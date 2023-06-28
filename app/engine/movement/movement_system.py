@@ -49,14 +49,7 @@ class MovementSystem:
         """
         for movement_component in self.moving_entities:
             if movement_component.unit == unit:
-                movement_component.finish()
-
-    def stop_all(self):
-        """
-        # Stop all movement components 
-        """
-        for movement_component in self.moving_entities:  
-            movement_component.finish()      
+                movement_component.finish()    
 
     def begin_move(self, unit, path: List[Tuple[int, int]], 
                    event=False, follow=True, speed=0):

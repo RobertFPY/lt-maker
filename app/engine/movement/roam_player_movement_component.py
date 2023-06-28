@@ -25,6 +25,7 @@ class RoamPlayerMovementComponent(MovementComponent):
         # This is the copy we will work with
         self.position = self.unit.position
         self.sprint = False
+        self.grid_move = False
 
         self.start()
 

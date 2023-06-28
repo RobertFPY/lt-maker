@@ -240,7 +240,6 @@ class RoamAI:
     def interact(self, region: RegionObject, proximity: float):
         positions = [pos for pos in region.get_all_positions() if utils.calculate_distance(self.unit.position, pos) <= proximity]
         if positions:
-            game.movement.stop_all()
             pos = list(sorted(positions, key=lambda pos: utils.calculate_distance(self.unit.position, pos)))[0]
             did_trigger = game.events.trigger(triggers.RegionTrigger(region.sub_nid, self.state.unit, pos, region))
             if not did_trigger:  # Just in case we need the generic one

@@ -19,6 +19,7 @@ class RoamAIMovementComponent(RoamPlayerMovementComponent):
         self.position = self.unit.position
         self.speed_modifier: float = 1.0
         self.path = []
+        self.grid_move = False
         self.start()
 
     def set_speed(self, mult: float = 1):

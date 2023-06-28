@@ -21,6 +21,7 @@ class RationalizeMovementComponent(MovementComponent):
         super().__init__(unit, follow=False, muted=True)
         # This is the copy we will work with
         self.position = self.unit.sprite.get_roam_position()
+        self.grid_move = False
         # This is where we shall go
         if game.board.get_unit(self.unit.position) is self.unit:
             self.goal = self.unit.position

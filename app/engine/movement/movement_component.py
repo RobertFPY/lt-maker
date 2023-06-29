@@ -8,6 +8,7 @@ class MovementComponent:
         self._unit = unit
         self.follow: bool = follow
         self.muted: bool = muted
+        self.grid_move: bool = True
 
         self._last_update = 0
 

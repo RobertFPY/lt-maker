@@ -229,7 +229,7 @@ class RoamAI:
         elif self.state.action_type == roam_ai_action.RoamAIAction.WAIT:
             self.wait(self.state.time)
         elif self.state.action_type == roam_ai_action.RoamAIAction.INTERACT:
-            self.move(self.state.region.center, self.state.desired_proximity)
+            self.make_path(self.state.region.center)
             # Then try to interact (will probably fail unless we are close enough)
             self.interact(self.state.region, self.state.desired_proximity)
 
@@ -264,6 +264,9 @@ class RoamAI:
             self.reset_for_next_behaviour()
             return
             
+        self.make_path(target)
+
+    def make_path(self, target: Tuple[int, int]):
         # Check whether the path has diverged too much
         if self.path and self.path[0] != target:
             self.path = self.get_path(target)

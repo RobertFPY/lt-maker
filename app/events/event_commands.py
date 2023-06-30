@@ -1846,6 +1846,16 @@ Changes *GlobalUnit*'s description to *String*.
         """
     keywords = ["GlobalUnit", "String"]
 
+class ChangeAffinity(EventCommand):
+    nid = 'change_affinity'
+    tag = Tags.MODIFY_UNIT_PROPERTIES
+    
+    desc = \
+        """
+Changes *GlobalUnit*'s affinity to *Affinity*.
+        """
+    keywords = ["GlobalUnit", "Affinity"]
+
 class ChangeStats(EventCommand):
     nid = 'change_stats'
     tag = Tags.MODIFY_UNIT_PROPERTIES

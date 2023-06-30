@@ -8,7 +8,7 @@ from app.utilities.typing import NID
 @dataclass
 class Team(Prefab):
     nid: NID
-    palette: NID = None  # Used for map sprites
+    map_sprite_palette: NID = None  # Used for map sprites
     combat_variant_palette: str = None  # Used for battle animation
     combat_color: str = 'red'
     _allies: List[NID] = field(default_factory=list)
@@ -19,6 +19,10 @@ class Team(Prefab):
 
     def set_allies(self, allies: List[NID]):
         self._allies = allies[:]
+
+    @classmethod
+    def default(cls):
+        return cls('')
 
 class TeamCatalog(Data[Team]):
     datatype = Team
@@ -39,14 +43,14 @@ class TeamCatalog(Data[Team]):
 
     def __init__(self):
         super().__init__()
-        print("TEAM CATALOG ASSEMBLE")
         self.add_defaults()
 
     def add_defaults(self):
         for idx, nid in enumerate(self.default_teams):
             if nid not in self.keys():
                 team = Team(
-                    nid, '%s_team_palette', self.default_combat_palettes[idx], 
+                    nid, 'map_sprite_%s' % self.default_colors[idx],
+                    self.default_combat_palettes[idx], 
                     self.default_colors[idx], self.default_allies[idx])
                 self.append(team)
 

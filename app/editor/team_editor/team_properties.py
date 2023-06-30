@@ -49,7 +49,7 @@ class TeamProperties(QWidget):
 
         mid_section = QHBoxLayout()
 
-        self.combat_palette_box = PropertyBox("Combat Palette Default", QLineEdit, self)
+        self.combat_palette_box = PropertyBox("Combat Palette Variant", QLineEdit, self)
         self.combat_palette_box.edit.editingFinished.connect(self.combat_variant_palette_changed)
         mid_section.addWidget(self.combat_palette_box)
 
@@ -88,15 +88,15 @@ class TeamProperties(QWidget):
         self.window.update_list()
 
     def palette_changed(self):
-        self.current.palette = self.palette_box.edit.currentText()
+        self.current.map_sprite_palette = self.palette_box.edit.currentText()
         self.draw_frame()
         self.window.update_list()
 
     def combat_variant_palette_changed(self, text):
         self.current.combat_variant_palette = text
 
-    def color_changed(self, text):
-        self.current.combat_color = text
+    def color_changed(self):
+        self.current.combat_color = self.color_box.edit.text()
 
     def allies_changed(self):
         self.current.set_allies(self.allies_box.edit.currentText())
@@ -104,7 +104,7 @@ class TeamProperties(QWidget):
     def set_current(self, current):
         self.current = current
         self.nid_box.edit.setText(current.nid)
-        self.palette_box.edit.setValue(current.palette)
+        self.palette_box.edit.setValue(current.map_sprite_palette)
         self.combat_palette_box.edit.setText(current.combat_variant_palette)
         self.color_box.edit.setText(current.combat_color)
 

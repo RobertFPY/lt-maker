@@ -1,17 +1,14 @@
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, \
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QCheckBox, \
     QGridLayout, QPushButton, QSizePolicy, QFrame, QSplitter, QButtonGroup
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QPainter, QImage, QColor
 
-from app.data.database.database import DB
-from app.data.resources.default_palettes import default_palettes
-
-from app.extensions.custom_gui import PropertyBox
+from app.extensions.custom_gui import PropertyBox, PropertyCheckBox
 from app.extensions.custom_widgets import TeamBox
 
 from app.editor import timer
 from app.editor.icon_editor.icon_view import IconView
-import app.editor.utilities as editor_utilities
+from app.editir.map_sprite_editor import map_sprite_model
 
 class MapSpriteProperties(QWidget):
     standing_width, standing_height = 192, 144
@@ -64,6 +61,8 @@ class MapSpriteProperties(QWidget):
         self.team_box.edit.setValue('player')
         self.team_box.edit.activated.connect(self.team_changed)
 
+        self.gray_box = PropertyCheckBox("Display exhausted sprite?", QCheckBox, self)
+
         bg_section = QHBoxLayout()
         self.bg_button = QPushButton(self)
         self.bg_button.setCheckable(True)
@@ -79,6 +78,7 @@ class MapSpriteProperties(QWidget):
 
         right_section.addLayout(button_section)
         right_section.addWidget(self.team_box)
+        right_section.addLayout(self.gray_box)
         right_section.addLayout(bg_section)
 
         left_frame = QFrame(self)
@@ -157,13 +157,11 @@ class MapSpriteProperties(QWidget):
             num = timer.get_timer().passive_counter.count
             frame = self.current.standing_pixmap.copy(num*64, 0, 64, 48)
         frame = frame.toImage()
-        team_nid = self.team_box.edit.currentText()
-        team = DB.teams.get(team_nid)
-        if team and team.palette:
-            conversion_dict = {a: b for a, b in zip(default_palettes['map_sprite_blue'], team.palette.get_colors())}
-            color_transform = editor_utilities.rgb_convert(conversion_dict)
-            frame = editor_utilities.color_convert(frame, color_transform)
-        frame = editor_utilities.convert_colorkey(frame)
+        if self.gray_box.edit.isChecked():
+            frame = map_sprite_model.gray_shift_team(frame)
+        else:
+            team_nid = self.team_box.edit.currentText()
+            frame = map_sprite_model.color_shift_team(frame, team_nid)
 
         # Background stuff
         if self.bg_button.isChecked():

@@ -13,10 +13,10 @@ from app.data.resources.combat_anims import Frame
 qCOLORKEY = QtGui.qRgb(*COLORKEY)
 qAlpha = QtGui.qRgba(0, 0, 0, 0)
 
-def rgb_convert(self, palette: Dict[Color3, Color3]) -> Dict[QtGui.qRgb, QtGui.qRgb]:
-    return {QtGui.qRgb(*k): QtGui.qRgb(*v) for k, v in palette.items()}
+def rgb_convert(conversion: Dict[Color3, Color3]) -> Dict[QtGui.qRgb, QtGui.qRgb]:
+    return {QtGui.qRgb(*k): QtGui.qRgb(*v) for k, v in conversion.items()}
 
-def convert_colorkey_slow(image):
+def convert_colorkey_slow(image: QtGui.QImage) -> QtGui.QImage:
     image.convertTo(QtGui.QImage.Format_ARGB32)
     for x in range(image.width()):
         for y in range(image.height()):
@@ -24,7 +24,7 @@ def convert_colorkey_slow(image):
                 image.setPixel(x, y, qAlpha)
     return image
 
-def convert_colorkey(image):
+def convert_colorkey(image: QtGui.QImage) -> QtGui.QImage:
     new_image = image.convertToFormat(QtGui.QImage.Format_Indexed8)
     num_colors = new_image.colorCount()
     if num_colors > 192:

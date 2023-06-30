@@ -1,8 +1,10 @@
 from __future__ import annotations
-from typing import Dict
+
+import math
+from typing import Dict, List
+
 from app.data.database.units import UnitPrefab
 from app.engine.game_counters import ANIMATION_COUNTERS
-import math
 
 from app.constants import TILEWIDTH, TILEHEIGHT, COLORKEY
 from app.engine.objects.unit import UnitObject
@@ -20,7 +22,7 @@ from app.engine import item_funcs, item_system, skill_system, particles
 import app.engine.config as cf
 from app.engine.animations import Animation
 from app.engine.game_state import game
-from app.utilities.typing import NID
+from app.utilities.typing import NID, Color3
 
 import logging
 
@@ -50,20 +52,32 @@ class MapSprite():
 
     def convert_to_team_colors(self, map_sprite):
         if self.team == 'black':
-            palette = DB.combat_palettes.get('map_sprite_black')
-            if not palette:
-                palette = default_palettes['map_sprite_black']
+            palette = RESOURCES.combat_palettes.get('map_sprite_black')
+            if palette:
+                colors: List[Color3] = palette.get_colors()
+            else:
+                colors: List[Color3] = default_palettes['map_sprite_black']
         else:
-            palette = DB.teams.get(self.team).palette
-        conversion_dict = {a: b for a, b in zip(default_palettes['map_sprite_blue'], palette.get_colors())}
+            team_obj = DB.teams.get(self.team)
+            palette_nid = team_obj.map_sprite_palette
+            palette = RESOURCES.combat_palettes.get(palette_nid)
+            if palette:
+                colors: List[Color3] = palette.get_colors()
+            else:
+                logging.error("Unable to locate map sprite palette with nid %s" % palette_nid)
+                colors: List[Color3] = default_palettes['map_sprite_black']
+
+        conversion_dict = {a: b for a, b in zip(default_palettes['map_sprite_blue'], colors)}
         return image_mods.color_convert(map_sprite.standing_image, conversion_dict), \
             image_mods.color_convert(map_sprite.moving_image, conversion_dict)
 
     def create_gray(self, imgs):
-        palette = DB.combat_palettes.get('map_sprite_wait')
-        if not palette:
-            palette = default_palettes['map_sprite_wait']
-        conversion_dict = {a: b for a, b in zip(default_palettes['map_sprite_blue'], palette.get_colors())}
+        palette = RESOURCES.combat_palettes.get('map_sprite_wait')
+        if palette:
+            colors: List[Color3] = palette.get_colors()
+        else:
+            colors: List[Color3] = default_palettes['map_sprite_wait']
+        conversion_dict = {a: b for a, b in zip(default_palettes['map_sprite_blue'], colors)}
         imgs = [image_mods.color_convert(img, conversion_dict) for img in imgs]
         for img in imgs:
             engine.set_colorkey(img, COLORKEY, rleaccel=True)

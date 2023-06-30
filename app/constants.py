@@ -12,3 +12,6 @@ VERSION = "2023.04.08a"
 
 if __name__ == '__main__':
     print(VERSION)
+
+APP_AUTHOR = "rainlash"
+APP_NAME = "Lex Talionis"

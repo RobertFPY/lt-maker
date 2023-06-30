@@ -4,7 +4,7 @@ import sys
 import functools
 from typing import Optional
 
-from PyQt5.QtWidgets import QMainWindow, QAction, QMenu, QMessageBox, \
+from PyQt5.QtWidgets import QMainWindow, QAction, QMenu, QMessageBox, QApplication, \
     QDesktopWidget, \
     QToolButton, QWidgetAction, QStackedWidget
 from PyQt5.QtGui import QIcon
@@ -16,7 +16,7 @@ from app.editor.settings import MainSettingsController
 from app.constants import VERSION
 from app.data.database.database import DB
 
-from app.editor import timer
+from app.editor import log_viewer, timer
 
 # components
 from app.editor.lib.components.menubar import MenuBar
@@ -205,6 +205,8 @@ class MainEditor(QMainWindow):
             _("Remove Unused Resources"), self, triggered=self.remove_unused_resources)
         self.check_for_updates_act = QAction(
             _("Check for updates..."), self, triggered=self.check_for_updates)
+        self.view_logs_act = QAction(
+            _("View logs..."), self, triggered=self.show_logs)
 
         # Test actions
         self.test_current_act = QAction(
@@ -304,6 +306,7 @@ class MainEditor(QMainWindow):
         help_menu.addAction(self.preferences_act)
         help_menu.addAction(self.remove_unused_resources_act)
         help_menu.addAction(self.check_for_updates_act)
+        help_menu.addAction(self.view_logs_act)
         self.menubar = MenuBar(self.menuBar())
         self.menubar.addMenu(file_menu)
         self.menubar.addMenu(edit_menu)
@@ -379,6 +382,8 @@ class MainEditor(QMainWindow):
             event.ignore()
         self.settings.component_controller.set_geometry(
             self.__class__.__name__, self.saveGeometry())
+        for window in QApplication.topLevelWidgets():
+            window.close()
 
     def test_play_current(self):
         self.test_current_act.setEnabled(False)
@@ -482,7 +487,7 @@ class MainEditor(QMainWindow):
 
     def save(self):
         if self.project_save_load_handler.save():
-            self._save()           
+            self._save()
 
     def save_as(self):
         if self.project_save_load_handler.save(True):
@@ -591,12 +596,14 @@ class MainEditor(QMainWindow):
             QMessageBox.warning(self, "Update unavailable", "<p>This is a standard python version of LT-maker.</p>"
                                       "<p>Use <b>git fetch</b> and <b>git pull</b> to download the latest git repo updates instead.</p>")
 
+    def show_logs(self):
+        # reference to keep sub window alive
+        self._log_window_ref = log_viewer.show_logs()
 
 # Testing
 # Run "python -m app.editor.main_editor" from main directory
 if __name__ == '__main__':
     import sys
-    from PyQt5.QtWidgets import QApplication
     app = QApplication(sys.argv)
     window = MainEditor()
     window.show()

@@ -38,12 +38,18 @@ class AuraTarget(SkillComponent):
 
 class AuraShow(SkillComponent):
     nid = 'show_aura'
-    desc = 'Aura will always show on the map'
+    desc = 'Aura will always show with this color on the map'
     tag = SkillTags.STATUS
     paired_with = ('aura', 'aura_range', 'aura_target')
 
     expose = ComponentType.Color3
     value = (128, 0, 0)
+
+class HideAura(SkillComponent):
+    nid = 'hide_aura'
+    desc = 'Aura\'s highlight will never appear on the map'
+    tag = SkillTags.STATUS
+    paired_with = ('aura', 'aura_range', 'aura_target')
 
 class PairUpBonus(SkillComponent):
     nid = 'pairup_bonus'

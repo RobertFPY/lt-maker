@@ -57,7 +57,7 @@ constants = ConstantCatalog([
     Constant('initiative', "Per Unit Initiative Order", ConstantType.BOOL, False, 'features'),
     Constant('fatigue', "Fatigue", ConstantType.BOOL, False, 'features'),
     Constant('reset_fatigue', "Automatically reset fatigue to 0 for benched units", ConstantType.BOOL, False, 'features'),
-    Constant('reset_uses', "Reset uses on droppable items when aquired", ConstantType.BOOL, False, 'features'),
+    Constant('reset_uses', "Reset uses on droppable items when acquired", ConstantType.BOOL, True, 'features'),
     Constant('minimap', "Enable Minimap", ConstantType.BOOL, True, 'features'),
     Constant('pairup', "Pair Up", ConstantType.BOOL, False, 'features'),
     Constant('limit_attack_stance', "Limit Attack Stance to first attack only", ConstantType.BOOL, False, 'features'),

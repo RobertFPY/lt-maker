@@ -75,7 +75,7 @@ def check_position(unit: UnitObject, new_position: Tuple[int, int],
             return True
     else:
         other_team = game.board.get_team(new_position)
-        if not other_team or unit.team in DB.teams.get(other_team).allies:
+        if not other_team or unit.team in DB.teams.get_allies(other_team):
             return True # Allies, this is fine
         else:  # Enemies
             return False

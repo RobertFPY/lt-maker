@@ -146,7 +146,7 @@ class RoamPlayerMovementComponent(MovementComponent):
             return False
         if game.board.get_unit(pos):
             other_team = game.board.get_team(pos)
-            if not other_team or self.unit.team in DB.teams.get(other_team).allies:
+            if not other_team or self.unit.team in DB.teams.get_allies(other_team):
                 return True # Allies, this is fine
             else:  # Enemies
                 return False

@@ -99,16 +99,17 @@ class TeamProperties(QWidget):
         self.current.combat_color = self.color_box.edit.text()
 
     def allies_changed(self):
-        self.current.set_allies(self.allies_box.edit.currentText())
+        DB.teams.set_allies(self.current.nid, self.allies_box.edit.currentText())
 
     def set_current(self, current):
         self.current = current
         self.nid_box.edit.setText(current.nid)
+        self.nid_box.edit.setDisabled(current.nid == 'player')
         self.palette_box.edit.setValue(current.map_sprite_palette)
         self.combat_palette_box.edit.setText(current.combat_variant_palette)
         self.color_box.edit.setText(current.combat_color)
 
-        allies = current.allies[:] # Must make a copy
+        allies = DB.teams.get_allies(current.nid)[:] # Must make a copy
         self.allies_box.edit.clear()
         self.allies_box.edit.addItems([k for k in DB.teams.keys() if k != current.nid])
         self.allies_box.edit.setCurrentTexts(allies)

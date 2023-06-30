@@ -142,7 +142,7 @@ class GameBoard(object):
 
     def can_move_through(self, team, adj) -> bool:
         unit_team = self.get_team((adj.x, adj.y))
-        if not unit_team or team in DB.teams.get(unit_team).allies:
+        if not unit_team or team in DB.teams.get_allies(unit_team):
             return True
         if team == 'player' or DB.constants.value('ai_fog_of_war'):
             if not self.in_vision((adj.x, adj.y), team):
@@ -218,17 +218,16 @@ class GameBoard(object):
             if team == 'player':
                 # Right now, line of sight doesn't interact at all with vision regions
                 # Since I'm not sure how we'd handle cases where a vision region is obscured by an opaque tile
-                team_obj = DB.teams.get(team)
                 if DB.constants.value('fog_los'):
                     fog_of_war_radius = game.level_vars.get('_fog_of_war_radius', 0)
                     valid: bool = False  # Can we see the pos?
                     # We can if any of our allies can see the pos.
-                    for team_nid in team_obj.allies:
+                    for team_nid in DB.teams.get_allies(team):
                         valid |= line_of_sight.simple_check(pos, team_nid, fog_of_war_radius)
                     if not valid:
                         return False
                 
-                for team_nid in team_obj.allies:
+                for team_nid in DB.teams.get_allies(team):
                     team_grid = self.fog_of_war_grids[team_nid]
                     if team_grid[idx]:
                         return True

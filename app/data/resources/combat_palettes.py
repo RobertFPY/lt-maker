@@ -35,7 +35,7 @@ class Palette(Prefab):
         # Returns just the colors in the right order
         # not the coord
         """
-        colors = list(sorted([(coord, color) for coord, color in self.colors.items()]))
+        colors = list(sorted([(coord[::-1], color) for coord, color in self.colors.items()]))
         colors = [color for coord, color in colors]
         return colors
 

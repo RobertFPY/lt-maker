@@ -2114,6 +2114,13 @@ def change_unit_desc(self: Event, global_unit, string, flags=None):
         return
     action.do(action.ChangeUnitDesc(unit, string))
 
+def change_affinity(self: Event, global_unit, affinity, flags=None):
+    unit = self._get_unit(global_unit)
+    if not unit:
+        self.logger.error("change_affinity: Couldn't find unit %s" % global_unit)
+        return
+    action.do(action.ChangeAffinity(unit, affinity))
+
 def change_stats(self: Event, global_unit, stat_list, flags=None):
     flags = flags or set()
 

@@ -405,6 +405,16 @@ class Portrait(Validator):
         valids.append((None, "{unit2}"))
         return valids + other_valids
 
+class Affinity(Validator):
+    def validate(self, affinity, level):
+        if affinity in self._db.affinities.keys():
+            return affinity
+        return None
+    
+    def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
+        valids = [(None, affinity.nid) for affinity in self._db.affinities]
+        return valids
+
 class AI(Validator):
     def validate(self, text, level):
         if text in self._db.ai.keys():

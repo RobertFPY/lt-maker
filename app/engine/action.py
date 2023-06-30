@@ -2559,6 +2559,18 @@ class ChangeUnitDesc(Action):
     def reverse(self):
         self.unit.desc = self.old_desc
 
+class ChangeAffinity(Action):
+    def __init__(self, unit, affinity):
+        self.unit = unit
+        self.old_affinity = unit.affinity
+        self.new_affinity = affinity
+        
+    def do(self):
+        self.unit.affinity = self.new_affinity
+    
+    def reverse(self):
+        self.unit.affinity = self.old_affinity
+
 class AddTag(Action):
     def __init__(self, unit, tag):
         self.unit = unit

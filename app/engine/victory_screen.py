@@ -28,7 +28,16 @@ class VictoryState(MapState):
         self.num_frame = 0
 
         get_sound_thread().lower()
-        get_sound_thread().play_sfx('StageClear')
+        # Check for an assigned sound
+        self.music_flag = False
+        if game.memory.get('victory_screen_sound'):
+            song = get_sound_thread().play_sfx(game.memory.get('victory_screen_sound'))
+            if song:
+                self.music_flag = True
+        if not self.music_flag:
+            song = get_sound_thread().play_sfx('StageClear')
+            if song:
+                self.music_flag = True
 
     def create_stat_surf(self):
         turns = str(game.turncount)

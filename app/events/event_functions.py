@@ -3318,7 +3318,8 @@ def alert(self: Event, string, item=None, skill=None, icon=None, flags=None):
     self.game.state.change('alert')
     self.state = 'paused'
 
-def victory_screen(self: Event, flags=None):
+def victory_screen(self: Event, sound=None, flags=None):
+    self.game.memory['victory_screen_sound'] = sound
     self.game.state.change('victory')
     self.state = 'paused'
 

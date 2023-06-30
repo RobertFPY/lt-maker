@@ -2697,8 +2697,9 @@ class VictoryScreen(EventCommand):
 
     desc = \
         """
-Displays the chapter's victory screen. Congratulations!
+Displays the chapter's victory screen. Congratulations! Optionally change the *Sound* that plays.
         """
+    optional_keywords = ["Sound"]
 
 class RecordsScreen(EventCommand):
     nid = 'records_screen'

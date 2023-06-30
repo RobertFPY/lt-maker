@@ -16,6 +16,8 @@ class RoamPlayerMovementComponent(MovementComponent):
     """
     # Used for moving the player's roaming unit according to the player's inputs
     """
+    grid_move = False
+    
     min_speed = 0.48  # Unit must have a velocity above this to actually move (tiles per second)
     base_max_speed = 6.0  # maximum speed allowed (tiles per second)
     base_accel = 30.0  # normal acceleration to maximum speed (tiles per second^2)

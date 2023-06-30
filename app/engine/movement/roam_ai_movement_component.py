@@ -13,6 +13,8 @@ class RoamAIMovementComponent(RoamPlayerMovementComponent):
     """
     # Used for moving the ai roaming unit according to a path given to it
     """
+    grid_move = False
+
     def __init__(self, unit, follow=False, muted=False):
         super().__init__(unit, follow=follow, muted=muted)
         # This is the copy we will work with

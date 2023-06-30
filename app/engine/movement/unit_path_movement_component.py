@@ -16,6 +16,8 @@ class UnitPathMovementComponent(MovementComponent):
     """
     # Used for moving a unit along a path
     """
+    grid_move = True
+    
     def __init__(self, unit, path: List[Tuple[int, int]], event=False, 
                  follow=True, muted=False, speed: int = 0):
         super().__init__(unit, follow, muted)

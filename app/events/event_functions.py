@@ -2044,6 +2044,17 @@ def change_ai(self: Event, global_unit, ai, flags=None):
     else:
         self.logger.error("change_ai: Couldn't find AI %s" % ai)
         return
+    
+def change_roam_ai(self: Event, global_unit, ai, flags=None):
+    unit = self._get_unit(global_unit)
+    if not unit:
+        self.logger.error("change_roam_ai: Couldn't find unit %s" % global_unit)
+        return
+    if ai in DB.ai.keys():
+        action.do(action.ChangeRoamAI(unit, ai))
+    else:
+        self.logger.error("change_roam_ai: Couldn't find AI %s" % ai)
+        return
 
 def change_ai_group(self: Event, global_unit, ai_group, flags=None):
     unit = self._get_unit(global_unit)

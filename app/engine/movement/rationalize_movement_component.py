@@ -14,6 +14,8 @@ class RationalizeMovementComponent(MovementComponent):
     # Used for moving all unit's that are off kilter of the 
     # correct unit.position to the correct unit.position
     """
+    grid_move = False
+    
     speed = 6  # In tiles per seconds
     epsilon = 0.01  # In tiles -- when the unit is close enough
 

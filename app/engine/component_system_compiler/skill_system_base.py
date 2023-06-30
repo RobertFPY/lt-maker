@@ -322,11 +322,8 @@ def on_end_chapter(unit, skill):
         if component.defines('on_end_chapter'):
             if component.ignore_conditional or condition(skill, unit):
                 component.on_end_chapter(unit, skill)
-
-def on_end_chapter_unconditional(unit, skill):
-    for component in skill.components:
         if component.defines('on_end_chapter_unconditional'):
-            component.on_end_chapter(unit, skill)
+            component.on_end_chapter_unconditional(unit, skill)
 
 def init(skill):
     """

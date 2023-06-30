@@ -2402,6 +2402,31 @@ class ChangeAI(Action):
         self.unit.ai = self.old_ai
 
 
+class ChangeRoamAI(Action):
+    def __init__(self, unit, ai):
+        self.unit = unit
+        self.roam_ai = ai
+        self.old_ai = self.unit.roam_ai
+        self._added_to_roam_ai = False
+
+    @recalculate_unit
+    def do(self):
+        self.unit.roam_ai = self.roam_ai
+        for s in game.state.state:
+            if s.name == 'free_roam' and not s.contains_ai_unit(self.unit):
+                s.add_ai_unit(self.unit)
+                self._added_to_roam_ai = True
+
+    @recalculate_unit
+    def reverse(self):
+        self.unit.roam_ai = self.old_ai
+        if self._added_to_roam_ai:
+            for s in game.state.state:
+                if s.name == 'free_roam' and s.contains_ai_unit(self.unit):
+                    s.remove_ai_unit(self.unit)
+        self._added_to_roam_ai = False  # Reset for later
+
+
 class ChangeAIGroup(Action):
     def __init__(self, unit, ai_group):
         self.unit = unit

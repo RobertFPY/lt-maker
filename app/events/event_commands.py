@@ -1766,6 +1766,18 @@ Sets the *AI* used by *GlobalUnit*.
 
     keywords = ["GlobalUnit", "AI"]
 
+class ChangeRoamAI(EventCommand):
+    nid = 'change_roam_ai'
+    nickname = 'set_roam_ai'
+    tag = Tags.MODIFY_UNIT_PROPERTIES
+
+    desc = \
+        """
+Sets the *Roam AI* used by *GlobalUnit*.
+        """
+
+    keywords = ["GlobalUnit", "AI"]
+
 class ChangeAIGroup(EventCommand):
     nid = 'change_ai_group'
     nickname = 'set_ai_group'

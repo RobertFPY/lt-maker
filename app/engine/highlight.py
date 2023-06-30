@@ -100,7 +100,7 @@ class HighlightController():
 
     def display_aura_highlights(self, unit):
         for skill in unit.skills:
-            if skill.aura:
+            if skill.aura and not skill.hide_aura:
                 positions = game.board.get_aura_positions(skill.subskill)
                 aura_range = skill.aura_range.value
                 if DB.constants.value('aura_los'):

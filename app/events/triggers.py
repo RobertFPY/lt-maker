@@ -88,7 +88,7 @@ class PhaseChange(EventTrigger):
     Occurs whenever the phase changes. Check `team` to figure out whose phase it is now.
     """
     nid: ClassVar[NID] = 'phase_change'
-    team: str
+    team: NID
 
 @dataclass(init=True)
 class TurnChange(EventTrigger):

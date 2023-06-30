@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import QWidget, QLineEdit, QMessageBox, QHBoxLayout, QVBoxLayout, \
     QSpacerItem, QSizePolicy
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPixmap
 
 from app.data.resources.resources import RESOURCES
 from app.data.database.database import DB
@@ -25,7 +26,7 @@ class TeamProperties(QWidget):
         top_section = QHBoxLayout()
 
         self.frame_view = IconView(self)
-        top_section.addWidget(self.icon_edit)
+        top_section.addWidget(self.frame_view)
 
         horiz_spacer = QSpacerItem(40, 10, QSizePolicy.Fixed, QSizePolicy.Fixed)
         top_section.addSpacerItem(horiz_spacer)
@@ -49,7 +50,7 @@ class TeamProperties(QWidget):
         mid_section = QHBoxLayout()
 
         self.combat_palette_box = PropertyBox("Combat Palette Default", QLineEdit, self)
-        self.combat_palette_box.edit.editingFinished.connect(self.combat_palette_changed)
+        self.combat_palette_box.edit.editingFinished.connect(self.combat_variant_palette_changed)
         mid_section.addWidget(self.combat_palette_box)
 
         self.color_box = PropertyBox("Combat UI Color", QLineEdit, self)
@@ -91,8 +92,8 @@ class TeamProperties(QWidget):
         self.draw_frame()
         self.window.update_list()
 
-    def combat_palette_changed(self, text):
-        self.current.combat_palette = text
+    def combat_variant_palette_changed(self, text):
+        self.current.combat_variant_palette = text
 
     def color_changed(self, text):
         self.current.combat_color = text
@@ -104,7 +105,7 @@ class TeamProperties(QWidget):
         self.current = current
         self.nid_box.edit.setText(current.nid)
         self.palette_box.edit.setValue(current.palette)
-        self.combat_palette_box.edit.setText(current.combat_palette)
+        self.combat_palette_box.edit.setText(current.combat_variant_palette)
         self.color_box.edit.setText(current.combat_color)
 
         allies = current.allies[:] # Must make a copy
@@ -116,7 +117,10 @@ class TeamProperties(QWidget):
             self.draw_frame()
 
     def draw_frame(self):
-        pixmap = RESOURCES.map_sprites[0].standing_pixmap
+        first_map_sprite = RESOURCES.map_sprites[0]
+        if not first_map_sprite.standing_pixmap:
+            first_map_sprite.standing_pixmap = QPixmap(first_map_sprite.stand_full_path)
+        pixmap = first_map_sprite.standing_pixmap
         pix = map_sprite_model.get_basic_icon(pixmap, 0, team=self.current.nid)
         self.frame_view.set_image(pix)
         self.frame_view.show_image()

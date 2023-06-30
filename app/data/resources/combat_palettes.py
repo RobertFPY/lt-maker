@@ -96,7 +96,7 @@ class PaletteCatalog(ManifestCatalog[Palette]):
                 self.append(new_palette)
 
         # Always load in the default map sprite palettes
-        for palette_nid, colors in default_palettes.items:
+        for palette_nid, colors in default_palettes.items():
             if palette_nid not in self.keys():
                 new_palette = Palette.from_list(palette_nid, colors)
                 self.append(new_palette)
@@ -113,7 +113,7 @@ class PaletteCatalog(ManifestCatalog[Palette]):
             save = list(save)  # by default a tuple
             nid = save[0]
             orderkeys[nid] = idx
-            nid = re.sub(r'[\\/*?:"<>|]',"", nid)
+            nid = re.sub(r'[\\/*?:"<>|]', "", nid)
             nid = nid.replace(' ', '_')
             save_loc = os.path.join(save_dir, nid + '.json')
             with open(save_loc, 'w') as serialize_file:

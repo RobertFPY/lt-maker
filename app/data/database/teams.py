@@ -9,13 +9,13 @@ from app.utilities.typing import NID
 class Team(Prefab):
     nid: NID
     palette: NID = None  # Used for map sprites
-    combat_palette: str = None  # Used for battle animation
+    combat_variant_palette: str = None  # Used for battle animation
     combat_color: str = 'red'
     _allies: List[NID] = field(default_factory=list)
 
     @property
     def allies(self) -> List[NID]:
-        return self.nid + self._allies
+        return [self.nid] + self._allies
 
     def set_allies(self, allies: List[NID]):
         self._allies = allies[:]
@@ -39,11 +39,21 @@ class TeamCatalog(Data[Team]):
 
     def __init__(self):
         super().__init__()
-        for idx, s in enumerate(self.default_teams):
-            team = Team(
-                s, '%s_team_palette', self.default_combat_palettes[idx], 
-                self.default_colors[idx], self.default_allies[idx])
-            self.append(team)
+        print("TEAM CATALOG ASSEMBLE")
+        self.add_defaults()
+
+    def add_defaults(self):
+        for idx, nid in enumerate(self.default_teams):
+            if nid not in self.keys():
+                team = Team(
+                    nid, '%s_team_palette', self.default_combat_palettes[idx], 
+                    self.default_colors[idx], self.default_allies[idx])
+                self.append(team)
+
+    def restore(self, vals):
+        super().restore(vals)
+        self.add_defaults()
+        return self
 
     def player(self) -> Team:
         # player is a special team that is used often throughout the engine

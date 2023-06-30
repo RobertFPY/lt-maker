@@ -3,7 +3,8 @@ from __future__ import annotations
 from PyQt5 import QtGui
 from PyQt5.QtCore import Qt
 
-from typing import Dict, Tuple
+from typing import Dict
+from app.utilities.typing import Color3
 
 from app.constants import COLORKEY
 from app.data.resources.combat_palettes import Palette
@@ -12,7 +13,6 @@ from app.data.resources.combat_anims import Frame
 qCOLORKEY = QtGui.qRgb(*COLORKEY)
 qAlpha = QtGui.qRgba(0, 0, 0, 0)
 
-Color3 = Tuple[int, int, int]
 def rgb_convert(self, palette: Dict[Color3, Color3]) -> Dict[QtGui.qRgb, QtGui.qRgb]:
     return {QtGui.qRgb(*k): QtGui.qRgb(*v) for k, v in palette.items()}
 

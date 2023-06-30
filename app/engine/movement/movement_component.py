@@ -3,12 +3,13 @@ from __future__ import annotations
 from typing import Tuple
 
 class MovementComponent:
+    grid_move = True
+    
     def __init__(self, unit, follow=True, muted=False):
         self.active = True
         self._unit = unit
         self.follow: bool = follow
         self.muted: bool = muted
-        self.grid_move: bool = True
 
         self._last_update = 0
 

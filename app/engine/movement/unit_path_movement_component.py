@@ -22,6 +22,7 @@ class UnitPathMovementComponent(MovementComponent):
         self.path = path
         self.goal = self.path[0] if self.path else None
         self.event: bool = event
+        self.grid_move = True
         # How fast we move to each new position in the path
         self.speed = int(speed)
         self.start()

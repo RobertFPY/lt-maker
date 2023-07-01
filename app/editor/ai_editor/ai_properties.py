@@ -8,7 +8,7 @@ import app.data.database.ai as ai
 from app.data.database.database import DB
 
 from app.extensions.custom_gui import PropertyBox, ComboBox, PropertyCheckBox
-from app.editor.custom_widgets import ClassBox, UnitBox, FactionBox, PartyBox
+from app.editor.custom_widgets import ClassBox, UnitBox, TeamBox, FactionBox, PartyBox
 from app.editor.lib.components.validated_line_edit import NidLineEdit
 from app.utilities import str_utils
 
@@ -51,9 +51,8 @@ class UnitSpecification(QWidget):
         name_box.addItems([unit.name for unit in DB.units])
         name_box.activated.connect(self.sub_spec_changed)
         self.box2.addWidget(name_box)
-        team_box = ComboBox(self)
-        team_box.addItems(DB.teams)
-        team_box.activated.connect(self.sub_spec_changed)
+        team_box = TeamBox(self)
+        team_box.edit.activated.connect(self.sub_spec_changed)
         self.box2.addWidget(team_box)
         faction_box = FactionBox(self)
         faction_box.edit.activated.connect(self.sub_spec_changed)

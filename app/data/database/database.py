@@ -11,16 +11,16 @@ from app.data.category import Categories, CategorizedCatalog
 from app.data.database import (ai, constants, difficulty_modes, equations, factions,
                       items, klass, levels, lore, mcost, minimap, overworld,
                       overworld_node, parties, raw_data, skills, stats, varslot,
-                      supports, tags, terrain, translations, units, weapons)
+                      supports, tags, terrain, translations, units, weapons, teams)
 from app.events import event_prefab
 from app.utilities.typing import NID
 
 
 class Database(object):
     save_data_types = ("constants", "stats", "equations", "mcost", "terrain", "weapon_ranks",
-                       "weapons", "factions", "items", "skills", "tags", "game_var_slots", "classes",
-                       "support_constants", "support_ranks", "affinities", "units", "support_pairs",
-                       "ai", "parties", "difficulty_modes",
+                       "weapons", "teams", "factions", "items", "skills", "tags", "game_var_slots", 
+                       "classes", "support_constants", "support_ranks", "affinities", "units", 
+                       "support_pairs", "ai", "parties", "difficulty_modes",
                        "translations", "lore", "levels", "events", "overworlds", "raw_data")
     save_as_chunks = ("events", 'items', 'skills', 'units', 'classes', 'levels')
 
@@ -28,7 +28,7 @@ class Database(object):
         self.current_proj_dir = None
 
         self.constants = constants.constants
-        self.teams = ["player", "enemy", "enemy2", "other"]  # Order determine phase order
+        self.teams = teams.TeamCatalog()
         self.stats = stats.StatCatalog()
         self.equations = equations.EquationCatalog()
         self.mcost = mcost.McostGrid()
@@ -69,9 +69,9 @@ class Database(object):
     def music_keys(self):
         keys = []
         for team in self.teams:
-            keys.append("%s_phase" % team)
+            keys.append("%s_phase" % team.nid)
         for team in self.teams:
-            keys.append("%s_battle" % team)
+            keys.append("%s_battle" % team.nid)
         keys.append("boss_battle")
         return keys
 

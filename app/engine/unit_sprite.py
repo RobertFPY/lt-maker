@@ -1,16 +1,17 @@
 from __future__ import annotations
-from typing import Dict
+
+import math
+from typing import Dict, List
+
 from app.data.database.units import UnitPrefab
 from app.engine.game_counters import ANIMATION_COUNTERS
-import math
 
 from app.constants import TILEWIDTH, TILEHEIGHT, COLORKEY
-from app.data.database.palettes import gray_colors, enemy_colors, other_colors, enemy2_colors, black_colors, \
-    player_dark_colors, enemy_dark_colors, other_dark_colors, gray_dark_colors
 from app.engine.objects.unit import UnitObject
 
 from app.data.resources.resources import RESOURCES
 from app.data.database.database import DB
+from app.data.resources.default_palettes import default_palettes
 
 from app.utilities import utils
 
@@ -21,7 +22,7 @@ from app.engine import item_funcs, item_system, skill_system, particles
 import app.engine.config as cf
 from app.engine.animations import Animation
 from app.engine.game_state import game
-from app.utilities.typing import NID
+from app.utilities.typing import NID, Color3
 
 import logging
 
@@ -50,35 +51,34 @@ class MapSprite():
         self.up = [engine.subsurface(move, (num*48, 120, 48, 40)) for num in range(4)]
 
     def convert_to_team_colors(self, map_sprite):
-        if self.team == 'player':
-            if DB.constants.value('dark_sprites'):
-                conversion_dict = player_dark_colors
+        if self.team == 'black':
+            palette = RESOURCES.combat_palettes.get('map_sprite_black')
+            if palette:
+                colors: List[Color3] = palette.get_colors()
             else:
-                conversion_dict = {}
-        elif self.team == 'enemy':
-            if DB.constants.value('dark_sprites'):
-                conversion_dict = enemy_dark_colors
+                colors: List[Color3] = default_palettes['map_sprite_black']
+        else:
+            team_obj = DB.teams.get(self.team)
+            palette_nid = team_obj.map_sprite_palette
+            palette = RESOURCES.combat_palettes.get(palette_nid)
+            if palette:
+                colors: List[Color3] = palette.get_colors()
             else:
-                conversion_dict = enemy_colors
-        elif self.team == 'enemy2':
-            conversion_dict = enemy2_colors
-        elif self.team == 'other':
-            if DB.constants.value('dark_sprites'):
-                conversion_dict = other_dark_colors
-            else:
-                conversion_dict = other_colors
-        elif self.team == 'black':
-            conversion_dict = black_colors
+                logging.error("Unable to locate map sprite palette with nid %s" % palette_nid)
+                colors: List[Color3] = default_palettes['map_sprite_black']
 
+        conversion_dict = {a: b for a, b in zip(default_palettes['map_sprite_blue'], colors)}
         return image_mods.color_convert(map_sprite.standing_image, conversion_dict), \
             image_mods.color_convert(map_sprite.moving_image, conversion_dict)
 
     def create_gray(self, imgs):
-        if DB.constants.value('dark_sprites'):
-            color = gray_dark_colors
+        palette = RESOURCES.combat_palettes.get('map_sprite_wait')
+        if palette:
+            colors: List[Color3] = palette.get_colors()
         else:
-            color = gray_colors
-        imgs = [image_mods.color_convert(img, color) for img in imgs]
+            colors: List[Color3] = default_palettes['map_sprite_wait']
+        conversion_dict = {a: b for a, b in zip(default_palettes['map_sprite_blue'], colors)}
+        imgs = [image_mods.color_convert(img, conversion_dict) for img in imgs]
         for img in imgs:
             engine.set_colorkey(img, COLORKEY, rleaccel=True)
         return imgs
@@ -619,8 +619,8 @@ class UnitSprite():
         if self.unit.is_dying or self.unit.dead:
             return False
         if (cf.SETTINGS['hp_map_team'] == 'All') or \
-           (cf.SETTINGS['hp_map_team'] == 'Ally' and self.unit.team in ('player', 'other')) or \
-           (cf.SETTINGS['hp_map_team'] == 'Enemy' and self.unit.team.startswith('enemy')):
+           (cf.SETTINGS['hp_map_team'] == 'Ally' and self.unit.team in DB.teams.allies) or \
+           (cf.SETTINGS['hp_map_team'] == 'Enemy' and self.unit.team in DB.teams.enemies):
             if (cf.SETTINGS['hp_map_cull'] == 'All') or \
                (cf.SETTINGS['hp_map_cull'] == 'Wounded' and self.unit.get_hp() < equations.parser.hitpoints(self.unit)):
                 return True
@@ -641,23 +641,16 @@ class UnitSprite():
             elif 'Elite' in self.unit.tags:
                 icon = SPRITES.get('elite_icon')
             elif 'Protect' in self.unit.tags:
-                if self.unit.team == 'other':
-                    icon = SPRITES.get('protect_green_icon')
-                elif self.unit.team == 'player':
-                    icon = SPRITES.get('protect_icon')
-                elif self.unit.team == 'enemy':
-                    icon = SPRITES.get('protect_red_icon')
-                elif self.unit.team == 'enemy2':
-                    icon = SPRITES.get('protect_purple_icon')
+                team_color = DB.teams.get(self.unit.team).combat_color
+                icon = SPRITES.get('protect_%s_icon' % team_color, 'protect_icon')
             if icon:
                 surf.blit(icon, (left - 8, top - 8))
 
         if self.unit.traveler and self.transition_state == 'normal' and \
                 not self.unit.is_dying and not DB.constants.value('pairup'):
-            if game.get_unit(self.unit.traveler).team == 'player':
-                rescue_icon = SPRITES.get('rescue_icon_blue')
-            else:
-                rescue_icon = SPRITES.get('rescue_icon_green')
+            traveler_team = game.get_unit(self.unit.traveler).team
+            team_color = DB.teams.get(traveler_team).combat_color
+            rescue_icon = SPRITES.get('rescue_icon_%s' % team_color, 'rescue_icon_green')
             topleft = (left - 8, top - 8)
             surf.blit(rescue_icon, topleft)
 

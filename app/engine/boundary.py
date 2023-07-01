@@ -10,7 +10,7 @@ from app.engine.game_state import game
 
 class BoundaryInterface():
     draw_order = ('all_spell', 'all_attack', 'spell', 'attack')
-    enemy_teams = ('enemy', 'enemy2')
+    enemy_teams = DB.teams.enemies
     fog_of_war_tile1 = SPRITES.get('bg_fow_tile')
     fog_of_war_tile2 = SPRITES.get('bg_black_tile')
 
@@ -169,7 +169,7 @@ class BoundaryInterface():
         if unit.position:
             x, y = unit.position
             other_units = {game.get_unit(nid) for nid in self.grids['movement'][x * self.height + y]}
-            other_units = {other_unit for other_unit in other_units if not utils.compare_teams(unit.team, other_unit.team)}
+            other_units = {other_unit for other_unit in other_units if unit.team not in DB.teams.get_allies(other_unit.team)}
 
             # Set unit's position to non-existent for a brief momement
             game.board.remove_unit(unit.position, unit)
@@ -191,7 +191,7 @@ class BoundaryInterface():
             x, y = unit.position
             # print(self.grids['movement'][x * self.height + y])
             other_units = {game.get_unit(nid) for nid in self.grids['movement'][x * self.height + y]}
-            other_units = {other_unit for other_unit in other_units if not utils.compare_teams(unit.team, other_unit.team)}
+            other_units = {other_unit for other_unit in other_units if unit.team not in DB.teams.get_allies(other_unit.team)}
 
             for other_unit in other_units:
                 self._remove_unit(other_unit)

@@ -25,6 +25,7 @@ from app.engine.graphics.text.text_renderer import render_text, text_width, rend
 from app.events import triggers
 from app.data.resources.resources import RESOURCES
 from app.utilities import utils
+from app.utilities.typing import NID
 from app.utilities.enums import HAlignment
 
 
@@ -43,7 +44,7 @@ class AnimationCombat(BaseCombat, MockCombat):
             self.right_item = self.def_item
             self.left = self.attacker
             self.left_item = self.main_item
-        elif self.attacker.team.startswith('enemy') and not self.defender.team.startswith('enemy'):
+        elif self.attacker.team in DB.teams.enemies and self.defender.team not in DB.teams.enemies:
             self.right = self.defender
             self.right_item = self.def_item
             self.left = self.attacker
@@ -522,7 +523,7 @@ class AnimationCombat(BaseCombat, MockCombat):
     def initial_paint_setup(self):
         crit_flag = DB.constants.value('crit')
         # Left
-        left_color = utils.get_team_color(self.left.team)
+        left_color = self.get_color(self.left.team)
         # Name tag
         self.left_name = SPRITES.get('combat_name_left_' + left_color).copy()
         if text_width('text', self.left.name) > 52:
@@ -556,7 +557,7 @@ class AnimationCombat(BaseCombat, MockCombat):
             render_text(self.left_bar, [font], [name], ['brown'], (WINWIDTH//4 + 31, 5 + (8 if crit_flag else 0)), HAlignment.CENTER)
 
         # Right
-        right_color = utils.get_team_color(self.right.team)
+        right_color = self.get_color(self.right.team)
         # Name tag
         self.right_name = SPRITES.get('combat_name_right_' + right_color).copy()
         if text_width('text', self.right.name) > 52:
@@ -733,6 +734,9 @@ class AnimationCombat(BaseCombat, MockCombat):
 
     def right_team(self):
         return self.right.team
+
+    def get_color(self, team: NID) -> str:
+        return DB.teams.get(team).combat_color
 
     def _set_stats(self):
         a_hit = combat_calcs.compute_hit(self.attacker, self.defender, self.main_item, self.def_item, 'attack', self.state_machine.get_attack_info())
@@ -1077,8 +1081,8 @@ class AnimationCombat(BaseCombat, MockCombat):
 
         # Guard gauge counter
         if DB.constants.value('pairup') and not DB.constants.value('attack_stance_only'):
-            left_color = utils.get_team_color(self.left.team)
-            right_color = utils.get_team_color(self.right.team)
+            left_color = self.get_color(self.left.team)
+            right_color = self.get_color(self.right.team)
             right_gauge = None
             left_gauge = None
             left_gauge = SPRITES.get('guard_' + left_color).copy()

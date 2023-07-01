@@ -286,9 +286,9 @@ class SimpleCombat():
     def turnwheel_death_messages(self, units):
         messages = []
         dying_units = [u for u in units if u.is_dying]
-        any_player_dead = any(not u.team.startswith('enemy') for u in dying_units)
+        any_player_dead = any(u.team not in DB.teams.enemies for u in dying_units)
         for unit in dying_units:
-            if unit.team.startswith('enemy'):
+            if unit.team in DB.teams.enemies:
                 if any_player_dead:
                     messages.append("%s was defeated" % unit.name)
                 else:

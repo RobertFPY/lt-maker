@@ -83,6 +83,14 @@ class LevelSelect(EventTrigger):
     nid: ClassVar[NID] = 'level_select'
 
 @dataclass(init=True)
+class PhaseChange(EventTrigger):
+    """
+    Occurs whenever the phase changes. Check `team` to figure out whose phase it is now.
+    """
+    nid: ClassVar[NID] = 'phase_change'
+    team: NID
+
+@dataclass(init=True)
 class TurnChange(EventTrigger):
     """
     Occurs immediately before turn changes to Player Phase. Useful for dialogue or reinforcements.

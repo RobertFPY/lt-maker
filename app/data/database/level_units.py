@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 from app.utilities.typing import NID
 from dataclasses import dataclass, field
 
@@ -10,19 +10,19 @@ class GenericUnit(Prefab):
     variant: str = None
 
     level: int = None
-    klass: str = None
+    klass: NID = None
 
-    faction: str = None
+    faction: NID = None
 
     starting_items: List[Tuple[NID, bool]] = field(default_factory=list)
     starting_skills: List[NID] = field(default_factory=list)
 
-    team: str = None
-    ai: str = None
-    roam_ai: str = None
-    ai_group: str = None
+    team: NID = None
+    ai: NID = None
+    roam_ai: NID = None
+    ai_group: NID = None
 
-    starting_position: list = None  # 2-tuple
+    starting_position: Tuple[int, int] = None
     starting_traveler: NID = None  # unit nid
 
     generic: bool = True
@@ -60,14 +60,14 @@ class GenericUnit(Prefab):
 @dataclass
 class UniqueUnit(Prefab):
     nid: str = None
-    team: str = None
-    ai: str = None
-    roam_ai: str = None
-    ai_group: str = None
+    team: NID = None
+    ai: NID = None
+    roam_ai: NID = None
+    ai_group: NID = None
 
-    faction: str = None  # Always None
+    faction: NID = None  # Always None
 
-    starting_position: list = None  # 2-tuple
+    starting_position: Tuple[int, int] = None
     starting_traveler: NID = None  # Unit nid
 
     generic: bool = False
@@ -97,8 +97,8 @@ class UniqueUnit(Prefab):
 @dataclass
 class UnitGroup(Prefab):
     nid: str = None
-    units: list = None  # list of unit nids
-    positions: dict = None  # unit nid : position
+    units: List[NID] = None  # list of unit nids
+    positions: Dict[NID, Tuple[int, int]] = None  # unit nid : position
 
     @classmethod
     def restore(cls, value):

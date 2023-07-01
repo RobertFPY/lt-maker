@@ -233,7 +233,7 @@ def draw_growth(surf, stat_nid, unit, topright, compact=False):
     bonus = unit.growth_bonus(stat_nid)
     klass_bonus = class_obj.growth_bonus.get(stat_nid, 0)
     bonus += klass_bonus
-    difficulty_bonus = game.mode.get_growth_bonus(unit)
+    difficulty_bonus = game.mode.get_growth_bonus(unit, DB)
     d_bonus = difficulty_bonus.get(stat_nid, 0)
     bonus += d_bonus
     if compact:

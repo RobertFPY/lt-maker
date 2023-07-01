@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import List, Tuple
 
+from app.data.database.database import DB
+
 from app.engine.game_state import game
 from app.engine import action
 from app.engine.movement.movement_component import MovementComponent
@@ -144,7 +146,7 @@ class RoamPlayerMovementComponent(MovementComponent):
             return False
         if game.board.get_unit(pos):
             other_team = game.board.get_team(pos)
-            if not other_team or utils.compare_teams(self.unit.team, other_team):
+            if not other_team or self.unit.team in DB.teams.get_allies(other_team):
                 return True # Allies, this is fine
             else:  # Enemies
                 return False

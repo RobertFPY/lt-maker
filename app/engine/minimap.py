@@ -294,14 +294,8 @@ class MiniMap(object):
         for unit in units:
             if unit.position and 'Tile' not in unit.tags and game.board.in_vision(unit.position):
                 pos = unit.position[0] * self.scale_factor, unit.position[1] * self.scale_factor
-                if unit.team == 'player':
-                    self.pin_surf.blit(engine.subsurface(self.minimap_units, (0, 0, self.scale_factor, self.scale_factor)), pos)
-                elif unit.team == 'enemy':
-                    self.pin_surf.blit(engine.subsurface(self.minimap_units, (self.scale_factor*1, 0, self.scale_factor, self.scale_factor)), pos)
-                elif unit.team == 'other':
-                    self.pin_surf.blit(engine.subsurface(self.minimap_units, (self.scale_factor*2, 0, self.scale_factor, self.scale_factor)), pos)
-                else:
-                    self.pin_surf.blit(engine.subsurface(self.minimap_units, (self.scale_factor*3, 0, self.scale_factor, self.scale_factor)), pos)
+                idx: int = DB.teams.index(unit.team)
+                self.pin_surf.blit(engine.subsurface(self.minimap_units, (self.scale_factor * idx, 0, self.scale_factor, self.scale_factor)), pos)
 
     def coast(self, position, allow_recurse=True, coast_key='Coast', sea_keys=('Sea', 'Pier', 'River', 'Bridge'), offset=(0, 0)):
         # A is up, B is left, C is right, D is down

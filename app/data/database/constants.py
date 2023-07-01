@@ -140,6 +140,4 @@ constants = ConstantCatalog([
     Constant('heal_magnitude', "Added to total exp for healing", ConstantType.INT, 0, 'exp'),
     Constant('heal_offset', "Modifies expected healing", ConstantType.INT, 11, 'exp'),
     Constant('heal_min', "Min exp gained for healing", ConstantType.INT, 11, 'exp'),
-    # Hidden constants below
-    Constant('dark_sprites', "Use darker map sprites", ConstantType.BOOL, False, 'hidden')
 ])

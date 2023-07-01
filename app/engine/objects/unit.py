@@ -34,7 +34,7 @@ class UnitObject(Prefab):
     ai_group: NID = None
     roam_ai: str = None
     faction: NID = None
-    team: str = "player"
+    team: NID = "player"
     portrait_nid: NID = None
     affinity: NID = None
     notes: List[Tuple[str, str]] = field(default_factory=list)
@@ -247,7 +247,7 @@ class UnitObject(Prefab):
             if klass.tier >= 2:
                 prev_levels = num_levels - (self.level - 1)
                 num_levels = self.level + int(prev_levels * mode.promoted_autolevels_fraction)
-            stat_bonus = mode.get_base_bonus(self)
+            stat_bonus = mode.get_base_bonus(self, DB)
             bonus = {nid: 0 for nid in DB.stats.keys()}
             for nid in DB.stats.keys():
                 bonus[nid] = utils.clamp(stat_bonus.get(nid, 0), -self.stats.get(nid, 0), klass.max_stats.get(nid, 30) - self.stats.get(nid, 0))
@@ -258,13 +258,13 @@ class UnitObject(Prefab):
                 unit_funcs.auto_level(self, 1, num_levels)
             # Existing units would have leveled up different with bonus growths
             elif DB.constants.value('backpropagate_difficulty_growths'):
-                difficulty_growth_bonus = mode.get_growth_bonus(self)
+                difficulty_growth_bonus = mode.get_growth_bonus(self, DB)
                 if difficulty_growth_bonus:
                     unit_funcs.difficulty_auto_level(self, 1, num_levels)
 
-            difficulty_autolevels = mode.get_difficulty_autolevels(self)
+            difficulty_autolevels = mode.get_difficulty_autolevels(self, DB)
             # Handle the ones that you can change in events
-            if self.team.startswith('enemy'):
+            if self.team in DB.teams.enemies:
                 difficulty_autolevels += current_mode.enemy_autolevels
                 difficulty_autolevels += current_mode.enemy_truelevels
             if 'Boss' in self.tags:
@@ -274,7 +274,7 @@ class UnitObject(Prefab):
             if difficulty_autolevels > 0:
                 unit_funcs.auto_level(self, 1, difficulty_autolevels)
 
-            if self.team.startswith('enemy'):
+            if self.team in DB.teams.enemies:
                 self.level += current_mode.enemy_truelevels
             if 'Boss' in self.tags:
                 self.level += current_mode.boss_truelevels

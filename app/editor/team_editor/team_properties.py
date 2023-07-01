@@ -92,8 +92,8 @@ class TeamProperties(QWidget):
         self.draw_frame()
         self.window.update_list()
 
-    def combat_variant_palette_changed(self, text):
-        self.current.combat_variant_palette = text
+    def combat_variant_palette_changed(self):
+        self.current.combat_variant_palette = self.combat_palette_box.edit.text()
 
     def color_changed(self):
         self.current.combat_color = self.color_box.edit.text()

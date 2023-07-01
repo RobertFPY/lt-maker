@@ -4,11 +4,11 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QPainter, QImage, QColor
 
 from app.extensions.custom_gui import PropertyBox, PropertyCheckBox
-from app.extensions.custom_widgets import TeamBox
+from app.editor.custom_widgets import TeamBox
 
 from app.editor import timer
 from app.editor.icon_editor.icon_view import IconView
-from app.editir.map_sprite_editor import map_sprite_model
+from app.editor.map_sprite_editor import map_sprite_model
 
 class MapSpriteProperties(QWidget):
     standing_width, standing_height = 192, 144
@@ -60,6 +60,7 @@ class MapSpriteProperties(QWidget):
         self.team_box = TeamBox(self)
         self.team_box.edit.setValue('player')
         self.team_box.edit.activated.connect(self.team_changed)
+        self.team_box.setMaximumWidth(120)
 
         self.gray_box = PropertyCheckBox("Display exhausted sprite?", QCheckBox, self)
 
@@ -78,7 +79,7 @@ class MapSpriteProperties(QWidget):
 
         right_section.addLayout(button_section)
         right_section.addWidget(self.team_box)
-        right_section.addLayout(self.gray_box)
+        right_section.addWidget(self.gray_box)
         right_section.addLayout(bg_section)
 
         left_frame = QFrame(self)

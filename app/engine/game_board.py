@@ -246,7 +246,7 @@ class GameBoard(object):
 
     def get_fog_of_war_radius(self, team: str) -> int:
         ai_fog_of_war_radius = game.level_vars.get('_ai_fog_of_war_radius', game.level_vars.get('_fog_of_war_radius', 0))
-        player_team_allies = DB.teams.allies()
+        player_team_allies = DB.teams.allies
         if team == 'player':
             fog_of_war_radius = game.level_vars.get('_fog_of_war_radius', 0)
         elif team in player_team_allies:

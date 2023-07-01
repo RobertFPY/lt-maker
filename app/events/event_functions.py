@@ -2090,7 +2090,7 @@ def change_team(self: Event, global_unit, team, flags=None):
     if not unit:
         self.logger.error("change_team: Couldn't find unit %s" % global_unit)
         return
-    if team in DB.teams:
+    if team in DB.teams.keys():
         action.do(action.ChangeTeam(unit, team))
     else:
         self.logger.error("change_team: Not a valid team: %s" % team)

@@ -49,7 +49,7 @@ class PhaseController():
             self.current = 0
             self.previous = 0
         else:
-            self.current = 3 if game.turncount == 0 else 0
+            self.current = len(DB.teams) - 1 if game.turncount == 0 else 0
             self.previous = 0
 
     def get_current(self) -> NID:

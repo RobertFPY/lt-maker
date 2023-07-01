@@ -100,7 +100,7 @@ Example usage:
         Args:
             item: item to check
             nid (optional): use to check specific unit nid
-            team (optional): used to match for team. one of 'player', 'enemy', 'enemy2', 'other'
+            team (optional): used to match for team.
             tag (optional): used to match for tag.
             party (optional): used to match for party
 
@@ -207,7 +207,7 @@ Example usage:
             position: position or unit
             dist (int, optional): How far to search. Defaults to 1.
             nid (optional): use to check specific unit nid
-            team (optional): used to match for team. one of 'player', 'enemy', 'enemy2', 'other'
+            team (optional): used to match for team.
             tag (optional): used to match for tag.
             party (optional): used to match for party
 
@@ -298,7 +298,7 @@ Example usage:
         Args:
             region: region in question
             nid (optional): used to match for NID
-            team (optional): used to match for team. one of 'player', 'enemy', 'enemy2', 'other'
+            team (optional): used to match for team.
             tag (optional): used to match for tag.
 
         Returns:
@@ -331,7 +331,7 @@ Example usage:
         Args:
             region: region in question
             nid (optional): used to match for NID
-            team (optional): used to match for team. one of 'player', 'enemy', 'enemy2', 'other'
+            team (optional): used to match for team.
             tag (optional): used to match for tag.
 
         Returns:

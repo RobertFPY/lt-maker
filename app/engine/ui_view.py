@@ -353,11 +353,11 @@ class UIView():
             infix = 'crit'
         else:
             infix = ''
-        color = utils.get_team_color(defender.team)
-        if color not in ('red', 'purple'):
-            color = 'red'
+
+        color = DB.teams.get(defender.team).combat_color
         final = prefix + infix + ('_' if infix else '') + color
-        surf = SPRITES.get(final).copy()
+        fallback_final = prefix + infix + ('_' if infix else '') + 'red'
+        surf = SPRITES.get(final, fallback_final).copy()
 
         if DB.constants.value('pairup') and \
                 (a_assist or d_assist) and not (attacker.traveler or defender.traveler):
@@ -370,9 +370,10 @@ class UIView():
                     infix = 'crit'
                 else:
                     infix = ''
-                color = utils.get_team_color(attacker.team)
+                color = DB.teams.get(attacker.team).combat_color
                 final = prefix + infix + ('_' if infix else '') + color
-                surf.blit(SPRITES.get(final).copy(), (92, 35))
+                fallback_final = prefix + infix + ('_' if infix else '') + 'red'
+                surf.blit(SPRITES.get(final, fallback_final).copy(), (92, 35))
 
                 mt = combat_calcs.compute_assist_damage(a_assist, defender, a_assist.get_weapon(), defender.get_weapon(), 'attack', (0, 0))
                 if grandmaster:
@@ -397,9 +398,10 @@ class UIView():
                     infix = 'crit'
                 else:
                     infix = ''
-                color = utils.get_team_color(defender.team)
+                color = DB.teams.get(defender.team).combat_color
                 final = prefix + infix + ('_' if infix else '') + color
-                surf.blit(SPRITES.get(final).copy(), (1, 35))
+                fallback_final = prefix + infix + ('_' if infix else '') + 'red'
+                surf.blit(SPRITES.get(final, fallback_final).copy(), (1, 35))
 
                 mt = combat_calcs.compute_assist_damage(d_assist, attacker, d_assist.get_weapon(), weapon, 'defense', (0, 0))
                 if grandmaster:

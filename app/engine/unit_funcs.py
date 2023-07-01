@@ -20,12 +20,12 @@ def get_leveling_method(unit, custom_method=None) -> str:
 
 def growth_rate(unit, nid) -> int:
     klass = DB.classes.get(unit.klass)
-    difficulty_growth_bonus = game.mode.get_growth_bonus(unit)
+    difficulty_growth_bonus = game.mode.get_growth_bonus(unit, DB)
     growth = unit.growths[nid] + unit.growth_bonus(nid) + klass.growth_bonus.get(nid, 0) + difficulty_growth_bonus.get(nid, 0)
     return growth
 
 def difficulty_growth_rate(unit, nid) -> int:
-    difficulty_growth_bonus = game.mode.get_growth_bonus(unit)
+    difficulty_growth_bonus = game.mode.get_growth_bonus(unit, DB)
     return difficulty_growth_bonus.get(nid, 0)
 
 def _fixed_levelup(unit, level, get_growth_rate=growth_rate) -> dict:

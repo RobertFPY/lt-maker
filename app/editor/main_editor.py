@@ -41,6 +41,7 @@ import app.editor.game_actions.game_actions as GAME_ACTIONS
 
 # Databases
 from app.editor.unit_editor.unit_tab import UnitDatabase
+from app.editor.team_editor.team_tab import TeamDatabase
 from app.editor.faction_editor.faction_tab import FactionDatabase
 from app.editor.party_editor.party_tab import PartyDatabase
 from app.editor.class_editor.class_tab import ClassDatabase
@@ -222,6 +223,7 @@ class MainEditor(QMainWindow):
 
         # Database actions
         database_actions = {_("Units"): UnitDatabase.edit,
+                            _("Teams"): TeamDatabase.edit,
                             _("Factions"): FactionDatabase.edit,
                             _("Parties"): PartyDatabase.edit,
                             _("Classes"): ClassDatabase.edit,

@@ -1,15 +1,14 @@
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, \
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QCheckBox, \
     QGridLayout, QPushButton, QSizePolicy, QFrame, QSplitter, QButtonGroup
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QPainter, QImage, QColor
 
-from app.data.database.database import DB
-
-from app.extensions.custom_gui import PropertyBox
+from app.extensions.custom_gui import PropertyBox, PropertyCheckBox
+from app.editor.custom_widgets import TeamBox
 
 from app.editor import timer
 from app.editor.icon_editor.icon_view import IconView
-import app.editor.utilities as editor_utilities
+from app.editor.map_sprite_editor import map_sprite_model
 
 class MapSpriteProperties(QWidget):
     standing_width, standing_height = 192, 144
@@ -58,25 +57,12 @@ class MapSpriteProperties(QWidget):
             self.button_group.setId(button, idx)
         button_section.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
 
-        color_section = QGridLayout()
-        self.current_color = 0
-        self.player_button = QPushButton(self)
-        self.enemy_button = QPushButton(self)
-        self.other_button = QPushButton(self)
-        self.enemy2_button = QPushButton(self)
-        self.button_group = QButtonGroup(self)
-        self.button_group.buttonPressed.connect(self.color_clicked)
-        self.colors = [self.player_button, self.enemy_button, self.enemy2_button, self.other_button]
-        text = [_.capitalize() for _ in DB.teams]
-        pos = [(0, 0), (1, 0), (0, 1), (1, 1)]
-        for idx, button in enumerate(self.colors):
-            color_section.addWidget(button, *pos[idx])
-            button.setCheckable(True)
-            button.setText(text[idx])
-            self.button_group.addButton(button)
-            self.button_group.setId(button, idx)
-        self.player_button.setChecked(True)
-        color_section.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+        self.team_box = TeamBox(self)
+        self.team_box.edit.setValue('player')
+        self.team_box.edit.activated.connect(self.team_changed)
+        self.team_box.setMaximumWidth(120)
+
+        self.gray_box = PropertyCheckBox("Display exhausted sprite?", QCheckBox, self)
 
         bg_section = QHBoxLayout()
         self.bg_button = QPushButton(self)
@@ -92,7 +78,8 @@ class MapSpriteProperties(QWidget):
         bg_section.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
 
         right_section.addLayout(button_section)
-        right_section.addLayout(color_section)
+        right_section.addWidget(self.team_box)
+        right_section.addWidget(self.gray_box)
         right_section.addLayout(bg_section)
 
         left_frame = QFrame(self)
@@ -171,24 +158,11 @@ class MapSpriteProperties(QWidget):
             num = timer.get_timer().passive_counter.count
             frame = self.current.standing_pixmap.copy(num*64, 0, 64, 48)
         frame = frame.toImage()
-        if self.current_color == 0:
-            if DB.constants.value('dark_sprites'):
-                frame = editor_utilities.color_convert(frame, editor_utilities.player_dark_colors)
-            else:
-                pass
-        elif self.current_color == 1:
-            if DB.constants.value('dark_sprites'):
-                frame = editor_utilities.color_convert(frame, editor_utilities.enemy_dark_colors)
-            else:
-                frame = editor_utilities.color_convert(frame, editor_utilities.enemy_colors)
-        elif self.current_color == 2:
-            frame = editor_utilities.color_convert(frame, editor_utilities.enemy2_colors)
-        elif self.current_color == 3:
-            if DB.constants.value('dark_sprites'):
-                frame = editor_utilities.color_convert(frame, editor_utilities.other_dark_colors)
-            else:
-                frame = editor_utilities.color_convert(frame, editor_utilities.other_colors)
-        frame = editor_utilities.convert_colorkey(frame)
+        if self.gray_box.edit.isChecked():
+            frame = map_sprite_model.gray_shift_team(frame)
+        else:
+            team_nid = self.team_box.edit.currentText()
+            frame = map_sprite_model.color_shift_team(frame, team_nid)
 
         # Background stuff
         if self.bg_button.isChecked():
@@ -223,6 +197,5 @@ class MapSpriteProperties(QWidget):
         spec_button.setChecked(checked)
         self.draw_frame()
 
-    def color_clicked(self, spec_button):
-        self.current_color = self.colors.index(spec_button)
+    def team_changed(self, val):
         self.draw_frame()

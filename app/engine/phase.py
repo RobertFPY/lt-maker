@@ -5,6 +5,7 @@ from app.data.database.database import DB
 from app.engine.sprites import SPRITES
 
 from app.utilities import utils
+from app.utilities.typing import NID
 
 from app.engine.sound import get_sound_thread
 from app.engine import config as cf
@@ -42,7 +43,7 @@ class PhaseController():
     def __init__(self):
         self.phase_in = []
         for team in DB.teams:
-            self.phase_in.append(PhaseIn(team))
+            self.phase_in.append(PhaseIn(team.nid))
 
         if DB.constants.value('initiative'):
             self.current = 0
@@ -51,16 +52,16 @@ class PhaseController():
             self.current = 3 if game.turncount == 0 else 0
             self.previous = 0
 
-    def get_current(self):
+    def get_current(self) -> NID:
         if DB.constants.value('initiative'):
             return game.initiative.get_current_unit().team
         else:
-            return DB.teams[self.current]
+            return DB.teams[self.current].nid
 
-    def get_previous(self):
+    def get_previous(self) -> NID:
         if DB.constants.value('initiative'):
             return game.initiative.get_previous_unit().team
-        return DB.teams[self.previous]
+        return DB.teams[self.previous].nid
 
     def set_player(self):
         self.current = 0
@@ -73,7 +74,7 @@ class PhaseController():
             self.current = (self.current + 1) % len(DB.teams)
 
     def _team_int(self, team: str) -> int:
-        if team in DB.teams:
+        if team in DB.teams.keys():
             return DB.teams.index(team)
         return 1 # 1 is used instead of zero so that it will default to an AI turn
 

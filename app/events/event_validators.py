@@ -421,14 +421,18 @@ class AI(Validator):
             return text
         return None
 
+    def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
+        valids = [(None, ai_nid) for ai_nid in self._db.ai.keys()]
+        return valids
+
 class Team(Validator):
     def validate(self, text, level):
-        if text in self._db.teams:
+        if text in self._db.teams.keys():
             return text
         return None
 
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
-        valids = [(None, team_nid) for team_nid in self._db.teams]
+        valids = [(None, team_nid) for team_nid in self._db.teams.keys()]
         return valids
 
 class Tag(Validator):

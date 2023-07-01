@@ -336,7 +336,8 @@ class PrepFormationState(MapState):
                     game.state.change('prep_formation_select')
                 else:
                     get_sound_thread().play_sfx('Select 2')
-                    if cur_unit.team == 'enemy' or cur_unit.team == 'enemy2':
+                    player_team_enemies = DB.teams.enemies
+                    if cur_unit.team in player_team_enemies:
                         get_sound_thread().play_sfx('Select 3')
                         game.boundary.toggle_unit(cur_unit)
                     else:

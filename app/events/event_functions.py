@@ -1169,7 +1169,7 @@ def remove_all_units(self: Event, flags=None):
 
 def remove_all_enemies(self: Event, flags=None):
     for unit in self.game.units:
-        if unit.position and unit.team.startswith('enemy'):
+        if unit.position and unit.team in DB.teams.enemies:
             action.do(action.FadeOut(unit))
 
 def interact_unit(self: Event, unit, position, combat_script=None, ability=None, rounds=None, flags=None):
@@ -2090,7 +2090,7 @@ def change_team(self: Event, global_unit, team, flags=None):
     if not unit:
         self.logger.error("change_team: Couldn't find unit %s" % global_unit)
         return
-    if team in DB.teams:
+    if team in DB.teams.keys():
         action.do(action.ChangeTeam(unit, team))
     else:
         self.logger.error("change_team: Not a valid team: %s" % team)

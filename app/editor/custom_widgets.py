@@ -47,6 +47,14 @@ class ClassBox(ObjBox):
         self.edit.setIconSize(QSize(32, 32))
         self.edit.view().setUniformItemSizes(True)
 
+class TeamBox(ObjBox):
+    def __init__(self, parent=None, button=False, exclude=None):
+        from app.editor.team_editor.team_model import TeamModel
+        database = DB.teams
+        if exclude:
+            database = Data([d for d in DB.teams if d is not exclude])
+        super().__init__("Team", TeamModel, database, parent, button)
+
 class FactionBox(ObjBox):
     def __init__(self, parent=None, button=False, exclude=None):
         from app.editor.faction_editor.faction_model import FactionModel

@@ -6,9 +6,11 @@ from app.data.resources.resources import RESOURCES
 from app.engine.sprites import SPRITES
 
 from app.utilities import utils
+from app.utilities.typing import NID
 
 from app.engine import engine, gui, image_mods, background
 from app.engine.animations import Animation
+
 
 class MockCombat():
     def __init__(self, left_anim, right_anim, at_range=0, pose='Attack', lp_anim=None, rp_anim=None):
@@ -216,6 +218,12 @@ class MockCombat():
     def right_team(self):
         return 'player'
 
+    def get_color(self, team: NID) -> str:
+        if team == 'player':
+            return 'blue'
+        else:
+            return 'red'
+
     def hit_modifiers(self):
         if self.get_damage() > 0 and self.get_glancing_hit():
             self.glancing_hit()
@@ -261,7 +269,7 @@ class MockCombat():
         else:
             position = (WINWIDTH//2, 21)
             team = self.left_team()
-        color = utils.get_team_color(team)
+        color = self.get_color(team)
         anim_nid = 'NoDamage%s' % color.capitalize()
         animation = RESOURCES.animations.get(anim_nid)
         if animation:
@@ -277,7 +285,7 @@ class MockCombat():
         else:
             position = (WINWIDTH//2, 21)
             team = self.left_team()
-        color = utils.get_team_color(team)
+        color = self.get_color(team)
         anim_nid = 'GlancingHit%s' % color.capitalize()
         animation = RESOURCES.animations.get(anim_nid)
         if animation:
@@ -293,7 +301,7 @@ class MockCombat():
         else:
             position = (128, 21)  # Enemy's position
             team = self.left_team()
-        color = utils.get_team_color(team)
+        color = self.get_color(team)
         anim_nid = 'Miss%s' % color.capitalize()
         animation = RESOURCES.animations.get(anim_nid)
         if animation:

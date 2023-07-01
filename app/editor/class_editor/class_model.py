@@ -18,8 +18,9 @@ from app.editor.combat_animation_editor import combat_animation_model
 from app.data.database import klass
 
 from app.utilities import str_utils
+from app.utilities.typing import NID
 
-def get_map_sprite_icon(klass_obj, num=0, current=False, team='player', variant=None):
+def get_map_sprite_icon(klass_obj, num=0, current=False, team: NID = 'player', variant=None):
     res = None
     if variant:
         res = RESOURCES.map_sprites.get(klass_obj.map_sprite_nid + variant)

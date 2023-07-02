@@ -1,7 +1,7 @@
 from __future__ import annotations
 import dataclasses
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, ClassVar, Dict, Optional, Tuple
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional, Tuple
 
 if TYPE_CHECKING:
     from app.engine.objects.item import ItemObject

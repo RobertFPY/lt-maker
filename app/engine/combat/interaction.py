@@ -113,6 +113,9 @@ def start_combat(unit: UnitObject, target: tuple, item: ItemObject, skip: bool =
         else:
             targets = [target]
 
+    # State change happens first, so if anything changes state during 
+    # initialization of combat, that will happen before combat really
+    # starts
     game.state.change('combat')
     combat = engage(
         unit, targets, item, skip=skip, script=script, total_rounds=total_rounds,

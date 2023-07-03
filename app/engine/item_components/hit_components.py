@@ -220,7 +220,7 @@ class ShoveOnEndCombat(Shove):
             if new_position:
                 action.do(action.ForcedMovement(target, new_position))
 
-class ShoveTargetRestrict(Shove, ItemComponent):
+class ShoveTargetRestrict(Shove):
     nid = 'shove_target_restrict'
     desc = "Works the same as shove but will not allow the item to be selected if the action cannot be performed."
     tag = ItemTags.SPECIAL

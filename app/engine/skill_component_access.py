@@ -1,18 +1,21 @@
 from functools import lru_cache
-from app.utilities.data import Data
+
 from app.data.database.components import ComponentType
 from app.data.database.skill_components import SkillComponent, SkillTags
+from app.utilities.class_utils import recursive_subclasses
+from app.utilities.data import Data
+
 
 @lru_cache(1)
 def get_cached_skill_components(proj_dir: str):
-    from app.engine import skill_components
     from app.data.resources.resources import RESOURCES
+    from app.engine import skill_components
     if RESOURCES.has_loaded_custom_components():
         # Necessary for get_skill_components to find the item component subclasses
         # defined here
         import custom_components
 
-    subclasses = SkillComponent.__subclasses__()
+    subclasses = recursive_subclasses(SkillComponent)
     # Sort by tag
     subclasses = sorted(subclasses, key=lambda x: list(SkillTags).index(x.tag) if x.tag in list(SkillTags) else 100)
     return Data(subclasses)

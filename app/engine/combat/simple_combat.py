@@ -339,6 +339,11 @@ class SimpleCombat():
             if unit.is_dying:
                 for item in unit.items[:]:
                     if item.droppable:
+                        if DB.constants.value('reset_uses'):
+                            if 'starting_uses' in item.data:
+                                action.do(action.SetObjData(item, 'uses', item.data['starting_uses']))
+                            elif 'starting_c_uses' in item.data:
+                                action.do(action.SetObjData(item, 'c_uses', item.data['starting_c_uses']))
                         action.do(action.RemoveItem(unit, item))
                         event_nid = 'DropItem%d' % counter
                         if self.alerts:
@@ -353,6 +358,11 @@ class SimpleCombat():
         if self.attacker.is_dying and self.defender:
             for item in self.attacker.items[:]:
                 if item.droppable:
+                    if DB.constants.value('reset_uses'):
+                        if 'starting_uses' in item.data:
+                            action.do(action.SetObjData(item, 'uses', item.data['starting_uses']))
+                        elif 'starting_c_uses' in item.data:
+                            action.do(action.SetObjData(item, 'c_uses', item.data['starting_c_uses']))
                     action.do(action.RemoveItem(self.attacker, item))
                     event_nid = 'DropItem%d' % counter
                     if self.alerts:

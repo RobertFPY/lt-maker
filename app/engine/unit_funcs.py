@@ -118,12 +118,12 @@ def _rd_bexp_levelup(unit, level):
     rng = static_random.get_levelup(unit.nid, level)
     stat_changes = {nid: 0 for nid in DB.stats.keys()}
 
-    klass = DB.classes.get(unit.klass)
     growths: list = []
     for stat in DB.stats:
         nid = stat.nid
         growth = growth_rate(unit, nid)
-        if unit.stats[nid] < klass.max_stats.get(nid, 30) and unit.growths[nid] != 0:
+        max_stat = unit.get_stat_cap(nid)
+        if unit.stats[nid] < max_stat and unit.growths[nid] != 0:
             growths.append(max(growth, 0))
         else:  # Cannot increase this one at all
             growths.append(0)
@@ -135,7 +135,8 @@ def _rd_bexp_levelup(unit, level):
         nid = [stat.nid for stat in DB.stats][choice_idx]
         stat_changes[nid] += 1
         growths[choice_idx] = max(0, growths[choice_idx] - 100)
-        if unit.stats[nid] + stat_changes[nid] >= klass.max_stats.get(nid, 30):
+        max_stat = unit.get_stat_cap(nid)
+        if unit.stats[nid] + stat_changes[nid] >= max_stat:
             growths[choice_idx] = 0
 
     return stat_changes
@@ -159,9 +160,9 @@ def get_next_level_up(unit, level, custom_method=None) -> dict:
     else:
         logging.error("Could not find level_up method matching %s", method)
 
-    klass = DB.classes.get(unit.klass)
     for nid in DB.stats.keys():
-        stat_changes[nid] = utils.clamp(stat_changes[nid], -unit.stats[nid], klass.max_stats.get(nid, 30) - unit.stats[nid])
+        max_stat = unit.get_stat_cap(nid)
+        stat_changes[nid] = utils.clamp(stat_changes[nid], -unit.stats[nid], max_stat - unit.stats[nid])
     return stat_changes
 
 def auto_level(unit, base_level: int, num_levels: int, custom_method=None):
@@ -186,9 +187,9 @@ def auto_level(unit, base_level: int, num_levels: int, custom_method=None):
             for nid in total_stat_changes.keys():
                 total_stat_changes[nid] -= stat_changes[nid]
 
-    klass = DB.classes.get(unit.klass)
     for nid in DB.stats.keys():
-        total_stat_changes[nid] = utils.clamp(total_stat_changes[nid], -unit.stats[nid], klass.max_stats.get(nid, 30) - unit.stats[nid])
+        max_stat = unit.get_stat_cap(nid)
+        total_stat_changes[nid] = utils.clamp(total_stat_changes[nid], -unit.stats[nid], max_stat - unit.stats[nid])
 
     for nid in total_stat_changes.keys():
         unit.stats[nid] += total_stat_changes[nid]
@@ -205,9 +206,9 @@ def difficulty_auto_level(unit, base_level, num_levels: int):
                 total_stat_changes[nid] += stat_changes[nid]
     # No reason to be less than 0
 
-    klass = DB.classes.get(unit.klass)
     for nid in DB.stats.keys():
-        total_stat_changes[nid] = utils.clamp(total_stat_changes[nid], -unit.stats[nid], klass.max_stats.get(nid, 30) - unit.stats[nid])
+        max_stat = unit.get_stat_cap(nid)
+        total_stat_changes[nid] = utils.clamp(total_stat_changes[nid], -unit.stats[nid], max_stat - unit.stats[nid])
 
     for nid in total_stat_changes.keys():
         unit.stats[nid] += total_stat_changes[nid]

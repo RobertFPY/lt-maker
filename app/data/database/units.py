@@ -19,6 +19,7 @@ class UnitPrefab(Prefab):
     tags: list = None
     bases: Dict[NID, int] = field(default_factory=dict)
     growths: Dict[NID, int] = field(default_factory=dict)
+    stat_cap_modifiers: Dict[NID, int] = field(default_factory=dict)
     starting_items: list = field(default_factory=list)  # of tuples (ItemPrefab, droppable)
 
     learned_skills: list = None
@@ -33,10 +34,10 @@ class UnitPrefab(Prefab):
     fields: list = field(default_factory=list) # arbitrary field, allow players to fill out anything they want
 
     def get_stat_titles(self):
-        return ["Bases", "Growths"]
+        return ["Bases", "Growths", "Stat Cap Mods"]
 
     def get_stat_lists(self):
-        return [self.bases, self.growths]
+        return [self.bases, self.growths, self.stat_cap_modifiers]
 
     def get_items(self):
         return [i[0] for i in self.starting_items]
@@ -55,7 +56,7 @@ class UnitPrefab(Prefab):
                 skill[1] = new_nid
 
     def save_attr(self, name, value):
-        if name in ('bases', 'growths'):
+        if name in ('bases', 'growths', 'stat_cap_modifiers'):
             return value.copy()  # So we don't make a copy
         elif name == 'learned_skills':
             return [val.copy() for val in value]  # So we don't make a copy
@@ -67,11 +68,13 @@ class UnitPrefab(Prefab):
             return super().save_attr(name, value)
 
     def restore_attr(self, name, value):
-        if name in ('bases', 'growths'):
+        if name in ('bases', 'growths', 'stat_cap_modifiers'):
             if isinstance(value, list):
                 value = {k: v for (k, v) in value}
-            else:
+            elif value:
                 value = value.copy()  # Should be copy so units don't share lists/dicts
+            else:
+                value = {}
         elif name == 'wexp_gain':
             if isinstance(value, list):
                 value = {nid: WexpGain(usable, wexp_gain) for (usable, nid, wexp_gain) in value}

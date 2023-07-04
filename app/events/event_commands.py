@@ -1902,6 +1902,28 @@ Sets the growths (STR, SKL, etc.) of *GlobalUnit* to specific values defined in 
 
     keywords = ["GlobalUnit", "StatList"]
 
+class ChangeStatCapModifiers(EventCommand):
+    nid = 'change_stat_cap_modifiers'
+    tag = Tags.MODIFY_UNIT_PROPERTIES
+
+    desc = \
+        """
+Changes the personal stat cap modifiers (STR, SKL, etc.) of *GlobalUnit*. The *StatList* defines the changes to be applied. Always silent.
+        """
+
+    keywords = ["GlobalUnit", "StatList"]
+
+class SetStatCapModifiers(EventCommand):
+    nid = 'set_stat_cap_modifiers'
+    tag = Tags.MODIFY_UNIT_PROPERTIES
+
+    desc = \
+        """
+Sets the personal stat cpa modifiers (STR, SKL, etc.) of *GlobalUnit* to specific values defined in *StatList*. Always silent.
+        """
+
+    keywords = ["GlobalUnit", "StatList"]
+
 class SetUnitLevel(EventCommand):
     nid = 'set_unit_level'
     tag = Tags.MODIFY_UNIT_PROPERTIES

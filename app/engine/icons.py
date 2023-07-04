@@ -197,16 +197,16 @@ def draw_stat(surf, stat_nid, unit, topright, compact=False):
     if stat_nid not in DB.stats.keys():
         FONT['text-yellow'].blit_right('--', surf, topright)
         return
-    class_obj = DB.classes.get(unit.klass)
     value = unit.stats.get(stat_nid, 0)
     bonus = unit.stat_bonus(stat_nid)
     subtle_bonus = unit.subtle_stat_bonus(stat_nid)
+    max_stat = unit.get_stat_cap(stat_nid)
     if compact:
         if bonus > 0:
             typeface = FONT['text-green']
         elif bonus < 0:
             typeface = FONT['text-red']
-        elif value >= class_obj.max_stats.get(stat_nid, 30):
+        elif value >= max_stat:
             typeface = FONT['text-yellow']
         else:
             typeface = FONT['text-blue']
@@ -215,7 +215,7 @@ def draw_stat(surf, stat_nid, unit, topright, compact=False):
         # Recalc these values for full display
         value = value + subtle_bonus
         bonus = bonus - subtle_bonus
-        if value >= class_obj.max_stats.get(stat_nid, 30):
+        if value >= max_stat:
             FONT['text-yellow'].blit_right(str(value), surf, topright)
         else:
             FONT['text-blue'].blit_right(str(value), surf, topright)

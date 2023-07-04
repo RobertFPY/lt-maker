@@ -1855,6 +1855,24 @@ class ApplyGrowthChanges(Action):
         negative_changes = {k: -v for k, v in self.stat_changes.items()}
         unit_funcs.apply_growth_changes(self.unit, negative_changes)
 
+
+class ChangeStatCapModifiers(Action):
+    def __init__(self, unit, stat_changes):
+        self.unit = unit
+        self.stat_changes = stat_changes
+
+    def do(self):
+        for nid, value in self.stat_changes.items():
+            if nid not in self.unit.stat_cap_modifiers:
+                self.unit.stat_cap_modifiers[nid] = 0
+            self.unit.stat_cap_modifiers[nid] += value
+
+    def reverse(self):
+        negative_changes = {k: -v for k, v in self.stat_changes.items()}
+        for nid, value in negative_changes.items():
+            self.unit.stat_cap_modifiers[nid] += value
+
+
 class Promote(Action):
     def __init__(self, unit, new_class_nid):
         self.unit = unit
@@ -1879,7 +1897,7 @@ class Promote(Action):
             elif stat_value == -98:  # Use the new klass base only if it's bigger
                 self.stat_changes[stat_nid] = max(0, new_klass_bases.get(stat_nid, 0) - current_stats[stat_nid])
             else:
-                max_gain_possible = new_klass_maxes.get(stat_nid, 0) - current_stats[stat_nid]
+                max_gain_possible = new_klass_maxes.get(stat_nid, 0) + unit.stat_cap_modifiers.get(stat_nid, 0) - current_stats[stat_nid]
                 self.stat_changes[stat_nid] = min(stat_value, max_gain_possible)
 
         wexp_gain = DB.classes.get(self.new_klass).wexp_gain
@@ -1943,7 +1961,7 @@ class ClassChange(Action):
         for stat_nid in self.stat_changes.keys():
             change = new_klass_bases.get(stat_nid, 0) - old_klass_bases.get(stat_nid, 0)
             current_stat = current_stats.get(stat_nid)
-            new_value = utils.clamp(change, -current_stat, new_klass_maxes.get(stat_nid, 0) - current_stat)
+            new_value = utils.clamp(change, -current_stat, new_klass_maxes.get(stat_nid, 0) + unit.stat_cap_modifiers.get(stat_nid, 0) - current_stat)
             self.stat_changes[stat_nid] = new_value
 
         wexp_gain = DB.classes.get(self.new_klass).wexp_gain

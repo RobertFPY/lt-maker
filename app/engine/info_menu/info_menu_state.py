@@ -492,9 +492,6 @@ class InfoMenuState(State):
         menu_size = WINWIDTH - 96, WINHEIGHT
         surf = engine.create_surface(menu_size, transparent=True)
 
-        class_obj = DB.classes.get(self.unit.klass)
-        max_stats = class_obj.max_stats
-
         left_stats = [stat.nid for stat in DB.stats if stat.position == 'left']
         right_stats = left_stats[6:]  # Only first six get to be on the left
         right_stats += [stat.nid for stat in DB.stats if stat.position == 'right']
@@ -509,7 +506,7 @@ class InfoMenuState(State):
                 icons.draw_growth(surf, stat_nid, self.unit, (47, 16 * idx + 24))
             else:
                 highest_stat = curr_stat.maximum
-                max_stat = max_stats.get(stat_nid, 30)
+                max_stat = self.unit.get_stat_cap(stat_nid)
                 if max_stat > 0:
                     total_length = int(max_stat / highest_stat * 42)
                     frac = utils.clamp(self.unit.stats.get(stat_nid) / max_stat, 0, 1)

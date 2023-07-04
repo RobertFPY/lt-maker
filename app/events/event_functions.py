@@ -2189,6 +2189,37 @@ def set_growths(self: Event, global_unit, stat_list, flags=None):
 
     self._apply_growth_changes(unit, growth_changes)
 
+def change_stat_cap_modifiers(self: Event, global_unit, stat_list, flags=None):
+    unit = self._get_unit(global_unit)
+    if not unit:
+        self.logger.error("change_stat_cap_modifiers: Couldn't find unit %s" % global_unit)
+        return
+
+    s_list = stat_list.split(',')
+    stat_cap_changes = {}
+    for idx in range(len(s_list)//2):
+        stat_nid = s_list[idx*2]
+        stat_value = int(s_list[idx*2 + 1])
+        stat_cap_changes[stat_nid] = stat_value
+
+    action.do(action.ChangeStatCapModifiers(unit, stat_cap_changes))
+
+def set_stat_cap_modifiers(self: Event, global_unit, stat_list, flags=None):
+    unit = self._get_unit(global_unit)
+    if not unit:
+        self.logger.error("set_stat_cap_modifiers: Couldn't find unit %s" % global_unit)
+        return
+
+    s_list = stat_list.split(',')
+    stat_cap_changes = {}
+    for idx in range(len(s_list)//2):
+        stat_nid = s_list[idx*2]
+        stat_value = int(s_list[idx*2 + 1])
+        current = unit.stat_cap_modifiers.get(stat_nid, 0)
+        stat_cap_changes[stat_nid] = stat_value - current
+
+    action.do(action.ChangeStatCapModifiers(unit, stat_cap_changes))
+
 def set_unit_level(self: Event, global_unit, level, flags=None):
     unit = self._get_unit(global_unit)
     if not unit:

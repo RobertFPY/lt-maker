@@ -364,6 +364,9 @@ class PhaseMusic(OptionValidator):
     valid = ['player_phase', 'enemy_phase', 'other_phase', 'enemy2_phase',
              'player_battle', 'enemy_battle', 'other_battle', 'enemy2_battle']
 
+class SpecialMusicType(OptionValidator):
+    valid = ['title_screen', 'promotion', 'class_change', 'game_over']
+
 class Volume(Validator):
     desc = "A number between greater than 0 (0 is muted, 1 is current volume)"
 

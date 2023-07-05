@@ -314,11 +314,22 @@ class ChangeMusic(EventCommand):
 
     desc = \
         """
-Changes the phase theme music. For instance, you could use this command to change the player phase theme halfway through the chapter.
+Changes the *Phase* theme *Music*. For instance, you could use this command to change the player phase theme halfway through the chapter.
         """
 
     keywords = ['Phase', 'Music']
     keyword_types = ['PhaseMusic', 'Music']
+
+class ChangeSpecialMusic(EventCommand):
+    nid = 'change_special_music'
+    tag = Tags.MUSIC_SOUND
+
+    desc = \
+        """
+Change the *Music* for the title screen, the promotion or class change screen, or the game over screen.
+        """
+
+    keywords = ['SpecialMusicType', 'Music']
 
 class AddPortrait(EventCommand):
     nid = "add_portrait"
@@ -903,7 +914,12 @@ class BattleSave(EventCommand):
 The player is given the option of saving the game mid-battle.
 This can be useful if the player chose Classic Mode,
 as he or she would otherwise only be able to suspend and not save mid-battle.
+
+By default, the prompt for a battle save will not occur until the end of this event.
+The optional flag *immediately* will cause the prompt to appear immediately.
         """
+
+    _flags = ["immediately"]
 
 class ClearTurnwheel(EventCommand):
     nid = 'clear_turnwheel'
@@ -1382,14 +1398,17 @@ class GiveItem(EventCommand):
 
     desc = \
         """
-Gives a new copy of *Item* to *GlobalUnitOrConvoy*. If the *no_banner* flag is set, there will not be a banner announcing that "X unit got a Y item!".
+Gives a new copy of *Item* to *GlobalUnitOrConvoy*.
+If `convoy` is chosen as the recipient, may optionally specify a specific *Party*'s convoy.
 
+ If the *no_banner* flag is set, there will not be a banner announcing that "X unit got a Y item!".
 If the unit's inventory is full, the player will be given the option of which item to send to the convoy.
 If the *no_choice* flag is set, the new item will be automatically sent to the convoy in this case without prompting the player.
 The *droppable* flag determines whether the item is set as a "droppable" item (generally only given to enemy units).
         """
 
     keywords = ["GlobalUnitOrConvoy", "Item"]
+    optional_keywords = ["Party"]
     _flags = ['no_banner', 'no_choice', 'droppable']
 
 class EquipItem(EventCommand):
@@ -1416,11 +1435,14 @@ class RemoveItem(EventCommand):
     desc = \
         """
 Removes *Item* from the inventory of *GlobalUnitOrConvoy*.
+If `convoy` is chosen as the target, may optionally specify a specific *Party*'s convoy.
+
 If the *no_banner* flag is set, there will not be a banner announcing that "X unit lost a Y item!".
 Also, if the item is removed from the convoy, there will not be a banner.
         """
 
     keywords = ["GlobalUnitOrConvoy", "Item"]
+    optional_keywords = ["Party"]
     _flags = ['no_banner']
 
 class MoveItem(EventCommand):
@@ -1449,6 +1471,18 @@ Moves *Item* from the convoy of *Party1* and adds it to the convoy of *Party2*.
 
     keywords = ["Item", "Party1", "Party2"]
     keyword_types = ["Item", "Party", "Party"]
+
+class OpenConvoy(EventCommand):
+    nid = 'open_convoy'
+    tag = Tags.MISCELLANEOUS
+
+    desc = \
+        """
+    *GlobalUnit* will open their own party's convoy.
+    The player may then access the convoy as normal using that unit.
+        """
+
+    keywords = ["GlobalUnit"]
 
 class SetItemUses(EventCommand):
     nid = 'set_item_uses'
@@ -1699,10 +1733,22 @@ class GiveWexp(EventCommand):
 
     desc = \
         """
-Gives a *PositiveInteger* amount of weapon experience in *WeaponType* to *GlobalUnit*. If the *no_banner* flag is set, the player will not be informed that weapon experience was awarded.
+Gives an *Integer* amount of weapon experience in *WeaponType* to *GlobalUnit*. If the *no_banner* flag is set, the player will not be informed that weapon experience was awarded.
         """
 
-    keywords = ["GlobalUnit", "WeaponType", "PositiveInteger"]
+    keywords = ["GlobalUnit", "WeaponType", "Integer"]
+    _flags = ['no_banner']
+
+class SetWexp(EventCommand):
+    nid = 'set_wexp'
+    tag = Tags.MODIFY_UNIT_PROPERTIES
+
+    desc = \
+        """
+Sets *GlobalUnit*'s weapon experience in the given *WeaponType* to *WholeNumber*. If the *no_banner* flag is set, the player will not be informed that weapon experience was awarded.
+        """
+
+    keywords = ["GlobalUnit", "WeaponType", "WholeNumber"]
     _flags = ['no_banner']
 
 class GiveSkill(EventCommand):

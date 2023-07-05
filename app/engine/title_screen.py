@@ -78,7 +78,9 @@ class TitleStartState(State):
             game.memory['title_intro_already_played'] = True
 
         get_sound_thread().clear()
-        if DB.constants.value('music_main'):
+        if RECORDS.get('_music_title_screen'):
+            get_sound_thread().fade_in(RECORDS.get('_music_title_screen'), fade_in=50)
+        elif DB.constants.value('music_main'):
             get_sound_thread().fade_in(DB.constants.value('music_main'), fade_in=50)
 
         return 'repeat'

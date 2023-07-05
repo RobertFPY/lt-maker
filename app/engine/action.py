@@ -2006,6 +2006,9 @@ class ClassChange(Action):
         self.subactions.clear()
 
 class GainWexp(Action):
+    """
+    # Given a unit and an item, gain some of amount of weapon experience for that item's weapon type
+    """
     def __init__(self, unit, item, wexp_gain):
         self.unit = unit
         self.item = item
@@ -2020,12 +2023,13 @@ class GainWexp(Action):
 
     def do(self):
         self.old_value, self.current_value = self.increase_wexp()
-        for weapon_rank in reversed(DB.weapon_ranks):
-            if self.old_value < weapon_rank.requirement and self.current_value >= weapon_rank.requirement:
-                weapon_type = item_system.weapon_type(self.unit, self.item)
-                game.alerts.append(banner.GainWexp(self.unit, weapon_rank.rank, weapon_type))
-                game.state.change('alert')
-                break
+        if self.current_value > self.old_value:
+            for weapon_rank in reversed(DB.weapon_ranks):
+                if self.old_value < weapon_rank.requirement and self.current_value >= weapon_rank.requirement:
+                    weapon_type = item_system.weapon_type(self.unit, self.item)
+                    game.alerts.append(banner.GainWexp(self.unit, weapon_rank.rank, weapon_type))
+                    game.state.change('alert')
+                    break
 
     def execute(self):
         self.old_value, self.current_value = self.increase_wexp()
@@ -2038,6 +2042,9 @@ class GainWexp(Action):
 
 
 class AddWexp(Action):
+    """
+    # Given a unit and a weapon type, gain some of amount of weapon experience
+    """
     def __init__(self, unit, weapon_type, wexp_gain):
         self.unit = unit
         self.weapon_type = weapon_type
@@ -2051,17 +2058,44 @@ class AddWexp(Action):
 
     def do(self):
         self.old_value, self.current_value = self.increase_wexp()
-        for weapon_rank in reversed(DB.weapon_ranks):
-            if self.old_value < weapon_rank.requirement and self.current_value >= weapon_rank.requirement:
-                game.alerts.append(banner.GainWexp(self.unit, weapon_rank.rank, self.weapon_type))
-                game.state.change('alert')
-                break
+        if self.current_value > self.old_value:
+            for weapon_rank in reversed(DB.weapon_ranks):
+                if self.old_value < weapon_rank.requirement and self.current_value >= weapon_rank.requirement:
+                    game.alerts.append(banner.GainWexp(self.unit, weapon_rank.rank, self.weapon_type))
+                    game.state.change('alert')
+                    break
 
     def execute(self):
         self.old_value, self.current_value = self.increase_wexp()
 
     def reverse(self):
         self.unit.wexp[self.weapon_type] = self.old_value
+
+
+class SetWexp(Action):
+    """
+    # Given a unit and a weapon type, set their wexp to a certain value
+    """
+    def __init__(self, unit, weapon_type, wexp):
+        self.unit = unit
+        self.weapon_type = weapon_type
+        self.old_wexp = self.unit.wexp[self.weapon_type]
+        self.wexp = max(0, wexp)  # Can't be less than 0        
+
+    def do(self):
+        self.unit.wexp[self.weapon_type] = self.wexp
+        if self.wexp > self.old_wexp:
+            for weapon_rank in reversed(DB.weapon_ranks):
+                if self.old_wexp < weapon_rank.requirement and self.wexp >= weapon_rank.requirement:
+                    game.alerts.append(banner.GainWexp(self.unit, weapon_rank.rank, self.weapon_type))
+                    game.state.change('alert')
+                    break
+
+    def execute(self):
+        self.unit.wexp[self.weapon_type] = self.wexp
+
+    def reverse(self):
+        self.unit.wexp[self.weapon_type] = self.old_wexp
 
 
 class ChangeHP(Action):

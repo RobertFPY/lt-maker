@@ -84,6 +84,17 @@ def change_music(self: Event, phase, music, flags=None):
     else:
         action.do(action.ChangePhaseMusic(phase, music))
 
+def change_special_music(self: Event, special_music_type: str, music: str, flags=None):
+    if special_music_type == 'title_screen':
+        # title screen must persist past the current game
+        RECORDS.replace('_music_title_screen', music)
+    elif special_music_type == 'promotion':
+        action.do(action.SetGameVar('_music_promotion', music))
+    elif special_music_type == 'class_change':
+        action.do(action.SetGameVar('_music_class_change', music))
+    elif special_music_type == 'game_over':
+        action.do(action.SetGameVar('_music_game_over', music))
+
 def add_portrait(self: Event, portrait, screen_position, slide=None, expression_list=None, speed_mult=None, flags=None):
     flags = flags or set()
 
@@ -759,7 +770,14 @@ def activate_turnwheel(self: Event, force=None, flags=None):
         self.turnwheel_flag = 2
 
 def battle_save(self: Event, flags=None):
-    self.battle_save_flag = True
+    flags = flags or set()
+    if 'immediately' in flags:
+        self.state = 'paused'
+        self.game.memory['save_kind'] = 'battle'
+        self.game.memory['next_state'] = 'in_chapter_save'
+        self.game.state.change('transition_to')
+    else:  # Wait until after this event to make the save
+        self.battle_save_flag = True
 
 def clear_turnwheel(self: Event, flags=None):
     self.game.action_log.set_first_free_action()
@@ -1453,7 +1471,7 @@ def remove_group(self: Event, group, remove_type=None, flags=None):
             else:  # immediate
                 action.do(action.LeaveMap(unit))
 
-def give_item(self: Event, global_unit_or_convoy, item, flags=None):
+def give_item(self: Event, global_unit_or_convoy, item, party=None, flags=None):
     flags = flags or set()
     global_unit = global_unit_or_convoy
 
@@ -1499,7 +1517,7 @@ def give_item(self: Event, global_unit_or_convoy, item, flags=None):
                 self.game.state.change('alert')
                 self.state = 'paused'
     else:
-        action.do(action.PutItemInConvoy(item))
+        action.do(action.PutItemInConvoy(item, party))
         if banner_flag:
             self.game.alerts.append(banner.SentToConvoy(item))
             self.game.state.change('alert')
@@ -1530,7 +1548,7 @@ def equip_item(self: Event, global_unit, item, flags=None):
     else:
         self.logger.error("equip_item: %s is not an item that can be equipped" % item.nid)
 
-def remove_item(self: Event, global_unit_or_convoy, item, flags=None):
+def remove_item(self: Event, global_unit_or_convoy, item, party=None, flags=None):
     flags = flags or set()
     global_unit = global_unit_or_convoy
 
@@ -1541,7 +1559,7 @@ def remove_item(self: Event, global_unit_or_convoy, item, flags=None):
     banner_flag = 'no_banner' not in flags
 
     if global_unit.lower() == 'convoy':
-        action.do(action.RemoveItemFromConvoy(item))
+        action.do(action.RemoveItemFromConvoy(item, party))
     else:
         action.do(action.RemoveItem(unit, item))
         if banner_flag:
@@ -1625,6 +1643,17 @@ def move_item_between_convoys(self: Event, item, party1, party2, flags=None):
 
     action.do(action.RemoveItemFromConvoy(item, party1))
     action.do(action.PutItemInConvoy(item, party2))
+
+def open_convoy(self: Event, global_unit, flags=None):
+    unit = self._get_unit(global_unit)
+    if not unit:
+        self.logger.error("open_convoy: Couldn't find unit with nid %s" % global_unit)
+        return
+
+    self.state = "paused"
+    self.game.memory['current_unit'] = unit
+    self.game.memory['next_state'] = 'supply_items'
+    self.game.state.change('transition_to')
 
 def set_item_uses(self: Event, global_unit_or_convoy, item, uses, flags=None):
     flags = flags or set()
@@ -1954,18 +1983,32 @@ def set_exp(self: Event, global_unit, experience, flags=None):
     exp = utils.clamp(int(experience), 0, 100)
     action.do(action.SetExp(unit, exp))
 
-def give_wexp(self: Event, global_unit, weapon_type, positive_integer, flags=None):
+def give_wexp(self: Event, global_unit, weapon_type, integer, flags=None):
     flags = flags or set()
 
     unit = self._get_unit(global_unit)
     if not unit:
         self.logger.error("give_wexp: Couldn't find unit with nid %s" % global_unit)
         return
-    wexp = int(positive_integer)
+    wexp = int(integer)
     if 'no_banner' in flags:
         action.execute(action.AddWexp(unit, weapon_type, wexp))
     else:
         action.do(action.AddWexp(unit, weapon_type, wexp))
+        self.state = 'paused'
+
+def set_wexp(self: Event, global_unit, weapon_type, whole_number, flags=None):
+    flags = flags or set()
+
+    unit = self._get_unit(global_unit)
+    if not unit:
+        self.logger.error("set_wexp: Couldn't find unit with nid %s" % global_unit)
+        return
+    wexp = int(whole_number)
+    if 'no_banner' in flags:
+        action.execute(action.SetWexp(unit, weapon_type, wexp))
+    else:
+        action.do(action.SetWexp(unit, weapon_type, wexp))
         self.state = 'paused'
 
 def give_skill(self: Event, global_unit, skill, initiator=None, flags=None):
@@ -2044,7 +2087,7 @@ def change_ai(self: Event, global_unit, ai, flags=None):
     else:
         self.logger.error("change_ai: Couldn't find AI %s" % ai)
         return
-    
+
 def change_roam_ai(self: Event, global_unit, ai, flags=None):
     unit = self._get_unit(global_unit)
     if not unit:

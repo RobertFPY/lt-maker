@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Dict
+from typing import Dict, List
 
 from app.data.database.weapons import WexpGain
 from app.utilities.data import Data, Prefab
@@ -13,16 +13,16 @@ class UnitPrefab(Prefab):
     desc: str = None
     variant: str = None
 
-    level: int = None
+    level: int = 1
     klass: str = None
 
-    tags: list = None
+    tags: List[NID] = field(default_factory=list)
     bases: Dict[NID, int] = field(default_factory=dict)
     growths: Dict[NID, int] = field(default_factory=dict)
     stat_cap_modifiers: Dict[NID, int] = field(default_factory=dict)
     starting_items: list = field(default_factory=list)  # of tuples (ItemPrefab, droppable)
 
-    learned_skills: list = None
+    learned_skills: list = field(default_factory=list)
     unit_notes: list = field(default_factory=list)
     wexp_gain: Dict[NID, WexpGain] = field(default_factory=dict)
 

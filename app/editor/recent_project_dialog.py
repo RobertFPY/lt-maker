@@ -1,16 +1,14 @@
-from functools import partial
 import os
-from typing import List, Optional, Tuple
+from typing import List, Optional
+
+from PyQt5.QtCore import QAbstractTableModel, QDir, QModelIndex, Qt
+from PyQt5.QtWidgets import (QFileDialog, QHBoxLayout, QHeaderView,
+                             QMessageBox, QPushButton, QTableView, QVBoxLayout)
+
 from app.editor.file_manager.project_initializer import ProjectInitializer
 from app.editor.settings.main_settings_controller import MainSettingsController
 from app.editor.settings.project_history_controller import ProjectHistoryEntry
-
 from app.extensions.custom_gui import SimpleDialog
-from app.utilities import str_utils
-from PyQt5.QtCore import Qt, QAbstractTableModel, QModelIndex, QDir
-from PyQt5.QtWidgets import (QListView, QLabel, QLineEdit, QTableView, QHBoxLayout, QHeaderView, QFileDialog, QMessageBox,
-                             QPushButton, QVBoxLayout)
-from PyQt5.QtGui import QStandardItemModel, QStandardItem
 
 
 class RecentProjectsModel(QAbstractTableModel):
@@ -49,6 +47,7 @@ class RecentProjectDialog(SimpleDialog):
     def __init__(self, recent_projects: List[ProjectHistoryEntry], load_only):
         super().__init__()
         self.setWindowTitle("Recent Projects")
+        # recent_projects guaranteed to not be empty
         self.projects = recent_projects
         self._selected_path: Optional[str] = None
 
@@ -71,8 +70,12 @@ class RecentProjectDialog(SimpleDialog):
         self.project_table.setSelectionBehavior(QTableView.SelectRows)
         self.project_table.clicked.connect(self.on_select_project)
         self.project_table.doubleClicked.connect(self.on_double_click_project)
+        self.project_table.selectRow(0)
 
         button_layout = QHBoxLayout()
+        self.confirm_button = QPushButton("Open selected project", self)
+        self.confirm_button.clicked.connect(self.on_click_confirm)
+        button_layout.addWidget(self.confirm_button)
         self.open_other_button = QPushButton("Open other...", self)
         self.open_other_button.clicked.connect(self.on_click_open)
         button_layout.addWidget(self.open_other_button)
@@ -80,9 +83,6 @@ class RecentProjectDialog(SimpleDialog):
         self.new_button.clicked.connect(self.on_click_new)
         if not load_only:
             button_layout.addWidget(self.new_button)
-        self.confirm_button = QPushButton("Open selected project", self)
-        self.confirm_button.clicked.connect(self.on_click_confirm)
-        button_layout.addWidget(self.confirm_button)
 
         layout.addWidget(self.project_table)
         layout.addLayout(button_layout)

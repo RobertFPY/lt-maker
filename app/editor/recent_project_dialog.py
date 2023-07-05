@@ -1,16 +1,14 @@
-from functools import partial
 import os
-from typing import List, Optional, Tuple
+from typing import List, Optional
+
+from PyQt5.QtCore import QAbstractTableModel, QDir, QModelIndex, Qt
+from PyQt5.QtWidgets import (QFileDialog, QHBoxLayout, QHeaderView,
+                             QMessageBox, QPushButton, QTableView, QVBoxLayout)
+
 from app.editor.file_manager.project_initializer import ProjectInitializer
 from app.editor.settings.main_settings_controller import MainSettingsController
 from app.editor.settings.project_history_controller import ProjectHistoryEntry
-
 from app.extensions.custom_gui import SimpleDialog
-from app.utilities import str_utils
-from PyQt5.QtCore import Qt, QAbstractTableModel, QModelIndex, QDir, QItemSelectionModel
-from PyQt5.QtWidgets import (QListView, QLabel, QLineEdit, QTableView, QHBoxLayout, QHeaderView, QFileDialog, QMessageBox,
-                             QPushButton, QVBoxLayout)
-from PyQt5.QtGui import QStandardItemModel, QStandardItem
 
 
 class RecentProjectsModel(QAbstractTableModel):

@@ -1855,6 +1855,24 @@ class ApplyGrowthChanges(Action):
         negative_changes = {k: -v for k, v in self.stat_changes.items()}
         unit_funcs.apply_growth_changes(self.unit, negative_changes)
 
+
+class ChangeStatCapModifiers(Action):
+    def __init__(self, unit, stat_changes):
+        self.unit = unit
+        self.stat_changes = stat_changes
+
+    def do(self):
+        for nid, value in self.stat_changes.items():
+            if nid not in self.unit.stat_cap_modifiers:
+                self.unit.stat_cap_modifiers[nid] = 0
+            self.unit.stat_cap_modifiers[nid] += value
+
+    def reverse(self):
+        negative_changes = {k: -v for k, v in self.stat_changes.items()}
+        for nid, value in negative_changes.items():
+            self.unit.stat_cap_modifiers[nid] += value
+
+
 class Promote(Action):
     def __init__(self, unit, new_class_nid):
         self.unit = unit
@@ -1879,7 +1897,7 @@ class Promote(Action):
             elif stat_value == -98:  # Use the new klass base only if it's bigger
                 self.stat_changes[stat_nid] = max(0, new_klass_bases.get(stat_nid, 0) - current_stats[stat_nid])
             else:
-                max_gain_possible = new_klass_maxes.get(stat_nid, 0) - current_stats[stat_nid]
+                max_gain_possible = new_klass_maxes.get(stat_nid, 0) + unit.stat_cap_modifiers.get(stat_nid, 0) - current_stats[stat_nid]
                 self.stat_changes[stat_nid] = min(stat_value, max_gain_possible)
 
         wexp_gain = DB.classes.get(self.new_klass).wexp_gain
@@ -1943,7 +1961,7 @@ class ClassChange(Action):
         for stat_nid in self.stat_changes.keys():
             change = new_klass_bases.get(stat_nid, 0) - old_klass_bases.get(stat_nid, 0)
             current_stat = current_stats.get(stat_nid)
-            new_value = utils.clamp(change, -current_stat, new_klass_maxes.get(stat_nid, 0) - current_stat)
+            new_value = utils.clamp(change, -current_stat, new_klass_maxes.get(stat_nid, 0) + unit.stat_cap_modifiers.get(stat_nid, 0) - current_stat)
             self.stat_changes[stat_nid] = new_value
 
         wexp_gain = DB.classes.get(self.new_klass).wexp_gain
@@ -2436,6 +2454,31 @@ class ChangeAI(Action):
         self.unit.ai = self.old_ai
 
 
+class ChangeRoamAI(Action):
+    def __init__(self, unit, ai):
+        self.unit = unit
+        self.roam_ai = ai
+        self.old_ai = self.unit.roam_ai
+        self._added_to_roam_ai = False
+
+    @recalculate_unit
+    def do(self):
+        self.unit.roam_ai = self.roam_ai
+        for s in game.state.state:
+            if s.name == 'free_roam' and not s.contains_ai_unit(self.unit):
+                s.add_ai_unit(self.unit)
+                self._added_to_roam_ai = True
+
+    @recalculate_unit
+    def reverse(self):
+        self.unit.roam_ai = self.old_ai
+        if self._added_to_roam_ai:
+            for s in game.state.state:
+                if s.name == 'free_roam' and s.contains_ai_unit(self.unit):
+                    s.remove_ai_unit(self.unit)
+        self._added_to_roam_ai = False  # Reset for later
+
+
 class ChangeAIGroup(Action):
     def __init__(self, unit, ai_group):
         self.unit = unit
@@ -2567,6 +2610,18 @@ class ChangeUnitDesc(Action):
 
     def reverse(self):
         self.unit.desc = self.old_desc
+
+class ChangeAffinity(Action):
+    def __init__(self, unit, affinity):
+        self.unit = unit
+        self.old_affinity = unit.affinity
+        self.new_affinity = affinity
+        
+    def do(self):
+        self.unit.affinity = self.new_affinity
+    
+    def reverse(self):
+        self.unit.affinity = self.old_affinity
 
 class AddTag(Action):
     def __init__(self, unit, tag):

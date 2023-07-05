@@ -12,20 +12,22 @@ class Defaults():
 
     @staticmethod
     def check_ally(unit1, unit2) -> bool:
+        from app.data.database.database import DB
         if unit1 is unit2:
             return True
-        elif unit1.team == 'player' or unit1.team == 'other':
-            return unit2.team == 'player' or unit2.team == 'other'
+        elif unit2.team in DB.teams.get_allies(unit1.team):
+            return True
         else:
             return unit2.team == unit1.team
         return False
 
     @staticmethod
     def check_enemy(unit1, unit2) -> bool:
-        if unit1.team == 'player' or unit1.team == 'other':
-            return not (unit2.team == 'player' or unit2.team == 'other')
+        from app.data.database.database import DB
+        if unit2.team in DB.teams.get_allies(unit1.team):
+            return False
         else:
-            return not unit2.team == unit1.team
+            return unit2.team != unit1.team
         return True
 
     @staticmethod
@@ -320,11 +322,8 @@ def on_end_chapter(unit, skill):
         if component.defines('on_end_chapter'):
             if component.ignore_conditional or condition(skill, unit):
                 component.on_end_chapter(unit, skill)
-
-def on_end_chapter_unconditional(unit, skill):
-    for component in skill.components:
         if component.defines('on_end_chapter_unconditional'):
-            component.on_end_chapter(unit, skill)
+            component.on_end_chapter_unconditional(unit, skill)
 
 def init(skill):
     """

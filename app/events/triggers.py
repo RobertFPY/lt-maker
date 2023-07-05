@@ -1,7 +1,7 @@
 from __future__ import annotations
 import dataclasses
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, ClassVar, Dict, Optional, Tuple
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional, Tuple
 
 if TYPE_CHECKING:
     from app.engine.objects.item import ItemObject
@@ -81,6 +81,14 @@ class LevelSelect(EventTrigger):
     this trigger should include a scripted move if movement is desired.
     """
     nid: ClassVar[NID] = 'level_select'
+
+@dataclass(init=True)
+class PhaseChange(EventTrigger):
+    """
+    Occurs whenever the phase changes. Check `team` to figure out whose phase it is now.
+    """
+    nid: ClassVar[NID] = 'phase_change'
+    team: NID
 
 @dataclass(init=True)
 class TurnChange(EventTrigger):

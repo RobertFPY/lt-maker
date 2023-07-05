@@ -9,9 +9,10 @@ from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import QLockFile, QDir, Qt
 from PyQt5.QtGui import QIcon
 
-
-if __name__ == '__main__':
+def initialize_translations():
     init_locale()
+
+def initialize_icon():
     # Hack to get a Windows icon to show up
     try:
         import ctypes
@@ -20,14 +21,22 @@ if __name__ == '__main__':
     except:
         print("Maybe not Windows? But that's OK")
 
+def code_gen():
     # compile necessary files
     if not hasattr(sys, 'frozen'):
         source_generator.generate_component_system_source()
 
+def initialize_logger():
     from app import lt_log
     success = lt_log.create_logger()
     if not success:
         sys.exit()
+
+if __name__ == '__main__':
+    initialize_translations()
+    initialize_icon()
+    code_gen()
+    initialize_logger()
 
     lockfile = QLockFile(QDir.tempPath() + '/lt-maker.lock')
     if lockfile.tryLock(100):

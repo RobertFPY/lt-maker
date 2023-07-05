@@ -15,7 +15,8 @@ from app.editor import timer
 
 from app.extensions.custom_gui import PropertyBox, ComboBox, Dialog, RightClickListView
 from app.editor.base_database_gui import DragDropCollectionModel
-from app.editor.custom_widgets import CustomQtRoles, UnitBox, ClassBox, FactionBox, AIBox, ObjBox, RoamAIBox
+from app.editor.custom_widgets import CustomQtRoles, UnitBox, ClassBox, \
+    TeamBox, FactionBox, AIBox, ObjBox, RoamAIBox
 from app.editor.class_editor import class_model
 from app.editor.item_editor import item_model
 from app.editor.unit_editor import unit_tab
@@ -376,8 +377,7 @@ class LoadUnitDialog(Dialog):
         self.unit_box.button.clicked.connect(self.access_units)
         layout.addWidget(self.unit_box)
 
-        self.team_box = PropertyBox("Team", ComboBox, self)
-        self.team_box.edit.addItems(DB.teams)
+        self.team_box = TeamBox(self)
         self.team_box.edit.setValue(self.current.team)
         self.team_box.edit.activated.connect(self.team_changed)
         layout.addWidget(self.team_box)
@@ -558,8 +558,7 @@ class GenericUnitDialog(Dialog):
         self.nid_box.edit.editingFinished.connect(self.nid_done_editing)
         layout.addWidget(self.nid_box)
 
-        self.team_box = PropertyBox("Team", ComboBox, self)
-        self.team_box.edit.addItems(DB.teams)
+        self.team_box = TeamBox(self)
         self.team_box.edit.activated.connect(self.team_changed)
         layout.addWidget(self.team_box)
 

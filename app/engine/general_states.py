@@ -141,6 +141,7 @@ class TurnChangeState(MapState):
                             if region.time_left <= 0:
                                 action.do(action.RemoveRegion(region))
                                 game.events.trigger(triggers.TimeRegionComplete(region.position, region))
+                game.events.trigger(triggers.PhaseChange(game.phase.get_current()))
                 game.events.trigger(triggers.TurnChange())
                 if game.turncount - 1 <= 0:  # Beginning of the level
                     for unit in game.get_all_units_in_party():
@@ -154,8 +155,8 @@ class TurnChangeState(MapState):
                 game.state.change('status_upkeep')
                 game.state.change('phase_change')
                 # EVENTS TRIGGER HERE
+                game.events.trigger(triggers.PhaseChange(game.phase.get_current()))
                 if game.phase.get_current() == 'enemy':
-
                     game.events.trigger(triggers.EnemyTurnChange())
                 elif game.phase.get_current() == 'enemy2':
                     game.events.trigger(triggers.Enemy2TurnChange())
@@ -326,7 +327,8 @@ class FreeState(MapState):
                     game.cursor.place_arrows()
                     game.events.trigger(triggers.UnitSelect(cur_unit, cur_unit.position))
                 else:
-                    if cur_unit.team == 'enemy' or cur_unit.team == 'enemy2':
+                    player_team_enemies = DB.teams.enemies
+                    if cur_unit.team in player_team_enemies:
                         get_sound_thread().play_sfx('Select 3')
                         game.boundary.toggle_unit(cur_unit)
                     else:
@@ -1325,8 +1327,9 @@ class ItemChildState(MapState):
                     game.memory['item'] = item
                     game.state.change('combat_targeting')
                 else: 
-                    targets = target_system.get_valid_targets(self.cur_unit, item)
-                    if len(targets) == 1:  # No need to select when only one target
+                    targets: set = target_system.get_valid_targets(self.cur_unit, item)
+                    # No need to select when only target is yourself
+                    if len(targets) == 1 and next(iter(targets)) == self.cur_unit.position:
                         interaction.start_combat(self.cur_unit, self.cur_unit.position, item)
                     else:
                         game.memory['item'] = item

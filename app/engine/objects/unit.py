@@ -34,7 +34,7 @@ class UnitObject(Prefab):
     ai_group: NID = None
     roam_ai: str = None
     faction: NID = None
-    team: str = "player"
+    team: NID = "player"
     portrait_nid: NID = None
     affinity: NID = None
     notes: List[Tuple[str, str]] = field(default_factory=list)
@@ -51,6 +51,7 @@ class UnitObject(Prefab):
     stats: Dict[NID, int] = field(default_factory=dict)
     growths: Dict[NID, int] = field(default_factory=dict)
     growth_points: Dict[NID, int] = field(default_factory=dict)
+    stat_cap_modifiers: Dict[Nid, int] = field(default_factory=dict)
     wexp: Dict[NID, WexpGain] = field(default_factory=dict)
 
     position: Tuple[int, int] = None
@@ -155,17 +156,21 @@ class UnitObject(Prefab):
             growths = klass_obj.growths
             self.stats = {stat_nid: bases.get(stat_nid, 0) for stat_nid in DB.stats.keys()}
             self.growths = {stat_nid: growths.get(stat_nid, 0) for stat_nid in DB.stats.keys()}
+            # Generics have defualt stat cap modifiers of 0
+            self.stat_cap_modifiers = {stat_nid: 0 for stat_nid in DB.stats.keys()}
             weapon_gain = klass_obj.wexp_gain
             self.wexp = {weapon_nid: weapon_gain.get(weapon_nid, DB.weapons.default()).wexp_gain for weapon_nid in DB.weapons.keys()}
         else:
             bases = prefab.bases
             growths = prefab.growths
+            stat_cap_modifiers = prefab.stat_cap_modifiers
             self.stats = {stat_nid: bases.get(stat_nid, 0) for stat_nid in DB.stats.keys()}
             self.growths = {stat_nid: growths.get(stat_nid, 0) for stat_nid in DB.stats.keys()}
             if DB.constants.value('unit_stats_as_bonus'):
                 klass_obj = DB.classes.get(self.klass)
                 self.stats = {stat_nid: self.stats[stat_nid] + klass_obj.bases.get(stat_nid, 0) for stat_nid in DB.stats.keys()}
                 self.growths = {stat_nid: self.growths[stat_nid] + klass_obj.growths.get(stat_nid, 0) for stat_nid in DB.stats.keys()}
+            self.stat_cap_modifiers = {stat_nid: stat_cap_modifiers.get(stat_nid, 0) for stat_nid in DB.stats.keys()}
             weapon_gain = prefab.wexp_gain
             self.wexp = {weapon_nid: weapon_gain.get(weapon_nid, DB.weapons.default()).wexp_gain for weapon_nid in DB.weapons.keys()}
 
@@ -247,10 +252,11 @@ class UnitObject(Prefab):
             if klass.tier >= 2:
                 prev_levels = num_levels - (self.level - 1)
                 num_levels = self.level + int(prev_levels * mode.promoted_autolevels_fraction)
-            stat_bonus = mode.get_base_bonus(self)
+            stat_bonus = mode.get_base_bonus(self, DB)
             bonus = {nid: 0 for nid in DB.stats.keys()}
             for nid in DB.stats.keys():
-                bonus[nid] = utils.clamp(stat_bonus.get(nid, 0), -self.stats.get(nid, 0), klass.max_stats.get(nid, 30) - self.stats.get(nid, 0))
+                max_stat = klass.max_stats.get(nid, 30) + self.stat_cap_modifiers.get(nid, 0)
+                bonus[nid] = utils.clamp(stat_bonus.get(nid, 0), -self.stats.get(nid, 0), max_stat - self.stats.get(nid, 0))
             if any(v != 0 for v in bonus.values()):
                 unit_funcs.apply_stat_changes(self, bonus)
 
@@ -258,13 +264,13 @@ class UnitObject(Prefab):
                 unit_funcs.auto_level(self, 1, num_levels)
             # Existing units would have leveled up different with bonus growths
             elif DB.constants.value('backpropagate_difficulty_growths'):
-                difficulty_growth_bonus = mode.get_growth_bonus(self)
+                difficulty_growth_bonus = mode.get_growth_bonus(self, DB)
                 if difficulty_growth_bonus:
                     unit_funcs.difficulty_auto_level(self, 1, num_levels)
 
-            difficulty_autolevels = mode.get_difficulty_autolevels(self)
+            difficulty_autolevels = mode.get_difficulty_autolevels(self, DB)
             # Handle the ones that you can change in events
-            if self.team.startswith('enemy'):
+            if self.team in DB.teams.enemies:
                 difficulty_autolevels += current_mode.enemy_autolevels
                 difficulty_autolevels += current_mode.enemy_truelevels
             if 'Boss' in self.tags:
@@ -274,7 +280,7 @@ class UnitObject(Prefab):
             if difficulty_autolevels > 0:
                 unit_funcs.auto_level(self, 1, difficulty_autolevels)
 
-            if self.team.startswith('enemy'):
+            if self.team in DB.teams.enemies:
                 self.level += current_mode.enemy_truelevels
             if 'Boss' in self.tags:
                 self.level += current_mode.boss_truelevels
@@ -393,7 +399,7 @@ class UnitObject(Prefab):
         self._visible_skills_cache = skills
         return skills
     
-    def stat_bonus(self, stat_nid: str) -> int:
+    def stat_bonus(self, stat_nid: NID) -> int:
         bonus = skill_system.stat_change(self, stat_nid)
         weapon = self.equipped_weapon
         if weapon:
@@ -403,11 +409,11 @@ class UnitObject(Prefab):
             bonus += item_system.stat_change(self, accessory, stat_nid)
         return bonus
 
-    def subtle_stat_bonus(self, stat_nid: str) -> int:
+    def subtle_stat_bonus(self, stat_nid: NID) -> int:
         bonus = skill_system.subtle_stat_change(self, stat_nid)
         return bonus
 
-    def stat_contribution(self, stat_nid: str) -> list:
+    def stat_contribution(self, stat_nid: NID) -> list:
         contribution = skill_system.stat_change_contribution(self, stat_nid)
         weapon = self.equipped_weapon
         if weapon:
@@ -417,17 +423,17 @@ class UnitObject(Prefab):
             contribution.update(item_system.stat_change_contribution(self, accessory, stat_nid))
         return contribution
 
-    def get_stat(self, stat_nid: str) -> int:
+    def get_stat(self, stat_nid: NID) -> int:
         return self.stats.get(stat_nid, 0) + self.stat_bonus(stat_nid)
 
-    def growth_bonus(self, stat_nid: str) -> int:
+    def growth_bonus(self, stat_nid: NID) -> int:
         return skill_system.growth_change(self, stat_nid)
 
-    def get_growth(self, stat_nid: str) -> int:
+    def get_growth(self, stat_nid: NID) -> int:
         return self.growths.get(stat_nid, 0) + self.growth_bonus(stat_nid)
 
-    def get_stat_cap(self, stat_nid: str) -> int:
-        return DB.classes.get(self.klass).max_stats.get(stat_nid, 30)
+    def get_stat_cap(self, stat_nid: NID) -> int:
+        return DB.classes.get(self.klass).max_stats.get(stat_nid, 30) + self.stat_cap_modifiers.get(stat_nid, 0)
 
     def get_damage_with_current_weapon(self) -> int:
         if self.get_weapon():
@@ -730,6 +736,7 @@ class UnitObject(Prefab):
                   'stats': self.stats,
                   'growths': self.growths,
                   'growth_points': self.growth_points,
+                  'stat_cap_modifiers': self.stat_cap_modifiers,
                   'starting_position': self.starting_position,
                   'wexp': self.wexp,
                   'portrait_nid': self.portrait_nid,
@@ -781,6 +788,7 @@ class UnitObject(Prefab):
         self.stats = s_dict['stats']
         self.growths = s_dict['growths']
         self.growth_points = s_dict['growth_points']
+        self.stat_cap_modifiers = s_dict.get('stat_cap_modifiers', {})
         self.wexp = s_dict['wexp']
         self.portrait_nid = s_dict['portrait_nid']
         self.affinity = s_dict.get('affinity', None)

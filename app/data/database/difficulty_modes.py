@@ -67,24 +67,24 @@ class DifficultyModePrefab(Prefab):
     def get_boss_stat_lists(self):
         return [self.boss_bases, self.boss_growths]
 
-    def get_base_bonus(self, unit) -> dict:
-        if unit.team in ('player', 'other'):
+    def get_base_bonus(self, unit, db) -> dict:
+        if unit.team in db.teams.allies:
             return self.player_bases
         elif 'Boss' in unit.tags:
             return self.boss_bases
         else:
             return self.enemy_bases
 
-    def get_growth_bonus(self, unit) -> dict:
-        if unit.team in ('player', 'other'):
+    def get_growth_bonus(self, unit, db) -> dict:
+        if unit.team in db.teams.allies:
             return self.player_growths
         elif 'Boss' in unit.tags:
             return self.boss_growths
         else:
             return self.enemy_growths
 
-    def get_difficulty_autolevels(self, unit) -> dict:
-        if unit.team in ('player', 'other'):
+    def get_difficulty_autolevels(self, unit, db) -> dict:
+        if unit.team in db.teams.allies:
             return self.player_autolevels
         elif 'Boss' in unit.tags:
             return self.boss_autolevels

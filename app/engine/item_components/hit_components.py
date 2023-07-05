@@ -21,9 +21,8 @@ class PermanentStatChange(ItemComponent):
     _hit_count = 0
 
     def _target_restrict(self, defender):
-        klass = DB.classes.get(defender.klass)
         for stat, inc in self.value:
-            if inc <= 0 or defender.stats[stat] < klass.max_stats.get(stat, 30):
+            if inc <= 0 or defender.stats[stat] < unit.get_stat_cap(stat):
                 return True
         return False
 
@@ -44,9 +43,8 @@ class PermanentStatChange(ItemComponent):
     def end_combat(self, playback, unit, item, target, mode):
         if self._hit_count > 0:
             stat_changes = {k: v*self._hit_count for (k, v) in self.value}
-            klass = DB.classes.get(target.klass)
             # clamp stat changes
-            stat_changes = {k: utils.clamp(v, -target.stats[k], klass.max_stats.get(k, 30) - target.stats[k]) for k, v in stat_changes.items()}
+            stat_changes = {k: utils.clamp(v, -target.stats[k], unit.get_stat_cap(k) - target.stats[k]) for k, v in stat_changes.items()}
             action.do(action.ApplyStatChanges(target, stat_changes))
             if any(v != 0 for v in stat_changes.values()):
                 game.memory['stat_changes'] = stat_changes
@@ -220,7 +218,7 @@ class ShoveOnEndCombat(Shove):
             if new_position:
                 action.do(action.ForcedMovement(target, new_position))
 
-class ShoveTargetRestrict(Shove, ItemComponent):
+class ShoveTargetRestrict(Shove):
     nid = 'shove_target_restrict'
     desc = "Works the same as shove but will not allow the item to be selected if the action cannot be performed."
     tag = ItemTags.SPECIAL

@@ -1187,7 +1187,7 @@ def remove_all_units(self: Event, flags=None):
 
 def remove_all_enemies(self: Event, flags=None):
     for unit in self.game.units:
-        if unit.position and unit.team.startswith('enemy'):
+        if unit.position and unit.team in DB.teams.enemies:
             action.do(action.FadeOut(unit))
 
 def interact_unit(self: Event, unit, position, combat_script=None, ability=None, rounds=None, flags=None):
@@ -2088,6 +2088,17 @@ def change_ai(self: Event, global_unit, ai, flags=None):
         self.logger.error("change_ai: Couldn't find AI %s" % ai)
         return
 
+def change_roam_ai(self: Event, global_unit, ai, flags=None):
+    unit = self._get_unit(global_unit)
+    if not unit:
+        self.logger.error("change_roam_ai: Couldn't find unit %s" % global_unit)
+        return
+    if ai in DB.ai.keys():
+        action.do(action.ChangeRoamAI(unit, ai))
+    else:
+        self.logger.error("change_roam_ai: Couldn't find AI %s" % ai)
+        return
+
 def change_ai_group(self: Event, global_unit, ai_group, flags=None):
     unit = self._get_unit(global_unit)
     if not unit:
@@ -2122,7 +2133,7 @@ def change_team(self: Event, global_unit, team, flags=None):
     if not unit:
         self.logger.error("change_team: Couldn't find unit %s" % global_unit)
         return
-    if team in DB.teams:
+    if team in DB.teams.keys():
         action.do(action.ChangeTeam(unit, team))
     else:
         self.logger.error("change_team: Not a valid team: %s" % team)
@@ -2145,6 +2156,13 @@ def change_unit_desc(self: Event, global_unit, string, flags=None):
         self.logger.error("change_unit_desc: Couldn't find unit %s" % global_unit)
         return
     action.do(action.ChangeUnitDesc(unit, string))
+
+def change_affinity(self: Event, global_unit, affinity, flags=None):
+    unit = self._get_unit(global_unit)
+    if not unit:
+        self.logger.error("change_affinity: Couldn't find unit %s" % global_unit)
+        return
+    action.do(action.ChangeAffinity(unit, affinity))
 
 def change_stats(self: Event, global_unit, stat_list, flags=None):
     flags = flags or set()
@@ -2213,6 +2231,37 @@ def set_growths(self: Event, global_unit, stat_list, flags=None):
             growth_changes[stat_nid] = stat_value - current
 
     self._apply_growth_changes(unit, growth_changes)
+
+def change_stat_cap_modifiers(self: Event, global_unit, stat_list, flags=None):
+    unit = self._get_unit(global_unit)
+    if not unit:
+        self.logger.error("change_stat_cap_modifiers: Couldn't find unit %s" % global_unit)
+        return
+
+    s_list = stat_list.split(',')
+    stat_cap_changes = {}
+    for idx in range(len(s_list)//2):
+        stat_nid = s_list[idx*2]
+        stat_value = int(s_list[idx*2 + 1])
+        stat_cap_changes[stat_nid] = stat_value
+
+    action.do(action.ChangeStatCapModifiers(unit, stat_cap_changes))
+
+def set_stat_cap_modifiers(self: Event, global_unit, stat_list, flags=None):
+    unit = self._get_unit(global_unit)
+    if not unit:
+        self.logger.error("set_stat_cap_modifiers: Couldn't find unit %s" % global_unit)
+        return
+
+    s_list = stat_list.split(',')
+    stat_cap_changes = {}
+    for idx in range(len(s_list)//2):
+        stat_nid = s_list[idx*2]
+        stat_value = int(s_list[idx*2 + 1])
+        current = unit.stat_cap_modifiers.get(stat_nid, 0)
+        stat_cap_changes[stat_nid] = stat_value - current
+
+    action.do(action.ChangeStatCapModifiers(unit, stat_cap_changes))
 
 def set_unit_level(self: Event, global_unit, level, flags=None):
     unit = self._get_unit(global_unit)
@@ -3343,7 +3392,8 @@ def alert(self: Event, string, item=None, skill=None, icon=None, flags=None):
     self.game.state.change('alert')
     self.state = 'paused'
 
-def victory_screen(self: Event, flags=None):
+def victory_screen(self: Event, sound=None, flags=None):
+    self.game.memory['victory_screen_sound'] = sound
     self.game.state.change('victory')
     self.state = 'paused'
 

@@ -1,5 +1,7 @@
-from app.engine.objects.unit import UnitObject
 import math
+
+from typing import Callable, List, Tuple, TYPE_CHECKING
+from app.utilities.typing import NID
 
 from app.constants import TILEWIDTH, TILEHEIGHT, WINWIDTH, WINHEIGHT
 from app.data.resources.resources import RESOURCES
@@ -17,6 +19,8 @@ from app.engine.animations import Animation
 from app.engine.game_state import game
 from app.engine.graphics.text.text_renderer import render_text
 from app.utilities.enums import HAlignment
+
+from app.engine.objects.unit import UnitObject
 
 class ExpState(State):
     name = 'exp'
@@ -282,10 +286,12 @@ class ExpState(State):
                 # get to this screen
                 if self.starting_state != "stat_booster":
                     ExpState.give_new_personal_skills(self.unit)
-                    if self.starting_state == 'class_change' and not DB.constants.value('learn_skills_on_reclass'):
-                        pass
-                    elif self.starting_state == 'promote' and not DB.constants.value('learn_skills_on_promote'):
-                        pass
+                    if self.starting_state == 'class_change':
+                        if DB.constants.value('learn_skills_on_reclass'):
+                            ExpState.give_all_class_skills(self.unit)
+                    elif self.starting_state == 'promote':
+                        if DB.constants.value('learn_skills_on_promote'):
+                            ExpState.give_all_class_skills(self.unit)
                     else:
                         ExpState.give_new_class_skills(self.unit)
 
@@ -369,39 +375,47 @@ class ExpState(State):
         return surf
 
     @staticmethod
-    def give_new_class_skills(unit: UnitObject):
-        unit_klass = DB.classes.get(unit.klass)
-        for level_needed, class_skill_nid in unit_klass.learned_skills:
-            if unit.level == level_needed:
-                if class_skill_nid == 'Feat':
+    def _give_skills(unit: UnitObject, avail_skills: List[Tuple[int, NID]],
+                     comparison_func: Callable[[UnitObject, int], bool]):
+        for level_needed, skill_nid in avail_skills:
+            if comparison_func(unit, level_needed):
+                if skill_nid == 'Feat':
                     game.memory['current_unit'] = unit
                     game.state.change('feat_choice')
                 else:
-                    if class_skill_nid not in [skill.nid for skill in unit.skills]:
-                        act = action.AddSkill(unit, class_skill_nid)
+                    if skill_nid not in [skill.nid for skill in unit.skills]:
+                        act = action.AddSkill(unit, skill_nid)
                         action.do(act)
                         if act.skill_obj and not skill_system.hidden(act.skill_obj, unit):
                             game.alerts.append(banner.GiveSkill(unit, act.skill_obj))
                             game.state.change('alert')
 
     @staticmethod
-    def give_new_personal_skills(unit):
+    def give_new_class_skills(unit: UnitObject):
+        def compare(unit, level_needed):
+            return unit.level == level_needed
+
+        unit_klass = DB.classes.get(unit.klass)
+        ExpState._give_skills(unit, unit_klass.learned_skills, compare)
+
+    @staticmethod
+    def give_new_personal_skills(unit: UnitObject):
+        def compare(unit, level_needed):
+            return unit.get_internal_level() == level_needed
+        
         unit_prefab = DB.units.get(unit.nid)
         if not unit_prefab:
             return
-        for level_needed, personal_skill_nid in unit_prefab.learned_skills:
-            if unit.get_internal_level() == level_needed:
-                if personal_skill_nid == 'Feat':
-                    game.memory['current_unit'] = unit
-                    game.state.change('feat_choice')
-                else:
-                    if personal_skill_nid not in [skill.nid for skill in unit.skills]:
-                        act = action.AddSkill(unit, personal_skill_nid)
-                        action.do(act)
-                        if act.skill_obj and not skill_system.hidden(act.skill_obj, unit):
-                            game.alerts.append(banner.GiveSkill(unit, act.skill_obj))
-                            game.state.change('alert')
+        ExpState._give_skills(unit, unit_prefab.learned_skills, compare)
 
+    @staticmethod
+    def give_all_class_skills(unit: UnitObject):
+        def compare(unit, level_needed):
+            return unit.level >= level_needed
+
+        unit_klass = DB.classes.get(unit.klass)
+        ExpState._give_skills(unit, unit_klass.learned_skills, compare)
+        
 class LevelUpScreen():
     bg = SPRITES.get('level_screen')
     bg = bg.convert_alpha()

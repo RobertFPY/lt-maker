@@ -57,6 +57,7 @@ constants = ConstantCatalog([
     Constant('initiative', "Per Unit Initiative Order", ConstantType.BOOL, False, 'features'),
     Constant('fatigue', "Fatigue", ConstantType.BOOL, False, 'features'),
     Constant('reset_fatigue', "Automatically reset fatigue to 0 for benched units", ConstantType.BOOL, False, 'features'),
+    Constant('reset_uses', "Reset uses on droppable items when acquired", ConstantType.BOOL, True, 'features'),
     Constant('minimap', "Enable Minimap", ConstantType.BOOL, True, 'features'),
     Constant('pairup', "Pair Up", ConstantType.BOOL, False, 'features'),
     Constant('limit_attack_stance', "Limit Attack Stance to first attack only", ConstantType.BOOL, False, 'features'),
@@ -86,8 +87,8 @@ constants = ConstantCatalog([
     Constant('promote_skill_inheritance', "Promoted units will have the skills of their previous classes", ConstantType.BOOL, True, 'leveling'),
     Constant('promote_level_reset', "Promotion resets level back to 1", ConstantType.BOOL, True, 'leveling'),
     Constant('class_change_level_reset', "Class Change resets level back to 1", ConstantType.BOOL, False, 'leveling'),
-    Constant('learn_skills_on_reclass', "Learn the appropriate skills of your new class when you reclass", ConstantType.BOOL, True, 'leveling'),
-    Constant('learn_skills_on_promote', "Learn the appropriate skills of your new class when you promote", ConstantType.BOOL, True, 'leveling'),
+    Constant('learn_skills_on_reclass', "Learn the skills of your new class when you reclass", ConstantType.BOOL, True, 'leveling'),
+    Constant('learn_skills_on_promote', "Learn the skills of your new class when you promote", ConstantType.BOOL, True, 'leveling'),
     Constant('negative_growths', "Negative growth rates will reduce stats", ConstantType.BOOL, True, 'leveling'),
     Constant('class_change_same_tier', "Class Change only between classes of the same tier", ConstantType.BOOL, False, 'leveling'),
     Constant('generic_feats', "Generic units will be given random feats when appropriate", ConstantType.BOOL, False, 'leveling'),
@@ -139,6 +140,4 @@ constants = ConstantCatalog([
     Constant('heal_magnitude', "Added to total exp for healing", ConstantType.INT, 0, 'exp'),
     Constant('heal_offset', "Modifies expected healing", ConstantType.INT, 11, 'exp'),
     Constant('heal_min', "Min exp gained for healing", ConstantType.INT, 11, 'exp'),
-    # Hidden constants below
-    Constant('dark_sprites', "Use darker map sprites", ConstantType.BOOL, False, 'hidden')
 ])

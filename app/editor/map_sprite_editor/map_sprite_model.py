@@ -2,46 +2,61 @@ import os
 
 from PyQt5.QtWidgets import QFileDialog, QMessageBox
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPixmap, QIcon, QPainter, QColor, QTransform
+from PyQt5.QtGui import QPixmap, QIcon, QImage, QPainter, QColor, QTransform
 
 from app.data.resources.map_sprites import MapSprite
 from app.data.resources.resources import RESOURCES
 
 from app.utilities.data import Data
 from app.data.database.database import DB
+from app.data.resources.default_palettes import default_palettes
 
 from app.extensions.custom_gui import DeletionDialog
 from app.editor.settings import MainSettingsController
 from app.editor.base_database_gui import ResourceCollectionModel
 import app.editor.utilities as editor_utilities
 from app.utilities import str_utils
+from app.utilities.typing import NID
 
-def get_basic_icon(pixmap, num, active=False, team='player'):
+import logging
+
+def color_shift_team(im: QImage, team: NID) -> QImage:
+    team_obj = DB.teams.get(team)
+    if team_obj and team_obj.map_sprite_palette:
+        map_sprite_palette = RESOURCES.combat_palettes.get(team_obj.map_sprite_palette)
+        if map_sprite_palette:
+            conversion_dict = {a: b for a, b in zip(default_palettes['map_sprite_blue'], map_sprite_palette.get_colors())}
+            color_transform = editor_utilities.rgb_convert(conversion_dict)
+            im = editor_utilities.color_convert(im, color_transform)
+        else:
+            logging.error("Map Sprite conversion unable to locate combat palette with nid: %s" % team_obj.map_sprite_palette)
+    # Must convert colorkey last, or else color conversion doesn't work correctly
+    im = editor_utilities.convert_colorkey(im)
+    return im
+
+def gray_shift_team(im: QImage) -> QImage:
+    map_sprite_palette = RESOURCES.combat_palettes.get('map_sprite_wait')
+    if map_sprite_palette:
+        colors = map_sprite_palette.get_colors()
+    else:
+        logging.error("Map Sprite conversion unable to locate combat palette with nid: map_sprite_wait")
+        colors = default_palettes['map_sprite_wait']
+    conversion_dict = {a: b for a, b in zip(default_palettes['map_sprite_blue'], colors)}
+    color_transform = editor_utilities.rgb_convert(conversion_dict)
+    im = editor_utilities.color_convert(im, color_transform)
+        
+    # Must convert colorkey last, or else color conversion doesn't work correctly
+    im = editor_utilities.convert_colorkey(im)
+    return im
+
+def get_basic_icon(pixmap: QPixmap, num: int, active: bool = False, team: NID = 'player') -> QPixmap:
     if active:
         one_frame = pixmap.copy(num*64 + 16, 96 + 16, 32, 32)
     else:
         one_frame = pixmap.copy(num*64 + 16, 0 + 16, 32, 32)
     # pixmap = pixmap.copy(16, 16, 32, 32)
     one_frame = one_frame.toImage()
-    if team == 'player':
-        if DB.constants.value('dark_sprites'):
-            one_frame = editor_utilities.color_convert(one_frame, editor_utilities.player_dark_colors)
-        else:
-            pass
-    elif team == 'enemy':
-        if DB.constants.value('dark_sprites'):
-            one_frame = editor_utilities.color_convert(one_frame, editor_utilities.enemy_dark_colors)
-        else:
-            one_frame = editor_utilities.color_convert(one_frame, editor_utilities.enemy_colors)
-    elif team == 'other':
-        if DB.constants.value('dark_sprites'):
-            one_frame = editor_utilities.color_convert(one_frame, editor_utilities.other_dark_colors)
-        else:
-            one_frame = editor_utilities.color_convert(one_frame, editor_utilities.other_colors)
-    elif team == 'enemy2':
-        one_frame = editor_utilities.color_convert(one_frame, editor_utilities.enemy2_colors)
-    # Must convert colorkey last, or else color conversion doesn't work correctly
-    one_frame = editor_utilities.convert_colorkey(one_frame)
+    one_frame = color_shift_team(one_frame, team)
     pixmap = QPixmap.fromImage(one_frame)
     return pixmap
 

@@ -408,20 +408,34 @@ class Portrait(Validator):
         valids.append((None, "{unit2}"))
         return valids + other_valids
 
+class Affinity(Validator):
+    def validate(self, affinity, level):
+        if affinity in self._db.affinities.keys():
+            return affinity
+        return None
+    
+    def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
+        valids = [(None, affinity.nid) for affinity in self._db.affinities]
+        return valids
+
 class AI(Validator):
     def validate(self, text, level):
         if text in self._db.ai.keys():
             return text
         return None
 
+    def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
+        valids = [(None, ai_nid) for ai_nid in self._db.ai.keys()]
+        return valids
+
 class Team(Validator):
     def validate(self, text, level):
-        if text in self._db.teams:
+        if text in self._db.teams.keys():
             return text
         return None
 
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
-        valids = [(None, team_nid) for team_nid in self._db.teams]
+        valids = [(None, team_nid) for team_nid in self._db.teams.keys()]
         return valids
 
 class Tag(Validator):

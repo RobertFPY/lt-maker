@@ -1,7 +1,13 @@
+from datetime import datetime
 import sys, os
+import pathlib
 import logging
+import threading
+import time
+from typing import Optional
+import app.utilities.platformdirs as appdirs
 
-from app.constants import VERSION
+from app.constants import APP_AUTHOR, APP_NAME, VERSION
 
 # Taken from: https://stackoverflow.com/a/61043789
 # Maxxim's answer
@@ -79,35 +85,57 @@ def setup_logging(console_log_output, console_log_level, console_log_color, logf
 
     return True
 
-def create_debug_log():
+def get_log_fname() -> Optional[str]:
+    log_files = [i.baseFilename for i in logging.getLogger().handlers if hasattr(i, 'baseFilename')]
+    return log_files[0] if log_files else None
+
+def create_debug_log(log_dir: os.PathLike) -> os.PathLike:
     """
-    Increments all old debug logs in number
-    Destroys logs older than 5 runs
+    Destroys logs older than 24 hours
+    Then initializes a current log
     """
-    counter = 5  # traverse backwards, so we don't overwrite older logs
-    while counter > 0:
-        fn = 'saves/debug.log.' + str(counter)
-        if os.path.exists(fn):
-            if counter == 5:
-                os.remove(fn)
-            else:
-                os.rename(fn, 'saves/debug.log.' + str(counter + 1))
-        counter -= 1
+    for root, _, files in os.walk(log_dir):
+        for name in files:
+            fn = os.path.join(root, name)
+            if fn.endswith('.log') and os.path.exists(fn):
+                last_modified_hours_ago = (time.time() - os.path.getmtime(fn)) / 3600
+                if last_modified_hours_ago > 24:
+                    os.remove(fn)
+    current_time = str(datetime.now()).replace(' ', '_').replace(':', '.')
+    nfn = log_dir / pathlib.Path('debug.' + str(current_time) + '.log')
+    # creates the file
+    with open(nfn, 'w'):
+        pass
+    return nfn
+
+def get_log_dir() -> os.PathLike:
+    appdata_dir = pathlib.Path(appdirs.user_log_dir(APP_NAME, APP_AUTHOR))
+    if not os.path.isdir(appdata_dir):
+        os.makedirs(appdata_dir)
+    return appdata_dir
+
+def touch_log():
+    current_time = time.time()
+    log = get_log_fname()
+    if log:
+        # touch once per hour
+        os.utime(log, (current_time, current_time))
+        t = threading.Timer(3600.0, touch_log)
+        t.daemon = True
+        t.start()
 
 def create_logger() -> bool:
     try:
-        create_debug_log()
-    except WindowsError:
-        print("Error! Debug logs in use -- Another instance of this is already running!")
-        return None
+        debug_fn = create_debug_log(get_log_dir())
     except PermissionError:
-        print("Error! Debug logs in use -- Another instance of this is already running!")
-        return None
+        print("No permission to write to AppData.")
+        return False
     success = setup_logging(console_log_output="stdout", console_log_level="warning", console_log_color=False,
-                            logfile_file='saves/debug.log.1', logfile_log_level="debug", logfile_log_color=False,
+                            logfile_file=debug_fn, logfile_log_level="debug", logfile_log_color=False,
                             log_line_template="%(color_on)s%(relativeCreated)d %(levelname)7s:%(module)16s: %(message)s")
     if not success:
         print("Failed to setup logging")
         return False
     logging.info('*** Lex Talionis Engine Version %s ***' % VERSION)
+    touch_log()
     return True

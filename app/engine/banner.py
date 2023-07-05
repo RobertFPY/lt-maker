@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from app.constants import WINWIDTH, WINHEIGHT
 from app.engine.sprites import SPRITES
-from app.engine.fonts import FONT
 from app.engine import engine, base_surf, image_mods, icons, text_funcs, item_system
 from app.engine.graphics.text.text_renderer import text_width, render_text
 from app.data.database import skills, items
+from app.data.database.database import DB
 
 from typing import TYPE_CHECKING
 
@@ -96,7 +96,7 @@ class StoleItem(Banner):
         else:
             self.text = '<blue>{name}</> stole {article} <{item_color}>{item_name}</>.'.format(name=unit.name, article=article, item_color=item_color, item_name=item.name)
         self.figure_out_size()
-        if self.unit.team in ('player', 'other'):
+        if self.unit.team in DB.teams.allies:
             self.sound = 'Item'
         else:
             self.sound = 'ItemBreak'

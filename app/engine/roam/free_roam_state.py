@@ -1,8 +1,9 @@
 import logging
 
-from app.engine import action, evaluate
+from app.engine import action, evaluate, phase
 from app.engine.game_state import game
 from app.engine.input_manager import get_input_manager
+from app.engine.objects.unit import UnitObject
 from app.engine.roam import free_roam_ai
 from app.engine.movement.roam_player_movement_component import RoamPlayerMovementComponent
 from app.engine.movement import movement_funcs
@@ -23,8 +24,18 @@ class FreeRoamState(MapState):
 
         self.ai_handler = free_roam_ai.FreeRoamAIHandler()
 
+    def add_ai_unit(self, unit: UnitObject):
+        self.ai_handler.add_unit(unit)
+
+    def remove_ai_unit(self, unit: UnitObject):
+        self.ai_handler.remove_unit(unit)
+
+    def contains_ai_unit(self, unit: UnitObject):
+        return self.ai_handler.contains_unit(unit)
+
     def begin(self):
         game.cursor.hide()
+        phase.fade_in_phase_music()
         if not self.ai_handler.active:
             self.ai_handler.start_all_units()
 

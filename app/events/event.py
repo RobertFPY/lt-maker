@@ -1,4 +1,5 @@
 from __future__ import annotations
+from app.engine.movement.unit_path_movement_component import UnitPathMovementComponent
 from app.engine.objects.item import ItemObject
 from app.engine.objects.skill import SkillObject
 from app.engine.text_evaluator import TextEvaluator
@@ -192,7 +193,7 @@ class Event():
                 self.state = 'processing'
 
             elif self.state == 'almost_complete':
-                if not self.game.movement or len(self.game.movement) <= 0:
+                if not self.game.movement or not any([c.grid_move for c in self.game.movement.moving_entities]):
                     self.state = 'complete'
 
             elif self.state == 'complete':
@@ -655,9 +656,8 @@ class Event():
         return unit, skill
 
     def _apply_stat_changes(self, unit, stat_changes, flags):
-        klass = DB.classes.get(unit.klass)
         # clamp stat changes
-        stat_changes = {k: utils.clamp(v, -unit.stats[k], klass.max_stats.get(k) - unit.stats[k]) for k, v in stat_changes.items()}
+        stat_changes = {k: utils.clamp(v, -unit.stats[k], unit.get_stat_caps(k) - unit.stats[k]) for k, v in stat_changes.items()}
 
         immediate = 'immediate' in flags
 

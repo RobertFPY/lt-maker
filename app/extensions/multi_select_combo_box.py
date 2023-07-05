@@ -1,3 +1,5 @@
+from typing import List
+
 from PyQt5.QtWidgets import QComboBox, QLineEdit, QListWidget, QListWidgetItem, \
     QCheckBox
 from PyQt5.QtGui import QCursor
@@ -73,7 +75,7 @@ class MultiSelectComboBox(QComboBox):
         self.list_widget.setItemWidget(list_widget_item, check_box)
         check_box.stateChanged.connect(self.stateChanged)
 
-    def currentText(self):
+    def currentText(self) -> List[str]:
         if self.line_edit.text():
             return [_.strip() for _ in self.line_edit.text().split(",")]
         return []

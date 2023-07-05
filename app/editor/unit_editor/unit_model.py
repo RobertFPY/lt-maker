@@ -111,8 +111,8 @@ class UnitModel(DragDropCollectionModel):
         bases = {k: 0 for k in DB.stats.keys()}
         growths = {k: 0 for k in DB.stats.keys()}
         wexp_gain = {weapon_nid: DB.weapons.default() for weapon_nid in DB.weapons.keys()}
-        new_unit = units.UnitPrefab(nid, name, '', None, 1, DB.classes[0].nid, [],
-                                    bases, growths, [], [], [], wexp_gain)
+        new_unit = units.UnitPrefab(nid, name, '', '', 1, DB.classes[0].nid,
+                                    bases=bases, growths=growths, wexp_gain=wexp_gain)
         new_unit.fields = []
         DB.units.append(new_unit)
         return new_unit

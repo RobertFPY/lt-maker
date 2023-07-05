@@ -242,7 +242,7 @@ class PromotionState(State, MockCombat):
         self.promotion_song = None
         if game.game_vars.get('_' + music):
             self.promotion_song = \
-                get_sound_thread().fade_in(game.game_vars.get(music), fade_in=50)
+                get_sound_thread().fade_in(game.game_vars.get('_' + music), fade_in=50)
         elif DB.constants.value(music):
             self.promotion_song = \
                 get_sound_thread().fade_in(DB.constants.value(music), fade_in=50)

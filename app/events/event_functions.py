@@ -773,9 +773,9 @@ def battle_save(self: Event, flags=None):
     flags = flags or set()
     if 'immediately' in flags:
         self.state = 'paused'
-        game.memory['save_kind'] = 'battle'
-        game.memory['next_state'] = 'in_chapter_save'
-        game.state.change('transition_to')
+        self.game.memory['save_kind'] = 'battle'
+        self.game.memory['next_state'] = 'in_chapter_save'
+        self.game.state.change('transition_to')
     else:  # Wait until after this event to make the save
         self.battle_save_flag = True
 
@@ -1651,9 +1651,9 @@ def open_convoy(self: Event, global_unit, flags=None):
         return
 
     self.state = "paused"
-    game.memory['current_unit'] = unit
-    game.memory['next_state'] = 'supply_items'
-    game.state.change('transition_to')
+    self.game.memory['current_unit'] = unit
+    self.game.memory['next_state'] = 'supply_items'
+    self.game.state.change('transition_to')
 
 def set_item_uses(self: Event, global_unit_or_convoy, item, uses, flags=None):
     flags = flags or set()

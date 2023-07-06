@@ -22,7 +22,7 @@ class PermanentStatChange(ItemComponent):
 
     def _target_restrict(self, defender):
         for stat, inc in self.value:
-            if inc <= 0 or defender.stats[stat] < unit.get_stat_cap(stat):
+            if inc <= 0 or defender.stats[stat] < defender.get_stat_cap(stat):
                 return True
         return False
 

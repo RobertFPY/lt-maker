@@ -493,11 +493,11 @@ class InfoMenuState(State):
         surf = engine.create_surface(menu_size, transparent=True)
 
         left_stats = [stat.nid for stat in DB.stats if stat.position == 'left']
-        right_stats = left_stats[6:]  # Only first six get to be on the left
+        right_stats = left_stats[7:]  # Only first seven get to be on the left
         right_stats += [stat.nid for stat in DB.stats if stat.position == 'right']
-        # Make sure we only display up to 6 on each
-        left_stats = left_stats[:6]
-        right_stats = right_stats[:6]
+        # Make sure we only display up to 7 on each
+        left_stats = left_stats[:7]
+        right_stats = right_stats[:7]
 
         for idx, stat_nid in enumerate(left_stats):
             curr_stat = DB.stats.get(stat_nid)
@@ -814,13 +814,13 @@ class InfoMenuState(State):
                 charge = ' %d / %d' % (skill.data['charge'], skill.data['total_charge'])
             else:
                 charge = ''
-            self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 32, 16, 16), help_menu.HelpDialog(skill.desc, name=skill.name + charge), 'personal_data')
-            self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 32, 16, 16), help_menu.HelpDialog(skill.desc, name=skill.name + charge), 'growths')
+            self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 22, 16, 16), help_menu.HelpDialog(skill.desc, name=skill.name + charge), 'personal_data')
+            self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 22, 16, 16), help_menu.HelpDialog(skill.desc, name=skill.name + charge), 'growths')
 
         return surf
 
     def draw_class_skill_surf(self, surf):
-        surf.blit(self.class_skill_surf, (96, WINHEIGHT - 36))
+        surf.blit(self.class_skill_surf, (96, WINHEIGHT - 26))
 
     def create_support_surf(self):
         surf = engine.create_surface((WINWIDTH - 96, WINHEIGHT), transparent=True)

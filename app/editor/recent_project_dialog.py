@@ -1,4 +1,4 @@
-import os
+import os, sys
 from typing import List, Optional
 
 from PyQt5.QtCore import QAbstractTableModel, QDir, QModelIndex, Qt
@@ -140,4 +140,9 @@ def choose_recent_project(load_only=False) -> Optional[str]:
     dialog = RecentProjectDialog(
         settings.get_last_ten_projects(), load_only)
     dialog.exec_()
-    return dialog.get_selected()
+    project = dialog.get_selected()
+    if not project:
+        # Close out of the editor completely
+        sys.exit()
+        return None
+    return project

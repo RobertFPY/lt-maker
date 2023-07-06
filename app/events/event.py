@@ -657,7 +657,7 @@ class Event():
 
     def _apply_stat_changes(self, unit, stat_changes, flags):
         # clamp stat changes
-        stat_changes = {k: utils.clamp(v, -unit.stats[k], unit.get_stat_caps(k) - unit.stats[k]) for k, v in stat_changes.items()}
+        stat_changes = {k: utils.clamp(v, -unit.stats[k], unit.get_stat_cap(k) - unit.stats[k]) for k, v in stat_changes.items()}
 
         immediate = 'immediate' in flags
 

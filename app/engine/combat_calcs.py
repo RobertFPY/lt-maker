@@ -291,6 +291,9 @@ def attack_speed(unit, item=None):
     # TODO
     # Support bonus
 
+    if not DB.constants.value('allow_negative_as') and attack_speed < 0:
+        attack_speed = 0
+
     return attack_speed
 
 def defense_speed(unit, item, item_to_avoid=None):
@@ -310,6 +313,10 @@ def defense_speed(unit, item, item_to_avoid=None):
     if item:
         speed += item_system.modify_defense_speed(unit, item)
     speed += skill_system.modify_defense_speed(unit, item_to_avoid)
+
+    if not DB.constants.value('allow_negative_as') and speed < 0:
+        speed = 0
+        
     return speed
 
 def compute_hit(unit, target, item, def_item, mode, attack_info):

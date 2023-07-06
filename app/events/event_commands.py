@@ -2778,6 +2778,24 @@ class RecordsScreen(EventCommand):
 Displays the game's records screen.
         """
 
+class OpenLibrary(EventCommand):
+    nid = 'open_library'
+    tag = Tags.MISCELLANEOUS
+
+    desc = \
+        """
+Displays the game's library screen.
+        """
+
+class OpenGuide(EventCommand):
+    nid = 'open_guide'
+    tag = Tags.MISCELLANEOUS
+
+    desc = \
+        """
+Displays the game's guide screen.
+        """
+
 class LocationCard(EventCommand):
     nid = 'location_card'
     tag = Tags.DIALOGUE_TEXT

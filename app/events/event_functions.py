@@ -3401,6 +3401,16 @@ def records_screen(self: Event, flags=None):
     self.game.state.change('base_records')
     self.state = 'paused'
 
+def open_library(self: Event, flags=None):
+    self.state = "paused"
+    self.game.memory['next_state'] = 'base_library'
+    self.game.state.change('transition_to')
+
+def open_guide(self: Event, flags=None):
+    self.state = "paused"
+    self.game.memory['next_state'] = 'base_guide'
+    self.game.state.change('transition_to')
+
 def location_card(self: Event, string, flags=None):
     new_location_card = dialog.LocationCard(string)
     self.other_boxes.append((None, new_location_card))

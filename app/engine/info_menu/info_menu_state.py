@@ -118,7 +118,8 @@ class InfoMenuState(State):
         get_sound_thread().play_sfx('Select 4')
         game.memory['info_menu_state'] = self.state
         game.memory['current_unit'] = self.unit
-        if self.unit.position:
+        if self.unit.position and not game.is_roam():
+            # Move camera to the new character unless it's a free roam, in which case we just stay on the free roamer
             game.cursor.set_pos(self.unit.position)
         game.state.change('transition_pop')
 

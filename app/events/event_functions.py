@@ -517,7 +517,7 @@ def unpause(self: Event, nid=None, flags=None):
     else:
         self.state = 'dialog'
 
-def transition(self: Event, direction=None, speed=None, color3=None, flags=None):
+def transition(self: Event, direction=None, speed=None, color3=None, panorama=None, flags=None):
     flags = flags or set()
     current_time = engine.get_time()
     if direction:
@@ -528,6 +528,11 @@ def transition(self: Event, direction=None, speed=None, color3=None, flags=None)
         self.transition_state = 'close'
     self.transition_speed = max(1, int(speed)) if speed else self._transition_speed
     self.transition_color = tuple(int(_) for _ in color3.split(',')) if color3 else self._transition_color
+    self.transition_background = None
+    if panorama:
+        panorama = RESOURCES.panoramas.get(panorama)
+        if panorama:
+            self.transition_background = background.PanoramaBackground(panorama)
 
     if not self.do_skip:
         self.transition_update = current_time

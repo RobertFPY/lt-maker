@@ -35,5 +35,5 @@ class AIGroupObject(Prefab):
 
     @classmethod
     def restore(cls, s_dict):
-        ai_group = cls(s_dict['nid'], s_dict['trigger_threshold']. s_dict['active'])
+        ai_group = cls(s_dict['nid'], s_dict['trigger_threshold'], s_dict['active'])
         return ai_group

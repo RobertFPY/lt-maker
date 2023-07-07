@@ -25,6 +25,21 @@ from app.engine.fluid_scroll import FluidScroll
 import app.engine.config as cf
 from app.events import triggers
 
+def base_background():
+    # build background
+    bg_name = game.game_vars.get('_base_bg_name')
+    panorama = None
+    if bg_name:
+        panorama = RESOURCES.panoramas.get(bg_name)
+    if panorama:
+        panorama = RESOURCES.panoramas.get(bg_name)
+        bg = background.PanoramaBackground(panorama)
+    else:
+        panorama = RESOURCES.panoramas.get('default_background')
+        bg = background.ScrollingBackground(panorama)
+        bg.scroll_speed = 50
+    game.memory['base_bg'] = bg
+    return bg
 
 class BaseMainState(State):
     name = 'base_main'
@@ -86,19 +101,8 @@ class BaseMainState(State):
         game.cursor.hide()
         game.cursor.autocursor()
         game.boundary.hide()
-        # build background
-        bg_name = game.game_vars.get('_base_bg_name')
-        panorama = None
-        if bg_name:
-            panorama = RESOURCES.panoramas.get(bg_name)
-        if panorama:
-            panorama = RESOURCES.panoramas.get(bg_name)
-            self.bg = background.PanoramaBackground(panorama)
-        else:
-            panorama = RESOURCES.panoramas.get('default_background')
-            self.bg = background.ScrollingBackground(panorama)
-            self.bg.scroll_speed = 50
-        game.memory['base_bg'] = self.bg
+
+        self.bg = base_background()
 
         self.is_from_overworld = game.is_displaying_overworld()
 
@@ -847,7 +851,10 @@ class BaseLibraryState(State):
             self.menu.set_ignore(ignore)
 
     def start(self):
-        self.bg = game.memory['base_bg']
+        if 'base_bg' in game.memory:
+            self.bg = game.memory['base_bg']
+        else:
+            self.bg = base_background()
 
         unlocked_lore = [lore for lore in DB.lore if lore.nid in game.unlocked_lore and lore.category != 'Guide']
         sorted_lore = sorted(unlocked_lore, key=lambda x: x.category)
@@ -947,11 +954,10 @@ class BaseGuideState(BaseLibraryState):
     name = 'base_guide'
 
     def start(self):
-        self.bg = game.memory.get('base_bg')
-        if not self.bg:
-            panorama = RESOURCES.panoramas.get('default_background')
-            self.bg = background.ScrollingBackground(panorama)
-            self.bg.scroll_speed = 50
+        if 'base_bg' in game.memory:
+            self.bg = game.memory['base_bg']
+        else:
+            self.bg = base_background()
 
         unlocked_lore = [lore for lore in DB.lore if lore.nid in game.unlocked_lore and lore.category == 'Guide']
         self.categories = ["Guide"]

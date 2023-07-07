@@ -2785,7 +2785,11 @@ class OpenLibrary(EventCommand):
     desc = \
         """
 Displays the game's library screen.
+
+1. *immediate* flag skips the transition between screens
         """
+
+    _flags = ["immediate"]
 
 class OpenGuide(EventCommand):
     nid = 'open_guide'
@@ -2794,7 +2798,11 @@ class OpenGuide(EventCommand):
     desc = \
         """
 Displays the game's guide screen.
+
+1. *immediate* flag skips the transition between screens
         """
+
+    _flags = ["immediate"]
 
 class LocationCard(EventCommand):
     nid = 'location_card'

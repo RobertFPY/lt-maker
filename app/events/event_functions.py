@@ -3402,14 +3402,30 @@ def records_screen(self: Event, flags=None):
     self.state = 'paused'
 
 def open_library(self: Event, flags=None):
-    self.state = "paused"
-    self.game.memory['next_state'] = 'base_library'
-    self.game.state.change('transition_to')
+    flags = flags or set()
+    unlocked_lore = [lore for lore in DB.lore if lore.nid in self.game.unlocked_lore and lore.category != 'Guide']
+    if unlocked_lore:
+        self.state = "paused"
+        if 'immediate' in flags:
+            self.game.state.change('base_library')
+        else:
+            self.game.memory['next_state'] = 'base_library'
+            self.game.state.change('transition_to')
+    else:
+        self.logger.warning("open_library: Skipping opening library because there is no unlocked lore")
 
 def open_guide(self: Event, flags=None):
-    self.state = "paused"
-    self.game.memory['next_state'] = 'base_guide'
-    self.game.state.change('transition_to')
+    flags = flags or set()
+    unlocked_lore = [lore for lore in DB.lore if lore.nid in self.game.unlocked_lore and lore.category == 'Guide']
+    if unlocked_lore:
+        self.state = "paused"
+        if 'immediate' in flags:
+            self.game.state.change('base_guide')
+        else:
+            self.game.memory['next_state'] = 'base_guide'
+            self.game.state.change('transition_to')
+    else:
+        self.logger.warning("open_guide: Skipping opening guide because there is no unlocked lore in the guide category")
 
 def location_card(self: Event, string, flags=None):
     new_location_card = dialog.LocationCard(string)

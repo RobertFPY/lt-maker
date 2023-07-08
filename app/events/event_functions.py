@@ -517,7 +517,7 @@ def unpause(self: Event, nid=None, flags=None):
     else:
         self.state = 'dialog'
 
-def transition(self: Event, direction=None, speed=None, color3=None, flags=None):
+def transition(self: Event, direction=None, speed=None, color3=None, panorama=None, flags=None):
     flags = flags or set()
     current_time = engine.get_time()
     if direction:
@@ -528,6 +528,11 @@ def transition(self: Event, direction=None, speed=None, color3=None, flags=None)
         self.transition_state = 'close'
     self.transition_speed = max(1, int(speed)) if speed else self._transition_speed
     self.transition_color = tuple(int(_) for _ in color3.split(',')) if color3 else self._transition_color
+    self.transition_background = None
+    if panorama:
+        panorama = RESOURCES.panoramas.get(panorama)
+        if panorama:
+            self.transition_background = background.PanoramaBackground(panorama)
 
     if not self.do_skip:
         self.transition_update = current_time
@@ -3400,6 +3405,32 @@ def victory_screen(self: Event, sound=None, flags=None):
 def records_screen(self: Event, flags=None):
     self.game.state.change('base_records')
     self.state = 'paused'
+
+def open_library(self: Event, flags=None):
+    flags = flags or set()
+    unlocked_lore = [lore for lore in DB.lore if lore.nid in self.game.unlocked_lore and lore.category != 'Guide']
+    if unlocked_lore:
+        self.state = "paused"
+        if 'immediate' in flags:
+            self.game.state.change('base_library')
+        else:
+            self.game.memory['next_state'] = 'base_library'
+            self.game.state.change('transition_to')
+    else:
+        self.logger.warning("open_library: Skipping opening library because there is no unlocked lore")
+
+def open_guide(self: Event, flags=None):
+    flags = flags or set()
+    unlocked_lore = [lore for lore in DB.lore if lore.nid in self.game.unlocked_lore and lore.category == 'Guide']
+    if unlocked_lore:
+        self.state = "paused"
+        if 'immediate' in flags:
+            self.game.state.change('base_guide')
+        else:
+            self.game.memory['next_state'] = 'base_guide'
+            self.game.state.change('transition_to')
+    else:
+        self.logger.warning("open_guide: Skipping opening guide because there is no unlocked lore in the guide category")
 
 def location_card(self: Event, string, flags=None):
     new_location_card = dialog.LocationCard(string)

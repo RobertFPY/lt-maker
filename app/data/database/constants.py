@@ -63,6 +63,7 @@ constants = ConstantCatalog([
     Constant('limit_attack_stance', "Limit Attack Stance to first attack only", ConstantType.BOOL, False, 'features'),
     Constant('attack_stance_only', "Only attack stance allowed", ConstantType.BOOL, False, 'features'),
     Constant('player_pairup_only', "Only player units can pairup", ConstantType.BOOL, False, 'features'),
+    Constant('allow_negative_as', "Allow Attack Speed to be negative", ConstantType.BOOL, False, 'features'),    
     Constant('lead', "Global Leadership Stars", ConstantType.BOOL, False, 'features'),
     Constant('bexp', "Bonus Experience", ConstantType.BOOL, False, 'features'),
     Constant('rd_bexp_lvl', "Always gain 3 stat-ups when using Bonus Exp.", ConstantType.BOOL, False, 'features'),

@@ -5,14 +5,14 @@ from app.engine.objects.skill import SkillObject
 from app.engine.text_evaluator import TextEvaluator
 
 import logging
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, Callable, Dict, List, Tuple, Optional
 
 import app.engine.config as cf
 import app.engine.graphics.ui_framework as uif
 from app.constants import WINHEIGHT, WINWIDTH
 from app.data.database.database import DB
-from app.engine import (action, dialog, engine, evaluate,
-                        target_system, item_funcs)
+from app.engine import (action, background, dialog, engine, evaluate,
+                        target_system, image_mods, item_funcs)
 from app.engine.game_state import GameState
 from app.engine.movement import movement_funcs
 from app.engine.objects.overworld import OverworldNodeObject
@@ -21,7 +21,7 @@ from app.engine.sound import get_sound_thread
 from app.events import event_commands, triggers
 from app.events.event_portrait import EventPortrait
 from app.utilities import str_utils, utils, static_random
-from app.utilities.typing import NID
+from app.utilities.typing import NID, Color3
 
 class Event():
     true_vals = ('t', 'true', 'True', '1', 'y', 'yes')
@@ -30,8 +30,8 @@ class Event():
                  "location_card", "credits", "ending"}
 
     def __init__(self, nid, commands, trigger: triggers.EventTrigger, game: GameState = None):
-        self._transition_speed = 250
-        self._transition_color = (0, 0, 0)
+        self._transition_speed: int = 250
+        self._transition_color: Color3 = (0, 0, 0)
 
         self.nid = nid
         self.commands: List[event_commands.EventCommand] = commands.copy()
@@ -85,8 +85,9 @@ class Event():
         self.transition_state = None
         self.transition_progress = 0
         self.transition_update = 0
-        self.transition_speed = self._transition_speed
-        self.transition_color = self._transition_color
+        self.transition_speed: int = self._transition_speed
+        self.transition_color: Color3 = self._transition_color
+        self.transition_background: Optional[background.PanoramaBackground] = None
 
         # For map animations
         self.animations = []
@@ -279,7 +280,11 @@ class Event():
         # Fade to black
         if self.transition_state:
             s = engine.create_surface((WINWIDTH, WINHEIGHT), transparent=True)
-            s.fill((*self.transition_color, int(255 * self.transition_progress)))
+            if self.transition_background:
+                self.transition_background.draw(s)
+                s = image_mods.make_translucent(s, 1 - self.transition_progress)
+            else:
+                s.fill((*self.transition_color, int(255 * self.transition_progress)))
             surf.blit(s, (0, 0))
 
         # draw all achievements
@@ -657,7 +662,7 @@ class Event():
 
     def _apply_stat_changes(self, unit, stat_changes, flags):
         # clamp stat changes
-        stat_changes = {k: utils.clamp(v, -unit.stats[k], unit.get_stat_caps(k) - unit.stats[k]) for k, v in stat_changes.items()}
+        stat_changes = {k: utils.clamp(v, -unit.stats[k], unit.get_stat_cap(k) - unit.stats[k]) for k, v in stat_changes.items()}
 
         immediate = 'immediate' in flags
 

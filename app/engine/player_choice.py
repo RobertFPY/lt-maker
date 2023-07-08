@@ -152,7 +152,7 @@ class PlayerChoiceState(MapState):
                 self._resolved_data = data
                 values, display_values = self.process_data(self._resolved_data)
                 self.menu.set_data(values, display_values)
-                self.create_help_boxes(value)
+                self.create_help_boxes(values)
 
         self.menu.update()
         if self.made_choice and not self.should_persist:

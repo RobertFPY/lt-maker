@@ -171,6 +171,7 @@ class LayerGrid(Prefab):
         self.nid: str = nid
         self.parent = parent
         self.visible: bool = True
+        self.foreground: bool = False
         self.terrain_grid = {}
         self.sprite_grid = {}
 
@@ -200,6 +201,7 @@ class LayerGrid(Prefab):
         s_dict = {}
         s_dict['nid'] = self.nid
         s_dict['visible'] = self.visible
+        s_dict['foreground'] = self.foreground
         s_dict['terrain_grid'] = {}
         for coord, terrain_nid in self.terrain_grid.items():
             str_coord = "%d,%d" % (coord[0], coord[1])
@@ -214,6 +216,7 @@ class LayerGrid(Prefab):
     def restore(cls, s_dict, parent):
         self = cls(s_dict['nid'], parent)
         self.visible = s_dict['visible']
+        self.foreground = s_dict.get('foreground', False)
         for str_coord, terrain_nid in s_dict['terrain_grid'].items():
             coord = tuple(int(_) for _ in str_coord.split(','))
             self.terrain_grid[coord] = terrain_nid

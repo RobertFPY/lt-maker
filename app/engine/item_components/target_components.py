@@ -210,6 +210,14 @@ class IgnoreLineOfSight(ItemComponent):
     def ignore_line_of_sight(self, unit, item) -> bool:
         return True
 
+class IgnoreFogOfWar(ItemComponent):
+    nid = 'ignore_fog_of_war'
+    desc = 'Item can target positions even if they are in fog of war.'
+    tag = ItemTags.TARGET
+    
+    def ignore_fog_of_war(self, unit, item) -> bool:
+        return True
+
 class MinimumRange(ItemComponent):
     nid = 'min_range'
     desc = "Set the minimum_range of the item to an integer"

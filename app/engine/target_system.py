@@ -309,7 +309,7 @@ def get_valid_targets(unit, item=None) -> set:
         if valid:
             valid_targets.add(position)
     # Fog of War
-    if unit.team == 'player' or DB.constants.value('ai_fog_of_war'):
+    if (unit.team == 'player' or DB.constants.value('ai_fog_of_war')) and not item_system.ignore_fog_of_war(unit, item):
         valid_targets = {position for position in valid_targets if game.board.in_vision(position, unit.team) or unit.position == position}
     # Line of Sight
     if DB.constants.value('line_of_sight') and not item_system.ignore_line_of_sight(unit, item):

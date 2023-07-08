@@ -400,10 +400,14 @@ class PrimaryAI():
         for pos in ai_targets:
             for valid_move in valid_moves:
                 # Determine if we can hit this unit at one of our moves
-                if (utils.calculate_distance(pos, valid_move) in item_range) and \
-                   (not DB.constants.value('ai_fog_of_war') or game.board.in_vision(pos, self.unit.team)):
-                    filtered_targets.add(pos)
-                    break
+                if utils.calculate_distance(pos, valid_move) in item_range:
+                    if DB.constants.value('ai_fog_of_war'):
+                        if game.board.in_vision(pos, unit.team) or item_system.ignore_fog_of_war(unit, item):
+                            filtered_targets.add(pos)
+                            break
+                    else:
+                        filtered_targets.add(pos)
+                        break
 
         return list(filtered_targets)
 

@@ -1,9 +1,7 @@
-import functools
 from enum import Enum
 
 from app.constants import TILEHEIGHT, TILEWIDTH, WINHEIGHT, WINWIDTH
 from app.data.database.database import DB
-from app.data.database.level_units import UniqueUnit
 from app.data.database.levels import LevelPrefab
 from app.data.resources.tiles import TileMapPrefab
 from app.editor import tilemap_editor, timer

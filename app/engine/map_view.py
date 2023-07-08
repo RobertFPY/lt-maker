@@ -36,6 +36,10 @@ class MapView():
         for unit in draw_units:
             unit.sprite.draw(surf, (0, 0))
 
+        if game.tilemap.foreground_layers():
+            foreground_image = game.tilemap.get_foreground_image(cull_rect)
+            surf.blit(foreground_image, (0, 0))
+
         engine.save_surface(surf, 'screenshots/LT_%s_map_view.png' % current_time)
 
     def draw_units(self, surf, cull_rect, subsurface_rect=None):
@@ -153,6 +157,10 @@ class MapView():
         game.tilemap.high_animations = [anim for anim in game.tilemap.high_animations if not anim.update()]
         for anim in game.tilemap.high_animations:
             anim.draw(surf, offset=(-game.camera.get_x(), -game.camera.get_y()))
+
+        if game.tilemap.foreground_layers():
+            foreground_image = game.tilemap.get_foreground_image(cull_rect)
+            surf.blit(foreground_image, (0, 0))
 
         # Handle time region text
         self.time_region_text(surf, cull_rect)

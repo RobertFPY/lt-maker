@@ -29,12 +29,16 @@ class SpriteBackground():
             self.fade += 4
             bg_surf = image_mods.make_translucent(self.image, self.fade/100.)
             if self.fade >= 100:
+                self.fade = 100
                 return True
         else:
             bg_surf = self.image
 
         engine.blit_center(surf, bg_surf)
         return False
+
+    def fade_in(self):
+        self.state = 'in'
 
     def fade_out(self):
         self.state = 'out'

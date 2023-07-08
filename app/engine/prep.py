@@ -117,6 +117,7 @@ class PrepMainState(MapState):
                 game.state.change('transition_to')
             elif selection == 'Formation':
                 self.bg.fade_out()
+                game.memory['_prep_outline'] = self.bg
                 game.state.change('prep_formation')
             elif selection == 'Options':
                 game.memory['next_state'] = 'settings_menu'
@@ -345,6 +346,8 @@ class PrepFormationState(MapState):
 
         elif event == 'BACK':
             get_sound_thread().play_sfx('Select 1')
+            if game.memory.get('_prep_outline'):
+                game.memory['_prep_outline'].fade_in()
             game.state.back()
 
         elif event == 'START':
@@ -357,6 +360,12 @@ class PrepFormationState(MapState):
     def update(self):
         super().update()
         game.highlight.handle_hover()
+
+    def draw(self, surf):
+        surf = super().draw(surf)
+        if game.memory.get('_prep_outline'):
+            game.memory['_prep_outline'].draw(surf)
+        return surf
 
     def finish(self):
         game.ui_view.remove_unit_display()

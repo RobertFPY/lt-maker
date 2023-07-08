@@ -239,7 +239,7 @@ class PhaseChangeState(MapState):
         logging.info("Phase Change End")
         if self.is_roam():
             return
-        phase.fade_in_phase_music()
+        phase.fade_in_phase_music(at_turn_change=True)
 
     def finish(self):
         if game.turncount == 1 and game.phase.get_current() == 'player':

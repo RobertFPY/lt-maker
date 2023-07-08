@@ -99,7 +99,6 @@ constants = ConstantCatalog([
     Constant('roam_hide_hp', "Hide hp bars during free roam", ConstantType.BOOL, False, 'aesthetic'),
     Constant('autogenerate_grey_map_sprites', 'Automatically generate grey "wait" map sprites', ConstantType.BOOL, True, 'aesthetic'),
     Constant('translucent_unit_sprite', "A translucent phantom of your unit will appear at cursor's position", ConstantType.BOOL, False, 'aesthetic'),
-    Constant('extra_stat_row', "Add an extra stat row by moving class skills slightly down", ConstantType.BOOL, False, 'aesthetic'),
     Constant('convoy_on_death', "Items held by dead player units are sent to convoy", ConstantType.BOOL),
     Constant('repair_shop', "Access the Repair Shop in prep and base", ConstantType.BOOL, False),
     Constant('sound_room_in_codex', "Can access sound room from Codex menu in base", ConstantType.BOOL, True),

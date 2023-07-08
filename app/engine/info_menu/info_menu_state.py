@@ -493,14 +493,16 @@ class InfoMenuState(State):
         surf = engine.create_surface(menu_size, transparent=True)
 
         left_stats = [stat.nid for stat in DB.stats if stat.position == 'left']
-        # Only first 6 or 7 stats get to be on the left
-        if DB.constants.value('extra_stat_row'):
+        if len(left_stats) >= 7:
+            self._extra_stat_row = True
+            # If we have 7 or more left stats, use 7 rows
             right_stats = left_stats[7:]  
-        else:
+        else:  # Otherwise, just use the 6 rows
+            self._extra_stat_row = False
             right_stats = left_stats[6:]
         right_stats += [stat.nid for stat in DB.stats if stat.position == 'right']
         # Make sure we only display up to 6 or 7 on each
-        if DB.constants.value('extra_stat_row'):
+        if self._extra_stat_row:
             left_stats = left_stats[:7]
             right_stats = right_stats[:7]
         else:
@@ -822,7 +824,7 @@ class InfoMenuState(State):
                 charge = ' %d / %d' % (skill.data['charge'], skill.data['total_charge'])
             else:
                 charge = ''
-            if DB.constants.value('extra_stat_row'):
+            if self._extra_stat_row:
                 self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 22, 16, 16), help_menu.HelpDialog(skill.desc, name=skill.name + charge), 'personal_data')
                 self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 22, 16, 16), help_menu.HelpDialog(skill.desc, name=skill.name + charge), 'growths')
             else:
@@ -832,7 +834,7 @@ class InfoMenuState(State):
         return surf
 
     def draw_class_skill_surf(self, surf):
-        if DB.constants.value('extra_stat_row'):
+        if self._extra_stat_row:
             surf.blit(self.class_skill_surf, (96, WINHEIGHT - 26))
         else:
             surf.blit(self.class_skill_surf, (96, WINHEIGHT - 36))

@@ -402,7 +402,9 @@ class PrimaryAI():
                 # Determine if we can hit this unit at one of our moves
                 if utils.calculate_distance(pos, valid_move) in item_range:
                     if DB.constants.value('ai_fog_of_war'):
-                        if game.board.in_vision(pos, unit.team) or item_system.ignore_fog_of_war(unit, item):
+                        if game.board.in_vision(pos, unit.team) or \
+                                item_system.ignore_fog_of_war(unit, item) or \
+                                (game.board.get_unit(pos) and 'Tile' in game.board.get_unit(pos).tags):
                             filtered_targets.add(pos)
                             break
                     else:
@@ -691,7 +693,11 @@ def get_targets(unit, behaviour):
 
     if behaviour.target != 'Position':
         if DB.constants.value('ai_fog_of_war'):
-            all_targets = [pos for pos in all_targets if game.board.in_vision(pos, unit.team)]
+            all_targets = [
+                pos for pos in all_targets if 
+                game.board.in_vision(pos, unit.team) or
+                (game.board.get_unit(pos) and 'Tile' in game.board.get_unit(pos).tags) # Can always targets Tiles
+            ]
     return all_targets
 
 class SecondaryAI():

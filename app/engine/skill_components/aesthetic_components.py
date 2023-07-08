@@ -99,7 +99,7 @@ class StealIcon(SkillComponent):
             return False
         return True
 
-class GBAStealIcon(StealIcon, SkillComponent):
+class GBAStealIcon(StealIcon):
     nid = 'gba_steal_icon'
 
     def _item_restrict(self, unit, defender, def_item) -> bool:

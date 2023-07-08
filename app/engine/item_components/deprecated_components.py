@@ -163,7 +163,7 @@ class EffectiveIcon(ItemComponent):
             return 'danger'
         return None
 
-class EffectiveTag(EffectiveIcon, ItemComponent):
+class EffectiveTag(EffectiveIcon):
     nid = 'effective_tag'
     desc = "Item will be considered effective if the targeted enemy has any of the tags listed in this component."
     # requires = ['damage']
@@ -184,7 +184,7 @@ class EffectiveTag(EffectiveIcon, ItemComponent):
             return item.data.get('effective', 0)
         return 0
 
-class MagicHeal(Heal, ItemComponent):
+class MagicHeal(Heal):
     nid = 'magic_heal'
     desc = "Heals the target for the specified integer + the HEAL equation defined in the equations editor. Will act oddly if no HEAL equation is defined."
     tag = ItemTags.DEPRECATED

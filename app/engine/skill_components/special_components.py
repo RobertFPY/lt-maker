@@ -31,7 +31,7 @@ class Oversplash(SkillComponent):
         from app.engine.item_components.aoe_components import BlastAOE
         return BlastAOE(0)
 
-class EnemyOversplash(Oversplash, SkillComponent):
+class EnemyOversplash(Oversplash):
     nid = 'enemy_oversplash'
     desc = "Grants unit +X area of effect for regular and blast items that only affects enemies"
 
@@ -39,7 +39,7 @@ class EnemyOversplash(Oversplash, SkillComponent):
         from app.engine.item_components.aoe_components import EnemyBlastAOE
         return EnemyBlastAOE(0)
 
-class SmartOversplash(Oversplash, SkillComponent):
+class SmartOversplash(Oversplash):
     nid = 'smart_oversplash'
     desc = """
         Grants unit +X area of effect for regular and blast items. If the main target is an enemy, then splash will only affect enemies. 

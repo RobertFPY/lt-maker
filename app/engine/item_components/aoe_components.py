@@ -39,7 +39,7 @@ class BlastAOE(ItemComponent):
         splash = {pos for pos in splash if game.tilemap.check_bounds(pos)}
         return splash
 
-class EnemyBlastAOE(BlastAOE, ItemComponent):
+class EnemyBlastAOE(BlastAOE):
     nid = 'enemy_blast_aoe'
     desc = "Gives Blast AOE that only hits enemies"
     tag = ItemTags.AOE
@@ -69,7 +69,7 @@ class EnemyBlastAOE(BlastAOE, ItemComponent):
         splash = {pos for pos in splash if not game.board.get_unit(pos) or skill_system.check_enemy(unit, game.board.get_unit(pos))}
         return splash
 
-class AllyBlastAOE(BlastAOE, ItemComponent):
+class AllyBlastAOE(BlastAOE):
     nid = 'ally_blast_aoe'
     desc = "Gives Blast AOE that only hits allies"
     tag = ItemTags.AOE
@@ -83,7 +83,7 @@ class AllyBlastAOE(BlastAOE, ItemComponent):
         splash = [s.position for s in splash if s and skill_system.check_ally(unit, s)]
         return None, splash
 
-class SmartBlastAOE(BlastAOE, ItemComponent):
+class SmartBlastAOE(BlastAOE):
     nid = 'smart_blast_aoe'
     desc = "Gives Enemy Blast AOE for items that target enemies, and Ally Blast AOE for items that target allies"
     tag = ItemTags.AOE
@@ -104,7 +104,7 @@ class SmartBlastAOE(BlastAOE, ItemComponent):
         else:
             return BlastAOE.splash_positions(self, unit, item, position)
 
-class EquationBlastAOE(BlastAOE, ItemComponent):
+class EquationBlastAOE(BlastAOE):
     nid = 'equation_blast_aoe'
     desc = "Gives Equation-Sized Blast AOE"
     tag = ItemTags.AOE
@@ -118,7 +118,7 @@ class EquationBlastAOE(BlastAOE, ItemComponent):
         empowered_splash = skill_system.empower_splash(unit)
         return value + 1 + empowered_splash
 
-class AllyEquationBlastAOE(AllyBlastAOE, EquationBlastAOE, ItemComponent):
+class AllyEquationBlastAOE(AllyBlastAOE, EquationBlastAOE):
     nid = 'ally_equation_blast_aoe'
     desc = "Gives Equation-Sized Blast AOE that only hits allies"
     tag = ItemTags.AOE

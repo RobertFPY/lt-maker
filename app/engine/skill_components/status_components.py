@@ -131,7 +131,7 @@ class UpkeepDamage(SkillComponent):
         self._playback_processing(playback, unit, hp_change)
         skill_system.after_take_strike(actions, playback, unit, None, None, 'defense', (0, 0), Strike.HIT)
 
-class EndstepDamage(UpkeepDamage, SkillComponent):
+class EndstepDamage(UpkeepDamage):
     nid = 'endstep_damage'
     desc = "Unit takes damage at endstep"
     tag = SkillTags.STATUS

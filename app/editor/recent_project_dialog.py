@@ -1,4 +1,6 @@
-import os, sys
+from __future__ import annotations
+
+import os
 from typing import List, Optional
 
 from PyQt5.QtCore import QAbstractTableModel, QDir, QModelIndex, Qt
@@ -10,6 +12,7 @@ from app.editor.settings.main_settings_controller import MainSettingsController
 from app.editor.settings.project_history_controller import ProjectHistoryEntry
 from app.extensions.custom_gui import SimpleDialog
 
+CANCEL_SENTINEL = object()
 
 class RecentProjectsModel(QAbstractTableModel):
     def __init__(self, data: List[ProjectHistoryEntry]):
@@ -128,11 +131,20 @@ class RecentProjectDialog(SimpleDialog):
             self._selected_path = path
             self.accept()
 
+    def closeEvent(self, event):
+        self._selected_path = CANCEL_SENTINEL
+        super().closeEvent(event)
+
     def get_selected(self) -> Optional[str]:
         return self._selected_path
 
 
-def choose_recent_project(load_only=False) -> Optional[str]:
+def choose_recent_project(load_only=False) -> str | CANCEL_SENTINEL | None:
+    """
+    # str means go open that project at that path
+    # CANCEL_SENTINEL means don't do anything (When you press X or close on the dialog)
+    # None means go open the default path
+    """
     settings = MainSettingsController()
     recent_projects = settings.get_last_ten_projects()
     if not recent_projects or settings.get_auto_open():
@@ -140,9 +152,6 @@ def choose_recent_project(load_only=False) -> Optional[str]:
     dialog = RecentProjectDialog(
         settings.get_last_ten_projects(), load_only)
     dialog.exec_()
-    project = dialog.get_selected()
-    if not project:
-        # Close out of the editor completely
-        sys.exit()
-        return None
-    return project
+    selected_path: str | CANCEL_SENTINEL | None = \
+        dialog.get_selected()
+    return selected_path

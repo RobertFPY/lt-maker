@@ -5,8 +5,6 @@ import logging
 import os
 import shutil
 from datetime import datetime
-from pathlib import Path
-from time import time_ns
 from typing import Optional
 
 from PyQt5.QtCore import QDir, Qt
@@ -18,8 +16,7 @@ from app.data.resources.resources import RESOURCES
 from app.editor import timer
 from app.editor.file_manager.project_initializer import ProjectInitializer
 from app.editor.lib.csv import csv_data_exporter, text_data_exporter
-from app.editor.new_game_dialog import NewGameDialog
-from app.editor.recent_project_dialog import choose_recent_project
+from app.editor.recent_project_dialog import choose_recent_project, CANCEL_SENTINEL
 from app.editor.settings import MainSettingsController
 from app.utilities import exceptions
 
@@ -186,7 +183,9 @@ class ProjectFileBackend():
         if self.maybe_save():
             # Go up one directory when starting
             fn = choose_recent_project(load_only=True)
-            if fn:
+            if fn is CANCEL_SENTINEL:
+                return False
+            elif fn:
                 if not fn.endswith('.ltproj'):
                     QMessageBox.warning(self.parent, "Incorrect directory type",
                                         "%s is not an .ltproj." % fn)

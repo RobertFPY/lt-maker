@@ -23,7 +23,7 @@ def read_config_file():
                          ('sound_volume', 0.3),
                          ('talk_boop', 1),
                          ('show_bounds', 0),
-                         ('grid_opacity', 127),
+                         ('grid_opacity', 0),
                          ('autoend_turn', 1),
                          ('confirm_end', 1),
                          ('hp_map_team', 'All'),

@@ -154,6 +154,7 @@ class InfoMenuState(State):
                 get_sound_thread().play_sfx('Info In')
                 self.info_graph.set_transition_in()
                 self.info_flag = True
+                return
             elif event == 'AUX':
                 if self.state == 'personal_data' and self.unit.team == 'player' and DB.constants.value('growth_info'):
                     get_sound_thread().play_sfx('Select 3')

@@ -402,7 +402,7 @@ def get_hide_skill_icon(unit, skill) -> bool:
     # Check if we should be hiding this skill
     for component in skill.components:
         if component.defines('hide_skill_icon') and \
-                component.hide_skill_icon(unit, skill):
+                component.hide_skill_icon(unit):
             return True
     return False
 

@@ -531,13 +531,14 @@ class GameState():
             # Unit cleanup
             unit.is_dying = False
             if unit.traveler:
+                droppee = self.get_unit(unit.traveler)
                 if full:
                     unit.traveler = None
                     action.RemoveSkill(unit, 'Rescue').execute()
                 else:
-                    droppee = self.get_unit(unit.traveler)
                     pos = target_system.get_nearest_open_tile(droppee, unit.position)
                     action.Drop(unit, droppee, pos).execute()
+                skill_system.on_separate(droppee, unit)
             unit.set_hp(1000)  # Set to full health
             unit.set_guard_gauge(0) # Remove all guard gauge
             if DB.constants.value('reset_mana'):

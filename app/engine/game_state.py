@@ -808,6 +808,9 @@ class GameState():
             return group.active
         return False
 
+    def get_units_in_ai_group(self, ai_group_nid: NID) -> List[UnitObject]:
+        return [unit for unit in self.get_all_units() if unit.ai_group == ai_group_nid]
+
     def get_all_units(self) -> List[UnitObject]:
         return [unit for unit in self.units if unit.position and not unit.dead and not unit.is_dying and 'Tile' not in unit.tags]
 

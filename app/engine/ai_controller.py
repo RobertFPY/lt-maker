@@ -271,7 +271,7 @@ class AIController():
                     if self.goal_target:
                         if self.unit.ai_group and game.get_ai_group(self.unit.ai_group):
                             ai_group = game.get_ai_group(self.unit.ai_group)
-                            triggered = ai_group.trigger(self.unit.nid)
+                            triggered = ai_group.trigger(self.unit.nid, len(game.get_units_in_ai_group(self.unit.ai_group)))
                             if triggered:
                                 logging.info("AI group %s activate!", self.unit.ai_group)
                                 self.ai_group_ping(ai_group)
@@ -298,7 +298,7 @@ class AIController():
                         if self.goal_position != self.unit.position:
                             if self.unit.ai_group and game.get_ai_group(self.unit.ai_group):
                                 ai_group = game.get_ai_group(self.unit.ai_group)
-                                triggered = ai_group.trigger(self.unit.nid)
+                                triggered = ai_group.trigger(self.unit.nid, len(game.get_units_in_ai_group(self.unit.ai_group)))
                                 if triggered:
                                     self.ai_group_ping(ai_group)
                                     success = True

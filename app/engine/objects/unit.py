@@ -51,8 +51,8 @@ class UnitObject(Prefab):
     stats: Dict[NID, int] = field(default_factory=dict)
     growths: Dict[NID, int] = field(default_factory=dict)
     growth_points: Dict[NID, int] = field(default_factory=dict)
-    stat_cap_modifiers: Dict[Nid, int] = field(default_factory=dict)
-    wexp: Dict[NID, WexpGain] = field(default_factory=dict)
+    stat_cap_modifiers: Dict[NID, int] = field(default_factory=dict)
+    wexp: Dict[NID, int] = field(default_factory=dict)
 
     position: Tuple[int, int] = None
     starting_position: Tuple[int, int] = None

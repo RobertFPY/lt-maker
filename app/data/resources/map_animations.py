@@ -14,7 +14,7 @@ class MapAnimation():
         self.frame_x, self.frame_y = 1, 1
         self.num_frames = 1
         self.speed: int = 75
-        self.frame_times: List[int] = []
+        self.frame_times: List[int] = [1]
         self.use_frame_time: bool = False
 
     def set_full_path(self, full_path):

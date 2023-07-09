@@ -783,7 +783,8 @@ class PrepItemsState(State):
         if not self.bg:
             self.bg = background.create_background('rune_background')
         self.unit = game.memory['current_unit']
-        include_other_units_items = (self.name != 'supply_items')
+        include_other_units_items = game.memory.get('include_other_units', False) or (self.name != 'supply_items')
+        game.memory['include_other_units'] = False  # Reset
         self.menu = menus.Convoy(self.unit, (WINWIDTH - 116, 40), include_other_units_items)
 
         self.state = 'free'

@@ -214,7 +214,7 @@ class MVPDisplay(RecordsDisplay):
     option_type = LevelRecordOption
 
     def get_options(self):
-        units = [unit.nid for unit in game.get_all_units_in_party()]
+        units = [unit.nid for unit in game.get_all_player_units()]
         units = list(sorted(units, key=lambda x: game.records.determine_score(x), reverse=True))
         kills = [game.records.get_kills(unit_nid) for unit_nid in units]
         damage = [game.records.get_damage(unit_nid) for unit_nid in units]
@@ -244,13 +244,19 @@ class ChapterStats(RecordsDisplay):
         super().__init__()
 
     def get_options(self):
-        units = [unit.nid for unit in game.get_all_units_in_party()]
+        # For all player units
+        units = [unit.nid for unit in game.get_all_player_units()]
         units = list(sorted(units, key=lambda x: game.records.determine_score(x, self.level_nid), reverse=True))
         kills = [game.records.get_kills(unit_nid, self.level_nid) for unit_nid in units]
         damage = [game.records.get_damage(unit_nid, self.level_nid) for unit_nid in units]
         healing = [game.records.get_heal(unit_nid, self.level_nid) for unit_nid in units]
 
-        return [(u, k, d, h) for (u, k, d, h) in zip(units, kills, damage, healing)]
+        # Only those units that actually participated
+        participated = [(u, k, d, h) for (u, k, d, h) in zip(units, kills, damage, healing) if (k > 0 or d > 0 or h > 0)]
+        if not participated:
+            # In case we can't find any of the units or nobody participated
+            participated = [(game.get_all_units_in_party()[0].nid, 0, 0, 0)]
+        return participated
 
     def create_top_banner(self):
         bg = SPRITES.get('purple_background').convert_alpha().copy()

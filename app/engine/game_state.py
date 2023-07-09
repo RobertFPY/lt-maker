@@ -854,6 +854,12 @@ class GameState():
         party_units = sorted(party_units, key=lambda unit: party_order.index(unit.nid) if unit.nid in party_order else 999999)
         return party_units
 
+    def get_all_player_units(self) -> List[UnitObject]:
+        """
+        # Return all units who are currently player team and persistent
+        """
+        return [unit for unit in self.units if unit.team == 'player' and unit.persistent]
+
     # For working with roaming
     def is_roam(self) -> bool:
         return self.roam_info.roam

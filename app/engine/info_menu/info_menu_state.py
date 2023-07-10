@@ -553,6 +553,8 @@ class InfoMenuState(State):
             self.info_graph.register((96 + 72, 16 * idx + 24, 64, 16), help_box, state)
 
         other_stats = ['RAT']
+        if DB.constants.value('talk_display'):
+            other_stats.insert(0, 'TALK')
         if DB.constants.value('pairup') and DB.constants.value('attack_stance_only'):
             pass
         else:
@@ -562,6 +564,7 @@ class InfoMenuState(State):
             other_stats.insert(0, 'MANA')
         if DB.constants.value('pairup') and not DB.constants.value('attack_stance_only'):
             other_stats.insert(2, 'GAUGE')
+
         other_stats = other_stats[:6 - len(right_stats)]
 
         for idx, stat in enumerate(other_stats):
@@ -615,6 +618,15 @@ class InfoMenuState(State):
                 render_text(surf, ['text'], [gge], ['blue'], (111, 16 * true_idx + 24), HAlignment.RIGHT)
                 render_text(surf, ['text'], [text_funcs.translate('GAUGE')], ['yellow'], (72, 16 * true_idx + 24))
                 self.info_graph.register((96 + 72, 16 * true_idx + 24, 64, 16), 'GAUGE_desc', state)
+                
+            elif stat == 'TALK':
+                if (len([talk for talk in game.talk_options if talk[0] == self.unit.nid]) != 0):
+                    talkee = [talk for talk in game.talk_options if talk[0] == self.unit.nid][0][1]
+                    render_text(surf, ['text'], [game.get_unit(talkee).name], ['blue'], (96, 16 * true_idx + 24))
+                else:
+                    render_text(surf, ['text'], ['--'], ['blue'], (98, 16 * true_idx + 24))
+                render_text(surf, ['text'], [text_funcs.translate('Talk')], ['yellow'], (72, 16 * true_idx + 24))
+                self.info_graph.register((96 + 72, 16 * true_idx + 24, 64, 16), 'Talk_desc', state)
 
             if DB.constants.value('lead'):
                 render_text(surf, ['text'], [text_funcs.translate('Lead')], ['yellow'], (72, 120))

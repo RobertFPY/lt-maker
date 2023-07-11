@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import (QDoubleSpinBox, QFormLayout, QFrame, QGridLayout,
                              QPushButton, QSizePolicy, QSpinBox, QSplitter,
                              QTreeView, QVBoxLayout, QWidget, QTabWidget)
 
-from app.data.database.constants import ConstantCatalog, ConstantType, TAGS
+from app.data.database.constants import ConstantCatalog, ConstantType, ConstantTag
 from app.data.database.database import DB
 from app.editor.base_database_gui import DatabaseTab
 from app.editor.data_editor import SingleDatabaseEditor
@@ -457,7 +457,7 @@ class ConstantDatabase(DatabaseTab):
         all_bool_constants = Data([d for d in self._data if d.attr == ConstantType.BOOL and not d.tag == 'hidden'])
 
         self.bool_tab_bar = QTabWidget(self)
-        for idx, tag in enumerate(TAGS):
+        for idx, tag in enumerate(ConstantTag):
             bool_constants = Data([d for d in all_bool_constants if d.tag == tag])
             if not bool_constants:
                 continue
@@ -469,7 +469,7 @@ class ConstantDatabase(DatabaseTab):
             bool_view.resizeColumnToContents(0)
             bool_view.setColumnWidth(0, 400)
             bool_view.clicked.connect(partial(self.on_bool_click, bool_model))
-            self.bool_tab_bar.addTab(bool_view, str_utils.snake_to_readable(tag))
+            self.bool_tab_bar.addTab(bool_view, str_utils.snake_to_readable(tag.value))
 
         bool_layout = QHBoxLayout()
         bool_section.setLayout(bool_layout)

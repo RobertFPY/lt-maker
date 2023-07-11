@@ -12,8 +12,6 @@ from app.editor.settings.main_settings_controller import MainSettingsController
 from app.editor.settings.project_history_controller import ProjectHistoryEntry
 from app.extensions.custom_gui import SimpleDialog
 
-CANCEL_SENTINEL = object()
-
 class RecentProjectsModel(QAbstractTableModel):
     def __init__(self, data: List[ProjectHistoryEntry]):
         super(RecentProjectsModel, self).__init__()
@@ -132,26 +130,26 @@ class RecentProjectDialog(SimpleDialog):
             self.accept()
 
     def closeEvent(self, event):
-        self._selected_path = CANCEL_SENTINEL
+        self._selected_path = None
         super().closeEvent(event)
 
     def get_selected(self) -> Optional[str]:
         return self._selected_path
 
 
-def choose_recent_project(load_only=False) -> str | CANCEL_SENTINEL | None:
+def choose_recent_project(load_only=False) -> Optional[str]:
     """
     # str means go open that project at that path
-    # CANCEL_SENTINEL means don't do anything (When you press X or close on the dialog)
-    # None means go open the default path
+    # None means don't do anytihng (When you press X or close on the dialog)
     """
+    from app.editor.file_manager.project_file_backend import DEFAULT_PROJECT
     settings = MainSettingsController()
     recent_projects = settings.get_last_ten_projects()
     if not recent_projects or settings.get_auto_open():
-        return None
+        return DEFAULT_PROJECT
     dialog = RecentProjectDialog(
         settings.get_last_ten_projects(), load_only)
     dialog.exec_()
-    selected_path: str | CANCEL_SENTINEL | None = \
+    selected_path: Optional[str] = \
         dialog.get_selected()
     return selected_path

@@ -243,7 +243,7 @@ def apply_growth_changes(unit, growth_changes: dict):
     for nid, value in growth_changes.items():
         unit.growths[nid] += value
 
-def get_starting_skills(unit) -> list:
+def get_starting_skills(unit, starting_level: int = 0) -> list:
     # Class skills
     klass_obj = DB.classes.get(unit.klass)
     current_klass = klass_obj
@@ -264,7 +264,7 @@ def get_starting_skills(unit) -> list:
     current_skills = [skill.nid for skill in unit.skills]
     for idx, klass in enumerate(all_klasses):
         for learned_skill in klass.learned_skills:
-            if (learned_skill[0] <= unit.level or klass != klass_obj) and \
+            if (starting_level < learned_skill[0] <= unit.level or klass != klass_obj) and \
                     learned_skill[1] not in current_skills and \
                     learned_skill[1] not in skills_to_add:
                 if learned_skill[1] == 'Feat':
@@ -279,17 +279,17 @@ def get_starting_skills(unit) -> list:
     klass_skills = item_funcs.create_skills(unit, skills_to_add)
     return klass_skills
 
-def get_personal_skills(unit, prefab):
+def get_personal_skills(unit, prefab, starting_level: int = 0) -> list:
     skills_to_add = []
     current_skills = [skill.nid for skill in unit.skills]
     for learned_skill in prefab.learned_skills:
-        if learned_skill[0] <= unit.level and learned_skill[1] not in current_skills:
+        if starting_level < learned_skill[0] <= unit.level and learned_skill[1] not in current_skills:
             skills_to_add.append(learned_skill[1])
 
     personal_skills = item_funcs.create_skills(unit, skills_to_add)
     return personal_skills
 
-def get_global_skills(unit):
+def get_global_skills(unit) -> list:
     skills_to_add = []
     current_skills = [skill.nid for skill in unit.skills]
     for skill_prefab in DB.skills:

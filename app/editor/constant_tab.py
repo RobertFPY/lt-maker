@@ -1,14 +1,13 @@
 import logging
-import math
 from functools import partial
 
 from PyQt5.QtCore import QAbstractItemModel, Qt
 from PyQt5.QtWidgets import (QDoubleSpinBox, QFormLayout, QFrame, QGridLayout,
                              QGroupBox, QHBoxLayout, QLabel, QLineEdit,
                              QPushButton, QSizePolicy, QSpinBox, QSplitter,
-                             QTreeView, QVBoxLayout, QWidget)
+                             QTreeView, QVBoxLayout, QWidget, QTabWidget)
 
-from app.data.database.constants import Constant, ConstantCatalog, ConstantType
+from app.data.database.constants import ConstantCatalog, ConstantType, ConstantTag
 from app.data.database.database import DB
 from app.editor.base_database_gui import DatabaseTab
 from app.editor.data_editor import SingleDatabaseEditor
@@ -18,6 +17,7 @@ from app.extensions.checkable_list_dialog import ComponentModel
 from app.extensions.custom_gui import ComboBox, PropertyBox
 from app.extensions.frame_layout import FrameLayout
 from app.utilities.data import Data
+from app.utilities import str_utils
 
 
 class BoolConstantsModel(ComponentModel):
@@ -454,18 +454,26 @@ class ConstantDatabase(DatabaseTab):
         self.left_frame.setLayout(self.layout)
 
         bool_section = QGroupBox(self)
-        bool_constants = Data([d for d in self._data if d.attr == ConstantType.BOOL and not d.tag == 'hidden'])
-        self.bool_model = BoolConstantsModel(bool_constants, self)
-        bool_view = QTreeView()
-        bool_view.setModel(self.bool_model)
-        bool_view.resizeColumnToContents(0)
-        bool_view.header().hide()
-        bool_view.header().setStretchLastSection(False)
-        bool_view.clicked.connect(self.on_bool_click)
+        all_bool_constants = Data([d for d in self._data if d.attr == ConstantType.BOOL and not d.tag == 'hidden'])
+
+        self.bool_tab_bar = QTabWidget(self)
+        for idx, tag in enumerate(ConstantTag):
+            bool_constants = Data([d for d in all_bool_constants if d.tag == tag])
+            if not bool_constants:
+                continue
+            bool_model = BoolConstantsModel(bool_constants, self)
+            bool_view = QTreeView()
+            bool_view.setModel(bool_model)
+            bool_view.header().hide()
+            bool_view.header().setStretchLastSection(False)
+            bool_view.resizeColumnToContents(0)
+            bool_view.setColumnWidth(0, 400)
+            bool_view.clicked.connect(partial(self.on_bool_click, bool_model))
+            self.bool_tab_bar.addTab(bool_view, str_utils.snake_to_readable(tag.value))
 
         bool_layout = QHBoxLayout()
         bool_section.setLayout(bool_layout)
-        bool_layout.addWidget(bool_view)
+        bool_layout.addWidget(self.bool_tab_bar)
 
         battle_constants = ('num_items', 'num_accessories', 'min_damage', 'enemy_leveling')
         battle_info = ("Number of non-accessory items units will be able to carry. The engine will not display inventories of size 6 or greater correctly.",
@@ -568,14 +576,14 @@ class ConstantDatabase(DatabaseTab):
             layout.addWidget(box)
         return section
 
-    def on_bool_click(self, index):
-        if bool(self.bool_model.flags(index) & Qt.ItemIsEnabled):
-            current_checked = self.bool_model.data(index, Qt.CheckStateRole)
+    def on_bool_click(self, model, index):
+        if bool(model.flags(index) & Qt.ItemIsEnabled):
+            current_checked = model.data(index, Qt.CheckStateRole)
             # Toggle checked
             if current_checked == Qt.Checked:
-                self.bool_model.setData(index, Qt.Unchecked, Qt.CheckStateRole)
+                model.setData(index, Qt.Unchecked, Qt.CheckStateRole)
             else:
-                self.bool_model.setData(index, Qt.Checked, Qt.CheckStateRole)
+                model.setData(index, Qt.Checked, Qt.CheckStateRole)
 
     def access_music_resources(self, constant, box):
         res, ok = sound_tab.get_music()

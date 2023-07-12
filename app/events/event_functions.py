@@ -2301,10 +2301,10 @@ def autolevel_to(self: Event, global_unit, level, growth_method=None, flags=None
         action.do(action.SetLevel(unit, max(1, final_level)))
     if not unit.generic and DB.units.get(unit.nid):
         unit_prefab = DB.units.get(unit.nid)
-        personal_skills = unit_funcs.get_personal_skills(unit, unit_prefab)
+        personal_skills = unit_funcs.get_personal_skills(unit, unit_prefab, current_level)
         for personal_skill in personal_skills:
             action.do(action.AddSkill(unit, personal_skill))
-    class_skills = unit_funcs.get_starting_skills(unit)
+    class_skills = unit_funcs.get_starting_skills(unit, current_level)
     for class_skill in class_skills:
         action.do(action.AddSkill(unit, class_skill))
 

@@ -140,13 +140,12 @@ class RecentProjectDialog(SimpleDialog):
 def choose_recent_project(load_only=False) -> Optional[str]:
     """
     # str means go open that project at that path
-    # None means don't do anytihng (When you press X or close on the dialog)
+    # None means don't do anything (When you press X or close on the dialog)
     """
-    from app.editor.file_manager.project_file_backend import DEFAULT_PROJECT
     settings = MainSettingsController()
     recent_projects = settings.get_last_ten_projects()
     if not recent_projects or settings.get_auto_open():
-        return DEFAULT_PROJECT
+        return settings.get_current_project()
     dialog = RecentProjectDialog(
         settings.get_last_ten_projects(), load_only)
     dialog.exec_()

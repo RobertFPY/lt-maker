@@ -10,12 +10,14 @@ class AIGroupObject(Prefab):
         # Cleared at the end of an AI phase
         self.triggered = set()
 
-    def trigger(self, unit_nid: NID) -> bool:
+    def trigger(self, unit_nid: NID, num_units_in_group: int) -> bool:
         """
         # Returns whether this trigger has finally triggered the number of units required for the ai group to fire
         """
         self.triggered.add(unit_nid)
-        return len(self.triggered) >= self.trigger_threshold
+        # If we have less units than the trigger threshold, our threshold is every unit in our group
+        threshold = min(self.trigger_threshold, num_units_in_group)
+        return len(self.triggered) >= threshold
 
     def clear(self):
         self.triggered.clear()

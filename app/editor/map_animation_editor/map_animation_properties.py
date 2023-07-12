@@ -5,15 +5,15 @@ import time
 from typing import Tuple
 
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, \
-    QSizePolicy, QLabel, QFrame, QSplitter, QRadioButton, QSpinBox, \
+    QLabel, QFrame, QSplitter, QRadioButton, QSpinBox, \
     QStyle, QToolButton, QListWidget, QListWidgetItem, QListView
 from PyQt5.QtCore import Qt, QSize, pyqtSignal
-from PyQt5.QtGui import QPixmap, QPainter, QImage, QColor, QPen, QIcon
+from PyQt5.QtGui import QPixmap, QPainter, QImage, QColor, QPen
 
 from app.extensions.custom_gui import PropertyBox
 from app.extensions.spinbox_xy import SpinBoxXY
 
-from app.utilities import utils, str_utils
+from app.utilities import utils
 from app.editor import timer
 from app.editor.icon_editor.icon_view import IconView
 
@@ -43,16 +43,16 @@ class SpeedSpecification(QWidget):
 
         self.setLayout(self.layout)
 
-    def set_current(self, speed):
-        if str_utils.is_int(speed):
-            self.int_speed_box.setValue(speed)
-            self.int_speed.setChecked(True)
-            self.frame_speed.setChecked(False)
-            self.int_speed_toggled(True)
-        else:
+    def set_current(self, speed: int, use_frame_time: bool):
+        self.int_speed_box.setValue(speed)
+        if use_frame_time:
             self.int_speed.setChecked(False)
             self.frame_speed.setChecked(True)
             self.int_speed_toggled(False)
+        else:
+            self.int_speed.setChecked(True)
+            self.frame_speed.setChecked(False)
+            self.int_speed_toggled(True)
 
     def int_speed_toggled(self, checked):
         if checked:
@@ -129,12 +129,9 @@ class FrameList(QListWidget):
         return s
 
     def frame_time_changed(self, idx: int, val: int):
-        self.current.speed[idx] = val
+        self.current.frame_times[idx] = val
 
-    def set_current(self, current) -> bool:
-        """
-        # Returns whether this animation's speed is a list of frame times
-        """
+    def set_current(self, current):
         self.current = current
 
         self.clear()
@@ -147,12 +144,9 @@ class FrameList(QListWidget):
             top = (num // self.current.frame_x) * height
             base_image = self.current.pixmap.copy(left, top, width, height)
             
-            if str_utils.is_int(self.current.speed):
-                frame_time = max(1, self.current.speed//16)
-            else:
-                if len(self.current.speed) < self.current.num_frames:
-                    self.current.speed.extend([1]*(self.current.num_frames - len(self.current.speed)))
-                frame_time = self.current.speed[num]
+            if len(self.current.frame_times) < self.current.num_frames:
+                self.current.frame_times.extend([1]*(self.current.num_frames - len(self.current.frame_times)))
+            frame_time = self.current.frame_times[num]
             frame_time_widget = FrameTime(num, base_image, frame_time, self)
             frame_time_widget.frame_time_changed.connect(self.frame_time_changed)
 
@@ -161,8 +155,6 @@ class FrameList(QListWidget):
             self.addItem(item)
             self.setItemWidget(item, frame_time_widget)
         self.updateGeometry()
-
-        return not str_utils.is_int(self.current.speed)
 
 class MapAnimationProperties(QWidget):
     def __init__(self, parent, current=None):
@@ -220,7 +212,7 @@ class MapAnimationProperties(QWidget):
         right_section.addLayout(frame_section)
 
         self.speed_box = PropertyBox("Speed", SpeedSpecification, self)
-        self.speed_box.edit.frame_speed_toggled.connect(self.frame_speed_toggled)
+        self.speed_box.edit.frame_speed_toggled.connect(self.which_speed_toggled)
         right_section.addWidget(self.speed_box)
 
         left_frame = QFrame(self)
@@ -260,18 +252,21 @@ class MapAnimationProperties(QWidget):
             self.draw_frame()
 
     def set_current(self, current):
+        self.reset()
         self.current = current
         old_num_frames = self.current.num_frames
         self.frame_box.edit.set_current(current.frame_x, current.frame_y)
         self.total_num_box.edit.setValue(old_num_frames)
-        self.speed_box.edit.set_current(current.speed)
-        enabled = self.frame_time_list.edit.set_current(current)
-        self.frame_time_list.setEnabled(enabled)
+        self.speed_box.edit.set_current(current.speed, current.use_frame_time)
+        self.frame_time_list.edit.set_current(current)
+        self.frame_time_list.setEnabled(current.use_frame_time)
         # self.draw_raw()
         self.draw_frame()
 
-    def frame_speed_toggled(self, val: bool):
+    def which_speed_toggled(self, val: bool):
+        self.current.use_frame_time = val
         self.frame_time_list.setEnabled(val)
+        self.reset()
 
     def draw_raw(self):
         pixmap = self.current.pixmap
@@ -296,23 +291,23 @@ class MapAnimationProperties(QWidget):
 
     def draw_frame(self):
         if self.playing:
-            if str_utils.is_int(self.current.speed):
+            if self.current.use_frame_time:
+                self.frames_passed += 1
+                if self.frames_passed > self.current.frame_times[self.counter]:
+                    self.counter += 1
+                    self.frames_passed = 0
+                if self.counter >= len(self.current.frame_times):
+                    if not self.loop:
+                        self.stop()
+                    self.counter = 0
+                num = self.counter
+            else:
                 num = int(time.time() * 1000 - self.last_update) // self.current.speed
                 if num >= self.current.num_frames and not self.loop:
                     num = 0
                     self.stop()
                 else:
                     num %= self.current.num_frames
-            else:
-                self.frames_passed += 1
-                if self.frames_passed > self.current.speed[self.counter]:
-                    self.counter += 1
-                    self.frames_passed = 0
-                if self.counter >= len(self.current.speed):
-                    if not self.loop:
-                        self.stop()
-                    self.counter = 0
-                num = self.counter
         else:
             num = 0
 
@@ -328,6 +323,11 @@ class MapAnimationProperties(QWidget):
     def stop(self):
         self.playing = False
         self.play_button.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
+
+    def reset(self):
+        self.stop()
+        self.counter = 0
+        self.frames_passed = 0
 
     def play_clicked(self):
         if self.playing:
@@ -354,8 +354,12 @@ class MapAnimationProperties(QWidget):
             self.total_num_box.edit.setValue(utils.clamp(self.current.num_frames, minim, x * y))
             # Update frame list view
             self.frame_time_list.edit.set_current(self.current)
+        # Stop currently drawing and reset counter
+        self.reset()
 
     def num_frames_changed(self, val):
         self.current.num_frames = val
         # Update frame list view
         self.frame_time_list.edit.set_current(self.current)
+        # Stop currently drawing and reset counter
+        self.reset()

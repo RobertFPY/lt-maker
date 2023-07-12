@@ -1,5 +1,7 @@
 import os, glob
 
+from typing import Optional
+
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtGui import QImage, QPixmap, qRgb, QColor, QPainter
 
@@ -554,7 +556,7 @@ def parse_gba_script(fn, pixmaps, weapon_type, empty_pixmaps):
     shield_toss = False  # Whether the next 01 command ends the shield toss
     loop_end = False  # Whether the next 01 command ends the loop
 
-    def get_pose_name(mode: int) -> (str, bool):
+    def get_pose_name(mode: int) -> (Optional[str], Optional[combat_anims.WeaponAnimation]):
         """
         Determines what pose to use and whether to use
         the melee script or a ranged/magic script

@@ -246,6 +246,8 @@ def mirror_portrait(self: Event, portrait, flags=None):
             self.portraits[name].position,
             self.portraits[name].priority,
             False, None, not self.portraits[name].mirror, name)
+    if self.text_boxes:
+        self.text_boxes[-1].portrait = flipped_portrait
 
     if self.do_skip:
         self.portraits[name] = flipped_portrait

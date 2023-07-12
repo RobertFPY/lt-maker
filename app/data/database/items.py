@@ -1,10 +1,10 @@
-from dataclasses import field
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 from app.data.category import Categories, CategorizedCatalog
 import app.engine.item_component_access as ICA
 from app.utilities.data import Data, Prefab
 from app.data.database.components import Component
 from app.utilities.typing import NID
+from app.utilities import str_utils
 
 
 class ItemPrefab(Prefab):
@@ -51,7 +51,6 @@ class ItemPrefab(Prefab):
 
     @classmethod
     def restore(cls, dat):
-        item_components = Data()
         components = [ICA.restore_component(val) for val in dat['components']]
         components = [c for c in components if c]
 
@@ -74,3 +73,10 @@ class ItemPrefab(Prefab):
 
 class ItemCatalog(CategorizedCatalog[ItemPrefab]):
     datatype = ItemPrefab
+
+    def create_new(self, db):
+        nids = [d.nid for d in self]
+        nid = name = str_utils.get_next_name("New Item", nids)
+        new_item = ItemPrefab(nid, name, '')
+        self.append(new_item)
+        return new_item

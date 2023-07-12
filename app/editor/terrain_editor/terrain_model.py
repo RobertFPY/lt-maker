@@ -1,13 +1,9 @@
 from PyQt5.QtGui import QIcon, QPixmap, QColor
 from PyQt5.QtCore import Qt
 
-from app.data.resources.resources import RESOURCES
 from app.data.database.database import DB
 
 from app.editor.base_database_gui import DragDropCollectionModel
-from app.utilities import str_utils
-
-from app.data.database import terrain
 
 class TerrainModel(DragDropCollectionModel):
     def data(self, index, role):
@@ -26,10 +22,5 @@ class TerrainModel(DragDropCollectionModel):
         return None
 
     def create_new(self):
-        nids = [d.nid for d in self._data]
-        nid = name = str_utils.get_next_name("New Terrain", nids)
-        terrain_mcost = DB.mcost.terrain_types[0]
-        platform = RESOURCES.get_platform_types()[0][0]
-        new_terrain = terrain.Terrain(nid, name, (0, 0, 0), 'Grass', platform, terrain_mcost)
-        DB.terrain.append(new_terrain)
+        new_terrain = DB.terrain.create_new(DB)
         return new_terrain

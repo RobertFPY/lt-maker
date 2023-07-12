@@ -3,6 +3,8 @@ from typing import List, Optional
 from app.events import event_commands
 from app.utilities.data import Data, Prefab
 from app.utilities.typing import NID
+from app.utilities import str_utils
+
 
 class EventPrefab(Prefab):
     def __init__(self, name):
@@ -64,3 +66,11 @@ class EventCatalog(Data[EventPrefab]):
 
     def get_from_nid(self, key, fallback=None):
         return self._dict.get(key, fallback)
+
+    def create_new(self, db, level_nid=None):
+        other_names = [d.name for d in self if d.level_nid == level_nid]
+        name = str_utils.get_next_name("New Event", other_names)
+        new_event = EventPrefab(name)
+        new_event.level_nid = level_nid
+        self.append(new_event)
+        return new_event

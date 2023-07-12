@@ -4,13 +4,11 @@ from PyQt5.QtGui import QIcon, QPixmap
 from app.utilities.data import Data
 from app.data.resources.resources import RESOURCES
 from app.data.database.database import DB
-from app.data.database import items
 
 from app.extensions.custom_gui import DeletionDialog
 from app.editor.base_database_gui import DragDropCollectionModel
 from app.editor.custom_widgets import ItemBox
 
-from app.utilities import str_utils
 import app.editor.utilities as editor_utilities
 
 def get_pixmap(item):
@@ -73,8 +71,5 @@ class ItemModel(DragDropCollectionModel):
                 unit.replace_item_nid(old_nid, new_nid)
 
     def create_new(self):
-        nids = [d.nid for d in self._data]
-        nid = name = str_utils.get_next_name("New Item", nids)
-        new_item = items.ItemPrefab(nid, name, '')
-        DB.items.append(new_item)
+        new_item = DB.items.create_new(DB)
         return new_item

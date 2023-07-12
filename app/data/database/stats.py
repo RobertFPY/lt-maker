@@ -27,3 +27,17 @@ class StatCatalog(Data[StatPrefab]):
         new_stat = StatPrefab(nid, nid)
         self.append(new_stat)
         return new_stat
+
+    def create_new(self, db):
+        new_stat = self.add_new_default(db)
+        nid = new_stat.nid
+        for klass in db.classes:
+            for stat_list in klass.get_stat_lists():
+                if nid not in stat_list:
+                    stat_list[nid] = 0
+            klass.max_stats[nid] = new_stat.maximum
+        for unit in db.units:
+            for stat_list in unit.get_stat_lists():
+                if nid not in stat_list:
+                    stat_list[nid] = 0
+        return new_stat

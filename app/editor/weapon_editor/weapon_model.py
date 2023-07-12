@@ -4,13 +4,12 @@ from PyQt5.QtCore import Qt
 from app.utilities.data import Data
 from app.data.resources.resources import RESOURCES
 from app.data.database.database import DB
-from app.data.database import weapons, components, item_components
+from app.data.database import components, item_components
 
 from app.editor.custom_widgets import WeaponTypeBox
 from app.extensions.custom_gui import DeletionDialog
 from app.editor.base_database_gui import DragDropCollectionModel
 
-from app.utilities import str_utils
 import app.editor.utilities as editor_utilities
 
 def get_pixmap(weapon):
@@ -96,10 +95,5 @@ class WeaponModel(DragDropCollectionModel):
         item_components.swap_values(affected_items, components.ComponentType.WeaponType, old_nid, new_nid)
 
     def create_new(self):
-        nids = [d.nid for d in self._data]
-        nid = name = str_utils.get_next_name("New Weapon Type", nids)
-        new_weapon = weapons.WeaponType(
-            nid, name, False, weapons.CombatBonusList(),
-            weapons.CombatBonusList(), weapons.CombatBonusList())
-        DB.weapons.append(new_weapon)
+        new_weapon = DB.weapons.create_new(DB)
         return new_weapon

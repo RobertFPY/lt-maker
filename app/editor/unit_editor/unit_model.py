@@ -4,14 +4,12 @@ from PyQt5.QtCore import Qt
 from app.data.resources.resources import RESOURCES
 from app.utilities.data import Data
 from app.data.database.database import DB
-from app.data.database import units
 from app.data.database.level_units import UniqueUnit
 
 from app.extensions.custom_gui import DeletionDialog
 
 from app.editor.base_database_gui import DragDropCollectionModel
 import app.editor.utilities as editor_utilities
-from app.utilities import str_utils
 
 def get_chibi(unit):
     res = RESOURCES.portraits.get(unit.portrait_nid)
@@ -106,13 +104,5 @@ class UnitModel(DragDropCollectionModel):
                 party.leader = new_nid
 
     def create_new(self):
-        nids = [d.nid for d in self._data]
-        nid = name = str_utils.get_next_name("New Unit", nids)
-        bases = {k: 0 for k in DB.stats.keys()}
-        growths = {k: 0 for k in DB.stats.keys()}
-        wexp_gain = {weapon_nid: DB.weapons.default() for weapon_nid in DB.weapons.keys()}
-        new_unit = units.UnitPrefab(nid, name, '', '', 1, DB.classes[0].nid,
-                                    bases=bases, growths=growths, wexp_gain=wexp_gain)
-        new_unit.fields = []
-        DB.units.append(new_unit)
+        new_unit = self._data.create_new(DB)
         return new_unit

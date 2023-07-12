@@ -4,6 +4,7 @@ from typing import Dict, List
 from app.data.database.weapons import WexpGain
 from app.utilities.data import Data, Prefab
 from app.utilities.typing import NID
+from app.utilities import str_utils
 
 
 @dataclass
@@ -92,3 +93,15 @@ class UnitPrefab(Prefab):
 
 class UnitCatalog(Data[UnitPrefab]):
     datatype = UnitPrefab
+
+    def create_new(self, db):
+        nids = [d.nid for d in self]
+        nid = name = str_utils.get_next_name("New Unit", nids)
+        bases = {k: 0 for k in db.stats.keys()}
+        growths = {k: 0 for k in db.stats.keys()}
+        wexp_gain = {weapon_nid: db.weapons.default() for weapon_nid in db.weapons.keys()}
+        new_unit = UnitPrefab(nid, name, '', '', 1, db.classes[0].nid,
+                              bases=bases, growths=growths, wexp_gain=wexp_gain)
+        new_unit.fields = []
+        self.append(new_unit)
+        return new_unit

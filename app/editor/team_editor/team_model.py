@@ -22,10 +22,7 @@ class TeamModel(DragDropCollectionModel):
         return None
 
     def create_new(self):
-        nids = [d.nid for d in self._data]
-        nid = str_utils.get_next_name("New Team", nids)
-        new_team = teams.Team(nid)
-        DB.teams.append(new_team)
+        new_team = DB.teams.create_new(DB)
         return new_team
 
     def delete(self, idx):

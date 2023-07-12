@@ -6,6 +6,7 @@ from app.data.category import Categories, CategorizedCatalog
 from app.data.database.components import Component
 from app.utilities.data import Data, Prefab
 from app.utilities.typing import NID
+from app.utilities import str_utils
 
 
 class SkillPrefab(Prefab):
@@ -73,3 +74,10 @@ class SkillCatalog(CategorizedCatalog[SkillPrefab]):
                     feats.append(skill)
                     break
         return feats
+
+    def create_new(self, db):
+        nids = [d.nid for d in self]
+        nid = name = str_utils.get_next_name("New Skill", nids)
+        new_skill = SkillPrefab(nid, name, '')
+        self.append(new_skill)
+        return new_skill

@@ -4,13 +4,11 @@ from PyQt5.QtGui import QIcon, QPixmap
 from app.utilities.data import Data
 from app.data.resources.resources import RESOURCES
 from app.data.database.database import DB
-from app.data.database import skills
 
 from app.extensions.custom_gui import DeletionDialog
 from app.editor.base_database_gui import DragDropCollectionModel
 from app.editor.custom_widgets import SkillBox
 
-from app.utilities import str_utils
 import app.editor.utilities as editor_utilities
 
 def get_pixmap(skill):
@@ -72,8 +70,5 @@ class SkillModel(DragDropCollectionModel):
             k.replace_skill_nid(old_nid, new_nid)
 
     def create_new(self):
-        nids = [d.nid for d in self._data]
-        nid = name = str_utils.get_next_name("New Skill", nids)
-        new_skill = skills.SkillPrefab(nid, name, '')
-        DB.skills.append(new_skill)
+        new_skill = DB.skills.create_new(DB)
         return new_skill

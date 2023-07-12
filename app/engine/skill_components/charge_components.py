@@ -65,7 +65,7 @@ class DrainCharge(SkillComponent):
     def cooldown(self):
         return self.skill.data['charge'] / self.skill.data['total_charge']
 
-class ChargesPerTurn(DrainCharge, SkillComponent):
+class ChargesPerTurn(DrainCharge):
     nid = 'charges_per_turn'
     desc = "Skill will have a number of charges that are refreshed each turn"
     tag = SkillTags.CHARGE

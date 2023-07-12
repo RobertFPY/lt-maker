@@ -1650,6 +1650,7 @@ def move_item_between_convoys(self: Event, item, party1, party2, flags=None):
     action.do(action.PutItemInConvoy(item, party2))
 
 def open_convoy(self: Event, global_unit, flags=None):
+    flags = flags or set()
     unit = self._get_unit(global_unit)
     if not unit:
         self.logger.error("open_convoy: Couldn't find unit with nid %s" % global_unit)
@@ -1658,6 +1659,7 @@ def open_convoy(self: Event, global_unit, flags=None):
     self.state = "paused"
     self.game.memory['current_unit'] = unit
     self.game.memory['next_state'] = 'supply_items'
+    self.game.memory['include_other_units'] = 'include_other_units' in flags
     self.game.state.change('transition_to')
 
 def set_item_uses(self: Event, global_unit_or_convoy, item, uses, flags=None):
@@ -2299,10 +2301,10 @@ def autolevel_to(self: Event, global_unit, level, growth_method=None, flags=None
         action.do(action.SetLevel(unit, max(1, final_level)))
     if not unit.generic and DB.units.get(unit.nid):
         unit_prefab = DB.units.get(unit.nid)
-        personal_skills = unit_funcs.get_personal_skills(unit, unit_prefab)
+        personal_skills = unit_funcs.get_personal_skills(unit, unit_prefab, current_level)
         for personal_skill in personal_skills:
             action.do(action.AddSkill(unit, personal_skill))
-    class_skills = unit_funcs.get_starting_skills(unit)
+    class_skills = unit_funcs.get_starting_skills(unit, current_level)
     for class_skill in class_skills:
         action.do(action.AddSkill(unit, class_skill))
 

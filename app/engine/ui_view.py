@@ -358,6 +358,7 @@ class UIView():
         final = prefix + infix + ('_' if infix else '') + color
         fallback_final = prefix + infix + ('_' if infix else '') + 'red'
         surf = SPRITES.get(final, fallback_final).copy()
+        surf = image_mods.make_translucent(surf, .1)
 
         if DB.constants.value('pairup') and \
                 (a_assist or d_assist) and not (attacker.traveler or defender.traveler):
@@ -374,6 +375,7 @@ class UIView():
                 final = prefix + infix + ('_' if infix else '') + color
                 fallback_final = prefix + infix + ('_' if infix else '') + 'red'
                 surf.blit(SPRITES.get(final, fallback_final).copy(), (92, 35))
+                surf = image_mods.make_translucent(surf, .1)
 
                 mt = combat_calcs.compute_assist_damage(a_assist, defender, a_assist.get_weapon(), defender.get_weapon(), 'attack', (0, 0))
                 if grandmaster:
@@ -402,6 +404,7 @@ class UIView():
                 final = prefix + infix + ('_' if infix else '') + color
                 fallback_final = prefix + infix + ('_' if infix else '') + 'red'
                 surf.blit(SPRITES.get(final, fallback_final).copy(), (1, 35))
+                surf = image_mods.make_translucent(surf, .1)
 
                 mt = combat_calcs.compute_assist_damage(d_assist, attacker, d_assist.get_weapon(), weapon, 'defense', (0, 0))
                 if grandmaster:

@@ -531,13 +531,14 @@ class GameState():
             # Unit cleanup
             unit.is_dying = False
             if unit.traveler:
+                droppee = self.get_unit(unit.traveler)
                 if full:
                     unit.traveler = None
                     action.RemoveSkill(unit, 'Rescue').execute()
                 else:
-                    droppee = self.get_unit(unit.traveler)
                     pos = target_system.get_nearest_open_tile(droppee, unit.position)
                     action.Drop(unit, droppee, pos).execute()
+                skill_system.on_separate(droppee, unit)
             unit.set_hp(1000)  # Set to full health
             unit.set_guard_gauge(0) # Remove all guard gauge
             if DB.constants.value('reset_mana'):
@@ -807,6 +808,9 @@ class GameState():
             return group.active
         return False
 
+    def get_units_in_ai_group(self, ai_group_nid: NID) -> List[UnitObject]:
+        return [unit for unit in self.get_all_units() if unit.ai_group == ai_group_nid]
+
     def get_all_units(self) -> List[UnitObject]:
         return [unit for unit in self.units if unit.position and not unit.dead and not unit.is_dying and 'Tile' not in unit.tags]
 
@@ -853,6 +857,12 @@ class GameState():
         party_units = [unit for unit in game.get_all_units_in_party(party) if not unit.dead]
         party_units = sorted(party_units, key=lambda unit: party_order.index(unit.nid) if unit.nid in party_order else 999999)
         return party_units
+
+    def get_all_player_units(self) -> List[UnitObject]:
+        """
+        # Return all units who are currently player team and persistent
+        """
+        return [unit for unit in self.units if unit.team == 'player' and unit.persistent]
 
     # For working with roaming
     def is_roam(self) -> bool:

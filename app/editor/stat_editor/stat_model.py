@@ -14,17 +14,7 @@ class StatTypeModel(DragDropCollectionModel):
         return None
 
     def create_new(self):
-        new_stat = self._data.add_new_default(DB)
-        nid = new_stat.nid
-        for klass in DB.classes:
-            for stat_list in klass.get_stat_lists():
-                if nid not in stat_list:
-                    stat_list[nid] = 0
-            klass.max_stats[nid] = new_stat.maximum
-        for unit in DB.units:
-            for stat_list in unit.get_stat_lists():
-                if nid not in stat_list:
-                    stat_list[nid] = 0
+        new_stat = self._data.create_new(DB)
         return new_stat
 
     def delete(self, idx):

@@ -1481,9 +1481,12 @@ class OpenConvoy(EventCommand):
         """
     *GlobalUnit* will open their own party's convoy.
     The player may then access the convoy as normal using that unit.
+
+    1. *include_other_units*: Includes items from other units in the party, not just what's in the convoy
         """
 
     keywords = ["GlobalUnit"]
+    _flags = ["include_other_units"]
 
 class SetItemUses(EventCommand):
     nid = 'set_item_uses'

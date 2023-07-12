@@ -6,9 +6,9 @@ from enum import IntEnum
 from PyQt5.QtWidgets import QSplitter, QFrame, QVBoxLayout, QDialogButtonBox, \
     QToolBar, QTabBar, QWidget, QDialog, QGroupBox, QFormLayout, QSpinBox, QAction, \
     QGraphicsView, QGraphicsScene, QAbstractItemView, QActionGroup, \
-    QDesktopWidget, QFileDialog, QMessageBox, QHBoxLayout
+    QDesktopWidget, QFileDialog, QMessageBox, QHBoxLayout, QApplication
 from PyQt5.QtCore import Qt, QRect, QDateTime
-from PyQt5.QtGui import QImage, QPainter, QPixmap, QIcon, QColor, QPen
+from PyQt5.QtGui import QImage, QPainter, QPixmap, QIcon, QColor, QPen, QBrush
 from app import dark_theme
 
 from app.constants import TILEWIDTH, TILEHEIGHT
@@ -832,6 +832,12 @@ class LayerModel(ResourceCollectionModel):
         elif role == Qt.CheckStateRole:
             value = Qt.Checked if layer.visible else Qt.Unchecked
             return value
+        elif role == Qt.ForegroundRole:
+            # Color blue when in the foreground
+            if layer.foreground:
+                return QBrush(QColor("cyan"))
+            else:
+                return QBrush(QApplication.palette().text().color())
         return None
 
     def create_new(self):
@@ -938,6 +944,8 @@ class LayerMenu(QWidget):
             self.move_up_action.setEnabled(False)
         if curr.row() >= len(self._data) - 1:
             self.move_down_action.setEnabled(False)
+        # Make sure we display whether this is a foreground action
+        self.is_foreground_action.setChecked(self._data[curr.row()].foreground)
 
     def on_click(self, index):
         if bool(self.model.flags(index) & Qt.ItemIsEnabled):
@@ -950,7 +958,6 @@ class LayerMenu(QWidget):
         theme = dark_theme.get_theme()
         icon_folder = theme.icon_dir()
 
-
         self.move_up_action = QAction(QIcon(f"{icon_folder}/up.png"), "Move Up", triggered=self.move_up)
         self.move_down_action = QAction(QIcon(f"{icon_folder}/down.png"), "Move Down", triggered=self.move_down)
         self.move_up_action.setEnabled(False)
@@ -959,6 +966,8 @@ class LayerMenu(QWidget):
         self.duplicate_action = QAction(QIcon(f"{icon_folder}/duplicate.png"), "Duplicate Layer", triggered=self.duplicate)
         self.delete_action = QAction(QIcon(f"{icon_folder}/x-circle.png"), "Delete Layer", triggered=self.delete)
         self.delete_action.setEnabled(False)
+        self.is_foreground_action = QAction(QIcon(f"{icon_folder}/foreground.png"), "Foreground", triggered=self.toggle_foreground)
+        self.is_foreground_action.setCheckable(True)
 
     def create_toolbar(self):
         self.toolbar = QToolBar(self)
@@ -967,6 +976,7 @@ class LayerMenu(QWidget):
         self.toolbar.addAction(self.new_action)
         self.toolbar.addAction(self.duplicate_action)
         self.toolbar.addAction(self.delete_action)
+        self.toolbar.addAction(self.is_foreground_action)
 
     def move_up(self):
         current_index = self.view.currentIndex()
@@ -999,6 +1009,13 @@ class LayerMenu(QWidget):
         current_index = self.view.currentIndex()
         if current_index and current_index.row() >= 0 and self.deletion_func(self.model, current_index):
             self.view.delete(current_index)
+
+    def toggle_foreground(self, val: bool):
+        current_index = self.view.currentIndex()
+        if current_index and current_index.row() >= 0:
+            row = current_index.row()
+            self._data[row].foreground = val
+            self.update_view()
 
 class TileSetMenu(QWidget):
     def __init__(self, parent=None, current=None):

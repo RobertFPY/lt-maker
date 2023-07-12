@@ -154,7 +154,7 @@ class StatusesOnHit(ItemComponent):
             total += ai_status_priority(unit, target, item, move, status_nid)
         return total
 
-class StatusAfterCombatOnHit(StatusOnHit, ItemComponent):
+class StatusAfterCombatOnHit(StatusOnHit):
     nid = 'status_after_combat_on_hit'
     desc = "If the target is hit they gain the specified status at the end of combat. Prevents changes being applied mid-combat."
     tag = ItemTags.SPECIAL
@@ -295,7 +295,7 @@ class Pivot(ItemComponent):
                 playback.append(pb.ShoveHit(unit, item, target))
 
 
-class PivotTargetRestrict(Pivot, ItemComponent):
+class PivotTargetRestrict(Pivot):
     nid = 'pivot_target_restrict'
     desc = "Suppresses the Pivot command when it would be invalid."
     tag = ItemTags.SPECIAL
@@ -358,7 +358,7 @@ class DrawBack(ItemComponent):
                 playback.append(pb.ShoveHit(unit, item, target))
 
 
-class DrawBackTargetRestrict(DrawBack, ItemComponent):
+class DrawBackTargetRestrict(DrawBack):
     nid = 'draw_back_target_restrict'
     desc = "Suppresses the Draw Back command when it would be invalid."
     tag = ItemTags.SPECIAL
@@ -457,7 +457,7 @@ class Steal(ItemComponent):
             return steal_term + 0.01 * distance_term
         return 0
 
-class GBASteal(Steal, ItemComponent):
+class GBASteal(Steal):
     nid = 'gba_steal'
     desc = "Steal any non-weapon, non-spell from target on hit"
     tag = ItemTags.SPECIAL

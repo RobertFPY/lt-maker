@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 from app.utilities.data import Data, Prefab
+from app.utilities import str_utils
 
 @dataclass
 class Terrain(Prefab):
@@ -26,3 +27,13 @@ class Terrain(Prefab):
 
 class TerrainCatalog(Data[Terrain]):
     datatype = Terrain
+
+    def create_new(self, db):
+        from app.data.resources.resources import RESOURCES
+        nids = [d.nid for d in self]
+        nid = name = str_utils.get_next_name("New Terrain", nids)
+        terrain_mcost = db.mcost.terrain_types[0]
+        platform = RESOURCES.get_platform_types()[0][0]
+        new_terrain = Terrain(nid, name, (0, 0, 0), 'Grass', platform, terrain_mcost)
+        self.append(new_terrain)
+        return new_terrain

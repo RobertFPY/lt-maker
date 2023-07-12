@@ -271,7 +271,7 @@ class AIController():
                     if self.goal_target:
                         if self.unit.ai_group and game.get_ai_group(self.unit.ai_group):
                             ai_group = game.get_ai_group(self.unit.ai_group)
-                            triggered = ai_group.trigger(self.unit.nid)
+                            triggered = ai_group.trigger(self.unit.nid, len(game.get_units_in_ai_group(self.unit.ai_group)))
                             if triggered:
                                 logging.info("AI group %s activate!", self.unit.ai_group)
                                 self.ai_group_ping(ai_group)
@@ -298,7 +298,7 @@ class AIController():
                         if self.goal_position != self.unit.position:
                             if self.unit.ai_group and game.get_ai_group(self.unit.ai_group):
                                 ai_group = game.get_ai_group(self.unit.ai_group)
-                                triggered = ai_group.trigger(self.unit.nid)
+                                triggered = ai_group.trigger(self.unit.nid, len(game.get_units_in_ai_group(self.unit.ai_group)))
                                 if triggered:
                                     self.ai_group_ping(ai_group)
                                     success = True
@@ -400,10 +400,16 @@ class PrimaryAI():
         for pos in ai_targets:
             for valid_move in valid_moves:
                 # Determine if we can hit this unit at one of our moves
-                if (utils.calculate_distance(pos, valid_move) in item_range) and \
-                   (not DB.constants.value('ai_fog_of_war') or game.board.in_vision(pos, self.unit.team)):
-                    filtered_targets.add(pos)
-                    break
+                if utils.calculate_distance(pos, valid_move) in item_range:
+                    if DB.constants.value('ai_fog_of_war'):
+                        if game.board.in_vision(pos, unit.team) or \
+                                item_system.ignore_fog_of_war(unit, item) or \
+                                (game.board.get_unit(pos) and 'Tile' in game.board.get_unit(pos).tags):
+                            filtered_targets.add(pos)
+                            break
+                    else:
+                        filtered_targets.add(pos)
+                        break
 
         return list(filtered_targets)
 
@@ -687,7 +693,11 @@ def get_targets(unit, behaviour):
 
     if behaviour.target != 'Position':
         if DB.constants.value('ai_fog_of_war'):
-            all_targets = [pos for pos in all_targets if game.board.in_vision(pos, unit.team)]
+            all_targets = [
+                pos for pos in all_targets if 
+                game.board.in_vision(pos, unit.team) or
+                (game.board.get_unit(pos) and 'Tile' in game.board.get_unit(pos).tags) # Can always targets Tiles
+            ]
     return all_targets
 
 class SecondaryAI():

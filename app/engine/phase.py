@@ -14,13 +14,13 @@ from app.engine.game_state import game
 
 import logging
 
-def fade_in_phase_music():
+def fade_in_phase_music(at_turn_change: bool = False):
     logging.info('Fade in Phase Music')
     team = game.phase.get_current()
     music = game.level.music.get(team + '_phase', None)
     fade = game.game_vars.get('_phase_music_fade_ms', 400)
     if music:
-        if DB.constants.value('restart_phase_music'):
+        if at_turn_change and DB.constants.value('restart_phase_music'):
             get_sound_thread().fade_in(music, fade_in=fade, from_start=True)
         else:
             get_sound_thread().fade_in(music, fade_in=fade)

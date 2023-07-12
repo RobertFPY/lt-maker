@@ -7,7 +7,8 @@ false_priority_hooks = \
      'can_use', 'can_use_in_base', 'locked', 'unstealable', 'allow_same_target', 'allow_less_than_max_targets',
      'ignore_weapon_advantage', 'unrepairable', 'unsplashable', 'targets_items',
      'menu_after_combat', 'transforms', 'no_attack_after_move', 'no_map_hp_display',
-     'cannot_dual_strike', 'can_attack_after_combat', 'simple_target_restrict', 'force_map_anim', 'ignore_line_of_sight')
+     'cannot_dual_strike', 'can_attack_after_combat', 'simple_target_restrict', 'force_map_anim', 
+     'ignore_line_of_sight', 'ignore_fog_of_war')
 # All default hooks are exclusive
 formula = ('damage_formula', 'resist_formula', 'accuracy_formula', 'avoid_formula',
            'crit_accuracy_formula', 'crit_avoid_formula', 'attack_speed_formula', 'defense_speed_formula')

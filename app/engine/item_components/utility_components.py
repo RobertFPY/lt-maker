@@ -61,7 +61,7 @@ class Heal(ItemComponent):
             return help_term * heal_term
         return 0
 
-class EquationHeal(Heal, ItemComponent):
+class EquationHeal(Heal):
     nid = 'equation_heal'
     desc = "Heals the target for the value of the equation defined in the equations editor. Equation is calculated using the caster's stats, not the targets"
 
@@ -118,7 +118,7 @@ class Restore(ItemComponent):
                 actions.append(action.RemoveSkill(target, skill))
                 playback.append(pb.RestoreHit(unit, item, target))
 
-class RestoreSpecific(Restore, ItemComponent):
+class RestoreSpecific(Restore):
     nid = 'restore_specific'
     desc = "Item removes specific status from target on hit"
     tag = ItemTags.UTILITY

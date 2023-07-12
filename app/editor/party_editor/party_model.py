@@ -20,10 +20,7 @@ class PartyModel(DragDropCollectionModel):
         return None
 
     def create_new(self):
-        nids = [d.nid for d in self._data]
-        nid = name = str_utils.get_next_name("New Party", nids)
-        new_party = parties.PartyPrefab(nid, name, DB.units[0].nid)
-        DB.parties.append(new_party)
+        new_party = DB.parties.create_new(DB)
         return new_party
 
     def delete(self, idx):

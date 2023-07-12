@@ -4,6 +4,8 @@ from typing import List, Set, Tuple
 
 from app.utilities.data import Data, Prefab
 from app.utilities.typing import NID
+from app.utilities import str_utils
+
 
 @dataclass
 class Team(Prefab):
@@ -98,3 +100,10 @@ class TeamCatalog(Data[Team]):
     @property    
     def enemies(self) -> List[NID]:
         return [team.nid for team in self if team.nid not in self.allies]
+
+    def create_new(self, db):
+        nids = [d.nid for d in self]
+        nid = str_utils.get_next_name("New Team", nids)
+        new_team = Team(nid)
+        self.append(new_team)
+        return new_team

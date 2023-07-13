@@ -96,13 +96,13 @@ def %s(unit):
 
     for behaviour in targeted_behaviours:
         func = """
-def %s(unit1, unit2):
-    for skill in unit1.skills:
+def %s(unit, target):
+    for skill in unit.skills:
         for component in skill.components:
             if component.defines('%s'):
-                if component.ignore_conditional or condition(skill, unit1):
-                    return component.%s(unit1, unit2)
-    return Defaults.%s(unit1, unit2)""" \
+                if component.ignore_conditional or condition(skill, unit):
+                    return component.%s(unit, target)
+    return Defaults.%s(unit, target)""" \
             % (behaviour, behaviour, behaviour, behaviour)
         compiled_skill_system.write(func)
         compiled_skill_system.write('\n')

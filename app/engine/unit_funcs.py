@@ -40,7 +40,7 @@ def _fixed_levelup(unit, level, get_growth_rate=growth_rate) -> dict:
             if growth_inc < growth:
                 stat_changes[nid] += 1
         elif growth < 0 and DB.constants.value('negative_growths'):
-            stat_changes[nid] += growth // 100
+            stat_changes[nid] -= abs(growth) // 100
             growth = -(abs(growth) % 100)
             growth_inc = (50 + growth * level) % 100
             if growth_inc > 100 - growth or growth_inc == 0:

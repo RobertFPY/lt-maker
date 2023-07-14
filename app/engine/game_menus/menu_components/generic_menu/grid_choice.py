@@ -71,8 +71,6 @@ class ChoiceMenuOptionFactory():
         elif option_type == BasicUnitOption:
             if isinstance(value, UnitObject):
                 return BasicUnitOption.from_unit(idx, value, disp_value, row_width, align=text_align)
-            elif isinstance(value, int):
-                return BasicUnitOption.from_uid(idx, value, disp_value, row_width, align=text_align)
             elif isinstance(value, str):
                 return BasicUnitOption.from_nid(idx, value, disp_value, row_width, align=text_align)
             raise ValueError("Unknown unit: " + value)

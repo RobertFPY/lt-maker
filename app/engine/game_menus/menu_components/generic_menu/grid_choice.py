@@ -42,6 +42,10 @@ CHOICE_TYPES: Dict[str, Type[IMenuOption]] = {
     'type_chibi': BasicChibiOption
 }
 
+def cast_value(data_type: str, val: str):
+    if data_type == 'type_game_item':
+        return int(val)
+    return val
 
 class ChoiceMenuOptionFactory():
     @staticmethod
@@ -51,24 +55,22 @@ class ChoiceMenuOptionFactory():
         elif option_type == BasicItemOption:
             if isinstance(value, ItemObject):
                 return BasicItemOption.from_item(idx, value, disp_value, row_width, align=text_align)
-            elif is_int(value):
-                return BasicItemOption.from_uid(idx, int(value), disp_value, row_width, align=text_align)
+            elif isinstance(value, int):
+                return BasicItemOption.from_uid(idx, value, disp_value, row_width, align=text_align)
             elif isinstance(value, str):
                 return BasicItemOption.from_nid(idx, value, disp_value, row_width, align=text_align)
             raise ValueError("Unknown item: " + str(value))
         elif option_type == BasicSkillOption:
             if isinstance(value, SkillObject):
                 return BasicSkillOption.from_skill(idx, value, disp_value, row_width, align=text_align)
-            elif is_int(value):
-                return BasicSkillOption.from_uid(idx, int(value), disp_value, row_width, align=text_align)
+            elif isinstance(value, int):
+                return BasicSkillOption.from_uid(idx, value, disp_value, row_width, align=text_align)
             elif isinstance(value, str):
                 return BasicSkillOption.from_nid(idx, value, disp_value, row_width, align=text_align)
             raise ValueError("Unknown skill: " + value)
         elif option_type == BasicUnitOption:
             if isinstance(value, UnitObject):
                 return BasicUnitOption.from_unit(idx, value, disp_value, row_width, align=text_align)
-            elif is_int(value):
-                return BasicUnitOption.from_uid(idx, int(value), disp_value, row_width, align=text_align)
             elif isinstance(value, str):
                 return BasicUnitOption.from_nid(idx, value, disp_value, row_width, align=text_align)
             raise ValueError("Unknown unit: " + value)
@@ -338,7 +340,7 @@ class GridChoiceMenu():
             value = data[i]
             disp_value = display_values[i]
             new_option = ChoiceMenuOptionFactory.create_option(self._resolve_data_type(
-                data_type), i, value, disp_value, row_width, self._text_align)
+                data_type), i, cast_value(data_type, value), disp_value, row_width, self._text_align)
             options.append(new_option)
             max_width = max(max_width, new_option.width())
         # normalize option width

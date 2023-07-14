@@ -11,6 +11,7 @@ from app.data.resources.resources import RESOURCES
 from app.data.resources import combat_anims, combat_commands, combat_palettes
 
 from app.editor.settings import MainSettingsController
+from app.editor.file_manager.project_file_backend import DEFAULT_PROJECT
 
 import app.editor.utilities as editor_utilities
 
@@ -220,7 +221,7 @@ def import_effect_from_legacy(fn: str):
 
     # Need to save the full image somewhere
     settings = MainSettingsController()
-    if os.path.basename(settings.get_current_project()) != 'default.ltproj':
+    if os.path.basename(settings.get_current_project()) != DEFAULT_PROJECT:
         path = os.path.join(settings.get_current_project(), 'resources', 'combat_effects')
         RESOURCES.combat_effects.save_image(path, current)
 
@@ -528,7 +529,7 @@ def import_from_gba(current, fn):
 
     # Need to save the full image somewhere
     settings = MainSettingsController()
-    if os.path.basename(settings.get_current_project()) != 'default.ltproj':
+    if os.path.basename(settings.get_current_project()) != DEFAULT_PROJECT:
         path = os.path.join(settings.get_current_project(), 'resources', 'combat_anims')
         RESOURCES.combat_anims.save_image(path, current)
 

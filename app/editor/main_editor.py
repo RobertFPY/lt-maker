@@ -29,7 +29,7 @@ from app.editor.lib.state_editor.editor_state_manager import EditorStateManager
 from app.editor.lib.state_editor.state_enums import MainEditorScreenStates
 
 # Saving/Loading Project
-from app.editor.file_manager.project_file_backend import ProjectFileBackend
+from app.editor.file_manager.project_file_backend import ProjectFileBackend, DEFAULT_PROJECT
 
 # Editors
 from app.editor.global_editor.global_editor import GlobalEditor
@@ -392,7 +392,7 @@ class MainEditor(QMainWindow):
         self.test_load_act.setEnabled(False)
         self.test_full_act.setEnabled(False)
         # Make a save before playing if not on default
-        if os.path.basename(self.settings.get_current_project()) != 'default.ltproj':
+        if os.path.basename(self.settings.get_current_project()) != DEFAULT_PROJECT:
             self.save()
         timer.get_timer().stop()  # Don't need these while running game
         GAME_ACTIONS.test_play_current(
@@ -407,7 +407,7 @@ class MainEditor(QMainWindow):
         self.test_load_act.setEnabled(False)
         self.test_full_act.setEnabled(False)
         # Make a save before playing if not on default
-        if os.path.basename(self.settings.get_current_project()) != 'default.ltproj':
+        if os.path.basename(self.settings.get_current_project()) != DEFAULT_PROJECT:
             self.save()
         timer.get_timer().stop()  # Don't need these while running game
         GAME_ACTIONS.test_play()
@@ -428,7 +428,7 @@ class MainEditor(QMainWindow):
         self.test_load_act.setEnabled(False)
         self.test_full_act.setEnabled(False)
         # Make a save before playing if not on default
-        if os.path.basename(self.settings.get_current_project()) != 'default.ltproj':
+        if os.path.basename(self.settings.get_current_project()) != DEFAULT_PROJECT:
             self.save()
         timer.get_timer().stop()  # Don't need these while running game
         GAME_ACTIONS.test_play_load(

@@ -50,9 +50,12 @@ if __name__ == '__main__':
         theme = dark_theme.get_theme()
         dark_theme.set(ap, theme)
         selected_path = choose_recent_project()
-        from app.editor.main_editor import MainEditor
-        window = MainEditor(selected_path)
-        window.show()
-        ap.exec_()
+        if selected_path:
+            from app.editor.main_editor import MainEditor
+            window = MainEditor(selected_path)
+            window.show()
+            ap.exec_()
+        else:
+            print('Canceling...')
     else:
         print('LT-maker is already running!')

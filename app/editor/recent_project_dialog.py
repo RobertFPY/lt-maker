@@ -72,6 +72,8 @@ class RecentProjectDialog(SimpleDialog):
         self.project_table.clicked.connect(self.on_select_project)
         self.project_table.doubleClicked.connect(self.on_double_click_project)
         self.project_table.selectRow(0)
+        # select initial project
+        self._selected_path = self.projects[0].path
 
         button_layout = QHBoxLayout()
         self.confirm_button = QPushButton("Open selected project", self)

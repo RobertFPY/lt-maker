@@ -309,7 +309,7 @@ class UIView():
             shimmer = SPRITES.get('menu_shimmer1')
         else:
             shimmer = SPRITES.get('menu_shimmer2')
-        bg_surf.blit(shimmer, (bg_surf.get_width() - 1 - shimmer.get_width(), 4))
+        bg_surf.blit(shimmer, (bg_surf.get_width() - 1 - shimmer.get_width(), 4 + 16 * max(len(text_lines) - 2, 0)))
         surf = engine.create_surface((bg_surf.get_width(), bg_surf.get_height() + 3), transparent=True)
         surf.blit(bg_surf, (0, 3))
         gem = SPRITES.get('combat_gem_blue')

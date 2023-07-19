@@ -67,6 +67,11 @@ def music(self: Event, music, fade_in=400, flags=None):
     else:
         get_sound_thread().fade_in(music, fade_in=fade_in)
 
+def music_fade_back(self: Event, fade_out=400, flags=None):
+    if self.do_skip:
+        fade_out = 0
+    get_sound_thread().fade_back(fade_out=fade_out)
+
 def music_clear(self: Event, fade_out=0, flags=None):
     if self.do_skip:
         fade_out = 0

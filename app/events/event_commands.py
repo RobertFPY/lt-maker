@@ -280,8 +280,21 @@ Fades in *Music* over the course of *FadeIn* milliseconds. Fade in defaults to 4
         """
 
     keywords = ['Music']
-    optional_keywords = ['FadeIn']  # How long to fade in (default 400)
+    optional_keywords = ['FadeIn']
     keyword_types = ['Music', 'Time']
+
+class MusicFadeBack(EventCommand):
+    nid = "music_fade_back"
+    nickname = "mf"
+    tag = Tags.MUSIC_SOUND
+    desc = \
+        """
+Fades out the currently playing song over the course of *FadeOut* milliseconds. Fade Out defaults to 400 milliseconds.
+If there is any previous music on the song stack, will fade into that song.
+        """
+
+    optional_keywords = ['FadeOut']
+    keyword_types = ['Time']
 
 class MusicClear(EventCommand):
     nid = "music_clear"

@@ -119,11 +119,8 @@ class CanUseWeaponType(SkillComponent):
 
     expose = ComponentType.WeaponType
 
-    def wexp_usable_skill(self, unit, item):
-        try: # get type from item and then compare
-            return item_system.weapon_type(unit, item) == self.value
-        except: # sometimes you just want to see if unit can use item TYPE
-            return item == self.value
+    def usable_wtypes(self, unit):
+        return self.value
 
 class CannotUseWeaponType(SkillComponent):
     nid = 'wexp_unusable_skill'
@@ -132,11 +129,8 @@ class CannotUseWeaponType(SkillComponent):
 
     expose = ComponentType.WeaponType
 
-    def wexp_unusable_skill(self, unit, item):
-        try: # get type from item and then compare
-            return item_system.weapon_type(unit, item) == self.value
-        except: # sometimes you just want to see if unit can use item TYPE
-            return item == self.value
+    def forbidden_wtypes(self, unit):
+        return self.value
 
 class EnemyWexpMultiplier(SkillComponent):
     nid = 'enemy_wexp_multiplier'

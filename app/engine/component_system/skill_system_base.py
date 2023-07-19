@@ -1,5 +1,8 @@
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
+
+from app.engine.component_system import utils
 
 if TYPE_CHECKING:
     from app.engine.objects.item import ItemObject
@@ -35,10 +38,6 @@ class Defaults():
         return unit1.team == unit2.team and check_ally(unit1, unit2) and not no_trade(unit1) and not no_trade(unit2)
 
     @staticmethod
-    def no_trade(unit) -> bool:
-        return False
-
-    @staticmethod
     def num_items_offset(unit) -> int:
         return 0
 
@@ -67,14 +66,6 @@ class Defaults():
         return 1.0
 
     @staticmethod
-    def wexp_usable_skill(unit1, unit2) -> float:
-        return False
-
-    @staticmethod
-    def wexp_unusable_skill(unit1, unit2) -> float:
-        return False
-
-    @staticmethod
     def change_variant(unit) -> str:
         return unit.variant
 
@@ -91,7 +82,7 @@ class Defaults():
         return unit.roam_ai
 
     @staticmethod
-    def has_canto(unit1, unit2) -> bool:
+    def has_canto(unit1, target) -> bool:
         return False
 
     @staticmethod
@@ -189,18 +180,6 @@ def is_grey(skill, unit) -> bool:
 def hidden(skill, unit) -> bool:
     return skill.hidden or skill.is_terrain or (skill.hidden_if_inactive and not condition(skill, unit))
 
-def available(unit, item) -> bool:
-    """
-    If any hook reports false, then it is false
-    """
-    for skill in unit.skills:
-        for component in skill.components:
-            if component.defines('available'):
-                if component.ignore_conditional or condition(skill, unit):
-                    if not component.available(unit, item):
-                        return False
-    return True
-
 def stat_change(unit, stat_nid) -> int:
     bonus = 0
     for skill in unit.skills:
@@ -280,36 +259,6 @@ def additional_tags(unit) -> set:
         if skill.has_tags and skill.has_tags.value and condition(skill, unit):
             new_tags = new_tags | set(skill.has_tags.value)
     return new_tags
-
-def mana(playback, unit, item, target) -> int:
-    mana = 0
-    for skill in unit.skills:
-        for component in skill.components:
-            if component.defines('mana'):
-                if component.ignore_conditional or condition(skill, unit):
-                    d = component.mana(playback, unit, item, target)
-                    mana += d
-    return mana
-
-def can_unlock(unit, region) -> bool:
-    for skill in unit.skills:
-        for component in skill.components:
-            if component.defines('can_unlock'):
-                if component.ignore_conditional or condition(skill, unit):
-                    if component.can_unlock(unit, region):
-                        return True
-    return False
-
-def target_icon(cur_unit, displaying_unit) -> list:
-    markers = []
-    for skill in cur_unit.skills:
-        for component in skill.components:
-            if component.defines('target_icon'):
-                if component.ignore_conditional or condition(skill, cur_unit):
-                    marker = component.target_icon(cur_unit, displaying_unit)
-                    if marker:
-                        markers.append(marker)
-    return markers
 
 def before_crit(actions, playback, attacker, item, defender, mode, attack_info) -> bool:
     for skill in attacker.skills:
@@ -439,7 +388,7 @@ def ai_priority_multiplier(unit) -> float:
     return ai_priority_multiplier
 
 def get_combat_arts(unit):
-    from app.engine import item_funcs, target_system, action
+    from app.engine import action, item_funcs, target_system
     combat_arts = {}
     unit_skills = unit.skills[:]
     for skill in unit_skills:

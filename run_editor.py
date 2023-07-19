@@ -3,7 +3,7 @@ import sys
 from app.editor.recent_project_dialog import choose_recent_project
 
 from app.editor.editor_locale import init_locale
-from app.engine.component_system_compiler import source_generator
+from app.engine.component_system import source_generator
 
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import QLockFile, QDir, Qt
@@ -51,11 +51,11 @@ if __name__ == '__main__':
         dark_theme.set(ap, theme)
         selected_path = choose_recent_project()
         if selected_path:
-            from app.editor.main_editor import MainEditor
-            window = MainEditor(selected_path)
-            window.show()
-            ap.exec_()
-        else:
+        from app.editor.main_editor import MainEditor
+        window = MainEditor(selected_path)
+        window.show()
+        ap.exec_()
+    else:
             print('Canceling...')
     else:
         print('LT-maker is already running!')

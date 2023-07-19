@@ -1,8 +1,10 @@
 from dataclasses import dataclass
+from typing import Dict
 
 from app.utilities.data import Data, Prefab
 from app.data.database.weapons import WexpGain
 from app.utilities import str_utils
+from app.utilities.typing import NID
 
 
 @dataclass
@@ -26,7 +28,7 @@ class Klass(Prefab):
     max_stats: dict = None
 
     learned_skills: list = None
-    wexp_gain: dict = None
+    wexp_gain: Dict[NID, WexpGain] = None
 
     icon_nid: str = None
     icon_index: tuple = (0, 0)

@@ -1,5 +1,13 @@
+from __future__ import annotations
+
 import random
-from typing import Set, Tuple
+from typing import TYPE_CHECKING, Set, Tuple
+
+from app.engine.component_system import utils
+
+if TYPE_CHECKING:
+    from app.engine.objects.item import ItemObject
+    from app.engine.objects.unit import UnitObject
 
 class Defaults():
     @staticmethod

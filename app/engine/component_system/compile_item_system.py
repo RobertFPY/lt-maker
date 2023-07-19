@@ -1,3 +1,7 @@
+from __future__ import annotations
+from typing import Dict
+from app.engine.component_system.utils import HookInfo, ARG_TYPE_MAP, ResolvePolicy
+
 # HOOK CATALOG
 # false priority hooks default to false
 # and will be false if any single component returns false
@@ -7,7 +11,7 @@ false_priority_hooks = \
      'can_use', 'can_use_in_base', 'locked', 'unstealable', 'allow_same_target', 'allow_less_than_max_targets',
      'ignore_weapon_advantage', 'unrepairable', 'unsplashable', 'targets_items',
      'menu_after_combat', 'transforms', 'no_attack_after_move', 'no_map_hp_display',
-     'cannot_dual_strike', 'can_attack_after_combat', 'simple_target_restrict', 'force_map_anim', 
+     'cannot_dual_strike', 'can_attack_after_combat', 'simple_target_restrict', 'force_map_anim',
      'ignore_line_of_sight', 'ignore_fog_of_war')
 # All default hooks are exclusive
 formula = ('damage_formula', 'resist_formula', 'accuracy_formula', 'avoid_formula',
@@ -36,6 +40,36 @@ status_event_hooks = ('on_upkeep', 'on_endstep')
 
 exclusive_hooks = false_priority_hooks + default_hooks
 
+ITEM_HOOKS: Dict[str, HookInfo] = {
+    # false_priority_hooks
+    # 'is_weapon': HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
+}
+
+def generate_item_hook_str(hook_name: str, hook_info: HookInfo):
+    args = hook_info.args
+    if not 'unit' in args or not 'item' in args:
+        raise ValueError("Expected 'unit' and 'item' in args for hook %s" % hook_name)
+    func_signature = ['{arg}: {type}'.format(arg=arg, type=ARG_TYPE_MAP.get(arg, "Any")) for arg in args]
+
+    default_handling = "return result"
+    if hook_info.has_default_value:
+        default_handling = "return result if values else Defaults.{hook_name}({args})".format(hook_name=hook_name, args=', '.join(args))
+    func_text = """
+def {hook_name}({func_signature}):
+    all_components = get_all_components(unit, item)
+    values = []
+    for component in all_components:
+        if component.defines('{hook_name}'):
+            values.append(component.{hook_name}({args}))
+    result = utils.{policy_resolution}(values)
+    {default_handling}
+""".format(hook_name=hook_name,
+           func_signature=', '.join(func_signature),
+           args=', '.join(args),
+           policy_resolution=hook_info.policy.value,
+           default_handling=default_handling)
+    return func_text
+
 def compile_item_system():
     import os
     dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -50,6 +84,10 @@ def compile_item_system():
     # copy item system base
     for line in item_system_base.readlines():
         compiled_item_system.write(line)
+
+    for hook_name, hook_info in ITEM_HOOKS.items():
+        func = generate_item_hook_str(hook_name, hook_info)
+        compiled_item_system.write(func)
 
     # compile item system
     for hook in false_priority_hooks:
@@ -190,3 +228,7 @@ def %s(unit, item, target, mode):
             % (hook, hook, hook)
         compiled_item_system.write(func)
         compiled_item_system.write('\n')
+
+    compiled_item_system.close()
+    item_system_base.close()
+    warning_msg.close()

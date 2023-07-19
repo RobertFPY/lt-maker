@@ -1,11 +1,14 @@
+from typing import Set
 from app.data.database.database import DB
 from app.data.database.difficulty_modes import GrowthOption
-from app.engine import item_funcs
+from app.engine import item_funcs, skill_system
 from app.engine.game_state import game
 from app.events import triggers
 from app.utilities import utils, static_random
 
 import logging
+
+from app.utilities.typing import NID
 
 def get_leveling_method(unit, custom_method=None) -> str:
     if custom_method:
@@ -344,3 +347,9 @@ def wait(unit):
         # To prevent double-waiting
         game.events.trigger(triggers.UnitWait(unit, unit.position, game.get_region_under_pos(unit.position)))
         action.do(action.Wait(unit))
+
+def usable_wtypes(unit) -> Set[NID]:
+    klass = DB.classes.get(unit.klass)
+    klass_weapons = klass.wexp_gain
+    klass_usable = set([wtype_name for wtype_name, wtype_info in klass_weapons.items() if wtype_info.usable])
+    return (klass_usable | skill_system.usable_wtypes(unit)) - skill_system.forbidden_wtypes(unit)

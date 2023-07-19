@@ -8,7 +8,7 @@ from app.constants import WINHEIGHT, WINWIDTH
 from app.data.database.database import DB
 from app.data.database.stats import StatPrefab
 from app.data.database.weapons import WeaponType
-from app.engine import engine, icons, image_mods, item_system
+from app.engine import engine, icons, image_mods, item_system, unit_funcs
 from app.engine.base_surf import create_base_surf, create_highlight_surf
 from app.engine.game_counters import ANIMATION_COUNTERS
 from app.engine.graphics.ui_framework.premade_animations.animation_templates import \
@@ -100,7 +100,7 @@ def get_formatted_stat_pages() -> List[Tuple[str, List[Column]]]:
         new_weapon_rank_page.append(
             Column('12%', "", uif.HAlignment.LEFT, icons.get_icon(wtype),
                    lambda unit, wtype=wtype: (DB.weapon_ranks.get_rank_from_wexp(unit.wexp[wtype.nid]).rank
-                                              if (DB.weapon_ranks.get_rank_from_wexp(unit.wexp[wtype.nid]) and (DB.classes.get(unit.klass).wexp_gain.get(wtype.nid).usable or skill_system.wexp_usable_skill(unit, wtype)))
+                                              if (DB.weapon_ranks.get_rank_from_wexp(unit.wexp[wtype.nid]) and wtype.nid in unit_funcs.usable_wtypes(unit))
                                               else '-'),
                    None,
                    get_font=(lambda unit, wtype=wtype:

@@ -7,7 +7,7 @@ from app.engine import engine
 from app.engine import config as cf
 from app.engine import driver
 from app.engine import game_state
-from app.engine.component_system_compiler import source_generator
+from app.engine.component_system import source_generator
 
 def main(name: str = 'testing_proj'):
     # Translation currently unused within engine proper

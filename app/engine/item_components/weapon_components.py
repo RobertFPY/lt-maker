@@ -5,7 +5,7 @@ from app.data.database.difficulty_modes import RNGOption
 from app.data.database.item_components import ItemComponent, ItemTags
 from app.data.database.components import ComponentType
 
-from app.engine import action, combat_calcs, equations, item_system, skill_system
+from app.engine import action, combat_calcs, equations, item_system, skill_system, unit_funcs
 from app.engine.game_state import game
 from app.engine.combat import playback as pb
 
@@ -23,7 +23,7 @@ class WeaponType(ItemComponent):
         klass = DB.classes.get(unit.klass)
         wexp_gain = klass.wexp_gain.get(self.value)
         if wexp_gain:
-            klass_usable = (wexp_gain.usable or skill_system.wexp_usable_skill(unit, item)) and not skill_system.wexp_unusable_skill(unit, item)
+            klass_usable = self.value in unit_funcs.usable_wtypes(unit)
             return unit.wexp[self.value] > 0 and klass_usable
         return False
 
@@ -161,7 +161,7 @@ class Damage(ItemComponent):
             damage = combat_calcs.compute_assist_damage(unit, target, item, target.get_weapon(), mode, attack_info, crit=True)
         else:
             damage = combat_calcs.compute_damage(unit, target, item, target.get_weapon(), mode, attack_info, crit=True)
- 
+
         # Reduce damage if in Grandmaster Mode (although crit doesn't make much sense with Grandmaster mode)
         if game.mode.rng_choice == RNGOption.GRANDMASTER:
             hit = utils.clamp(combat_calcs.compute_hit(unit, target, item, target.get_weapon(), mode, attack_info), 0, 100)

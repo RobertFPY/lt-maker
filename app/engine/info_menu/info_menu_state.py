@@ -5,7 +5,7 @@ from app.data.database.database import DB
 from app.data.resources.resources import RESOURCES
 from app.engine import (background, combat_calcs, engine, equations, gui,
                         help_menu, icons, image_mods, item_funcs, skill_system,
-                        text_funcs)
+                        text_funcs, unit_funcs)
 from app.engine.fluid_scroll import FluidScroll
 from app.engine.game_menus import menu_options
 from app.engine.game_menus.icon_options import BasicItemOption, ItemOptionModes
@@ -498,7 +498,7 @@ class InfoMenuState(State):
         if len(left_stats) >= 7:
             self._extra_stat_row = True
             # If we have 7 or more left stats, use 7 rows
-            right_stats = left_stats[7:]  
+            right_stats = left_stats[7:]
         else:  # Otherwise, just use the 6 rows
             self._extra_stat_row = False
             right_stats = left_stats[6:]
@@ -648,11 +648,9 @@ class InfoMenuState(State):
         surf.blit(self.growths_surf, (96, 0))
 
     def create_wexp_surf(self):
-        class_obj = DB.classes.get(self.unit.klass)
         wexp_to_draw: List[Tuple[str, int]] = []
         for weapon, wexp in self.unit.wexp.items():
-            if wexp > 0 and (class_obj.wexp_gain.get(weapon).usable or skill_system.wexp_usable_skill(self.unit, weapon)) \
-            and not skill_system.wexp_unusable_skill(self.unit, weapon):
+            if wexp > 0 and weapon in unit_funcs.usable_wtypes(self.unit):
                 wexp_to_draw.append((weapon, wexp))
         width = (WINWIDTH - 102) // 2
         height = 16 * 2 + 4

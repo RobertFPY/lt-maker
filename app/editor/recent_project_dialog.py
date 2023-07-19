@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 from typing import List, Optional
 
@@ -9,7 +11,6 @@ from app.editor.file_manager.project_initializer import ProjectInitializer
 from app.editor.settings.main_settings_controller import MainSettingsController
 from app.editor.settings.project_history_controller import ProjectHistoryEntry
 from app.extensions.custom_gui import SimpleDialog
-
 
 class RecentProjectsModel(QAbstractTableModel):
     def __init__(self, data: List[ProjectHistoryEntry]):
@@ -71,6 +72,8 @@ class RecentProjectDialog(SimpleDialog):
         self.project_table.clicked.connect(self.on_select_project)
         self.project_table.doubleClicked.connect(self.on_double_click_project)
         self.project_table.selectRow(0)
+        # select initial project
+        self._selected_path = self.projects[0].path
 
         button_layout = QHBoxLayout()
         self.confirm_button = QPushButton("Open selected project", self)
@@ -128,16 +131,26 @@ class RecentProjectDialog(SimpleDialog):
             self._selected_path = path
             self.accept()
 
+    def closeEvent(self, event):
+        self._selected_path = None
+        super().closeEvent(event)
+
     def get_selected(self) -> Optional[str]:
         return self._selected_path
 
 
 def choose_recent_project(load_only=False) -> Optional[str]:
+    """
+    # str means go open that project at that path
+    # None means don't do anything (When you press X or close on the dialog)
+    """
     settings = MainSettingsController()
     recent_projects = settings.get_last_ten_projects()
     if not recent_projects or settings.get_auto_open():
-        return None
+        return settings.get_current_project()
     dialog = RecentProjectDialog(
         settings.get_last_ten_projects(), load_only)
     dialog.exec_()
-    return dialog.get_selected()
+    selected_path: Optional[str] = \
+        dialog.get_selected()
+    return selected_path

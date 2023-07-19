@@ -376,6 +376,8 @@ class Dialog():
     def command_unpause(self):
         if self.state == DialogState.COMMAND_PAUSE:
             self.state = DialogState.PROCESS
+            if self.portrait and self.should_move_mouth:
+                self.portrait.talk()
 
     def start_processing(self):
         if self.state == DialogState.TRANSITION_IN:

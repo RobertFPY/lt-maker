@@ -1,4 +1,5 @@
 from app.utilities.data import Data, Prefab
+from app.utilities import str_utils
 
 AI_ActionTypes = ['None', 'Attack', 'Support', 'Steal', 'Interact', 'Move_to', 'Move_away_from', 'Wait']
 AI_TargetTypes = ['None', 'Enemy', 'Ally', 'Unit', 'Position', 'Event', 'Time']
@@ -104,3 +105,10 @@ class AIBehaviour(Prefab):
 
 class AICatalog(Data[AIPrefab]):
     datatype = AIPrefab
+
+    def create_new(self, db):
+        nids = [d.nid for d in self]
+        nid = str_utils.get_next_name("New AI", nids)
+        new_ai = AIPrefab(nid, 20)
+        self.append(new_ai)
+        return new_ai

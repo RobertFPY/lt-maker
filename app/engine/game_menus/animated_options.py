@@ -40,19 +40,12 @@ class BasicUnitOption(BaseOption[UnitObject]):
     def from_nid(cls, idx, unit_nid: NID, display_value: str | None = None, width: int = 0,
                  height: int = 0, ignore: bool = False, font: NID = 'text', text_color: NID = 'white',
                  align: HAlignment = HAlignment.LEFT):
-        unit_prefab = DB.units.get(unit_nid, None)
-        if not unit_prefab:
-            raise ValueError("%s is not a unit" % unit_nid)
-        as_unit = UnitObject.from_prefab(unit_prefab)
-        return cls(idx, as_unit, display_value, width, height, ignore, font, text_color, align)
-
-    @classmethod
-    def from_uid(cls, idx, unit_uid: int, display_value: str | None = None, width: int = 0,
-                 height: int = 0, ignore: bool = False, font: NID = 'text', text_color: NID = 'white',
-                 align: HAlignment = HAlignment.LEFT):
-        unit_object = game.unit_registry.get(unit_uid)
-        if not unit_object:
-            raise ValueError("%s is not a valid unit uid" % unit_uid)
+        unit_object = game.unit_registry.get(unit_nid)
+        if not unit_object: # unit is unloaded/in DB?
+            unit_prefab = DB.units.get(unit_nid, None)
+            if not unit_prefab:
+                raise ValueError("%s is not a unit" % unit_nid)
+            unit_object = UnitObject.from_prefab(unit_prefab)
         return cls(idx, unit_object, display_value, width, height, ignore, font, text_color, align)
 
     @classmethod

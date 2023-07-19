@@ -42,10 +42,7 @@ class FactionModel(DragDropCollectionModel):
         return None
 
     def create_new(self):
-        nids = [d.nid for d in self._data]
-        nid = name = str_utils.get_next_name("New Faction", nids)
-        new_faction = factions.Faction(nid, name)
-        DB.factions.append(new_faction)
+        new_faction = DB.factions.create_new(DB)
         return new_faction
 
     def delete(self, idx):

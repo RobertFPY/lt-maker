@@ -5,8 +5,6 @@ import logging
 import os
 import shutil
 from datetime import datetime
-from pathlib import Path
-from time import time_ns
 from typing import Optional
 
 from PyQt5.QtCore import QDir, Qt
@@ -18,13 +16,12 @@ from app.data.resources.resources import RESOURCES
 from app.editor import timer
 from app.editor.file_manager.project_initializer import ProjectInitializer
 from app.editor.lib.csv import csv_data_exporter, text_data_exporter
-from app.editor.new_game_dialog import NewGameDialog
 from app.editor.recent_project_dialog import choose_recent_project
 from app.editor.settings import MainSettingsController
 from app.utilities import exceptions
 
 RESERVED_PROJECT_PATHS = ("default.ltproj", 'autosave.ltproj', 'autosave', 'default')
-
+DEFAULT_PROJECT = "default.ltproj"
 
 class ProjectFileBackend():
     def __init__(self, parent, app_state_manager):
@@ -69,7 +66,7 @@ class ProjectFileBackend():
     def save(self, new=False) -> bool:
         # Returns whether we successfully saved
         # check if we're editing default, if so, prompt to save as
-        if self.current_proj and os.path.basename(self.current_proj) == 'default.ltproj':
+        if self.current_proj and os.path.basename(self.current_proj) == DEFAULT_PROJECT:
             self.current_proj = None
         if new or not self.current_proj:
             starting_path = self.current_proj or QDir.currentPath()
@@ -79,7 +76,7 @@ class ProjectFileBackend():
                 # Make sure you can't save as "autosave" or "default"
                 if os.path.split(fn)[-1] in RESERVED_PROJECT_PATHS:
                     QMessageBox.critical(
-                        self.parent, "Save Error", "You cannot save project as <b>default.ltproj</b> or <b>autosave.ltproj</b>!\nChoose another name.")
+                        self.parent, "Save Error", "You cannot save project as <b>%s</b> or <b>autosave.ltproj</b>!\nChoose another name." % DEFAULT_PROJECT)
                     return False
                 if fn.endswith('.ltproj'):
                     self.current_proj = fn
@@ -201,7 +198,7 @@ class ProjectFileBackend():
         return False
 
     def auto_open_fallback(self):
-        self.current_proj = "default.ltproj"
+        self.current_proj = DEFAULT_PROJECT
         self.settings.set_current_project(self.current_proj)
         self.load()
 
@@ -220,7 +217,7 @@ class ProjectFileBackend():
                     path, RESOURCES.get_custom_components_path()))
                 QMessageBox.warning(self.parent, "Load of project failed",
                                     "Failed to load project at %s due to syntax error. Likely there's a problem in your Custom Components file, located at %s. Exception:\n%s." % (path, RESOURCES.get_custom_components_path(), e))
-                logging.warning("falling back to default.ltproj")
+                logging.warning("falling back to %s" % DEFAULT_PROJECT)
                 self.auto_open_fallback()
                 return False
             except Exception as e:
@@ -253,12 +250,12 @@ class ProjectFileBackend():
                 else:
                     logging.warning("no project found at %s",
                                     backup_project_name)
-                logging.warning("falling back to default.ltproj")
+                logging.warning("falling back to %s" % DEFAULT_PROJECT)
                 self.auto_open_fallback()
                 return False
         else:
             logging.warning(
-                "path %s not found. Falling back to default.ltproj" % path)
+                "path %s not found. Falling back to %s" % (path, DEFAULT_PROJECT))
             self.auto_open_fallback()
             return False
 

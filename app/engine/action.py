@@ -3315,6 +3315,7 @@ class AddSkill(Action):
 
         if self.skill_obj.aura and self.skill_obj in self.unit.all_skills and \
                 self.unit.position and game.board and game.tilemap:
+            game.boundary.unregister_unit_auras(self.unit)
             aura_funcs.propagate_aura(self.unit, self.skill_obj, game)
             game.boundary.register_unit_auras(self.unit)
 
@@ -3328,14 +3329,17 @@ class AddSkill(Action):
         self.reset_action.reverse()
         if not self.skill_obj:
             return
-        game.boundary.unregister_unit_auras(self.unit)
         if self.skill_obj in self.unit.all_skills:
             # Actually remove skill
             skill_system.before_remove(self.unit, self.skill_obj)
             self.unit.remove_skill(self.skill_obj)
             self.skill_obj.owner_nid = None
+
             if self.skill_obj.aura and self.unit.position and game.board and game.tilemap:
+                game.boundary.unregister_unit_auras(self.unit)
                 aura_funcs.release_aura(self.unit, self.skill_obj, game)
+                game.boundary.register_unit_auras(self.unit)
+
             skill_system.after_remove(self.unit, self.skill_obj)
         else:
             logging.error("Skill %s not in %s's skills", self.skill_obj.nid, self.unit)
@@ -3355,9 +3359,13 @@ class RemoveSkill(Action):
             skill_system.before_true_remove(self.unit, skill)
         skill.owner_nid = None
         self.removed_skills.append(skill)
-        if skill.aura and self.unit.position and game.board and game.tilemap:
-            aura_funcs.release_aura(self.unit, skill, game)
         self.unit.remove_skill(skill)
+
+        if skill.aura and self.unit.position and game.board and game.tilemap:
+            game.boundary.unregister_unit_auras(self.unit)
+            aura_funcs.release_aura(self.unit, skill, game)
+            game.boundary.register_unit_auras(self.unit)
+
         skill_system.after_remove(self.unit, skill)
         if true_remove:
             skill_system.after_true_remove(self.unit, skill)
@@ -3398,8 +3406,12 @@ class RemoveSkill(Action):
             skill_system.before_add(self.unit, skill)
             skill.owner_nid = self.unit.nid
             self.unit.add_skill(skill)
+
             if skill.aura and self.unit.position and game.board and game.tilemap:
+                game.boundary.unregister_unit_auras(self.unit)
                 aura_funcs.propagate_aura(self.unit, skill, game)
+                game.boundary.register_unit_auras(self.unit)
+                
             skill_system.after_add(self.unit, skill)
 
 

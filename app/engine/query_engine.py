@@ -195,7 +195,7 @@ Example usage:
         position = self._resolve_pos(position)
         if position:
             return sorted([(unit, utils.calculate_distance(unit.position, position)) for unit in self.game.get_player_units()],
-                        key=lambda pair: pair[1])[:num]
+                            key=lambda pair: pair[1])[:num]
         return []
 
     @categorize(QueryType.MAP)

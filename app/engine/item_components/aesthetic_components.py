@@ -3,7 +3,7 @@ from app.data.database.item_components import ItemComponent, ItemTags
 from app.data.database.components import ComponentType
 
 from app.engine.combat import playback as pb
-from app.engine import engine, image_mods, skill_system
+from app.engine import engine, image_mods, item_funcs, skill_system
 
 import logging
 
@@ -135,7 +135,7 @@ class Warning(ItemComponent):
     tag = ItemTags.AESTHETIC
 
     def target_icon(self, target, item, unit) -> str:
-        return 'warning' if skill_system.check_enemy(target, unit) else None
+        return 'warning' if item_funcs.available(unit, item) and skill_system.check_enemy(target, unit) else None
 
 class EvalWarning(ItemComponent):
     nid = 'eval_warning'

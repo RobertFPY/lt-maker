@@ -3,7 +3,7 @@ from app.data.database.item_components import ItemComponent, ItemTags
 from app.data.database.components import ComponentType
 
 from app.utilities import utils
-from app.engine import action, combat_calcs, image_mods, engine, item_system, skill_system
+from app.engine import action, combat_calcs, item_funcs, image_mods, engine, item_system, skill_system
 from app.engine.combat import playback as pb
 
 class EffectiveDamage(ItemComponent):
@@ -71,7 +71,7 @@ class EffectiveDamage(ItemComponent):
         return sprite
 
     def target_icon(self, target, item, unit) -> Optional[str]:
-        if skill_system.check_enemy(target, unit):
+        if item_funcs.available(unit, item) and skill_system.check_enemy(target, unit):
             if self._check_effective(target):
                 return 'danger'
         return None

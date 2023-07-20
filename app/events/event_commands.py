@@ -840,6 +840,17 @@ checked to see the turnwheel option in your menu.
     keywords = ["Activated"]
     keyword_types = ['Bool']
 
+class EndTurn(EventCommand):
+    nid = 'end_turn'
+    tag = TAGS.LEVEL_VARS
+
+    desc = \
+        """
+Forcibly ends the current turn. Optionally can skip ahead to any further *Team*'s phase.
+        """
+
+    optional_keywords = ["Team"]
+
 class WinGame(EventCommand):
     nid = 'win_game'
     tag = Tags.LEVEL_VARS

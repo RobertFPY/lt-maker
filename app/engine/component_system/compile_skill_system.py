@@ -112,8 +112,8 @@ SKILL_HOOKS: Dict[str, HookInfo] = {
     'after_strike':                         HookInfo(['actions', 'playback', 'unit', 'item', 'target', 'mode', 'attack_info', 'strike'], ResolvePolicy.NO_RETURN),
     'after_take_strike':                    HookInfo(['actions', 'playback', 'unit', 'item', 'target', 'mode', 'attack_info', 'strike'], ResolvePolicy.NO_RETURN),
     # phase events
-    'on_upkeep':                            HookInfo(['actions', 'playback', 'unit'], ResolvePolicy.NO_RETURN),
-    'on_endstep':                           HookInfo(['actions', 'playback', 'unit'], ResolvePolicy.NO_RETURN),
+    'on_upkeep':                            HookInfo(['actions', 'playback', 'unit'], ResolvePolicy.NO_RETURN, has_unconditional=True),
+    'on_endstep':                           HookInfo(['actions', 'playback', 'unit'], ResolvePolicy.NO_RETURN, has_unconditional=True),
     # combat events (as events but has unconditional variants)
     'start_combat':                         HookInfo(['playback', 'unit', 'item', 'target', 'mode'], ResolvePolicy.NO_RETURN, has_unconditional=True),
     'cleanup_combat':                       HookInfo(['playback', 'unit', 'item', 'target', 'mode'], ResolvePolicy.NO_RETURN, has_unconditional=True),

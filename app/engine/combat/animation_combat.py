@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import random
+from typing import List
 
 import logging
 
@@ -10,6 +13,7 @@ from app.engine import (action, background, battle_animation, combat_calcs,
                         engine, gui, icons, image_mods, item_funcs,
                         item_system, skill_system)
 from app.engine.combat import playback as pb
+from app.engine.combat.playback import PlaybackBrush
 from app.engine.combat.base_combat import BaseCombat
 from app.engine.combat.map_combat import MapCombat
 from app.engine.combat.mock_combat import MockCombat
@@ -140,7 +144,7 @@ class AnimationCombat(BaseCombat, MockCombat):
         self.current_battle_anim = None
 
         self.initial_paint_setup()
-        self._set_stats()
+        self._set_stats(self.playback)
 
     def skip(self):
         self._skip = True
@@ -234,7 +238,7 @@ class AnimationCombat(BaseCombat, MockCombat):
             game.cursor.set_pos(self.view_pos)
             if not self._skip:
                 game.state.change('move_camera')
-            self._set_stats()  # For start combat changes
+            self._set_stats(self.playback)  # For start combat changes
 
         elif self.state == 'red_cursor':
             if self._skip or current_time > 400:
@@ -264,7 +268,7 @@ class AnimationCombat(BaseCombat, MockCombat):
 
         elif self.state == 'arena_init':
             self.start_combat()
-            self._set_stats()
+            self._set_stats(self.playback)
             self.pair_battle_animations(0)
             self.bar_offset = 1
             self.name_offset = 1
@@ -738,7 +742,7 @@ class AnimationCombat(BaseCombat, MockCombat):
     def get_color(self, team: NID) -> str:
         return DB.teams.get(team).combat_color
 
-    def _set_stats(self):
+    def _set_stats(self, playback: List[PlaybackBrush]):
         a_hit = combat_calcs.compute_hit(self.attacker, self.defender, self.main_item, self.def_item, 'attack', self.state_machine.get_attack_info())
         a_mt = combat_calcs.compute_damage(self.attacker, self.defender, self.main_item, self.def_item, 'attack', self.state_machine.get_attack_info())
         if DB.constants.value('crit'):
@@ -783,12 +787,12 @@ class AnimationCombat(BaseCombat, MockCombat):
             d_stats = None
             dp_stats = None
 
-        if self.get_from_playback('attacker_partner_phase'):
+        if any(brush.nid == 'attacker_partner_phase' for brush in playback):
             ta_stats = ap_stats
         else:
             ta_stats = a_stats
 
-        if self.get_from_playback('defender_partner_phase'):
+        if any(brush.nid == 'defender_partner_phase' for brush in playback):
             td_stats = dp_stats
         else:
             td_stats = d_stats

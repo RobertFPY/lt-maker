@@ -14,7 +14,6 @@ SKILL_HOOKS: Dict[str, HookInfo] = {
     'ignore_region_status':                 HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'no_double':                            HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'def_double':                           HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
-    'alternate_splash':                     HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'ignore_rescue_penalty':                HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'ignore_forced_movement':               HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'distant_counter':                      HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
@@ -30,6 +29,8 @@ SKILL_HOOKS: Dict[str, HookInfo] = {
     'no_trade':                             HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
     # false priority, true if any (set to True if result is True in any component, False if not defined)
     'can_unlock':                           HookInfo(['unit', 'region'], ResolvePolicy.ANY_DEFAULT_FALSE),
+    # exclusive (returns last component value, returns None if not defined)
+    'alternate_splash':                     HookInfo(['unit'], ResolvePolicy.UNIQUE),
     # exclusive (returns last component value, has default value if not defined)
     'can_select':                           HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
     'movement_type':                        HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
@@ -135,7 +136,7 @@ def generate_skill_hook_str(hook_name: str, hook_info: HookInfo):
         raise ValueError("Expected 'unit' in args for hook %s" % hook_name)
     func_signature = ['{arg}: {type}'.format(arg=arg, type=ARG_TYPE_MAP.get(arg, "Any")) for arg in args]
 
-    conditional_check = "condition(skill, unit)" if not 'item' in args else 'condition(skill, unit, item)'
+    conditional_check = "condition(skill, unit)" if 'item' not in args else 'condition(skill, unit, item)'
     default_handling = "return result"
     unconditional_handling = ""
     if hook_info.has_default_value:

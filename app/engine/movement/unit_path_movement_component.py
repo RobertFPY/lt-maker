@@ -110,6 +110,7 @@ class UnitPathMovementComponent(MovementComponent):
             get_sound_thread().play_sfx('Surprise')
             self.unit.sprite.change_state('normal')
             self.unit.sprite.reset()
+            self.unit.sprite.add_animation('MapSurprise', loop=False)
             action.do(action.HasAttacked(self.unit))
             if self.unit.team == 'player':
                 game.state.clear()

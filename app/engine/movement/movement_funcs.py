@@ -61,9 +61,11 @@ def check_position(unit: UnitObject, new_position: Tuple[int, int],
     # Returns True if position is OK
     """
     # Interruption regions take precedence, even over event movements
-    interrupted = check_region_interrupt(new_position)
-    if interrupted:
-        return False
+    # Only applies if there's not already a unit standing on the position
+    if not game.board.get_unit(unit.position):
+        interrupted = check_region_interrupt(unit.position)
+        if interrupted:
+            return False
     # Event movement is nearly always valid
     if event:
         return True

@@ -80,6 +80,11 @@ class PrepMainState(MapState):
 
         game.events.trigger(triggers.OnPrepStart())
 
+    def begin(self):
+        prep_music = game.game_vars.get('_prep_music')
+        if prep_music:
+            get_sound_thread().fade_in(prep_music)
+
     def create_background(self):
         img = SPRITES.get('focus_fade').convert_alpha()
         self.bg = SpriteBackground(img)

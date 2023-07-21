@@ -121,6 +121,11 @@ class BaseMainState(State):
         game.state.change('transition_in')
         return 'repeat'
 
+    def begin(self):
+        base_music = game.game_vars.get('_base_music')
+        if base_music:
+            get_sound_thread().fade_in(base_music)
+
     def take_input(self, event):
         first_push = self.fluid.update()
         directions = self.fluid.get_directions()

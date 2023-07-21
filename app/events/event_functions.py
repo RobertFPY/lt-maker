@@ -760,22 +760,27 @@ def set_fog_of_war(self: Event, fog_of_war_type, radius, ai_radius=None, other_r
         action.do(action.SetLevelVar('_ai_fog_of_war_radius', other_radius))
 
 def end_turn(self: Event, team: NID = None, flags=None):
-    logging.info('Force end of turn.')
+    self.logger.info('Force end of turn.')
     if team is not None:
         if team not in DB.teams.keys():
-            logging.error("end_turn: %s is not a valid team team nid" % team)
-        # Skip turns until the next team is the one we want:
+            self.logger.error("end_turn: %s is not a valid team team nid" % team)
+            return
+        if not any(unit.team == team for unit in self.game.units if unit.position and 'Tile' not in unit.tags):
+            self.logger.error("end_turn: %s has no units on the team" % team)
+            return
+        # Skip turns until the next team is the one we want
         while self.game.phase.get_next() != team:
+            print(self.game.phase.get_next())
             self.game.phase.next()
 
     if self.game.phase.get_next() == 'player':
-        game.state.change('turn_change')
-        game.state.change('status_endstep')
+        self.game.state.change('turn_change')
+        self.game.state.change('status_endstep')
     else:
-        game.state.change('turn_change')
-        game.state.change('status_endstep')
-        game.state.change('ai')
-        game.ui_view.remove_unit_display()
+        self.game.state.change('turn_change')
+        self.game.state.change('status_endstep')
+        self.game.state.change('ai')
+        self.game.ui_view.remove_unit_display()
 
 def win_game(self: Event, flags=None):
     self.game.level_vars['_win_game'] = True

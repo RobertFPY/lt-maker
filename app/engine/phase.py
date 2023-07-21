@@ -68,13 +68,19 @@ class PhaseController():
         if DB.constants.value('initiative'):
             return game.initiative.get_next_unit().team
         else:
-            return DB.teams[(self.current + 1) % len(DB.teams)]
+            counter = 0
+            while counter < 99:
+                counter += 1
+                next_team = DB.teams[(self.current + counter) % len(DB.teams)].nid
+                if any(unit.team == next_team for unit in game.units if unit.position and 'Tile' not in unit.tags):
+                    return next_team
+            return 'player'
 
     def set_player(self):
         self.current = 0
         self.previous = (self.current - 1) % len(DB.teams)
 
-    def next(self):
+    def _next(self):
         if DB.constants.value('initiative'):
             self.current = self._team_int(game.initiative.get_current_unit().team)
         else:
@@ -89,13 +95,13 @@ class PhaseController():
         self.previous = self.current
         # If there are units
         if any(unit.position for unit in game.units):
-            self.next()
+            self._next()
             # Skip over any phases that no one is part of
             # but never skip player phase
             if not DB.constants.value('initiative'):
                 while self.current != 0 and not any(self.get_current() == unit.team for unit in game.units if unit.position and 'Tile' not in unit.tags) \
                         and not DB.constants.get('initiative').value:
-                    self.next()
+                    self._next()
         else:
             self.current = 0
 

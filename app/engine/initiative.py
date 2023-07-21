@@ -38,10 +38,10 @@ class InitiativeTracker():
         return game.get_unit(self.unit_line[self.current_idx])
 
     def get_previous_unit(self):
-        return game.get_unit(self.unit_line[(self.current_idx + 1) % len(self.unit_line)])
+        return game.get_unit(self.unit_line[(self.current_idx - 1) % len(self.unit_line)])
 
     def get_next_unit(self):
-        return game.get_unit(self.unit_line[(self.current_idx - 1) % len(self.unit_line)])
+        return game.get_unit(self.unit_line[(self.current_idx + 1) % len(self.unit_line)])
 
     def get_initiative(self, unit):
         idx = self.get_index(unit)

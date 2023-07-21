@@ -842,7 +842,7 @@ checked to see the turnwheel option in your menu.
 
 class EndTurn(EventCommand):
     nid = 'end_turn'
-    tag = TAGS.LEVEL_VARS
+    tag = Tags.LEVEL_VARS
 
     desc = \
         """

@@ -80,5 +80,5 @@ class MapAnimationModel(ResourceCollectionModel):
     def on_nid_changed(self, old_nid, new_nid):
         # What uses Animations
         # Certain item components
-        affected_items = item_components.get_items_using(item_components.ComponentType.MapAnimations, old_nid, DB)
-        item_components.swap_values(affected_items, item_components.ComponentType.MapAnimations, old_nid, new_nid)
+        affected_items = item_components.get_items_using(item_components.ComponentType.MapAnimation, old_nid, DB)
+        item_components.swap_values(affected_items, item_components.ComponentType.MapAnimation, old_nid, new_nid)

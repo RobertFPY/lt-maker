@@ -1152,7 +1152,7 @@ class Table(Simple):
                     self.scroll = utils.clamp(self.scroll, 0, max(0, num_rows - self.rows))
             else:
                 # Set to most recent good option
-                idx = max(i for i in range(len(self.options)) if not self.options[idx].ignore)
+                idx = max(i for i in range(len(self.options)) if not self.options[i].ignore)
                 break
             idx = self._idx_coords(row, col)
             if not self.options[idx].ignore:
@@ -1179,7 +1179,7 @@ class Table(Simple):
                     self.scroll = max(0, self.scroll)
             else:
                 # Set to most recent good option
-                idx = min(i for i in range(len(self.options)) if not self.options[idx].ignore)
+                idx = min(i for i in range(len(self.options)) if not self.options[i].ignore)
                 break
             idx = self._idx_coords(row, col)
             if not self.options[idx].ignore:

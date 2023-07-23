@@ -1816,8 +1816,8 @@ def add_item_component(self: Event, global_unit_or_convoy, item, item_component,
     flags = flags or set()
     global_unit = global_unit_or_convoy
     component_nid = item_component
-
-    unit, item = self._get_item_in_inventory(global_unit, item)
+    recursive_flag = 'recursive' in flags
+    unit, item = self._get_item_in_inventory(global_unit, item, recursive=recursive_flag)
     if not unit or not item:
         self.logger.error("add_item_component: Either unit or item was invalid, see above")
         return
@@ -1838,8 +1838,8 @@ def modify_item_component(self: Event, global_unit_or_convoy, item, item_compone
     global_unit = global_unit_or_convoy
     component_nid = item_component
     is_additive = 'additive' in flags
-
-    unit, item = self._get_item_in_inventory(global_unit, item)
+    recursive_flag = 'recursive' in flags
+    unit, item = self._get_item_in_inventory(global_unit, item, recursive=recursive_flag)
     if not unit or not item:
         self.logger.error("modify_item_component: Either unit or item was invalid, see above")
         return
@@ -1856,8 +1856,8 @@ def remove_item_component(self: Event, global_unit_or_convoy, item, item_compone
     flags = flags or set()
     global_unit = global_unit_or_convoy
     component_nid = item_component
-
-    unit, item = self._get_item_in_inventory(global_unit, item)
+    recursive_flag = 'recursive' in flags
+    unit, item = self._get_item_in_inventory(global_unit, item, recursive=recursive_flag)
     if not unit or not item:
         self.logger.error("remove_item_component: Either unit or item was invalid, see above")
         return

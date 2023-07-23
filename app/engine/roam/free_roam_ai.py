@@ -62,8 +62,8 @@ class FreeRoamAIHandler:
                 roam_ai.think()
             roam_ai.act()
             # Every frame, make sure our movement component has the right path
-            if roam_ai.path:
-                self.components[roam_ai.unit.nid].set_path(roam_ai.path)
+            # if roam_ai.path:
+            self.components[roam_ai.unit.nid].set_path(roam_ai.path)
 
     def stop_all_units(self):
         self.active = False
@@ -75,6 +75,12 @@ class FreeRoamAIHandler:
         for mc in self.components.values():
             mc.start()
             game.movement.add(mc)
+
+    def reset_all_units(self):
+        for mc in self.components.values():
+            mc.reset_position()
+        for roam_ai in self.roam_ais:
+            roam_ai.reset_path()
 
 
 class RoamAI:
@@ -95,6 +101,9 @@ class RoamAI:
 
     def reset_for_next_behaviour(self):
         self.state = None
+        self.reset_path()
+
+    def reset_path(self):
         self.path.clear()
 
     def set_next_behaviour(self):

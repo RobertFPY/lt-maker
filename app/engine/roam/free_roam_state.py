@@ -39,6 +39,8 @@ class FreeRoamState(MapState):
         if not self.ai_handler.active:
             self.ai_handler.start_all_units()
 
+        self.ai_handler.reset_all_units()
+
         if game.is_roam() and game.get_roam_unit():
             roam_unit = game.get_roam_unit()
             if self.roam_unit and self.roam_unit != roam_unit:
@@ -226,6 +228,6 @@ class FreeRoamState(MapState):
 
     def update(self):
         super().update()
-        game.movement.update()
         self.ai_handler.update()
+        game.movement.update()
         self.check_region_interrupt()

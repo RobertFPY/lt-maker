@@ -17,6 +17,11 @@ class MovementComponent:
     def unit(self):
         return self._unit  
 
+    def reset_position(self):
+        # Used to reset the internal movement component position
+        # Called when the free roam state begins
+        pass
+
     def start(self):
         raise NotImplementedError
 

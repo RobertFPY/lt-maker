@@ -32,6 +32,9 @@ class RoamPlayerMovementComponent(MovementComponent):
 
         self.start()
 
+    def reset_position(self):
+        self.position = self.unit.position
+
     def set_sprint(self, b: bool):
         self.sprint = b
 

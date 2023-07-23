@@ -40,6 +40,9 @@ class RationalizeMovementComponent(MovementComponent):
 
         self.start()
 
+    def reset_position(self):
+        self.position = self.unit.sprite.get_roam_position()
+
     def get_camera_position(self) -> Tuple[float, float]:
         return self.position
 

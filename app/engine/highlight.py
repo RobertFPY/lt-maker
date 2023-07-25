@@ -1,4 +1,4 @@
-from app.constants import TILEWIDTH, TILEHEIGHT
+from app.constants import TILEWIDTH, TILEHEIGHT, WINHEIGHT, WINWIDTH
 from app.data.database.database import DB
 from app.events.regions import RegionType
 
@@ -12,13 +12,13 @@ class HighlightController():
     starting_cutoff = 7
 
     def __init__(self):
-        self.images = {'spell': SPRITES.get('highlight_green'),
-                       'attack': SPRITES.get('highlight_red'),
-                       'splash': SPRITES.get('highlight_lightred'),
-                       'possible_move': SPRITES.get('highlight_lightblue'),
-                       'move': SPRITES.get('highlight_blue'),
-                       'aura': SPRITES.get('highlight_lightpurple'),
-                       'spell_splash': SPRITES.get('highlight_lightgreen')}
+        self.images = {'spell': SPRITES.get('highlight_green', scale=True),
+                       'attack': SPRITES.get('highlight_red', scale=True),
+                       'splash': SPRITES.get('highlight_lightred', scale=True),
+                       'possible_move': SPRITES.get('highlight_lightblue', scale=True),
+                       'move': SPRITES.get('highlight_blue', scale=True),
+                       'aura': SPRITES.get('highlight_lightpurple', scale=True),
+                       'spell_splash': SPRITES.get('highlight_lightgreen', scale=True)}
 
         self.highlights = {k: set() for k in self.images}
         self.transitions = {k: self.starting_cutoff for k in self.images}

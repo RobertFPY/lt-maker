@@ -29,7 +29,8 @@ class SpecialSprite(object):
 class SpriteDict(dict):
     def get(self, val, fallback='bg_black_tile'):
         '''Retrieves an image in the form of a pygame surface.
-        If scale is True, scales the image to the tile width and height'''
+        Fallback provides a backup image if the specified one
+        cannot be found'''
         if val in self:
             return self[val].image
         # Defaults to this

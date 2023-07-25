@@ -35,8 +35,9 @@ class BaseCursor():
         self.visible: bool = False
 
         # default settings
-        self._sprite: Surface = SPRITES.get('cursor')
-        self._sprite_dim: Tuple[int, int] = (32, 32)
+        self._sprite: Surface = SPRITES.get('cursor', scale=True)
+        tile_scale = SPRITES.get_tile_scale()
+        self._sprite_dim: Tuple[int, int] = (32 * tile_scale[0], 32 * tile_scale[1])
 
         # used for animating between squares
         # gba formula: 4 frames, linear interpolation

@@ -1,4 +1,4 @@
-from app.constants import TILEHEIGHT, TILEWIDTH, WINHEIGHT, WINWIDTH
+from app.constants import BASETILEHEIGHT, BASETILEWIDTH, TILEHEIGHT, TILEWIDTH, WINHEIGHT, WINWIDTH
 import os
 from dataclasses import dataclass
 from app.engine import engine
@@ -27,19 +27,20 @@ class SpecialSprite(object):
         return self._image
 
 class SpriteDict(dict):
-    def get(self, val, fallback='bg_black_tile', scale=False, frames=16):
+    def get(self, val, fallback='bg_black_tile', scale=False):
         '''Retrieves an image in the form of a pygame surface.
-        If scale is True, scales the image to the tile width and height
-        
-        Frames is the num of frames in the sprite - defaults to 16 for use
-        with higlight tiles'''
+        If scale is True, scales the image to the tile width and height'''
         if val in self:
             img = self[val].image
             if scale:
-                img = engine.transform_scale(img, (frames * TILEWIDTH, TILEHEIGHT))
+                relative_scale = self.get_tile_scale()
+                img = engine.transform_scale(img, (relative_scale[0] * img.get_width(), relative_scale[1] * img.get_height()))
             return img
         # Defaults to this
         return self[fallback].image
+    
+    def get_tile_scale(self) -> tuple:
+        return (TILEWIDTH//BASETILEWIDTH, TILEHEIGHT//BASETILEHEIGHT)
 
 def load_sprites(root):
     for root, dirs, files in os.walk(root):

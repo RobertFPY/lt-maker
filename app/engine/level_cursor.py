@@ -1,3 +1,4 @@
+from enum import IntEnum
 import math
 from typing import Optional, Tuple
 
@@ -13,6 +14,13 @@ from app.engine.sprites import SPRITES
 from app.utilities.utils import frames2ms
 from app.engine.engine import Surface
 
+class CursorDrawState(IntEnum):
+    Hidden = 0
+    Visible = 1
+    Combat = 2
+    Turnwheel = 3
+    Formation = 4
+
 class LevelCursor(BaseCursor):
     def __init__(self, game: GameState):
         super().__init__(camera=game.camera, game_board=game.board)
@@ -21,12 +29,13 @@ class LevelCursor(BaseCursor):
         self.game = game
         self.cur_unit = None
         self.path = []
-        self.draw_state = 0
+        self.draw_state = CursorDrawState.Hidden
         self.speed_state = False
 
-        self._sprite = SPRITES.get('cursor')
-        self._sprite_dim = (32, 32)
-        self.format_sprite(self._sprite)
+        self._sprite = SPRITES.get('cursor', scale=True)
+        self.tile_scale = SPRITES.get_tile_scale()
+        self._sprite_dim = (32 * self.tile_scale[0], 32 * self.tile_scale[1])
+        self.format_sprite(self._sprite, self.tile_scale)
 
         self._display_arrows: bool = False
         self.arrows = []
@@ -47,23 +56,23 @@ class LevelCursor(BaseCursor):
 
     def hide(self):
         super().hide()
-        self.draw_state = 0
+        self.draw_state = CursorDrawState.Hidden
 
     def show(self):
         super().show()
-        self.draw_state = 1
+        self.draw_state = CursorDrawState.Visible
 
     def combat_show(self):
         super().show()
-        self.draw_state = 2
+        self.draw_state = CursorDrawState.Combat
 
     def set_turnwheel_sprite(self):
         super().show()
-        self.draw_state = 3
+        self.draw_state = CursorDrawState.Turnwheel
 
     def formation_show(self):
         super().show()
-        self.draw_state = 4
+        self.draw_state = CursorDrawState.Formation
 
     def set_speed_state(self, val: bool):
         self.speed_state = val
@@ -218,29 +227,33 @@ class LevelCursor(BaseCursor):
         self.cursor_counter.update(engine.get_time())
         left = self.cursor_counter.count * TILEWIDTH * 2
         hovered_unit = self.get_hover()
-        if self.draw_state == 4:
+        # Scale cursor to match tilewidth
+        base_size = 32
+        cur_size = base_size * self.tile_scale[0]
+        if self.draw_state == CursorDrawState.Formation:
             if self.game.check_for_region(self.position, 'formation'):
-                return engine.subsurface(self.formation_sprite, (0, 0, 32, 32))
+                return engine.subsurface(self.formation_sprite, (0, 0, cur_size, cur_size))
             else:
-                return engine.subsurface(self.formation_sprite, (32, 0, 32, 32))
-        elif self.draw_state == 2:
-            return engine.subsurface(self.red_sprite, (left, 0, 32, 32))
-        elif self.draw_state == 3:  # Green for turnwheel
-            return engine.subsurface(self.green_sprite, (left, 0, 32, 32))
+                return engine.subsurface(self.formation_sprite, (cur_size, 0, cur_size, cur_size))
+        elif self.draw_state == CursorDrawState.Combat:
+            return engine.subsurface(self.red_sprite, (left * self.tile_scale[0], 0, cur_size, cur_size))
+        elif self.draw_state == CursorDrawState.Turnwheel:  # Green for turnwheel
+            return engine.subsurface(self.green_sprite, (left * self.tile_scale[0], 0, cur_size, cur_size))
         elif hovered_unit and hovered_unit.team == 'player' and not hovered_unit.finished:
             return self.active_sprite
         else:
-            return engine.subsurface(self.passive_sprite, (left, 0, 32, 32))
+            return engine.subsurface(self.passive_sprite, (left * self.tile_scale[0], 0, cur_size, cur_size))
 
-    def format_sprite(self, sprite):
-        self.passive_sprite = engine.subsurface(sprite, (0, 0, 128, 32))
-        self.red_sprite = engine.subsurface(sprite, (0, 32, 128, 32))
-        self.active_sprite = engine.subsurface(sprite, (0, 64, 32, 32))
-        self.formation_sprite = engine.subsurface(sprite, (64, 64, 64, 32))
-        self.green_sprite = engine.subsurface(sprite, (0, 96, 128, 32))
+    def format_sprite(self, sprite, scale):
+        xscale, yscale = scale
+        self.passive_sprite = engine.subsurface(sprite, (0, 0, 128 * xscale, 32 * yscale))
+        self.red_sprite = engine.subsurface(sprite, (0, 32 * yscale, 128 * xscale, 32 * yscale))
+        self.active_sprite = engine.subsurface(sprite, (0, 64 * yscale, 32 * xscale, 32 * yscale))
+        self.formation_sprite = engine.subsurface(sprite, (64 * xscale, 64 * yscale, 64 * xscale, 32 * yscale))
+        self.green_sprite = engine.subsurface(sprite, (0, 96 * yscale, 128 * xscale, 32 * yscale))
 
     def draw(self, surf, cull_rect):
-        if self.draw_state:
+        if self.draw_state != CursorDrawState.Hidden:
             surf = super().draw(surf, cull_rect)
         return surf
 

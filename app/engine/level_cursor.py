@@ -3,7 +3,7 @@ import math
 from typing import Optional, Tuple
 
 from app.engine.objects.unit import UnitObject
-from app.constants import TILEHEIGHT, TILEHEIGHTRATIO, TILEWIDTH, TILEWIDTHRATIO
+from app.constants import TILEHEIGHT, TILEWIDTH
 from app.counters import generic3counter
 from app.data.database.database import DB
 from app.engine import engine, image_mods, skill_system, target_system
@@ -32,10 +32,9 @@ class LevelCursor(BaseCursor):
         self.draw_state = CursorDrawState.Hidden
         self.speed_state = False
 
-        self._sprite = SPRITES.get('cursor', scale=True)
-        self.tile_scale = (TILEWIDTHRATIO, TILEHEIGHTRATIO)
-        self._sprite_dim = (32 * self.tile_scale[0], 32 * self.tile_scale[1])
-        self.format_sprite(self._sprite, self.tile_scale)
+        self._sprite = SPRITES.get('cursor')
+        self._sprite_dim = (32, 32)
+        self.format_sprite(self._sprite)
 
         self._display_arrows: bool = False
         self.arrows = []
@@ -229,28 +228,26 @@ class LevelCursor(BaseCursor):
         hovered_unit = self.get_hover()
         # Scale cursor to match tilewidth
         base_size = 32
-        cur_size = base_size * self.tile_scale[0]
         if self.draw_state == CursorDrawState.Formation:
             if self.game.check_for_region(self.position, 'formation'):
-                return engine.subsurface(self.formation_sprite, (0, 0, cur_size, cur_size))
+                return engine.subsurface(self.formation_sprite, (0, 0, base_size, base_size))
             else:
-                return engine.subsurface(self.formation_sprite, (cur_size, 0, cur_size, cur_size))
+                return engine.subsurface(self.formation_sprite, (base_size, 0, base_size, base_size))
         elif self.draw_state == CursorDrawState.Combat:
-            return engine.subsurface(self.red_sprite, (left * self.tile_scale[0], 0, cur_size, cur_size))
+            return engine.subsurface(self.red_sprite, (left, 0, base_size, base_size))
         elif self.draw_state == CursorDrawState.Turnwheel:  # Green for turnwheel
-            return engine.subsurface(self.green_sprite, (left * self.tile_scale[0], 0, cur_size, cur_size))
+            return engine.subsurface(self.green_sprite, (left, 0, base_size, base_size))
         elif hovered_unit and hovered_unit.team == 'player' and not hovered_unit.finished:
             return self.active_sprite
         else:
-            return engine.subsurface(self.passive_sprite, (left * self.tile_scale[0], 0, cur_size, cur_size))
+            return engine.subsurface(self.passive_sprite, (left, 0, base_size, base_size))
 
-    def format_sprite(self, sprite, scale):
-        xscale, yscale = scale
-        self.passive_sprite = engine.subsurface(sprite, (0, 0, 128 * xscale, 32 * yscale))
-        self.red_sprite = engine.subsurface(sprite, (0, 32 * yscale, 128 * xscale, 32 * yscale))
-        self.active_sprite = engine.subsurface(sprite, (0, 64 * yscale, 32 * xscale, 32 * yscale))
-        self.formation_sprite = engine.subsurface(sprite, (64 * xscale, 64 * yscale, 64 * xscale, 32 * yscale))
-        self.green_sprite = engine.subsurface(sprite, (0, 96 * yscale, 128 * xscale, 32 * yscale))
+    def format_sprite(self, sprite):
+        self.passive_sprite = engine.subsurface(sprite, (0, 0, 128, 32))
+        self.red_sprite = engine.subsurface(sprite, (0, 32 , 128, 32))
+        self.active_sprite = engine.subsurface(sprite, (0, 64, 32, 32))
+        self.formation_sprite = engine.subsurface(sprite, (64, 64, 64, 32))
+        self.green_sprite = engine.subsurface(sprite, (0, 96, 128, 32))
 
     def draw(self, surf, cull_rect):
         if self.draw_state != CursorDrawState.Hidden:
@@ -291,7 +288,7 @@ class LevelCursor(BaseCursor):
         return surf
 
 class Arrow(object):
-    sprite = SPRITES.get('movement_arrows', scale=True)
+    sprite = SPRITES.get('movement_arrows')
     sprite = image_mods.make_translucent(sprite, 0.1)
 
     def __init__(self, x, y, position, idx):

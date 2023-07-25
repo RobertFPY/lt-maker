@@ -11,8 +11,8 @@ from app.engine.game_state import game
 class BoundaryInterface():
     draw_order = ('all_spell', 'all_attack', 'spell', 'attack')
     enemy_teams = DB.teams.enemies
-    fog_of_war_tile1 = SPRITES.get('bg_fow_tile', scale=True)
-    fog_of_war_tile2 = SPRITES.get('bg_black_tile', scale=True)
+    fog_of_war_tile1 = SPRITES.get('bg_fow_tile')
+    fog_of_war_tile2 = SPRITES.get('bg_black_tile')
 
     def __init__(self, width, height):
         self.modes = {'attack': SPRITES.get('boundary_red'),

@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Tuple
 
-from app.constants import TILEHEIGHT, TILEHEIGHTRATIO, TILEWIDTH, TILEWIDTHRATIO, TILEX, TILEY
+from app.constants import TILEHEIGHT, TILEWIDTH, TILEX, TILEY
 from app.engine import engine
 from app.engine.camera import Camera
 from app.engine.fluid_scroll import FluidScroll
@@ -35,8 +35,8 @@ class BaseCursor():
         self.visible: bool = False
 
         # default settings
-        self._sprite: Surface = SPRITES.get('cursor', scale=True)
-        self._sprite_dim: Tuple[int, int] = (32 * TILEWIDTHRATIO, 32 * TILEHEIGHTRATIO)
+        self._sprite: Surface = SPRITES.get('cursor')
+        self._sprite_dim: Tuple[int, int] = (32, 32)
 
         # used for animating between squares
         # gba formula: 4 frames, linear interpolation

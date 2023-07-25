@@ -12,13 +12,13 @@ class HighlightController():
     starting_cutoff = 7
 
     def __init__(self):
-        self.images = {'spell': SPRITES.get('highlight_green', scale=True),
-                       'attack': SPRITES.get('highlight_red', scale=True),
-                       'splash': SPRITES.get('highlight_lightred', scale=True),
-                       'possible_move': SPRITES.get('highlight_lightblue', scale=True),
-                       'move': SPRITES.get('highlight_blue', scale=True),
-                       'aura': SPRITES.get('highlight_lightpurple', scale=True),
-                       'spell_splash': SPRITES.get('highlight_lightgreen', scale=True)}
+        self.images = {'spell': SPRITES.get('highlight_green'),
+                       'attack': SPRITES.get('highlight_red'),
+                       'splash': SPRITES.get('highlight_lightred'),
+                       'possible_move': SPRITES.get('highlight_lightblue'),
+                       'move': SPRITES.get('highlight_blue'),
+                       'aura': SPRITES.get('highlight_lightpurple'),
+                       'spell_splash': SPRITES.get('highlight_lightgreen')}
 
         self.highlights = {k: set() for k in self.images}
         self.transitions = {k: self.starting_cutoff for k in self.images}
@@ -118,14 +118,14 @@ class HighlightController():
 
     def draw(self, surf, cull_rect):
         # Handle Formation Highlight
-        formation_image = SPRITES.get('highlight_blue', scale=True)
+        formation_image = SPRITES.get('highlight_blue')
         rect = (self.update_idx//4 * TILEWIDTH, 0, TILEWIDTH, TILEHEIGHT)
         formation_image = engine.subsurface(formation_image, rect)
         for position in self.formation_highlights:
             surf.blit(formation_image, (position[0] * TILEWIDTH - cull_rect[0], position[1] * TILEHEIGHT - cull_rect[1]))
 
         # Handle escape Highlight
-        escape_image = SPRITES.get('highlight_yellow', scale=True)
+        escape_image = SPRITES.get('highlight_yellow')
         rect = (self.update_idx//4 * TILEWIDTH, 0, TILEWIDTH, TILEHEIGHT)
         escape_image = engine.subsurface(escape_image, rect)
         for region in game.level.regions:

@@ -1,4 +1,4 @@
-from app.constants import TILEWIDTH, TILEHEIGHT, WINHEIGHT, WINWIDTH
+from app.constants import TILEWIDTH, TILEHEIGHT
 from app.data.database.database import DB
 from app.events.regions import RegionType
 

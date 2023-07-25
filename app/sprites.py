@@ -1,4 +1,4 @@
-from app.constants import TILEHEIGHT, TILEWIDTH, WINHEIGHT, WINWIDTH
+from app.constants import WINHEIGHT, WINWIDTH
 import os
 from dataclasses import dataclass
 from app.engine import engine
@@ -27,7 +27,7 @@ class SpecialSprite(object):
         return self._image
 
 class SpriteDict(dict):
-    def get(self, val, fallback='bg_black_tile', scale=False):
+    def get(self, val, fallback='bg_black_tile'):
         '''Retrieves an image in the form of a pygame surface.
         If scale is True, scales the image to the tile width and height'''
         if val in self:

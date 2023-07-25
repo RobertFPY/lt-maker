@@ -82,7 +82,7 @@ class SiegeWeapon(ItemComponent):
 
 class Usable(ItemComponent):
     nid = 'usable'
-    desc = "Item can be used from the items menu. Must be paired with the Targets Allies or Target Anything component."
+    desc = "Item can be used from the items menu."
     tag = ItemTags.BASE
 
     def can_use(self, unit, item):

@@ -4,7 +4,8 @@ from app.engine.graphics.ui_framework.premade_components.plain_text_component im
 
 from app.engine import engine
 
-from ..ui_framework import HAlignment, UIComponent
+from ..ui_framework import UIComponent
+from app.utilities.enums import HAlignment
 from ..ui_framework_layout import ListLayoutStyle, UILayoutType
 from ..ui_framework_styling import UIMetric
 

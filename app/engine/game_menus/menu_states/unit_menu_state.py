@@ -58,11 +58,14 @@ class UnitMenuState(State):
 
         if event == 'BACK':
             get_sound_thread().play_sfx('Select 4')
-            if not game.level.roam:
+            if not game.is_roam():
                 selected = self.ui_display.cursor_hover()
                 if isinstance(selected, UnitObject):
                     if self.in_level:
-                        game.cursor.set_pos(selected.position)
+                        if selected.position:
+                            game.cursor.set_pos(selected.position)
+                        elif game.get_rescuers_position(selected):
+                            game.cursor.set_pos(game.get_rescuers_position(selected))
             game.state.change('transition_pop')
 
         elif event == 'SELECT':
@@ -70,7 +73,10 @@ class UnitMenuState(State):
             selected = self.ui_display.cursor_hover()
             if isinstance(selected, UnitObject):
                 if self.in_level:
-                    game.cursor.set_pos(selected.position)
+                    if selected.position:
+                        game.cursor.set_pos(selected.position)
+                    elif game.get_rescuers_position(selected):
+                        game.cursor.set_pos(game.get_rescuers_position(selected))
                     game.state.back()
                     game.state.back()
             elif isinstance(selected, Tuple):

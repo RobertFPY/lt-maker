@@ -32,17 +32,24 @@ class AuraTarget(SkillComponent):
     tag = SkillTags.STATUS
     paired_with = ('aura', 'aura_range')
 
-    expose = ComponentType.String
+    # expose = ComponentType.String
+    expose = (ComponentType.MultipleChoice, ('ally', 'enemy', 'unit'))
     value = 'unit'
 
 class AuraShow(SkillComponent):
     nid = 'show_aura'
-    desc = 'Aura will always show on the map'
+    desc = 'Aura will always show with this color on the map'
     tag = SkillTags.STATUS
     paired_with = ('aura', 'aura_range', 'aura_target')
 
     expose = ComponentType.Color3
     value = (128, 0, 0)
+
+class HideAura(SkillComponent):
+    nid = 'hide_aura'
+    desc = 'Aura\'s highlight will never appear on the map'
+    tag = SkillTags.STATUS
+    paired_with = ('aura', 'aura_range', 'aura_target')
 
 class PairUpBonus(SkillComponent):
     nid = 'pairup_bonus'
@@ -124,7 +131,7 @@ class UpkeepDamage(SkillComponent):
         self._playback_processing(playback, unit, hp_change)
         skill_system.after_take_strike(actions, playback, unit, None, None, 'defense', (0, 0), Strike.HIT)
 
-class EndstepDamage(UpkeepDamage, SkillComponent):
+class EndstepDamage(UpkeepDamage):
     nid = 'endstep_damage'
     desc = "Unit takes damage at endstep"
     tag = SkillTags.STATUS
@@ -163,7 +170,7 @@ class ResistStatus(SkillComponent):
     tag = SkillTags.STATUS
 
     def before_add(self, unit, skill):
-        for skill in unit.skills:
+        for skill in unit.all_skills:
             if skill.time or skill.end_time or skill.combined_time:
                 action.do(action.SetObjData(skill, 'turns', min(skill.data['turns'], 1)))
 
@@ -177,7 +184,7 @@ class ImmuneStatus(SkillComponent):
     tag = SkillTags.STATUS
 
     def after_add(self, unit, skill):
-        for skill in unit.skills:
+        for skill in unit.all_skills:
             if skill.negative:
                 action.do(action.RemoveSkill(unit, skill))
 

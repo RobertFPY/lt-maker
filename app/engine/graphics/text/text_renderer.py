@@ -6,7 +6,7 @@ from typing import List, Tuple
 from app.engine import engine
 from app.engine.fonts import FONT
 from app.engine.icons import draw_icon_by_alias
-from app.utilities.enums import Alignments
+from app.utilities.enums import HAlignment
 from app.utilities.typing import NID
 
 MATCH_TAG_RE = re.compile('<(.*?)>')
@@ -14,6 +14,23 @@ MATCH_CAPTURE_TAG_RE = re.compile('(<[^<]*?>)')
 
 def font_height(font: NID):
     return FONT[font].height
+
+def anchor_align(x: int, width: int, align: HAlignment, padding: Tuple[int, int] = (0, 0)) -> int:
+    """Returns the appropriate anchor point for a specific align,
+    given a specific box. For example, supposing the text box is
+    this wide:
+
+    A -------- B -------- C
+
+    This will return A for left align, B for center align, and C for right align.
+    Padding allows this to be offset.
+    """
+    if align == HAlignment.LEFT:
+        return x + padding[0]
+    if align == HAlignment.CENTER:
+        return x + width // 2
+    else:
+        return width + x - padding[1]
 
 def rendered_text_width(fonts: List[NID], texts: List[str]) -> int:
     """Returns the full rendered width (see render_text) of a text list.
@@ -26,9 +43,9 @@ def rendered_text_width(fonts: List[NID], texts: List[str]) -> int:
         int: Width of string if it were rendered
     """
     if not fonts:
-        return
+        return 0
     if not texts:
-        return
+        return 0
     if len(fonts) < len(texts):
         fonts += [fonts[-1] for i in range(len(texts) - len(fonts))]
     font_stack = list(reversed(fonts))
@@ -125,7 +142,7 @@ def remove_tags(text_block: List[str]) -> List[str]:
         new_text_block.append(new_line)
     return new_text_block
 
-def render_text(surf: engine.Surface, fonts: List[NID], texts: List[str], colors: List[NID | None], topleft: Tuple[int, int], align: Alignments = Alignments.LEFT) -> engine.Surface:
+def render_text(surf: engine.Surface, fonts: List[NID], texts: List[str], colors: List[NID | None], topleft: Tuple[int, int], align: HAlignment = HAlignment.LEFT) -> engine.Surface:
     """An enhanced text render layer wrapper around BmpFont.
     Supports multiple fonts and multiple text sections, as well as
     embedded icons.
@@ -153,12 +170,12 @@ def render_text(surf: engine.Surface, fonts: List[NID], texts: List[str], colors
     color_stack = list(reversed(colors))
 
     # for non-left alignments
-    if align == Alignments.CENTER or align == Alignments.RIGHT:
+    if align == HAlignment.CENTER or align == HAlignment.RIGHT:
         width = rendered_text_width(fonts, texts)
         tx, ty = topleft
-        if align == Alignments.CENTER:
+        if align == HAlignment.CENTER:
             tx -= width//2
-        elif align == Alignments.RIGHT:
+        elif align == HAlignment.RIGHT:
             tx -= width
     else:
         tx, ty = topleft

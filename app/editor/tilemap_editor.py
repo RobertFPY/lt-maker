@@ -6,11 +6,12 @@ from enum import IntEnum
 from PyQt5.QtWidgets import QSplitter, QFrame, QVBoxLayout, QDialogButtonBox, \
     QToolBar, QTabBar, QWidget, QDialog, QGroupBox, QFormLayout, QSpinBox, QAction, \
     QGraphicsView, QGraphicsScene, QAbstractItemView, QActionGroup, \
-    QDesktopWidget, QFileDialog, QMessageBox, QHBoxLayout
+    QDesktopWidget, QFileDialog, QMessageBox, QHBoxLayout, QApplication
 from PyQt5.QtCore import Qt, QRect, QDateTime
-from PyQt5.QtGui import QImage, QPainter, QPixmap, QIcon, QColor, QPen
+from PyQt5.QtGui import QImage, QPainter, QPixmap, QIcon, QColor, QPen, QBrush
+from app import dark_theme
 
-from app.constants import TILEWIDTH, TILEHEIGHT, TILEX, TILEY
+from app.constants import TILEWIDTH, TILEHEIGHT
 from app.data.resources.resources import RESOURCES
 from app.data.resources.tiles import LayerGrid
 from app.data.database.database import DB
@@ -561,11 +562,8 @@ class MapEditor(QDialog):
         self.view.update_view()
 
     def create_actions(self):
-        theme = self.settings.get_theme()
-        if theme == 0:
-            icon_folder = 'icons/icons'
-        else:
-            icon_folder = 'icons/dark_icons'
+        theme = dark_theme.get_theme()
+        icon_folder = theme.icon_dir()
 
         paint_group = QActionGroup(self)
         self.brush_action = QAction(QIcon(f"{icon_folder}/brush.png"), "&Brush", self, shortcut="B", triggered=self.set_brush)
@@ -731,12 +729,12 @@ class ResizeDialog(Dialog):
         size_layout = QFormLayout()
         self.width_box = QSpinBox()
         self.width_box.setValue(self.current.width)
-        self.width_box.setRange(math.ceil(TILEX), 65536)
+        self.width_box.setRange(1, 65536)
         self.width_box.valueChanged.connect(self.on_width_changed)
         size_layout.addRow("Width:", self.width_box)
         self.height_box = QSpinBox()
         self.height_box.setValue(self.current.height)
-        self.height_box.setRange(math.ceil(TILEY), 65536)
+        self.height_box.setRange(1, 65536)
         self.height_box.valueChanged.connect(self.on_height_changed)
         size_layout.addRow("Height:", self.height_box)
         size_section.setLayout(size_layout)
@@ -834,6 +832,12 @@ class LayerModel(ResourceCollectionModel):
         elif role == Qt.CheckStateRole:
             value = Qt.Checked if layer.visible else Qt.Unchecked
             return value
+        elif role == Qt.ForegroundRole:
+            # Color blue when in the foreground
+            if layer.foreground:
+                return QBrush(QColor("cyan"))
+            else:
+                return QBrush(QApplication.palette().text().color())
         return None
 
     def create_new(self):
@@ -940,6 +944,8 @@ class LayerMenu(QWidget):
             self.move_up_action.setEnabled(False)
         if curr.row() >= len(self._data) - 1:
             self.move_down_action.setEnabled(False)
+        # Make sure we display whether this is a foreground action
+        self.is_foreground_action.setChecked(self._data[curr.row()].foreground)
 
     def on_click(self, index):
         if bool(self.model.flags(index) & Qt.ItemIsEnabled):
@@ -949,11 +955,8 @@ class LayerMenu(QWidget):
             self.window.update_view()
 
     def create_actions(self):
-        theme = self.settings.get_theme()
-        if theme == 0:
-            icon_folder = 'icons/icons'
-        else:
-            icon_folder = 'icons/dark_icons'
+        theme = dark_theme.get_theme()
+        icon_folder = theme.icon_dir()
 
         self.move_up_action = QAction(QIcon(f"{icon_folder}/up.png"), "Move Up", triggered=self.move_up)
         self.move_down_action = QAction(QIcon(f"{icon_folder}/down.png"), "Move Down", triggered=self.move_down)
@@ -963,6 +966,8 @@ class LayerMenu(QWidget):
         self.duplicate_action = QAction(QIcon(f"{icon_folder}/duplicate.png"), "Duplicate Layer", triggered=self.duplicate)
         self.delete_action = QAction(QIcon(f"{icon_folder}/x-circle.png"), "Delete Layer", triggered=self.delete)
         self.delete_action.setEnabled(False)
+        self.is_foreground_action = QAction(QIcon(f"{icon_folder}/foreground.png"), "Foreground", triggered=self.toggle_foreground)
+        self.is_foreground_action.setCheckable(True)
 
     def create_toolbar(self):
         self.toolbar = QToolBar(self)
@@ -971,6 +976,7 @@ class LayerMenu(QWidget):
         self.toolbar.addAction(self.new_action)
         self.toolbar.addAction(self.duplicate_action)
         self.toolbar.addAction(self.delete_action)
+        self.toolbar.addAction(self.is_foreground_action)
 
     def move_up(self):
         current_index = self.view.currentIndex()
@@ -1003,6 +1009,13 @@ class LayerMenu(QWidget):
         current_index = self.view.currentIndex()
         if current_index and current_index.row() >= 0 and self.deletion_func(self.model, current_index):
             self.view.delete(current_index)
+
+    def toggle_foreground(self, val: bool):
+        current_index = self.view.currentIndex()
+        if current_index and current_index.row() >= 0:
+            row = current_index.row()
+            self._data[row].foreground = val
+            self.update_view()
 
 class TileSetMenu(QWidget):
     def __init__(self, parent=None, current=None):
@@ -1072,11 +1085,9 @@ class TileSetMenu(QWidget):
         self.view.update_view()
 
     def create_actions(self):
-        theme = self.settings.get_theme()
-        if theme == 0:
-            icon_folder = 'icons/icons'
-        else:
-            icon_folder = 'icons/dark_icons'
+        theme = dark_theme.get_theme()
+        icon_folder = theme.icon_dir()
+
 
         self.new_action = QAction(QIcon(f"{icon_folder}/file-plus.png"), "Load Tileset", triggered=self.new)
         self.delete_action = QAction(QIcon(f"{icon_folder}/x-circle.png"), "Unload Tileset", triggered=self.delete)

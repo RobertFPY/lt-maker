@@ -1,6 +1,6 @@
 from app.constants import TILEHEIGHT, TILEWIDTH
 from app.engine import engine, image_mods
-from app.utilities import str_utils, utils
+from app.utilities import utils
 
 # Generic Animation Object
 # Used, for instance, for miss and no damage animations
@@ -17,6 +17,8 @@ class Animation():
         self.frame_x, self.frame_y = anim.frame_x, anim.frame_y
         self.num_frames = anim.num_frames
         self.anim_speed = anim.speed
+        self.anim_frame_times = anim.frame_times
+        self.use_frame_time = anim.use_frame_time
         self.speed_adj = speed_adj
         self.delay = delay
         self.loop = loop
@@ -48,10 +50,11 @@ class Animation():
 
     @property
     def speed(self):
-        if str_utils.is_int(self.anim_speed):
-            return int(self.anim_speed) * self.speed_adj
-        else:
-            return [frames * self.speed_adj for frames in self.anim_speed]
+        return int(self.anim_speed) * self.speed_adj
+
+    @property
+    def frame_times(self):
+        return [int(frames * self.speed_adj) for frames in self.anim_frame_times]
 
     def use_center(self):
         self.position = self.position[0] - self.width//2, self.position[1] - self.height//2
@@ -72,10 +75,11 @@ class Animation():
         self.tint_after_delay = i
 
     def get_wait(self) -> int:
-        if str_utils.is_int(self.speed):
-            return self.num_frames * self.speed
+        # Returns number of milliseconds
+        if self.use_frame_time:
+            return utils.frames2ms(sum(self.frame_times))
         else:
-            return utils.frames2ms(sum(self.speed))
+            return self.num_frames * self.speed
 
     def update(self):
         current_time = engine.get_time()
@@ -83,28 +87,30 @@ class Animation():
             return
 
         done = False
-        if str_utils.is_int(self.speed):
-            self.counter = int(current_time - self.first_update) // self.speed
-            if self.counter >= self.num_frames:
+        if self.use_frame_time:
+            # Frame by frame timing
+            num_frames = self.frame_times[self.counter]
+            self.frames_held += 1
+            if self.frames_held >= num_frames:
+                self.frames_held = 0
+                self.counter += 1
+            if self.counter >= min(len(self.frame_times), self.num_frames):
                 if self.loop:
                     self.counter = 0
-                    self.first_update = current_time
+                    self.frames_held = 0
                     self.delay = 0
                 elif self.hold:
                     self.counter = self.num_frames - 1
                 else:
                     self.counter = self.num_frames - 1
                     done = True
-        else:  # Frame by frame timing
-            num_frames = self.speed[self.counter]
-            self.frames_held += 1
-            if self.frames_held >= num_frames:
-                self.frames_held = 0
-                self.counter += 1
-            if self.counter >= min(len(self.speed), self.num_frames):
+        else:  
+            # Constant ms timing
+            self.counter = int(current_time - self.first_update) // self.speed
+            if self.counter >= self.num_frames:
                 if self.loop:
                     self.counter = 0
-                    self.frames_held = 0
+                    self.first_update = current_time
                     self.delay = 0
                 elif self.hold:
                     self.counter = self.num_frames - 1

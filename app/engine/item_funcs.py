@@ -4,7 +4,7 @@ import math
 from typing import TYPE_CHECKING, List
 
 from app.data.database.database import DB
-from app.engine import item_system, skill_system, text_funcs
+from app.engine import item_system, skill_system, target_system, text_funcs
 from app.engine.objects.item import ItemObject
 from app.engine.objects.skill import SkillObject
 from app.utilities import utils
@@ -36,8 +36,8 @@ def has_magic(unit) -> bool:
 
 def can_use(unit, item) -> bool:
     if item_system.can_use(unit, item) and available(unit, item):
-        defender, splash = item_system.splash(unit, item, unit.position)
-        if item_system.target_restrict(unit, item, defender, splash):
+        targets = target_system.get_valid_targets(unit, item)
+        if targets:
             return True
     return False
 
@@ -74,17 +74,6 @@ def repair_price(unit, item):
         cost_per_charge = buy_price(unit, item) / item.data['uses']
         repair_cost = math.ceil(charges_used * cost_per_charge)
     return int(repair_cost)
-
-# def can_wield(unit, item) -> bool:
-#     weapon = item_system.is_weapon(unit, item)
-#     spell = item_system.is_weapon(unit, item)
-#     avail = available(unit, item)
-#     if (weapon or spell):
-#         if avail:
-#             return True
-#         else:
-#             return False
-#     return True
 
 def create_item(unit, item_nid, droppable=False, parent: ItemObject = None) -> ItemObject:
     item_prefab = DB.items.get(item_nid)

@@ -3,6 +3,9 @@ from typing import Dict
 
 from app.utilities.data import Data, Prefab
 from app.data.database.weapons import WexpGain
+from app.utilities import str_utils
+from app.utilities.typing import NID
+
 
 @dataclass
 class Klass(Prefab):
@@ -25,7 +28,7 @@ class Klass(Prefab):
     max_stats: dict = None
 
     learned_skills: list = None
-    wexp_gain: dict = None
+    wexp_gain: Dict[NID, WexpGain] = None
 
     icon_nid: str = None
     icon_index: tuple = (0, 0)
@@ -81,3 +84,21 @@ class Klass(Prefab):
 
 class ClassCatalog(Data[Klass]):
     datatype = Klass
+
+    def create_new(self, db):
+        nids = [d.nid for d in self]
+        nid = name = str_utils.get_next_name("New Class", nids)
+        movement_group = db.mcost.unit_types[0]
+        bases = {k: 0 for k in db.stats.keys()}
+        growths = {k: 0 for k in db.stats.keys()}
+        growth_bonus = {k: 0 for k in db.stats.keys()}
+        promotion = {k: 0 for k in db.stats.keys()}
+        max_stats = {stat.nid: stat.maximum for stat in db.stats}
+        wexp_gain = {weapon_nid: db.weapons.default() for weapon_nid in db.weapons.keys()}
+        new_class = Klass(
+            nid, name, "", 1, movement_group, None, [], [], 20,
+            bases, growths, growth_bonus, promotion, max_stats,
+            [], wexp_gain)
+        new_class.fields = []
+        self.append(new_class)
+        return new_class

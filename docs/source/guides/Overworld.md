@@ -26,7 +26,7 @@ You can see that I've set the border to 1. The player cannot interact with the r
 
 Now, onto **nodes** and **roads**!
 
-The instructions are at the bottom of the screen, but to reiterate, all controls involve the mouse or the delete key. **Left-Click** selects an object; **Right-Click** creates roads. **Double-L-Click** creates nodes.
+The instructions are at the bottom of the screen, but to reiterate, all controls involve the mouse or the delete key. **Left-Click** selects an object; **Right-Click** moves it, while **Ctrl+Right-Click** creates roads. If a road does not start and end in a node it will not appear in game. **Double-L-Click** creates nodes.
 
 We can make two nodes and a road between:
 

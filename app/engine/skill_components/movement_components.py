@@ -4,6 +4,7 @@ from app.data.database.components import ComponentType
 
 from app.engine import equations, target_system, action
 from app.engine.game_state import game
+from app.engine.movement import movement_funcs
 from app.engine.objects.unit import UnitObject
 
 import logging
@@ -120,7 +121,7 @@ class WitchWarp(SkillComponent):
                 left = (pos[0] - 1, pos[1])
                 right = (pos[0] + 1, pos[1])
                 for point in [up, down, left, right]:
-                    if game.board.check_bounds(point) and game.movement.check_weakly_traversable(unit, point) and not game.board.get_unit(point):
+                    if game.board.check_bounds(point) and movement_funcs.check_weakly_traversable(unit, point) and not game.board.get_unit(point):
                         warp_spots.add(point)
         return warp_spots
 
@@ -140,7 +141,7 @@ class SpecificWitchWarp(SkillComponent):
             else:
                 continue
             if partner_pos:
-                positions += [pos for pos in target_system.get_adjacent_positions(partner_pos) if game.movement.check_weakly_traversable(unit, pos) and not game.board.get_unit(pos)]
+                positions += [pos for pos in target_system.get_adjacent_positions(partner_pos) if movement_funcs.check_weakly_traversable(unit, pos) and not game.board.get_unit(pos)]
         return positions
 
 class WitchWarpExpression(SkillComponent):

@@ -2,14 +2,14 @@ import math, string
 
 from app.constants import TILEX, WINWIDTH, WINHEIGHT
 from app.data.database.database import DB
+from app.engine.game_menus import menu_options
 from app.utilities import utils
 
 from app.data.database import lore
 from app.engine.sprites import SPRITES
 from app.engine.fonts import FONT
 from app.engine.input_manager import get_input_manager
-from app.engine import engine, image_mods, icons, help_menu, menu_options, \
-    item_system, gui, item_funcs
+from app.engine import engine, image_mods, icons, help_menu, item_system, gui, item_funcs
 from app.engine.gui import ScrollBar
 from app.engine.base_surf import create_base_surf
 from app.engine.objects.item import ItemObject
@@ -1152,7 +1152,7 @@ class Table(Simple):
                     self.scroll = utils.clamp(self.scroll, 0, max(0, num_rows - self.rows))
             else:
                 # Set to most recent good option
-                idx = max(i for i in range(len(self.options)) if not self.options[idx].ignore)
+                idx = max(i for i in range(len(self.options)) if not self.options[i].ignore)
                 break
             idx = self._idx_coords(row, col)
             if not self.options[idx].ignore:
@@ -1179,7 +1179,7 @@ class Table(Simple):
                     self.scroll = max(0, self.scroll)
             else:
                 # Set to most recent good option
-                idx = min(i for i in range(len(self.options)) if not self.options[idx].ignore)
+                idx = min(i for i in range(len(self.options)) if not self.options[i].ignore)
                 break
             idx = self._idx_coords(row, col)
             if not self.options[idx].ignore:

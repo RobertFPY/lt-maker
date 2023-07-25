@@ -85,6 +85,7 @@ class StatusUpkeepState(MapState):
                         action.do(act)
                     self.check_death()
                     self.cur_unit = None
+                    return 'repeat'
                 else:
                     self.cur_unit = None
                     return 'repeat'

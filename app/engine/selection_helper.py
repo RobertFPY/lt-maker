@@ -34,7 +34,7 @@ class SelectionHelper():
 
     def get_least_hp(self, position):
         if self.pos_list:
-            return min(self.pos_list, key=lambda pos: game.board.get_unit(pos).get_hp() / game.board.get_unit(pos).get_max_hp())
+            return min(self.pos_list, key=lambda pos: (game.board.get_unit(pos).get_hp() / game.board.get_unit(pos).get_max_hp() if game.board.get_unit(pos) else 9999))
         else:
             return None
 

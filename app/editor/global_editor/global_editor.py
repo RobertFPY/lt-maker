@@ -1,8 +1,10 @@
+from typing import Optional
 from PyQt5 import QtGui
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QMainWindow, QAction, QDockWidget, QLabel, QFrame
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt
+from app import dark_theme
 
 
 from app.data.database.database import DB
@@ -109,15 +111,9 @@ class GlobalEditor(QMainWindow):
         self.modify_level_act = QAction(
             "Edit Level", self, triggered=self.edit_level)
 
-    def set_icons(self, force_theme=None):
-        if force_theme is None:
-            theme = self.settings.get_theme(0)
-        else:
-            theme = force_theme
-        if theme == 0:
-            icon_folder = 'icons/icons'
-        else:
-            icon_folder = 'icons/dark_icons'
+    def set_icons(self, force_theme: Optional[dark_theme.ThemeType] = None):
+        theme = dark_theme.get_theme(force_theme)
+        icon_folder = theme.icon_dir()
         self.zoom_in_act.setIcon(QIcon(f'{icon_folder}/zoom_in.png'))
         self.zoom_out_act.setIcon(QIcon(f'{icon_folder}/zoom_out.png'))
         self.modify_level_act.setIcon(QIcon(f'{icon_folder}/map.png'))

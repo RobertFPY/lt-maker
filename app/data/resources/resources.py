@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import shutil
 import os
 import traceback
@@ -7,7 +9,7 @@ from app.utilities import exceptions
 from app.data.resources.fonts import FontCatalog
 from app.data.resources.icons import Icon16Catalog, Icon32Catalog, Icon80Catalog
 from app.data.resources.portraits import PortraitCatalog
-from app.data.resources.animations import AnimationCatalog
+from app.data.resources.map_animations import MapAnimationCatalog
 from app.data.resources.panoramas import PanoramaCatalog
 from app.data.resources.map_icons import MapIconCatalog
 from app.data.resources.map_sprites import MapSpriteCatalog
@@ -62,7 +64,7 @@ class Resources():
         self.icons80 = Icon80Catalog()
 
         self.portraits = PortraitCatalog()
-        self.animations = AnimationCatalog()
+        self.animations = MapAnimationCatalog()
 
         self.panoramas = PanoramaCatalog()
         self.map_icons = MapIconCatalog()
@@ -127,49 +129,58 @@ class Resources():
         if not os.path.exists(module_path):
             self.loaded_custom_components_path = None
 
-    def save(self, proj_dir, specific=None, progress=None):
+    def save(self, proj_dir, specific=None, progress=None) -> bool:
+        """
+        # Returns whether it was successful in saving
+        """
         logging.info("Starting Resource Serialization for %s..." % proj_dir)
         import time
         start = time.time_ns()/1e6
         # Make the directory to save this resource pack in
-        if not os.path.exists(proj_dir):
-            os.mkdir(proj_dir)
-        resource_dir = os.path.join(proj_dir, 'resources')
-        if not os.path.exists(resource_dir):
-            os.mkdir(resource_dir)
+        try:
+            if not os.path.exists(proj_dir):
+                os.mkdir(proj_dir)
+            resource_dir = os.path.join(proj_dir, 'resources')
+            if not os.path.exists(resource_dir):
+                os.mkdir(resource_dir)
 
-        should_save_loose_files = False
-        if specific:
-            save_data_types = specific
-        else:
-            save_data_types = self.save_data_types
-            should_save_loose_files = True
-        for idx, data_type in enumerate(save_data_types):
-            data_dir = os.path.join(resource_dir, data_type)
-            if not os.path.exists(data_dir):
-                os.mkdir(data_dir)
-            logging.info("Saving %s..." % data_type)
-            time1 = time.time_ns()/1e6
-            getattr(self, data_type).save(data_dir)
-            time2 = time.time_ns()/1e6 - time1
-            logging.info("Time Taken: %s ms" % time2)
-            if progress:
-                progress.setValue(int(idx / len(save_data_types) * 75))
-        if should_save_loose_files and self.main_folder:
-            for loose_file_type in self.loose_file_types:
-                logging.info("Saving %s..." % loose_file_type)
+            should_save_loose_files = False
+            if specific:
+                save_data_types = specific
+            else:
+                save_data_types = self.save_data_types
+                should_save_loose_files = True
+            for idx, data_type in enumerate(save_data_types):
+                data_dir = os.path.join(resource_dir, data_type)
+                if not os.path.exists(data_dir):
+                    os.mkdir(data_dir)
+                logging.info("Saving %s..." % data_type)
                 time1 = time.time_ns()/1e6
-                target_dir = os.path.join(resource_dir, loose_file_type)
-                if not os.path.exists(target_dir) and os.path.exists(os.path.join(self.main_folder, loose_file_type)):
-                    shutil.copytree(os.path.join(self.main_folder, loose_file_type), target_dir)
+                getattr(self, data_type).save(data_dir)
                 time2 = time.time_ns()/1e6 - time1
                 logging.info("Time Taken: %s ms" % time2)
                 if progress:
-                    progress.setValue(80)
+                    progress.setValue(int(idx / len(save_data_types) * 75))
+            if should_save_loose_files and self.main_folder:
+                for loose_file_type in self.loose_file_types:
+                    logging.info("Saving %s..." % loose_file_type)
+                    time1 = time.time_ns()/1e6
+                    target_dir = os.path.join(resource_dir, loose_file_type)
+                    if not os.path.exists(target_dir) and os.path.exists(os.path.join(self.main_folder, loose_file_type)):
+                        shutil.copytree(os.path.join(self.main_folder, loose_file_type), target_dir)
+                    time2 = time.time_ns()/1e6 - time1
+                    logging.info("Time Taken: %s ms" % time2)
+                    if progress:
+                        progress.setValue(80)
+        except OSError as e:  # In case we ran out of memory
+            logging.error("Editor was unable to save your project. Free up memory in your hard drive or try saving somewhere else, otherwise progress will be lost when the editor is closed.")
+            logging.exception(e)
+            return False
 
         end = time.time_ns()/1e6
         logging.info("Total Time Taken for Resources: %s ms" % (end - start))
         logging.info('Done Resource Serializing!')
+        return True
 
     def autosave(self, proj_dir, autosave_dir, progress=None):
         logging.info("Starting Autosave Resource Serialization for %s..." % proj_dir)

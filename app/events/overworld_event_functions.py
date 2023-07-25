@@ -222,7 +222,7 @@ def create_overworld_entity(self: Event, nid, unit=None, team=None, flags=None):
         if unit not in DB.units.keys():
             self.logger.error('%s: No such unit with nid %s', 'create_overworld_entity', unit)
             return
-        if team not in DB.teams:
+        if team not in DB.teams.keys():
             team = 'player'
         new_entity = OverworldEntityObject.from_unit_prefab(nid, None, unit, team)
         game.overworld_controller.add_entity(new_entity)
@@ -293,9 +293,11 @@ def narrate(self: Event, speaker, string, flags=None):
         self.state = 'blocked'
 
 def set_overworld_menu_option_enabled(self: Event, overworld_node_nid: NID, overworld_node_menu_option: NID, setting: bool, flags=None):
-    overworld = game.overworld_controller
-    overworld.toggle_menu_option_enabled(overworld_node_nid, overworld_node_menu_option, setting)
+    val = (setting.lower() in self.true_vals)
+    overworld = self.game.overworld_controller
+    overworld.toggle_menu_option_enabled(overworld_node_nid, overworld_node_menu_option, val)
 
 def set_overworld_menu_option_visible(self: Event, overworld_node_nid: NID, overworld_node_menu_option: NID, setting: bool, flags=None):
-    overworld = game.overworld_controller
-    overworld.toggle_menu_option_visible(overworld_node_nid, overworld_node_menu_option, setting)
+    val = (setting.lower() in self.true_vals)
+    overworld = self.game.overworld_controller
+    overworld.toggle_menu_option_visible(overworld_node_nid, overworld_node_menu_option, val)

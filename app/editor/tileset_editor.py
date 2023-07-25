@@ -1,3 +1,4 @@
+from app import dark_theme
 from app.constants import TILEHEIGHT, TILEWIDTH
 from app.data.database.database import DB
 from app.editor.settings import MainSettingsController
@@ -162,11 +163,9 @@ class TileSetEditor(QDialog):
                     self.current.terrain_grid[tile_pos] = None
 
     def create_actions(self):
-        theme = self.settings.get_theme()
-        if theme == 0:
-            icon_folder = 'icons/icons'
-        else:
-            icon_folder = 'icons/dark_icons'
+        theme = dark_theme.get_theme()
+        icon_folder = theme.icon_dir()
+
 
         paint_group = QActionGroup(self)
         self.brush_action = QAction(QIcon(f"{icon_folder}/brush.png"), "&Brush", self, shortcut="B", triggered=self.set_brush)

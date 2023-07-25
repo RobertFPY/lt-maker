@@ -15,7 +15,26 @@ from app.engine.objects.tilemap import TileMapObject
 from app.utilities.typing import NID, Point
 from app.utilities.algorithms.ltgraph import LTGraph
 
-class OverworldManager():
+class OverworldManagerInterface():
+    def enable_node(self, node: OverworldNodeObject | NID):
+        raise NotImplementedError
+
+    def enable_road(self, road: RoadObject | NID):
+        raise NotImplementedError
+
+    def toggle_menu_option_enabled(self, node: NID, menu_option: NID, setting: bool):
+        raise NotImplementedError
+
+    def menu_option_enabled(self, node: NID, menu_option: NID) -> bool:
+        raise NotImplementedError
+
+    def toggle_menu_option_visible(self, node: NID, menu_option: NID, setting: bool):
+        raise NotImplementedError
+
+    def menu_option_visible(self, node: NID, menu_option: NID) -> bool:
+        raise NotImplementedError
+
+class OverworldManager(OverworldManagerInterface):
     """A wrapper class that contains various functionality for manipulating
     and accessing the overworld data.
     """
@@ -322,7 +341,7 @@ class OverworldManager():
             path = road.prefab
             start_node = self.node_at(path[0], True)
             end_node = self.node_at(path[-1], True)
-            if start_node.nid and end_node.nid:
+            if start_node and end_node and start_node.nid and end_node.nid:
                 self.overworld_full_graph.add_edge(start_node.nid, end_node.nid, data=road, weight=road.tile_length)
         self.regenerate_explored_graph()
 

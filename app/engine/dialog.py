@@ -1,3 +1,4 @@
+from enum import Enum
 import re
 from typing import Callable, List
 
@@ -21,7 +22,6 @@ from app.utilities.enums import Alignments
 import logging
 
 MATCH_DIALOG_COMMAND_RE = re.compile('(\{[^\{]*?\})')
-
 def clean_newlines(text: str) -> str:
     if not text:
         return text
@@ -34,13 +34,23 @@ def clean_newlines(text: str) -> str:
     text = text.replace('\n', '{br}')
     return text
 
+class DialogState(Enum):
+    PROCESS = 'process'  # Normal display of characters one at a time
+    TRANSITION_IN = 'transition_in'  # Dialog is fading in
+    PAUSE = 'pause'  # Pause processing for some amount of time
+    PAUSE_BEFORE_WAIT = 'pause_before_wait'  # Pause processing before we wait for user input, so that user input cannot skip too quickly
+    WAIT = 'wait'  # Wait for user input
+    DONE = 'done'  # Dialog has nothing else to do and can be removed
+    NEW_LINE = 'new_line'  # Pause while we move to a new line
+    COMMAND_PAUSE = 'command_pause'  # Pause caused by a {p} command
+
 class Dialog():
     solo_flag = False
     cursor = SPRITES.get('waiting_cursor')
     cursor_offset = [0]*20 + [1]*2 + [2]*8 + [1]*2
-    transition_speed = 166  # 10 frames
-    pause_before_wait_time = 150 # 9 frames
-    pause_time = 50  # 3 frames
+    transition_speed = utils.frames2ms(10)
+    pause_before_wait_time = utils.frames2ms(9)
+    pause_time = utils.frames2ms(3)
     attempt_split: bool = True # Whether we attempt to split big chunks across multiple lines
 
     def __init__(self, text, portrait=None, background=None, position=None, width=None,
@@ -55,15 +65,14 @@ class Dialog():
         self.font_type = font_type
         self.font_color = font_color or 'black'
         self.autosize = autosize
-        self.speed = speed
+        self.speed = speed if speed is not None else 1.0
         self.num_lines = num_lines
         self.draw_cursor_flag = draw_cursor
         self.font = FONT[self.font_type]
         if '{sub_break}' in self.plain_text:
             self.attempt_split = False
 
-        # States: process, transition_in, pause, pause_before_wait, wait, done, new_line
-        self.state = 'transition_in'
+        self._state = DialogState.TRANSITION_IN
 
         self.no_wait = False
         self.text_commands = self.format_text(text)
@@ -143,6 +152,14 @@ class Dialog():
             style_as_dict['width'] = width
         self = cls(text, portrait=portrait, autosize=False, **style_as_dict)
         return self
+
+    @property
+    def state(self) -> DialogState:
+        return self._state
+
+    @state.setter
+    def state(self, value: DialogState):
+        self._state = value
 
     def format_text(self, text):
         # Pipe character replacement
@@ -240,10 +257,10 @@ class Dialog():
     def _next_line(self):
         # Don't do this for the first line
         if len(self.text_lines) > self.num_lines - 1:
-            self.state = 'new_line'
+            self.state = DialogState.NEW_LINE
             self.y_offset = 16
         else:
-            self.state = 'process'
+            self.state = DialogState.PROCESS
             if self.portrait:
                 if self.should_move_mouth:
                     self.portrait.talk()
@@ -322,56 +339,63 @@ class Dialog():
         """
         Should no longer be drawn
         """
-        return self.state == 'done' and not self.hold
+        return self.state == DialogState.DONE and not self.hold
 
     def is_done(self) -> bool:
         """
         Can move onto processing other commands
         """
-        return self.state == 'done'
+        return self.state == DialogState.DONE
 
     def is_done_or_wait(self) -> bool:
-        return self.state in ('done', 'wait')
+        return self.state in (DialogState.DONE, DialogState.WAIT)
 
     def is_paused(self) -> bool:
         """
         Waiting for the event to finish processing it's {p} command
         """
-        return self.state == 'command_pause'
+        return self.state == DialogState.COMMAND_PAUSE
 
     def pause(self):
         if self.portrait:
             self.portrait.stop_talking()
-        self.state = 'pause'
+        self.state = DialogState.PAUSE
         self.last_update = engine.get_time()
 
     def pause_before_wait(self):
         if self.portrait:
             self.portrait.stop_talking()
-        self.state = 'pause_before_wait'
+        self.state = DialogState.PAUSE_BEFORE_WAIT
         self.last_update = engine.get_time()
 
     def command_pause(self):
         if self.portrait:
             self.portrait.stop_talking()
-        self.state = 'command_pause'
+        self.state = DialogState.COMMAND_PAUSE
 
     def command_unpause(self):
-        if self.state == 'command_pause':
-            self.state = 'process'
+        if self.state == DialogState.COMMAND_PAUSE:
+            self.state = DialogState.PROCESS
+            if self.portrait and self.should_move_mouth:
+                self.portrait.talk()
+
+    def start_processing(self):
+        if self.state == DialogState.TRANSITION_IN:
+            self.state = DialogState.PROCESS
+            self._next_line()
 
     def hurry_up(self):
-        if self.state == 'process':
-            while self.state == 'process':
+        if self.state == DialogState.PROCESS:
+            while self.state == DialogState.PROCESS:
                 self._next_char(sound=False)
-                # Skip regular pauses because we want maximum velocity of speech
-                if self.state == 'pause':
-                    self.state = 'process'
-        elif self.state == 'wait':
+                # Skip pauses because we want maximum velocity of speech
+                if self.state == DialogState.PAUSE:
+                    self.state = DialogState.PROCESS
+        elif self.state == DialogState.WAIT:
             if self.text_index >= len(self.text_commands):
-                self.state = 'done'
+                self.state = DialogState.DONE
             else:
-                self.state = 'process'
+                self.state = DialogState.PROCESS
                 if self.portrait:
                     if self.should_move_mouth:
                         self.portrait.talk()
@@ -386,46 +410,50 @@ class Dialog():
     def update(self):
         current_time = engine.get_time()
 
-        if self.state == 'transition_in':
+        if self.state == DialogState.TRANSITION_IN:
             perc = (current_time - self.last_update) / self.transition_speed
             self.transition_progress = utils.clamp(perc, 0, 1)
             if self.transition_progress == 1:
                 self._next_line()
-        elif self.state == 'process':
-            if cf.SETTINGS['text_speed'] > 0:
+
+        elif self.state == DialogState.PROCESS:
+            if (cf.SETTINGS['text_speed'] * self.speed) > 0:
                 num_updates = engine.get_delta() / (float(cf.SETTINGS['text_speed']) * self.speed)
                 self.total_num_updates += num_updates
-                while self.total_num_updates >= 1 and self.state == 'process':
+                while self.total_num_updates >= 1 and self.state == DialogState.PROCESS:
                     self.total_num_updates -= 1
                     self._next_char(sound=self.total_num_updates < 2)
-                    if self.state != 'process':
+                    if self.state != DialogState.PROCESS:
                         self.total_num_updates = 0
             else:
-                while self.state == 'process':
+                while self.state == DialogState.PROCESS:
                     self._next_char(sound=False)
                     # Skip regular pauses because we want MAXIMUM VELOCITY of characters
-                    if self.state == 'pause':
-                        self.state = 'process'
+                    if self.state == DialogState.PAUSE:
+                        self.state = DialogState.PROCESS
                 self.play_talk_boop()
-        elif self.state == 'pause_before_wait':
+
+        elif self.state == DialogState.PAUSE_BEFORE_WAIT:
             if current_time - self.last_update > self.pause_before_wait_time:
                 if self.no_wait:
-                    self.state = 'done'
+                    self.state = DialogState.DONE
                 else:
-                    self.state = 'wait'
-        elif self.state == 'pause':  # Regular pause for periods
+                    self.state = DialogState.WAIT
+
+        elif self.state == DialogState.PAUSE:  # Regular pause for periods
             if current_time - self.last_update > self.pause_time:
-                self.state = 'process'
+                self.state = DialogState.PROCESS
                 if self.portrait:
                     if self.should_move_mouth:
                         self.portrait.talk()
                     else:
                         self.portrait.stop_talking()
-        elif self.state == 'new_line':
+
+        elif self.state == DialogState.NEW_LINE:
             # Update y_offset
             self.y_offset = max(0, self.y_offset - 2)
             if self.y_offset == 0:
-                self.state = 'process'
+                self.state = DialogState.PROCESS
                 if self.portrait:
                     if self.should_move_mouth:
                         self.portrait.talk()
@@ -433,6 +461,38 @@ class Dialog():
                         self.portrait.stop_talking()
 
         self.cursor_offset_index = (self.cursor_offset_index + 1) % len(self.cursor_offset)
+        return True
+
+    def warp_speed(self):
+        """
+        # Process the whole dialog and ignore all non-done states
+        # We just want to get to the end
+        # Essentially a simplified version of update()
+        """
+        self.start_processing()
+        while self.state != DialogState.DONE:
+            if self.state == DialogState.PROCESS:
+                while self.state == DialogState.PROCESS:
+                    self._next_char(sound=False)
+                    # Skip pauses because we want MAXIMUM VELOCITY of characters
+                    if self.state in (DialogState.PAUSE, DialogState.COMMAND_PAUSE):
+                        self.state = DialogState.PROCESS
+
+            elif self.state == DialogState.PAUSE_BEFORE_WAIT:
+                self.state = DialogState.WAIT
+
+            elif self.state == DialogState.WAIT:
+                if self.text_index >= len(self.text_commands):
+                    self.state = DialogState.DONE
+                else:
+                    self.state = DialogState.PROCESS
+
+            elif self.state in (DialogState.PAUSE, DialogState.COMMAND_PAUSE):
+                self.state = DialogState.PROCESS
+
+            elif self.state == DialogState.NEW_LINE:
+                self.y_offset = 0
+                self.state = DialogState.PROCESS
         return True
 
     def draw_text(self, surf):
@@ -506,7 +566,7 @@ class Dialog():
 
     def draw(self, surf: engine.Surface) -> engine.Surface:
         if self.background:
-            if self.state == 'transition_in':
+            if self.state == DialogState.TRANSITION_IN:
                 # bg = image_mods.resize(self.background, (1, .5 + self.transition_progress/2.))
                 new_width = max(1, self.background.get_width() - 10 + int(10*self.transition_progress))
                 new_height = max(1, self.background.get_height() - 10 + int(10*self.transition_progress))
@@ -517,7 +577,7 @@ class Dialog():
                 bg = image_mods.make_translucent(self.background, self.dialog_transparency)
                 surf.blit(bg, self.position)
 
-        if self.state != 'transition_in':
+        if self.state != DialogState.TRANSITION_IN:
             # Draw message tail
             if self.portrait and self.tail:
                 self.draw_tail(surf, self.portrait)
@@ -527,7 +587,7 @@ class Dialog():
             # Draw text
             end_pos = self.draw_text(surf)
 
-            if self.state == 'wait' and self.draw_cursor_flag:
+            if self.state == DialogState.WAIT and self.draw_cursor_flag:
                 cursor_pos = 4 + end_pos[0], \
                     6 + end_pos[1] + self.cursor_offset[self.cursor_offset_index]
                 surf.blit(self.cursor, cursor_pos)
@@ -536,7 +596,7 @@ class Dialog():
 
 class DynamicDialogWrapper():
     def __init__(self, text_func: Callable[[], str], portrait=None, background=None, position=None, width=None,
-                 speaker=None, style_nid=None, autosize=False, speed: float=1.0, font_color='black',
+                 speaker=None, style_nid=None, autosize=False, speed: float = 1.0, font_color='black',
                  font_type='convo', num_lines=2, draw_cursor=True, message_tail='message_bg_tail', transparency: float=0.05,
                  name_tag_bg='name_tag', flags=None) -> None:
         # eval trick
@@ -824,7 +884,7 @@ class Ending():
         # Only wait for so long
         if self.wait_update:
             if current_time - self.wait_update > self.wait_time:
-                self.dialog.state = 'done'
+                self.dialog.state = DialogState.DONE
         elif self.is_done_or_wait():
             self.wait_update = current_time
 

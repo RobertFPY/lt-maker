@@ -7,8 +7,9 @@ from app.data.database.database import DB
 from app.data.database.difficulty_modes import RNGOption
 from app.engine import (base_surf, combat_calcs, engine, equations, evaluate,
                         icons, image_mods, item_funcs, item_system,
-                        menu_options, skill_system, text_funcs)
+                        skill_system, text_funcs)
 from app.engine.fonts import FONT
+from app.engine.game_menus import menu_options
 from app.engine.game_counters import ANIMATION_COUNTERS
 from app.engine.game_state import game
 from app.engine.sprites import SPRITES
@@ -109,7 +110,7 @@ class UIView():
 
         if (game.state.current() in self.legal_states or game.state.current() in self.initiative_states) \
                 and DB.constants.value('initiative') \
-                and not game.current_level.roam and game.initiative.draw_me:
+                and not game.is_roam() and game.initiative.draw_me:
             self.initiative_info_disp = self.create_initiative_info()
             self.initiative_info_offset = max(0, self.initiative_info_offset)
         elif self.initiative_info_disp:
@@ -308,7 +309,7 @@ class UIView():
             shimmer = SPRITES.get('menu_shimmer1')
         else:
             shimmer = SPRITES.get('menu_shimmer2')
-        bg_surf.blit(shimmer, (bg_surf.get_width() - 1 - shimmer.get_width(), 4))
+        bg_surf.blit(shimmer, (bg_surf.get_width() - 1 - shimmer.get_width(), 4 + 16 * max(len(text_lines) - 2, 0)))
         surf = engine.create_surface((bg_surf.get_width(), bg_surf.get_height() + 3), transparent=True)
         surf.blit(bg_surf, (0, 3))
         gem = SPRITES.get('combat_gem_blue')
@@ -339,8 +340,10 @@ class UIView():
             else:
                 FONT['text-blue'].blit_right(str(num), surf, (x_pos, y_pos))
 
-        grandmaster = game.mode.rng_choice == RNGOption.GRANDMASTER
         crit_flag = DB.constants.value('crit')
+        grandmaster = game.mode.rng_choice == RNGOption.GRANDMASTER
+        if grandmaster:  # Grandmaster takes precedence
+            crit_flag = False
 
         # Choose attack info background
         prefix = 'attack_info_'
@@ -350,11 +353,11 @@ class UIView():
             infix = 'crit'
         else:
             infix = ''
-        color = utils.get_team_color(defender.team)
-        if color not in ('red', 'purple'):
-            color = 'red'
+
+        color = DB.teams.get(defender.team).combat_color
         final = prefix + infix + ('_' if infix else '') + color
-        surf = SPRITES.get(final).copy()
+        fallback_final = prefix + infix + ('_' if infix else '') + 'red'
+        surf = SPRITES.get(final, fallback_final).copy()
 
         if DB.constants.value('pairup') and \
                 (a_assist or d_assist) and not (attacker.traveler or defender.traveler):
@@ -367,9 +370,10 @@ class UIView():
                     infix = 'crit'
                 else:
                     infix = ''
-                color = utils.get_team_color(attacker.team)
+                color = DB.teams.get(attacker.team).combat_color
                 final = prefix + infix + ('_' if infix else '') + color
-                surf.blit(SPRITES.get(final).copy(), (92, 35))
+                fallback_final = prefix + infix + ('_' if infix else '') + 'red'
+                surf.blit(SPRITES.get(final, fallback_final).copy(), (92, 35))
 
                 mt = combat_calcs.compute_assist_damage(a_assist, defender, a_assist.get_weapon(), defender.get_weapon(), 'attack', (0, 0))
                 if grandmaster:
@@ -394,9 +398,10 @@ class UIView():
                     infix = 'crit'
                 else:
                     infix = ''
-                color = utils.get_team_color(defender.team)
+                color = DB.teams.get(defender.team).combat_color
                 final = prefix + infix + ('_' if infix else '') + color
-                surf.blit(SPRITES.get(final).copy(), (1, 35))
+                fallback_final = prefix + infix + ('_' if infix else '') + 'red'
+                surf.blit(SPRITES.get(final, fallback_final).copy(), (1, 35))
 
                 mt = combat_calcs.compute_assist_damage(d_assist, attacker, d_assist.get_weapon(), weapon, 'defense', (0, 0))
                 if grandmaster:
@@ -410,6 +415,8 @@ class UIView():
                     if crit_flag:
                         c = combat_calcs.compute_crit(d_assist, attacker, d_assist.get_weapon(), weapon, 'defense', (0, 0))
                         blit_num(surf, c, 21, 67)
+        # Now make everything translucent
+        surf = image_mods.make_translucent(surf, .1)
 
         # Name
         width = text_width('text', attacker.name)
@@ -500,8 +507,10 @@ class UIView():
         if not self.attack_info_disp:
             self.attack_info_disp = self.create_attack_info(attacker, weapon, defender, a_assist, d_assist)
 
-        grandmaster = game.mode.rng_choice == RNGOption.GRANDMASTER
         crit_flag = DB.constants.value('crit')
+        grandmaster = game.mode.rng_choice == RNGOption.GRANDMASTER
+        if grandmaster:  # Grandmaster takes precedence
+            crit_flag = False
 
         if game.cursor.position[0] > TILEX // 2 + game.camera.get_x() - 1:
             if DB.constants.value('pairup') and \
@@ -543,10 +552,10 @@ class UIView():
         if skill_system.check_enemy(attacker, defender):
             self.draw_adv_arrows(surf, attacker, defender, weapon, defender.get_weapon(), (topleft[0] + 37, topleft[1] + 8))
 
-            y_pos = topleft[1] + 105
+            y_pos = topleft[1] + 89
             if not crit_flag:
                 y_pos -= 16
-            if not grandmaster:
+            if grandmaster:
                 y_pos -= 16
 
             self.draw_adv_arrows(surf, defender, attacker, defender.get_weapon(), weapon, (topleft[0] + 85, y_pos))
@@ -838,8 +847,10 @@ class ItemDescriptionPanel():
         else:
             if self.item.desc:
                 desc = self.item.desc
-            else:
+            elif not available:
                 desc = "Cannot wield."
+            else:
+                desc = ""
 
             desc = desc.replace('{br}', '\n')
             lines = text_funcs.line_wrap('text', desc, width - 8)

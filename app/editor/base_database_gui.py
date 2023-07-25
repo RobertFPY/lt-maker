@@ -19,6 +19,9 @@ from app.utilities import str_utils
 
 import logging
 
+if '_' not in globals():
+    _ = lambda s: s
+
 class Collection(QWidget):
     def __init__(self, deletion_criteria, collection_model: Type[DragDropCollectionModel], parent,
                  button_text="Create %s", view_type: Type[RightClickListView] = RightClickListView):

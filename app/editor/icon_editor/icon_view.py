@@ -6,7 +6,7 @@ from app.data.resources.icons import Icon, IconSheet
 class IconView(QGraphicsView):
     min_scale = 0.5
     max_scale = 5
-    static_size = None
+    static_size = False
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -44,7 +44,7 @@ class IconView(QGraphicsView):
             self.screen_scale -= 1
             self.scale(0.5, 0.5)
 
-def icon_slice(resource: IconSheet, base_width: int, base_height: int, vertical: bool = True) -> list:
+def icon_slice(resource: IconSheet, base_width: int, base_height: int, vertical: bool = False) -> list:
     if not resource.pixmap:
         resource.pixmap = QPixmap(resource.full_path)
     sheet = resource.pixmap

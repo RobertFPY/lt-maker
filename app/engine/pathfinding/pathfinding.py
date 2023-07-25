@@ -1,18 +1,19 @@
 import heapq
 from typing import Tuple, Callable
 
+from app.engine import bresenham_line_algorithm
+
 class Djikstra():
     __slots__ = ['open', 'closed', 'cells', 'bounds', 'height', 'start_pos',
-                 'start_cell', 'unit_team', 'diagonal']
+                 'start_cell', 'unit_team']
 
     def __init__(self, start_pos: tuple, grid: list, bounds: Tuple[int, int, int, int],
-                 height: int, unit_team: str, diagonal: bool = False):
+                 height: int, unit_team: str):
         self.open = []
         heapq.heapify(self.open)
         self.closed = set()
         self.cells = grid # Must keep order
         self.bounds: Tuple[int, int, int, int] = bounds
-        self.diagonal = diagonal
         self.height = height
         self.reset_grid()
         self.start_pos = start_pos
@@ -27,8 +28,6 @@ class Djikstra():
         return self.cells[x * self.height + y]
 
     def get_adjacent_cells(self, cell) -> list:
-        if self.diagonal:
-            return self.get_surrounding_cells(cell)
         return self.get_manhattan_adjacent(cell)
 
     def get_manhattan_adjacent(self, cell):
@@ -41,17 +40,6 @@ class Djikstra():
             cells.append(self.get_cell(cell.x - 1, cell.y))
         if cell.y > self.bounds[1]:
             cells.append(self.get_cell(cell.x, cell.y - 1))
-        return cells
-
-    def get_surrounding_cells(self, cell):
-        x = cell.x
-        y = cell.y
-        cells = []
-        for i in range(-1, 2):
-            for j in range(-1, 2):
-                nx, ny = (x + i, y + j)
-                if self.bounds[0] <= nx <= self.bounds[2] and self.bounds[1] <= ny <= self.bounds[3] and not (nx, ny) == (x, y):
-                    cells.append(self.get_cell(nx, ny))
         return cells
 
     def update_cell(self, adj, cell):
@@ -92,14 +80,12 @@ class Djikstra():
 
 class AStar():
     def __init__(self, start_pos: tuple, goal_pos: tuple, grid: list,
-                 bounds: Tuple[int, int, int, int], height: int, unit_team: str,
-                 diagonal: bool = False):
+                 bounds: Tuple[int, int, int, int], height: int, unit_team: str):
         self.cells = grid
         self.bounds = bounds
         self.height = height
         self.start_pos = start_pos
         self.goal_pos = goal_pos
-        self.diagonal = diagonal
 
         self.start_cell = self.get_cell(start_pos[0], start_pos[1])
         self.end_cell = self.get_cell(goal_pos[0], goal_pos[1]) if goal_pos else None
@@ -154,8 +140,6 @@ class AStar():
         return self.cells[x * self.height + y]
 
     def get_adjacent_cells(self, cell) -> list:
-        if self.diagonal:
-            return self.get_surrounding_cells(cell)
         return self.get_manhattan_adjacent(cell)
 
     def get_manhattan_adjacent(self, cell):
@@ -169,23 +153,6 @@ class AStar():
         if cell.y > self.bounds[1]:
             cells.append(self.get_cell(cell.x, cell.y - 1))
         return cells
-
-    def get_surrounding_cells(self, cell):
-        x, y = cell.x, cell.y
-        cells = []
-        for i in range(-1, 2):
-            for j in range(-1, 2):
-                nx, ny = (x + i, y + j)
-                if self.bounds[0] <= nx <= self.bounds[2] and self.bounds[1] <= ny <= self.bounds[3] and not (nx, ny) == (x, y):
-                    if (j != 0 and i != 0):
-                        self.get_single_diagonal((x, ny), (nx, y), (nx, ny), cells)
-                    else:
-                        cells.append(self.get_cell(nx, ny))
-        return cells
-
-    def get_single_diagonal(self, vadj: tuple, hadj: tuple, diagonal: tuple, cells):
-        if self.get_cell(vadj[0], vadj[1]).reachable and self.get_cell(hadj[0], hadj[1]).reachable:
-            cells.append(self.get_cell(diagonal[0], diagonal[1]))
 
     def update_cell(self, adj, cell):
         # h is approximate distance between this cell and the goal
@@ -237,3 +204,34 @@ class AStar():
                     else:  # Is blocked
                         pass
         return []
+
+class ThetaStar(AStar):
+    """
+    # Just a slight modification to AStar that enables better straight line
+    # pathing because we can skip cells
+    """
+    def update_cell(self, adj, cell):
+        # h is approximate distance between this cell and the goal
+        # g is true distance between this cell and the starting position
+        # f is simply them added together
+        # If line of sight is valid, we can just use the parent
+        # of the current cell rather than the current cell
+        if cell.parent and self.line_of_sight(cell.parent, adj):
+            adj.g = cell.parent.g + adj.cost
+            adj.parent = cell.parent
+        else:
+            adj.g = cell.g + adj.cost
+            adj.parent = cell
+        adj.h = self.get_heuristic(adj)
+        adj.f = adj.h + adj.g
+        adj.true_f = self.get_simple_heuristic(adj) + adj.g
+
+    def line_of_sight(self, cell1, cell2) -> bool:
+        def cannot_move_through(pos: Tuple[int, int]) -> bool:
+            cell = self.get_cell(*pos)
+            return not cell.reachable
+
+        pos1 = cell1.x, cell1.y
+        pos2 = cell2.x, cell2.y
+        valid = bresenham_line_algorithm.get_line(pos1, pos2, cannot_move_through)
+        return valid

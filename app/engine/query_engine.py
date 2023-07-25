@@ -4,6 +4,7 @@ import logging
 from typing import TYPE_CHECKING, Any, List, Optional, Tuple
 
 if TYPE_CHECKING:
+    from app.data.database.klass import Klass
     from app.engine.game_state import GameState
     from app.engine.objects.item import ItemObject
     from app.engine.objects.region import RegionObject
@@ -11,6 +12,7 @@ if TYPE_CHECKING:
     from app.engine.objects.unit import UnitObject
     from app.utilities.typing import NID
 
+from app.data.database.database import DB
 from app.utilities import utils
 
 class QueryType():
@@ -20,6 +22,7 @@ class QueryType():
     MAP = 'Map Functions'
     ACHIEVEMENT = 'Achievements'
     VARIABLES = 'VARIABLES'
+    CLASS = 'Class'
 
 def categorize(tag):
     def deco(func):
@@ -97,7 +100,7 @@ Example usage:
         Args:
             item: item to check
             nid (optional): use to check specific unit nid
-            team (optional): used to match for team. one of 'player', 'enemy', 'enemy2', 'other'
+            team (optional): used to match for team.
             tag (optional): used to match for tag.
             party (optional): used to match for party
 
@@ -141,7 +144,7 @@ Example usage:
         unit = self._resolve_to_unit(unit)
         skill = self._resolve_to_nid(skill)
         if unit:
-            for sk in unit.skills:
+            for sk in reversed(unit.all_skills):
                 if sk.nid == skill:
                     return sk
         return None
@@ -159,6 +162,23 @@ Example usage:
         """
         return bool(self.get_skill(unit, skill))
 
+    @categorize(QueryType.CLASS)
+    def get_klass(self, unit) -> Optional[Klass]:
+        """Returns the klass prefab of the unit.
+
+        Args:
+            unit: unit in question
+
+        Returns:
+            Klass object if the unit exists and has a valid klass, otherwise None
+        """
+        unit = self._resolve_to_unit(unit)
+        if unit:
+            klass = DB.classes.get(unit.klass)
+            return klass
+        return None
+    # Gives get_klass an alternate name
+    get_class = get_klass
 
     @categorize(QueryType.MAP)
     def get_closest_allies(self, position, num: int = 1) -> List[Tuple[UnitObject, int]]:
@@ -175,7 +195,7 @@ Example usage:
         position = self._resolve_pos(position)
         if position:
             return sorted([(unit, utils.calculate_distance(unit.position, position)) for unit in self.game.get_player_units()],
-                        key=lambda pair: pair[1])[:num]
+                            key=lambda pair: pair[1])[:num]
         return []
 
     @categorize(QueryType.MAP)
@@ -187,7 +207,7 @@ Example usage:
             position: position or unit
             dist (int, optional): How far to search. Defaults to 1.
             nid (optional): use to check specific unit nid
-            team (optional): used to match for team. one of 'player', 'enemy', 'enemy2', 'other'
+            team (optional): used to match for team.
             tag (optional): used to match for tag.
             party (optional): used to match for party
 
@@ -278,7 +298,7 @@ Example usage:
         Args:
             region: region in question
             nid (optional): used to match for NID
-            team (optional): used to match for team. one of 'player', 'enemy', 'enemy2', 'other'
+            team (optional): used to match for team.
             tag (optional): used to match for tag.
 
         Returns:
@@ -311,7 +331,7 @@ Example usage:
         Args:
             region: region in question
             nid (optional): used to match for NID
-            team (optional): used to match for team. one of 'player', 'enemy', 'enemy2', 'other'
+            team (optional): used to match for team.
             tag (optional): used to match for tag.
 
         Returns:

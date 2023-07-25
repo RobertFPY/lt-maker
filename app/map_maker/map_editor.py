@@ -197,11 +197,9 @@ class MapEditor(QMainWindow):
         self.view.update_view()
 
     def create_actions(self):
-        theme = self.settings.get_theme()
-        if theme == 0:
-            icon_folder = 'icons/icons'
-        else:
-            icon_folder = 'icons/dark_icons'
+        theme = dark_theme.get_theme()
+        icon_folder = theme.icon_dir()
+
 
         paint_group = QActionGroup(self)
         self.brush_action = QAction(QIcon(f"{icon_folder}/brush.png"), "Brush", self, shortcut="B", triggered=self.set_brush)
@@ -410,7 +408,7 @@ class MapEditor(QMainWindow):
         if fn:
             parent_dir = os.path.split(fn)[0]
             self.settings.set_last_open_path(parent_dir)
-            
+
             nid = NidDialog.get(self)
             if not nid:
                 return
@@ -425,7 +423,7 @@ class MapEditor(QMainWindow):
             s_dict = {}
             s_dict['nid'] = nid
             s_dict['terrain_grid'] = {}
-            
+
             # Build autotiles
             s_dict['autotiles'] = {}
             all_autotile_positions = []
@@ -437,7 +435,7 @@ class MapEditor(QMainWindow):
                 terrain = DB_terrain.get(terrain_nid)
                 if terrain.has_autotiles():
                     all_autotile_positions.append((pos, terrain))
-            
+
             width = TILEWIDTH * len(all_autotile_positions)
             height = TILEHEIGHT * AUTOTILE_FRAMES
             autotile_image = QImage(width, height, QImage.Format_ARGB32)
@@ -463,7 +461,7 @@ class MapEditor(QMainWindow):
                 json.dump(data, fp, indent=4)
 
             QMessageBox.information(self, self.title, "Map successfully exported as tileset with nid *%s* to %s" % (nid, fn))
-            
+
     def update_view(self):
         self.view.update_view()
 
@@ -588,7 +586,7 @@ if __name__ == "__main__":
     import sys
     from PyQt5.QtWidgets import QApplication
     from app import dark_theme
-    
+
     # For High DPI displays
     os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
     QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
@@ -596,7 +594,7 @@ if __name__ == "__main__":
     ap = QApplication(sys.argv)
     ap.setWindowIcon(QIcon('favicon.ico'))
     settings = MainSettingsController()
-    theme = settings.get_theme(0)
+    theme = dark_theme.get_theme()
     dark_theme.set(ap, theme)
     sample_tilemap = MapPrefab('sample')
     # sample_tilemap = meta_generation.generate(sample_tilemap)

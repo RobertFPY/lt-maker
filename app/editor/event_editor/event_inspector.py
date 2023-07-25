@@ -29,7 +29,8 @@ class EventInspectorEngine():
         for event in self.event_db:
             for command in event.commands:
                 for parameter in command.parameters.values():
-                    if parameter == symbol or re.match(rstr, parameter):
+                    # Can sometimes be not a string, in which case we don't want to mess with it
+                    if isinstance(parameter, str) and (parameter == symbol or re.match(rstr, parameter)):
                         occurrence_dict.add(event.nid)
                         break
                 if event.nid in occurrence_dict:

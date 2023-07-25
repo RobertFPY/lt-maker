@@ -31,10 +31,14 @@ class MapView():
         surf = surf.convert_alpha()
 
         # Draw units
-        draw_units = [unit for unit in game.units if (unit.position or unit.sprite.fake_position)]
-        draw_units = sorted(draw_units, key=lambda unit: unit.position[1] if unit.position else unit.sprite.fake_position[1])
+        draw_units = [unit for unit in game.units if unit.sprite.position]
+        draw_units = sorted(draw_units, key=lambda unit: unit.sprite.position[1])
         for unit in draw_units:
             unit.sprite.draw(surf, (0, 0))
+
+        if game.tilemap.foreground_layers():
+            foreground_image = game.tilemap.get_foreground_image(cull_rect)
+            surf.blit(foreground_image, (0, 0))
 
         engine.save_surface(surf, 'screenshots/LT_%s_map_view.png' % current_time)
 
@@ -44,9 +48,9 @@ class MapView():
         cull_rect_center_in_tiles = tuple_add(cull_rect_in_tiles[:2], tmult(cull_rect_in_tiles[2:], 0.5))
 
         # Update all units
-        update_units = [unit for unit in game.units if (unit.position or unit.sprite.fake_position)]
+        update_units = [unit for unit in game.units if unit.sprite.position]
         for unit in update_units:
-            if game.level and game.level.roam:
+            if game.is_roam():
                 if unit.position:
                     norm_dist_from_center = max(1.0 - magnitude(tuple_sub(unit.position, cull_rect_center_in_tiles)) / ((TILEX + TILEY) / 2), 0)
                 else:
@@ -56,14 +60,14 @@ class MapView():
             unit.sprite.update()
             unit.sound.update(volume=norm_dist_from_center)
 
-        pos_units = [unit for unit in update_units if unit is not game.cursor.cur_unit and (unit.position or unit.sprite.fake_position)]
+        pos_units = [unit for unit in update_units if unit is not game.cursor.cur_unit and unit.sprite.position]
         # Only draw units within 2 tiles of cull_rect
         culled_units = [unit for unit in pos_units if unit.sprite.draw_anyway() or
-                        (cull_rect[0] - TILEWIDTH*2 < (unit.position or unit.sprite.fake_position)[0] * TILEWIDTH < cull_rect[0] + cull_rect[2] + TILEWIDTH*2 and
-                         cull_rect[1] - TILEHEIGHT*2 < (unit.position or unit.sprite.fake_position)[1] * TILEHEIGHT < cull_rect[1] + cull_rect[3] + TILEHEIGHT*2)]
+                        (cull_rect[0] - TILEWIDTH*2 < unit.sprite.position[0] * TILEWIDTH < cull_rect[0] + cull_rect[2] + TILEWIDTH*2 and
+                         cull_rect[1] - TILEHEIGHT*2 < unit.sprite.position[1] * TILEHEIGHT < cull_rect[1] + cull_rect[3] + TILEHEIGHT*2)]
         if game.level_vars.get('_fog_of_war') or game.board.fog_region_set:
             culled_units = [unit for unit in culled_units if game.board.in_vision(unit.sprite.get_round_fake_pos() or unit.position)]
-        draw_units = sorted(culled_units, key=lambda unit: unit.position[1] if unit.position else unit.sprite.fake_position[1])
+        draw_units = sorted(culled_units, key=lambda unit: unit.sprite.position[1])
 
         topleft = cull_rect[0], cull_rect[1]
 
@@ -79,7 +83,7 @@ class MapView():
 
         # Draw the main unit
         cur_unit = game.cursor.cur_unit
-        if cur_unit and (cur_unit.position or cur_unit.sprite.fake_position):
+        if cur_unit and cur_unit.sprite.position:
             cur_unit.sprite.draw(unit_surf, topleft)
             cur_unit.sprite.draw_hp(unit_surf, topleft, event)
             if not event:
@@ -154,6 +158,10 @@ class MapView():
         for anim in game.tilemap.high_animations:
             anim.draw(surf, offset=(-game.camera.get_x(), -game.camera.get_y()))
 
+        if game.tilemap.foreground_layers():
+            foreground_image = game.tilemap.get_foreground_image(cull_rect)
+            surf.blit(foreground_image, (0, 0))
+
         # Handle time region text
         self.time_region_text(surf, cull_rect)
 
@@ -182,14 +190,12 @@ class MapView():
         line_surf = engine.copy_surface(self._line_surf)
 
         bounds = game.board.bounds
-
-        # Don't bother showing bounds if there just normal bounds
-        if not cf.SETTINGS['show_bounds'] and \
-                bounds[0] == 0 and \
-                bounds[1] == 0 and \
-                bounds[2] == game.tilemap.width - 1 and \
-                bounds[3] == game.tilemap.height - 1:
-            return surf
+        
+        regular_bounds = \
+            bounds[0] == 0 and \
+            bounds[1] == 0 and \
+            bounds[2] == game.tilemap.width - 1 and \
+            bounds[3] == game.tilemap.height - 1
 
         left = bounds[0] * TILEWIDTH - cull_rect[0]
         right = (bounds[2] + 1) * TILEWIDTH - cull_rect[0]
@@ -197,10 +203,8 @@ class MapView():
         bottom = (bounds[3] + 1) * TILEHEIGHT - cull_rect[1]
 
         opacity = cf.SETTINGS['grid_opacity']  # Higher numbers show more grid
-        if opacity == 0:
-            return surf
         outside_opacity = min(255, opacity + 56)
-
+        # Draw small lines (grid)
         if opacity > 30:
             # Draw vertical lines
             for x in range(left, right, TILEWIDTH):
@@ -208,11 +212,15 @@ class MapView():
             # Draw horizontal lines
             for y in range(top, bottom, TILEHEIGHT):
                 engine.draw_line(line_surf, (0, 0, 0, opacity), (left, y), (right, y))
-        # Draw big lines
-        engine.draw_line(line_surf, (0, 0, 0, outside_opacity), (left - 2, top - 1), (right + 1, top - 1), width=3)
-        engine.draw_line(line_surf, (0, 0, 0, outside_opacity), (left - 1, top - 1), (left - 1, bottom), width=3)
-        engine.draw_line(line_surf, (0, 0, 0, outside_opacity), (right, top - 1), (right, bottom), width=3)
-        engine.draw_line(line_surf, (0, 0, 0, outside_opacity), (left - 2, bottom), (right + 1, bottom), width=3)
+
+        # Draw big lines (bounds)
+        # Don't bother showing bounds if they are just normal bounds
+        if not regular_bounds and cf.SETTINGS['show_bounds']:
+            engine.draw_line(line_surf, (0, 0, 0, outside_opacity), (left - 2, top - 1), (right + 1, top - 1), width=3)
+            engine.draw_line(line_surf, (0, 0, 0, outside_opacity), (left - 1, top - 1), (left - 1, bottom), width=3)
+            engine.draw_line(line_surf, (0, 0, 0, outside_opacity), (right, top - 1), (right, bottom), width=3)
+            engine.draw_line(line_surf, (0, 0, 0, outside_opacity), (left - 2, bottom), (right + 1, bottom), width=3)
+        # Draw to map
         surf.blit(line_surf, (0, 0))
 
         return surf

@@ -1,34 +1,37 @@
 from __future__ import annotations
+from app.engine.movement.unit_path_movement_component import UnitPathMovementComponent
 from app.engine.objects.item import ItemObject
+from app.engine.objects.skill import SkillObject
 from app.engine.text_evaluator import TextEvaluator
 
 import logging
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, Callable, Dict, List, Tuple, Optional
 
 import app.engine.config as cf
 import app.engine.graphics.ui_framework as uif
 from app.constants import WINHEIGHT, WINWIDTH
 from app.data.database.database import DB
-from app.engine import (action, dialog, engine, evaluate,
-                        target_system, item_funcs)
+from app.engine import (action, background, dialog, engine, evaluate,
+                        target_system, image_mods, item_funcs)
 from app.engine.game_state import GameState
+from app.engine.movement import movement_funcs
 from app.engine.objects.overworld import OverworldNodeObject
 from app.engine.objects.unit import UnitObject
 from app.engine.sound import get_sound_thread
 from app.events import event_commands, triggers
 from app.events.event_portrait import EventPortrait
 from app.utilities import str_utils, utils, static_random
-from app.utilities.typing import NID
+from app.utilities.typing import NID, Color3
 
 class Event():
     true_vals = ('t', 'true', 'True', '1', 'y', 'yes')
 
-    skippable = {"speak", "wait", "bop_portrait",
-                 "sound", "location_card", "credits", "ending"}
+    skippable = {"wait", "bop_portrait", "sound", 
+                 "location_card", "credits", "ending"}
 
     def __init__(self, nid, commands, trigger: triggers.EventTrigger, game: GameState = None):
-        self._transition_speed = 250
-        self._transition_color = (0, 0, 0)
+        self._transition_speed: int = 250
+        self._transition_color: Color3 = (0, 0, 0)
 
         self.nid = nid
         self.commands: List[event_commands.EventCommand] = commands.copy()
@@ -36,6 +39,7 @@ class Event():
 
         self.background = None
 
+        self.trigger = trigger
         event_args = trigger.to_args()
         self.unit = event_args.get('unit1', None)
         self.unit2 = event_args.get('unit2', None)
@@ -81,8 +85,9 @@ class Event():
         self.transition_state = None
         self.transition_progress = 0
         self.transition_update = 0
-        self.transition_speed = self._transition_speed
-        self.transition_color = self._transition_color
+        self.transition_speed: int = self._transition_speed
+        self.transition_color: Color3 = self._transition_color
+        self.transition_background: Optional[background.PanoramaBackground] = None
 
         # For map animations
         self.animations = []
@@ -174,7 +179,9 @@ class Event():
                 if self.text_boxes:
                     if self.text_boxes[-1].is_done():
                         if dialog_log:
-                            action.do(action.LogDialog(self.text_boxes[-1]))
+                            speaker = self.text_boxes[-1].speaker
+                            plain_text = self.text_boxes[-1].plain_text
+                            action.do(action.LogDialog(speaker, plain_text))
                         self.state = 'processing'
                         if self.text_boxes[-1].is_complete():
                             self.text_boxes.pop()
@@ -187,7 +194,7 @@ class Event():
                 self.state = 'processing'
 
             elif self.state == 'almost_complete':
-                if not self.game.movement or len(self.game.movement) <= 0:
+                if not self.game.movement or not any([c.grid_move for c in self.game.movement.moving_entities]):
                     self.state = 'complete'
 
             elif self.state == 'complete':
@@ -273,7 +280,11 @@ class Event():
         # Fade to black
         if self.transition_state:
             s = engine.create_surface((WINWIDTH, WINHEIGHT), transparent=True)
-            s.fill((*self.transition_color, int(255 * self.transition_progress)))
+            if self.transition_background:
+                self.transition_background.draw(s)
+                s = image_mods.make_translucent(s, 1 - self.transition_progress)
+            else:
+                s.fill((*self.transition_color, int(255 * self.transition_progress)))
             surf.blit(s, (0, 0))
 
         # draw all achievements
@@ -377,7 +388,7 @@ class Event():
         if command.nid == 'if':
             self.logger.info('%s: %s, %s', command.nid, command.parameters, command.chosen_flags)
             if not self.if_stack or self.if_stack[-1]:
-                truth = self._get_truth(command)
+                truth = self._get_truth(command)                
                 self.if_stack.append(truth)
                 self.parse_stack.append(truth)
             else:
@@ -523,7 +534,7 @@ class Event():
         if direction == 'west':
             test_pos = (0, position[1])
             for x in offsets:
-                if self.game.movement.check_traversable(unit, test_pos):
+                if movement_funcs.check_traversable(unit, test_pos):
                     final_pos = test_pos
                     break
                 else:
@@ -531,7 +542,7 @@ class Event():
         elif direction == 'east':
             test_pos = (self.game.tilemap.width - 1, position[1])
             for x in offsets:
-                if self.game.movement.check_traversable(unit, test_pos):
+                if movement_funcs.check_traversable(unit, test_pos):
                     final_pos = test_pos
                     break
                 else:
@@ -539,7 +550,7 @@ class Event():
         elif direction == 'north':
             test_pos = (position[0], 0)
             for x in offsets:
-                if self.game.movement.check_traversable(unit, test_pos):
+                if movement_funcs.check_traversable(unit, test_pos):
                     final_pos = test_pos
                     break
                 else:
@@ -547,7 +558,7 @@ class Event():
         elif direction == 'south':
             test_pos = (position[0], self.game.tilemap.height - 1)
             for x in offsets:
-                if self.game.movement.check_traversable(unit, test_pos):
+                if movement_funcs.check_traversable(unit, test_pos):
                     final_pos = test_pos
                     break
                 else:
@@ -621,6 +632,9 @@ class Event():
             if not unit:
                 self.logger.error("Couldn't find unit with nid %s" % unit_nid)
                 return None, None
+        # If UID, immediately retrieve item
+        if item.isdigit() and self.game.get_item(int(item)):
+            return unit, self.game.get_item(int(item))
         item_id = item
         if recursive:
             item_list = item_funcs.get_all_items_with_multiitems(unit.items)
@@ -633,11 +647,25 @@ class Event():
             return None, None
         item = [item for item in item_list if (item.nid == item_id or (str_utils.is_int(item_id) and item.uid == int(item_id)))][0]
         return unit, item
+        
+    def _get_skill(self, unit_nid: str, skill: str) -> tuple[UnitObject, SkillObject]:
+        unit = self._get_unit(unit_nid)
+        if not unit:
+            self.logger.error("Couldn't find unit with nid %s" % unit_nid)
+            return None, None
+        skill_id = skill
+        skill_list = unit.skills
+        snids = [skill.nid for skill in skill_list]
+        suids = [skill.uid for skill in skill_list]
+        if (skill_id not in snids) and (not str_utils.is_int(skill_id) or not int(skill_id) in suids):
+            self.logger.error("Couldn't find skill with id %s" % skill)
+            return None, None
+        skill = [skill for skill in skill_list if (skill.nid == skill_id or (str_utils.is_int(skill_id) and skill.uid == int(skill_id)))][0]
+        return unit, skill
 
     def _apply_stat_changes(self, unit, stat_changes, flags):
-        klass = DB.classes.get(unit.klass)
         # clamp stat changes
-        stat_changes = {k: utils.clamp(v, -unit.stats[k], klass.max_stats.get(k) - unit.stats[k]) for k, v in stat_changes.items()}
+        stat_changes = {k: utils.clamp(v, -unit.stats[k], unit.get_stat_cap(k) - unit.stats[k]) for k, v in stat_changes.items()}
 
         immediate = 'immediate' in flags
 
@@ -662,7 +690,11 @@ class Event():
         elif text == '{position}':
             position = self.position
         elif not self.game.is_displaying_overworld() and self._get_unit(text):
-            position = self._get_unit(text).position
+            unit = self._get_unit(text)
+            if unit.position:
+                position = unit.position
+            else:
+                position = self.game.get_rescuers_position(unit)
         elif self.game.is_displaying_overworld() and self._get_overworld_location_of_object(text):
             position = self._get_overworld_location_of_object(text).position
         elif text in self.game.level.regions.keys():

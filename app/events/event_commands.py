@@ -1,8 +1,9 @@
 from __future__ import annotations
+from dataclasses import dataclass
 
 import logging
 from enum import Enum
-from typing import Callable, List, Dict, Set, Tuple
+from typing import Callable, List, Dict, Set, Tuple, Type
 
 from app.utilities.data import Prefab
 
@@ -21,6 +22,7 @@ class Tags(Enum):
     ADD_REMOVE_INTERACT_WITH_UNITS = 'Add/Remove/Interact with Units'
     MODIFY_UNIT_PROPERTIES = 'Modify Unit Properties'
     MODIFY_ITEM_PROPERTIES = 'Modify Item Properties'
+    MODIFY_SKILL_PROPERTIES = 'Modify Skill Properties'
     UNIT_GROUPS = 'Unit Groups'
     MISCELLANEOUS = 'Miscellaneous'
     OVERWORLD = 'Overworld'
@@ -278,8 +280,21 @@ Fades in *Music* over the course of *FadeIn* milliseconds. Fade in defaults to 4
         """
 
     keywords = ['Music']
-    optional_keywords = ['FadeIn']  # How long to fade in (default 400)
+    optional_keywords = ['FadeIn']
     keyword_types = ['Music', 'Time']
+
+class MusicFadeBack(EventCommand):
+    nid = "music_fade_back"
+    nickname = "mf"
+    tag = Tags.MUSIC_SOUND
+    desc = \
+        """
+Fades out the currently playing song over the course of *FadeOut* milliseconds. Fade Out defaults to 400 milliseconds.
+If there is any previous music on the song stack, will fade into that song.
+        """
+
+    optional_keywords = ['FadeOut']
+    keyword_types = ['Time']
 
 class MusicClear(EventCommand):
     nid = "music_clear"
@@ -312,11 +327,22 @@ class ChangeMusic(EventCommand):
 
     desc = \
         """
-Changes the phase theme music. For instance, you could use this command to change the player phase theme halfway through the chapter.
+Changes the *Phase* theme *Music*. For instance, you could use this command to change the player phase theme halfway through the chapter.
         """
 
     keywords = ['Phase', 'Music']
     keyword_types = ['PhaseMusic', 'Music']
+
+class ChangeSpecialMusic(EventCommand):
+    nid = 'change_special_music'
+    tag = Tags.MUSIC_SOUND
+
+    desc = \
+        """
+Change the *Music* for the title screen, the promotion or class change screen, or the game over screen.
+        """
+
+    keywords = ['SpecialMusicType', 'Music']
 
 class AddPortrait(EventCommand):
     nid = "add_portrait"
@@ -527,9 +553,11 @@ class Unpause(EventCommand):
 Unpauses a previously paused text box. Has no effect if text box was not paused using `{p}` before.
 
 This will 'unpause' the text box with the specified speaker NID.
+
+If no speaker NID is specified, the most recent text box is unpaused.
     """
 
-    keywords = ['Nid']
+    optional_keywords = ['Nid']
 
 class Narrate(EventCommand):
     nid = "narrate"
@@ -558,13 +586,14 @@ class Transition(EventCommand):
 If a scene is currently displayed, it is faded out to a black screen.
 The next use of this function will fade the scene back into view.
 The optional *Speed* and *Color3* keywords control the speed and color of the transition.
+The optional *Panorama* keyword lets you use a panorama as the background during the transition.
 
 Extra flags:
 
 1. *no_block*: The event script will continue to execute while the screen is fading in or out
         """
 
-    optional_keywords = ['Direction', 'Speed', 'Color3']
+    optional_keywords = ['Direction', 'Speed', 'Color3', 'Panorama']
     _flags = ['no_block']
 
 class ChangeBackground(EventCommand):
@@ -811,6 +840,17 @@ checked to see the turnwheel option in your menu.
     keywords = ["Activated"]
     keyword_types = ['Bool']
 
+class EndTurn(EventCommand):
+    nid = 'end_turn'
+    tag = Tags.LEVEL_VARS
+
+    desc = \
+        """
+Forcibly ends the current turn. Optionally can skip ahead to any further *Team*'s phase.
+        """
+
+    optional_keywords = ["Team"]
+
 class WinGame(EventCommand):
     nid = 'win_game'
     tag = Tags.LEVEL_VARS
@@ -899,7 +939,12 @@ class BattleSave(EventCommand):
 The player is given the option of saving the game mid-battle.
 This can be useful if the player chose Classic Mode,
 as he or she would otherwise only be able to suspend and not save mid-battle.
+
+By default, the prompt for a battle save will not occur until the end of this event.
+The optional flag *immediately* will cause the prompt to appear immediately.
         """
+
+    _flags = ["immediately"]
 
 class ClearTurnwheel(EventCommand):
     nid = 'clear_turnwheel'
@@ -909,6 +954,31 @@ class ClearTurnwheel(EventCommand):
         """
 The turnwheel's history will be cleared. The player will not be able to
 return to any action that occurs before this event.
+        """
+
+class StopTurnwheelRecording(EventCommand):
+    nid = 'stop_turnwheel_recording'
+    tag = Tags.MISCELLANEOUS
+
+    desc = \
+        """
+Turns off the turnwheel's recording of every action the player makes.
+Use `start_turnwheel_recording` command to start it back up.
+This is a powerful command. Do not use it without great tribulation.
+Make sure you follow it up eventually with a `start_turnwheel_recording`
+        """
+
+class StartTurnwheelRecording(EventCommand):
+    nid = 'start_turnwheel_recording'
+    tag = Tags.MISCELLANEOUS
+
+    desc = \
+        """
+Turns on the turnwheel's recording of every action the player makes.
+Usually only called after `stop_turnwheel_recording` was called.
+This is a powerful command. Do not use it without great tribulation.
+You should call it first only in a `on_turnwheel` triggered event,
+since that event does not record by default
         """
 
 class ChangeTilemap(EventCommand):
@@ -1353,14 +1423,17 @@ class GiveItem(EventCommand):
 
     desc = \
         """
-Gives a new copy of *Item* to *GlobalUnitOrConvoy*. If the *no_banner* flag is set, there will not be a banner announcing that "X unit got a Y item!".
+Gives a new copy of *Item* to *GlobalUnitOrConvoy*.
+If `convoy` is chosen as the recipient, may optionally specify a specific *Party*'s convoy.
 
+ If the *no_banner* flag is set, there will not be a banner announcing that "X unit got a Y item!".
 If the unit's inventory is full, the player will be given the option of which item to send to the convoy.
 If the *no_choice* flag is set, the new item will be automatically sent to the convoy in this case without prompting the player.
 The *droppable* flag determines whether the item is set as a "droppable" item (generally only given to enemy units).
         """
 
     keywords = ["GlobalUnitOrConvoy", "Item"]
+    optional_keywords = ["Party"]
     _flags = ['no_banner', 'no_choice', 'droppable']
 
 class EquipItem(EventCommand):
@@ -1387,11 +1460,14 @@ class RemoveItem(EventCommand):
     desc = \
         """
 Removes *Item* from the inventory of *GlobalUnitOrConvoy*.
+If `convoy` is chosen as the target, may optionally specify a specific *Party*'s convoy.
+
 If the *no_banner* flag is set, there will not be a banner announcing that "X unit lost a Y item!".
 Also, if the item is removed from the convoy, there will not be a banner.
         """
 
     keywords = ["GlobalUnitOrConvoy", "Item"]
+    optional_keywords = ["Party"]
     _flags = ['no_banner']
 
 class MoveItem(EventCommand):
@@ -1420,6 +1496,21 @@ Moves *Item* from the convoy of *Party1* and adds it to the convoy of *Party2*.
 
     keywords = ["Item", "Party1", "Party2"]
     keyword_types = ["Item", "Party", "Party"]
+
+class OpenConvoy(EventCommand):
+    nid = 'open_convoy'
+    tag = Tags.MISCELLANEOUS
+
+    desc = \
+        """
+    *GlobalUnit* will open their own party's convoy.
+    The player may then access the convoy as normal using that unit.
+
+    1. *include_other_units*: Includes items from other units in the party, not just what's in the convoy
+        """
+
+    keywords = ["GlobalUnit"]
+    _flags = ["include_other_units"]
 
 class SetItemUses(EventCommand):
     nid = 'set_item_uses'
@@ -1547,7 +1638,7 @@ Use **ComponentProperty* to change a specific value if the ItemComponent has mor
 Use the *additive* flag to add rather than set the value.
         """
 
-    keywords = ["UnitOrConvoy", "Item", "ItemComponent", "Expression"]
+    keywords = ["GlobalUnitOrConvoy", "Item", "ItemComponent", "Expression"]
     optional_keywords = ["ComponentProperty"]
     keyword_types = ["GlobalUnitOrConvoy", "Item", "ItemComponent", "Expression", "String"]
     _flags = ['additive']
@@ -1562,6 +1653,47 @@ Removes *ItemComponent* from *Item* in the inventory of *GlobalUnitOrConvoy*.
         """
 
     keywords = ["GlobalUnitOrConvoy", "Item", "ItemComponent"]
+    
+class AddSkillComponent(EventCommand):
+    nid = 'add_skill_component'
+    tag = Tags.MODIFY_SKILL_PROPERTIES
+
+    desc = \
+        """
+Adds a *SkillComponent* with optional value of *Expression* to *Skill* belonging to *GlobalUnit*.
+        """
+
+    keywords = ["GlobalUnit", "Skill", "SkillComponent"]
+    optional_keywords = ["Expression"]
+    
+class ModifySkillComponent(EventCommand):
+    nid = 'modify_skill_component'
+    tag = Tags.MODIFY_SKILL_PROPERTIES
+
+    desc = \
+        """
+Sets the value of an *SkillComponent* to *Expression* for a *Skill* belonging to *GlobalUnit*.
+
+Use **ComponentProperty* to change a specific value if the SkillComponent has more than one option available.
+
+Use the *additive* flag to add rather than set the value.
+        """
+
+    keywords = ["GlobalUnit", "Skill", "SkillComponent", "Expression"]
+    optional_keywords = ["ComponentProperty"]
+    keyword_types = ["GlobalUnit", "Skill", "SkillComponent", "Expression", "String"]
+    _flags = ['additive']
+    
+class RemoveSkillComponent(EventCommand):
+    nid = 'remove_skill_component'
+    tag = Tags.MODIFY_SKILL_PROPERTIES
+
+    desc = \
+        """
+Removes *SkillComponent* from *Skill* in the inventory of *GlobalUnit*.
+        """
+
+    keywords = ["GlobalUnit", "Skill", "SkillComponent"]
 
 class GiveMoney(EventCommand):
     nid = 'give_money'
@@ -1629,10 +1761,22 @@ class GiveWexp(EventCommand):
 
     desc = \
         """
-Gives a *PositiveInteger* amount of weapon experience in *WeaponType* to *GlobalUnit*. If the *no_banner* flag is set, the player will not be informed that weapon experience was awarded.
+Gives an *Integer* amount of weapon experience in *WeaponType* to *GlobalUnit*. If the *no_banner* flag is set, the player will not be informed that weapon experience was awarded.
         """
 
-    keywords = ["GlobalUnit", "WeaponType", "PositiveInteger"]
+    keywords = ["GlobalUnit", "WeaponType", "Integer"]
+    _flags = ['no_banner']
+
+class SetWexp(EventCommand):
+    nid = 'set_wexp'
+    tag = Tags.MODIFY_UNIT_PROPERTIES
+
+    desc = \
+        """
+Sets *GlobalUnit*'s weapon experience in the given *WeaponType* to *WholeNumber*. If the *no_banner* flag is set, the player will not be informed that weapon experience was awarded.
+        """
+
+    keywords = ["GlobalUnit", "WeaponType", "WholeNumber"]
     _flags = ['no_banner']
 
 class GiveSkill(EventCommand):
@@ -1686,6 +1830,7 @@ interacts with the data of the skill to use this command.
 
 class ChangeAI(EventCommand):
     nid = 'change_ai'
+    nickname = 'set_ai'
     tag = Tags.MODIFY_UNIT_PROPERTIES
 
     desc = \
@@ -1694,6 +1839,31 @@ Sets the *AI* used by *GlobalUnit*.
         """
 
     keywords = ["GlobalUnit", "AI"]
+
+class ChangeRoamAI(EventCommand):
+    nid = 'change_roam_ai'
+    nickname = 'set_roam_ai'
+    tag = Tags.MODIFY_UNIT_PROPERTIES
+
+    desc = \
+        """
+Sets the *Roam AI* used by *GlobalUnit*.
+        """
+
+    keywords = ["GlobalUnit", "AI"]
+
+class ChangeAIGroup(EventCommand):
+    nid = 'change_ai_group'
+    nickname = 'set_ai_group'
+    tag = Tags.MODIFY_UNIT_PROPERTIES
+
+    desc = \
+        """
+Sets the *AIGroup* used by *GlobalUnit*.
+        """
+
+    keywords = ["GlobalUnit", "AIGroup"]
+    keyword_types = ["GlobalUnit", "String"]
 
 class ChangeParty(EventCommand):
     nid = 'change_party'
@@ -1750,6 +1920,16 @@ Changes *GlobalUnit*'s description to *String*.
         """
     keywords = ["GlobalUnit", "String"]
 
+class ChangeAffinity(EventCommand):
+    nid = 'change_affinity'
+    tag = Tags.MODIFY_UNIT_PROPERTIES
+    
+    desc = \
+        """
+Changes *GlobalUnit*'s affinity to *Affinity*.
+        """
+    keywords = ["GlobalUnit", "Affinity"]
+
 class ChangeStats(EventCommand):
     nid = 'change_stats'
     tag = Tags.MODIFY_UNIT_PROPERTIES
@@ -1792,6 +1972,28 @@ class SetGrowths(EventCommand):
     desc = \
         """
 Sets the growths (STR, SKL, etc.) of *GlobalUnit* to specific values defined in *StatList*. Always silent.
+        """
+
+    keywords = ["GlobalUnit", "StatList"]
+
+class ChangeStatCapModifiers(EventCommand):
+    nid = 'change_stat_cap_modifiers'
+    tag = Tags.MODIFY_UNIT_PROPERTIES
+
+    desc = \
+        """
+Changes the personal stat cap modifiers (STR, SKL, etc.) of *GlobalUnit*. The *StatList* defines the changes to be applied. Always silent.
+        """
+
+    keywords = ["GlobalUnit", "StatList"]
+
+class SetStatCapModifiers(EventCommand):
+    nid = 'set_stat_cap_modifiers'
+    tag = Tags.MODIFY_UNIT_PROPERTIES
+
+    desc = \
+        """
+Sets the personal stat cpa modifiers (STR, SKL, etc.) of *GlobalUnit* to specific values defined in *StatList*. Always silent.
         """
 
     keywords = ["GlobalUnit", "StatList"]
@@ -1992,6 +2194,18 @@ class UnlockSupportRank(EventCommand):
         """
 Unlocks the specific *SupportRank* between the two specified units.
         """
+
+    keywords = ['Unit1', 'Unit2', 'SupportRank']
+    keyword_types = ['GlobalUnit', 'GlobalUnit', 'SupportRank']
+
+class DisableSupportRank(EventCommand):
+    nid = 'disable_support_rank'
+    tag = Tags.MODIFY_UNIT_PROPERTIES
+
+    desc = \
+"""
+Removes the provided *SupportRank* between two units.
+"""
 
     keywords = ['Unit1', 'Unit2', 'SupportRank']
     keyword_types = ['GlobalUnit', 'GlobalUnit', 'SupportRank']
@@ -2289,18 +2503,42 @@ Flags:
     keyword_types = ['Panorama', 'Music', "StringList", "StringList", "StringList"]
     _flags = ["show_map"]
 
+class SetCustomOptions(EventCommand):
+    nid = 'set_custom_options'
+    tag = Tags.MISCELLANEOUS
+
+    desc = \
+        """
+Allows you to add additional custom options which can call events in the general Options Menu (where the Unit, Suspend, End Turn, etc. options are).
+You must call this again from scratch each time you want to change what custom events are available in the Options Menu.
+
+Args:
+* *CustomOptions* is a list of strings (Option1, Option2, Option3) that specify additional options to display in the main options menu.
+* *CustomOptionsEnabled* is a list of string bools (true, false, false) that specify which of the OtherOptions are enabled. By default, all other options are enabled.
+* *CustomOptionsDesc* is a list of strings (Option1_desc, Waffle_desc, This is a pig) that specifies what pops up when the player presses INFO on your custom option.
+* *CustomOptionsOnSelect* is a list of Event NIDS or Event Names. These events will be triggered when the corresponding Custom Option is selected.
+        """
+
+    keywords = ["CustomOptions"]
+    optional_keywords = ["CustomOptionsEnabled", "CustomOptionsDesc", "CustomOptionsOnSelect"]
+    keyword_types = ["StringList", "StringList", "StringList", "StringList"]
+
+
 class Shop(EventCommand):
     nid = 'shop'
     tag = Tags.MISCELLANEOUS
 
     desc = \
         """
-Causes *Unit* to enter a shop that sells *ItemList* items. The optional *ShopFlavor* keyword determines whether the shop appears as a vendor or an armory. The optional *StockList* keyword determines if an item should have a limited stock. The order will be the same as ItemList. Use -1 for unlimited stock.
+Causes *Unit* to enter a shop that sells *ItemList* items. 
+The optional *ShopFlavor* keyword determines whether the shop appears as a vendor, armory, or your own custom flavor. 
+The optional *StockList* keyword determines if an item should have a limited stock. The order will be the same as ItemList. Use -1 for unlimited stock.
+The optional *ShopId* keyword is available if you want to save what was bought from the shop in future shops. Memory will be preserved across shops with the same *ShopId*.
         """
 
     keywords = ["Unit", "ItemList"]
-    optional_keywords = ["ShopFlavor", "StockList"]
-    keyword_types = ["Unit", "ItemList", "ShopFlavor", "IntegerList"]
+    optional_keywords = ["ShopFlavor", "StockList", "ShopId"]
+    keyword_types = ["Unit", "ItemList", "ShopFlavor", "IntegerList", "Nid"]
 
 class Choice(EventCommand):
     nid = 'choice'
@@ -2358,15 +2596,15 @@ via hitting the back button, and the event will go on as normal.
 * The *expression* flag indicates that the provided table data should be be continually parsed as a python expression and updated.
 * The *no_bg* flag removes the bg.
 * *no_cursor* removes the cursor.
-* *arrows* adds pulsing left/right arrows.
-* *scroll_bar* adds a vertical scroll bar
+* Horizontal pulsing left/right arrows will appear by default if you have a single row and it has more options than will fit inside the menu without scrolling. You can use *arrows* to force the arrows to display, or use *no_arrows* to forcibly remove them.
+* A vertical scroll bar will appear by default if you have more rows than will fit in the menu. Use *scroll_bar* to force this bar to appear when it wouldn't otherwise, or use *no_scroll_bar* to forcibly remote it.
 * *backable* allows you to exit out of the menu without making a choice - similarly to *persist*. If backed out in this way, will set `BACK` as the chosen option.
  """
 
     keywords = ['Nid', 'Title', 'Choices']
     optional_keywords = ['RowWidth', 'Orientation', 'Alignment', 'BG', 'EventNid', 'EntryType', 'Dimensions', 'TextAlign']
     keyword_types = ['GeneralVar', 'String', 'String', 'Width', 'Orientation', 'Align', 'Sprite', 'Event', 'TableEntryType', 'Size', 'HAlign']
-    _flags = ['persist', 'expression', 'no_bg', 'no_cursor', 'arrows', 'scroll_bar', 'backable']
+    _flags = ['persist', 'expression', 'no_bg', 'no_cursor', 'arrows', 'no_arrows', 'scroll_bar', 'no_scroll_bar', 'backable']
 
 class Unchoice(EventCommand):
     nid = 'unchoice'
@@ -2555,8 +2793,9 @@ class VictoryScreen(EventCommand):
 
     desc = \
         """
-Displays the chapter's victory screen. Congratulations!
+Displays the chapter's victory screen. Congratulations! Optionally change the *Sound* that plays.
         """
+    optional_keywords = ["Sound"]
 
 class RecordsScreen(EventCommand):
     nid = 'records_screen'
@@ -2566,6 +2805,32 @@ class RecordsScreen(EventCommand):
         """
 Displays the game's records screen.
         """
+
+class OpenLibrary(EventCommand):
+    nid = 'open_library'
+    tag = Tags.MISCELLANEOUS
+
+    desc = \
+        """
+Displays the game's library screen.
+
+1. *immediate* flag skips the transition between screens
+        """
+
+    _flags = ["immediate"]
+
+class OpenGuide(EventCommand):
+    nid = 'open_guide'
+    tag = Tags.MISCELLANEOUS
+
+    desc = \
+        """
+Displays the game's guide screen.
+
+1. *immediate* flag skips the transition between screens
+        """
+
+    _flags = ["immediate"]
 
 class LocationCard(EventCommand):
     nid = 'location_card'
@@ -2947,17 +3212,26 @@ def restore_command(dat) -> EventCommand:
 
 evaluables = ('Expression', 'String', 'StringList', 'PointList', 'DashList', 'Nid')
 
-def get_command_arguments(text: str) -> List[str]:
+@dataclass
+class ArgToken():
+    string: str
+    index: int
+
+def get_command_arguments(text: str) -> List[ArgToken]:
     # Replacement for text.split(';')
     # that ignores any semicolons
     # found within '{}' brackets
+    # in addition, returns the string location
+    # that the arg begins
     arguments = []
     curr = ""
     level = 0
-    for t in text:
+    curr_idx = 0
+    for idx, t in enumerate(text):
         if t == ';' and level == 0:
-            arguments.append(curr)
+            arguments.append(ArgToken(curr, curr_idx))
             curr = ""
+            curr_idx = idx + 1
         elif t == '{':
             level += 1
             curr += t
@@ -2966,22 +3240,22 @@ def get_command_arguments(text: str) -> List[str]:
             curr += t
         else:
             curr += t
-    arguments.append(curr)
+    arguments.append(ArgToken(curr, curr_idx))
     return arguments
 
-def determine_command_type(text: str) -> EventCommand:
+def determine_command_type(text: str) -> Type[EventCommand]:
     text = text.lstrip()
     if text.startswith('#'):
-        return Comment(display_values=[text])
+        return Comment
     if text.startswith('comment;'):
-        return Comment(display_values=[text[8:]])
-    arguments = get_command_arguments(text)
+        return Comment
+    arguments = [arg.string for arg in get_command_arguments(text)]
     command_nid = arguments[0]
     subclasses = EventCommand.__subclasses__()
     for command_type in subclasses:
         if command_type.nid == command_nid or command_type.nickname == command_nid:
-            return command_type()
-    return Comment()
+            return command_type
+    return Comment
 
 def parse_text_to_command(text: str, strict: bool = False) -> Tuple[EventCommand, int]:
     """parses a line into a command
@@ -3074,7 +3348,7 @@ def parse_text_to_command(text: str, strict: bool = False) -> Tuple[EventCommand
     if text.endswith(';'):
         text = text[:-1]
 
-    arguments = get_command_arguments(text)
+    arguments = [arg.string for arg in get_command_arguments(text)]
 
     command_nid = arguments[0]
     subclasses = EventCommand.__subclasses__()

@@ -481,6 +481,7 @@ class UnitStatAveragesModel(ClassStatAveragesModel):
     def determine_average(self, obj, stat_nid, level_ups):
         stat_base = obj.bases.get(stat_nid, 0)
         stat_growth = obj.growths.get(stat_nid, 0)
+        stat_cap_modifier = obj.stat_cap_modifiers.get(stat_nid, 0)
         if DB.constants.value('unit_stats_as_bonus'):
             klass = DB.classes.get(obj.klass)
             stat_base += klass.bases.get(stat_nid, 0)
@@ -501,6 +502,7 @@ class UnitStatAveragesModel(ClassStatAveragesModel):
                 level_ups -= 1  # Costs one level to move up a class
             klass = DB.classes.get(klass)
             stat_max = klass.max_stats.get(stat_nid, DB.stats.get(stat_nid).maximum)
+            stat_max += stat_cap_modifier
             if idx == 0:
                 ticks = utils.clamp(level_ups, 0, klass.max_level - obj.level)
             else:

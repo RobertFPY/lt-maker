@@ -8,7 +8,10 @@ FRAMERATE = 1000//FPS
 
 AUTOTILE_FRAMES = 16
 
-VERSION = "2023.04.08a"
+VERSION = "2023.07.24a"
 
 if __name__ == '__main__':
     print(VERSION)
+
+APP_AUTHOR = "rainlash"
+APP_NAME = "Lex Talionis"

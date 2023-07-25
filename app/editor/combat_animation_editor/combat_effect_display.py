@@ -1,3 +1,4 @@
+from app import dark_theme
 from app.editor.lib.components.validated_line_edit import NidLineEdit
 import os, glob
 import json
@@ -55,11 +56,8 @@ class CombatEffectProperties(CombatAnimProperties):
         self.nid_box.editingFinished.connect(self.nid_done_editing)
 
         self.settings = MainSettingsController()
-        theme = self.settings.get_theme(0)
-        if theme == 0:
-            icon_folder = 'icons/icons'
-        else:
-            icon_folder = 'icons/dark_icons'
+        theme = dark_theme.get_theme()
+        icon_folder = theme.icon_dir()
 
         pose_row = self.set_up_pose_box(icon_folder)
 

@@ -1,11 +1,14 @@
+from typing import Set
 from app.data.database.database import DB
 from app.data.database.difficulty_modes import GrowthOption
-from app.engine import item_funcs
+from app.engine import item_funcs, skill_system
 from app.engine.game_state import game
 from app.events import triggers
 from app.utilities import utils, static_random
 
 import logging
+
+from app.utilities.typing import NID
 
 def get_leveling_method(unit, custom_method=None) -> str:
     if custom_method:
@@ -20,12 +23,12 @@ def get_leveling_method(unit, custom_method=None) -> str:
 
 def growth_rate(unit, nid) -> int:
     klass = DB.classes.get(unit.klass)
-    difficulty_growth_bonus = game.mode.get_growth_bonus(unit)
+    difficulty_growth_bonus = game.mode.get_growth_bonus(unit, DB)
     growth = unit.growths[nid] + unit.growth_bonus(nid) + klass.growth_bonus.get(nid, 0) + difficulty_growth_bonus.get(nid, 0)
     return growth
 
 def difficulty_growth_rate(unit, nid) -> int:
-    difficulty_growth_bonus = game.mode.get_growth_bonus(unit)
+    difficulty_growth_bonus = game.mode.get_growth_bonus(unit, DB)
     return difficulty_growth_bonus.get(nid, 0)
 
 def _fixed_levelup(unit, level, get_growth_rate=growth_rate) -> dict:
@@ -40,7 +43,7 @@ def _fixed_levelup(unit, level, get_growth_rate=growth_rate) -> dict:
             if growth_inc < growth:
                 stat_changes[nid] += 1
         elif growth < 0 and DB.constants.value('negative_growths'):
-            stat_changes[nid] += growth // 100
+            stat_changes[nid] -= abs(growth) // 100
             growth = -(abs(growth) % 100)
             growth_inc = (50 + growth * level) % 100
             if growth_inc > 100 - growth or growth_inc == 0:
@@ -118,12 +121,12 @@ def _rd_bexp_levelup(unit, level):
     rng = static_random.get_levelup(unit.nid, level)
     stat_changes = {nid: 0 for nid in DB.stats.keys()}
 
-    klass = DB.classes.get(unit.klass)
     growths: list = []
     for stat in DB.stats:
         nid = stat.nid
         growth = growth_rate(unit, nid)
-        if unit.stats[nid] < klass.max_stats.get(nid, 30) and unit.growths[nid] != 0:
+        max_stat = unit.get_stat_cap(nid)
+        if unit.stats[nid] < max_stat and unit.growths[nid] != 0:
             growths.append(max(growth, 0))
         else:  # Cannot increase this one at all
             growths.append(0)
@@ -135,7 +138,8 @@ def _rd_bexp_levelup(unit, level):
         nid = [stat.nid for stat in DB.stats][choice_idx]
         stat_changes[nid] += 1
         growths[choice_idx] = max(0, growths[choice_idx] - 100)
-        if unit.stats[nid] + stat_changes[nid] >= klass.max_stats.get(nid, 30):
+        max_stat = unit.get_stat_cap(nid)
+        if unit.stats[nid] + stat_changes[nid] >= max_stat:
             growths[choice_idx] = 0
 
     return stat_changes
@@ -159,9 +163,9 @@ def get_next_level_up(unit, level, custom_method=None) -> dict:
     else:
         logging.error("Could not find level_up method matching %s", method)
 
-    klass = DB.classes.get(unit.klass)
     for nid in DB.stats.keys():
-        stat_changes[nid] = utils.clamp(stat_changes[nid], -unit.stats[nid], klass.max_stats.get(nid, 30) - unit.stats[nid])
+        max_stat = unit.get_stat_cap(nid)
+        stat_changes[nid] = utils.clamp(stat_changes[nid], -unit.stats[nid], max_stat - unit.stats[nid])
     return stat_changes
 
 def auto_level(unit, base_level: int, num_levels: int, custom_method=None):
@@ -186,9 +190,9 @@ def auto_level(unit, base_level: int, num_levels: int, custom_method=None):
             for nid in total_stat_changes.keys():
                 total_stat_changes[nid] -= stat_changes[nid]
 
-    klass = DB.classes.get(unit.klass)
     for nid in DB.stats.keys():
-        total_stat_changes[nid] = utils.clamp(total_stat_changes[nid], -unit.stats[nid], klass.max_stats.get(nid, 30) - unit.stats[nid])
+        max_stat = unit.get_stat_cap(nid)
+        total_stat_changes[nid] = utils.clamp(total_stat_changes[nid], -unit.stats[nid], max_stat - unit.stats[nid])
 
     for nid in total_stat_changes.keys():
         unit.stats[nid] += total_stat_changes[nid]
@@ -205,9 +209,9 @@ def difficulty_auto_level(unit, base_level, num_levels: int):
                 total_stat_changes[nid] += stat_changes[nid]
     # No reason to be less than 0
 
-    klass = DB.classes.get(unit.klass)
     for nid in DB.stats.keys():
-        total_stat_changes[nid] = utils.clamp(total_stat_changes[nid], -unit.stats[nid], klass.max_stats.get(nid, 30) - unit.stats[nid])
+        max_stat = unit.get_stat_cap(nid)
+        total_stat_changes[nid] = utils.clamp(total_stat_changes[nid], -unit.stats[nid], max_stat - unit.stats[nid])
 
     for nid in total_stat_changes.keys():
         unit.stats[nid] += total_stat_changes[nid]
@@ -242,7 +246,7 @@ def apply_growth_changes(unit, growth_changes: dict):
     for nid, value in growth_changes.items():
         unit.growths[nid] += value
 
-def get_starting_skills(unit) -> list:
+def get_starting_skills(unit, starting_level: int = 0) -> list:
     # Class skills
     klass_obj = DB.classes.get(unit.klass)
     current_klass = klass_obj
@@ -263,7 +267,7 @@ def get_starting_skills(unit) -> list:
     current_skills = [skill.nid for skill in unit.skills]
     for idx, klass in enumerate(all_klasses):
         for learned_skill in klass.learned_skills:
-            if (learned_skill[0] <= unit.level or klass != klass_obj) and \
+            if (starting_level < learned_skill[0] <= unit.level or klass != klass_obj) and \
                     learned_skill[1] not in current_skills and \
                     learned_skill[1] not in skills_to_add:
                 if learned_skill[1] == 'Feat':
@@ -278,17 +282,17 @@ def get_starting_skills(unit) -> list:
     klass_skills = item_funcs.create_skills(unit, skills_to_add)
     return klass_skills
 
-def get_personal_skills(unit, prefab):
+def get_personal_skills(unit, prefab, starting_level: int = 0) -> list:
     skills_to_add = []
     current_skills = [skill.nid for skill in unit.skills]
     for learned_skill in prefab.learned_skills:
-        if learned_skill[0] <= unit.level and learned_skill[1] not in current_skills:
+        if starting_level < learned_skill[0] <= unit.level and learned_skill[1] not in current_skills:
             skills_to_add.append(learned_skill[1])
 
     personal_skills = item_funcs.create_skills(unit, skills_to_add)
     return personal_skills
 
-def get_global_skills(unit):
+def get_global_skills(unit) -> list:
     skills_to_add = []
     current_skills = [skill.nid for skill in unit.skills]
     for skill_prefab in DB.skills:
@@ -343,3 +347,9 @@ def wait(unit):
         # To prevent double-waiting
         game.events.trigger(triggers.UnitWait(unit, unit.position, game.get_region_under_pos(unit.position)))
         action.do(action.Wait(unit))
+
+def usable_wtypes(unit) -> Set[NID]:
+    klass = DB.classes.get(unit.klass)
+    klass_weapons = klass.wexp_gain
+    klass_usable = set([wtype_name for wtype_name, wtype_info in klass_weapons.items() if wtype_info.usable])
+    return (klass_usable | skill_system.usable_wtypes(unit)) - skill_system.forbidden_wtypes(unit)

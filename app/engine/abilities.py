@@ -1,5 +1,6 @@
 from app.data.database.database import DB
 from app.engine import target_system, skill_system, action, equations
+from app.engine.movement import movement_funcs
 from app.engine.game_state import game
 from app.events import triggers
 
@@ -108,7 +109,7 @@ class DropAbility(Ability):
             adj_positions = target_system.get_adjacent_positions(unit.position)
             u = game.get_unit(unit.traveler)
             for adj_pos in adj_positions:
-                if not game.board.get_unit(adj_pos) and game.movement.check_weakly_traversable(u, adj_pos):
+                if not game.board.get_unit(adj_pos) and movement_funcs.check_weakly_traversable(u, adj_pos):
                     good_pos.add(adj_pos)
             return good_pos
         return set()
@@ -222,7 +223,7 @@ class SeparateAbility(Ability):
             adj_positions = target_system.get_adjacent_positions(unit.position)
             u = game.get_unit(unit.traveler)
             for adj_pos in adj_positions:
-                if not game.board.get_unit(adj_pos) and game.movement.check_traversable(u, adj_pos):
+                if not game.board.get_unit(adj_pos) and movement_funcs.check_traversable(u, adj_pos):
                     good_pos.add(adj_pos)
             return good_pos
         return set()
@@ -307,7 +308,6 @@ class TradeAbility(Ability):
         if unit.traveler and skill_system.can_trade(unit, game.get_unit(unit.traveler)):
             adj.add(unit.position)
         return adj
-
 
     @staticmethod
     def do(unit):

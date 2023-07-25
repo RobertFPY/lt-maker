@@ -1,6 +1,7 @@
 from typing import Tuple
 from app.constants import WINHEIGHT, WINWIDTH
-from app.engine.graphics.ui_framework.ui_framework_layout import convert_align, HAlignment, VAlignment
+from app.engine.graphics.ui_framework.ui_framework_layout import convert_align
+from app.utilities.enums import HAlignment, VAlignment
 
 from app.utilities.enums import Alignments
 

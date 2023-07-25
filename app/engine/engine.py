@@ -43,6 +43,9 @@ def build_display(size):
         logging.error("Your screen is probably too small to activate fullscreen with this resolution. Close the engine and editor. Go to your saves/config.ini file and change the screensize variable to 1. Then try again.")
         return pygame.display.set_mode(size)
 
+def get_screen_size():
+    return pygame.display.get_surface().get_size()
+
 def push_display(surf, size, new_surf):
     pygame.transform.scale(surf, size, new_surf)
 
@@ -135,7 +138,7 @@ def copy_surface(surf):
 def save_surface(surf, fn):
     pygame.image.save(surf, fn)
 
-def subsurface(surf, rect):
+def subsurface(surf, rect) -> pygame.Surface:
     x, y, width, height = rect
     twidth = min(surf.get_width() - x, width)
     theight = min(surf.get_height() - y, height)

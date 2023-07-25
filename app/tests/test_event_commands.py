@@ -26,24 +26,24 @@ class EventCommandUnitTests(unittest.TestCase):
 
     def test_determine_command_type(self):
         command1 = event_commands.determine_command_type("speak")
-        self.assertTrue(isinstance(command1, event_commands.Speak))
+        self.assertTrue(command1 == event_commands.Speak)
         # Test with tab in front
         command2 = event_commands.determine_command_type("    speak;Eirika;I am evil;;60")
-        self.assertTrue(isinstance(command2, event_commands.Speak))
+        self.assertTrue(command2 == event_commands.Speak)
 
     def test_determine_command_type_nickname(self):
         command = event_commands.determine_command_type("s;Eirika;I am evil;;60")
-        self.assertTrue(isinstance(command, event_commands.Speak))
+        self.assertTrue(command == event_commands.Speak)
 
     def test_determine_command_type_comment(self):
         command1 = event_commands.determine_command_type("#Hello")
-        self.assertTrue(isinstance(command1, event_commands.Comment))
+        self.assertTrue(command1 == event_commands.Comment)
         command2 = event_commands.determine_command_type("comment;Hello")
-        self.assertTrue(isinstance(command2, event_commands.Comment))
+        self.assertTrue(command2 == event_commands.Comment)
 
     def test_determine_command_type_fails(self):
         command = event_commands.determine_command_type("flgjklskl;sumerian;lorem ipsum")
-        self.assertTrue(isinstance(command, event_commands.Comment))
+        self.assertTrue(command == event_commands.Comment)
 
     def test_parse_text_to_command_typing(self):
         # Missing keyword

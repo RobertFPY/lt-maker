@@ -14,19 +14,22 @@ class MinimapCatalog():
                   'Chest': (15, 0),
                   'Mountain': (4, 1),
                   'Desert': (10, 0),
+                  'Waste': (11, 1),
                   'Snow': (12, 1),
                   'Dark_Snow': (13, 1),
                   'Pier': (14, 1)}
     complex_map = {'Wall': (0, 2),
                    'River': (0, 3),
                    'Sand': (0, 4),
-                   'Sea': (0, 5)}
+                   'Sea': (0, 5),
+                   'Lava': (0, 8)}
     other_map = {'Cliff': (8, 6),
                  'Desert_Cliff': (12, 6),
                  'Snow_Cliff': (4, 7),
                  'Door': (7, 1),
                  'Bridge': (0, 1),
-                 'Coast': (0, 7)}
+                 'Coast': (0, 7),
+                 'Lava_Coast': (0, 10)}
 
     def get_minimap_types(self):
         r = list(self.single_map.items()) + list(self.complex_map.items()) + list(self.other_map.items())

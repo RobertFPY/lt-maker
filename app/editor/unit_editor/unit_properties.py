@@ -191,7 +191,7 @@ class UnitProperties(QWidget):
         self.unit_stat_widget.button.clicked.connect(self.display_averages)
         self.unit_stat_widget.reset_button.clicked.connect(self.reset_stats)
         self.unit_stat_widget.model.dataChanged.connect(self.stat_list_model_data_changed)
-        self.unit_stat_widget.view.setFixedHeight(120)
+        self.unit_stat_widget.view.setFixedHeight(130)
         self.averages_dialog = None
         # self.unit_stat_widget.button.clicked.connect(self.access_stats)
         # Changing of stats done automatically by using model view framework within
@@ -319,8 +319,10 @@ class UnitProperties(QWidget):
             stat_nid = DB.stats[index.column()].nid
             if index.row() == 0:
                 class_value = my_klass.bases.get(stat_nid, 0)
-            else:
+            elif index.row() == 1:
                 class_value = my_klass.growths.get(stat_nid, 0)
+            else:
+                class_value = 0
             model.setData(index, class_value, Qt.EditRole)
 
     def display_averages(self):

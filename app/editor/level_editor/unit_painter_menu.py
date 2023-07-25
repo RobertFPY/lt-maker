@@ -1,5 +1,5 @@
 from app.editor.skill_list_widget import SkillListWidget
-from PyQt5.QtWidgets import QPushButton, QLineEdit, \
+from PyQt5.QtWidgets import QPushButton, QLineEdit, QComboBox, \
     QWidget, QStyledItemDelegate, QDialog, QSpinBox, \
     QVBoxLayout, QHBoxLayout, QMessageBox, QApplication, QCheckBox
 from PyQt5.QtCore import QSize, Qt
@@ -8,13 +8,15 @@ from PyQt5.QtGui import QIcon, QBrush, QColor, QFontMetrics
 from app.utilities import str_utils
 from app.utilities.data import Data
 from app.data.database.level_units import GenericUnit, UniqueUnit
+from app.data.database.ai_groups import AIGroup
 from app.data.database.database import DB
 
 from app.editor import timer
 
 from app.extensions.custom_gui import PropertyBox, ComboBox, Dialog, RightClickListView
 from app.editor.base_database_gui import DragDropCollectionModel
-from app.editor.custom_widgets import CustomQtRoles, UnitBox, ClassBox, FactionBox, AIBox, ObjBox, RoamAIBox
+from app.editor.custom_widgets import CustomQtRoles, UnitBox, ClassBox, \
+    TeamBox, FactionBox, AIBox, ObjBox, RoamAIBox
 from app.editor.class_editor import class_model
 from app.editor.item_editor import item_model
 from app.editor.unit_editor import unit_tab
@@ -375,8 +377,7 @@ class LoadUnitDialog(Dialog):
         self.unit_box.button.clicked.connect(self.access_units)
         layout.addWidget(self.unit_box)
 
-        self.team_box = PropertyBox("Team", ComboBox, self)
-        self.team_box.edit.addItems(DB.teams)
+        self.team_box = TeamBox(self)
         self.team_box.edit.setValue(self.current.team)
         self.team_box.edit.activated.connect(self.team_changed)
         layout.addWidget(self.team_box)
@@ -385,13 +386,27 @@ class LoadUnitDialog(Dialog):
         self.ai_box.edit.setValue(self.current.ai)
         self.ai_box.edit.activated.connect(self.ai_changed)
 
-        self.ai_group_box = PropertyBox("AI Group", QLineEdit, self)
-        self.ai_group_box.edit.setPlaceholderText("No Group")
+        self.ai_group_box = PropertyBox("AI Group", ComboBox, self)
+        self.ai_group_box.setToolTip("Units which share an AI Group will try to attack together.")
+        self.ai_group_box.edit.setEditable(True)
+        self.ai_group_box.edit.setInsertPolicy(QComboBox.InsertAlphabetically)
+        self.ai_group_box.edit.addItems(sorted(self.window.current_level.ai_groups.keys()))
         if self.current.ai_group:
-            self.ai_group_box.edit.setText(self.current.ai_group)
+            self.ai_group_box.edit.setValue(self.current.ai_group)
         else:
-            self.ai_group_box.edit.clear()
-        self.ai_group_box.edit.textChanged.connect(self.ai_group_changed)
+            self.ai_group_box.edit.clearEditText()
+        self.ai_group_box.edit.currentTextChanged.connect(self.ai_group_changed)
+        # self.ai_group_box.edit.activated.connect(self.ai_group_changed)  # Shared with ai_group_threshold below
+
+        self.ai_group_threshold_box = PropertyBox("Threshold", QSpinBox, self)
+        self.ai_group_threshold_box.setToolTip("How many units need to be capable of attacking an enemy for group activation.")
+        self.ai_group_threshold_box.edit.setRange(1, 99)
+        if self.current.ai_group:
+            ai_group = self.window.current_level.ai_groups.get(self.current.ai_group)
+            self.ai_group_threshold_box.edit.setValue(ai_group.trigger_threshold)
+        else:
+            self.ai_group_threshold_box.edit.setValue(1)
+        # self.ai_group_threshold_box.edit.valueChanged.connect(self.ai_group_changed)  # Shared with ai_group above
 
         ai_layout = QHBoxLayout()
         ai_layout.addWidget(self.ai_box)
@@ -406,6 +421,7 @@ class LoadUnitDialog(Dialog):
             ai_layout.addWidget(self.roam_ai_box)
 
         ai_layout.addWidget(self.ai_group_box)
+        ai_layout.addWidget(self.ai_group_threshold_box)
         layout.addLayout(ai_layout)
 
         traveler_layout = build_traveler_box(self)
@@ -429,7 +445,23 @@ class LoadUnitDialog(Dialog):
         self.current.ai = self.ai_box.edit.currentText()
 
     def ai_group_changed(self, text):
-        self.current.ai_group = text
+        """
+        # Remember to set the value of the ai threshold box when we switch ai groups
+        # if it's an already existing ai group
+        """
+        ai_group = self.ai_group_box.edit.currentText()
+        if ai_group in self.window.current_level.ai_groups.keys():
+            threshold = self.window.current_level.ai_groups.get(ai_group).trigger_threshold
+            self.ai_group_threshold_box.edit.setValue(threshold)
+
+    def check_ai_group(self):
+        ai_group = self.ai_group_box.edit.currentText()
+        threshold = int(self.ai_group_threshold_box.edit.value())
+        if ai_group in self.window.current_level.ai_groups.keys():
+            self.window.current_level.ai_groups.get(ai_group).trigger_threshold = threshold
+        else:
+            self.window.current_level.ai_groups.append(AIGroup(ai_group, threshold))
+        self.current.ai_group = ai_group
 
     def traveler_check(self, val):
         if bool(val):
@@ -482,6 +514,7 @@ class LoadUnitDialog(Dialog):
         dialog = cls(parent, unit)
         result = dialog.exec_()
         if result == QDialog.Accepted:
+            dialog.check_ai_group()
             unit = dialog.current
             return unit, True
         else:
@@ -525,8 +558,7 @@ class GenericUnitDialog(Dialog):
         self.nid_box.edit.editingFinished.connect(self.nid_done_editing)
         layout.addWidget(self.nid_box)
 
-        self.team_box = PropertyBox("Team", ComboBox, self)
-        self.team_box.edit.addItems(DB.teams)
+        self.team_box = TeamBox(self)
         self.team_box.edit.activated.connect(self.team_changed)
         layout.addWidget(self.team_box)
 
@@ -559,9 +591,16 @@ class GenericUnitDialog(Dialog):
         self.ai_box = AIBox(self)
         self.ai_box.edit.activated.connect(self.ai_changed)
 
-        self.ai_group_box = PropertyBox("AI Group", QLineEdit, self)
-        self.ai_group_box.edit.setPlaceholderText("No Group")
-        self.ai_group_box.edit.textChanged.connect(self.ai_group_changed)
+        self.ai_group_box = PropertyBox("AI Group", ComboBox, self)
+        self.ai_group_box.setToolTip("Units which share an AI Group will try to attack together.")
+        self.ai_group_box.edit.setEditable(True)
+        self.ai_group_box.edit.setInsertPolicy(QComboBox.InsertAlphabetically)
+        self.ai_group_box.edit.addItems(sorted(self.window.current_level.ai_groups.keys()))
+        self.ai_group_box.edit.currentTextChanged.connect(self.ai_group_changed)
+
+        self.ai_group_threshold_box = PropertyBox("Threshold", QSpinBox, self)
+        self.ai_group_threshold_box.setToolTip("How many units need to be capable of attacking an enemy for group activation.")
+        self.ai_group_threshold_box.edit.setRange(1, 99)
 
         ai_layout = QHBoxLayout()
         ai_layout.addWidget(self.ai_box)
@@ -575,6 +614,7 @@ class GenericUnitDialog(Dialog):
             ai_layout.addWidget(self.roam_ai_box)
 
         ai_layout.addWidget(self.ai_group_box)
+        ai_layout.addWidget(self.ai_group_threshold_box)
         layout.addLayout(ai_layout)
 
         traveler_layout = build_traveler_box(self)
@@ -662,11 +702,27 @@ class GenericUnitDialog(Dialog):
     def ai_changed(self, val):
         self.current.ai = self.ai_box.edit.currentText()
 
+    def ai_group_changed(self, text):
+        """
+        # Remember to set the value of the ai threshold box when we switched ai groups
+        # if it's an already existing ai group
+        """
+        ai_group = self.ai_group_box.edit.currentText()
+        if ai_group in self.window.current_level.ai_groups.keys():
+            threshold = self.window.current_level.ai_groups.get(ai_group).trigger_threshold
+            self.ai_group_threshold_box.edit.setValue(threshold)
+
+    def check_ai_group(self):
+        ai_group = self.ai_group_box.edit.currentText()
+        threshold = int(self.ai_group_threshold_box.edit.value())
+        if ai_group in self.window.current_level.ai_groups.keys():
+            self.window.current_level.ai_groups.get(ai_group).trigger_threshold = threshold
+        else:
+            self.window.current_level.ai_groups.append(AIGroup(ai_group, threshold))
+        self.current.ai_group = ai_group
+
     def roam_ai_changed(self, val):
         self.current.roam_ai = self.roam_ai_box.edit.currentText()
-
-    def ai_group_changed(self, text):
-        self.current.ai_group = text
 
     def traveler_check(self, val):
         if bool(val):
@@ -732,9 +788,12 @@ class GenericUnitDialog(Dialog):
         self.ai_box.edit.setValue(current.ai)
         self.roam_ai_box.edit.setValue(current.roam_ai)
         if current.ai_group:
-            self.ai_group_box.edit.setText(current.ai_group)
+            self.ai_group_box.edit.setValue(current.ai_group)
+            ai_group = self.window.current_level.ai_groups.get(current.ai_group)
+            self.ai_group_threshold_box.edit.setValue(ai_group.trigger_threshold)
         else:
-            self.ai_group_box.edit.clear()
+            self.ai_group_box.edit.clearEditText()
+            self.ai_group_threshold_box.edit.setValue(1)
         if current.starting_traveler:
             self.traveler_button.setChecked(True)
             self.traveler_box.edit.setValue(current.starting_traveler)
@@ -751,6 +810,7 @@ class GenericUnitDialog(Dialog):
         dialog = cls(parent, last_touched_generic, unit)
         result = dialog.exec_()
         if result == QDialog.Accepted:
+            dialog.check_ai_group()
             unit = dialog.current
             return unit, True
         else:

@@ -96,7 +96,7 @@ def generate_flags_wordlist(flags: List[str] = []) -> List[str]:
             flaglist.append('FLAG({flag})'.format(flag=flag))
     return flaglist
 
-def detect_command_under_cursor(line: str) -> event_commands.EventCommand:
+def detect_command_under_cursor(line: str) -> Type[event_commands.EventCommand]:
     return event_commands.determine_command_type(line)
 
 def detect_type_under_cursor(line: str, cursor_pos: int, arg_under_cursor: str = None) -> Tuple[event_validators.Validator, List[str]]:
@@ -117,7 +117,7 @@ def detect_type_under_cursor(line: str, cursor_pos: int, arg_under_cursor: str =
             eval_tag = arg_under_cursor[eval_bracket+1:eval_colon]
             return (event_validators.get(eval_tag), [])
 
-    args = event_commands.get_command_arguments(line)
+    args = [arg.string for arg in event_commands.get_command_arguments(line)]
     arg_idx = -1
     while cursor_pos > 0:
         current_arg = args.pop()
@@ -130,7 +130,8 @@ def detect_type_under_cursor(line: str, cursor_pos: int, arg_under_cursor: str =
     if arg_idx <= -1:
         return (event_validators.EventFunction, [])
     try:
-        command = detect_command_under_cursor(line)
+        command_type = detect_command_under_cursor(line)
+        command = command_type()
         validator_name = None
         if arg_under_cursor and '=' in arg_under_cursor:
             arg_name = arg_under_cursor.split('=')[0]

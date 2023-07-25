@@ -12,6 +12,18 @@ class Alignments(Enum):
     BOT = "bottom"
     BOT_RIGHT = "bottom_right"
 
+class HAlignment(Enum):
+    LEFT = 'left'
+    CENTER = 'center'
+    RIGHT = 'right'
+    NONE = 'none'
+
+class VAlignment(Enum):
+    TOP = 'top'
+    CENTER = 'center'
+    BOTTOM = 'bottom'
+    NONE = 'none'
+
 class Orientation(Enum):
     HORIZONTAL = 'horizontal'
     VERTICAL = 'vertical'

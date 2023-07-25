@@ -7,6 +7,7 @@ from app.data.database.components import ComponentType
 from app.data.database.item_components import ItemComponent, ItemTags
 from app.engine import item_funcs, skill_system, target_system
 from app.engine.game_state import game
+from app.engine.movement import movement_funcs
 from app.utilities import utils
 
 
@@ -197,7 +198,7 @@ class TraversableTargetRestrict(ItemComponent):
 
     def target_restrict(self, unit, item, def_pos, splash) -> bool:
         if unit and def_pos:
-            if game.movement.check_traversable(unit, def_pos):
+            if movement_funcs.check_traversable(unit, def_pos):
                 return True
         return False
         
@@ -207,6 +208,14 @@ class IgnoreLineOfSight(ItemComponent):
     tag = ItemTags.TARGET
     
     def ignore_line_of_sight(self, unit, item) -> bool:
+        return True
+
+class IgnoreFogOfWar(ItemComponent):
+    nid = 'ignore_fog_of_war'
+    desc = 'Item can target positions even if they are in fog of war.'
+    tag = ItemTags.TARGET
+    
+    def ignore_fog_of_war(self, unit, item) -> bool:
         return True
 
 class MinimumRange(ItemComponent):

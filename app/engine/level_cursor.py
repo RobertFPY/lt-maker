@@ -1,14 +1,16 @@
-from app.engine.objects.unit import UnitObject
+import math
 from typing import Optional, Tuple
 
+from app.engine.objects.unit import UnitObject
 from app.constants import TILEHEIGHT, TILEWIDTH
 from app.counters import generic3counter
-from app.engine import engine, target_system
+from app.data.database.database import DB
+from app.engine import engine, image_mods, skill_system, target_system
 from app.engine.cursor import BaseCursor
 from app.engine.game_state import GameState
 from app.engine.input_manager import get_input_manager
 from app.engine.sprites import SPRITES
-from app.utilities.utils import frames2ms, tclamp
+from app.utilities.utils import frames2ms
 from app.engine.engine import Surface
 
 class LevelCursor(BaseCursor):
@@ -246,10 +248,38 @@ class LevelCursor(BaseCursor):
         if self._display_arrows:
             for arrow in self.arrows:
                 surf = arrow.draw(surf, cull_rect)
+
+            draw_unit_sprite = False
+            if self.cur_unit:    
+                if self.path and len(self.path) > 1 and \
+                        self.position == self.path[0]:
+                    draw_unit_sprite = True
+                    x_offset = self.path[0][0] - self.path[1][0]
+                    y_offset = self.path[0][1] - self.path[1][1]
+                elif self.position in set(skill_system.witch_warp(self.cur_unit)):
+                    draw_unit_sprite = True
+                    x_offset, y_offset = 0, 0
+
+            if draw_unit_sprite and DB.constants.value('translucent_unit_sprite'):
+                # Draw unit's sprite
+                if x_offset > 0:
+                    state = 'right'
+                elif x_offset < 0:
+                    state = 'left'
+                elif y_offset < 0:
+                    state = 'up'
+                else:
+                    state = 'down'
+                active_sprite = self.cur_unit.sprite.create_image(state)
+                active_sprite = image_mods.make_translucent(active_sprite.convert_alpha(), .5)
+                x_pos = self.position[0] * TILEWIDTH - cull_rect[0] - max(0, (active_sprite.get_width() - 16)//2)
+                y_pos = self.position[1] * TILEHEIGHT - cull_rect[1] - 24
+                surf.blit(active_sprite, (x_pos, y_pos))
         return surf
 
 class Arrow(object):
     sprite = SPRITES.get('movement_arrows')
+    sprite = image_mods.make_translucent(sprite, 0.1)
 
     def __init__(self, x, y, position, idx):
         self.image = engine.subsurface(self.sprite, (x * TILEWIDTH, y * TILEHEIGHT, TILEWIDTH, TILEHEIGHT))
@@ -257,7 +287,14 @@ class Arrow(object):
         self.idx = idx
 
     def draw(self, surf, cull_rect):
+        if DB.constants.value('translucent_unit_sprite'):
+            t = math.sin(math.radians((engine.get_time()//5 - self.idx * 6) % 180))
+            new_color = image_mods.blend_colors((200, 40, 0), (0, 0, 0), t)
+            image = image_mods.change_color(self.image, new_color)
+        else:
+            image = self.image
+
         x, y = self.position
-        topleft = x * TILEWIDTH - cull_rect[0], y * TILEHEIGHT - cull_rect[1]
-        surf.blit(self.image, topleft)
+        topleft = x * TILEWIDTH - cull_rect[0], y * TILEHEIGHT - cull_rect[1]        
+        surf.blit(image, topleft)
         return surf

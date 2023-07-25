@@ -1,3 +1,8 @@
+from __future__ import annotations
+
+from typing import Tuple
+
+from app.constants import WINWIDTH, WINHEIGHT
 from app.engine import engine
 from app.engine import config as cf
 
@@ -50,10 +55,18 @@ class InputManager():
     def just_pressed(self, button):
         return button in self.key_down_events
 
+    def screen_denominator(self) -> Tuple[float, float]:
+        if cf.SETTINGS['fullscreen']:  # Fullscreen
+            x, y = engine.get_screen_size()
+            return (x / WINWIDTH, y / WINHEIGHT)
+        else:
+            return float(cf.SETTINGS['screen_size']), float(cf.SETTINGS['screen_size'])
+
     def get_mouse_position(self):
         if self.current_mouse_position:
-            return (self.current_mouse_position[0] // int(cf.SETTINGS['screen_size']),
-                    self.current_mouse_position[1] // int(cf.SETTINGS['screen_size']))
+            x, y = self.screen_denominator()
+            return (self.current_mouse_position[0] // x,
+                    self.current_mouse_position[1] // y)
         else:
             return None
 
@@ -64,8 +77,9 @@ class InputManager():
         if not cf.SETTINGS['mouse']:
             return None
         mouse_pos = engine.get_mouse_pos()
-        mouse_pos = (mouse_pos[0] // int(cf.SETTINGS['screen_size']),
-                     mouse_pos[1] // int(cf.SETTINGS['screen_size']))
+        x, y = self.screen_denominator()
+        mouse_pos = (mouse_pos[0] // x,
+                     mouse_pos[1] // y)
         if engine.get_mouse_focus():
             return mouse_pos
         else:  # Returns None if mouse is not in screen

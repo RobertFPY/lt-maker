@@ -9,8 +9,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type
 from app.data.database.database import Database
 from app.editor.event_editor.event_inspector import EventInspectorEngine
 from app.engine.fonts import FONT
-from app.engine.graphics.ui_framework.ui_framework_layout import (HAlignment,
-                                                                  VAlignment)
+from app.utilities.enums import HAlignment, VAlignment
 from app.events import event_commands
 from app.events.screen_positions import horizontal_screen_positions, vertical_screen_positions
 from app.data.resources.resources import Resources
@@ -365,6 +364,9 @@ class PhaseMusic(OptionValidator):
     valid = ['player_phase', 'enemy_phase', 'other_phase', 'enemy2_phase',
              'player_battle', 'enemy_battle', 'other_battle', 'enemy2_battle']
 
+class SpecialMusicType(OptionValidator):
+    valid = ['title_screen', 'promotion', 'class_change', 'game_over']
+
 class Volume(Validator):
     desc = "A number between greater than 0 (0 is muted, 1 is current volume)"
 
@@ -406,20 +408,34 @@ class Portrait(Validator):
         valids.append((None, "{unit2}"))
         return valids + other_valids
 
+class Affinity(Validator):
+    def validate(self, affinity, level):
+        if affinity in self._db.affinities.keys():
+            return affinity
+        return None
+    
+    def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
+        valids = [(None, affinity.nid) for affinity in self._db.affinities]
+        return valids
+
 class AI(Validator):
     def validate(self, text, level):
         if text in self._db.ai.keys():
             return text
         return None
 
+    def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
+        valids = [(None, ai_nid) for ai_nid in self._db.ai.keys()]
+        return valids
+
 class Team(Validator):
     def validate(self, text, level):
-        if text in self._db.teams:
+        if text in self._db.teams.keys():
             return text
         return None
 
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
-        valids = [(None, team_nid) for team_nid in self._db.teams]
+        valids = [(None, team_nid) for team_nid in self._db.teams.keys()]
         return valids
 
 class Tag(Validator):
@@ -1042,6 +1058,20 @@ class ItemComponent(Validator):
         from app.engine import item_component_access as ICA
         valids = [(None, component.nid) for component in ICA.get_item_components()]
         return valids
+        
+class SkillComponent(Validator):
+    desc = "accepts a skill component."
+
+    def validate(self, text, level):
+        from app.engine import skill_component_access as SCA
+        if text in SCA.get_skill_components().keys():
+            return text
+        return None
+
+    def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
+        from app.engine import skill_component_access as SCA
+        valids = [(None, component.nid) for component in SCA.get_skill_components()]
+        return valids
 
 class StatList(Validator):
     desc = "accepts a comma-delimited list of pairs of stat nids and stat changes. For example, `STR,2,SPD,-3`."
@@ -1343,7 +1373,7 @@ class MaybeSprite(Validator):
 
 class DifficultyMode(Validator):
     desc = 'accepts the nid of a difficulty mode.'
-    
+
     def validate(self, text, level):
         if text in self._db.difficulty_modes.keys():
             return text

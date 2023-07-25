@@ -20,6 +20,8 @@ class EventState(State):
         self.game_over: bool = False  # Whether we've called for a game over
         if not self.event:
             self.event = game.events.get()
+            if self.event and self.event.trigger and self.event.trigger.nid == 'on_turnwheel':
+                game.action_log.stop_recording()
             if self.event and game.cursor:
                 game.cursor.hide()
 
@@ -106,6 +108,8 @@ class EventState(State):
 
     def end_event(self):
         logging.debug("Ending Event")
+        if self.event and self.event.trigger and self.event.trigger.nid == 'on_turnwheel':
+            game.action_log.start_recording()
         game.events.end(self.event)
         if game.level_vars.get('_win_game') or self.is_handling_end_event:
             logging.info("Player Wins!")

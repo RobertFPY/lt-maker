@@ -36,7 +36,7 @@ class StatChangeExpression(SkillComponent):
         try:
             return {stat[0]: int(evaluate.evaluate(stat[1], unit)) for stat in self.value}
         except Exception as e:
-            logging.error("Couldn't evaluate conditional %s", e)
+            logging.error("Couldn't evaluate conditional for skill %s: [%s], %s", self.skill.nid, str(self.value), e)
         return {stat[0]: 0 for stat in self.value}
 
 class StatMultiplier(SkillComponent):
@@ -162,6 +162,21 @@ class Avoid(SkillComponent):
 
     def tile_avoid(self):
         return self.value
+        
+class EvalAvoid(SkillComponent):
+    nid = 'eval_avoid'
+    desc = "Gives +X avoid solved using evaluate"
+    tag = SkillTags.COMBAT
+
+    expose = ComponentType.String
+
+    def modify_avoid(self, unit, item):
+        from app.engine import evaluate
+        try:
+            return int(evaluate.evaluate(self.value, unit, local_args={'item': item}))
+        except Exception as e:
+            logging.error("Couldn't evaluate %s conditional (%s)", self.value, e)
+        return 0
 
 class Crit(SkillComponent):
     nid = 'crit'

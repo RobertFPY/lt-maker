@@ -85,7 +85,7 @@ class HighlightController():
     def display_highlights(self, unit, light=False):
         valid_moves = target_system.get_valid_moves(unit)
 
-        if DB.constants.value('zero_move') and unit.get_ai() and not unit.ai_group_active:
+        if DB.constants.value('zero_move') and unit.get_ai() and not game.ai_group_active(unit.ai_group):
             ai_prefab = DB.ai.get(unit.get_ai())
             guard = ai_prefab.guard_ai()
             if guard:
@@ -100,7 +100,7 @@ class HighlightController():
 
     def display_aura_highlights(self, unit):
         for skill in unit.skills:
-            if skill.aura:
+            if skill.aura and not skill.hide_aura:
                 positions = game.board.get_aura_positions(skill.subskill)
                 aura_range = skill.aura_range.value
                 if DB.constants.value('aura_los'):

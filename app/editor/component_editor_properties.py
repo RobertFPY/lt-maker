@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import (QAction, QGridLayout, QHBoxLayout, QLabel,
                              QLineEdit, QMessageBox, QPushButton, QSizePolicy,
                              QSpacerItem, QTextEdit, QToolBar, QToolButton,
                              QVBoxLayout, QWidget, QWidgetAction)
+from app import dark_theme
 
 from app.data.database.components import Component
 from app.editor import component_database
@@ -95,12 +96,8 @@ class NewComponentProperties(QWidget, Generic[T]):
         self.toolbar = QToolBar(self)
         self.menus = {}
 
-        self.settings = MainSettingsController()
-        theme = self.settings.get_theme(0)
-        if theme == 0:
-            icon_folder = 'icons/icons'
-        else:
-            icon_folder = 'icons/dark_icons'
+        theme = dark_theme.get_theme()
+        icon_folder = theme.icon_dir()
 
         # Add component search to the top component bar
         self.show_components_dialog = None

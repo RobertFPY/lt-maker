@@ -432,5 +432,14 @@
         "frame_y": 1,
         "num_frames": 12,
         "speed": "32"
+    },
+    {
+        "nid": "MapSurprise",
+        "frame_x": 5,
+        "frame_y": 2,
+        "num_frames": 10,
+        "speed": 75,
+        "frame_times": "1,1,1,1,2,2,2,2,2,30",
+        "use_frame_time": true
     }
 ]

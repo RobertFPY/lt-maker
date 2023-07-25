@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import colorsys
 import hashlib
 import math
@@ -29,7 +31,7 @@ def sign(n):
     else:
         return -1
 
-def distance(pos1, pos2):
+def distance(pos1, pos2) -> float:
     """
     Euclidean distance
     """
@@ -48,24 +50,6 @@ def model_wave(time, period, width) -> float:
         return 1 - float(cur_time - half_width) / half_width
     else:
         return 0
-
-def compare_teams(t1: str, t2: str) -> bool:
-    # Returns True if allies, False if enemies
-    if t1 is None or t2 is None:
-        return None
-    elif t1 == t2:
-        return True
-    elif (t1 == 'player' and t2 == 'other') or (t2 == 'player' and t1 == 'other'):
-        return True
-    else:
-        return False
-
-def get_team_color(team: str):
-    team_dict = {'player': 'blue',
-                 'enemy': 'red',
-                 'other': 'green',
-                 'enemy2': 'purple'}
-    return team_dict.get(team, 'red')
 
 def calculate_distance(pos1: tuple, pos2: tuple) -> int:
     """
@@ -148,6 +132,12 @@ def hsv2rgb(h: float, s: float, v: float) -> tuple:
 def rgb2hsv(r: int, g: int, b: int) -> tuple:
     return tuple(colorsys.rgb_to_hsv(r, g, b))
 
+def round_pos(pos: Tuple[float, float]) -> Tuple[int, int]:
+    """
+    # Convert position to integer form
+    """
+    return (int(round(pos[0])), int(round(pos[1])))
+
 def average_pos(pos_list: list, as_int=False) -> tuple:
     avg_x, avg_y = 0, 0
     for x, y in pos_list:
@@ -225,9 +215,6 @@ def flatten_list(initial_list) -> list:
         else:
             final_list.append(item)
     return final_list
-
-def rationalize(p: Tuple[float, float]) -> Tuple[int, int]:
-    return (int(round(p[0])), int(round(p[1])))
 
 def is_windows() -> bool:
     return sys.platform.startswith('win')

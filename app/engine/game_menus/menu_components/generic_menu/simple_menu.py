@@ -1,21 +1,22 @@
 from __future__ import annotations
+
 import math
-from app.engine.graphics.ui_framework.premade_animations.animation_templates import component_scroll_anim
-from app.engine.graphics.ui_framework.premade_components.plain_text_component import PlainTextLine
+from typing import TYPE_CHECKING, List, Tuple
 
-from app.engine.base_surf import create_base_surf, create_highlight_surf
-
-from typing import List, TYPE_CHECKING, Tuple
-
-from app.engine.graphics.ui_framework import (HeaderList, IconRow,
-                                            ListLayoutStyle, UIComponent,
-                                            UILayoutType )
 from app.engine import engine
-from app.engine.graphics.ui_framework.ui_framework_layout import HAlignment
+from app.engine.base_surf import create_base_surf, create_highlight_surf
+from app.engine.graphics.ui_framework import (HeaderList, IconRow,
+                                              ListLayoutStyle, UIComponent,
+                                              UILayoutType)
+from app.engine.graphics.ui_framework.premade_animations.animation_templates import \
+    component_scroll_anim
+from app.engine.graphics.ui_framework.premade_components.plain_text_component import \
+    PlainTextLine
 from app.engine.gui import ScrollArrow, ScrollBar
 from app.sprites import SPRITES
-from app.utilities.enums import Orientation
+from app.utilities.enums import HAlignment, Orientation
 from app.utilities.utils import tuple_add
+
 
 class SimpleIconTable(UIComponent):
     def __init__(self, name: str, parent: UIComponent = None,

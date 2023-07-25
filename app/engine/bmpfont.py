@@ -110,7 +110,6 @@ class BmpFont():
                 left += char_width + self.space_offset
 
         x, y = pos
-        surfwidth, surfheight = surf.get_size()
 
         string = self.modify_string(string)
 

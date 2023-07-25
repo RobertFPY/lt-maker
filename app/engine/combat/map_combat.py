@@ -10,11 +10,13 @@ from app.engine.game_state import game
 
 from app.engine.combat.simple_combat import SimpleCombat
 
+
 class MapCombat(SimpleCombat):
     alerts: bool = True
 
     def __init__(self, attacker, main_item, items, positions, main_target_positions, splash_positions, script, total_rounds=1):
-        self._full_setup(attacker, main_item, items, positions, main_target_positions, splash_positions)
+        self._full_setup(attacker, main_item, items, positions,
+                         main_target_positions, splash_positions)
         self.state_machine = CombatPhaseSolver(
             attacker, self.main_item, self.items,
             self.defenders, self.splashes, self.target_positions,
@@ -95,21 +97,26 @@ class MapCombat(SimpleCombat):
                     if self.get_from_playback('defender_phase'):
                         self.defender.sprite.change_state('combat_attacker')
                     elif self.get_from_playback('defender_partner_phase'):
-                        self.defender.strike_partner.sprite.change_state('combat_attacker')
+                        self.defender.strike_partner.sprite.change_state(
+                            'combat_attacker')
                 self.attacker.sprite.change_state('combat_counter')
                 if self.attacker.strike_partner:
-                    self.attacker.strike_partner.sprite.change_state('combat_counter')
+                    self.attacker.strike_partner.sprite.change_state(
+                        'combat_counter')
             else:
                 if self.get_from_playback('defender_partner_phase'):
-                    self.attacker.strike_partner.sprite.change_state('combat_attacker')
+                    self.attacker.strike_partner.sprite.change_state(
+                        'combat_attacker')
                 else:
                     self.attacker.sprite.change_state('combat_attacker')
                     if self.attacker.strike_partner:
-                        self.attacker.strike_partner.sprite.change_state('combat_counter')
+                        self.attacker.strike_partner.sprite.change_state(
+                            'combat_counter')
                 if self.defender:
                     self.defender.sprite.change_state('combat_defender')
                     if self.defender.strike_partner:
-                        self.defender.strike_partner.sprite.change_state('combat_defender')
+                        self.defender.strike_partner.sprite.change_state(
+                            'combat_defender')
             self.state = 'red_cursor'
 
         elif self.state == 'red_cursor':
@@ -119,7 +126,9 @@ class MapCombat(SimpleCombat):
                 game.cursor.hide()
             # Handle proc effects
             self.set_up_proc_animation('attack_proc')
+            self.set_up_proc_animation('attack_hit_proc')
             self.set_up_proc_animation('defense_proc')
+            self.set_up_proc_animation('defense_hit_proc')
 
             self.state = 'start_anim'
 
@@ -134,6 +143,14 @@ class MapCombat(SimpleCombat):
                     if anim:
                         anim = MapAnimation(anim, pos)
                         self.animations.append(anim)
+
+                animation_brushes = self.get_from_playback('target_cast_anim')
+                for brush in animation_brushes:
+                    anim = RESOURCES.animations.get(brush.anim)
+                    if anim:
+                        anim = MapAnimation(anim, brush.pos)
+                        self.animations.append(anim)
+
                 self.state = 'sound'
 
         elif self.state == 'sound':
@@ -144,9 +161,11 @@ class MapCombat(SimpleCombat):
                 elif self.defender and self.defender.strike_partner and \
                         self.defender.strike_partner.sprite.state == 'combat_attacker' and \
                         self.get_from_playback('defender_partner_phase'):
-                    self.defender.strike_partner.sprite.change_state('combat_anim')
+                    self.defender.strike_partner.sprite.change_state(
+                        'combat_anim')
                 elif self.get_from_playback('attacker_partner_phase'):
-                    self.attacker.strike_partner.sprite.change_state('combat_anim')
+                    self.attacker.strike_partner.sprite.change_state(
+                        'combat_anim')
                 else:
                     self.attacker.sprite.change_state('combat_anim')
                 sound_brushes = self.get_from_playback('cast_sound')
@@ -164,7 +183,8 @@ class MapCombat(SimpleCombat):
                 for hp_bar in self.health_bars.values():
                     hp_bar.update()
                 if self.health_bars:
-                    self.hp_bar_time = max(hp_bar.get_time_for_change() for hp_bar in self.health_bars.values())
+                    self.hp_bar_time = max(hp_bar.get_time_for_change()
+                                           for hp_bar in self.health_bars.values())
                 else:
                     self.hp_bar_time = 0
                 self.state = 'hp_bar_wait'
@@ -179,10 +199,12 @@ class MapCombat(SimpleCombat):
                     self.defender.sprite.change_state('combat_attacker')
                 elif self.defender and self.defender.strike_partner and \
                         self.defender.strike_partner.sprite.state == 'combat_anim':
-                    self.defender.strike_partner.sprite.change_state('combat_attacker')
+                    self.defender.strike_partner.sprite.change_state(
+                        'combat_attacker')
                 elif self.attacker.strike_partner and \
                         self.attacker.strike_partner.sprite.state == 'combat_anim':
-                    self.attacker.strike_partner.sprite.change_state('combat_attacker')
+                    self.attacker.strike_partner.sprite.change_state(
+                        'combat_attacker')
                 else:
                     self.attacker.sprite.change_state('combat_attacker')
                 self._end_phase()
@@ -207,31 +229,40 @@ class MapCombat(SimpleCombat):
         else:
             # P1 on P1
             if self.defender and self.attacker is self.defender:
-                hit = combat_calcs.compute_hit(self.attacker, self.defender, self.main_item, self.def_item, 'attack', self.state_machine.get_attack_info())
-                mt = combat_calcs.compute_damage(self.attacker, self.defender, self.main_item, self.def_item, 'attack', self.state_machine.get_attack_info())
+                hit = combat_calcs.compute_hit(
+                    self.attacker, self.defender, self.main_item, self.def_item, 'attack', self.state_machine.get_attack_info())
+                mt = combat_calcs.compute_damage(
+                    self.attacker, self.defender, self.main_item, self.def_item, 'attack', self.state_machine.get_attack_info())
                 if self.attacker not in self.health_bars:
-                    attacker_health = MapCombatInfo('p1', self.attacker, self.main_item, self.defender, (hit, mt))
+                    attacker_health = MapCombatInfo(
+                        'p1', self.attacker, self.main_item, self.defender, (hit, mt))
                     self.health_bars[self.attacker] = attacker_health
                 else:
                     self.health_bars[self.attacker].update_stats((hit, mt))
 
             # P1 on P2
             elif self.defender:
-                hit = combat_calcs.compute_hit(self.attacker, self.defender, self.main_item, self.def_item, 'attack', self.state_machine.get_attack_info())
-                mt = combat_calcs.compute_damage(self.attacker, self.defender, self.main_item, self.def_item, 'attack', self.state_machine.get_attack_info())
+                hit = combat_calcs.compute_hit(
+                    self.attacker, self.defender, self.main_item, self.def_item, 'attack', self.state_machine.get_attack_info())
+                mt = combat_calcs.compute_damage(
+                    self.attacker, self.defender, self.main_item, self.def_item, 'attack', self.state_machine.get_attack_info())
                 if self.attacker not in self.health_bars:
-                    attacker_health = MapCombatInfo('p1', self.attacker, self.main_item, self.defender, (hit, mt))
+                    attacker_health = MapCombatInfo(
+                        'p1', self.attacker, self.main_item, self.defender, (hit, mt))
                     self.health_bars[self.attacker] = attacker_health
                 else:
                     self.health_bars[self.attacker].update_stats((hit, mt))
 
                 if combat_calcs.can_counterattack(self.attacker, self.main_item, self.defender, self.def_item):
-                    hit = combat_calcs.compute_hit(self.defender, self.attacker, self.def_item, self.main_item, 'defense', self.state_machine.get_defense_info())
-                    mt = combat_calcs.compute_damage(self.defender, self.attacker, self.def_item, self.main_item, 'defense', self.state_machine.get_defense_info())
+                    hit = combat_calcs.compute_hit(
+                        self.defender, self.attacker, self.def_item, self.main_item, 'defense', self.state_machine.get_defense_info())
+                    mt = combat_calcs.compute_damage(
+                        self.defender, self.attacker, self.def_item, self.main_item, 'defense', self.state_machine.get_defense_info())
                 else:
                     hit, mt = None, None
                 if self.defender not in self.health_bars:
-                    defender_health = MapCombatInfo('p2', self.defender, self.def_item, self.attacker, (hit, mt))
+                    defender_health = MapCombatInfo(
+                        'p2', self.defender, self.def_item, self.attacker, (hit, mt))
                     self.health_bars[self.defender] = defender_health
                 else:
                     self.health_bars[self.defender].update_stats((hit, mt))
@@ -239,16 +270,20 @@ class MapCombat(SimpleCombat):
             # P1 on single splash
             elif len(self.all_splash) == 1:
                 defender = self.all_splash[0]
-                hit = combat_calcs.compute_hit(self.attacker, defender, self.main_item, None, 'attack', self.state_machine.get_attack_info())
-                mt = combat_calcs.compute_damage(self.attacker, defender, self.main_item, None, 'attack', self.state_machine.get_attack_info())
+                hit = combat_calcs.compute_hit(
+                    self.attacker, defender, self.main_item, None, 'attack', self.state_machine.get_attack_info())
+                mt = combat_calcs.compute_damage(
+                    self.attacker, defender, self.main_item, None, 'attack', self.state_machine.get_attack_info())
                 if self.attacker not in self.health_bars:
-                    attacker_health = MapCombatInfo('p1', self.attacker, self.main_item, defender, (hit, mt))
+                    attacker_health = MapCombatInfo(
+                        'p1', self.attacker, self.main_item, defender, (hit, mt))
                     self.health_bars[self.attacker] = attacker_health
                 else:
                     self.health_bars[self.attacker].update_stats((hit, mt))
 
                 if defender not in self.health_bars:
-                    splash_health = MapCombatInfo('splash', defender, None, self.attacker, (None, None))
+                    splash_health = MapCombatInfo(
+                        'splash', defender, None, self.attacker, (None, None))
                     self.health_bars[defender] = splash_health
 
     def _handle_playback(self):
@@ -262,7 +297,8 @@ class MapCombat(SimpleCombat):
                 # Delay five frames
                 brush.unit.sprite.start_flicker(83, 33, brush.color, 'add')
                 # Delay five more frames
-                brush.unit.sprite.start_flicker(166, 333, brush.color, 'add', fade_out=True)
+                brush.unit.sprite.start_flicker(
+                    166, 333, brush.color, 'add', fade_out=True)
             elif brush.nid == 'crit_vibrate':
                 # In 10 frames, start vibrating for 12 frames
                 brush.unit.sprite.start_vibrate(166, 200)
@@ -287,7 +323,8 @@ class MapCombat(SimpleCombat):
                 str_damage = str(damage)
                 target = brush.defender
                 for idx, num in enumerate(str_damage):
-                    d = gui.DamageNumber(int(num), idx, len(str_damage), target.position, 'small_red')
+                    d = gui.DamageNumber(int(num), idx, len(
+                        str_damage), target.position, 'small_red')
                     target.sprite.damage_numbers.append(d)
             elif brush.nid == 'damage_crit':
                 damage = brush.damage
@@ -296,7 +333,8 @@ class MapCombat(SimpleCombat):
                 str_damage = str(damage)
                 target = brush.defender
                 for idx, num in enumerate(str_damage):
-                    d = gui.DamageNumber(int(num), idx, len(str_damage), target.position, 'small_yellow')
+                    d = gui.DamageNumber(int(num), idx, len(
+                        str_damage), target.position, 'small_yellow')
                     target.sprite.damage_numbers.append(d)
             elif brush.nid == 'heal_hit':
                 damage = brush.damage
@@ -305,7 +343,8 @@ class MapCombat(SimpleCombat):
                 str_damage = str(damage)
                 target = brush.defender
                 for idx, num in enumerate(str_damage):
-                    d = gui.DamageNumber(int(num), idx, len(str_damage), target.position, 'small_cyan')
+                    d = gui.DamageNumber(int(num), idx, len(
+                        str_damage), target.position, 'small_cyan')
                     target.sprite.damage_numbers.append(d)
 
     def _apply_actions(self):
@@ -366,7 +405,8 @@ class MapCombat(SimpleCombat):
 
     def draw(self, surf):
         # Animations
-        self.animations = [anim for anim in self.animations if not anim.update()]
+        self.animations = [
+            anim for anim in self.animations if not anim.update()]
         for anim in self.animations:
             anim.draw(surf, offset=(-game.camera.get_x(), -game.camera.get_y()))
 

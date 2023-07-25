@@ -5,12 +5,14 @@ from app.engine.objects.unit import UnitObject
 from app.engine.objects.item import ItemObject
 from app.engine.objects.skill import SkillObject
 
+
 @dataclass
 class PlaybackBrush:
     """
     Generic playback brush class
     """
     nid: ClassVar[str] = 'playback_brush'
+
 
 @dataclass
 class AttackerPhase(PlaybackBrush):
@@ -19,12 +21,14 @@ class AttackerPhase(PlaybackBrush):
     """
     nid: ClassVar[str] = 'attacker_phase'
 
+
 @dataclass
 class AttackerPartnerPhase(PlaybackBrush):
     """
     Added to playback when the attacker's partner's phase would begin (only with Pair Up enabled)
     """
     nid: ClassVar[str] = 'attacker_partner_phase'
+
 
 @dataclass
 class DefenderPhase(PlaybackBrush):
@@ -33,12 +37,14 @@ class DefenderPhase(PlaybackBrush):
     """
     nid: ClassVar[str] = 'defender_phase'
 
+
 @dataclass
 class DefenderPartnerPhase(PlaybackBrush):
     """
     Added to playback when the defender's partner's phase would begin (only with Pair Up enabled)
     """
     nid: ClassVar[str] = 'defender_partner_phase'
+
 
 @dataclass
 class AttackPreProc(PlaybackBrush):
@@ -52,6 +58,7 @@ class AttackPreProc(PlaybackBrush):
     unit: UnitObject
     skill: SkillObject  # Skill that is proccing
 
+
 @dataclass
 class DefensePreProc(PlaybackBrush):
     """
@@ -62,6 +69,7 @@ class DefensePreProc(PlaybackBrush):
     nid: ClassVar[str] = 'defense_pre_proc'
     unit: UnitObject
     skill: SkillObject  # Skill that is proccing
+
 
 @dataclass
 class AttackProc(PlaybackBrush):
@@ -74,6 +82,7 @@ class AttackProc(PlaybackBrush):
     unit: UnitObject
     skill: SkillObject  # Skill that is proccing
 
+
 @dataclass
 class DefenseProc(PlaybackBrush):
     """
@@ -85,17 +94,46 @@ class DefenseProc(PlaybackBrush):
     unit: UnitObject
     skill: SkillObject  # Skill that is proccing
 
+
+@dataclass
+class DefenseHitProc(PlaybackBrush):
+    """
+    Added to playback when a defender's proc effect should happen (processed at beginning of phase)
+    Automatically adds Icon to screen when the hit strikes
+    In Animation Combat, will add effect with same name as skill.nid
+    """
+    nid: ClassVar[str] = 'defense_hit_proc'
+    unit: UnitObject
+    skill: SkillObject  # Skill that is proccing
+
+
+@dataclass
+class AttackHitProc(PlaybackBrush):
+    """
+    Added to playback when a defender's proc effect should happen (processed at beginning of phase)
+    Automatically adds Icon to screen when the hit strikes
+    In Animation Combat, will add effect with same name as skill.nid
+    """
+    nid: ClassVar[str] = 'attack_hit_proc'
+    unit: UnitObject
+    skill: SkillObject  # Skill that is proccing
+
+
 @dataclass
 class MarkHit(PlaybackBrush):
     """
     Added to playback when an attack successfully hits
     """
     nid: ClassVar[str] = 'mark_hit'
-    attacker: UnitObject  # The actual attacker for this attack, which may not be the main attacker (e.g., pair up)
+    # The actual attacker for this attack, which may not be the main attacker (e.g., pair up)
+    attacker: UnitObject
     defender: UnitObject
     main_attacker: UnitObject
-    item: ItemObject # The actual item used for this attack, which may not be the main item used for this combat (e.g., multi-items)
-    guard_hit: bool = False  # Whether the attack was guarded (only posible with pairup)
+    # The actual item used for this attack, which may not be the main item used for this combat (e.g., multi-items)
+    item: ItemObject
+    # Whether the attack was guarded (only posible with pairup)
+    guard_hit: bool = False
+
 
 @dataclass
 class MarkCrit(PlaybackBrush):
@@ -104,10 +142,13 @@ class MarkCrit(PlaybackBrush):
     MarkHit is generally not also included
     """
     nid: ClassVar[str] = 'mark_crit'
-    attacker: UnitObject  # The actual attacker for this attack, which may not be the main attacker (e.g., pair up)
+    # The actual attacker for this attack, which may not be the main attacker (e.g., pair up)
+    attacker: UnitObject
     defender: UnitObject
     main_attacker: UnitObject
-    item: ItemObject # The actual item used for this attack, which may not be the main item used for this combat (e.g., multi-items)
+    # The actual item used for this attack, which may not be the main item used for this combat (e.g., multi-items)
+    item: ItemObject
+
 
 @dataclass
 class MarkMiss(PlaybackBrush):
@@ -115,10 +156,13 @@ class MarkMiss(PlaybackBrush):
     Added to playback when an attack misses
     """
     nid: ClassVar[str] = 'mark_miss'
-    attacker: UnitObject  # The actual attacker for this attack, which may not be the main attacker (e.g., pair up)
+    # The actual attacker for this attack, which may not be the main attacker (e.g., pair up)
+    attacker: UnitObject
     defender: UnitObject
     main_attacker: UnitObject
-    item: ItemObject # The actual item used for this attack, which may not be the main item used for this combat (e.g., multi-items)
+    # The actual item used for this attack, which may not be the main item used for this combat (e.g., multi-items)
+    item: ItemObject
+
 
 @dataclass
 class MarkGlancingHit(PlaybackBrush):
@@ -127,10 +171,13 @@ class MarkGlancingHit(PlaybackBrush):
     MarkHit is always also included in playback
     """
     nid: ClassVar[str] = 'mark_glancing_hit'
-    attacker: UnitObject  # The actual attacker for this attack, which may not be the main attacker (e.g., pair up)
+    # The actual attacker for this attack, which may not be the main attacker (e.g., pair up)
+    attacker: UnitObject
     defender: UnitObject
     main_attacker: UnitObject
-    item: ItemObject # The actual item used for this attack, which may not be the main item used for this combat (e.g., multi-items)
+    # The actual item used for this attack, which may not be the main item used for this combat (e.g., multi-items)
+    item: ItemObject
+
 
 @dataclass
 class DamageHit(PlaybackBrush):
@@ -141,10 +188,13 @@ class DamageHit(PlaybackBrush):
     """
     nid: ClassVar[str] = 'damage_hit'
     attacker: UnitObject
-    item: ItemObject # The actual item used for this attack, which may not be the main item used for this combat (e.g., multi-items)
+    # The actual item used for this attack, which may not be the main item used for this combat (e.g., multi-items)
+    item: ItemObject
     defender: UnitObject
-    damage: int  # attempted damage number 
-    true_damage: int  # actual damage dealt (cannot be more than defender's current HP)
+    damage: int  # attempted damage number
+    # actual damage dealt (cannot be more than defender's current HP)
+    true_damage: int
+
 
 @dataclass
 class DamageCrit(PlaybackBrush):
@@ -155,10 +205,13 @@ class DamageCrit(PlaybackBrush):
     """
     nid: ClassVar[str] = 'damage_crit'
     attacker: UnitObject
-    item: ItemObject # The actual item used for this attack, which may not be the main item used for this combat (e.g., multi-items)
+    # The actual item used for this attack, which may not be the main item used for this combat (e.g., multi-items)
+    item: ItemObject
     defender: UnitObject
-    damage: int  # attempted damage number 
-    true_damage: int  # actual damage dealt (cannot be more than defender's current HP)
+    damage: int  # attempted damage number
+    # actual damage dealt (cannot be more than defender's current HP)
+    true_damage: int
+
 
 @dataclass
 class HealHit(PlaybackBrush):
@@ -169,10 +222,13 @@ class HealHit(PlaybackBrush):
     """
     nid: ClassVar[str] = 'heal_hit'
     attacker: UnitObject
-    item: ItemObject # The actual item used for this attack, which may not be the main item used for this combat (e.g., multi-items)
+    # The actual item used for this attack, which may not be the main item used for this combat (e.g., multi-items)
+    item: ItemObject
     defender: UnitObject
     damage: int  # attempted number of hp points healed
-    true_damage: int  # Actual number of hp points healed (cannot be more than defender's missing HP)
+    # Actual number of hp points healed (cannot be more than defender's missing HP)
+    true_damage: int
+
 
 @dataclass
 class RescueHit(PlaybackBrush):
@@ -185,6 +241,7 @@ class RescueHit(PlaybackBrush):
     item: ItemObject
     defender: UnitObject
 
+
 @dataclass
 class StatHit(PlaybackBrush):
     """
@@ -195,6 +252,7 @@ class StatHit(PlaybackBrush):
     attacker: UnitObject
     item: ItemObject
     defender: UnitObject
+
 
 @dataclass
 class StatusHit(PlaybackBrush):
@@ -207,6 +265,7 @@ class StatusHit(PlaybackBrush):
     defender: UnitObject
     status: str  # nid of status that is added
 
+
 @dataclass
 class ShoveHit(PlaybackBrush):
     """
@@ -217,6 +276,7 @@ class ShoveHit(PlaybackBrush):
     attacker: UnitObject
     item: ItemObject
     defender: UnitObject
+
 
 @dataclass
 class SwapHit(PlaybackBrush):
@@ -229,6 +289,7 @@ class SwapHit(PlaybackBrush):
     item: ItemObject
     defender: UnitObject
 
+
 @dataclass
 class RefreshHit(PlaybackBrush):
     """
@@ -239,6 +300,7 @@ class RefreshHit(PlaybackBrush):
     attacker: UnitObject
     item: ItemObject
     defender: UnitObject
+
 
 @dataclass
 class RestoreHit(PlaybackBrush):
@@ -270,6 +332,7 @@ class HitSound(PlaybackBrush):
     sound: str
     map_only: bool = False
 
+
 @dataclass
 class CastSound(PlaybackBrush):
     """
@@ -278,6 +341,7 @@ class CastSound(PlaybackBrush):
     """
     nid: ClassVar[str] = 'cast_sound'
     sound: str
+
 
 @dataclass
 class HitAnim(PlaybackBrush):
@@ -290,6 +354,7 @@ class HitAnim(PlaybackBrush):
     anim: str
     defender: UnitObject
 
+
 @dataclass
 class CastAnim(PlaybackBrush):
     """
@@ -299,6 +364,18 @@ class CastAnim(PlaybackBrush):
     """
     nid: ClassVar[str] = 'cast_anim'
     anim: str
+
+
+@dataclass
+class TargetCastAnim(PlaybackBrush):
+    """
+    Aesthetic brush for playing a specific animation on all targets in AoE
+    Processed by a Map Combat only (Combat animations do this in Animation Combat)
+    """
+    nid: ClassVar[str] = 'target_cast_anim'
+    anim: str
+    pos: Tuple[int, int]
+
 
 @dataclass
 class UnitTintAdd(PlaybackBrush):
@@ -311,6 +388,7 @@ class UnitTintAdd(PlaybackBrush):
     unit: UnitObject
     color: Tuple[int, int, int]
 
+
 @dataclass
 class UnitTintSub(PlaybackBrush):
     """
@@ -321,6 +399,7 @@ class UnitTintSub(PlaybackBrush):
     nid: ClassVar[str] = 'unit_tint_sub'
     unit: UnitObject
     color: Tuple[int, int, int]
+
 
 @dataclass
 class CritTint(PlaybackBrush):
@@ -333,6 +412,7 @@ class CritTint(PlaybackBrush):
     unit: UnitObject
     color: Tuple[int, int, int]
 
+
 @dataclass
 class CritVibrate(PlaybackBrush):
     """
@@ -342,6 +422,7 @@ class CritVibrate(PlaybackBrush):
     """
     nid: ClassVar[str] = 'crit_vibrate'
     unit: UnitObject
+
 
 @dataclass
 class Shake(PlaybackBrush):
@@ -353,6 +434,7 @@ class Shake(PlaybackBrush):
     nid: ClassVar[str] = 'shake'
     shake: int
 
+
 @dataclass
 class CombatEffect(PlaybackBrush):
     """
@@ -363,6 +445,7 @@ class CombatEffect(PlaybackBrush):
     nid: ClassVar[str] = 'combat_effect'
     attacker_nid: str
 
+
 @dataclass
 class AlternateBattlePose(PlaybackBrush):
     """
@@ -372,6 +455,7 @@ class AlternateBattlePose(PlaybackBrush):
     """
     nid: ClassVar[str] = 'alternate_battle_pose'
     alternate_pose: str  # Pose to be used instead of the basic "Hit", "Crit", or "Miss"
+
 
 @dataclass
 class DamageNumbers(PlaybackBrush):

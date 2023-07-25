@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, List, Tuple
 
 from PyQt5.QtWidgets import (QCheckBox, QDoubleSpinBox, QHBoxLayout, QLabel,
                              QLineEdit, QSpinBox, QWidget)
@@ -37,6 +37,7 @@ class BaseSubcomponentEditor(QWidget):
         hbox.addWidget(name_label)
 
         self._create_editor(hbox)
+        self.resize(self.sizeHint())
 
     @classmethod
     def create(cls: BaseSubcomponentEditor, field_name: str, option_dict: Dict[str, Any]):
@@ -44,6 +45,7 @@ class BaseSubcomponentEditor(QWidget):
 
     def _create_editor(self, hbox):
         raise NotImplementedError()
+
 
 class BoolSubcomponentEditor(BaseSubcomponentEditor):
     @override
@@ -56,13 +58,15 @@ class BoolSubcomponentEditor(BaseSubcomponentEditor):
     def on_value_changed(self, val):
         self.option_dict[self.field_name] = bool(val)
 
+
 class SkillSubcomponentEditor(BaseSubcomponentEditor):
     @override
     def _create_editor(self, hbox):
         self.editor = ComboBox(self)
         for skill in DB.skills.values():
             self.editor.addItem(skill.nid)
-        width = utils.clamp(self.editor.minimumSizeHint().width() + DROP_DOWN_BUFFER, MIN_DROP_DOWN_WIDTH, MAX_DROP_DOWN_WIDTH)
+        width = utils.clamp(self.editor.minimumSizeHint().width(
+        ) + DROP_DOWN_BUFFER, MIN_DROP_DOWN_WIDTH, MAX_DROP_DOWN_WIDTH)
         self.editor.setMaximumWidth(width)
         if not self.option_dict.get(self.field_name):
             self.option_dict[self.field_name] = DB.skills[0].nid
@@ -72,6 +76,7 @@ class SkillSubcomponentEditor(BaseSubcomponentEditor):
 
     def on_value_changed(self, val):
         self.option_dict[self.field_name] = val
+
 
 class IntSubcomponentEditor(BaseSubcomponentEditor):
     @override
@@ -91,6 +96,7 @@ class IntSubcomponentEditor(BaseSubcomponentEditor):
         self.editor.setMaximumWidth(60)
         self.editor.setRange(-1000, 10000)
 
+
 class StringSubcomponentEditor(BaseSubcomponentEditor):
     @override
     def _create_editor(self, hbox):
@@ -104,6 +110,7 @@ class StringSubcomponentEditor(BaseSubcomponentEditor):
 
     def on_value_changed(self, val):
         self.option_dict[self.field_name] = str(val)
+
 
 class FloatSubcomponentEditor(BaseSubcomponentEditor):
     @override
@@ -121,15 +128,18 @@ class FloatSubcomponentEditor(BaseSubcomponentEditor):
     def on_value_changed(self, val):
         self.option_dict[self.field_name] = float(val)
 
+
 class EventSubcomponentEditor(BaseSubcomponentEditor):
     @override
     def _create_editor(self, hbox):
         self.editor = ComboBox(self)
         # Only use global events
-        valid_events = [event for event in DB.events.values() if not event.level_nid]
+        valid_events = [event for event in DB.events.values()
+                        if not event.level_nid]
         for event in valid_events:
             self.editor.addItem(event.nid)
-        width = utils.clamp(self.editor.minimumSizeHint().width() + DROP_DOWN_BUFFER, MIN_DROP_DOWN_WIDTH, MAX_DROP_DOWN_WIDTH)
+        width = utils.clamp(self.editor.minimumSizeHint().width(
+        ) + DROP_DOWN_BUFFER, MIN_DROP_DOWN_WIDTH, MAX_DROP_DOWN_WIDTH)
         self.editor.setMaximumWidth(width)
         if not self.option_dict.get(self.field_name) and valid_events:
             self.option_dict[self.field_name] = valid_events[0].nid
@@ -140,13 +150,15 @@ class EventSubcomponentEditor(BaseSubcomponentEditor):
     def on_value_changed(self, val):
         self.option_dict[self.field_name] = val
 
+
 class ItemSubcomponentEditor(BaseSubcomponentEditor):
     @override
     def _create_editor(self, hbox):
         self.editor = ComboBox(self)
         for item in DB.items.values():
             self.editor.addItem(item.nid)
-        width = utils.clamp(self.editor.minimumSizeHint().width() + DROP_DOWN_BUFFER, MIN_DROP_DOWN_WIDTH, MAX_DROP_DOWN_WIDTH)
+        width = utils.clamp(self.editor.minimumSizeHint().width(
+        ) + DROP_DOWN_BUFFER, MIN_DROP_DOWN_WIDTH, MAX_DROP_DOWN_WIDTH)
         self.editor.setMaximumWidth(width)
         if not self.option_dict.get(self.field_name):
             self.option_dict[self.field_name] = DB.items[0].nid
@@ -157,13 +169,15 @@ class ItemSubcomponentEditor(BaseSubcomponentEditor):
     def on_value_changed(self, val):
         self.option_dict[self.field_name] = val
 
+
 class SoundSubcomponentEditor(BaseSubcomponentEditor):
     @override
     def _create_editor(self, hbox):
         self.editor = ComboBox(self)
         for sound in RESOURCES.sfx.values():
             self.editor.addItem(sound.nid)
-        width = utils.clamp(self.editor.minimumSizeHint().width() + DROP_DOWN_BUFFER, MIN_DROP_DOWN_WIDTH, MAX_DROP_DOWN_WIDTH)
+        width = utils.clamp(self.editor.minimumSizeHint().width(
+        ) + DROP_DOWN_BUFFER, MIN_DROP_DOWN_WIDTH, MAX_DROP_DOWN_WIDTH)
         self.editor.setMaximumWidth(width)
         if not self.option_dict.get(self.field_name):
             self.option_dict[self.field_name] = RESOURCES.sfx[0].nid
@@ -174,6 +188,7 @@ class SoundSubcomponentEditor(BaseSubcomponentEditor):
     def on_value_changed(self, val):
         self.option_dict[self.field_name] = val
 
+
 class BaseContainerSubcomponentEditor(BaseSubcomponentEditor):
     def __init__(self, field_name: str, option_dict: Dict[str, Any], delegate: BaseComponentDelegate) -> None:
         self.delegate = delegate
@@ -183,12 +198,14 @@ class BaseContainerSubcomponentEditor(BaseSubcomponentEditor):
     def create(cls: BaseSubcomponentEditor, field_name: str, option_dict: Dict[str, Any], delegate: BaseComponentDelegate):
         return cls(field_name, option_dict, delegate)
 
+
 class ListSubcomponentEditor(BaseContainerSubcomponentEditor):
     @override
     def _create_editor(self, hbox):
         if not self.option_dict[self.field_name]:
             self.option_dict[self.field_name] = []
-        self.editor = AppendSingleListWidget(self.option_dict[self.field_name], str_utils.snake_to_readable(self.field_name), self.delegate, self)
+        self.editor = AppendSingleListWidget(
+            self.option_dict[self.field_name], str_utils.snake_to_readable(self.field_name), self.delegate, self)
         self.editor.view.setColumnWidth(0, 100)
         self.editor.view.setMinimumHeight(100)
         self.editor.view.setMaximumHeight(150)
@@ -223,12 +240,43 @@ CONTAINER_EDITOR_MAP: Dict[ComponentType, BaseContainerSubcomponentEditor] = {
     ComponentType.List: ListSubcomponentEditor
 }
 
-def get_editor_widget(field_name: str, ctype: ComponentType | Tuple[ComponentType, ComponentType], option_dict: Dict[str, Any]):
+
+class MultipleChoiceSubcomponentEditor(BaseSubcomponentEditor):
+    def __init__(self, field_name: str, option_dict: Dict[str, Any], choices: List[str]) -> None:
+        self.choices = choices
+        super().__init__(field_name, option_dict)
+
+    @override
+    def _create_editor(self, hbox):
+        self.editor = ComboBox(self)
+        for choice in self.choices:
+            self.editor.addItem(choice)
+        width = utils.clamp(self.editor.minimumSizeHint().width(
+        ) + DROP_DOWN_BUFFER, MIN_DROP_DOWN_WIDTH, MAX_DROP_DOWN_WIDTH)
+        self.editor.setMaximumWidth(width)
+        if not self.option_dict.get(self.field_name):
+            self.option_dict[self.field_name] = self.choices[0]
+        self.editor.setValue(self.option_dict[self.field_name])
+        self.editor.currentTextChanged.connect(self.on_value_changed)
+        hbox.addWidget(self.editor)
+
+    def on_value_changed(self, val):
+        self.option_dict[self.field_name] = val
+
+
+def get_editor_widget(field_name: str, ctype: ComponentType | Tuple[ComponentType, ComponentType | list], option_dict: Dict[str, Any]):
     if ctype in EDITOR_MAP:
         return EDITOR_MAP[ctype].create(field_name, option_dict)
-    elif isinstance(ctype, tuple): # tuple
+    elif isinstance(ctype, tuple):  # tuple
         container_type, stype = ctype
-        if container_type in CONTAINER_EDITOR_MAP:
+        if container_type == ComponentType.MultipleChoice:
+            if not isinstance(stype, tuple):
+                raise ValueError("Multiple choice has no list arg")
+            choices = stype
+            return MultipleChoiceSubcomponentEditor(field_name, option_dict, choices)
+        elif container_type in CONTAINER_EDITOR_MAP:
+            if not isinstance(stype, ComponentType):
+                raise ValueError("Container has no subtype")
             delegate = DELEGATE_MAP[stype]
             return CONTAINER_EDITOR_MAP[container_type].create(field_name, option_dict, delegate)
     raise ValueError("Component type not valid")

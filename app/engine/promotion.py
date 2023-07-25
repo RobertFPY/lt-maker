@@ -178,7 +178,7 @@ class PromotionChoiceState(State):
 
         self.bg.draw(surf)
 
-        top = 88
+        top = WINHEIGHT - 72
         surf.blit(self.left_platform, (WINWIDTH//2 - self.left_platform.get_width() + self.anim_offset + 52, top))
         surf.blit(self.right_platform, (WINWIDTH//2 + self.anim_offset + 52, top))
         anim = self.animations[self.menu.get_current_index()]
@@ -240,12 +240,15 @@ class PromotionState(State, MockCombat):
 
         music = 'music_%s' % self.name
         self.promotion_song = None
-        if DB.constants.value(music):
+        if game.game_vars.get('_' + music):
+            self.promotion_song = \
+                get_sound_thread().fade_in(game.game_vars.get('_' + music), fade_in=50)
+        elif DB.constants.value(music):
             self.promotion_song = \
                 get_sound_thread().fade_in(DB.constants.value(music), fade_in=50)
 
         self.unit = game.memory['current_unit']
-        color = utils.get_team_color(self.unit.team)
+        color = DB.teams.get(self.unit.team).combat_color
 
         # Old Right Animation
         self.right_battle_anim = battle_animation.get_battle_anim(self.unit, None)
@@ -340,7 +343,7 @@ class PromotionState(State, MockCombat):
         combat_surf = engine.copy_surface(self.combat_surf)
 
         # Platforms
-        top = 88
+        top = WINHEIGHT - 72
         combat_surf.blit(self.left_platform, (WINWIDTH//2 - self.left_platform.get_width(), top))
         combat_surf.blit(self.right_platform, (WINWIDTH//2, top))
 

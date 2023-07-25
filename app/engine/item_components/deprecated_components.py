@@ -6,11 +6,12 @@ from typing import Optional
 from app.data.database.components import ComponentType
 from app.data.database.database import DB
 from app.data.database.item_components import ItemComponent, ItemTags
-from app.engine import (action, combat_calcs, engine, image_mods, item_system,
+from app.engine import (action, combat_calcs, engine, equations, image_mods, item_system,
                         skill_system)
 from app.engine.combat import playback as pb
 from app.engine.game_state import game
 from app.utilities import utils
+from app.engine.item_components.utility_components import Heal
 
 
 class EvalTargetRestrict(ItemComponent):
@@ -162,7 +163,7 @@ class EffectiveIcon(ItemComponent):
             return 'danger'
         return None
 
-class EffectiveTag(EffectiveIcon, ItemComponent):
+class EffectiveTag(EffectiveIcon):
     nid = 'effective_tag'
     desc = "Item will be considered effective if the targeted enemy has any of the tags listed in this component."
     # requires = ['damage']
@@ -182,3 +183,13 @@ class EffectiveTag(EffectiveIcon, ItemComponent):
                 return int((item.data.get('effective_multiplier') - 1) * might)
             return item.data.get('effective', 0)
         return 0
+
+class MagicHeal(Heal):
+    nid = 'magic_heal'
+    desc = "Heals the target for the specified integer + the HEAL equation defined in the equations editor. Will act oddly if no HEAL equation is defined."
+    tag = ItemTags.DEPRECATED
+
+    def _get_heal_amount(self, unit, target):
+        empower_heal = skill_system.empower_heal(unit, target)
+        empower_heal_received = skill_system.empower_heal_received(target, unit)
+        return self.value + equations.parser.heal(unit) + empower_heal + empower_heal_received

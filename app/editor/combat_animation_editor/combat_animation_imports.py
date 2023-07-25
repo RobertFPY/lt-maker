@@ -1,5 +1,7 @@
 import os, glob
 
+from typing import Optional
+
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtGui import QImage, QPixmap, qRgb, QColor, QPainter
 
@@ -9,6 +11,7 @@ from app.data.resources.resources import RESOURCES
 from app.data.resources import combat_anims, combat_commands, combat_palettes
 
 from app.editor.settings import MainSettingsController
+from app.editor.file_manager.project_file_backend import DEFAULT_PROJECT
 
 import app.editor.utilities as editor_utilities
 
@@ -218,7 +221,7 @@ def import_effect_from_legacy(fn: str):
 
     # Need to save the full image somewhere
     settings = MainSettingsController()
-    if os.path.basename(settings.get_current_project()) != 'default.ltproj':
+    if os.path.basename(settings.get_current_project()) != DEFAULT_PROJECT:
         path = os.path.join(settings.get_current_project(), 'resources', 'combat_effects')
         RESOURCES.combat_effects.save_image(path, current)
 
@@ -526,7 +529,7 @@ def import_from_gba(current, fn):
 
     # Need to save the full image somewhere
     settings = MainSettingsController()
-    if os.path.basename(settings.get_current_project()) != 'default.ltproj':
+    if os.path.basename(settings.get_current_project()) != DEFAULT_PROJECT:
         path = os.path.join(settings.get_current_project(), 'resources', 'combat_anims')
         RESOURCES.combat_anims.save_image(path, current)
 
@@ -554,7 +557,7 @@ def parse_gba_script(fn, pixmaps, weapon_type, empty_pixmaps):
     shield_toss = False  # Whether the next 01 command ends the shield toss
     loop_end = False  # Whether the next 01 command ends the loop
 
-    def get_pose_name(mode: int) -> (str, bool):
+    def get_pose_name(mode: int) -> (Optional[str], Optional[combat_anims.WeaponAnimation]):
         """
         Determines what pose to use and whether to use
         the melee script or a ranged/magic script

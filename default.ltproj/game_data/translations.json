@@ -140,6 +140,14 @@
         "text": "Whether text should make a sound."
     },
     {
+        "nid": "show_bounds_desc",
+        "text": "Display playable area bounds?"
+    },
+    {
+        "nid": "grid_opacity_desc",
+        "text": "Change grid opacity."
+    },
+    {
         "nid": "keymap_desc",
         "text": "Change keyboard bindings."
     },

@@ -5,6 +5,7 @@ from app.constants import WINWIDTH, WINHEIGHT, TILEWIDTH, TILEHEIGHT, TILEX, TIL
 from app.engine.sprites import SPRITES
 from app.engine.fonts import FONT
 from app.engine.sound import get_sound_thread
+from app.data.database.database import DB
 from app.engine import engine, combat_calcs, icons, equations, skill_system, item_system
 from app.engine.game_state import game
 from app.engine.game_counters import ANIMATION_COUNTERS
@@ -216,12 +217,12 @@ class MapCombatInfo():
         self.skill_icons.clear()
 
         # Handle surfaces
-        team = unit.team
+        team = DB.teams.get(unit.team)
 
         self.stats_surf = None
-        self.bg_surf = SPRITES.get('health_' + utils.get_team_color(team)).convert_alpha()
-        self.c_surf = SPRITES.get('combat_stats_' + utils.get_team_color(team)).convert_alpha()
-        self.gem = SPRITES.get('combat_gem_' + utils.get_team_color(team)).convert_alpha()
+        self.bg_surf = SPRITES.get('health_' + team.combat_color).convert_alpha()
+        self.c_surf = SPRITES.get('combat_stats_' + team.combat_color).convert_alpha()
+        self.gem = SPRITES.get('combat_gem_' + team.combat_color).convert_alpha()
 
     def reset(self):
         self.draw_method = None
@@ -342,7 +343,7 @@ class MapCombatInfo():
             self.true_position = (x_pos, y_pos)
 
         elif self.draw_method == 'splash':
-            pos = self.unit.position or self.unit.sprite.fake_position
+            pos = self.unit.sprite.position
             x_pos = pos[0] - game.camera.get_x()
             x_pos = utils.clamp(x_pos, 3, TILEX - 2)
             if pos[1] - game.camera.get_y() < TILEY//2:

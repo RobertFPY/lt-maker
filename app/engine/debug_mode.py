@@ -15,7 +15,7 @@ from app.engine.state import MapState
 from app.events import event_commands
 from app.events.event import Event
 from app.events.triggers import GenericTrigger
-from app.utilities.enums import Alignments
+from app.utilities.enums import HAlignment
 from app.utilities.typing import NID
 
 
@@ -101,7 +101,7 @@ class DebugState(MapState):
         else:
             unit_position_info = [str(game.cursor.position)]
             colors = ['blue']
-        render_text(surf, ['text'], unit_position_info, colors, topleft=(WINWIDTH, 0), align=Alignments.RIGHT)
+        render_text(surf, ['text'], unit_position_info, colors, topleft=(WINWIDTH, 0), align=HAlignment.RIGHT)
 
     def end(self):
         game.cursor.hide()

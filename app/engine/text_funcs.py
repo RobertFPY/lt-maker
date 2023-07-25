@@ -2,15 +2,17 @@ from typing import List
 
 from app.engine.graphics.text.text_renderer import text_width
 
+
 def translate(string):
     from app.data.database.database import DB
     if string in DB.translations.keys():
         return DB.translations.get(string).text
-    else:
-        return string.replace('_', ' ')
+    return string
+
 
 def get_max_width(font_name, text_list):
     return max(text_width(font_name, t) for t in text_list)
+
 
 def split(font_name, string, num_lines, max_width):
     """
@@ -36,7 +38,7 @@ def split(font_name, string, num_lines, max_width):
                 continue
 
         if which_line >= len(lines):
-            lines.append([]) # This shouldn't happen normally
+            lines.append([])  # This shouldn't happen normally
         lines[which_line].append(character)
         length_so_far = text_width(font_name, ''.join(lines[which_line]))
         if num_lines > 1 and length_so_far >= total_length // num_lines - 5:
@@ -46,10 +48,12 @@ def split(font_name, string, num_lines, max_width):
 
     return [''.join(line) for line in lines]
 
+
 def line_chunk(string: str) -> list:
     chunks = string.strip().split(' ')
     chunks = [x for x in chunks if x]  # Remove empty chunks
     return chunks
+
 
 def line_wrap(font_name, string: str, width: int, pad=False) -> List[str]:
     """
@@ -94,6 +98,7 @@ def line_wrap(font_name, string: str, width: int, pad=False) -> List[str]:
             lines.append(chunks.pop())
 
     return lines
+
 
 if __name__ == '__main__':
     from app.engine.fonts import FONT

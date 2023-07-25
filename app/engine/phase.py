@@ -5,6 +5,7 @@ from app.data.database.database import DB
 from app.engine.sprites import SPRITES
 
 from app.utilities import utils
+from app.utilities.typing import NID
 
 from app.engine.sound import get_sound_thread
 from app.engine import config as cf
@@ -13,13 +14,13 @@ from app.engine.game_state import game
 
 import logging
 
-def fade_in_phase_music():
+def fade_in_phase_music(at_turn_change: bool = False):
     logging.info('Fade in Phase Music')
     team = game.phase.get_current()
     music = game.level.music.get(team + '_phase', None)
     fade = game.game_vars.get('_phase_music_fade_ms', 400)
     if music:
-        if DB.constants.value('restart_phase_music'):
+        if at_turn_change and DB.constants.value('restart_phase_music'):
             get_sound_thread().fade_in(music, fade_in=fade, from_start=True)
         else:
             get_sound_thread().fade_in(music, fade_in=fade)
@@ -42,25 +43,38 @@ class PhaseController():
     def __init__(self):
         self.phase_in = []
         for team in DB.teams:
-            self.phase_in.append(PhaseIn(team))
+            self.phase_in.append(PhaseIn(team.nid))
 
         if DB.constants.value('initiative'):
             self.current = 0
             self.previous = 0
         else:
-            self.current = 3 if game.turncount == 0 else 0
+            self.current = len(DB.teams) - 1 if game.turncount == 0 else 0
             self.previous = 0
 
-    def get_current(self):
+    def get_current(self) -> NID:
         if DB.constants.value('initiative'):
             return game.initiative.get_current_unit().team
         else:
-            return DB.teams[self.current]
+            return DB.teams[self.current].nid
 
-    def get_previous(self):
+    def get_previous(self) -> NID:
         if DB.constants.value('initiative'):
             return game.initiative.get_previous_unit().team
-        return DB.teams[self.previous]
+        else:
+            return DB.teams[self.previous].nid
+
+    def get_next(self) -> NID:
+        if DB.constants.value('initiative'):
+            return game.initiative.get_next_unit().team
+        else:
+            counter = 0
+            while counter < 99:
+                counter += 1
+                next_team = DB.teams[(self.current + counter) % len(DB.teams)].nid
+                if any(unit.team == next_team for unit in game.units if unit.position and 'Tile' not in unit.tags):
+                    return next_team
+            return 'player'
 
     def set_player(self):
         self.current = 0
@@ -73,7 +87,7 @@ class PhaseController():
             self.current = (self.current + 1) % len(DB.teams)
 
     def _team_int(self, team: str) -> int:
-        if team in DB.teams:
+        if team in DB.teams.keys():
             return DB.teams.index(team)
         return 1 # 1 is used instead of zero so that it will default to an AI turn
 

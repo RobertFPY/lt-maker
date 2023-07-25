@@ -1,8 +1,15 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
+from __future__ import annotations
 
-from PyQt5.QtGui import QPalette, QColor
+from enum import Enum
+from typing import Dict, Optional
+
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QColor, QPalette
+
+from app.editor.settings.main_settings_controller import MainSettingsController
+from app.engine.item_system import text_color
 
 WHITE = QColor(255, 255, 255)
 BLACK = QColor(0, 0, 0)
@@ -47,6 +54,15 @@ base_palette = QPalette()
 def css_rgb(color, a=False):
     """Get a CSS `rgb` or `rgba` string from a `QtGui.QColor`."""
     return ("rgba({}, {}, {}, {})" if a else "rgb({}, {}, {})").format(*color.getRgb())
+
+class EventSyntaxHighlightingPalette():
+    line_number_color: QColor
+    func_color: QColor
+    comment_color: QColor
+    error_underline_color: QColor
+    text_color: QColor
+    special_text_color: QColor
+    special_func_color: QColor
 
 class QLightPalette(QPalette):
     """Dark palette for a Qt application meant to be used with the Fusion theme."""
@@ -111,6 +127,23 @@ class QLightPalette(QPalette):
         app.setPalette(app.style().standardPalette())
         self.set_stylesheet(app)
 
+    def background_png(self) -> Optional[str]:
+        return None
+
+    def icon_dir(self) -> str:
+        return 'icons/icons'
+
+    def event_syntax_highlighting(self) -> EventSyntaxHighlightingPalette:
+        palette = EventSyntaxHighlightingPalette()
+        palette.line_number_color = Qt.darkGray
+        palette.func_color = QColor(52, 103, 174)
+        palette.comment_color = Qt.darkGray
+        palette.error_underline_color = Qt.red
+        palette.text_color = QColor(63, 109, 58)
+        palette.special_text_color = Qt.darkMagenta
+        palette.special_func_color = Qt.red
+        return palette
+
 class QDarkPalette(QLightPalette):
     """Dark palette for a Qt application meant to be used with the Fusion theme."""
     def __init__(self, *__args):
@@ -142,6 +175,20 @@ class QDarkPalette(QLightPalette):
         app.setPalette(self)
         self.set_stylesheet(app)
 
+    def icon_dir(self) -> str:
+        return 'icons/dark_icons'
+
+    def event_syntax_highlighting(self) -> EventSyntaxHighlightingPalette:
+        palette = EventSyntaxHighlightingPalette()
+        palette.line_number_color = QColor(144, 144, 138)
+        palette.func_color = QColor(102, 217, 239)
+        palette.comment_color = QColor(117, 113, 94)
+        palette.error_underline_color = QColor(249, 38, 114)
+        palette.text_color = QColor(230, 219, 116)
+        palette.special_text_color = QColor(174, 129, 255)
+        palette.special_func_color = (249, 38, 114)
+        return palette
+
 class QDiscordPalette(QDarkPalette):
     def __init__(self, *__args):
         super().__init__(*__args)
@@ -166,7 +213,7 @@ class QDiscordPalette(QDarkPalette):
         self.setColor(QPalette.Disabled, QPalette.Text, DISABLED)
         self.setColor(QPalette.Disabled, QPalette.ButtonText, DISABLED)
 
-class QDarkBGPalette(QDarkPalette):
+class QSiderealPalette(QDarkPalette):
     """Dark palette for a Qt application meant to be used with the Fusion theme."""
     def __init__(self, *__args):
         super().__init__(*__args)
@@ -191,7 +238,10 @@ class QDarkBGPalette(QDarkPalette):
         self.setColor(QPalette.Disabled, QPalette.Text, DISABLED)
         self.setColor(QPalette.Disabled, QPalette.ButtonText, DISABLED)
 
-class QBlueBGPalette(QDarkPalette):
+    def background_png(self) -> Optional[str]:
+        return 'icons/bg.png'
+
+class QMistPalette(QDarkPalette):
     """Dark palette for a Qt application meant to be used with the Fusion theme."""
     def __init__(self, *__args):
         super().__init__(*__args)
@@ -216,7 +266,10 @@ class QBlueBGPalette(QDarkPalette):
         self.setColor(QPalette.Disabled, QPalette.Text, DISABLED)
         self.setColor(QPalette.Disabled, QPalette.ButtonText, DISABLED)
 
-class QSkyBGPalette(QLightPalette):
+    def background_png(self) -> Optional[str]:
+        return 'icons/bg2.png'
+
+class QSkyPalette(QLightPalette):
     def __init__(self, *__args):
         super().__init__(*__args)
         self.highlight_color = SKYHIGHLIGHT
@@ -246,7 +299,10 @@ class QSkyBGPalette(QLightPalette):
         app.setPalette(self)
         self.set_stylesheet(app)
 
-class QPurpleBGPalette(QLightPalette):
+    def background_png(self) -> Optional[str]:
+        return 'icons/bg3.png'
+
+class QPurplePalette(QLightPalette):
     def __init__(self, *__args):
         super().__init__(*__args)
         self.highlight_color = PURPLEHIGHLIGHT
@@ -276,41 +332,46 @@ class QPurpleBGPalette(QLightPalette):
         app.setPalette(self)
         self.set_stylesheet(app)
 
-def set(app, theme_idx):
+    def background_png(self) -> Optional[str]:
+        return 'icons/bg4.png'
+
+class ThemeType(Enum):
+    Light = 0
+    Dark = 1
+    Discord = 2
+    Sidereal = 3
+    Mist = 4
+    Sky = 5
+    Purple = 6
+
+THEMES: Dict[ThemeType, QPalette] = {
+    ThemeType.Light: QLightPalette(),
+    ThemeType.Dark: QDarkPalette(),
+    ThemeType.Discord: QDiscordPalette(),
+    ThemeType.Sidereal: QSiderealPalette(),
+    ThemeType.Mist: QMistPalette(),
+    ThemeType.Sky: QSkyPalette(),
+    ThemeType.Purple: QPurplePalette(),
+}
+
+def get_theme(theme: Optional[ThemeType] = None):
+    if not theme:
+        settings = MainSettingsController()
+        theme_idx = settings.get_theme(0)
+        return THEMES[ThemeType(theme_idx)]
+    return THEMES[theme]
+
+def set(app, theme: ThemeType | QPalette):
     """
     Unfortunately for now, icon colors don't change until restart
     """
-    if theme_idx == 0:
-        d = QLightPalette()
-        d.set_app(app)
-    elif theme_idx == 1:
-        d = QDarkPalette()
-        d.set_app(app)
-    elif theme_idx == 2:
-        d = QDiscordPalette()
-        d.set_app(app)
-    elif theme_idx == 3:
-        d = QDarkBGPalette()
-        d.set_app(app)
-    elif theme_idx == 4:
-        d = QBlueBGPalette()
-        d.set_app(app)
-    elif theme_idx == 5:
-        d = QSkyBGPalette()
-        d.set_app(app)
-    elif theme_idx == 6:
-        d = QPurpleBGPalette()
-        d.set_app(app)
-
-    if theme_idx == 3:
-        app.custom_style_sheet += "QDialog {background-image: url(icons/bg.png)};"
-    elif theme_idx == 4:
-        app.custom_style_sheet += "QDialog {background-image: url(icons/bg2.png)};"
-    elif theme_idx == 5:
-        app.custom_style_sheet += "QDialog {background-image: url(icons/bg3.png)};"
-    elif theme_idx == 6:
-        app.custom_style_sheet += "QDialog {background-image: url(icons/bg4.png)};"
+    if isinstance(theme, ThemeType):
+        theme = get_theme(theme)
+    theme.set_app(app)
+    bg = theme.background_png()
+    if bg:
+        app.custom_style_sheet += "QDialog {background-image: url(%s)};" % bg
     else:
-        app.custom_style_sheet += "QDialog {background-image: none;"
+        app.custom_style_sheet += "QDialog {background-image: none};"
 
     app.setStyleSheet(app.custom_style_sheet)

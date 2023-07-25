@@ -134,5 +134,5 @@ class MountainTerrain(Terrain):
     def mountain_processing(self, thread):
         print("Processing... %s" % id(thread))
         for pos, coord in thread.organization.items():
-            sprite = self.get_pixmap(coord, 0, 0)
+            sprite = self.get_pixmap(coord, 0)
             self.tilemap.tile_grid[pos] = sprite

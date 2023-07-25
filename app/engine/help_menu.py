@@ -11,7 +11,7 @@ from app.engine.graphics.text.text_renderer import (fix_tags, font_height, rende
                                                     text_width)
 from app.engine.sprites import SPRITES
 from app.utilities import utils
-from app.utilities.enums import Alignments
+from app.utilities.enums import HAlignment
 from app.utilities.typing import NID
 
 MAX_TEXT_WIDTH = WINWIDTH - 40
@@ -50,7 +50,7 @@ class HelpDialog():
         from app.engine import dialog
         desc = desc.replace('\n', '{br}')
         self.dlg = \
-            dialog.Dialog.from_style(game.speak_styles.get('__default_help'), desc, 
+            dialog.Dialog.from_style(game.speak_styles.get('__default_help'), desc,
                                      width=self.greatest_line_len + 16)
         self.dlg.position = (0, (16 if self.name else 0))
 
@@ -62,7 +62,7 @@ class HelpDialog():
 
     def find_num_lines(self, desc: str) -> int:
         '''Returns the number of lines in the description'''
-        # Split on \n, then go through each element in the list 
+        # Split on \n, then go through each element in the list
         # and break it into further strings if too long
         desc = desc.replace('{br}', '\n')
         lines = desc.split("\n")
@@ -178,7 +178,7 @@ class StatDialog(HelpDialog):
         from app.engine import dialog
         desc = desc.replace('\n', '{br}')
         self.dlg = \
-            dialog.Dialog.from_style(game.speak_styles.get('__default_help'), desc, 
+            dialog.Dialog.from_style(game.speak_styles.get('__default_help'), desc,
                                      width=160)
         self.dlg.position = (0, 0)
 
@@ -317,7 +317,7 @@ class ItemHelpDialog(HelpDialog):
         weapon_type = item_system.weapon_type(self.unit, self.item)
         if weapon_type:
             icons.draw_weapon(help_surf, weapon_type, (8, 6))
-        render_text(help_surf, [self.text_font], [str(self.vals[0])], ['blue'], (50, 6), Alignments.RIGHT)
+        render_text(help_surf, [self.text_font], [str(self.vals[0])], ['blue'], (50, 6), HAlignment.RIGHT)
 
         name_positions = [(56, 6), (106, 6), (8, 22), (56, 22), (106, 22)]
         name_positions.reverse()
@@ -329,7 +329,7 @@ class ItemHelpDialog(HelpDialog):
                 name_pos = name_positions.pop()
                 render_text(help_surf, [self.text_font], [n], ['yellow'], name_pos)
                 val_pos = val_positions.pop()
-                render_text(help_surf, [self.text_font], [str(v)], ['blue'], val_pos, Alignments.RIGHT)
+                render_text(help_surf, [self.text_font], [str(v)], ['blue'], val_pos, HAlignment.RIGHT)
 
         if self.dlg:
             self.dlg.update()

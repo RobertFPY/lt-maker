@@ -198,5 +198,5 @@ class MapIconButton(QPushButton):
     def onIconSourcePicker(self):
         from app.editor.icon_editor import icon_tab
         res, ok = icon_tab.get_map_icon_editor()
-        if ok:
+        if res and ok:
             self.change_icon(res.nid)

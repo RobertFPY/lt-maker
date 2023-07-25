@@ -9,6 +9,7 @@ from app.engine import action, combat_calcs, equations, banner
 from app.engine import item_system, skill_system, item_funcs
 from app.engine.game_state import game
 from app.engine.combat import playback as pb
+from app.engine.movement import movement_funcs
 
 class PermanentStatChange(ItemComponent):
     nid = 'permanent_stat_change'
@@ -20,9 +21,8 @@ class PermanentStatChange(ItemComponent):
     _hit_count = 0
 
     def _target_restrict(self, defender):
-        klass = DB.classes.get(defender.klass)
         for stat, inc in self.value:
-            if inc <= 0 or defender.stats[stat] < klass.max_stats.get(stat, 30):
+            if inc <= 0 or defender.stats[stat] < defender.get_stat_cap(stat):
                 return True
         return False
 
@@ -43,9 +43,8 @@ class PermanentStatChange(ItemComponent):
     def end_combat(self, playback, unit, item, target, mode):
         if self._hit_count > 0:
             stat_changes = {k: v*self._hit_count for (k, v) in self.value}
-            klass = DB.classes.get(target.klass)
             # clamp stat changes
-            stat_changes = {k: utils.clamp(v, -target.stats[k], klass.max_stats.get(k, 30) - target.stats[k]) for k, v in stat_changes.items()}
+            stat_changes = {k: utils.clamp(v, -target.stats[k], unit.get_stat_cap(k) - target.stats[k]) for k, v in stat_changes.items()}
             action.do(action.ApplyStatChanges(target, stat_changes))
             if any(v != 0 for v in stat_changes.values()):
                 game.memory['stat_changes'] = stat_changes
@@ -155,7 +154,7 @@ class StatusesOnHit(ItemComponent):
             total += ai_status_priority(unit, target, item, move, status_nid)
         return total
 
-class StatusAfterCombatOnHit(StatusOnHit, ItemComponent):
+class StatusAfterCombatOnHit(StatusOnHit):
     nid = 'status_after_combat_on_hit'
     desc = "If the target is hit they gain the specified status at the end of combat. Prevents changes being applied mid-combat."
     tag = ItemTags.SPECIAL
@@ -191,7 +190,7 @@ class Shove(ItemComponent):
         new_position = (unit_to_move.position[0] + offset_x * magnitude,
                         unit_to_move.position[1] + offset_y * magnitude)
 
-        mcost = game.movement.get_mcost(unit_to_move, new_position)
+        mcost = movement_funcs.get_mcost(unit_to_move, new_position)
         if game.board.check_bounds(new_position) and \
                 not game.board.get_unit(new_position) and \
                 mcost <= equations.parser.movement(unit_to_move):
@@ -219,7 +218,7 @@ class ShoveOnEndCombat(Shove):
             if new_position:
                 action.do(action.ForcedMovement(target, new_position))
 
-class ShoveTargetRestrict(Shove, ItemComponent):
+class ShoveTargetRestrict(Shove):
     nid = 'shove_target_restrict'
     desc = "Works the same as shove but will not allow the item to be selected if the action cannot be performed."
     tag = ItemTags.SPECIAL
@@ -261,7 +260,7 @@ class SwapOnEndCombat(ItemComponent):
     tag = ItemTags.SPECIAL
 
     def end_combat(self, playback, unit, item, target, mode):
-        if not skill_system.ignore_forced_movement(unit) and \
+        if target and not skill_system.ignore_forced_movement(unit) and \
                 not skill_system.ignore_forced_movement(target) and \
                 mode == 'attack':
             action.do(action.Swap(unit, target))
@@ -281,7 +280,7 @@ class Pivot(ItemComponent):
         new_position = (anchor_pos[0] + offset_x * -magnitude,
                         anchor_pos[1] + offset_y * -magnitude)
 
-        mcost = game.movement.get_mcost(unit_to_move, new_position)
+        mcost = movement_funcs.get_mcost(unit_to_move, new_position)
         if game.board.check_bounds(new_position) and \
                 not game.board.get_unit(new_position) and \
                 mcost <= equations.parser.movement(unit_to_move):
@@ -296,7 +295,7 @@ class Pivot(ItemComponent):
                 playback.append(pb.ShoveHit(unit, item, target))
 
 
-class PivotTargetRestrict(Pivot, ItemComponent):
+class PivotTargetRestrict(Pivot):
     nid = 'pivot_target_restrict'
     desc = "Suppresses the Pivot command when it would be invalid."
     tag = ItemTags.SPECIAL
@@ -340,8 +339,8 @@ class DrawBack(ItemComponent):
         new_position_target = (target.position[0] - offset_x * magnitude,
                                target.position[1] - offset_y * magnitude)
 
-        mcost_user = game.movement.get_mcost(user, new_position_user)
-        mcost_target = game.movement.get_mcost(target, new_position_target)
+        mcost_user = movement_funcs.get_mcost(user, new_position_user)
+        mcost_target = movement_funcs.get_mcost(target, new_position_target)
 
         if game.board.check_bounds(new_position_user) and \
                 not game.board.get_unit(new_position_user) and \
@@ -359,7 +358,7 @@ class DrawBack(ItemComponent):
                 playback.append(pb.ShoveHit(unit, item, target))
 
 
-class DrawBackTargetRestrict(DrawBack, ItemComponent):
+class DrawBackTargetRestrict(DrawBack):
     nid = 'draw_back_target_restrict'
     desc = "Suppresses the Draw Back command when it would be invalid."
     tag = ItemTags.SPECIAL
@@ -458,7 +457,7 @@ class Steal(ItemComponent):
             return steal_term + 0.01 * distance_term
         return 0
 
-class GBASteal(Steal, ItemComponent):
+class GBASteal(Steal):
     nid = 'gba_steal'
     desc = "Steal any non-weapon, non-spell from target on hit"
     tag = ItemTags.SPECIAL

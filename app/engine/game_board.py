@@ -18,14 +18,14 @@ class GameBoard(object):
         self.reset_grid(tilemap)
 
         # Keeps track of what team occupies which tile
-        self.team_grid: List[List[str]] = self.init_unit_grid()
+        self.team_grid: List[List[NID]] = self.init_unit_grid()
         # Keeps track of which unit occupies which tile
         self.unit_grid: List[List[UnitObject]] = self.init_unit_grid()
 
         # Fog of War -- one for each team
         self.fog_of_war_grids = {}
         for team in DB.teams:
-            self.fog_of_war_grids[team] = self.init_aura_grid()
+            self.fog_of_war_grids[team.nid] = self.init_aura_grid()
         self.fow_vantage_point = {}  # Unit: Position where the unit is that's looking
         self.fog_regions = self.init_aura_grid()
         self.fog_region_set = set()  # Set of Fog region nids so we can tell how many fog regions exist at all times
@@ -50,17 +50,38 @@ class GameBoard(object):
         mtype_grid = [[None for j in range(self.height)] for i in range(self.width)]
         for x in range(self.width):
             for y in range(self.height):
-                if DB.terrain:
-                    terrain_nid = game.get_terrain_nid(tilemap, (x, y))
-                    terrain_type = DB.terrain.get(terrain_nid)
-                    if not terrain_type:
-                        terrain_type = DB.terrain[0]
-                    mtype_grid[x][y] = terrain_type.mtype
-                else:
-                    mtype_grid[x][y] = None
+                terrain_nid = game.get_terrain_nid(tilemap, (x, y))
+                terrain = DB.terrain.get(terrain_nid)
+                if not terrain:
+                    terrain = DB.terrain[0]
+                mtype_grid[x][y] = terrain.mtype
         for idx, mode in enumerate(DB.mcost.unit_types):
             self.mcost_grids[mode] = self.init_grid(mode, tilemap, mtype_grid)
         self.opacity_grid = self.init_opacity_grid(tilemap)
+
+    def reset_pos(self, tilemap, pos):
+        x, y = pos
+        idx = x * self.height + y
+        terrain_nid = game.get_terrain_nid(tilemap, (x, y))
+        terrain = DB.terrain.get(terrain_nid)
+        if not terrain:
+            terrain = DB.terrain[0]
+        mtype = terrain.mtype
+
+        # Movement reset
+        for movement_group in DB.mcost.unit_types:
+            mcost_grid = self.mcost_grids[movement_group]        
+            if mtype:
+                tile_cost = DB.mcost.get_mcost(movement_group, mtype)
+            else:
+                tile_cost = 1
+            mcost_grid[idx] = Node(x, y, tile_cost < 99, tile_cost)
+
+        # Opacity reset
+        if terrain:
+            self.opacity_grid[idx] = terrain.opaque
+        else:
+            self.opacity_grid[idx] = False
 
     # For movement
     def init_grid(self, movement_group, tilemap, mtype_grid: Dict[int, Dict[int, int]]):
@@ -105,12 +126,13 @@ class GameBoard(object):
             return self.unit_grid[idx][0]
         return None
 
-    def rationalize_pos(self, pos: tuple):
-        """Similar to in roam_state, except
-        does not force the unit into a particular position"""
-        return (int(round(pos[0])), int(round(pos[1])))
+    def get_units(self, pos: Tuple[int, int]) -> List[UnitObject]:
+        if not pos:
+            return []
+        idx = pos[0] * self.height + pos[1]
+        return self.unit_grid[idx]
 
-    def get_team(self, pos):
+    def get_team(self, pos: Tuple[int, int]) -> NID:
         if not pos:
             return None
         idx = pos[0] * self.height + pos[1]
@@ -120,7 +142,7 @@ class GameBoard(object):
 
     def can_move_through(self, team, adj) -> bool:
         unit_team = self.get_team((adj.x, adj.y))
-        if not unit_team or utils.compare_teams(team, unit_team):
+        if not unit_team or team in DB.teams.get_allies(unit_team):
             return True
         if team == 'player' or DB.constants.value('ai_fog_of_war'):
             if not self.in_vision((adj.x, adj.y), team):
@@ -184,7 +206,7 @@ class GameBoard(object):
         for cell in self.vision_regions:
             cell.discard(region.nid)
 
-    def in_vision(self, pos, team='player') -> bool:
+    def in_vision(self, pos: Tuple[int, int], team: NID = 'player') -> bool:
         idx = pos[0] * self.height + pos[1]
 
         # Anybody can see things in vision regions no matter what
@@ -198,15 +220,17 @@ class GameBoard(object):
                 # Since I'm not sure how we'd handle cases where a vision region is obscured by an opaque tile
                 if DB.constants.value('fog_los'):
                     fog_of_war_radius = game.level_vars.get('_fog_of_war_radius', 0)
-                    valid = line_of_sight.simple_check(pos, 'player', fog_of_war_radius) or line_of_sight.simple_check(pos, 'other', fog_of_war_radius)
+                    valid: bool = False  # Can we see the pos?
+                    # We can if any of our allies can see the pos.
+                    for team_nid in DB.teams.get_allies(team):
+                        valid |= line_of_sight.simple_check(pos, team_nid, fog_of_war_radius)
                     if not valid:
                         return False
-                player_grid = self.fog_of_war_grids['player']
-                if player_grid[idx]:
-                    return True
-                other_grid = self.fog_of_war_grids['other']
-                if other_grid[idx]:
-                    return True
+                
+                for team_nid in DB.teams.get_allies(team):
+                    team_grid = self.fog_of_war_grids[team_nid]
+                    if team_grid[idx]:
+                        return True
             else:
                 if DB.constants.value('fog_los'):
                     fog_of_war_radius = self.get_fog_of_war_radius(team)
@@ -222,9 +246,10 @@ class GameBoard(object):
 
     def get_fog_of_war_radius(self, team: str) -> int:
         ai_fog_of_war_radius = game.level_vars.get('_ai_fog_of_war_radius', game.level_vars.get('_fog_of_war_radius', 0))
+        player_team_allies = DB.teams.allies
         if team == 'player':
             fog_of_war_radius = game.level_vars.get('_fog_of_war_radius', 0)
-        elif team == 'other':
+        elif team in player_team_allies:
             fog_of_war_radius = game.level_vars.get('_other_fog_of_war_radius', ai_fog_of_war_radius)
         else:
             fog_of_war_radius = ai_fog_of_war_radius

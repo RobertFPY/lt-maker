@@ -193,7 +193,7 @@ class MiniMap(object):
     minimap_units = SPRITES.get('Minimap_Sprites')
     minimap_cursor = SPRITES.get('Minimap_Cursor')
     cliffs = ('Cliff', 'Desert_Cliff', 'Snow_Cliff')
-    complex_map = ('Wall', 'River', 'Sand', 'Sea')
+    complex_map = ('Wall', 'River', 'Sand', 'Sea', 'Lava')
     scale_factor = 4
 
     def __init__(self, tilemap, units):
@@ -269,12 +269,15 @@ class MiniMap(object):
         # Door
         elif key == 'Door':
             return self.door_type(position)
-        # Wall, River, Desert, Sea
+        # Wall, River, Desert, Sea, Lava
         elif key in DB.minimap.complex_map:
             return self.complex_shape(key, position)
         # Coast
         elif key == 'Coast':
             return self.coast(position)
+        # Lava Coast
+        elif key == 'Lava_Coast':
+            return self.coast(position, sea_keys=('Lava',), coast=key, offset=(0, 2))
         # Cliff
         elif key in self.cliffs:
             pos = self.cliff_manager.get_orientation(position)
@@ -291,17 +294,10 @@ class MiniMap(object):
         for unit in units:
             if unit.position and 'Tile' not in unit.tags and game.board.in_vision(unit.position):
                 pos = unit.position[0] * self.scale_factor, unit.position[1] * self.scale_factor
-                if unit.team == 'player':
-                    self.pin_surf.blit(engine.subsurface(self.minimap_units, (0, 0, self.scale_factor, self.scale_factor)), pos)
-                elif unit.team == 'enemy':
-                    self.pin_surf.blit(engine.subsurface(self.minimap_units, (self.scale_factor*1, 0, self.scale_factor, self.scale_factor)), pos)
-                elif unit.team == 'other':
-                    self.pin_surf.blit(engine.subsurface(self.minimap_units, (self.scale_factor*2, 0, self.scale_factor, self.scale_factor)), pos)
-                else:
-                    self.pin_surf.blit(engine.subsurface(self.minimap_units, (self.scale_factor*3, 0, self.scale_factor, self.scale_factor)), pos)
+                idx: int = DB.teams.index(unit.team)
+                self.pin_surf.blit(engine.subsurface(self.minimap_units, (self.scale_factor * idx, 0, self.scale_factor, self.scale_factor)), pos)
 
-    def coast(self, position, allow_recurse=True):
-        sea_keys = ('Sea', 'Pier', 'River', 'Bridge')
+    def coast(self, position, allow_recurse=True, coast_key='Coast', sea_keys=('Sea', 'Pier', 'River', 'Bridge'), offset=(0, 0)):
         # A is up, B is left, C is right, D is down
         # This code determines which minimap tiles fit assuming you only knew one side of the tile, and then intersects to find the best
         a, b, c, d, e, f, g, h = None, None, None, None, None, None, None, None
@@ -310,7 +306,7 @@ class MiniMap(object):
             a = {2, 3, 4, 8, 11, 12, 13}
         elif self.get_minimap_key(up_pos) in sea_keys:
             a = {0, 1, 5, 6, 7, 9, 10}
-        elif self.get_minimap_key(up_pos) == 'Coast':
+        elif self.get_minimap_key(up_pos) == coast_key:
             a = {2, 3, 5, 6, 7, 9, 10, 11, 12, 13}
         else:
             a = {2, 3, 4, 8, 11, 12, 13}
@@ -319,7 +315,7 @@ class MiniMap(object):
             b = {1, 3, 4, 7, 10, 12, 13}
         elif self.get_minimap_key(left_pos) in sea_keys:
             b = {0, 2, 5, 6, 8, 9, 11}
-        elif self.get_minimap_key(left_pos) == 'Coast':
+        elif self.get_minimap_key(left_pos) == coast_key:
             b = {1, 4, 5, 6, 8, 9, 10, 11, 12, 13}
         else:
             b = {1, 3, 4, 7, 10, 12, 13}
@@ -328,7 +324,7 @@ class MiniMap(object):
             c = {1, 2, 4, 6, 9, 11, 13}
         elif self.get_minimap_key(right_pos) in sea_keys:
             c = {0, 3, 5, 7, 8, 10, 12}
-        elif self.get_minimap_key(right_pos) == 'Coast':
+        elif self.get_minimap_key(right_pos) == coast_key:
             c = {1, 4, 5, 7, 8, 9, 10, 11, 12, 13}
         else:
             c = {1, 2, 4, 6, 9, 11, 13}
@@ -337,7 +333,7 @@ class MiniMap(object):
             d = {1, 2, 3, 5, 9, 10, 13}
         elif self.get_minimap_key(down_pos) in sea_keys:
             d = {0, 4, 6, 7, 8, 11, 12}
-        elif self.get_minimap_key(down_pos) == 'Coast':
+        elif self.get_minimap_key(down_pos) == coast_key:
             d = {2, 3, 6, 7, 8, 9, 10, 11, 12, 13}
         else:
             d = {1, 2, 3, 5, 9, 10, 13}
@@ -346,7 +342,7 @@ class MiniMap(object):
             e = {0, 1, 2, 3, 4, 7, 8, 10, 11, 12}
         elif self.get_minimap_key(topleft_pos) in sea_keys:
             e = {0, 1, 2, 5, 6, 7, 8, 9, 10, 11}
-        elif self.get_minimap_key(topleft_pos) == 'Coast':
+        elif self.get_minimap_key(topleft_pos) == coast_key:
             e = {0, 1, 2, 5, 6, 7, 8, 9, 10, 11, 12}
         else:
             e = {0, 1, 2, 3, 4, 7, 8, 9, 10, 11, 12}
@@ -355,7 +351,7 @@ class MiniMap(object):
             f = {0, 1, 2, 3, 4, 6, 8, 9, 11, 12}
         elif self.get_minimap_key(topright_pos) in sea_keys:
             f = {0, 1, 3, 5, 6, 7, 8, 9, 10, 12}
-        elif self.get_minimap_key(topright_pos) == 'Coast':
+        elif self.get_minimap_key(topright_pos) == coast_key:
             f = {0, 1, 3, 5, 6, 7, 8, 9, 10, 11, 12}
         else:
             f = {0, 1, 2, 3, 4, 6, 8, 9, 10, 11, 12}
@@ -364,7 +360,7 @@ class MiniMap(object):
             g = {0, 1, 2, 3, 4, 5, 7, 9, 10, 12}
         elif self.get_minimap_key(bottomleft_pos) in sea_keys:
             g = {0, 2, 4, 5, 6, 7, 8, 9, 11, 12}
-        elif self.get_minimap_key(bottomleft_pos) == 'Coast':
+        elif self.get_minimap_key(bottomleft_pos) == coast_key:
             g = {0, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12}
         else:
             g = {0, 1, 2, 3, 4, 5, 7, 9, 10, 11, 12}
@@ -373,7 +369,7 @@ class MiniMap(object):
             h = {0, 1, 2, 3, 4, 5, 6, 9, 10, 11}
         elif self.get_minimap_key(bottomright_pos) in sea_keys:
             h = {0, 3, 4, 5, 6, 7, 8, 10, 11, 12}
-        elif self.get_minimap_key(bottomright_pos) == 'Coast':
+        elif self.get_minimap_key(bottomright_pos) == coast_key:
             h = {0, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}
         else:
             h = {0, 1, 2, 3, 4, 5, 6, 9, 10, 11, 12}
@@ -388,13 +384,13 @@ class MiniMap(object):
             # If we are a diagonal, we need to figure out what the left and right diagonals look like
             # if they are also diagonals ... then we can match better
             if allow_recurse and value in (9, 10, 11, 12):
-                if self.tilemap.check_bounds(left_pos) and self.get_minimap_key(left_pos) == 'Coast':
+                if self.tilemap.check_bounds(left_pos) and self.get_minimap_key(left_pos) == coast_key:
                     left = self.coast(left_pos, False)
                     if left == 9:
                         value = 10
                     elif left == 11:
                         value = 12
-                if self.tilemap.check_bounds(right_pos) and self.get_minimap_key(right_pos) == 'Coast':
+                if self.tilemap.check_bounds(right_pos) and self.get_minimap_key(right_pos) == coast_key:
                     right = self.coast(right_pos, False)
                     if right == 10:
                         value = 9
@@ -433,7 +429,7 @@ class MiniMap(object):
         elif value == 14:
             row, column = 0, 0
 
-        return self.get_sprite((row, column))
+        return self.get_sprite((row + offset[0], column + offset[1]))
 
     def bridge_left_right(self, position):
         # Keep running left along bridge until we leave bridge
@@ -441,7 +437,7 @@ class MiniMap(object):
         while self.tilemap.check_bounds(pos) and self.get_minimap_key(pos) == 'Bridge':
             pos = (pos[0] - 1, pos[1]) # Go left
         # If we hit sea or the end of the map, not left/right bridge
-        if not self.tilemap.check_bounds(pos) or self.get_minimap_key(pos) in ('Sea', 'River', 'Wall'):
+        if not self.tilemap.check_bounds(pos) or self.get_minimap_key(pos) in ('Sea', 'River', 'Wall', 'Lava'):
             return False
         else:
             return True

@@ -18,8 +18,6 @@ key_to_button = {'Tab': Qt.Key_Tab,
 button_to_key = {v: k for k, v in key_to_button.items()}
 
 class PreferencesDialog(Dialog):
-    theme_options = ['Light', 'Dark', 'Discord', 'Sidereal', 'Mist', 'Sky', 'Purple']
-
     def __init__(self, parent):
         super().__init__(parent)
         self.window = parent
@@ -42,6 +40,7 @@ class PreferencesDialog(Dialog):
         self.saved_preferences['save_backup'] = self.settings.get_should_make_backup_save()
         self.saved_preferences['editor_close_button'] = self.settings.get_editor_close_button(Qt.Key_Escape)
         self.saved_preferences['save_chunks'] = self.settings.get_should_save_as_chunks()
+        self.saved_preferences['auto_open_last'] = self.settings.get_auto_open()
 
         self.available_options = name_to_button.keys()
         self.autocomplete_options = key_to_button.keys()
@@ -60,9 +59,9 @@ class PreferencesDialog(Dialog):
         self.place.edit.currentIndexChanged.connect(self.place_changed)
 
         self.theme = PropertyBox('Theme', ComboBox, self)
-        for option in self.theme_options:
-            self.theme.edit.addItem(option)
-        self.theme.edit.setValue(self.theme_options[self.saved_preferences['theme']])
+        for option in dark_theme.ThemeType:
+            self.theme.edit.addItem(option.name)
+        self.theme.edit.setValue(dark_theme.ThemeType(self.saved_preferences['theme']).name)
         self.theme.edit.currentIndexChanged.connect(self.theme_changed)
 
         self.autocomplete = PropertyCheckBox('Event Autocomplete', QCheckBox, self)
@@ -77,6 +76,9 @@ class PreferencesDialog(Dialog):
         self.savechunks = PropertyCheckBox('Save data in chunks?', QCheckBox, self)
         self.savechunks.setToolTip("Saving data in chunks makes it easier to collaborate with others, but also makes saving slower.")
         self.savechunks.edit.setChecked(bool(self.saved_preferences['save_chunks']))
+        self.autoopen = PropertyCheckBox('Automatically open most recent project?', QCheckBox, self)
+        self.autoopen.setToolTip("Skips the recent project dialog.")
+        self.autoopen.edit.setChecked(bool(self.saved_preferences['auto_open_last']))
 
         self.autocomplete_button = PropertyBox('Autocomplete Button', ComboBox, self)
         for option in self.autocomplete_options:
@@ -117,6 +119,7 @@ class PreferencesDialog(Dialog):
         self.layout.addWidget(self.crashlog)
         self.layout.addWidget(self.savebackup)
         self.layout.addWidget(self.savechunks)
+        self.layout.addWidget(self.autoopen)
         self.layout.addWidget(self.autosave)
         self.layout.addWidget(self.buttonbox)
 
@@ -163,8 +166,9 @@ class PreferencesDialog(Dialog):
     def theme_changed(self, idx):
         choice = self.theme.edit.currentText()
         ap = QApplication.instance()
-        dark_theme.set(ap, idx)
-        self.window.set_icons(idx)  # Change icons of main editor
+        theme_type = dark_theme.ThemeType[choice]
+        dark_theme.set(ap, theme_type)
+        self.window.set_icons(theme_type)  # Change icons of main editor
 
     def autosave_time_changed(self, val):
         t = timer.get_timer()
@@ -187,6 +191,8 @@ class PreferencesDialog(Dialog):
         self.settings.set_should_display_crash_logs(crash_log_setting)
         save_chunks_setting = 1 if self.savechunks.edit.isChecked() else 0
         self.settings.set_should_save_as_chunks(save_chunks_setting)
+        auto_open_setting = 1 if self.autoopen.edit.isChecked() else 0
+        self.settings.set_auto_open(auto_open_setting)
         save_backup_setting = 1 if self.savebackup.edit.isChecked() else 0
         self.settings.set_should_make_backup_save(save_backup_setting)
         autosave = float(self.autosave.edit.value())

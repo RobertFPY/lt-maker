@@ -82,6 +82,13 @@ class PropertiesMenu(QWidget):
         self.title_box.edit.textChanged.connect(self.title_changed)
         form.addWidget(self.title_box)
 
+        # Records
+        self.record_box = PropertyCheckBox("Display in Records?", QCheckBox, self)
+        self.record_box.setToolTip("You might want to turn this off if this level is not a main story level that should be viewed in the Records screen.")
+        self.record_box.edit.setChecked(True)
+        self.record_box.edit.stateChanged.connect(self.record_changed)
+        form.addWidget(self.record_box)
+
         self.party_box = PartyBox(self)
         self.party_box.edit.activated.connect(self.party_changed)
         form.addWidget(self.party_box)
@@ -157,6 +164,7 @@ class PropertiesMenu(QWidget):
             return
         self.title_box.edit.setText(current.name)
         self.nid_box.edit.setText(current.nid)
+        self.record_box.edit.setChecked(bool(current.should_record))
         if current.party in DB.parties.keys():
             idx = DB.parties.index(current.party)
             self.party_box.edit.setCurrentIndex(idx)
@@ -209,6 +217,9 @@ class PropertiesMenu(QWidget):
     def title_changed(self, text):
         self.current.name = text
         self.state_manager.change_and_broadcast('ui_refresh_signal', None)
+
+    def record_changed(self, state):
+        self.current.should_record = bool(state)
 
     def party_changed(self):
         idx = self.party_box.edit.currentIndex()

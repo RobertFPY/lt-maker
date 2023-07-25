@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 from app.utilities.data import Data, Prefab
+from app.utilities import str_utils
 
 # === Can get bonuses to combat statistics based on weapon_type and weapon_rank
 class CombatBonus(Prefab):
@@ -148,6 +149,15 @@ class WeaponCatalog(Data[WeaponType]):
 
     def default(self):
         return WexpGain(False, 0)
+
+    def create_new(self, db):
+        nids = [d.nid for d in self]
+        nid = name = str_utils.get_next_name("New Weapon Type", nids)
+        new_weapon = WeaponType(
+            nid, name, False, CombatBonusList(),
+            CombatBonusList(), CombatBonusList())
+        self.append(new_weapon)
+        return new_weapon
 
 # === WEAPON EXPERIENCE GAINED ===
 class WexpGain():

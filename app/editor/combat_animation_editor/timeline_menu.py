@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import QVBoxLayout, QWidget, QAction, QWidgetAction, \
     QAbstractItemView
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
+from app import dark_theme
 
 from app.editor.settings import MainSettingsController
 
@@ -198,11 +199,8 @@ class TimelineMenu(QWidget):
         self.menus = {}
 
         self.settings = MainSettingsController()
-        theme = self.settings.get_theme(0)
-        if theme == 0:
-            icon_folder = 'icons/icons'
-        else:
-            icon_folder = 'icons/dark_icons'
+        theme = dark_theme.get_theme()
+        icon_folder = theme.icon_dir()
 
         for command in combat_commands.anim_commands:
             if command.tag not in self.menus:

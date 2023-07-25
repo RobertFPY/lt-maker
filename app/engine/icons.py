@@ -173,16 +173,19 @@ def draw_portrait(surf, unit, topleft=None, bottomright=None):
         surf.blit(image, (bottomright[0] - 96, bottomright[1] - 80))
     return surf
 
-def draw_chibi(surf, nid, topleft=None, bottomright=None):
-    image = RESOURCES.portraits.get(nid)
-    if not image:
-        return surf
-
-    if not image.image:
-        image.image = engine.image_load(image.full_path)
-    image = engine.subsurface(image.image, (image.image.get_width() - 32, 16, 32, 32))
+def get_chibi(portrait):
+    if not portrait.image:
+        portrait.image = engine.image_load(portrait.full_path)
+    image = engine.subsurface(portrait.image, (portrait.image.get_width() - 32, 16, 32, 32))
     image = image.convert()
     engine.set_colorkey(image, COLORKEY, rleaccel=True)
+    return image
+
+def draw_chibi(surf, nid, topleft=None, bottomright=None):
+    portrait = RESOURCES.portraits.get(nid)
+    if not portrait:
+        return surf
+    image = get_chibi(portrait)
 
     if topleft:
         surf.blit(image, topleft)
@@ -194,16 +197,16 @@ def draw_stat(surf, stat_nid, unit, topright, compact=False):
     if stat_nid not in DB.stats.keys():
         FONT['text-yellow'].blit_right('--', surf, topright)
         return
-    class_obj = DB.classes.get(unit.klass)
     value = unit.stats.get(stat_nid, 0)
     bonus = unit.stat_bonus(stat_nid)
     subtle_bonus = unit.subtle_stat_bonus(stat_nid)
+    max_stat = unit.get_stat_cap(stat_nid)
     if compact:
         if bonus > 0:
             typeface = FONT['text-green']
         elif bonus < 0:
             typeface = FONT['text-red']
-        elif value >= class_obj.max_stats.get(stat_nid, 30):
+        elif value >= max_stat:
             typeface = FONT['text-yellow']
         else:
             typeface = FONT['text-blue']
@@ -212,14 +215,14 @@ def draw_stat(surf, stat_nid, unit, topright, compact=False):
         # Recalc these values for full display
         value = value + subtle_bonus
         bonus = bonus - subtle_bonus
-        if value >= class_obj.max_stats.get(stat_nid, 30):
-            FONT['text-yellow'].blit_right(str(value), surf, topright)
+        if value >= max_stat:
+            FONT['small-yellow'].blit_right(str(value), surf, topright)
         else:
-            FONT['text-blue'].blit_right(str(value), surf, topright)
+            FONT['small-blue'].blit_right(str(value), surf, topright)
         if bonus > 0:
             FONT['small-green'].blit("+%d" % bonus, surf, topright)
         elif bonus < 0:
-            FONT['text-red'].blit(str(bonus), surf, topright)
+            FONT['small-red'].blit(str(bonus), surf, topright)
 
 def draw_growth(surf, stat_nid, unit, topright, compact=False):
     if stat_nid not in DB.stats.keys():
@@ -230,7 +233,7 @@ def draw_growth(surf, stat_nid, unit, topright, compact=False):
     bonus = unit.growth_bonus(stat_nid)
     klass_bonus = class_obj.growth_bonus.get(stat_nid, 0)
     bonus += klass_bonus
-    difficulty_bonus = game.mode.get_growth_bonus(unit)
+    difficulty_bonus = game.mode.get_growth_bonus(unit, DB)
     d_bonus = difficulty_bonus.get(stat_nid, 0)
     bonus += d_bonus
     if compact:
@@ -240,4 +243,4 @@ def draw_growth(surf, stat_nid, unit, topright, compact=False):
         if bonus > 0:
             FONT['small-green'].blit("+%d" % bonus, surf, topright)
         elif bonus < 0:
-            FONT['text-red'].blit(str(bonus), surf, topright)
+            FONT['small-red'].blit(str(bonus), surf, topright)

@@ -165,6 +165,20 @@ class EventUnitTests(unittest.TestCase):
         # disable intercepting calls at the end of the test
         dialog_patch.stop()
 
+    def test_overworld_menu_commands(self):
+        from app.events import overworld_event_functions
+        test_commands = [
+            "set_overworld_menu_option_visible;1;Battle;t",
+            "set_overworld_menu_option_enabled;1;Battle;t"
+        ]
+        event = self.create_event(test_commands)
+
+        event.run_command(event.commands[0])
+        event.run_command(event.commands[1])
+
+        self.game.overworld_controller.toggle_menu_option_enabled.assert_called_with('1', 'Battle', True)
+        self.game.overworld_controller.toggle_menu_option_visible.assert_called_with('1', 'Battle', True)
+
     def test_textbox_command(self):
         from app.events import event_functions
         # test that event correctly parses speak commands

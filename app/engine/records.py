@@ -1,5 +1,6 @@
 import sys
 
+from app.data.database.database import DB
 from app.engine.game_state import game
 
 class Record():
@@ -191,7 +192,8 @@ class Recordkeeper():
         """
         levels = []
         for record in self.turns_taken:
-            if record.level_nid not in levels:
+            if record.level_nid not in levels and \
+                    DB.levels.get(record.level_nid).should_record:
                 levels.append(record.level_nid)
         return levels
 
@@ -257,7 +259,7 @@ class Recordkeeper():
         """
         best_score = -1
         mvp = None
-        player_units = [unit for unit in game.units if unit.team == 'player' and not unit.generic]
+        player_units = [unit for unit in game.units if unit.team == 'player' and unit.persistent]
         for unit in player_units:
             score = self.determine_score(unit.nid, level_nid)
             if score > best_score:

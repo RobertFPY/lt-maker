@@ -27,7 +27,7 @@ class ComponentType(IntEnum):
     CombatAnimation = 21  # Stored as Nid
     EffectAnimation = 22  # Stored as Nid
     Affinity = 23  # Stored as Nid
-    Terrain = 24 # stored as nid
+    Terrain = 24 # stored as Nid
     Event = 80
     List = 100
     Dict = 101  # Item followed by integer

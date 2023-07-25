@@ -11,7 +11,7 @@ class TransitionInState(State):
     transparent = True
 
     start_time = 0
-    wait_time = 0
+    wait_time = 133
     bg = None
 
     def start(self):

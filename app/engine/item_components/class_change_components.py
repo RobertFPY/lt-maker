@@ -36,7 +36,7 @@ class Promote(ItemComponent):
                 game.state.change('transition_to')
         self._did_hit = False
 
-class ForcePromote(Promote, ItemComponent):
+class ForcePromote(Promote):
     nid = 'force_promote'
     desc = "Forcibly promotes the targeted unit into the class specified in the component."
     tag = ItemTags.CLASS_CHANGE
@@ -51,7 +51,7 @@ class ForcePromote(Promote, ItemComponent):
             game.state.change('transition_out')
         self._did_hit = False
 
-class ClassChange(Promote, ItemComponent):
+class ClassChange(Promote):
     nid = 'class_change'
     desc = "Item allows target to change class after hit. Define reclass options on the unit's unit screen."
     tag = ItemTags.CLASS_CHANGE
@@ -79,7 +79,7 @@ class ClassChange(Promote, ItemComponent):
                 game.state.change('transition_out')
         self._did_hit = False
 
-class ForceClassChange(Promote, ItemComponent):
+class ForceClassChange(Promote):
     nid = 'force_class_change'
     desc = "Item forcibly changes target's class after hit"
     tag = ItemTags.CLASS_CHANGE

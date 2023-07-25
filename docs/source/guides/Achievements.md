@@ -30,7 +30,7 @@ Most game platforms, like Steam, display certain achievements as "Locked" prior 
 
 Create a new achievement.
 
-```create_achievement;KillGodOrSomething;???;Continue the story to unlock;f;f```
+```create_achievement;KillGodOrSomething;???;Continue the story to unlock;hidden```
 
 ![LockedAchievement](images/LockedAchievement.png)
 
@@ -42,22 +42,22 @@ Players can see that they haven't unlocked all achievements, but will naturally 
 
 The details of the achievement have been updated.
 
-## Non-achievement storage
+## Player record storage
 
-I'd like to remember if the player has completed the game. I can't keep that data tied to a particular save file, so the achievement system is perfect here.
+I'd like to remember if the player has completed the game. I can't keep that data tied to a particular save file, so the persistent record system is perfect here.
+
+Similarly to achievements, we'll create a new record first.
+
+```create_record;CompleteGame;False```
+
+When you create or update a new record, remember that you must provide it a valid Python expression after the name. It is therefore recommended that you provide one of True, False, or a number unless you are confident you know what you're doing.
+
+Similar to achievements, you can use update_record or replace_record to change the value later. You can also check the value of records, as seen below.
 
 ```
-if;has_achievement("CompleteGame")
+if;RECORDS.get("CompleteGame")
     speak;Eirika;I've won before
 else
     speak;Eirika;I haven't won yet.
 end
 ```
-
-This block of eventing checks whether an achievement with CompleteGame as the nid has been registered. You can also check for a.name or a.desc to get the achievement's visible name and description. Run the event, and see Eirika state that she has yet to win.
-
-Now, at the end of an event, put:
-
-```create_achievement;CompleteGame;NA;NA;t;t```
-
-That final argument is what matters. Setting hidden to true prevents the achievement from appearing in the Records menu. If you run the event again, you'll see that Eirika remembers that she's won before. Most importantly, if you check the base records menu you won't see the new achievement listed there.

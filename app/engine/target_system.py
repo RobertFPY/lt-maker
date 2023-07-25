@@ -5,6 +5,7 @@ from functools import lru_cache
 from app.data.database.database import DB
 from app.engine import (combat_calcs, equations, item_funcs, item_system,
                         line_of_sight, skill_system)
+from app.engine.movement import movement_funcs
 from app.engine.pathfinding import pathfinding
 from app.engine.game_state import game
 from app.utilities import utils
@@ -59,9 +60,9 @@ def get_nearest_open_tile(unit, position):
             magn = _abs(x)
             n1 = position[0] + x, position[1] + r - magn
             n2 = position[0] + x, position[1] - r + magn
-            if game.movement.check_weakly_traversable(unit, n1) and not game.board.get_unit(n1) and not game.movement.check_if_occupied_in_future(n1):
+            if movement_funcs.check_weakly_traversable(unit, n1) and not game.board.get_unit(n1) and not game.movement.check_if_occupied_in_future(n1):
                 return n1
-            elif game.movement.check_weakly_traversable(unit, n2) and not game.board.get_unit(n2) and not game.movement.check_if_occupied_in_future(n2):
+            elif movement_funcs.check_weakly_traversable(unit, n2) and not game.board.get_unit(n2) and not game.movement.check_if_occupied_in_future(n2):
                 return n2
         r += 1
     return None
@@ -74,9 +75,9 @@ def get_nearest_open_tile_rationalization(unit, position, taken_positions):
             magn = _abs(x)
             n1 = position[0] + x, position[1] + r - magn
             n2 = position[0] + x, position[1] - r + magn
-            if game.movement.check_weakly_traversable(unit, n1) and not game.board.get_unit(n1) and not n1 in taken_positions:
+            if movement_funcs.check_weakly_traversable(unit, n1) and not game.board.get_unit(n1) and not n1 in taken_positions:
                 return n1
-            elif game.movement.check_weakly_traversable(unit, n2) and not game.board.get_unit(n2) and not n2 in taken_positions:
+            elif movement_funcs.check_weakly_traversable(unit, n2) and not game.board.get_unit(n2) and not n2 in taken_positions:
                 return n2
         r += 1
     return None
@@ -196,12 +197,11 @@ def get_valid_moves(unit, force=False, witch_warp=True) -> set:
     # Assumes unit is on the map
     if not force and unit.finished:
         return set()
-    from app.engine.movement import MovementManager
-    mtype = MovementManager.get_movement_group(unit)
+    mtype = movement_funcs.get_movement_group(unit)
     grid = game.board.get_grid(mtype)
     bounds = game.board.bounds
     height = game.board.height
-    start_pos = game.board.rationalize_pos(unit.position)
+    start_pos = unit.position
     pathfinder = pathfinding.Djikstra(start_pos, grid, bounds, height, unit.team)
     movement_left = equations.parser.movement(unit) if force else unit.movement_left
 
@@ -217,17 +217,14 @@ def get_valid_moves(unit, force=False, witch_warp=True) -> set:
     return valid_moves
 
 def get_path(unit, position, ally_block=False, use_limit=False, free_movement=False) -> list:
-    from app.engine.movement import MovementManager
-    mtype = MovementManager.get_movement_group(unit)
+    mtype = movement_funcs.get_movement_group(unit)
     grid = game.board.get_grid(mtype)
     start_pos = unit.position
-    if free_movement:
-        start_pos = game.board.rationalize_pos(start_pos)
 
     bounds = game.board.bounds
     height = game.board.height
 
-    if skill_system.pass_through(unit):
+    if skill_system.pass_through(unit) or free_movement:
         can_move_through = lambda team, adj: True
     else:
         if ally_block:
@@ -235,7 +232,10 @@ def get_path(unit, position, ally_block=False, use_limit=False, free_movement=Fa
         else:
             can_move_through = game.board.can_move_through
 
-    pathfinder = pathfinding.AStar(start_pos, position, grid, bounds, height, unit.team, free_movement)
+    if free_movement:
+        pathfinder = pathfinding.ThetaStar(start_pos, position, grid, bounds, height, unit.team)
+    else:
+        pathfinder = pathfinding.AStar(start_pos, position, grid, bounds, height, unit.team)
 
     limit = unit.movement_left if use_limit else None
     path = pathfinder.process(can_move_through, limit=limit)
@@ -249,7 +249,7 @@ def check_path(unit, path) -> bool:
     for pos in path[:-1]:  # Don't need to count the starting position
         if prev_pos and pos not in get_adjacent_positions(prev_pos):
             return False
-        mcost = game.movement.get_mcost(unit, pos)
+        mcost = movement_funcs.get_mcost(unit, pos)
         movement -= mcost
         if movement < 0:
             return False
@@ -309,8 +309,13 @@ def get_valid_targets(unit, item=None) -> set:
         if valid:
             valid_targets.add(position)
     # Fog of War
-    if unit.team == 'player' or DB.constants.value('ai_fog_of_war'):
-        valid_targets = {position for position in valid_targets if game.board.in_vision(position, unit.team)}
+    if (unit.team == 'player' or DB.constants.value('ai_fog_of_war')) and not item_system.ignore_fog_of_war(unit, item):
+        valid_targets = {
+            position for position in valid_targets if
+            game.board.in_vision(position, unit.team) or 
+            unit.position == position or  # Can always target self
+            (game.board.get_unit(position) and 'Tile' in game.board.get_unit(position).tags) # Can always targets Tiles
+        }
     # Line of Sight
     if DB.constants.value('line_of_sight') and not item_system.ignore_line_of_sight(unit, item):
         item_range = item_funcs.get_range(unit, item)

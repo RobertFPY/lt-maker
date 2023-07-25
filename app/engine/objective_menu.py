@@ -168,8 +168,8 @@ class ObjectiveMenuState(State):
         return surfaces
 
     def determine_party_leader(self) -> UnitObject:
-        if game.level.roam:
-            unit = game.get_unit(game.level.roam_unit)
+        if game.is_roam():
+            unit = game.get_roam_unit()
         else:
             unit = game.get_unit(game.get_party().leader_nid)
 

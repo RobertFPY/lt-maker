@@ -16,6 +16,8 @@ class BaseCombat(SimpleCombat):
 
     def __init__(self, attacker: UnitObject, main_item: ItemObject,
                  main_target: UnitObject, script: list, total_rounds: int = 1):
+        self._counter: int = 0
+        
         self.attacker = attacker
         self.defender = main_target
         self.main_item = main_item
@@ -34,11 +36,6 @@ class BaseCombat(SimpleCombat):
 
         self.start_combat()
         self.start_event()
-        while self.state_machine.get_state():
-            self.actions, self.playback = self.state_machine.do()
-            self.full_playback += self.playback
-            self._apply_actions()
-            self.state_machine.setup_next_state()
 
     def start_combat(self):
         self.initial_random_state = static_random.get_combat_random_state()
@@ -93,6 +90,19 @@ class BaseCombat(SimpleCombat):
         if self.attacker is not self.defender:
             all_units.append(self.defender)
         return all_units
+
+    def update(self):
+        if self._counter == 0:
+            while self.state_machine.get_state():
+                self.actions, self.playback = self.state_machine.do()
+                self.full_playback += self.playback
+                self._apply_actions()
+                self.state_machine.setup_next_state()
+            self._counter += 1
+            return False
+        else:
+            self.clean_up()
+            return True
 
     def handle_state_stack(self):
         pass

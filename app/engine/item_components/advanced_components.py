@@ -4,6 +4,7 @@ from app.engine import action
 from app.engine import skill_system
 from app.engine.game_state import game
 from app.engine.combat import playback as pb
+from app.engine.movement import movement_funcs
 
 class MultiItem(ItemComponent):
     nid = 'multi_item'
@@ -71,7 +72,7 @@ class UnloadUnit(ItemComponent):
     tag = ItemTags.ADVANCED
 
     def target_restrict(self, unit, item, def_pos, splash) -> bool:
-        if def_pos and not game.board.get_unit(def_pos) and game.movement.check_simple_traversable(def_pos):
+        if def_pos and not game.board.get_unit(def_pos) and movement_funcs.check_simple_traversable(def_pos):
             return True
         return False
 

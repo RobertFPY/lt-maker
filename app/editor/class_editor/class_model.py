@@ -15,11 +15,9 @@ from app.editor.base_database_gui import DragDropCollectionModel
 from app.editor.map_sprite_editor import map_sprite_model
 from app.editor.combat_animation_editor import combat_animation_model
 
-from app.data.database import klass
+from app.utilities.typing import NID
 
-from app.utilities import str_utils
-
-def get_map_sprite_icon(klass_obj, num=0, current=False, team='player', variant=None):
+def get_map_sprite_icon(klass_obj, num=0, current=False, team: NID = 'player', variant=None):
     res = None
     if variant:
         res = RESOURCES.map_sprites.get(klass_obj.map_sprite_nid + variant)
@@ -113,19 +111,5 @@ class ClassModel(DragDropCollectionModel):
                     unit.klass = new_nid
 
     def create_new(self):
-        nids = [d.nid for d in self._data]
-        nid = name = str_utils.get_next_name("New Class", nids)
-        movement_group = DB.mcost.unit_types[0]
-        bases = {k: 0 for k in DB.stats.keys()}
-        growths = {k: 0 for k in DB.stats.keys()}
-        growth_bonus = {k: 0 for k in DB.stats.keys()}
-        promotion = {k: 0 for k in DB.stats.keys()}
-        max_stats = {stat.nid: stat.maximum for stat in DB.stats}
-        wexp_gain = {weapon_nid: DB.weapons.default() for weapon_nid in DB.weapons.keys()}
-        new_class = klass.Klass(
-            nid, name, "", 1, movement_group, None, [], [], 20,
-            bases, growths, growth_bonus, promotion, max_stats,
-            [], wexp_gain)
-        new_class.fields = []
-        DB.classes.append(new_class)
+        new_class = DB.classes.create_new(DB)
         return new_class

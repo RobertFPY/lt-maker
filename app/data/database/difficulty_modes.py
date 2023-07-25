@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum
 from app.utilities.data import Data, Prefab
+from app.utilities import str_utils
 
 class PermadeathOption(str, Enum):
     PLAYER_CHOICE = 'Player Choice'
@@ -67,24 +68,24 @@ class DifficultyModePrefab(Prefab):
     def get_boss_stat_lists(self):
         return [self.boss_bases, self.boss_growths]
 
-    def get_base_bonus(self, unit) -> dict:
-        if unit.team in ('player', 'other'):
+    def get_base_bonus(self, unit, db) -> dict:
+        if unit.team in db.teams.allies:
             return self.player_bases
         elif 'Boss' in unit.tags:
             return self.boss_bases
         else:
             return self.enemy_bases
 
-    def get_growth_bonus(self, unit) -> dict:
-        if unit.team in ('player', 'other'):
+    def get_growth_bonus(self, unit, db) -> dict:
+        if unit.team in db.teams.allies:
             return self.player_growths
         elif 'Boss' in unit.tags:
             return self.boss_growths
         else:
             return self.enemy_growths
 
-    def get_difficulty_autolevels(self, unit) -> dict:
-        if unit.team in ('player', 'other'):
+    def get_difficulty_autolevels(self, unit, db) -> dict:
+        if unit.team in db.teams.allies:
             return self.player_autolevels
         elif 'Boss' in unit.tags:
             return self.boss_autolevels
@@ -93,3 +94,12 @@ class DifficultyModePrefab(Prefab):
 
 class DifficultyModeCatalog(Data[DifficultyModePrefab]):
     datatype = DifficultyModePrefab
+
+    def create_new(self, db):
+        nids = [d.nid for d in self]
+        nid = name = str_utils.get_next_name("New Difficulty Mode", nids)
+        new_difficulty_mode = DifficultyModePrefab(nid, name, 'green')
+        new_difficulty_mode.init_bases(db)
+        new_difficulty_mode.init_growths(db)
+        self.append(new_difficulty_mode)
+        return new_difficulty_mode

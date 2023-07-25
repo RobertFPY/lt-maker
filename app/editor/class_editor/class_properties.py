@@ -5,6 +5,8 @@ from PyQt5.QtWidgets import QWidget, QGridLayout, QLineEdit, \
 from PyQt5.QtGui import QFontMetrics, QIcon
 from PyQt5.QtCore import Qt
 
+from app import dark_theme
+
 from app.data.resources.resources import RESOURCES
 from app.data.database.database import DB
 
@@ -38,11 +40,8 @@ class ClassProperties(QWidget):
         self._data = self.window._data
 
         self.settings = MainSettingsController()
-        theme = self.settings.get_theme(0)
-        if theme == 0:
-            icon_folder = 'icons/icons'
-        else:
-            icon_folder = 'icons/dark_icons'
+        theme = dark_theme.get_theme()
+        icon_folder = theme.icon_dir()
 
         self.current = current
 

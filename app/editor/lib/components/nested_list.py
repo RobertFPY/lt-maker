@@ -309,6 +309,7 @@ class LTNestedList(QWidget):
         target_item = self.tree_widget.itemAt(event.pos())
         if target_item:
             self.data_changed(target_item)
+            self.select_item(target_item)
 
     def data_changed(self, item: Optional[QTreeWidgetItem], column=None):
         list_entries, list_categories = self.get_list_and_category_structure()

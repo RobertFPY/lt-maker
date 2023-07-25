@@ -1519,7 +1519,7 @@ class SetItemUses(EventCommand):
     desc = \
         """
 Sets the uses of an *Item* to *Uses* in the inventory of *GlobalUnitOrConvoy*.
-If the *recursive* flag is set, the event will first attempt to equip items directly
+If the *recursive* flag is set, the event will first attempt to modify items directly
 in the unit's inventory, and then if no matching item is found, check the sub-items of multi-items.
 
 *  the *additive* flag adds the given uses instead
@@ -1619,10 +1619,14 @@ class AddItemComponent(EventCommand):
         """
 Adds an *ItemComponent* with optional value of *Expression* to *Item* in the inventory of *GlobalUnitOrConvoy*.
 Can be used to modify a specific item within your game, such as for forging.
+
+If the *recursive* flag is set, the event will first attempt to modify items directly
+in the unit's inventory, and then if no matching item is found, check the sub-items of multi-items.
         """
 
     keywords = ["GlobalUnitOrConvoy", "Item", "ItemComponent"]
     optional_keywords = ["Expression"]
+    _flags = ['recursive']
 
 class ModifyItemComponent(EventCommand):
     nid = 'modify_item_component'
@@ -1636,12 +1640,15 @@ Can be used to modify a specific item within your game, such as for forging.
 Use **ComponentProperty* to change a specific value if the ItemComponent has more than one option available.
 
 Use the *additive* flag to add rather than set the value.
+
+If the *recursive* flag is set, the event will first attempt to modify items directly
+in the unit's inventory, and then if no matching item is found, check the sub-items of multi-items.
         """
 
     keywords = ["GlobalUnitOrConvoy", "Item", "ItemComponent", "Expression"]
     optional_keywords = ["ComponentProperty"]
     keyword_types = ["GlobalUnitOrConvoy", "Item", "ItemComponent", "Expression", "String"]
-    _flags = ['additive']
+    _flags = ['additive', 'recursive']
 
 class RemoveItemComponent(EventCommand):
     nid = 'remove_item_component'
@@ -1650,9 +1657,13 @@ class RemoveItemComponent(EventCommand):
     desc = \
         """
 Removes *ItemComponent* from *Item* in the inventory of *GlobalUnitOrConvoy*.
+
+If the *recursive* flag is set, the event will first attempt to modify items directly
+in the unit's inventory, and then if no matching item is found, check the sub-items of multi-items.
         """
 
     keywords = ["GlobalUnitOrConvoy", "Item", "ItemComponent"]
+    _flags = ['recursive']
     
 class AddSkillComponent(EventCommand):
     nid = 'add_skill_component'

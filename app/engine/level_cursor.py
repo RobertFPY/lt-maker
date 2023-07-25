@@ -3,7 +3,7 @@ import math
 from typing import Optional, Tuple
 
 from app.engine.objects.unit import UnitObject
-from app.constants import TILEHEIGHT, TILEWIDTH
+from app.constants import TILEHEIGHT, TILEHEIGHTRATIO, TILEWIDTH, TILEWIDTHRATIO
 from app.counters import generic3counter
 from app.data.database.database import DB
 from app.engine import engine, image_mods, skill_system, target_system
@@ -33,7 +33,7 @@ class LevelCursor(BaseCursor):
         self.speed_state = False
 
         self._sprite = SPRITES.get('cursor', scale=True)
-        self.tile_scale = SPRITES.get_tile_scale()
+        self.tile_scale = (TILEWIDTHRATIO, TILEHEIGHTRATIO)
         self._sprite_dim = (32 * self.tile_scale[0], 32 * self.tile_scale[1])
         self.format_sprite(self._sprite, self.tile_scale)
 
@@ -291,7 +291,7 @@ class LevelCursor(BaseCursor):
         return surf
 
 class Arrow(object):
-    sprite = SPRITES.get('movement_arrows')
+    sprite = SPRITES.get('movement_arrows', scale=True)
     sprite = image_mods.make_translucent(sprite, 0.1)
 
     def __init__(self, x, y, position, idx):

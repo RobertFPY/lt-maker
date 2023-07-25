@@ -1,4 +1,4 @@
-from app.constants import BASETILEHEIGHT, BASETILEWIDTH, TILEHEIGHT, TILEWIDTH, WINHEIGHT, WINWIDTH
+from app.constants import BASETILEHEIGHT, BASETILEWIDTH, TILEHEIGHT, TILEHEIGHTRATIO, TILEWIDTH, TILEWIDTHRATIO, WINHEIGHT, WINWIDTH
 import os
 from dataclasses import dataclass
 from app.engine import engine
@@ -32,15 +32,14 @@ class SpriteDict(dict):
         If scale is True, scales the image to the tile width and height'''
         if val in self:
             img = self[val].image
-            if scale:
-                relative_scale = self.get_tile_scale()
-                img = engine.transform_scale(img, (relative_scale[0] * img.get_width(), relative_scale[1] * img.get_height()))
+            if scale:        
+                img = self.scale_image_by_tilesize(img)
             return img
         # Defaults to this
         return self[fallback].image
     
-    def get_tile_scale(self) -> tuple:
-        return (TILEWIDTH//BASETILEWIDTH, TILEHEIGHT//BASETILEHEIGHT)
+    def scale_image_by_tilesize(self, img) -> engine.Surface:
+        return engine.transform_scale(img, (TILEWIDTHRATIO * img.get_width(), TILEHEIGHTRATIO * img.get_height()))
 
 def load_sprites(root):
     for root, dirs, files in os.walk(root):

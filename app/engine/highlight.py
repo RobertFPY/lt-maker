@@ -118,14 +118,14 @@ class HighlightController():
 
     def draw(self, surf, cull_rect):
         # Handle Formation Highlight
-        formation_image = SPRITES.get('highlight_blue')
+        formation_image = SPRITES.get('highlight_blue', scale=True)
         rect = (self.update_idx//4 * TILEWIDTH, 0, TILEWIDTH, TILEHEIGHT)
         formation_image = engine.subsurface(formation_image, rect)
         for position in self.formation_highlights:
             surf.blit(formation_image, (position[0] * TILEWIDTH - cull_rect[0], position[1] * TILEHEIGHT - cull_rect[1]))
 
         # Handle escape Highlight
-        escape_image = SPRITES.get('highlight_yellow')
+        escape_image = SPRITES.get('highlight_yellow', scale=True)
         rect = (self.update_idx//4 * TILEWIDTH, 0, TILEWIDTH, TILEHEIGHT)
         escape_image = engine.subsurface(escape_image, rect)
         for region in game.level.regions:

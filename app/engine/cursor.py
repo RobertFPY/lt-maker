@@ -241,7 +241,7 @@ class BaseCursor():
         if self.visible:
             image = self.get_image()
             x, y = self.position
-            left = x * TILEWIDTH - max(0, (image.get_width() - 16)//2) - self.offset_x
-            top = y * TILEHEIGHT - max(0, (image.get_height() - 16)//2) - self.offset_y
+            left = x * TILEWIDTH - max(0, (image.get_width() - TILEWIDTH)//2) - self.offset_x
+            top = y * TILEHEIGHT - max(0, (image.get_height() - TILEHEIGHT)//2) - self.offset_y
             surf.blit(image, (left - cull_rect[0], top - cull_rect[1]))
         return surf

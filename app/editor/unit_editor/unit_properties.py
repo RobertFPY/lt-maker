@@ -75,7 +75,7 @@ class WexpModel(VirtualListModel):
         weapon = self._columns[index.column()]
         wexp_gain = self._data.get(weapon.nid)
         if not wexp_gain:
-            self._data[weapon.nid] = DB.weapons.default()
+            self._data[weapon.nid] = DB.weapons.default(DB)
             wexp_gain = self._data[weapon.nid]
         if value in DB.weapon_ranks.keys():
             value = DB.weapon_ranks.get(value).requirement
@@ -212,7 +212,7 @@ class UnitProperties(QWidget):
         self.unit_fields_widget = AppendMultiListWidget([], "Unit Fields", fieldAttrs, UnitFieldDelegate, self, model=KeyValueDoubleListModel)
         self.unit_fields_widget.view.setMaximumHeight(120)
 
-        default_weapons = {weapon_nid: DB.weapons.default() for weapon_nid in DB.weapons.keys()}
+        default_weapons = {weapon_nid: DB.weapons.default(DB) for weapon_nid in DB.weapons.keys()}
         self.wexp_gain_widget = HorizWeaponListWidget(
             default_weapons, "Starting Weapon Experience", HorizWeaponListDelegate, self)
         # Changing of Weapon Gain done automatically

@@ -76,10 +76,10 @@ class RankDialog(MultiAttrListDialog):
 class WexpGainDelegate(QItemDelegate):
     bool_column = 0
     weapon_type_column = 1
-    int_column = 2
+    rank_columns = (2, 3)
 
     def createEditor(self, parent, option, index):
-        if index.column() == self.int_column:
+        if index.column() in self.rank_columns:
             editor = ComboBox(parent)
             editor.setEditable(True)
             editor.addItem('0')
@@ -99,7 +99,7 @@ class WexpGainMultiAttrModel(DefaultMultiAttrListModel):
         if index.column() in self.checked_columns:
             if role == Qt.CheckStateRole:
                 weapon_key = DB.weapons.keys()[index.row()]
-                data = self._data.get(weapon_key, DB.weapons.default())
+                data = self._data.get(weapon_key, DB.weapons.default(DB))
                 attr = self._headers[index.column()]
                 val = getattr(data, attr)
                 return Qt.Checked if bool(val) else Qt.Unchecked
@@ -107,7 +107,7 @@ class WexpGainMultiAttrModel(DefaultMultiAttrListModel):
                 return None
         elif role == Qt.DisplayRole or role == Qt.EditRole:
             weapon_key = DB.weapons.keys()[index.row()]
-            data = self._data.get(weapon_key, DB.weapons.default())
+            data = self._data.get(weapon_key, DB.weapons.default(DB))
             attr = self._headers[index.column()]
             if attr == 'nid':
                 return weapon_key
@@ -121,23 +121,24 @@ class WexpGainMultiAttrModel(DefaultMultiAttrListModel):
         weapon_key = DB.weapons.keys()[index.row()]
         data = self._data.get(weapon_key)
         if not data:
-            self._data[weapon_key] = DB.weapons.default()
+            self._data[weapon_key] = DB.weapons.default(DB)
             data = self._data[weapon_key]
         attr = self._headers[index.column()]
 
         current_value = getattr(data, attr)
-        if attr == 'wexp_gain':
+        if attr in ('wexp_gain', 'cap'):
             if value in DB.weapon_ranks.keys():
                 value = DB.weapon_ranks.get(value).requirement
             elif str_utils.is_int(value):
                 value = int(value)
             else:
                 value = 0
-            setattr(data, 'wexp_gain', value)
-            usable = getattr(data, 'usable')
-            if value > 0 and not usable:
-                self.on_attr_changed(data, 'usable', usable, True)
-                setattr(data, 'usable', True)
+            setattr(data, attr, value)
+            if attr == 'wexp_gain':
+                usable = getattr(data, 'usable')
+                if value > 0 and not usable:
+                    self.on_attr_changed(data, 'usable', usable, True)
+                    setattr(data, 'usable', True)
             self.on_attr_changed(data, attr, current_value, value)
             setattr(data, attr, value)
         elif attr == 'usable':

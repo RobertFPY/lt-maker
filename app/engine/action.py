@@ -1967,7 +1967,7 @@ class ClassChange(Action):
         wexp_gain = DB.classes.get(self.new_klass).wexp_gain
         self.new_wexp = {nid: 0 for nid in DB.weapons.keys()}
         for weapon_nid in self.new_wexp.keys():
-            weapon_info = wexp_gain.get(weapon_nid, DB.weapons.default())
+            weapon_info = wexp_gain.get(weapon_nid, DB.weapons.default(DB))
             self.new_wexp[weapon_nid] = weapon_info.wexp_gain
 
         self.subactions = []
@@ -2014,12 +2014,15 @@ class GainWexp(Action):
         self.item = item
         self.wexp_gain = wexp_gain
 
-    def increase_wexp(self):
+    def increase_wexp(self) -> Tuple[int, int]:
         weapon_type = item_system.weapon_type(self.unit, self.item)
         if not weapon_type:
             return 0, 0
+        wexp_cap = unit_funcs.get_weapon_cap(self.unit, weapon_type)
+        old_value = self.unit.wexp[weapon_type]
         self.unit.wexp[weapon_type] += self.wexp_gain
-        return self.unit.wexp[weapon_type] - self.wexp_gain, self.unit.wexp[weapon_type]
+        self.unit.wexp[weapon_type] = utils.clamp(self.unit.wexp[weapon_type], 0, wexp_cap)
+        return old_value, self.unit.wexp[weapon_type]
 
     def do(self):
         self.old_value, self.current_value = self.increase_wexp()
@@ -2051,9 +2054,10 @@ class AddWexp(Action):
         self.wexp_gain = wexp_gain
 
     def increase_wexp(self):
+        wexp_cap = unit_funcs.get_weapon_cap(self.unit, weapon_type)
         old_value = self.unit.wexp[self.weapon_type]
         self.unit.wexp[self.weapon_type] += self.wexp_gain
-        self.unit.wexp[self.weapon_type] = max(0, self.unit.wexp[self.weapon_type])  # Can't be less than 0
+        self.unit.wexp[weapon_type] = utils.clamp(self.unit.wexp[weapon_type], 0, wexp_cap)
         return old_value, self.unit.wexp[self.weapon_type]
 
     def do(self):
@@ -2080,7 +2084,8 @@ class SetWexp(Action):
         self.unit = unit
         self.weapon_type = weapon_type
         self.old_wexp = self.unit.wexp[self.weapon_type]
-        self.wexp = max(0, wexp)  # Can't be less than 0        
+        wexp_cap = unit_funcs.get_weapon_cap(self.unit, self.weapon_type)
+        self.wexp = utils.clamp(wexp, 0, wexp_cap)
 
     def do(self):
         self.unit.wexp[self.weapon_type] = self.wexp

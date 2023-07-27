@@ -74,7 +74,7 @@ class Klass(Prefab):
             if isinstance(value, list):
                 value = {nid: WexpGain(usable, wexp_gain) for (usable, nid, wexp_gain) in value}
             else:
-                value = {k: WexpGain(usable, wexp_gain) for (k, (usable, wexp_gain)) in value.items()}
+                value = {k: WexpGain.restore(v) for (k, v) in value.items()}
         elif name == 'fields':
             if value is None:
                 return []
@@ -94,7 +94,7 @@ class ClassCatalog(Data[Klass]):
         growth_bonus = {k: 0 for k in db.stats.keys()}
         promotion = {k: 0 for k in db.stats.keys()}
         max_stats = {stat.nid: stat.maximum for stat in db.stats}
-        wexp_gain = {weapon_nid: db.weapons.default() for weapon_nid in db.weapons.keys()}
+        wexp_gain = {weapon_nid: db.weapons.default(db) for weapon_nid in db.weapons.keys()}
         new_class = Klass(
             nid, name, "", 1, movement_group, None, [], [], 20,
             bases, growths, growth_bonus, promotion, max_stats,

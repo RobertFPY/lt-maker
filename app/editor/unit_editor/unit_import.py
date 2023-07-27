@@ -46,7 +46,7 @@ def get_from_xml(parent_dir: str, xml_fn: str) -> list:
 
         # Create weapon experience
         wexp = unit.find('wexp').text.split(',')
-        wexp_gain = {weapon_nid: DB.weapons.default() for weapon_nid in DB.weapons.keys()}
+        wexp_gain = {weapon_nid: DB.weapons.default(DB) for weapon_nid in DB.weapons.keys()}
         weapon_order = ['Sword', 'Lance', 'Axe', 'Bow', 'Staff', 'Light', 'Anima', 'Dark']
         if os.path.exists(parent_dir + '/weapon_triangle.txt'):
             with open(parent_dir + '/weapon_triangle.txt') as wfn:

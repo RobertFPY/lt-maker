@@ -77,10 +77,10 @@ class UnitPrefab(Prefab):
             else:
                 value = {}
         elif name == 'wexp_gain':
-            if isinstance(value, list):
-                value = {nid: WexpGain(usable, wexp_gain) for (usable, nid, wexp_gain) in value}
+            if isinstance(value, list):  # DEPRECATED
+                value = {nid: WexpGain(usable, wexp_gain, 251) for (usable, nid, wexp_gain) in value}
             else:
-                value = {k: WexpGain(usable, wexp_gain) for (k, (usable, wexp_gain)) in value.items()}
+                value = {k: WexpGain.restore(v) for (k, v) in value.items()}
         elif name == 'starting_items':
             # Need to convert to item nid + droppable
             value = [i if isinstance(i, list) else [i, False] for i in value]
@@ -99,7 +99,7 @@ class UnitCatalog(Data[UnitPrefab]):
         nid = name = str_utils.get_next_name("New Unit", nids)
         bases = {k: 0 for k in db.stats.keys()}
         growths = {k: 0 for k in db.stats.keys()}
-        wexp_gain = {weapon_nid: db.weapons.default() for weapon_nid in db.weapons.keys()}
+        wexp_gain = {weapon_nid: db.weapons.default(db) for weapon_nid in db.weapons.keys()}
         new_unit = UnitPrefab(nid, name, '', '', 1, db.classes[0].nid,
                               bases=bases, growths=growths, wexp_gain=wexp_gain)
         new_unit.fields = []

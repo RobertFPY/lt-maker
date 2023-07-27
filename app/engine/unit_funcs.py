@@ -353,3 +353,9 @@ def usable_wtypes(unit) -> Set[NID]:
     klass_weapons = klass.wexp_gain
     klass_usable = set([wtype_name for wtype_name, wtype_info in klass_weapons.items() if wtype_info.usable])
     return (klass_usable | skill_system.usable_wtypes(unit)) - skill_system.forbidden_wtypes(unit)
+
+def get_weapon_cap(unit, weapon_type: NID) -> int:
+    klass = DB.classes.get(unit.klass)
+    wexp_gain = klass.wexp_gain.get(weapon_type, DB.weapons.default(DB))
+    cap = wexp_gain.cap
+    return cap

@@ -2054,10 +2054,10 @@ class AddWexp(Action):
         self.wexp_gain = wexp_gain
 
     def increase_wexp(self):
-        wexp_cap = unit_funcs.get_weapon_cap(self.unit, weapon_type)
+        wexp_cap = unit_funcs.get_weapon_cap(self.unit, self.weapon_type)
         old_value = self.unit.wexp[self.weapon_type]
         self.unit.wexp[self.weapon_type] += self.wexp_gain
-        self.unit.wexp[weapon_type] = utils.clamp(self.unit.wexp[weapon_type], 0, wexp_cap)
+        self.unit.wexp[self.weapon_type] = utils.clamp(self.unit.wexp[self.weapon_type], 0, wexp_cap)
         return old_value, self.unit.wexp[self.weapon_type]
 
     def do(self):

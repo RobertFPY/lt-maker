@@ -222,33 +222,35 @@ class InfoMenuState(State):
 
     def move_down(self):
         get_sound_thread().play_sfx('Status_Character')
-        if len(self.scroll_units) > 1:
-            if self.rescuer:
-                new_index = self.scroll_units.index(self.rescuer)
-                self.rescuer = None
-            else:
-                index = self.scroll_units.index(self.unit)
-                new_index = (index + 1) % len(self.scroll_units)
-            self.next_unit = self.scroll_units[new_index]
-            if self.state == 'notes' and not (DB.constants.value('unit_notes') and self.next_unit.notes):
-                self.state = 'personal_data'
-                self.switch_logo('personal_data')
-            self.transition = 'DOWN'
+        if self.rescuer:
+            new_index = self.scroll_units.index(self.rescuer)
+            self.rescuer = None
+        elif len(self.scroll_units) > 1:
+            index = self.scroll_units.index(self.unit)
+            new_index = (index + 1) % len(self.scroll_units)    
+        else:
+            return
+        self.next_unit = self.scroll_units[new_index]
+        if self.state == 'notes' and not (DB.constants.value('unit_notes') and self.next_unit.notes):
+            self.state = 'personal_data'
+            self.switch_logo('personal_data')
+        self.transition = 'DOWN'
 
     def move_up(self):
         get_sound_thread().play_sfx('Status_Character')
-        if len(self.scroll_units) > 1:
-            if self.rescuer:
-                new_index = self.scroll_units.index(self.rescuer)
-                self.rescuer = None
-            else:
-                index = self.scroll_units.index(self.unit)
-                new_index = (index - 1) % len(self.scroll_units)
-            self.next_unit = self.scroll_units[new_index]
-            if self.state == 'notes' and not (DB.constants.value('unit_notes') and self.next_unit.notes):
-                self.state = 'personal_data'
-                self.switch_logo('personal_data')
-            self.transition = 'UP'
+        if self.rescuer:
+            new_index = self.scroll_units.index(self.rescuer)
+            self.rescuer = None
+        elif len(self.scroll_units) > 1:
+            index = self.scroll_units.index(self.unit)
+            new_index = (index - 1) % len(self.scroll_units)
+        else:
+            return        
+        self.next_unit = self.scroll_units[new_index]
+        if self.state == 'notes' and not (DB.constants.value('unit_notes') and self.next_unit.notes):
+            self.state = 'personal_data'
+            self.switch_logo('personal_data')
+        self.transition = 'UP'
 
     def move_traveler(self):
         get_sound_thread().play_sfx('Status_Character')

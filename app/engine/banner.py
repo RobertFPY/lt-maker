@@ -109,7 +109,7 @@ class SentToConvoy(Banner):
         self.text = '<{item_color}>{item_name}</> sent to convoy.'.format(item_color=item_color, item_name=item.name)
         self.figure_out_size()
         self.sound = 'Item'
-        
+
 class LostItem(Banner):
     def __init__(self, item: ItemObject):
         super().__init__()
@@ -171,7 +171,7 @@ class TakeSkill(GiveSkill):
 
 class Custom(Banner):
     def __init__(self, text, sound=None):
-        self.text = text
+        self.text = text_funcs.translate(text)
         self.item = None
         self.figure_out_size()
         self.sound = sound

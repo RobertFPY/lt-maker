@@ -135,6 +135,11 @@ class EventState(State):
             game.memory['next_state'] = 'title_start'
             game.state.change('transition_to')
 
+        elif game.level_vars.get('_enter_level'):
+            game.level_vars['_enter_level'] = False
+            game.memory['next_state'] = 'overworld_next_level'
+            game.state.change('transition_to')
+
         elif self.event.battle_save_flag:
             game.state.back()
             game.memory['save_kind'] = 'battle'

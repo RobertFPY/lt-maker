@@ -3119,6 +3119,14 @@ class SetOverworldMenuOptionVisible(EventCommand):
     keywords = ['OverworldNodeNID', 'OverworldNodeMenuOption', 'Setting']
     keyword_types = ['OverworldNodeNID', 'OverworldNodeMenuOption', 'Bool']
 
+class EnterLevelFromOverworld(EventCommand):
+    nid = 'enter_level_from_overworld'
+    tag =  Tags.OVERWORLD
+    desc = ('Begin the level with the specified NID. Only intended to work from the Overword')
+
+    keywords = ['LevelNid']
+    keyword_types = ['String']
+
 class CreateAchievement(EventCommand):
     nid = 'create_achievement'
     tag = Tags.ACHIEVEMENT

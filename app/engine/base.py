@@ -1497,7 +1497,7 @@ class BaseSoundRoomState(State):
 
     def draw_sound_room_title(self, surf, topleft, music_name):
         surf.blit(SPRITES.get('chapter_select_green'), (topleft[0], topleft[1]))
-        FONT['chapter-white'].blit_center(music_name, surf, (topleft[0] + 98, topleft[1] + 8))
+        FONT['convo-white'].blit_center(music_name, surf, (topleft[0] + 98, topleft[1] + 8))
         return surf
 
     def draw_volume(self, surf):

@@ -12,7 +12,7 @@ class FontType():
 NORMAL_FONT_COLORS = ['white', 'blue', 'green', 'red', 'grey', 'yellow', 'brown']
 
 text = FontType('text', 'white')
-text.colors['white'] = ((248, 248, 248, 255), (160, 136, 216, 255), (40, 32, 24, 255))
+text.colors['white'] = ((248, 248, 248, 255), (160, 136, 216, 255), (56, 48, 40, 255))
 text.colors['blue'] = ((192, 248, 248, 255), (80, 112, 248, 255), (24, 24, 88, 255))
 text.colors['green'] = ((72, 232, 32, 255), (112, 160, 72, 255), (24, 88, 24, 255))
 text.colors['red'] = ((224, 96, 80, 255), (160, 88, 72, 255), (88, 24, 24, 255))

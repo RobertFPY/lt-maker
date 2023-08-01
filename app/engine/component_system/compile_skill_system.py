@@ -150,7 +150,7 @@ def generate_skill_hook_str(hook_name: str, hook_info: HookInfo):
     func_text = """
 def {hook_name}({func_signature}):
     values = []
-    for skill in unit.skills:
+    for skill in unit.skills[:]:
         for component in skill.components:
             if component.defines('{hook_name}'):
                 if component.ignore_conditional or {conditional_check}:

@@ -29,7 +29,7 @@ from app.engine.objects.unit import UnitObject
 from app.utilities.enums import Alignments, HAlignment, Orientation, VAlignment
 from app.utilities.str_utils import is_int
 from app.utilities.typing import NID
-from app.utilities.utils import clamp, sign, tuple_add, tuple_sub
+from app.utilities.utils import clamp, sign, tuple_add, tuple_sub, calculate_distance
 
 CHOICE_TYPES: Dict[str, Type[IMenuOption]] = {
     'type_skill': BasicSkillOption,
@@ -248,14 +248,25 @@ class GridChoiceMenu():
 
     def move_cursor(self, idx):
         idx = clamp(idx, 0, len(self._option_data) - 1)
+        old_coord = self._get_coord_of_option_idx(self._cursor_idx) 
+        new_coord = self._get_coord_of_option_idx(idx)
         self._cursor_idx = idx
-        as_coord = self._get_coord_of_option_idx(idx)
         scroll_to = self._identify_minimum_scroll_to_loc(
-            tuple(map(int, self._scroll)), tuple(map(float, as_coord)))
+            tuple(map(int, self._scroll)), tuple(map(float, new_coord)))
         self.scroll_to(scroll_to)
+        if new_coord[1] > old_coord[1]:
+            self.cursor_hand.y_offset_down()
+        # Only if no scrolling
+        elif new_coord[1] < old_coord[1]:
+            self.cursor_hand.y_offset_up()
 
     def scroll_to(self, coord: Tuple[float, float]):
-        self._scroll_to = coord
+        # If it's really far away, don't bother even scrolling, just jump
+        if calculate_distance(self._scroll, coord) > 4:
+            self._scroll_to = coord
+            self._scroll = coord
+        else:
+            self._scroll_to = coord
 
     def _total_grid_size(self) -> Tuple[int, int]:
         if self._orientation == Orientation.VERTICAL:
@@ -396,16 +407,17 @@ class GridChoiceMenu():
         return fx, fy
 
     def _handle_scrolling(self):
-        EPSILON = 0.2
+        EPSILON = 0.25
+        SCROLL_SPEED = 0.25
         sx, sy = self._scroll
         goal_sx, goal_sy = self._scroll_to
         if not float_eq(sx, goal_sx, EPSILON):
-            sx += EPSILON * sign(goal_sx - sx)
+            sx += SCROLL_SPEED * sign(goal_sx - sx)
         else:
             sx = goal_sx
 
         if not float_eq(sy, goal_sy, EPSILON):
-            sy += EPSILON * sign(goal_sy - sy)
+            sy += SCROLL_SPEED * sign(goal_sy - sy)
         else:
             sy = goal_sy
 
@@ -489,7 +501,7 @@ class GridChoiceMenu():
         bw, bh = self._get_pixel_size()
         # minor adjustments for visuals
         ox, oy = options_top_left
-        if py < 0 or py > bh - (16 if self._title else 0):
+        if py < -16 or py > bh - (16 if self._title else 0):
             return
         if px < 0 or px > bw:
             return

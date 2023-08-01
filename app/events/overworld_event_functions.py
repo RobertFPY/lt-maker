@@ -301,3 +301,7 @@ def set_overworld_menu_option_visible(self: Event, overworld_node_nid: NID, over
     val = (setting.lower() in self.true_vals)
     overworld = self.game.overworld_controller
     overworld.toggle_menu_option_visible(overworld_node_nid, overworld_node_menu_option, val)
+
+def enter_level_from_overworld(self: Event, level_nid: str, flags=None):
+    game.overworld_controller.next_level = level_nid
+    self.game.level_vars['_enter_level'] = True

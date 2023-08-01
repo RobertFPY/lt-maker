@@ -3464,6 +3464,21 @@ def open_guide(self: Event, flags=None):
     else:
         self.logger.warning("open_guide: Skipping opening guide because there is no unlocked lore in the guide category")
 
+def open_unit_management(self: Event, panorama=None, flags=None):
+    flags = flags or set() 
+    if 'scroll' in flags:
+        bg = background.create_background(panorama, True)
+    else:
+        bg = background.create_background(panorama, False)
+    self.game.memory['base_bg'] = bg
+    
+    self.state = "paused"
+    if 'immediate' in flags:
+        self.game.state.change('base_manage')
+    else:
+        self.game.memory['next_state'] = 'base_manage'
+        self.game.state.change('transition_to')
+
 def location_card(self: Event, string, flags=None):
     new_location_card = dialog.LocationCard(string)
     self.other_boxes.append((None, new_location_card))

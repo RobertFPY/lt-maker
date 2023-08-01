@@ -291,16 +291,19 @@ class Foreground():
                     self.foreground = None
                     self.fade_out = False
 
-def create_background(bg_name):
+def create_background(bg_name, scroll=True):
     panorama = RESOURCES.panoramas.get(bg_name)
     if not panorama:
         panorama = RESOURCES.panoramas.get('default_background')
     if panorama:
-        if panorama.num_frames > 1:
-            return PanoramaBackground(panorama)
+        if scroll:
+            if panorama.num_frames > 1:
+                return PanoramaBackground(panorama)
+            else:
+                bg = ScrollingBackground(panorama)
+                bg.scroll_speed = 50  # Make it move slower
+                return bg
         else:
-            bg = ScrollingBackground(panorama)
-            bg.scroll_speed = 50  # Make it move slower
-            return bg
+            return PanoramaBackground(panorama)
     else:
         return None

@@ -34,9 +34,9 @@ class UnitObject(Prefab):
     prefab_nid: NID = None  #: NID of this unit's prefab (usually the same as it's *nid*)
     generic: bool = False  #: Whether the unit is a generic
     persistent: bool = True  #: If unit is persistent, unit will not be removed between levels. Generic units start off without persistence.
-    ai: NID = None  #: NID of this unit's base combat AI (skills might change this)
+    ai: NID = None  #: NID of this unit's base combat AI (skills might modify this)
     ai_group: NID = None
-    roam_ai: NID = None  #: NID of this unit's base roaming AI (skills might change this)
+    roam_ai: NID = None  #: NID of this unit's base roaming AI (skills might modify this)
     faction: NID = None
     team: NID = "player"
     portrait_nid: NID = None
@@ -534,7 +534,7 @@ class UnitObject(Prefab):
         return combat_calcs.avoid(self, self.get_weapon())
 
     @property
-    def sprite(self) -> unit_sprite.UnitSprite:
+    def sprite(self) -> "unit_sprite.UnitSprite":
         if not self._sprite:
             from app.engine import unit_sprite
             self._sprite = unit_sprite.UnitSprite(self)
@@ -550,7 +550,7 @@ class UnitObject(Prefab):
         return None
 
     @property
-    def sound(self) -> unit_sound.UnitSound:
+    def sound(self) -> "unit_sound.UnitSound":
         if not self._sound:
             from app.engine import unit_sound
             self._sound = unit_sound.UnitSound(self)

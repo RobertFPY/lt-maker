@@ -10,9 +10,10 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
+import os
+import sys
 # sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, os.path.abspath('../'))
 
 
 # -- Project information -----------------------------------------------------
@@ -22,12 +23,18 @@ copyright = '2022, rainlash'
 author = 'rainlash'
 
 
+# -- Autodoc configuration ---------------------------------------------------
+autodoc_member_order = 'bysource'  # Not alphabetical
+# Not needed as long as you do UnitObject() with those parentheses on the end
+# It gets rid of the init call
+# autodoc_class_signature = 'separated'  
+
 # -- General configuration ---------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['myst_parser', 'sphinx_rtd_theme']
+extensions = ['myst_parser', 'sphinx_rtd_theme', 'sphinx.ext.autodoc', 'sphinx.ext.napoleon']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -54,4 +61,4 @@ html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
 
 def setup(app):
-   app.add_css_file("theme_overrides.css")
+    app.add_css_file("theme_overrides.css")

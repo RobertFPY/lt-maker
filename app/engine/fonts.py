@@ -83,6 +83,9 @@ for font in RESOURCES.fonts.values():
 
 # Convert colors
 for font_type in font_types:
+    # If the FONT does not exist in the RESOURCES.fonts catalog, skip it
+    if font_type.name not in FONT:
+        continue
     FONT[font_type.name].surfaces[font_type.default] = FONT[font_type.name].surfaces['default']
     for color, value in font_type.colors.items():
         if color == font_type.default:

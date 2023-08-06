@@ -32,6 +32,7 @@ class HookInfo():
     policy: ResolvePolicy = ResolvePolicy.UNIQUE
     has_default_value: bool = False
     has_unconditional: bool = False
+    inherits_parent: bool = False
 
 
 """

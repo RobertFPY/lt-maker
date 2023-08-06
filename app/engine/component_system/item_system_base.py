@@ -116,7 +116,7 @@ def get_all_components(unit, item) -> list:
     override_component_nids = [c.nid for c in override_components]
     if not item:
         return override_components
-    all_components = override_components + [c for c in item.components if c.nid not in override_component_nids]
+    all_components = [c for c in item.components] + override_components
     return all_components
 
 def available(unit, item) -> bool:

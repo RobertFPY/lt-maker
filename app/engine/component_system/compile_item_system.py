@@ -2,47 +2,90 @@ from __future__ import annotations
 from typing import Dict
 from app.engine.component_system.utils import HookInfo, ARG_TYPE_MAP, ResolvePolicy
 
-# HOOK CATALOG
-# false priority hooks default to false
-# and will be false if any single component returns false
-false_priority_hooks = \
-    ('is_weapon', 'is_spell', 'is_accessory', 'equippable',
-     'can_counter', 'can_be_countered', 'can_double',
-     'can_use', 'can_use_in_base', 'locked', 'unstealable', 'allow_same_target', 'allow_less_than_max_targets',
-     'ignore_weapon_advantage', 'unrepairable', 'unsplashable', 'targets_items',
-     'menu_after_combat', 'transforms', 'no_attack_after_move', 'no_map_hp_display',
-     'cannot_dual_strike', 'can_attack_after_combat', 'simple_target_restrict', 'force_map_anim',
-     'ignore_line_of_sight', 'ignore_fog_of_war')
-# All default hooks are exclusive
-formula = ('damage_formula', 'resist_formula', 'accuracy_formula', 'avoid_formula',
-           'crit_accuracy_formula', 'crit_avoid_formula', 'attack_speed_formula', 'defense_speed_formula')
-default_hooks = ('full_price', 'buy_price', 'sell_price', 'special_sort', 'num_targets', 'minimum_range', 'maximum_range',
-                 'weapon_type', 'weapon_rank', 'modify_weapon_triangle', 'damage', 'hit', 'crit', 'effect_animation', 'text_color')
-default_hooks += formula
-
-target_hooks = ('wexp',)
-simple_target_hooks = ('target_icon', )
-
-dynamic_hooks = ('dynamic_damage', 'dynamic_accuracy', 'dynamic_crit_accuracy',
-                 'dynamic_attack_speed', 'dynamic_multiattacks')
-modify_hooks = ('modify_damage', 'modify_resist', 'modify_accuracy', 'modify_avoid',
-                'modify_crit_accuracy', 'modify_crit_avoid', 'modify_attack_speed',
-                'modify_defense_speed')
-
-# None of these are exclusive
-event_hooks = ('on_end_chapter', 'reverse_use',
-               'on_equip_item', 'on_unequip_item', 'on_add_item', 'on_remove_item')
-
-combat_event_hooks = ('start_combat', 'end_combat')
-aesthetic_combat_hooks = ('battle_music', 'combat_effect')
-
-status_event_hooks = ('on_upkeep', 'on_endstep')
-
-exclusive_hooks = false_priority_hooks + default_hooks
-
 ITEM_HOOKS: Dict[str, HookInfo] = {
-    # false_priority_hooks
-    # 'is_weapon': HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    # default false, return false if any component returns false
+    'is_weapon':                                       HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'is_spell':                                        HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'is_accessory':                                    HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'equippable':                                      HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'can_counter':                                     HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'can_be_countered':                                HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'can_double':                                      HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'can_use':                                         HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'can_use_in_base':                                 HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'locked':                                          HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'unstealable':                                     HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'allow_same_target':                               HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'allow_less_than_max_targets':                     HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'ignore_weapon_advantage':                         HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'unrepairable':                                    HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'unsplashable':                                    HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'targets_items':                                   HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'menu_after_combat':                               HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'transforms':                                      HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'no_attack_after_move':                            HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'no_map_hp_display':                               HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'cannot_dual_strike':                              HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'can_attack_after_combat':                         HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'simple_target_restrict':                          HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'force_map_anim':                                  HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'ignore_line_of_sight':                            HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'ignore_fog_of_war':                               HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    # returns latest value defined by a component, or default value if not defined
+    'damage_formula':                                  HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
+    'resist_formula':                                  HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
+    'accuracy_formula':                                HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
+    'avoid_formula':                                   HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
+    'crit_accuracy_formula':                           HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
+    'crit_avoid_formula':                              HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
+    'attack_speed_formula':                            HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
+    'defense_speed_formula':                           HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
+    'full_price':                                      HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
+    'buy_price':                                       HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
+    'sell_price':                                      HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
+    'special_sort':                                    HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
+    'num_targets':                                     HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
+    'minimum_range':                                   HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
+    'maximum_range':                                   HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),  
+    'weapon_type':                                     HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
+    'weapon_rank':                                     HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
+    'damage':                                          HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
+    'hit':                                             HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
+    'crit':                                            HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
+    'effect_animation':                                HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
+    'text_color':                                      HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
+    # returns set of all defined values
+    'target_icon':                                     HookInfo(['unit', 'item', 'target'], ResolvePolicy.UNION),
+    # returns sum of all defined values
+    'wexp':                                            HookInfo(['playbacks', 'unit', 'item', 'target'], ResolvePolicy.NUMERIC_ACCUM),
+    'modify_damage':                                   HookInfo(['unit', 'item'], ResolvePolicy.NUMERIC_ACCUM),
+    'modify_resist':                                   HookInfo(['unit', 'item'], ResolvePolicy.NUMERIC_ACCUM),
+    'modify_accuracy':                                 HookInfo(['unit', 'item'], ResolvePolicy.NUMERIC_ACCUM),
+    'modify_avoid':                                    HookInfo(['unit', 'item'], ResolvePolicy.NUMERIC_ACCUM),
+    'modify_crit_accuracy':                            HookInfo(['unit', 'item'], ResolvePolicy.NUMERIC_ACCUM),
+    'modify_crit_avoid':                               HookInfo(['unit', 'item'], ResolvePolicy.NUMERIC_ACCUM),
+    'modify_attack_speed':                             HookInfo(['unit', 'item'], ResolvePolicy.NUMERIC_ACCUM),
+    'modify_defense_speed':                            HookInfo(['unit', 'item'], ResolvePolicy.NUMERIC_ACCUM),
+    'modify_weapon_triangle':                          HookInfo(['unit', 'item'], ResolvePolicy.NUMERIC_MULTIPLY, has_default_value=True),
+    'dynamic_damage':                                  HookInfo(['unit', 'item', 'target', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
+    'dynamic_accuracy':                                HookInfo(['unit', 'item', 'target', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
+    'dynamic_crit_accuracy':                           HookInfo(['unit', 'item', 'target', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
+    'dynamic_attack_speed':                            HookInfo(['unit', 'item', 'target', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
+    'dynamic_multiattacks':                            HookInfo(['unit', 'item', 'target', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
+    # aesthetic components do not return any value
+    'battle_music':                                    HookInfo(['unit', 'item', 'target', 'mode'], ResolvePolicy.NO_RETURN),
+    'combat_effect':                                   HookInfo(['unit', 'item', 'target', 'mode'], ResolvePolicy.NO_RETURN),
+    # events do not return, but are the only item components currently inherited from parents
+    'on_end_chapter':                                  HookInfo(['unit', 'item'], ResolvePolicy.NO_RETURN, inherits_parent=True),
+    'reverse_use':                                     HookInfo(['unit', 'item'], ResolvePolicy.NO_RETURN, inherits_parent=True),
+    'on_equip_item':                                   HookInfo(['unit', 'item'], ResolvePolicy.NO_RETURN, inherits_parent=True),
+    'on_unequip_item':                                 HookInfo(['unit', 'item'], ResolvePolicy.NO_RETURN, inherits_parent=True),
+    'on_add_item':                                     HookInfo(['unit', 'item'], ResolvePolicy.NO_RETURN, inherits_parent=True),
+    'on_remove_item':                                  HookInfo(['unit', 'item'], ResolvePolicy.NO_RETURN, inherits_parent=True),
+    'on_upkeep':                                       HookInfo(['actions', 'playback', 'unit', 'item'], ResolvePolicy.NO_RETURN, inherits_parent=True),
+    'on_endstep':                                      HookInfo(['actions', 'playback', 'unit', 'item'], ResolvePolicy.NO_RETURN, inherits_parent=True),
+    'start_combat':                                    HookInfo(['playback', 'unit', 'item', 'target', 'mode'], ResolvePolicy.NO_RETURN, inherits_parent=True),
+    'end_combat':                                      HookInfo(['playback', 'unit', 'item', 'target', 'mode'], ResolvePolicy.NO_RETURN, inherits_parent=True),
 }
 
 def generate_item_hook_str(hook_name: str, hook_info: HookInfo):
@@ -52,8 +95,18 @@ def generate_item_hook_str(hook_name: str, hook_info: HookInfo):
     func_signature = ['{arg}: {type}'.format(arg=arg, type=ARG_TYPE_MAP.get(arg, "Any")) for arg in args]
 
     default_handling = "return result"
+    inheritance_handling = ""
     if hook_info.has_default_value:
         default_handling = "return result if values else Defaults.{hook_name}({args})".format(hook_name=hook_name, args=', '.join(args))
+    if hook_info.inherits_parent:
+        inheritance_handling = """
+            if item.parent_item:
+                item = item.parent_item
+                for component in item.components:
+                    if component.defines('{hook_name}'):
+                        values.append(component.{hook_name}({args}))
+""".format(hook_name=hook_name, args=', '.join(args))
+
     func_text = """
 def {hook_name}({func_signature}):
     all_components = get_all_components(unit, item)
@@ -61,13 +114,15 @@ def {hook_name}({func_signature}):
     for component in all_components:
         if component.defines('{hook_name}'):
             values.append(component.{hook_name}({args}))
+{inheritance_handling}
     result = utils.{policy_resolution}(values)
     {default_handling}
 """.format(hook_name=hook_name,
            func_signature=', '.join(func_signature),
            args=', '.join(args),
            policy_resolution=hook_info.policy.value,
-           default_handling=default_handling)
+           default_handling=default_handling,
+           inheritance_handling=inheritance_handling)
     return func_text
 
 def compile_item_system():
@@ -88,146 +143,6 @@ def compile_item_system():
     for hook_name, hook_info in ITEM_HOOKS.items():
         func = generate_item_hook_str(hook_name, hook_info)
         compiled_item_system.write(func)
-
-    # compile item system
-    for hook in false_priority_hooks:
-        func = """
-def %s(unit, item):
-    all_components = get_all_components(unit, item)
-    all_true = False
-    for component in all_components:
-        if component.defines('%s'):
-            if not component.%s(unit, item):
-                return False
-            else:
-                all_true = True
-    return all_true""" \
-            % (hook, hook, hook)
-        compiled_item_system.write(func)
-        compiled_item_system.write('\n')
-
-    for hook in default_hooks:
-        func = """
-def %s(unit, item):
-    all_components = get_all_components(unit, item)
-    for component in all_components:
-        if component.defines('%s'):
-            return component.%s(unit, item)
-    return Defaults.%s(unit, item)""" \
-            % (hook, hook, hook, hook)
-        compiled_item_system.write(func)
-        compiled_item_system.write('\n')
-
-    for hook in simple_target_hooks:
-        func = """
-def %s(cur_unit, item, displaying_unit):
-    all_components = get_all_components(displaying_unit, item)
-    markers = []
-    for component in all_components:
-        if component.defines('%s'):
-            marker = component.%s(cur_unit, item, displaying_unit)
-            if marker:
-                markers.append(marker)
-    return markers""" \
-            % (hook, hook, hook)
-        compiled_item_system.write(func)
-        compiled_item_system.write('\n')
-
-    for hook in target_hooks:
-        func = """
-def %s(playback, unit, item, target):
-    all_components = get_all_components(unit, item)
-    val = 0
-    for component in all_components:
-        if component.defines('%s'):
-            val += component.%s(playback, unit, item, target)
-    return val""" \
-            % (hook, hook, hook)
-        compiled_item_system.write(func)
-        compiled_item_system.write('\n')
-
-    for hook in modify_hooks:
-        func = """
-def %s(unit, item):
-    all_components = get_all_components(unit, item)
-    val = 0
-    for component in all_components:
-        if component.defines('%s'):
-            val += component.%s(unit, item)
-    return val""" \
-            % (hook, hook, hook)
-        compiled_item_system.write(func)
-        compiled_item_system.write('\n')
-
-    for hook in dynamic_hooks:
-        func = """
-def %s(unit, item, target, mode, attack_info, base_value):
-    all_components = get_all_components(unit, item)
-    val = 0
-    for component in all_components:
-        if component.defines('%s'):
-            val += component.%s(unit, item, target, mode, attack_info, base_value)
-    return val""" \
-            % (hook, hook, hook)
-        compiled_item_system.write(func)
-        compiled_item_system.write('\n')
-
-    for hook in event_hooks:
-        func = """
-def %s(unit, item):
-    all_components = get_all_components(unit, item)
-    for component in all_components:
-        if component.defines('%s'):
-            component.%s(unit, item)
-    if item.parent_item:
-        for component in item.parent_item.components:
-            if component.defines('%s'):
-                component.%s(unit, item.parent_item)""" \
-            % (hook, hook, hook, hook, hook)
-        compiled_item_system.write(func)
-        compiled_item_system.write('\n')
-
-    for hook in combat_event_hooks:
-        func = """
-def %s(playback, unit, item, target, mode):
-    all_components = get_all_components(unit, item)
-    for component in all_components:
-        if component.defines('%s'):
-            component.%s(playback, unit, item, target, mode)
-    if item.parent_item:
-        for component in item.parent_item.components:
-            if component.defines('%s'):
-                component.%s(playback, unit, item.parent_item, target, mode)""" \
-            % (hook, hook, hook, hook, hook)
-        compiled_item_system.write(func)
-        compiled_item_system.write('\n')
-
-    for hook in status_event_hooks:
-        func = """
-def %s(actions, playback, unit, item):
-    all_components = get_all_components(unit, item)
-    for component in all_components:
-        if component.defines('%s'):
-            component.%s(actions, playback, unit, item)
-    if item.parent_item:
-        for component in item.parent_item.components:
-            if component.defines('%s'):
-                component.%s(actions, playback, unit, item.parent_item)""" \
-            % (hook, hook, hook, hook, hook)
-        compiled_item_system.write(func)
-        compiled_item_system.write('\n')
-
-    for hook in aesthetic_combat_hooks:
-        func = """
-def %s(unit, item, target, mode):
-    all_components = get_all_components(unit, item)
-    for component in all_components:
-        if component.defines('%s'):
-            return component.%s(unit, item, target, mode)
-    return None""" \
-            % (hook, hook, hook)
-        compiled_item_system.write(func)
-        compiled_item_system.write('\n')
 
     compiled_item_system.close()
     item_system_base.close()

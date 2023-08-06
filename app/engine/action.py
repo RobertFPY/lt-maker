@@ -822,7 +822,7 @@ class Take(Action):
 
 # === PAIR UP ACTIONS =======================================================
 class PairUp(Action):
-    def __init__(self, unit, target):
+    def __init__(self, unit: UnitObject, target: UnitObject):
         self.unit = unit
         self.target = target
         self.old_pos = self.unit.position
@@ -835,7 +835,9 @@ class PairUp(Action):
         self.subactions.clear()
         self.target.traveler = self.unit.nid
 
+        move_left = self.unit.movement_left
         self.subactions.append(Reset(self.unit))
+        self.subactions.append(SetMovementLeft(self.unit, move_left))
         skill_system.on_pairup(self.unit, self.target)
         game.leave(self.unit)
         self.unit.position = None

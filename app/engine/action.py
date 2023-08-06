@@ -822,7 +822,7 @@ class Take(Action):
 
 # === PAIR UP ACTIONS =======================================================
 class PairUp(Action):
-    def __init__(self, unit, target):
+    def __init__(self, unit: UnitObject, target: UnitObject):
         self.unit = unit
         self.target = target
         self.old_pos = self.unit.position

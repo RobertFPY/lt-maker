@@ -733,8 +733,6 @@ class MoveState(MapState):
                     else:
                         cur_unit.current_move = action.Move(cur_unit, game.cursor.position)
                         game.state.change('menu')
-                    if cur_unit.traveler:
-                        game.get_unit(cur_unit.traveler).current_move = cur_unit.current_move
                     game.state.change('movement')
                     action.do(cur_unit.current_move)
             else:
@@ -975,8 +973,6 @@ class MenuState(MapState):
                         logging.info("Traveler is " + self.cur_unit.traveler)
                     if not self.cur_unit.lead_unit and self.cur_unit.traveler:
                         u = game.get_unit(self.cur_unit.traveler)
-                        act = action.SwapPaired(self.cur_unit, u)
-                        act.do()
                         self.cur_unit = u
                         game.cursor.cur_unit = u
                         game.leave(self.cur_unit)

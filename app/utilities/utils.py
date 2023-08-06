@@ -9,7 +9,7 @@ from operator import add, sub
 from typing import Tuple
 
 
-def frames_to_ms(num_frames: int) -> int:
+def frames_to_ms(num_frames: float) -> int:
     """at 60 fps, each frame would happen in 16.67 ms"""
     return int(16.67 * num_frames)
 frames2ms = frames_to_ms  # Alternate name

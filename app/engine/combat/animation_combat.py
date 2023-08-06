@@ -476,21 +476,22 @@ class AnimationCombat(BaseCombat, MockCombat):
                     self.right_battle_anim.finish()
                     if self.rp_battle_anim:
                         self.rp_battle_anim.finish()
-                    if self.battle_background and not self._skip:
-                        self.battle_background.fade_out(utils.frames2ms(10))
+                    if self.battle_background:
+                        fade_time = utils.frames2ms(2.5 if self._skip else 10)
+                        self.battle_background.fade_out(fade_time)
                     self.state = 'name_tags_out'
 
         elif self.state == 'name_tags_out':
-            exit_time = utils.frames2ms(10)
+            exit_time = utils.frames2ms(2.5 if self._skip else 10)
             self.name_offset = 1 - current_time / exit_time
-            if self._skip or current_time > exit_time:
+            if current_time > exit_time:
                 self.name_offset = 0
                 self.state = 'all_out'
 
         elif self.state == 'all_out':
-            exit_time = utils.frames2ms(10)
+            exit_time = utils.frames2ms(2.5 if self._skip else 10)
             self.bar_offset = 1 - current_time / exit_time
-            if self._skip or current_time > exit_time:
+            if current_time > exit_time:
                 self.bar_offset = 0
                 self.state = 'fade_out'
 
@@ -503,9 +504,9 @@ class AnimationCombat(BaseCombat, MockCombat):
                 return True
 
         elif self.state == 'arena_out':
-            exit_time = utils.frames2ms(10)
+            exit_time = utils.frames2ms(2.5 if self._skip else 10)
             self.bg_black_progress = 1 - current_time / exit_time
-            if self._skip or current_time > exit_time:
+            if current_time > exit_time:
                 self.bg_black_progress = 0
                 self.finish()
                 self.clean_up2()

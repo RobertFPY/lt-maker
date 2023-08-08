@@ -194,16 +194,8 @@ def inventory_full(unit, item) -> bool:
         return len(unit.nonaccessories) >= get_num_items(unit)
 
 def get_range(unit, item) -> set:
-    min_range, max_range = 0, 0
-    all_components = item_system.get_all_components(unit, item)
-    for component in all_components:
-        if component.defines('minimum_range'):
-            min_range = component.minimum_range(unit, item)
-            break
-    for component in all_components:
-        if component.defines('maximum_range'):
-            max_range = component.maximum_range(unit, item)
-            break
+    min_range = item_system.minimum_range(unit, item)
+    max_range = item_system.maximum_range(unit, item)
 
     max_range = max(0, max_range)
     max_range += skill_system.modify_maximum_range(unit, item)

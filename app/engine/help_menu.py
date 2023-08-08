@@ -8,7 +8,7 @@ from app.engine import (base_surf, engine, icons, item_funcs,
 from app.engine.fonts import FONT
 from app.engine.game_state import game
 from app.engine.graphics.text.text_renderer import (fix_tags, font_height, render_text,
-                                                    text_width)
+                                                    text_width, remove_tags)
 from app.engine.sprites import SPRITES
 from app.utilities import utils
 from app.utilities.enums import HAlignment
@@ -215,8 +215,14 @@ class StatDialog(HelpDialog):
                     render_text(help_surf, [self.text_font], [str(val)], ['red'], (8, top))
                 else:
                     render_text(help_surf, [self.font], [str(val)], [color], (8, top))
-                render_text(help_surf, [self.font], [bonus[:num_characters]], [color], (32, top))
-                num_characters -= len(bonus)
+                num_characters -= len(str(val))
+                # Creates a temporary surface so that we can subsurface it and 
+                # draw it in from left to right
+                tmp_surface = engine.create_surface((WINWIDTH - 32, font_height(self.font)), transparent=True)
+                render_text(tmp_surface, [self.font], [bonus], [color], (0, 0))
+                tmp_surface = engine.subsurface(tmp_surface, (0, 0, min(num_characters * 6, WINWIDTH - 32), font_height(self.font)))
+                help_surf.blit(tmp_surface, (32, top))
+                num_characters -= len(remove_tags([bonus])[0])
 
         if self.dlg:
             self.dlg.update()

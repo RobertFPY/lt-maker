@@ -47,9 +47,23 @@ class TeamCatalog(Data[Team]):
                     self.default_combat_palettes[idx], 
                     self.default_colors[idx])
                 self.append(team)
+
+    def save(self):
+        vals: list = super().save()
+        return (vals, list(self.alliance_pairs))
         
     def restore(self, vals):
-        super().restore(vals)
+        if len(vals) == 2:
+            vals, alliance_pairs = vals
+        else:  # Deprecated support
+            vals = vals
+            alliance_pairs = [('other', 'player')]
+        self = super().restore(vals)
+
+        self.alliance_pairs = set()
+        for a, b in alliance_pairs:
+            self.alliance_pairs.add((a, b))
+
         self.add_defaults()
         return self
 

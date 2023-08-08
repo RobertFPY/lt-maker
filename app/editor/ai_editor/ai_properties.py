@@ -115,7 +115,7 @@ class UnitSpecification(QWidget):
 
     def sub_spec_changed(self):
         unit_spec = self.box1.currentText()
-        if self.box2.currentIndex() in (0, 2, 3, 4):
+        if self.box2.currentIndex() in (0, 2, 3):
             sub_spec = self.box2.currentWidget().currentText()
         else:
             sub_spec = self.box2.currentWidget().edit.currentText()

@@ -1284,6 +1284,9 @@ def recruit_generic(self: Event, unit, nid, name, flags=None):
     if not new_unit:
         self.logger.error("recruit_generic: Couldn't find unit %s" % unit)
         return
+    if not nid:
+        self.logger.error("recruit_generic: The unit must be given a new NID")
+        return
     unit = new_unit
     action.do(action.SetPersistent(unit))
     action.do(action.SetNid(unit, nid))

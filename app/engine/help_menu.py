@@ -164,6 +164,7 @@ class StatDialog(HelpDialog):
         self.transition_out = 0
 
         desc = text_funcs.translate(desc)
+        self.plain_desc = desc
         self.bonuses = bonuses
 
         self.lines = fix_tags(text_funcs.line_wrap(self.font, desc, 144))
@@ -177,6 +178,24 @@ class StatDialog(HelpDialog):
     def create_dialog(self, desc):
         from app.engine import dialog
         desc = desc.replace('\n', '{br}')
+
+        bonuses = sorted(self.bonuses.items(), key=lambda x: x[0] != 'Base Value')
+        color = game.speak_styles.get('__default_help').font_color
+        for idx, (bonus, val) in enumerate(bonuses):
+            if idx == 0:
+                width = text_width(self.text_font, str(val))
+                desc += '{br}<%s><%s>%s</></>' % (self.text_font, color, str(val))
+            elif val > 0:
+                width = text_width(self.text_font, '+' + str(val))
+                desc += '{br}<%s><green>%s</></>' % (self.text_font, '+' + str(val))
+            elif val < 0:
+                width = text_width(self.text_font, str(val))
+                desc += '{br}<%s><red>%s</></>' % (self.text_font, str(val))
+            else:
+                width = text_width(self.font, str(val))
+                desc += '{br}<%s><%s>%s</></>' % (self.font, color, str(val))
+            desc += '{max_speed}' + ('﹘' * (24 - width)) + '{starting_speed}<%s><%s>%s</></>' % (self.font, color, bonus)
+
         self.dlg = \
             dialog.Dialog.from_style(game.speak_styles.get('__default_help'), desc,
                                      width=160)
@@ -188,41 +207,10 @@ class StatDialog(HelpDialog):
             self.start_time = time - 16
             self.transition_in = True
             self.transition_out = 0
-            self.create_dialog(self.dlg.plain_text)
+            self.create_dialog(self.plain_desc)
         self.last_time = time
 
         help_surf = engine.copy_surface(self.help_surf)
-        if cf.SETTINGS['text_speed'] > 0:
-            num_characters = int(2 * (time - self.start_time) / float(cf.SETTINGS['text_speed']))
-        else:
-            num_characters = 1000
-
-        for idx, line in enumerate(self.lines):
-            if num_characters > 0:
-                num_characters -= len(line)
-
-        y_height = len(self.lines) * 16
-        bonuses = sorted(self.bonuses.items(), key=lambda x: x[0] != 'Base Value')
-        color = game.speak_styles.get('__default_help').font_color
-        for idx, (bonus, val) in enumerate(bonuses):
-            if num_characters > 0:
-                top = font_height(self.font) * idx + 8 + y_height
-                if idx == 0:
-                    render_text(help_surf, [self.text_font], [str(val)], [color], (8, top))
-                elif val > 0:
-                    render_text(help_surf, [self.text_font], ['+' + str(val)], ['green'], (8, top))
-                elif val < 0:
-                    render_text(help_surf, [self.text_font], [str(val)], ['red'], (8, top))
-                else:
-                    render_text(help_surf, [self.font], [str(val)], [color], (8, top))
-                num_characters -= len(str(val))
-                # Creates a temporary surface so that we can subsurface it and 
-                # draw it in from left to right
-                tmp_surface = engine.create_surface((WINWIDTH - 32, font_height(self.font)), transparent=True)
-                render_text(tmp_surface, [self.font], [bonus], [color], (0, 0))
-                tmp_surface = engine.subsurface(tmp_surface, (0, 0, min(num_characters * 6, WINWIDTH - 32), font_height(self.font)))
-                help_surf.blit(tmp_surface, (32, top))
-                num_characters -= len(remove_tags([bonus])[0])
 
         if self.dlg:
             self.dlg.update()

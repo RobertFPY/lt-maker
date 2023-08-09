@@ -66,6 +66,7 @@ class Dialog():
         self.font_color = font_color or 'black'
         self.autosize = autosize
         self.speed = speed if speed is not None else 1.0
+        self.starting_speed = self.speed
         self.num_lines = num_lines
         self.draw_cursor_flag = draw_cursor
         self.font = FONT[self.font_type]
@@ -294,6 +295,10 @@ class Dialog():
                     self.portrait.stop_talking()
         elif command == '{tgs}':
             self.should_speak_sound = not self.should_speak_sound
+        elif command == '{max_speed}':
+            self.speed = 0
+        elif command == '{starting_speed}':
+            self.speed = self.starting_speed
         elif command == ' ':  # Check to see if we should move to next line
             # Wow this is cursed
             # Basically, we need to make sure we are using 
@@ -426,7 +431,7 @@ class Dialog():
                     if self.state != DialogState.PROCESS:
                         self.total_num_updates = 0
             else:
-                while self.state == DialogState.PROCESS:
+                while self.state == DialogState.PROCESS and (cf.SETTINGS['text_speed'] * self.speed) == 0:
                     self._next_char(sound=False)
                     # Skip regular pauses because we want MAXIMUM VELOCITY of characters
                     if self.state == DialogState.PAUSE:

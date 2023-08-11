@@ -72,9 +72,9 @@ ITEM_HOOKS: Dict[str, HookInfo] = {
     'dynamic_crit_accuracy':                           HookInfo(['unit', 'item', 'target', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
     'dynamic_attack_speed':                            HookInfo(['unit', 'item', 'target', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
     'dynamic_multiattacks':                            HookInfo(['unit', 'item', 'target', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
-    # aesthetic components do not return any value
-    'battle_music':                                    HookInfo(['unit', 'item', 'target', 'mode'], ResolvePolicy.NO_RETURN),
-    'combat_effect':                                   HookInfo(['unit', 'item', 'target', 'mode'], ResolvePolicy.NO_RETURN),
+    # aesthetic components that return a value
+    'battle_music':                                    HookInfo(['unit', 'item', 'target', 'mode'], ResolvePolicy.UNIQUE),
+    'combat_effect':                                   HookInfo(['unit', 'item', 'target', 'mode'], ResolvePolicy.UNIQUE),
     # events do not return, but are the only item components currently inherited from parents
     'on_end_chapter':                                  HookInfo(['unit', 'item'], ResolvePolicy.NO_RETURN, inherits_parent=True),
     'reverse_use':                                     HookInfo(['unit', 'item'], ResolvePolicy.NO_RETURN, inherits_parent=True),

@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Dict, List
+from typing import Dict, List, Optional, Tuple
 
 from app.data.database.weapons import WexpGain
 from app.utilities.data import Data, Prefab
@@ -9,10 +9,10 @@ from app.utilities import str_utils
 
 @dataclass
 class UnitPrefab(Prefab):
-    nid: str = None
-    name: str = None
-    desc: str = None
-    variant: str = None
+    nid: str
+    name: Optional[str] = None
+    desc: Optional[str] = None
+    variant: Optional[str] = None
 
     level: int = 1
     klass: str = None
@@ -21,16 +21,16 @@ class UnitPrefab(Prefab):
     bases: Dict[NID, int] = field(default_factory=dict)
     growths: Dict[NID, int] = field(default_factory=dict)
     stat_cap_modifiers: Dict[NID, int] = field(default_factory=dict)
-    starting_items: list = field(default_factory=list)  # of tuples (ItemPrefab, droppable)
+    starting_items: List[Tuple[NID, bool]] = field(default_factory=list)  # (item_nid, droppable)
 
-    learned_skills: list = field(default_factory=list)
+    learned_skills: List[List] = field(default_factory=list) # each list is a tuple (level, skill_nid)
     unit_notes: list = field(default_factory=list)
     wexp_gain: Dict[NID, WexpGain] = field(default_factory=dict)
 
     alternate_classes: list = field(default_factory=list)
 
-    portrait_nid: str = None
-    affinity: str = None
+    portrait_nid: Optional[NID] = None
+    affinity: Optional[NID] = None
 
     fields: list = field(default_factory=list) # arbitrary field, allow players to fill out anything they want
 
@@ -90,6 +90,10 @@ class UnitPrefab(Prefab):
         else:
             value = super().restore_attr(name, value)
         return value
+
+    @classmethod
+    def default(cls):
+        return cls('0')
 
 class UnitCatalog(Data[UnitPrefab]):
     datatype = UnitPrefab

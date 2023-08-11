@@ -890,7 +890,7 @@ class PairUp(Action):
         self.unit.sprite.change_state('normal')
 
 
-class SwapPaired(Action):
+class SwitchPaired(Action):
     def __init__(self, leader, follower):
         self.leader = leader
         self.follower = follower
@@ -907,7 +907,7 @@ class SwapPaired(Action):
         self.follower.set_guard_gauge(self.orig_guard_gauge)
         self.leader.set_guard_gauge(0)
 
-        logging.info(self.leader.nid + " and " + self.follower.nid + " swapped. The first was leader but is now follower, and vice versa.")
+        logging.info(self.leader.nid + " and " + self.follower.nid + " switched. The first was leader but is now follower, and vice versa.")
 
         game.leave(self.leader)
         self.leader.position = None
@@ -925,7 +925,7 @@ class SwapPaired(Action):
         self.leader.set_guard_gauge(self.orig_guard_gauge)
         self.follower.set_guard_gauge(0)
 
-        logging.info(self.leader.nid + " and " + self.follower.nid + " reversed their earlier swap")
+        logging.info(self.leader.nid + " and " + self.follower.nid + " reversed their earlier switch")
 
         skill_system.on_separate(self.leader, self.follower)
         skill_system.on_pairup(self.follower, self.leader)

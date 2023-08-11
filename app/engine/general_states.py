@@ -663,7 +663,7 @@ class MoveState(MapState):
         if cur_unit.previous_position != cur_unit.position:
             action.do(action.SetPreviousPosition(cur_unit))
 
-        # To keep track of for swapping
+        # To keep track of for switching
         if cur_unit.traveler:
             cur_unit.lead_unit = True
 
@@ -823,7 +823,7 @@ class MoveCameraState(State):
 class MenuState(MapState):
     name = 'menu'
     menu = None
-    normal_options = {'Item', 'Wait', 'Take', 'Give', 'Rescue', 'Trade', 'Drop', 'Visit', 'Armory', 'Vendor', 'Spells', 'Attack', 'Steal', 'Shove', 'Pair Up', 'Swap', 'Separate', 'Transfer'}
+    normal_options = {'Item', 'Wait', 'Take', 'Give', 'Rescue', 'Trade', 'Drop', 'Visit', 'Armory', 'Vendor', 'Spells', 'Attack', 'Steal', 'Shove', 'Pair Up', 'Switch', 'Separate', 'Transfer'}
 
     def start(self):
         self._proceed_with_targets_item = False
@@ -966,7 +966,7 @@ class MenuState(MapState):
                         game.state.change('free')
                         self.cur_unit.wait()
                 else:
-                    # Reverse Swap here
+                    # Reverse Switch here
                     if self.cur_unit.lead_unit:
                         logging.info("Lead unit is " + str(self.cur_unit.lead_unit))
                     if self.cur_unit.traveler:

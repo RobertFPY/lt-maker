@@ -165,9 +165,7 @@ def multi_add_portrait(self: Event, portrait1, screen_position1, portrait2, scre
         commands.append(event_commands.AddPortrait({'Portrait': portrait3, 'ScreenPosition': screen_position3}, flags))
     if portrait4:
         commands.append(event_commands.AddPortrait({'Portrait': portrait4, 'ScreenPosition': screen_position4}, set()))
-    for command in reversed(commands):
-        # Done backwards to preserve order upon insertion
-        self.commands.insert(self.command_idx + 1, command)
+    self.command_queue += commands
 
 def remove_portrait(self: Event, portrait, speed_mult=1, flags=None):
     flags = flags or set()
@@ -203,10 +201,7 @@ def multi_remove_portrait(self: Event, portrait1, portrait2, portrait3=None, por
         commands.append(event_commands.RemovePortrait({'Portrait': portrait3}, flags))
     if portrait4:
         commands.append(event_commands.RemovePortrait({'Portrait': portrait4}, set()))
-
-    for command in reversed(commands):
-        # Done backwards to preserve order upon insertion
-        self.commands.insert(self.command_idx + 1, command)
+    self.command_queue += commands
 
 def move_portrait(self: Event, portrait, screen_position, speed_mult=1, flags=None):
     flags = flags or set()
@@ -267,9 +262,7 @@ def mirror_portrait(self: Event, portrait, flags=None):
             if 'no_block' in flags:
                 command_flags.add("no_block")
             commands.append(event_commands.AddPortrait({'Portrait': name, 'ScreenPosition': str(self.portraits[name].position)}, command_flags))
-            for command in reversed(commands):
-                # Done backwards to preserve order upon insertion
-                self.commands.insert(self.command_idx + 1, command)
+            self.command_queue += commands
         else:
             # Immediate removal followed by a transition in
             self.portraits[name] = flipped_portrait
@@ -635,11 +628,12 @@ def flicker_cursor(self: Event, position, flags=None):
     disp_cursor_command1 = event_commands.DispCursor({'ShowCursor': '1'})
     wait_command = event_commands.Wait({'Time': '1000'})
     disp_cursor_command2 = event_commands.DispCursor({'ShowCursor': '0'})
-    # Done backwards to presever order upon insertion
-    self.commands.insert(self.command_idx + 1, disp_cursor_command2)
-    self.commands.insert(self.command_idx + 1, wait_command)
-    self.commands.insert(self.command_idx + 1, disp_cursor_command1)
-    self.commands.insert(self.command_idx + 1, move_cursor_command)
+    self.command_queue += [
+        move_cursor_command,
+        disp_cursor_command1,
+        wait_command,
+        disp_cursor_command2
+    ]
 
 def screen_shake(self: Event, duration, shake_type=None, flags=None):
     flags = flags or set()
@@ -1283,9 +1277,6 @@ def recruit_generic(self: Event, unit, nid, name, flags=None):
     new_unit = self._get_unit(unit)
     if not new_unit:
         self.logger.error("recruit_generic: Couldn't find unit %s" % unit)
-        return
-    if not nid:
-        self.logger.error("recruit_generic: The unit must be given a new NID")
         return
     unit = new_unit
     action.do(action.SetPersistent(unit))
@@ -3541,9 +3532,8 @@ def unlock(self: Event, unit, flags=None):
     # This is a macro that just adds new commands to command list
     find_unlock_command = event_commands.FindUnlock({'Unit': unit})
     spend_unlock_command = event_commands.SpendUnlock({'Unit': unit})
-    # Done backwards to preseve order upon insertion
-    self.commands.insert(self.command_idx + 1, spend_unlock_command)
-    self.commands.insert(self.command_idx + 1, find_unlock_command)
+    self.command_queue.append(find_unlock_command)
+    self.command_queue.append(spend_unlock_command)
 
 def find_unlock(self: Event, unit, flags=None):
     new_unit = self._get_unit(unit)
@@ -3659,11 +3649,11 @@ def loop_units(self: Event, expression, event, flags=None):
     if not all((isinstance(unit_nid, str) or isinstance(unit_nid, UnitObject)) for unit_nid in unit_list):
         self.logger.error("loop_units: %s: could not evaluate to NID list {%s}" % ('loop_units', unit_list_str))
         return
-    for unit_nid in reversed(unit_list):
+    for unit_nid in unit_list:
         if not isinstance(unit_nid, str):
             unit_nid = unit_nid.nid  # Try this!
         macro_command = event_commands.TriggerScript({'Event': event, 'Unit1': unit_nid})
-        self.commands.insert(self.command_idx + 1, macro_command)
+        self.command_queue.append(macro_command)
 
 def change_roaming(self: Event, free_roam_enabled, flags=None):
     val = free_roam_enabled.lower()
@@ -3797,7 +3787,7 @@ def complete_achievement(self: Event, achievement: str, completed: str, flags=No
             self.wait_time = engine.get_time() + 2000
             self.state = 'waiting'
             remove_overlay_sprite_command = event_commands.RemoveOverlaySprite({'Nid': anim_nid}, flags={'foreground'})
-            self.commands.insert(self.command_idx + 1, remove_overlay_sprite_command)
+            self.command_queue.append(remove_overlay_sprite_command)
 
 def clear_achievements(self: Event, flags=None):
     ACHIEVEMENTS.clear_achievements()

@@ -173,8 +173,8 @@ class EventUnitTests(unittest.TestCase):
         ]
         event = self.create_event(test_commands)
 
-        event.run_command(event.commands[0])
-        event.run_command(event.commands[1])
+        event.run_command(event.parser.commands[0])
+        event.run_command(event.parser.commands[1])
 
         self.game.overworld_controller.toggle_menu_option_enabled.assert_called_with('1', 'Battle', True)
         self.game.overworld_controller.toggle_menu_option_visible.assert_called_with('1', 'Battle', True)

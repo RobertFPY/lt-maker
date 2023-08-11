@@ -1,7 +1,9 @@
 from enum import Enum, IntEnum
+from typing import Optional
 
 from app.utilities import str_utils
 from app.utilities.data import Data
+
 
 class ComponentType(IntEnum):
     Bool = 0
@@ -50,7 +52,7 @@ class Component():
     nid: str
     desc: str
     author: str = 'rainlash'
-    expose = None  # Attribute
+    expose: Optional[ComponentType] = None  # Attribute
     paired_with: list = []
     tag: Enum
     value = None

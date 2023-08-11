@@ -6,12 +6,13 @@ import os
 import re
 import shutil
 from typing import Any, Dict, List
-from app.data.category import Categories, CategorizedCatalog
 
-from app.data.database import (ai, constants, difficulty_modes, equations, factions,
-                      items, klass, levels, lore, mcost, minimap, overworld,
-                      overworld_node, parties, raw_data, skills, stats, varslot,
-                      supports, tags, terrain, translations, units, weapons, teams)
+from app.data.category import Categories, CategorizedCatalog
+from app.data.database import (ai, constants, difficulty_modes, equations,
+                               factions, items, klass, levels, lore, mcost,
+                               minimap, overworld, parties,
+                               raw_data, skills, stats, supports, tags, teams,
+                               terrain, translations, units, varslot, weapons)
 from app.events import event_prefab
 from app.utilities.typing import NID
 

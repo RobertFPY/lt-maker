@@ -1,21 +1,24 @@
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
-from app.data.category import Categories, CategorizedCatalog
+from __future__ import annotations
+
+from typing import Optional, Tuple
+
 import app.engine.item_component_access as ICA
-from app.utilities.data import Data, Prefab
-from app.data.database.components import Component
-from app.utilities.typing import NID
+from app.data.category import CategorizedCatalog
+from app.data.database.item_components import ItemComponent
 from app.utilities import str_utils
+from app.utilities.data import Data, Prefab
+from app.utilities.typing import NID
 
 
 class ItemPrefab(Prefab):
     nid: NID
     name: str
     desc: str
-    components: Data[Component]
+    components: Data[ItemComponent]
     icon_nid: Optional[NID]
     icon_index: Tuple[int, int]
 
-    def __init__(self, nid, name, desc, icon_nid=None, icon_index=(0, 0), components=None):
+    def __init__(self, nid, name, desc, icon_nid=None, icon_index=(0, 0), components: Optional[Data[ItemComponent]]=None):
         self.nid = nid
         self.name = name
         self.desc = desc
@@ -23,7 +26,7 @@ class ItemPrefab(Prefab):
         self.icon_nid = icon_nid
         self.icon_index = icon_index
 
-        self.components = components or Data()
+        self.components = components or Data[ItemComponent]()
         for component_key, component_value in self.components.items():
             self.__dict__[component_key] = component_value
 

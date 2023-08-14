@@ -16,53 +16,34 @@ class TargetsAnything(ItemComponent):
     desc = "Item targets any tile"
     tag = ItemTags.TARGET
 
-    def ai_targets(self, unit, item) -> set:
-        return {(x, y) for x in range(game.tilemap.width) for y in range(game.tilemap.height)}
-
     def valid_targets(self, unit, item) -> set:
-        rng = item_funcs.get_range(unit, item)
-        positions = target_system.find_manhattan_spheres(rng, *unit.position)
-        return {pos for pos in positions if game.board.check_bounds(pos)}
+        return {(x, y) for x in range(game.tilemap.width) for y in range(game.tilemap.height)}
 
 class TargetsUnits(ItemComponent):
     nid = 'target_unit'
     desc = "Item targets any unit"
     tag = ItemTags.TARGET
 
-    def ai_targets(self, unit, item):
-        return {other.position for other in game.units if other.position}
-
     def valid_targets(self, unit, item) -> set:
-        targets = {other.position for other in game.units if other.position}
-        return {t for t in targets if utils.calculate_distance(unit.position, t) in item_funcs.get_range(unit, item)}
+        return {other.position for other in game.units if other.position}
 
 class TargetsEnemies(ItemComponent):
     nid = 'target_enemy'
     desc = "Item targets any enemy"
     tag = ItemTags.TARGET
 
-    def ai_targets(self, unit, item):
-        return {other.position for other in game.units if other.position and
-                skill_system.check_enemy(unit, other)}
-
     def valid_targets(self, unit, item) -> set:
-        targets = {other.position for other in game.units if other.position and
+        return {other.position for other in game.units if other.position and
                    skill_system.check_enemy(unit, other)}
-        return {t for t in targets if utils.calculate_distance(unit.position, t) in item_funcs.get_range(unit, item)}
 
 class TargetsAllies(ItemComponent):
     nid = 'target_ally'
     desc = "Item targets any ally"
     tag = ItemTags.TARGET
 
-    def ai_targets(self, unit, item):
-        return {other.position for other in game.units if other.position and
-                skill_system.check_ally(unit, other)}
-
     def valid_targets(self, unit, item) -> set:
-        targets = {other.position for other in game.units if other.position and
+        return {other.position for other in game.units if other.position and
                    skill_system.check_ally(unit, other)}
-        return {t for t in targets if utils.calculate_distance(unit.position, t) in item_funcs.get_range(unit, item)}
 
 class TargetsSpecificTiles(ItemComponent):
     nid = 'target_specific_tile'
@@ -72,14 +53,8 @@ class TargetsSpecificTiles(ItemComponent):
     expose = ComponentType.String
     value = ''
 
-    def ai_targets(self, unit, item) -> set:
-        return set(self.resolve_targets(unit, item))
-
     def valid_targets(self, unit, item) -> set:
-        rng = item_funcs.get_range(unit, item)
-        range_restrictions = target_system.find_manhattan_spheres(rng, *unit.position)
-        targetable_positions = self.resolve_targets(unit, item)
-        return {pos for pos in targetable_positions if pos in range_restrictions}
+        return set(self.resolve_targets(unit, item))
 
     def resolve_targets(self, unit, item):
         from app.engine import evaluate

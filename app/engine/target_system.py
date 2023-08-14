@@ -277,6 +277,15 @@ def travel_algorithm(path, moves, unit, grid):
         through_path -= 1
     return path[-(through_path + 1)]  # Travel as far as we can
 
+def targets_in_range(unit: UnitObject, item: ItemObject) -> set:
+    '''
+    Taking a unit and an item, finds a set of
+    positions that are within range
+    '''
+    possible_targets = item_system.valid_targets(unit, item)
+    item_range = item_funcs.get_range(unit, item)
+    return {t for t in possible_targets if utils.calculate_distance(unit.position, t) in item_range}
+
 def get_valid_targets(unit, item=None) -> set:
     """
     Determines all the valid targets given use of the item
@@ -301,7 +310,7 @@ def get_valid_targets(unit, item=None) -> set:
             return set()
 
     # Handle regular item targeting
-    all_targets = item_system.valid_targets(unit, item)
+    all_targets = targets_in_range(unit, item)
     valid_targets = set()
     for position in all_targets:
         splash = item_system.splash(unit, item, position)

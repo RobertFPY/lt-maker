@@ -392,7 +392,7 @@ class PrimaryAI():
 
     def get_valid_targets(self, unit, item, valid_moves) -> list:
         item_range = item_funcs.get_range(unit, item)
-        ai_targets = item_system.ai_targets(unit, item)
+        ai_targets = item_system.valid_targets(unit, item)
         if len(ai_targets) < 20:
             logging.info("AI Targets: %s", ai_targets)
         filtered_targets = set()

@@ -204,17 +204,6 @@ def valid_targets(unit, item) -> set:
             targets |= component.valid_targets(unit, item)
     return targets
 
-def ai_targets(unit, item) -> set:
-    targets = set()
-    all_components = get_all_components(unit, item)
-    for component in all_components:
-        if component.defines('ai_targets'):
-            if targets:  # If we already have targets, just make them smaller
-                targets &= component.ai_targets(unit, item)
-            else:
-                targets |= component.ai_targets(unit, item)
-    return targets
-
 def target_restrict(unit, item, def_pos, splash) -> bool:
     all_components = get_all_components(unit, item)
     for component in all_components:

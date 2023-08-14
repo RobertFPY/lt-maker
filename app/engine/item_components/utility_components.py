@@ -138,17 +138,13 @@ class UnlockStaff(ItemComponent):
     def _valid_region(self, region) -> bool:
         return region.region_type == RegionType.EVENT and 'can_unlock' in region.condition
 
-    def ai_targets(self, unit, item) -> set:
+    def valid_targets(self, unit, item) -> set:
         targets = set()
         for region in game.level.regions:
             if self._valid_region(region):
                 for position in region.get_all_positions():
                     targets.add(position)
         return targets
-
-    def valid_targets(self, unit, item) -> set:
-        targets = self.ai_targets(unit, item)
-        return {t for t in targets if utils.calculate_distance(unit.position, t) in item_funcs.get_range(unit, item)}
 
     def splash(self, unit, item, position):
         return position, []

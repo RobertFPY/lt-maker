@@ -409,7 +409,7 @@ class Steal(ItemComponent):
                     return True
         return False
 
-    def ai_targets(self, unit, item):
+    def valid_targets(self, unit, item):
         positions = set()
         for other in game.units:
             if other.position and skill_system.check_enemy(unit, other):

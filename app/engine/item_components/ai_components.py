@@ -7,6 +7,4 @@ class NoAI(ItemComponent):
 
     def ai_priority(self, unit, item, target, move):
         return -1
-
-    def ai_targets(self, unit, item) -> set:
-        return set()
+    

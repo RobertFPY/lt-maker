@@ -104,11 +104,12 @@ def compute_advantage(unit1, unit2, item1, item2, advantage=True):
     return new_adv
 
 def can_counterattack(attacker, aweapon, defender, dweapon) -> bool:
+    from app.engine import target_system
     if dweapon and item_funcs.available(defender, dweapon):
         if item_system.can_be_countered(attacker, aweapon) and \
                 item_system.can_counter(defender, dweapon):
             if not attacker.position or \
-                    attacker.position in item_system.valid_targets(defender, dweapon) or \
+                    attacker.position in target_system.targets_in_range(defender, dweapon) or \
                     skill_system.distant_counter(defender) or \
                     (skill_system.close_counter(defender) and utils.calculate_distance(attacker.position, defender.position) == 1):
                 return True

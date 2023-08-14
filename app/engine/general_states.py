@@ -647,8 +647,9 @@ class MoveState(MapState):
         game.cursor.show()
         cur_unit = game.cursor.cur_unit
 
-        if cur_unit.is_dying or cur_unit.dead:
+        if cur_unit.is_dying or cur_unit.dead or not cur_unit.position:
             # This is sometimes possible if a unit dies after combat somehow but also has canto
+            # Also sometimes possible if you remove a unit in or after combat but they have canto
             # Combat will figure out that you are supposed to go to canto move (here)
             # But you then die and therefore don't have a position and shouldn't be moving
             # So we clean this up here

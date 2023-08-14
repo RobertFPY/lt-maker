@@ -323,7 +323,6 @@ class SimpleCombat():
                 game.state.change('move')
                 action.do(action.SetMovementLeft(self.attacker, skill_system.canto_movement(self.attacker, self.defender)))
                 game.cursor.place_arrows()
-
             else:
                 game.state.clear()
                 game.state.change('free')

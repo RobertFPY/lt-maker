@@ -1,7 +1,6 @@
 from app.utilities.typing import Color3, NID, Point
 from typing import Dict, Tuple
 from app.constants import TILEWIDTH, TILEHEIGHT
-from app.utilities import utils
 
 from app.data.database.database import DB
 from app.engine.sprites import SPRITES

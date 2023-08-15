@@ -27,7 +27,7 @@ from app.utilities.typing import NID, Color3
 class Event():
     true_vals = ('t', 'true', 'True', '1', 'y', 'yes')
 
-    skippable = {"wait", "bop_portrait", "sound", 
+    skippable = {"wait", "bop_portrait", "sound",
                  "location_card", "credits", "ending"}
 
     def __init__(self, nid, commands, trigger: triggers.EventTrigger, game: GameState = None):
@@ -133,7 +133,7 @@ class Event():
         self.command_queue = ser_dict['command_queue']
         self.parser = EventParser.restore(ser_dict['parser_state'], self.text_evaluator)
         return self
-    
+
     def finished(self):
         return self.parser.finished() and not self.command_queue
 
@@ -502,7 +502,7 @@ class Event():
             return None, None
         item = [item for item in item_list if (item.nid == item_id or (str_utils.is_int(item_id) and item.uid == int(item_id)))][0]
         return unit, item
-        
+
     def _get_skill(self, unit_nid: str, skill: str) -> tuple[UnitObject, SkillObject]:
         unit = self._get_unit(unit_nid)
         if not unit:

@@ -366,7 +366,7 @@ def speak(self: Event, speaker, text, text_position=None, width=None, style_nid=
 
     # Process text for commands
     blocks = str_utils.matched_block_expr(text, '{', '}')
-    for block in reversed(blocks):  # reversed to preserve order upon insertion
+    for block in blocks:
         if block.startswith('{command:') and block.endswith('}'):
             event_command_str = block[len('{command:'):-1]
         elif block.startswith('{c:') and block.endswith('}'):
@@ -374,12 +374,11 @@ def speak(self: Event, speaker, text, text_position=None, width=None, style_nid=
         else:
             continue
         text = text.replace(block, '{p}', 1)  # Replace first instance
-        # Done backwards to preserve order
+        self._queue_command(event_command_str)
         if speaker:
             self._queue_command('unpause;%s' % speaker)
         else:
             self._queue_command('unpause')
-        self._queue_command(event_command_str)
 
     # Determine whether this should be skipped
     # Hold speaks are not skipped
@@ -1880,7 +1879,7 @@ def remove_item_component(self: Event, global_unit_or_convoy, item, item_compone
         return
 
     action.do(action.RemoveItemComponent(item, component_nid))
-    
+
 def add_skill_component(self: Event, global_unit, skill, skill_component, expression=None, flags=None):
     flags = flags or set()
     component_nid = skill_component
@@ -1900,7 +1899,7 @@ def add_skill_component(self: Event, global_unit, skill, skill_component, expres
         component_value = None
 
     action.do(action.AddSkillComponent(skill, component_nid, component_value))
-    
+
 def modify_skill_component(self: Event, global_unit, skill, skill_component, expression, component_property=None, flags=None):
     flags = flags or set()
     component_nid = skill_component
@@ -1918,7 +1917,7 @@ def modify_skill_component(self: Event, global_unit, skill, skill_component, exp
         return
 
     action.do(action.ModifySkillComponent(skill, component_nid, component_value, component_property, is_additive))
-    
+
 def remove_skill_component(self: Event, global_unit, skill, skill_component, flags=None):
     flags = flags or set()
     component_nid = skill_component
@@ -2948,7 +2947,7 @@ def base(self: Event, background: str, music: str = None, other_options: str = N
     self.game.state.change('base_main')
     self.state = 'paused'
 
-def set_custom_options(self: Event, custom_options: str, custom_options_enabled: str = None, 
+def set_custom_options(self: Event, custom_options: str, custom_options_enabled: str = None,
                        custom_options_desc: str = None, custom_options_on_select: str = None, flags=None):
     flags = flags or set()
 
@@ -3475,13 +3474,13 @@ def open_guide(self: Event, flags=None):
         self.logger.warning("open_guide: Skipping opening guide because there is no unlocked lore in the guide category")
 
 def open_unit_management(self: Event, panorama=None, flags=None):
-    flags = flags or set() 
+    flags = flags or set()
     if 'scroll' in flags:
         bg = background.create_background(panorama, True)
     else:
         bg = background.create_background(panorama, False)
     self.game.memory['base_bg'] = bg
-    
+
     self.state = "paused"
     if 'immediate' in flags:
         self.game.state.change('base_manage')

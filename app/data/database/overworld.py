@@ -5,11 +5,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional
 
 from app.utilities.typing import Point
 
-if TYPE_CHECKING:
-    from app.data.resources.sounds import Song
-
 from app.data.database.overworld_node import OverworldNodeCatalog, OverworldNodePrefab
-from app.data.resources.resources import RESOURCES
 from app.utilities.data import Data, Prefab
 
 class OverworldPrefab(Prefab):
@@ -76,9 +72,6 @@ class OverworldPrefab(Prefab):
         """
         spl = tstring.split('-')
         return [make_tuple(spl[0]), make_tuple(spl[1])]
-    
-    def get_music_resource(self) -> Song:
-        return RESOURCES.music.get(self.music)
 
 class OverworldCatalog(Data[OverworldPrefab]):
     datatype = OverworldPrefab

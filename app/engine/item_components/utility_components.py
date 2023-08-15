@@ -197,11 +197,10 @@ class Repair(ItemComponent):
     def init(self, item):
         item.data['target_item'] = None
 
-    def _target_restrict(self, defender):
+    def _target_restrict(self, unit, item, defender):
         # Unit has item that can be repaired
         for item in defender.items:
-            if item.uses and item.data['uses'] < item.data['starting_uses'] and \
-                    not item_system.unrepairable(defender, item):
+            if self.item_restrict(unit, item, defender, item):
                 return True
         return False
 
@@ -210,7 +209,7 @@ class Repair(ItemComponent):
         defender = game.board.get_unit(def_pos)
         if not defender:
             return False
-        return self._target_restrict(defender)
+        return self._target_restrict(unit, item, defender)
 
     def simple_target_restrict(self, unit, item):
         return self._target_restrict(unit)

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from ast import literal_eval as make_tuple
-from typing import Dict, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 from app.utilities.typing import Point
 

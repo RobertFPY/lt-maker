@@ -153,7 +153,7 @@ class OverworldObject():
     @property
     def music(self) -> Song:
         if not self._music:
-            self._music = self.prefab.get_music_resource()
+            self._music = RESOURCES.music.get(self.prefab.music)
         return self._music
 
     @classmethod

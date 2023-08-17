@@ -1,3 +1,6 @@
+from __future__ import annotations
+from typing import Optional
+
 from app.data.database.database import DB
 from app.engine import (action, banner, item_system, skill_system,
                         supports)
@@ -156,6 +159,11 @@ class SimpleCombat():
 
         self.handle_records(self.full_playback, all_units)
 
+        asp = self.attacker.strike_partner
+        dsp = None
+        if self.defender:
+            dsp = self.defender.strike_partner
+
         self.end_combat()
 
         self.attacker.built_guard = True
@@ -165,8 +173,7 @@ class SimpleCombat():
 
         self.handle_death(all_units)
 
-        a_broke, d_broke = self.find_broken_items()
-        self.handle_broken_items(a_broke, d_broke)
+        self.handle_broken_items(asp, dsp)
 
     def start_event(self, full_animation=False):
         # region is set to True or False depending on whether we are in a battle anim
@@ -373,27 +380,32 @@ class SimpleCombat():
                     game.events._add_event(event_nid, [command], trigger)
                     counter += 1
 
-    def find_broken_items(self):
-        a_broke, d_broke = False, False
+    def handle_broken_items(self, attack_partner: Optional[UnitObject], defense_partner: Optional[UnitObject]):
+        """
+        Checks if any of the items used in battle are broken,
+        and if so unequips them.
+        Provides an alert for the attacker and defender's broken
+        item if nobody died
+        """
         if item_system.is_broken(self.attacker, self.main_item):
-            a_broke = True
-        if self.def_item and item_system.is_broken(self.defender, self.def_item):
-            d_broke = True
-        return a_broke, d_broke
-
-    def handle_broken_items(self, a_broke, d_broke):
-        if a_broke:
-            alert = item_system.on_broken(self.attacker, self.main_item)
+            item_system.on_broken(self.attacker, self.main_item)
+            alert = item_system.broken_alert(self.attacker, self.main_item)
             if self.alerts and self.attacker is not self.defender and alert and \
                     self.attacker.team == 'player' and not self.attacker.is_dying:
                 game.alerts.append(banner.BrokenItem(self.attacker, self.main_item))
                 game.state.change('alert')
-        if d_broke:
-            alert = item_system.on_broken(self.defender, self.def_item)
+        if self.def_item and item_system.is_broken(self.defender, self.def_item):
+            item_system.on_broken(self.defender, self.def_item)
+            alert = item_system.broken_alert(self.defender, self.def_item)
             if self.alerts and self.attacker is not self.defender and alert and \
                     self.defender.team == 'player' and not self.defender.is_dying:
                 game.alerts.append(banner.BrokenItem(self.defender, self.def_item))
                 game.state.change('alert')
+        # No alert - just break the item
+        if attack_partner and item_system.is_broken(attack_partner, attack_partner.get_weapon()):
+            item_system.on_broken(attack_partner, attack_partner.get_weapon())
+        if defense_partner and item_system.is_broken(defense_partner, defense_partner.get_weapon()):
+            item_system.on_broken(defense_partner, defense_partner.get_weapon())
 
     def handle_wexp(self, unit, item, target):
         marks = self.get_from_full_playback('mark_hit')

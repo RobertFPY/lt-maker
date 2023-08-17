@@ -1193,17 +1193,21 @@ class AnimationCombat(BaseCombat, MockCombat):
         self.handle_support_pairs(pairs)
         self.handle_records(self.full_playback, all_units)
 
+        asp = self.attacker.strike_partner
+        dsp = None
+        if self.defender:
+            dsp = self.defender.strike_partner
+
         self.end_combat()
 
         self.handle_death(all_units)
+
+        self.handle_broken_items(asp, dsp)
 
         self.attacker.built_guard = True
         if self.defender:
             self.defender.strike_partner = None
             self.defender.built_guard = True
-
-        a_broke, d_broke = self.find_broken_items()
-        self.handle_broken_items(a_broke, d_broke)
 
         # Clean up battle anims so we can re-use them later
         self.left_battle_anim.reset_unit()

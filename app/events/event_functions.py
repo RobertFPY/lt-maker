@@ -1743,7 +1743,8 @@ def break_item(self: Event, global_unit_or_convoy, item, flags=None):
         self.logger.error("break_item: Item %s does not have uses!" % item.nid)
         return
 
-    alert = item_system.on_broken(unit, item)
+    item_system.on_broken(unit, item)
+    alert = item_system.broken_alert(unit, item)
     if alert and unit.team == 'player' and banner_flag:
         self.game.alerts.append(banner.BrokenItem(unit, item))
         self.game.state.change('alert')
@@ -3591,7 +3592,8 @@ def spend_unlock(self: Event, unit, flags=None):
 
     # Check to see if we broke the item we were using
     if item_system.is_broken(unit, chosen_item):
-        alert = item_system.on_broken(unit, chosen_item)
+        alert = item_system.broken_alert(unit, chosen_item)
+        item_system.on_broken(unit, chosen_item)
         if alert and unit.team == 'player':
             self.game.alerts.append(banner.BrokenItem(unit, chosen_item))
             self.game.state.change('alert')

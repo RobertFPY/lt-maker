@@ -182,17 +182,27 @@ def is_broken(unit, item) -> bool:
                     return True
     return False
 
-def on_broken(unit, item) -> bool:
-    alert = False
+def on_broken(unit, item):
     all_components = get_all_components(unit, item)
     for component in all_components:
         if component.defines('on_broken'):
-            if component.on_broken(unit, item):
-                alert = True
+            component.on_broken(unit, item)
     if item.parent_item:
         for component in item.parent_item.components:
             if component.defines('on_broken'):
-                if component.on_broken(unit, item.parent_item):
+                component.on_broken(unit, item.parent_item)
+
+def broken_alert(unit, item) -> bool:
+    alert = False
+    all_components = get_all_components(unit, item)
+    for component in all_components:
+        if component.defines('broken_alert'):
+            if component.broken_alert(unit, item):
+                alert = True
+    if item.parent_item:
+        for component in item.parent_item.components:
+            if component.defines('broken_alert'):
+                if component.broken_alert(unit, item.parent_item):
                     alert = True
     return alert
 

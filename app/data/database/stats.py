@@ -10,6 +10,8 @@ class StatPrefab(Prefab):
     maximum: int = 30
     desc: str = ""
     position: str = "left"
+    
+    growth_colors: bool = False
 
     def __repr__(self):
         return self.nid

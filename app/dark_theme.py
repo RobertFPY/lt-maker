@@ -64,6 +64,17 @@ class EventSyntaxHighlightingPalette():
     special_text_color: QColor
     special_func_color: QColor
 
+class PythonSyntaxHighlightingPalette():
+    keyword: QColor
+    alt_keyword: QColor
+    brace: QColor
+    deffunc: QColor
+    defclass: QColor
+    string: QColor
+    string2: QColor
+    comment: QColor
+    numbers: QColor
+
 class QLightPalette(QPalette):
     """Dark palette for a Qt application meant to be used with the Fusion theme."""
     def __init__(self, *__args):
@@ -144,6 +155,19 @@ class QLightPalette(QPalette):
         palette.special_func_color = Qt.red
         return palette
 
+    def python_syntax_highlighting(self) -> PythonSyntaxHighlightingPalette:
+        palette = PythonSyntaxHighlightingPalette()
+        palette.keyword = QColor('#8c4351')
+        palette.alt_keyword = QColor('#5a4a78')
+        palette.brace = QColor('#8f5e15')
+        palette.deffunc = QColor('#34548a')
+        palette.defclass = QColor('#33635c')
+        palette.string = QColor('#485e30')
+        palette.string2 = QColor('#485e30')
+        palette.comment = QColor('#9699a3')
+        palette.numbers = QColor('#965027')
+        return palette
+
 class QDarkPalette(QLightPalette):
     """Dark palette for a Qt application meant to be used with the Fusion theme."""
     def __init__(self, *__args):
@@ -187,6 +211,19 @@ class QDarkPalette(QLightPalette):
         palette.text_color = QColor(230, 219, 116)
         palette.special_text_color = QColor(174, 129, 255)
         palette.special_func_color = (249, 38, 114)
+        return palette
+
+    def python_syntax_highlighting(self) -> PythonSyntaxHighlightingPalette:
+        palette = PythonSyntaxHighlightingPalette()
+        palette.keyword = QColor('#f7768e')
+        palette.alt_keyword = QColor('#bb9af7')
+        palette.brace = QColor('#e0af68')
+        palette.deffunc = QColor('#7aa2f7')
+        palette.defclass = QColor('#c0caf5')
+        palette.string = QColor('#9ece6a')
+        palette.string2 = QColor('#9ece6a')
+        palette.comment = QColor('#565f89')
+        palette.numbers = QColor('#ff9e64')
         return palette
 
 class QDiscordPalette(QDarkPalette):
@@ -354,7 +391,7 @@ THEMES: Dict[ThemeType, QPalette] = {
     ThemeType.Purple: QPurplePalette(),
 }
 
-def get_theme(theme: Optional[ThemeType] = None):
+def get_theme(theme: Optional[ThemeType] = None) -> QLightPalette:
     if not theme:
         settings = MainSettingsController()
         theme_idx = settings.get_theme(0)

@@ -102,12 +102,12 @@ class EventCommand(Prefab):
     @property
     def flags(self) -> List[str]:
         return self._flags + UNIVERSAL_FLAGS
-    
+
     def __eq__(self, other: EventCommand):
         return (self.__class__ == other.__class__
                 and self.parameters == other.parameters
                 and self.chosen_flags == other.chosen_flags)
-    
+
 class Comment(EventCommand):
     nid = "comment"
     nickname = '#'
@@ -3218,20 +3218,6 @@ class UnlockDifficulty(EventCommand):
 
     keywords = ['DifficultyMode']
     keyword_types = ['DifficultyMode']
-
-class Python(EventCommand):
-    nid = 'python'
-    tag = Tags.HIDDEN
-    special_handling = True
-
-    desc = "Executes the following lines in python. End with `end_python`"
-
-class EndPython(EventCommand):
-    nid = 'end_python'
-    tag = Tags.HIDDEN
-    special_handling = True
-
-    desc = "Ends a block of python code."
 
 def get_commands():
     return EventCommand.__subclasses__()

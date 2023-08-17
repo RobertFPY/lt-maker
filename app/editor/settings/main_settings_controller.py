@@ -11,9 +11,9 @@ from .component_settings_controller import ComponentSettingsController
 
 class MainSettingsController():
     """
-    # Provides an interface for interacting with editor settings.
-    # Contains general application-wide settings. Also contains
-    # specific setting controllers for more tailored settings.
+    Provides an interface for interacting with editor settings.
+    Contains general application-wide settings. Also contains
+    specific setting controllers for more tailored settings.
     """
 
     def __init__(self, company='rainlash', product='Lex Talionis'):

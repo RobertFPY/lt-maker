@@ -200,8 +200,7 @@ class Repair(ItemComponent):
     def _target_restrict(self, defender):
         # Unit has item that can be repaired
         for item in defender.items:
-            if item.uses and item.data['uses'] < item.data['starting_uses'] and \
-                    not item_system.unrepairable(defender, item):
+            if self.item_restrict(None, None, defender, item):
                 return True
         return False
 

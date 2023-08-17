@@ -1,11 +1,11 @@
 from PyQt5.QtWidgets import QWidget, QLineEdit, QMessageBox, QVBoxLayout, \
-    QSpinBox
+    QSpinBox, QCheckBox
 from PyQt5.QtCore import Qt
 
 from app.data.database.database import DB
 
 from app.utilities import str_utils
-from app.extensions.custom_gui import PropertyBox, ComboBox
+from app.extensions.custom_gui import PropertyBox, ComboBox, PropertyCheckBox
 from app.editor.lib.components.validated_line_edit import NidLineEdit
 
 class StatTypeProperties(QWidget):
@@ -43,6 +43,12 @@ class StatTypeProperties(QWidget):
         self.position_box.setToolTip("Column within Info Menu in engine")
         self.position_box.edit.currentTextChanged.connect(self.position_changed)
         name_section.addWidget(self.position_box)
+
+        #colored growths
+        self.growth_colors_box = PropertyCheckBox(_("Colored Growths"), QCheckBox, self)
+        self.growth_colors_box.edit.stateChanged.connect(self.growth_colors_changed)
+        self.growth_colors_box.setToolTip(_("Select individually which stat growths will change color based on their value"))
+        name_section.addWidget(self.growth_colors_box)
 
         self.setLayout(name_section)
         name_section.setAlignment(Qt.AlignTop)
@@ -111,10 +117,14 @@ class StatTypeProperties(QWidget):
     def maximum_changed(self, val):
         self.current.maximum = val
 
+    def growth_colors_changed(self, state):
+        self.current.growth_colors = bool(state)
+
     def set_current(self, current):
         self.current = current
         self.nid_box.edit.setText(current.nid)
         self.name_box.edit.setText(current.name)
         self.max_box.edit.setValue(current.maximum)
+        self.growth_colors_box.edit.setChecked(bool(current.growth_colors))
         self.desc_box.edit.setText(current.desc)
         self.position_box.edit.setValue(current.position)

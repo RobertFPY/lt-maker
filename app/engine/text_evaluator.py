@@ -80,7 +80,9 @@ class TextEvaluator():
             text = text.replace(to_eval, evaled)
         return text
 
-    def _evaluate_locals(self, text, local_args: Dict[str, str]):
+    def _evaluate_locals(self, text, local_args: Dict[str, str]) -> str:
+        if not self.game:
+            return "??"
         local_args = local_args or {}
         to_evaluate: List[str] = re.findall(r'\{[^{}]*\}', text)
         evaluated = []

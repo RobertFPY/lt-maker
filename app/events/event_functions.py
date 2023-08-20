@@ -242,11 +242,11 @@ def mirror_portrait(self: Event, portrait, flags=None):
 
     flipped_portrait = \
         EventPortrait(
-            self.portraits[name].portrait,
-            self.portraits[name].position,
-            self.portraits[name].priority,
-            False, None, not self.portraits[name].mirror, name)
-    if self.text_boxes:
+            portrait.portrait,
+            portrait.position,
+            portrait.priority,
+            False, None, not portrait.mirror, name)
+    if self.text_boxes and self.text_boxes[-1].portrait == portrait:
         self.text_boxes[-1].portrait = flipped_portrait
 
     if self.do_skip:
@@ -763,7 +763,6 @@ def end_turn(self: Event, team: NID = None, flags=None):
             return
         # Skip turns until the next team is the one we want
         while self.game.phase.get_next() != team:
-            print(self.game.phase.get_next())
             self.game.phase.next()
 
     if self.game.phase.get_next() == 'player':

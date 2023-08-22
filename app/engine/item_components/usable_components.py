@@ -5,6 +5,8 @@ from app.data.database.components import ComponentType
 from app.engine import action, item_funcs
 from app.engine.item_system import is_broken
 
+import logging
+
 class Uses(ItemComponent):
     nid = 'uses'
     desc = "Number of uses of item"
@@ -376,7 +378,7 @@ class EvalAvailable(ItemComponent):
     def available(self, unit, item) -> bool:
         from app.engine import evaluate
         try:
-            return int(evaluate.evaluate(self.value, unit, local_args={'item': item}))
+            return bool(evaluate.evaluate(self.value, unit, local_args={'item': item}))
         except:
             logging.error("EvalAvailable: Couldn't evaluate %s conditional" % self.value)
         return False

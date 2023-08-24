@@ -1,7 +1,7 @@
 [
     {
         "nid": "_random_seed",
-        "desc": "Seed used by engine for RNG. Set between 0-1023 at new game."
+        "desc": "Seed used by engine for RNG. Generated automatically at new game."
     },
     {
         "nid": "_next_level_nid",
@@ -17,7 +17,7 @@
     },
     {
         "nid": "_current_turnwheel_use",
-        "desc": "# of turnwheel uses left in level. Set to max upon winning level."
+        "desc": "# of turnwheel uses left in level. Automatically sets to max upon winning level."
     },
     {
         "nid": "_max_turnwheel_uses",
@@ -37,7 +37,7 @@
     },
     {
         "nid": "_fatigue",
-        "desc": "0=off, 1=fatigued cannot be deployed, 2=fatigue status, 3=other"
+        "desc": "0=off, 1=fatigued units can't be deployed, 2=fatigue/rested status, 3=your custom implementation"
     },
     {
         "nid": "_prep_market",

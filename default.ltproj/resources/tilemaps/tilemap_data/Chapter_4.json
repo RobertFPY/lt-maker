@@ -10,6 +10,7 @@
             {
                 "nid": "base",
                 "visible": true,
+                "foreground": false,
                 "terrain_grid": {
                     "0,0": "2",
                     "0,1": "2",
@@ -1818,6 +1819,7 @@
             {
                 "nid": "Village1",
                 "visible": true,
+                "foreground": false,
                 "terrain_grid": {
                     "8,2": "0"
                 },
@@ -1834,6 +1836,7 @@
             {
                 "nid": "Village2",
                 "visible": true,
+                "foreground": false,
                 "terrain_grid": {
                     "1,11": "0"
                 },
@@ -1850,6 +1853,7 @@
             {
                 "nid": "Snag",
                 "visible": true,
+                "foreground": false,
                 "terrain_grid": {
                     "4,8": "1",
                     "4,9": "4"

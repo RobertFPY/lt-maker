@@ -23,6 +23,7 @@
         "roam": false,
         "roam_unit": null,
         "go_to_overworld": false,
+        "should_record": true,
         "units": [
             {
                 "nid": "Eirika",
@@ -163,6 +164,7 @@
                         false
                     ]
                 ],
+                "starting_skills": [],
                 "team": "enemy",
                 "ai": "Attack",
                 "roam_ai": null,
@@ -186,6 +188,7 @@
                         false
                     ]
                 ],
+                "starting_skills": [],
                 "team": "enemy",
                 "ai": "Attack",
                 "roam_ai": null,
@@ -209,6 +212,7 @@
                         false
                     ]
                 ],
+                "starting_skills": [],
                 "team": "enemy",
                 "ai": "Attack",
                 "roam_ai": null,
@@ -232,6 +236,7 @@
                         false
                     ]
                 ],
+                "starting_skills": [],
                 "team": "enemy",
                 "ai": "Defend",
                 "roam_ai": null,
@@ -255,6 +260,7 @@
                         false
                     ]
                 ],
+                "starting_skills": [],
                 "team": "enemy",
                 "ai": "Attack",
                 "roam_ai": null,
@@ -278,6 +284,7 @@
                         false
                     ]
                 ],
+                "starting_skills": [],
                 "team": "enemy",
                 "ai": "Attack",
                 "roam_ai": null,
@@ -301,6 +308,7 @@
                         false
                     ]
                 ],
+                "starting_skills": [],
                 "team": "enemy",
                 "ai": "Pursue",
                 "roam_ai": null,
@@ -324,6 +332,7 @@
                         false
                     ]
                 ],
+                "starting_skills": [],
                 "team": "enemy",
                 "ai": "Pursue",
                 "roam_ai": null,
@@ -351,6 +360,7 @@
                         false
                     ]
                 ],
+                "starting_skills": [],
                 "team": "enemy",
                 "ai": "Pursue",
                 "roam_ai": null,
@@ -371,6 +381,7 @@
                         false
                     ]
                 ],
+                "starting_skills": [],
                 "team": "enemy",
                 "ai": "Pursue",
                 "roam_ai": null,
@@ -391,6 +402,7 @@
                         false
                     ]
                 ],
+                "starting_skills": [],
                 "team": "enemy",
                 "ai": "Pursue",
                 "roam_ai": null,
@@ -411,6 +423,7 @@
                         false
                     ]
                 ],
+                "starting_skills": [],
                 "team": "enemy",
                 "ai": "Pursue",
                 "roam_ai": null,
@@ -431,6 +444,7 @@
                         false
                     ]
                 ],
+                "starting_skills": [],
                 "team": "enemy",
                 "ai": "Defend",
                 "roam_ai": null,
@@ -454,6 +468,7 @@
                         false
                     ]
                 ],
+                "starting_skills": [],
                 "team": "enemy",
                 "ai": "Attack",
                 "roam_ai": null,
@@ -477,6 +492,7 @@
                         false
                     ]
                 ],
+                "starting_skills": [],
                 "team": "enemy",
                 "ai": "Attack",
                 "roam_ai": null,
@@ -500,6 +516,7 @@
                         false
                     ]
                 ],
+                "starting_skills": [],
                 "team": "enemy",
                 "ai": "Attack",
                 "roam_ai": null,
@@ -523,6 +540,7 @@
                         false
                     ]
                 ],
+                "starting_skills": [],
                 "team": "enemy",
                 "ai": "Pursue",
                 "roam_ai": null,
@@ -543,6 +561,7 @@
                         false
                     ]
                 ],
+                "starting_skills": [],
                 "team": "enemy",
                 "ai": "Pursue",
                 "roam_ai": null,
@@ -563,6 +582,7 @@
                         false
                     ]
                 ],
+                "starting_skills": [],
                 "team": "enemy",
                 "ai": "Pursue",
                 "roam_ai": null,
@@ -583,6 +603,7 @@
                         false
                     ]
                 ],
+                "starting_skills": [],
                 "team": "enemy",
                 "ai": "Attack",
                 "roam_ai": null,
@@ -606,6 +627,7 @@
                         false
                     ]
                 ],
+                "starting_skills": [],
                 "team": "enemy",
                 "ai": "Attack",
                 "roam_ai": null,
@@ -629,6 +651,7 @@
                         false
                     ]
                 ],
+                "starting_skills": [],
                 "team": "enemy",
                 "ai": "Attack",
                 "roam_ai": null,
@@ -652,6 +675,7 @@
                         false
                     ]
                 ],
+                "starting_skills": [],
                 "team": "enemy",
                 "ai": "Attack",
                 "roam_ai": null,
@@ -670,6 +694,7 @@
                 "klass": "Snag20",
                 "faction": "Wall",
                 "starting_items": [],
+                "starting_skills": [],
                 "team": "enemy",
                 "ai": "None",
                 "roam_ai": null,
@@ -735,6 +760,7 @@
                 ],
                 "sub_nid": "Visit",
                 "condition": "True",
+                "time_left": null,
                 "only_once": true,
                 "interrupt_move": false
             },
@@ -751,6 +777,7 @@
                 ],
                 "sub_nid": "Visit",
                 "condition": "True",
+                "time_left": null,
                 "only_once": true,
                 "interrupt_move": false
             },
@@ -767,6 +794,7 @@
                 ],
                 "sub_nid": "",
                 "condition": "True",
+                "time_left": null,
                 "only_once": false,
                 "interrupt_move": false
             },
@@ -783,6 +811,7 @@
                 ],
                 "sub_nid": "",
                 "condition": "True",
+                "time_left": null,
                 "only_once": false,
                 "interrupt_move": false
             },
@@ -799,6 +828,7 @@
                 ],
                 "sub_nid": "",
                 "condition": "True",
+                "time_left": null,
                 "only_once": false,
                 "interrupt_move": false
             },
@@ -815,6 +845,7 @@
                 ],
                 "sub_nid": "",
                 "condition": "True",
+                "time_left": null,
                 "only_once": false,
                 "interrupt_move": false
             },
@@ -831,6 +862,7 @@
                 ],
                 "sub_nid": "",
                 "condition": "True",
+                "time_left": null,
                 "only_once": false,
                 "interrupt_move": false
             },
@@ -847,6 +879,7 @@
                 ],
                 "sub_nid": "",
                 "condition": "True",
+                "time_left": null,
                 "only_once": false,
                 "interrupt_move": false
             },
@@ -863,6 +896,7 @@
                 ],
                 "sub_nid": "",
                 "condition": "True",
+                "time_left": null,
                 "only_once": false,
                 "interrupt_move": false
             },
@@ -879,6 +913,7 @@
                 ],
                 "sub_nid": null,
                 "condition": "True",
+                "time_left": null,
                 "only_once": false,
                 "interrupt_move": false
             }
@@ -978,6 +1013,7 @@
                     ]
                 }
             }
-        ]
+        ],
+        "ai_groups": []
     }
 ]

@@ -10,6 +10,7 @@
             {
                 "nid": "base",
                 "visible": false,
+                "foreground": false,
                 "terrain_grid": {
                     "0,0": "9",
                     "0,1": "9",
@@ -7210,6 +7211,7 @@
             {
                 "nid": "TopDoor",
                 "visible": true,
+                "foreground": false,
                 "terrain_grid": {
                     "15,8": "6",
                     "14,8": "6",

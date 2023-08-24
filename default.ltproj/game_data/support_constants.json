@@ -12,6 +12,10 @@
         false
     ],
     [
+        "break_supports_on_death",
+        true
+    ],
+    [
         "bonus_method",
         "Use Sum of Affinity Bonuses"
     ],

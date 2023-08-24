@@ -234,3 +234,11 @@ class CannotDS(ItemComponent):
 
     def cannot_dual_strike(self, unit, item):
         return True
+
+class NoEquip(ItemComponent):
+    nid = 'no_equip'
+    desc = 'Prevents the item from being equipped even when being used as a weapon, similar to Spell behavior.'
+    tag = ItemTags.WEAPON
+    
+    def equippable(self, unit, item):
+        return False

@@ -64,6 +64,10 @@
         true
     ],
     [
+        "overworld_start",
+        false
+    ],
+    [
         "unit_notes",
         false
     ],
@@ -72,12 +76,24 @@
         true
     ],
     [
+        "reset_uses",
+        true
+    ],
+    [
+        "allow_negative_as",
+        false
+    ],
+    [
         "trade",
         true
     ],
     [
         "growth_info",
         true
+    ],
+    [
+        "glancing_hit",
+        false
     ],
     [
         "backpropagate_difficulty_growths",
@@ -120,12 +136,24 @@
         false
     ],
     [
+        "promote_skill_inheritance",
+        true
+    ],
+    [
         "promote_level_reset",
         true
     ],
     [
         "class_change_level_reset",
         false
+    ],
+    [
+        "learn_skills_on_reclass",
+        true
+    ],
+    [
+        "learn_skills_on_promote",
+        true
     ],
     [
         "negative_growths",
@@ -153,6 +181,18 @@
     ],
     [
         "roam_hide_hp",
+        false
+    ],
+    [
+        "autogenerate_grey_map_sprites",
+        true
+    ],
+    [
+        "translucent_unit_sprite",
+        false
+    ],
+    [
+        "talk_display",
         false
     ],
     [
@@ -216,6 +256,10 @@
         true
     ],
     [
+        "title_sound",
+        true
+    ],
+    [
         "music_main",
         "Main Theme"
     ],
@@ -226,6 +270,10 @@
     [
         "music_class_change",
         null
+    ],
+    [
+        "music_game_over",
+        "Game Over"
     ],
     [
         "restart_phase_music",
@@ -310,13 +358,5 @@
     [
         "heal_min",
         5
-    ],
-    [
-        "dark_sprites",
-        false
-    ],
-    [
-        "glancing_hit",
-        false
     ]
 ]

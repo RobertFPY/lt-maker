@@ -23,6 +23,7 @@
         "roam": false,
         "roam_unit": null,
         "go_to_overworld": false,
+        "should_record": true,
         "units": [
             {
                 "nid": "Eirika",
@@ -153,6 +154,7 @@
                         false
                     ]
                 ],
+                "starting_skills": [],
                 "team": "enemy",
                 "ai": "Attack",
                 "roam_ai": null,
@@ -176,6 +178,7 @@
                         false
                     ]
                 ],
+                "starting_skills": [],
                 "team": "enemy",
                 "ai": "None",
                 "roam_ai": null,
@@ -199,6 +202,7 @@
                         false
                     ]
                 ],
+                "starting_skills": [],
                 "team": "enemy",
                 "ai": "PursueVillage",
                 "roam_ai": null,
@@ -226,6 +230,7 @@
                         true
                     ]
                 ],
+                "starting_skills": [],
                 "team": "enemy",
                 "ai": "None",
                 "roam_ai": null,
@@ -249,6 +254,7 @@
                         false
                     ]
                 ],
+                "starting_skills": [],
                 "team": "enemy",
                 "ai": "Defend",
                 "roam_ai": null,
@@ -272,6 +278,7 @@
                         false
                     ]
                 ],
+                "starting_skills": [],
                 "team": "enemy",
                 "ai": "PursueVillage",
                 "roam_ai": null,
@@ -295,6 +302,7 @@
                         false
                     ]
                 ],
+                "starting_skills": [],
                 "team": "enemy",
                 "ai": "PursueVillage",
                 "roam_ai": null,
@@ -321,6 +329,7 @@
                 ],
                 "sub_nid": "Visit",
                 "condition": "True",
+                "time_left": null,
                 "only_once": true,
                 "interrupt_move": false
             },
@@ -337,6 +346,7 @@
                 ],
                 "sub_nid": "Visit",
                 "condition": "True",
+                "time_left": null,
                 "only_once": true,
                 "interrupt_move": false
             },
@@ -353,6 +363,7 @@
                 ],
                 "sub_nid": "Visit",
                 "condition": "True",
+                "time_left": null,
                 "only_once": true,
                 "interrupt_move": false
             },
@@ -369,6 +380,7 @@
                 ],
                 "sub_nid": "Armory",
                 "condition": "True",
+                "time_left": null,
                 "only_once": false,
                 "interrupt_move": false
             },
@@ -385,6 +397,7 @@
                 ],
                 "sub_nid": "Destructible",
                 "condition": "unit.team == 'enemy'",
+                "time_left": null,
                 "only_once": true,
                 "interrupt_move": false
             },
@@ -401,6 +414,7 @@
                 ],
                 "sub_nid": "Destructible",
                 "condition": "unit.team == 'enemy'",
+                "time_left": null,
                 "only_once": true,
                 "interrupt_move": false
             },
@@ -417,6 +431,7 @@
                 ],
                 "sub_nid": "Destructible",
                 "condition": "unit.team == 'enemy'",
+                "time_left": null,
                 "only_once": true,
                 "interrupt_move": false
             }
@@ -485,6 +500,7 @@
                 ],
                 "positions": {}
             }
-        ]
+        ],
+        "ai_groups": []
     }
 ]

@@ -1020,7 +1020,7 @@ class MenuState(MapState):
             elif selection == 'Wait':
                 game.state.clear()
                 game.state.change('free')
-                self.cur_unit.wait()
+                self.cur_unit.wait(actively_chosen=True)
             # A region event
             elif selection in [region.sub_nid for region in self.valid_regions]:
                 for region in self.valid_regions:

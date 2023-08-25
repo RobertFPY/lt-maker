@@ -336,7 +336,6 @@ class GameState():
         self.boundary = boundary.BoundaryInterface(tilemap.width, tilemap.height)
 
     def save(self):
-
         s_dict = {'units': [unit.save() for unit in self.unit_registry.values()],
                   'items': [item.save() for item in self.item_registry.values()],
                   'skills': [skill.save() for skill in self.skill_registry.values()],
@@ -364,7 +363,7 @@ class GameState():
                   'talk_options': self.talk_options,
                   'base_convos': self.base_convos,
                   'current_random_state': static_random.get_combat_random_state(),
-                  'bounds': self.board.bounds,
+                  'bounds': self.board.bounds if self.board else None,
                   'roam_info': self.roam_info,
                   }
         meta_dict = {'playtime': self.playtime,

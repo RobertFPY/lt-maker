@@ -649,8 +649,8 @@ class UnitObject(Prefab):
                     return running_total
             return running_total
 
-    def wait(self):
-        unit_funcs.wait(self)
+    def wait(self, actively_chosen: bool = False):
+        unit_funcs.wait(self, actively_chosen)
 
     @property
     def finished(self):

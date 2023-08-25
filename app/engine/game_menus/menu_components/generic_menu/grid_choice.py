@@ -130,6 +130,7 @@ class GridChoiceMenu():
         self._display_values = display_values
         self._item_size = self._determine_item_size(
             self._option_data, self._row_width)
+        print(self._item_size)
 
         self._cursor_idx: int = 0
 
@@ -353,6 +354,7 @@ class GridChoiceMenu():
             new_option = ChoiceMenuOptionFactory.create_option(self._resolve_data_type(
                 data_type), i, cast_value(data_type, value), disp_value, row_width, self._text_align)
             options.append(new_option)
+            print(new_option, new_option.width())
             max_width = max(max_width, new_option.width())
         # normalize option width
         for option in options:
@@ -364,6 +366,8 @@ class GridChoiceMenu():
         iwidth, iheight = self._item_size
         width = x * iwidth
         height = y * iheight
+        print("full")
+        print(width)
         blank_surf = engine.create_surface((width, height), True)
         ox, oy = 0, 0
         for option in self._option_data:

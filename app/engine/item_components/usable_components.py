@@ -3,7 +3,6 @@ from app.data.database.item_components import ItemComponent, ItemTags
 from app.data.database.components import ComponentType
 
 from app.engine import action, item_funcs
-from app.engine.item_system import is_broken
 
 import logging
 
@@ -58,7 +57,7 @@ class Uses(ItemComponent):
         return self.is_broken(unit, item)
 
     def end_combat(self, playback, unit, item, target, mode):
-        if self._did_something:
+        if self._did_something and 'uses' in item.data:
             action.do(action.SetObjData(item, 'uses', item.data['uses'] - 1))
             action.do(action.UpdateRecords('item_use', (unit.nid, item.nid)))
         self._did_something = False
@@ -121,7 +120,7 @@ class ChapterUses(ItemComponent):
         return self.is_broken(unit, item)
 
     def end_combat(self, playback, unit, item, target, mode):
-        if self._did_something:
+        if self._did_something and 'c_uses' in item.data:
             action.do(action.SetObjData(item, 'c_uses', item.data['c_uses'] - 1))
             action.do(action.UpdateRecords('item_use', (unit.nid, item.nid)))
         self._did_something = False

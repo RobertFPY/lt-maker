@@ -101,10 +101,12 @@ def generate_item_hook_str(hook_name: str, hook_info: HookInfo):
     if hook_info.inherits_parent:
         inheritance_handling = """
             if item.parent_item:
+                orig_item = item
                 item = item.parent_item
                 for component in item.components:
                     if component.defines('{hook_name}'):
                         values.append(component.{hook_name}({args}))
+                item = orig_item
 """.format(hook_name=hook_name, args=', '.join(args))
 
     func_text = """

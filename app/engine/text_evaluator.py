@@ -81,8 +81,6 @@ class TextEvaluator():
         return text
 
     def _evaluate_locals(self, text, local_args: Dict[str, str]) -> str:
-        if not self.game:
-            return "??"
         local_args = local_args or {}
         to_evaluate: List[str] = re.findall(r'\{[^{}]*\}', text)
         evaluated = []
@@ -93,9 +91,15 @@ class TextEvaluator():
             elif to_eval in self.local_args:
                 evaluated.append(self._object_to_str(self.local_args[to_eval]))
             elif to_eval == 'unit':
-                evaluated.append(self.unit.nid)
+                if self.unit:
+                    evaluated.append(self.unit.nid)
+                else:
+                    evaluated.append("??")
             elif to_eval == 'unit2':
-                evaluated.append(self.unit2.nid)
+                if self.unit2:
+                    evaluated.append(self.unit2.nid)
+                else:
+                    evaluated.append("??")
             else:
                 evaluated.append('{%s}' % to_eval)
         for idx in range(len(to_evaluate)):

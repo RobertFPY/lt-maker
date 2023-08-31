@@ -45,6 +45,7 @@ from app.extensions.markdown2 import Markdown
 from app.utilities import str_utils
 
 class EditorLanguageMode(Enum):
+    UNSET = -1
     PYTHON = 0
     EVENT = 1
 
@@ -299,7 +300,7 @@ class EventProperties(QWidget):
         self._data = self.window._data
 
         self.current = current
-        self.language_mode = EditorLanguageMode.EVENT
+        self.language_mode = EditorLanguageMode.UNSET
 
         self.text_box = EventTextEditor(self)
         self.text_box.textChanged.connect(self.text_changed)
@@ -537,8 +538,12 @@ class EventProperties(QWidget):
         self.language_mode = lang
         if lang == EditorLanguageMode.PYTHON:
             self.highlighter = PythonHighlighter(self.text_box.document())
+            self.text_box.set_completer(None)
+            self.text_box.set_function_hinter(None)
         else:
             self.highlighter = EventHighlighter(self.text_box.document(), self)
+            self.text_box.set_completer(event_autocompleter.EventScriptCompleter())
+            self.text_box.set_function_hinter(event_autocompleter.EventScriptFunctionHinter)
 
     def set_current(self, current: EventPrefab):
         self.current = current

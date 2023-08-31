@@ -142,11 +142,12 @@ class FrameSelector(Dialog):
             self.draw()
 
     def delete_frame(self):
-        idx = self.frames.index(self.current.nid)
-        new_idx = self.model.delete(idx)
-        if new_idx:
-            new_frame = self.frames[new_idx.row()]
-            self.set_current(new_frame)
+        if self.current:
+            idx = self.frames.index(self.current.nid)
+            new_idx = self.model.delete(idx)
+            if new_idx:
+                new_frame = self.frames[new_idx.row()]
+                self.set_current(new_frame)
 
     def draw(self):
         base_image = QImage(WINWIDTH, WINHEIGHT, QImage.Format_ARGB32)

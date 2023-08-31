@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import Dict
+from app.engine.codegen.codegen_utils import get_codegen_header
 from app.engine.component_system.utils import HookInfo, ARG_TYPE_MAP, ResolvePolicy
 
 ITEM_HOOKS: Dict[str, HookInfo] = {
@@ -46,7 +47,7 @@ ITEM_HOOKS: Dict[str, HookInfo] = {
     'special_sort':                                    HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
     'num_targets':                                     HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
     'minimum_range':                                   HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
-    'maximum_range':                                   HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),  
+    'maximum_range':                                   HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
     'weapon_type':                                     HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
     'weapon_rank':                                     HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
     'damage':                                          HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
@@ -132,11 +133,9 @@ def compile_item_system():
     dir_path = os.path.dirname(os.path.realpath(__file__))
     compiled_item_system = open(os.path.join(dir_path, '..', 'item_system.py'), 'w')
     item_system_base = open(os.path.join(dir_path, 'item_system_base.py'), 'r')
-    warning_msg = open(os.path.join(dir_path, 'warning_msg.txt'), 'r')
 
     # write warning msg
-    for line in warning_msg.readlines():
-        compiled_item_system.write(line)
+    compiled_item_system.writelines(get_codegen_header())
 
     # copy item system base
     for line in item_system_base.readlines():
@@ -148,4 +147,3 @@ def compile_item_system():
 
     compiled_item_system.close()
     item_system_base.close()
-    warning_msg.close()

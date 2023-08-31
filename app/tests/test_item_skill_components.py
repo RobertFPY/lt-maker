@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 
 from app.data.database.item_components import ItemComponent
 from app.data.database.skill_components import SkillComponent
-from app.engine.component_system import source_generator
+from app.engine.codegen import source_generator
 from app.engine.item_components.base_components import Spell, Weapon
 from app.engine.item_components.advanced_components import MultiTarget
 from app.engine.item_components.exp_components import Wexp

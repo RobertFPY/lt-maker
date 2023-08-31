@@ -1,3 +1,4 @@
+from functools import lru_cache
 from typing import List, Tuple, Type
 
 from PyQt5.QtCore import QStringListModel, Qt, pyqtSignal
@@ -9,6 +10,64 @@ from app.editor.settings import MainSettingsController
 from app.events import event_commands, event_validators
 from app.utilities import str_utils
 from app.utilities.typing import NID
+
+class EventScriptFunctionHinter():
+    @staticmethod
+    @lru_cache(16)
+    def _generate_hint_for_command(command: Type[event_commands.EventCommand], param: str) -> str:
+        command = command()
+        args = []
+        args.append(command.nid)
+        all_keywords = command.keywords + command.optional_keywords
+        curr_keyword = None
+        for idx, keyword in enumerate(all_keywords):
+            if command.keyword_types:
+                keyword_type = command.keyword_types[idx]
+                hint_str = "%s=%s" % (keyword, keyword_type)
+                if keyword == param:
+                    hint_str = "<b>%s</b>" % hint_str
+                    curr_keyword = keyword_type
+                args.append(hint_str)
+            else:
+                hint_str = keyword
+                if keyword == param:
+                    hint_str = "<b>%s</b>" % hint_str
+                    curr_keyword = keyword
+                args.append(hint_str)
+        if command.flags:
+            hint_str = 'FLAGS'
+            if param == 'FLAGS':
+                hint_str = "<b>%s</b>" % hint_str
+                curr_keyword = 'FLAGS'
+            args.append(hint_str)
+        hint_cmd_str = ';\u200b'.join(args)
+        hint_cmd_str = '<div class="command_text">' + hint_cmd_str + '</div>'
+
+        hint_desc = ''
+        if curr_keyword == 'FLAGS':
+            hint_desc = 'Must be one of: %s' % ', '.join(command.flags)
+        else:
+            validator = event_validators.get(curr_keyword)
+            if validator:
+                hint_desc = '<div class="desc_text">' + validator().desc + '</div>'
+
+        style = """
+            <style>
+                .command_text {font-family: 'Courier New', Courier, monospace;}
+                .desc_text {font-family: Arial, Helvetica, sans-serif;}
+            </style>
+        """
+
+        hint_text = style + hint_cmd_str + '<hr>' + hint_desc
+        return hint_text
+
+    @staticmethod
+    def generate_hint_for_line(line: str, cursor_pos: int):
+        if cursor_pos != 0 and line[cursor_pos - 1] not in ';=':
+            return None
+        command = detect_command_under_cursor(line)
+        param = detect_param_under_cursor(command, line, cursor_pos)
+        return EventScriptFunctionHinter._generate_hint_for_command(command, param)
 
 
 class EventScriptCompleter(QCompleter):
@@ -98,6 +157,27 @@ def generate_flags_wordlist(flags: List[str] = []) -> List[str]:
 
 def detect_command_under_cursor(line: str) -> Type[event_commands.EventCommand]:
     return event_commands.determine_command_type(line)
+
+def detect_param_under_cursor(command: event_commands.EventCommand, line: str, cursor_pos: int):
+    if isinstance(command, event_commands.Comment):
+        return None
+    as_tokens = line[:cursor_pos].split(';')
+    if not as_tokens[0] in (command.nid, command.nickname): # should never happen
+        return None
+    if len(as_tokens) == 1:
+        return None
+    as_tokens = as_tokens[1:]
+    all_keywords = command.keywords + command.optional_keywords
+
+    curr_arg = as_tokens[-1]
+    if '=' in curr_arg:
+        param = curr_arg.split('=')[0]
+        if param in all_keywords:
+            return param
+    curr_arg_idx = len(as_tokens) - 1
+    if curr_arg_idx < len(all_keywords):
+        return all_keywords[curr_arg_idx]
+    return 'FLAGS'
 
 def detect_type_under_cursor(line: str, cursor_pos: int, arg_under_cursor: str = None) -> Tuple[event_validators.Validator, List[str]]:
     # turn off typechecking for comments

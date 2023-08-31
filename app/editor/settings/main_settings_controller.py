@@ -64,12 +64,6 @@ class MainSettingsController():
     def get_event_autocomplete(self, fallback=True):
         return self.state.value("event_autocomplete", fallback, type=bool)
 
-    def set_event_autocomplete_desc(self, value):
-        self.state.setValue("event_autocomplete_desc", value)
-
-    def get_event_autocomplete_desc(self, fallback=True):
-        return self.state.value("event_autocomplete_desc", fallback, type=bool)
-
     def set_autosave_time(self, value):
         self.state.setValue("autosave_time", value)
 

@@ -33,7 +33,6 @@ class PreferencesDialog(Dialog):
         self.saved_preferences['place_button'] = self.settings.get_place_button(Qt.RightButton)
         self.saved_preferences['theme'] = self.settings.get_theme(0)
         self.saved_preferences['event_autocomplete'] = self.settings.get_event_autocomplete(1)
-        self.saved_preferences['event_autocomplete_desc'] = self.settings.get_event_autocomplete_desc(1)
         self.saved_preferences['autocomplete_button'] = self.settings.get_autocomplete_button(Qt.Key_Tab)
         self.saved_preferences['autosave_time'] = self.settings.get_autosave_time()
         self.saved_preferences['crash_logs'] = self.settings.get_should_display_crash_logs()
@@ -66,8 +65,6 @@ class PreferencesDialog(Dialog):
 
         self.autocomplete = PropertyCheckBox('Event Autocomplete', QCheckBox, self)
         self.autocomplete.edit.setChecked(bool(self.saved_preferences['event_autocomplete']))
-        self.autocomplete_desc = PropertyCheckBox('Show Event Command Description?', QCheckBox, self)
-        self.autocomplete_desc.edit.setChecked(bool(self.saved_preferences['event_autocomplete_desc']))
 
         self.crashlog = PropertyCheckBox('Show Error Logs on Crash?', QCheckBox, self)
         self.crashlog.edit.setChecked(bool(self.saved_preferences['crash_logs']))
@@ -115,7 +112,6 @@ class PreferencesDialog(Dialog):
         self.layout.addWidget(self.autocomplete_button)
         self.layout.addLayout(self.editor_close_button_layout)
         self.layout.addWidget(self.autocomplete)
-        self.layout.addWidget(self.autocomplete_desc)
         self.layout.addWidget(self.crashlog)
         self.layout.addWidget(self.savebackup)
         self.layout.addWidget(self.savechunks)
@@ -185,8 +181,6 @@ class PreferencesDialog(Dialog):
         # resorting to int
         autocomplete = 1 if self.autocomplete.edit.isChecked() else 0
         self.settings.set_event_autocomplete(autocomplete)
-        autocomplete_desc = 1 if self.autocomplete_desc.edit.isChecked() else 0
-        self.settings.set_event_autocomplete_desc(autocomplete_desc)
         crash_log_setting = 1 if self.crashlog.edit.isChecked() else 0
         self.settings.set_should_display_crash_logs(crash_log_setting)
         save_chunks_setting = 1 if self.savechunks.edit.isChecked() else 0

@@ -3,7 +3,6 @@ from dataclasses import dataclass
 
 import logging
 from enum import Enum
-from operator import eq
 from typing import Callable, List, Dict, Set, Tuple, Type
 
 from app.utilities.data import Prefab
@@ -55,7 +54,12 @@ class EventCommand(Prefab):
     def __init__(self, parameters: Dict[str, str] = None, flags: Set[str] = None, display_values: List[str] = None):
         self.parameters: Dict[str, str] = parameters or {}
         self.chosen_flags: Set[str] = flags or set()
-        self.display_values: List[str] = display_values or []
+        self.display_values = display_values
+        if not self.display_values:
+            if self.parameters:
+                self.display_values = [self.parameters.get(kwd) or "" for kwd in (self.keywords + self.optional_keywords)]
+            else:
+                self.display_values = []
 
     def save(self):
         return self.nid, self.display_values

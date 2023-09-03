@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from app.engine.text_evaluator import TextEvaluator
 from app.events import event_commands
@@ -28,13 +28,13 @@ class EventIterator():
 
     def __repr__(self):
         return self.__str__()
-    
+
     def save(self):
         s_dict = {}
         s_dict['items'] = self.items
         s_dict['idx'] = self._idx
         return s_dict
-    
+
     @classmethod
     def restore(cls, s_dict):
         items = s_dict['items']
@@ -42,7 +42,7 @@ class EventIterator():
         self = cls(items)
         self._idx = idx
         return self
-    
+
 class IteratorInfo():
     def __init__(self, nid: NID, line: int, items: List[str]) -> None:
         self.nid = nid
@@ -55,7 +55,7 @@ class IteratorInfo():
         s_dict['line'] = self.line
         s_dict['iterator'] = self.iterator.save()
         return s_dict
-    
+
     @classmethod
     def restore(cls, s_dict):
         self = cls(None, None, None)
@@ -165,7 +165,7 @@ class EventParser():
             self.logger.error("%s: Could not evaluate {%s} in %s" % (e, command.parameters['Expression'], command.to_plain_text()))
             raise e
 
-    def fetch_next_command(self) -> event_commands.EventCommand:
+    def fetch_next_command(self) -> Optional[event_commands.EventCommand]:
         if self.command_pointer >= len(self.commands):
             return None
         command = self.commands[self.command_pointer]
@@ -224,7 +224,7 @@ class EventParser():
             parameters['Text'] = unevaled_parameters['Text']
         processed_command = command.__class__(parameters, flags, command.display_values)
         return processed_command
-    
+
     def finished(self):
         return self.command_pointer >= len(self.commands)
 
@@ -235,7 +235,7 @@ class EventParser():
             return str(obj.nid)
         else:
             return str(obj)
-        
+
     def save(self):
         s_dict = {}
         s_dict['nid'] = self.nid
@@ -243,7 +243,7 @@ class EventParser():
         s_dict['iterators'] = [info.save() for info in self.iterator_stack]
         s_dict['command_pointer'] = self.command_pointer
         return s_dict
-    
+
     @classmethod
     def restore(cls, s_dict, text_evaluator: TextEvaluator):
         commands = s_dict['commands']

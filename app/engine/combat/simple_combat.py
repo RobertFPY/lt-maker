@@ -358,7 +358,7 @@ class SimpleCombat():
                             flags = {'no_banner'}
                         command = event_commands.GiveItem({'GlobalUnitOrConvoy': '{unit}', 'Item': str(item.uid)}, flags)
                         trigger = triggers.GenericTrigger(self.attacker, unit, self.attacker.position, {'item_uid': item.uid})
-                        game.events._add_event(event_nid, [command], trigger)
+                        game.events._add_event_from_commands(event_nid, [command], trigger)
                         counter += 1
 
         if self.attacker.is_dying and self.defender:
@@ -377,7 +377,7 @@ class SimpleCombat():
                         flags = {'no_banner'}
                     command = event_commands.GiveItem({'GlobalUnitOrConvoy': '{unit}', 'Item': str(item.uid)}, flags)
                     trigger = triggers.GenericTrigger(self.defender, self.attacker, self.defender.position, {'item_uid': item.uid})
-                    game.events._add_event(event_nid, [command], trigger)
+                    game.events._add_event_from_commands(event_nid, [command], trigger)
                     counter += 1
 
     def handle_broken_items(self, attack_partner: Optional[UnitObject], defense_partner: Optional[UnitObject]):

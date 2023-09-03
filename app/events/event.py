@@ -21,6 +21,7 @@ from app.engine.sound import get_sound_thread
 from app.events import event_commands, triggers
 from app.events.event_parser import EventParser
 from app.events.event_portrait import EventPortrait
+from app.events.event_prefab import EventPrefab
 from app.utilities import str_utils, utils, static_random
 from app.utilities.typing import NID, Color3
 
@@ -30,11 +31,11 @@ class Event():
     skippable = {"wait", "bop_portrait", "sound",
                  "location_card", "credits", "ending"}
 
-    def __init__(self, nid, commands, trigger: triggers.EventTrigger, game: GameState = None):
+    def __init__(self, event_prefab: EventPrefab, trigger: triggers.EventTrigger, game: GameState = None):
         self._transition_speed: int = 250
         self._transition_color: Color3 = (0, 0, 0)
 
-        self.nid = nid
+        self.nid = event_prefab.nid
         self.command_queue: List[event_commands.EventCommand] = []
 
         self.background = None
@@ -55,7 +56,7 @@ class Event():
         self._generic_setup()
 
         self.text_evaluator = TextEvaluator(self.logger, self.game, self.unit, self.unit2, self.position, self.local_args)
-        self.parser = EventParser(nid, commands.copy(), self.text_evaluator)
+        self.parser = EventParser(event_prefab.nid, event_prefab.commands.copy(), self.text_evaluator)
 
     def _generic_setup(self):
         self.portraits: Dict[str, EventPortrait] = {}

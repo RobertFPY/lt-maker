@@ -1,3 +1,4 @@
+from app.events.event_prefab import EventPrefab
 from app.events.speak_style import SpeakStyle, SpeakStyleLibrary
 from app.events.triggers import GenericTrigger
 from typing import List
@@ -32,8 +33,11 @@ class EventUnitTests(unittest.TestCase):
             patcher.stop()
 
     def create_event(self, test_commands: List[EventCommand]):
-        from app.events.event import Event
-        return Event('test_nid', test_commands, GenericTrigger(), game=self.game)
+        from app.events.event import Event        
+        prefab = EventPrefab('test_nid')
+        prefab.commands = test_commands
+        return Event(prefab, GenericTrigger(), game=self.game)
+
 
     def create_event_from_script(self, test_script: List[str]):
         parsed_test_commands = [parse_text_to_command(command)[0] for command in test_script]

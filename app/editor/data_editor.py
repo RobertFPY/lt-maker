@@ -216,8 +216,8 @@ class SingleResourceEditor(QDialog):
 
     def accept(self):
         current_proj = self.settings.get_current_project()
-        if current_proj:
-            RESOURCES.save(current_proj, self.resource_types)
+        # if current_proj:
+            # RESOURCES.save(current_proj, self.resource_types)
         self.save_geometry()
         super().accept()
         self.close()
@@ -232,8 +232,8 @@ class SingleResourceEditor(QDialog):
 
     def apply(self):
         current_proj = self.settings.get_current_project()
-        if current_proj:
-            RESOURCES.save(current_proj, self.resource_types)
+        # if current_proj:
+            # RESOURCES.save(current_proj, self.resource_types)
         self.save_geometry()
 
     def closeEvent(self, event):

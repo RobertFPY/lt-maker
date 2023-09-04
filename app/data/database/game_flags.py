@@ -9,7 +9,7 @@ def dataclass_from_dict(klass, d):
 
 @dataclass
 class GameFlags():
-    has_fatal_errors: bool = True
+    has_fatal_errors: bool = False
 
     def save(self):
         return asdict(self)

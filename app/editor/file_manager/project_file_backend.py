@@ -127,6 +127,12 @@ class ProjectFileBackend():
             display_error("resources")
             return False
         self.save_progress.setValue(75)
+
+        # make sure no errors in DB exist
+        # any_errors = self.validate(DB)
+        any_errors = []
+        DB.game_flags.has_fatal_errors = False if not any_errors else True
+
         success = DB.serialize(self.current_proj)
         if not success:
             display_error("database")

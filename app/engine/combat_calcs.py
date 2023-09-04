@@ -2,7 +2,7 @@ from app.engine.game_state import game
 from app.utilities import utils
 from app.data.database.database import DB
 from app.data.database import weapons
-from app.engine import equations, item_system, item_funcs, skill_system
+from app.engine import equations, item_system, item_funcs, skill_system, line_of_sight
 
 def get_weapon_rank_bonus(unit, item):
     weapon_type = item_system.weapon_type(unit, item)
@@ -107,7 +107,9 @@ def can_counterattack(attacker, aweapon, defender, dweapon) -> bool:
     from app.engine import target_system
     if dweapon and item_funcs.available(defender, dweapon):
         if item_system.can_be_countered(attacker, aweapon) and \
-                item_system.can_counter(defender, dweapon):
+                item_system.can_counter(defender, dweapon) and \
+                (item_system.ignore_line_of_sight(defender, dweapon) or \
+                len(line_of_sight.line_of_sight([defender.position], [attacker.position], 99)) >= 1):
             if not attacker.position or \
                     attacker.position in target_system.targets_in_range(defender, dweapon) or \
                     skill_system.distant_counter(defender) or \

@@ -130,7 +130,8 @@ class Event():
         local_args = ser_dict.get('local_args', {})
         local_args = {k: action.Action.restore_obj(v) for k, v in local_args.items()}
         nid = ser_dict['nid']
-        self = cls(nid, [], triggers.GenericTrigger(unit, unit2, position, local_args), game)
+        prefab = DB.events.get_by_nid_or_name(nid)[0]
+        self = cls(prefab, triggers.GenericTrigger(unit, unit2, position, local_args), game)
         self.command_queue = ser_dict['command_queue']
         self.parser = EventParser.restore(ser_dict['parser_state'], self.text_evaluator)
         return self

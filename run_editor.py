@@ -49,7 +49,7 @@ if __name__ == '__main__':
         from app import dark_theme
         theme = dark_theme.get_theme()
         dark_theme.set(ap, theme)
-        selected_path = choose_recent_project()
+        selected_path = choose_recent_project(allow_auto_open=True)
         if selected_path:
             from app.editor.main_editor import MainEditor
             window = MainEditor(selected_path)

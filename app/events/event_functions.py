@@ -3041,6 +3041,7 @@ def choice(self: Event, nid: NID, title: str, choices: str, row_width: str = Non
         dtype = entry_type
 
     # figure out function or list of NIDs
+    data = []
     if 'expression' in flags:
         try:
             ast.parse(choices)
@@ -3061,6 +3062,7 @@ def choice(self: Event, nid: NID, title: str, choices: str, row_width: str = Non
         choices = self.text_evaluator._evaluate_all(choices)
         data = choices.split(',')
         data = [s.strip().replace('{comma}', ',') for s in data]
+    data = data or ['']
 
     row_width = int(row_width)
 
@@ -3252,6 +3254,7 @@ def table(self: Event, nid: NID, table_data: str, title: str = None,
         dtype = entry_type
 
     # figure out function or list of NIDs
+    data = []
     if 'expression' in flags:
         try:
             # eval once to make sure it's eval-able
@@ -3273,6 +3276,7 @@ def table(self: Event, nid: NID, table_data: str, title: str = None,
         table_data = self.text_evaluator._evaluate_all(table_data)
         data = table_data.split(',')
         data = [s.strip().replace('{comma}', ',') for s in data]
+    data = data or [""]
 
     align = Alignments.TOP_LEFT
     if alignment:

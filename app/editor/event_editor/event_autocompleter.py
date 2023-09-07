@@ -72,6 +72,7 @@ class EventScriptFunctionHinter():
 
 class EventScriptCompleter(QCompleter):
     insertText = pyqtSignal(str)
+    
     def __init__(self, parent=None):
         super().__init__(parent)
         self.settings = MainSettingsController()

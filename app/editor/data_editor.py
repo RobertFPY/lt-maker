@@ -216,8 +216,12 @@ class SingleResourceEditor(QDialog):
 
     def accept(self):
         current_proj = self.settings.get_current_project()
-        # if current_proj:
-            # RESOURCES.save(current_proj, self.resource_types)
+        # RESOURCES must be saved here because if we grabbed a file from somewhere else
+        # on our computer not under the project tree, we must transfer it under the project 
+        # tree. The project does not and should not know the absolute path of every one of its
+        # resources, just where the resources should be.
+        if current_proj and current_proj != 'default.ltproj':
+            RESOURCES.save(current_proj, self.resource_types)
         self.save_geometry()
         super().accept()
         self.close()
@@ -232,8 +236,8 @@ class SingleResourceEditor(QDialog):
 
     def apply(self):
         current_proj = self.settings.get_current_project()
-        # if current_proj:
-            # RESOURCES.save(current_proj, self.resource_types)
+        if current_proj and current_proj != 'default.ltproj':
+            RESOURCES.save(current_proj, self.resource_types)
         self.save_geometry()
 
     def closeEvent(self, event):

@@ -132,7 +132,9 @@ class PhaseIn():
 
     def begin(self):
         self.starting_time = engine.get_time()
-        get_sound_thread().play_sfx('Next Turn')
+        team = DB.teams.get(self.name)
+        phase_change_sound_effect = team.phase_change_sound_effect or 'Next Turn'
+        get_sound_thread().play_sfx(phase_change_sound_effect)
         if self.name == 'player':
             if cf.SETTINGS['autocursor']:
                 game.cursor.autocursor()

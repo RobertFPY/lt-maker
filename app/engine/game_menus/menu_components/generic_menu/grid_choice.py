@@ -53,6 +53,8 @@ class ChoiceMenuOptionFactory():
         if option_type == TextOption:
             return TextOption(idx, value, disp_value, row_width, align=text_align)
         elif option_type == BasicItemOption:
+            if not value:
+                return BasicItemOption.empty_option(idx, value or disp_value, row_width, align=text_align)
             if isinstance(value, ItemObject):
                 return BasicItemOption.from_item(idx, value, disp_value, row_width, align=text_align)
             elif isinstance(value, int):
@@ -248,7 +250,7 @@ class GridChoiceMenu():
 
     def move_cursor(self, idx):
         idx = clamp(idx, 0, len(self._option_data) - 1)
-        old_coord = self._get_coord_of_option_idx(self._cursor_idx) 
+        old_coord = self._get_coord_of_option_idx(self._cursor_idx)
         new_coord = self._get_coord_of_option_idx(idx)
         self._cursor_idx = idx
         scroll_to = self._identify_minimum_scroll_to_loc(
@@ -272,7 +274,7 @@ class GridChoiceMenu():
         if self._orientation == Orientation.VERTICAL:
             # constraint on num_cols
             num_cols = self.num_cols()
-            return num_cols, (len(self._option_data) - 1 // num_cols) + 1
+            return num_cols, ((len(self._option_data) - 1) // num_cols) + 1
         else:
             # constraint on num_rols
             num_rows = self.num_rows()
@@ -383,6 +385,10 @@ class GridChoiceMenu():
         for option in option_data:
             max_width = max(max_width, option.width())
             max_height = max(max_height, option.height())
+        if self._title:
+            title_width = text_width('text', self._title)
+            per_col_width = title_width // self.num_cols()
+            max_width = max(per_col_width, max_width)
         return (row_width or max_width), max_height
 
     def _identify_minimum_scroll_to_loc(self, scroll: Tuple[float, float], loc: Tuple[float, float]) -> Tuple[float, float]:

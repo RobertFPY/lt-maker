@@ -8,6 +8,7 @@ from app.engine.combat.solver import CombatPhaseSolver
 from app.engine.game_state import game
 from app.engine.objects.item import ItemObject
 from app.engine.objects.unit import UnitObject
+from app.engine.level_up import ExpState
 from app.events import triggers, event_commands
 from app.utilities import utils, static_random
 
@@ -467,18 +468,18 @@ class SimpleCombat():
         # handle exp
         if self.attacker.team == 'player' and not self.attacker.is_dying:
             exp = self.calculate_exp(self.attacker, self.main_item)
-            exp = int(utils.clamp(exp, 0, 100))
+            exp = int(utils.clamp(exp, -100, 100))
 
             if DB.constants.value('pairup') and self.main_item:
                 self.handle_paired_exp(self.attacker, combat_object)
 
             # Make sure to check if mana happened
-            if ((self.alerts and exp > 0) or exp + self.attacker.exp >= 100) or \
+            if ((self.alerts and exp != 0) or exp + self.attacker.exp >= 100 or exp + self.attacker.exp < 0) or \
                     any(mana_instance[0] == self.attacker for mana_instance in game.mana_instance):
                 game.exp_instance.append((self.attacker, exp, combat_object, 'init'))
                 game.state.change('exp')
                 game.ai.end_skip()
-            elif not self.alerts and exp > 0:
+            elif not self.alerts and exp != 0 and ExpState.can_give_exp(self.attacker, exp):
                 action.do(action.GainExp(self.attacker, exp))
 
         elif self.defender and self.defender.team == 'player' and not self.defender.is_dying:
@@ -488,12 +489,12 @@ class SimpleCombat():
             if DB.constants.value('pairup') and self.def_item:
                 self.handle_paired_exp(self.defender, combat_object)
 
-            if ((self.alerts and exp > 0) or exp + self.defender.exp >= 100) or \
+            if ((self.alerts and exp != 0) or exp + self.defender.exp >= 100 or exp + self.defender.exp < 0) or \
                     any(mana_instance[0] == self.defender for mana_instance in game.mana_instance):
                 game.exp_instance.append((self.defender, exp, combat_object, 'init'))
                 game.state.change('exp')
                 game.ai.end_skip()
-            elif not self.alerts and exp > 0:
+            elif not self.alerts and exp != 0 and ExpState.can_give_exp(self.defender, exp):
                 action.do(action.GainExp(self.defender, exp))
 
     def handle_paired_exp(self, leader_unit, combat_object=None):

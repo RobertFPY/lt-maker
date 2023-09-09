@@ -74,6 +74,7 @@ class PythonSyntaxHighlightingPalette():
     string2: QColor
     comment: QColor
     numbers: QColor
+    command: QColor
 
 class QLightPalette(QPalette):
     """Dark palette for a Qt application meant to be used with the Fusion theme."""
@@ -166,6 +167,7 @@ class QLightPalette(QPalette):
         palette.string2 = QColor('#485e30')
         palette.comment = QColor('#9699a3')
         palette.numbers = QColor('#965027')
+        palette.command = QColor('#166775')
         return palette
 
 class QDarkPalette(QLightPalette):
@@ -224,6 +226,7 @@ class QDarkPalette(QLightPalette):
         palette.string2 = QColor('#9ece6a')
         palette.comment = QColor('#565f89')
         palette.numbers = QColor('#ff9e64')
+        palette.command = QColor('#2ac3de')
         return palette
 
 class QDiscordPalette(QDarkPalette):

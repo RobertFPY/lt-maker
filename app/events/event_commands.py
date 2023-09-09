@@ -2986,7 +2986,7 @@ For example, if you called `trigger_script_with_args;MyEvent;Color,Purple,Animal
 
 class LoopUnits(EventCommand):
     nid = 'loop_units'
-    tag = Tags.MISCELLANEOUS
+    tag = Tags.HIDDEN   # command is deprecated
 
     desc = \
         """

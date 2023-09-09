@@ -22,6 +22,7 @@ from app.events import event_commands, triggers
 from app.events.event_parser import EventParser
 from app.events.event_portrait import EventPortrait
 from app.events.event_prefab import EventPrefab
+from app.events.python_eventing.python_event_parser import PythonEventParser
 from app.utilities import str_utils, utils, static_random
 from app.utilities.typing import NID, Color3
 
@@ -56,7 +57,11 @@ class Event():
         self._generic_setup()
 
         self.text_evaluator = TextEvaluator(self.logger, self.game, self.unit, self.unit2, self.position, self.local_args)
-        self.parser = EventParser(event_prefab.nid, event_prefab.commands.copy(), self.text_evaluator)
+        if event_prefab.is_python_event():
+            self.parser = PythonEventParser(self.nid, event_prefab.source, self.game)
+        else:
+            self.parser = EventParser(self.nid, event_prefab.commands.copy(), self.text_evaluator)
+
 
     def _generic_setup(self):
         self.portraits: Dict[str, EventPortrait] = {}

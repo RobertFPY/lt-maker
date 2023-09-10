@@ -8,7 +8,6 @@ from app.engine.combat.solver import CombatPhaseSolver
 from app.engine.game_state import game
 from app.engine.objects.item import ItemObject
 from app.engine.objects.unit import UnitObject
-from app.engine.level_up import ExpState
 from app.events import triggers, event_commands
 from app.utilities import utils, static_random
 
@@ -465,6 +464,7 @@ class SimpleCombat():
                     action.do(action.ChangeMana(self.defender, mana_gain))
 
     def handle_exp(self, combat_object=None):
+        from app.engine.level_up import ExpState
         # handle exp
         if self.attacker.team == 'player' and not self.attacker.is_dying:
             exp = self.calculate_exp(self.attacker, self.main_item)

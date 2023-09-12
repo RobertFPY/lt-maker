@@ -8,8 +8,8 @@ import sys
 from logging import getLogger
 from typing import TYPE_CHECKING, Generator
 from app.events.python_eventing.errors import InvalidPythonError
-
 from app.events.python_eventing.utils import EVENT_INSTANCE
+from app.engine import evaluate
 
 if TYPE_CHECKING:
     from app.engine.game_state import GameState
@@ -103,8 +103,7 @@ class Compiler():
         script = insert_command_pointer_conditional_skips(script)
         script = wrap_generator(script, "g", command_pointer)
         script = insert_header(script)
-        exec_context = {'game': game}
-        exec_context.update(game.query_engine.func_dict)
+        exec_context = evaluate.get_context(game=game)
         exec(script, exec_context)
         # possibility that there are some errors in python script
         try:

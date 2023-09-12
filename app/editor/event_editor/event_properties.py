@@ -18,6 +18,7 @@ from PyQt5.QtWidgets import (QAbstractItemView, QAction, QApplication,
                              QSpinBox, QSplitter, QStyle, QStyledItemDelegate,
                              QTextEdit, QToolBar, QVBoxLayout, QWidget)
 from app.editor.event_editor.event_text_editor import EventTextEditor
+from app.editor.event_editor.utils import EditorLanguageMode
 
 import app.editor.game_actions.game_actions as GAME_ACTIONS
 from app import dark_theme
@@ -43,11 +44,6 @@ from app.extensions.custom_gui import (ComboBox, PropertyBox, PropertyCheckBox,
                                        QHLine, TableView)
 from app.extensions.markdown2 import Markdown
 from app.utilities import str_utils
-
-class EditorLanguageMode(Enum):
-    UNSET = -1
-    PYTHON = 0
-    EVENT = 1
 
 class EventCollection(QWidget):
     def __init__(self, deletion_criteria, collection_model, parent,
@@ -538,7 +534,7 @@ class EventProperties(QWidget):
         self.language_mode = lang
         if lang == EditorLanguageMode.PYTHON:
             self.highlighter = PythonHighlighter(self.text_box.document())
-            self.text_box.set_completer(None)
+            self.text_box.set_completer(event_autocompleter.PythonEventScriptCompleter())
             self.text_box.set_function_hinter(None)
         else:
             self.highlighter = EventHighlighter(self.text_box.document(), self)

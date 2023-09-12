@@ -261,7 +261,7 @@ class TextEvaluator():
             text = text.replace(to_evaluate[idx], evaluated[idx])
         return text
 
-    def _evaluate_evals(self, text) -> str:
+    def _evaluate_evals(self, text: str) -> str:
         # Set up variables so evals work well
         to_evaluate = re.findall(r'\{e:[^{}]*\}', text) + re.findall(r'\{eval:[^{}]*\}', text)
         evaluated = []

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import math
 import os
-from typing import Optional, Type
+from typing import TYPE_CHECKING, Optional, Tuple, Type
 
 from PyQt5.QtCore import QRect, QSize, Qt, pyqtSignal
 from PyQt5.QtGui import QFontMetrics, QPainter, QPalette, QTextCursor
@@ -10,8 +10,11 @@ from PyQt5.QtWidgets import QCompleter, QLabel, QPlainTextEdit, QWidget
 
 from app import dark_theme
 from app.editor.event_editor import event_autocompleter
+from app.editor.event_editor.utils import EditorLanguageMode
 from app.editor.settings import MainSettingsController
 
+if TYPE_CHECKING:
+    from app.editor.event_editor.event_properties import EventProperties
 
 class LineNumberArea(QWidget):
     def __init__(self, parent: EventTextEditor):
@@ -33,7 +36,7 @@ class EventTextEditor(QPlainTextEdit):
 
     def __init__(self, parent):
         super().__init__(parent)
-        self.window = parent
+        self.event_properties: EventProperties = parent
         self.line_number_area = LineNumberArea(self)
 
         self.settings = MainSettingsController()
@@ -119,14 +122,24 @@ class EventTextEditor(QPlainTextEdit):
         self.function_annotator.move(tc_top_right)
         self.function_annotator.show()
 
+    def get_event_command_context(self) -> Tuple[str, int]: # returns code line, and position in line
+        if self.event_properties.language_mode == EditorLanguageMode.EVENT:
+            return self.textCursor().block().text(), self.textCursor().positionInBlock()
+        elif self.event_properties.language_mode == EditorLanguageMode.PYTHON:
+            curr_pos = self.textCursor().position()
+            terminal_pos = curr_pos
+            while terminal_pos > 0 and self.document().characterAt(terminal_pos) != '$':
+                terminal_pos -= 1
+            return self.document().toRawText()[terminal_pos:curr_pos], curr_pos - terminal_pos
+        else:
+            return None
+
     def complete(self):
         if not self.should_show_completion_box():
             self.hide_completion_box()
             return
-        tc = self.textCursor()
-        line = tc.block().text()
-        cursor_pos = tc.positionInBlock()
-        if not self.completer.setTextToComplete(line, cursor_pos, self.window.current.level_nid):
+        line, cursor_pos = self.get_event_command_context()
+        if not self.completer.setTextToComplete(line, cursor_pos, self.event_properties.current.level_nid):
             return
         cr = self.cursorRect()
         cr.setWidth(

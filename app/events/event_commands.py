@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 import logging
 from enum import Enum
-from typing import Callable, List, Dict, Set, Tuple, Type
+from typing import Callable, List, Dict, Optional, Set, Tuple, Type
 
 from app.utilities.data import Prefab
 from app.utilities.typing import NID
@@ -57,7 +57,7 @@ class EventCommand(Prefab):
         self.display_values = display_values
         if not self.display_values:
             if self.parameters:
-                self.display_values = [self.parameters.get(kwd) or "" for kwd in (self.keywords + self.optional_keywords)]
+                self.display_values = [str(self.parameters.get(kwd)) or "" for kwd in (self.keywords + self.optional_keywords)]
             else:
                 self.display_values = []
 
@@ -74,19 +74,21 @@ class EventCommand(Prefab):
     def __repr__(self):
         return self.to_plain_text()
 
-    def get_keyword_types(self) -> list:
-        if len(self.keyword_types) == len(self.keywords + self.optional_keywords):
-            return self.keyword_types
+    @classmethod
+    def get_keyword_types(cls) -> list:
+        if len(cls.keyword_types) == len(cls.keywords + cls.optional_keywords):
+            return cls.keyword_types
         else:
-            return self.keywords + self.optional_keywords
+            return cls.keywords + cls.optional_keywords
 
-    def get_validator_from_keyword(self, keyword: str) -> str:
-        if keyword in self.keywords:
-            i = self.keywords.index(keyword)
-            return self.get_keyword_types()[i]
-        elif keyword in self.optional_keywords:
-            i = self.optional_keywords.index(keyword)
-            return self.get_keyword_types()[len(self.keywords) + i]
+    @classmethod
+    def get_validator_from_keyword(cls, keyword: str) -> Optional[str]:
+        if keyword in cls.keywords:
+            i = cls.keywords.index(keyword)
+            return cls.get_keyword_types()[i]
+        elif keyword in cls.optional_keywords:
+            i = cls.optional_keywords.index(keyword)
+            return cls.get_keyword_types()[len(cls.keywords) + i]
 
     def get_index_from_keyword(self, keyword: str) -> int:
         for idx, value in enumerate(self.display_values):
@@ -3248,7 +3250,7 @@ def restore_command(dat) -> EventCommand:
 
 evaluables = ('Expression', 'String', 'StringList', 'PointList', 'DashList', 'Nid')
 
-ALL_EVENT_COMMANDS: Dict[NID, EventCommand] = {
+ALL_EVENT_COMMANDS: Dict[NID, Type[EventCommand]] = {
     command.nid: command for command in EventCommand.__subclasses__()
 }
 ALL_EVENT_COMMANDS.update({

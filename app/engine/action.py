@@ -2259,7 +2259,7 @@ class Die(Action):
         self.unit = unit
         self.old_pos = unit.position
         self.leave_map = LeaveMap(self.unit)
-        if DB.support_constants.value('break_supports_on_death') and not game.current_mode.permadeath:
+        if DB.support_constants.value('break_supports_on_death'):
             self.lock_all_support_ranks = \
                 [LockAllSupportRanks(pair.nid) for pair in game.supports.get_pairs(self.unit.nid)]
         else:

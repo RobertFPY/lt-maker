@@ -137,6 +137,9 @@ class TileSetEditor(QDialog):
     def on_terrain_alpha_change(self, alpha: int):
         self.view.set_alpha(alpha)
 
+    def reset_terrain(self):
+        self.current.terrain_grid.clear()
+
     def handle_left_click(self, x, y):
         tile_pos = (x, y)
         if self.current_tool == PaintTool.Brush:

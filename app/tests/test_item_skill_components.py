@@ -4,10 +4,12 @@ from unittest.mock import MagicMock, patch
 
 from app.data.database.item_components import ItemComponent
 from app.data.database.skill_components import SkillComponent
-from app.engine.component_system import source_generator
+from app.engine.codegen import source_generator
 from app.engine.item_components.base_components import Spell, Weapon
 from app.engine.item_components.advanced_components import MultiTarget
 from app.engine.item_components.exp_components import Wexp
+from app.engine.item_components.weapon_components import Damage, Hit, Crit
+from app.engine.item_components.extra_components import CustomTriangleMultiplier
 from app.engine.skill_components.base_components import CanUseWeaponType, CannotUseWeaponType, ChangeAI, ChangeBuyPrice, IgnoreAlliances, Locktouch
 from app.engine.skill_components.combat_components import DamageMultiplier
 from app.engine.skill_components.combat2_components import Vantage
@@ -252,6 +254,10 @@ class ItemSkillComponentTests(unittest.TestCase):
         mock_unit = MagicMock()
         self.assertEqual(expected_result, call_hook(mock_unit, mock_item))
         
+    def _test_item_hook_with_item(self, mock_item: Any, call_hook: Callable[[], Any], expected_result: Any):
+        mock_unit = MagicMock()
+        self.assertEqual(expected_result, call_hook(mock_unit, mock_item))
+        
     def test_item_hooks_weapon_resolution_logic(self):
         from app.engine import item_system
         # is_weapon
@@ -260,5 +266,80 @@ class ItemSkillComponentTests(unittest.TestCase):
         self._test_item_hook_with_components([Spell(), Weapon()], lambda unit, item: item_system.is_weapon(unit, item), False)
         self._test_item_hook_with_components([], lambda unit, item: item_system.is_weapon(unit, item), False)
         
+    def test_item_hooks_all_false_priority(self):
+        from app.engine import item_system
+        self._test_item_hook_with_components([], lambda unit, item: item_system.is_weapon(unit, item), False)
+        self._test_item_hook_with_components([Weapon()], lambda unit, item: item_system.is_weapon(unit, item), True)
+        mock_component = MagicMock()
+        mock_component.is_weapon = MagicMock(return_value=False)
+        self._test_item_hook_with_components([Weapon(), mock_component], lambda unit, item: item_system.is_weapon(unit, item), False)
+        
+    def test_item_hooks_unique_default(self):
+        from app.engine import item_system
+        self._test_item_hook_with_components([], lambda unit, item: item_system.num_targets(unit, item), 1)
+        self._test_item_hook_with_components([MultiTarget(2)], lambda unit, item: item_system.num_targets(unit, item), 2)
+        self._test_item_hook_with_components([MultiTarget(2), MultiTarget(3)], lambda unit, item: item_system.num_targets(unit, item), 3)
+
+    def test_item_hooks_union(self):
+        from app.engine import item_system
+        target = MagicMock()
+        mock_component_1 = MagicMock()
+        mock_component_1.target_icon = MagicMock(return_value='warning')
+        mock_component_2 = MagicMock()
+        mock_component_2.target_icon = MagicMock(return_value='money')
+        self._test_item_hook_with_components([], lambda unit, item: item_system.target_icon(unit, item, target), set())
+        self._test_item_hook_with_components([mock_component_1, mock_component_1], lambda unit, item: item_system.target_icon(unit, item, target), set(['warning']))
+        self._test_item_hook_with_components([mock_component_1, mock_component_2], lambda unit, item: item_system.target_icon(unit, item, target), set(['warning', 'money']))
+        
+    def test_item_hooks_accum(self):
+        from app.engine import item_system
+        mock_arg = MagicMock()
+        self._test_item_hook_with_components([], lambda unit, item: item_system.wexp(mock_arg, unit, item, mock_arg), 0)
+        self._test_item_hook_with_components([Wexp(2)], lambda unit, item: item_system.wexp(mock_arg, unit, item, mock_arg), 1)
+        self._test_item_hook_with_components([Wexp(2), Wexp(3)], lambda unit, item: item_system.wexp(mock_arg, unit, item, mock_arg), 3)
+        
+    def test_item_hooks_no_return(self):
+        from app.engine import item_system
+        mock_arg = MagicMock()
+        mock_item = MagicMock()
+        mock_parent = MagicMock()
+        mock_component_1 = MagicMock()
+        mock_component_1.on_end_chapter = MagicMock(return_value=None)
+        mock_component_1.on_upkeep = MagicMock(return_value=None)
+        mock_component_1.start_combat = MagicMock(return_value=None)
+        mock_component_1.battle_music = MagicMock(return_value=None)
+        mock_component_2 = MagicMock()
+        mock_component_2.on_end_chapter = MagicMock(return_value=None)
+        mock_component_2.on_upkeep = MagicMock(return_value=None)
+        mock_component_2.start_combat = MagicMock(return_value=None)
+        mock_component_2.battle_music = MagicMock(return_value=None)
+        mock_item.components = [mock_component_1]
+        mock_parent.components = [mock_component_2]
+        mock_item.parent_item = mock_parent
+        self.assertEqual(None, item_system.on_end_chapter(mock_arg, mock_item))
+        self.assertEqual(None, item_system.on_upkeep(mock_arg, mock_arg, mock_arg, mock_item))
+        self.assertEqual(None, item_system.start_combat(mock_arg, mock_arg, mock_item, mock_arg, mock_arg))
+        self.assertEqual(None, item_system.battle_music(mock_arg, mock_item, mock_arg, mock_arg))
+        self.assertTrue(mock_component_1.on_end_chapter.called)
+        self.assertTrue(mock_component_2.on_end_chapter.called)
+        self.assertTrue(mock_component_1.on_upkeep.called)
+        self.assertTrue(mock_component_2.on_upkeep.called)
+        self.assertTrue(mock_component_1.start_combat.called)
+        self.assertTrue(mock_component_2.start_combat.called)
+        self.assertTrue(mock_component_1.battle_music.called)
+        self.assertFalse(mock_component_2.battle_music.called)
+    
+    @patch('app.engine.skill_system')
+    def test_item_override(self, test_patch):
+        from app.engine import item_system
+        mock_unit = MagicMock()
+        test_patch.item_override = MagicMock(return_value = [Damage(4), Hit(90), CustomTriangleMultiplier(2)])
+        mock_item = MagicMock()
+        mock_item.components = [Damage(10), Crit(25), CustomTriangleMultiplier(2)]
+        self.assertEqual(4, item_system.damage(mock_unit, mock_item))
+        self.assertEqual(90, item_system.hit(mock_unit, mock_item))
+        self.assertEqual(25, item_system.crit(mock_unit, mock_item))
+        self.assertEqual(4, item_system.modify_weapon_triangle(mock_unit, mock_item))
+
 if __name__ == '__main__':
     unittest.main()

@@ -8,6 +8,8 @@ from app.data.database.ai_groups import AIGroup
 from app.events.regions import Region
 from app.utilities.data import Data, Prefab
 
+OBJECTIVE_KEYS = ['simple', 'win', 'loss']
+
 class LevelPrefab(Prefab):
     def __init__(self, nid, name):
         self.nid = nid
@@ -17,18 +19,16 @@ class LevelPrefab(Prefab):
         self.party: NID = None  # Party Prefab Nid
         self.music = OrderedDict()
 
-        self.objective = {'simple': '',
-                          'win': '',
-                          'loss': ''}
+        self.objective = {key: '' for key in OBJECTIVE_KEYS}
         self.roam: bool = False
-        self.roam_unit: str = None
+        self.roam_unit: NID = None
 
         self.go_to_overworld: bool = False
         self.should_record: bool = True
 
         self.units = Data[Union[UniqueUnit, GenericUnit]]()
         self.regions = Data[Region]()
-        self.unit_groups = Data()
+        self.unit_groups = Data[UnitGroup]()
         self.ai_groups = Data[AIGroup]()  # Each AI Group is Level Specific
 
     def save_attr(self, name, value):
@@ -68,7 +68,7 @@ class LevelPrefab(Prefab):
     @classmethod
     def restore(cls, s_dict):
         self = super().restore(s_dict)
-        
+
         # Clear any unused ai groups
         # Cannot be done on save because then autosaving will randomly remove non-populated ai groups you may have planned to use
         all_unit_ai_groups = {unit.ai_group for unit in self.units if unit.ai_group}

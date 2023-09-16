@@ -118,8 +118,8 @@ class ClassProperties(QWidget):
 
         weapon_section = QHBoxLayout()
 
-        attrs = ("usable", "nid", "wexp_gain")
-        default_weapons = {weapon_nid: DB.weapons.default() for weapon_nid in DB.weapons.keys()}
+        attrs = ("usable", "nid", "wexp_gain", "cap")
+        default_weapons = {weapon_nid: DB.weapons.default(DB) for weapon_nid in DB.weapons.keys()}
         self.wexp_gain_widget = MultiDictWidget(
             default_weapons, "Weapon Experience",
             attrs, WexpGainDelegate, self, model=WexpGainMultiAttrModel)
@@ -363,7 +363,7 @@ class ClassProperties(QWidget):
             self.averages_dialog.set_current(current)
 
         self.class_skill_widget.set_current(current.learned_skills)
-        default_weapons = {weapon_nid: DB.weapons.default() for weapon_nid in DB.weapons.keys()}
+        default_weapons = {weapon_nid: DB.weapons.default(DB) for weapon_nid in DB.weapons.keys()}
         default_weapons.update(current.wexp_gain)
         current.wexp_gain = default_weapons
         self.wexp_gain_widget.set_current(current.wexp_gain)

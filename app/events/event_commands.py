@@ -3,9 +3,10 @@ from dataclasses import dataclass
 
 import logging
 from enum import Enum
-from typing import Callable, List, Dict, Set, Tuple, Type
+from typing import Callable, List, Dict, Optional, Set, Tuple, Type
 
 from app.utilities.data import Prefab
+from app.utilities.typing import NID
 
 
 class Tags(Enum):
@@ -53,7 +54,16 @@ class EventCommand(Prefab):
     def __init__(self, parameters: Dict[str, str] = None, flags: Set[str] = None, display_values: List[str] = None):
         self.parameters: Dict[str, str] = parameters or {}
         self.chosen_flags: Set[str] = flags or set()
-        self.display_values: List[str] = display_values or []
+        self.display_values = display_values
+        if not self.display_values:
+            if self.parameters:
+                self.display_values = [str(self.parameters.get(kwd)) or "" for kwd in (self.keywords + self.optional_keywords)]
+            else:
+                self.display_values = []
+
+    def FLAGS(self, *args) -> EventCommand:
+        self.chosen_flags = set(args)
+        return self
 
     def save(self):
         return self.nid, self.display_values
@@ -64,19 +74,21 @@ class EventCommand(Prefab):
     def __repr__(self):
         return self.to_plain_text()
 
-    def get_keyword_types(self) -> list:
-        if len(self.keyword_types) == len(self.keywords + self.optional_keywords):
-            return self.keyword_types
+    @classmethod
+    def get_keyword_types(cls) -> list:
+        if len(cls.keyword_types) == len(cls.keywords + cls.optional_keywords):
+            return cls.keyword_types
         else:
-            return self.keywords + self.optional_keywords
+            return cls.keywords + cls.optional_keywords
 
-    def get_validator_from_keyword(self, keyword: str) -> str:
-        if keyword in self.keywords:
-            i = self.keywords.index(keyword)
-            return self.get_keyword_types()[i]
-        elif keyword in self.optional_keywords:
-            i = self.optional_keywords.index(keyword)
-            return self.get_keyword_types()[len(self.keywords) + i]
+    @classmethod
+    def get_validator_from_keyword(cls, keyword: str) -> Optional[str]:
+        if keyword in cls.keywords:
+            i = cls.keywords.index(keyword)
+            return cls.get_keyword_types()[i]
+        elif keyword in cls.optional_keywords:
+            i = cls.optional_keywords.index(keyword)
+            return cls.get_keyword_types()[len(cls.keywords) + i]
 
     def get_index_from_keyword(self, keyword: str) -> int:
         for idx, value in enumerate(self.display_values):
@@ -100,6 +112,11 @@ class EventCommand(Prefab):
     @property
     def flags(self) -> List[str]:
         return self._flags + UNIVERSAL_FLAGS
+
+    def __eq__(self, other: EventCommand):
+        return (self.__class__ == other.__class__
+                and self.parameters == other.parameters
+                and self.chosen_flags == other.chosen_flags)
 
 class Comment(EventCommand):
     nid = "comment"
@@ -1519,7 +1536,7 @@ class SetItemUses(EventCommand):
     desc = \
         """
 Sets the uses of an *Item* to *Uses* in the inventory of *GlobalUnitOrConvoy*.
-If the *recursive* flag is set, the event will first attempt to equip items directly
+If the *recursive* flag is set, the event will first attempt to modify items directly
 in the unit's inventory, and then if no matching item is found, check the sub-items of multi-items.
 
 *  the *additive* flag adds the given uses instead
@@ -1619,10 +1636,14 @@ class AddItemComponent(EventCommand):
         """
 Adds an *ItemComponent* with optional value of *Expression* to *Item* in the inventory of *GlobalUnitOrConvoy*.
 Can be used to modify a specific item within your game, such as for forging.
+
+If the *recursive* flag is set, the event will first attempt to modify items directly
+in the unit's inventory, and then if no matching item is found, check the sub-items of multi-items.
         """
 
     keywords = ["GlobalUnitOrConvoy", "Item", "ItemComponent"]
     optional_keywords = ["Expression"]
+    _flags = ['recursive']
 
 class ModifyItemComponent(EventCommand):
     nid = 'modify_item_component'
@@ -1636,12 +1657,15 @@ Can be used to modify a specific item within your game, such as for forging.
 Use **ComponentProperty* to change a specific value if the ItemComponent has more than one option available.
 
 Use the *additive* flag to add rather than set the value.
+
+If the *recursive* flag is set, the event will first attempt to modify items directly
+in the unit's inventory, and then if no matching item is found, check the sub-items of multi-items.
         """
 
     keywords = ["GlobalUnitOrConvoy", "Item", "ItemComponent", "Expression"]
     optional_keywords = ["ComponentProperty"]
     keyword_types = ["GlobalUnitOrConvoy", "Item", "ItemComponent", "Expression", "String"]
-    _flags = ['additive']
+    _flags = ['additive', 'recursive']
 
 class RemoveItemComponent(EventCommand):
     nid = 'remove_item_component'
@@ -1650,10 +1674,14 @@ class RemoveItemComponent(EventCommand):
     desc = \
         """
 Removes *ItemComponent* from *Item* in the inventory of *GlobalUnitOrConvoy*.
+
+If the *recursive* flag is set, the event will first attempt to modify items directly
+in the unit's inventory, and then if no matching item is found, check the sub-items of multi-items.
         """
 
     keywords = ["GlobalUnitOrConvoy", "Item", "ItemComponent"]
-    
+    _flags = ['recursive']
+
 class AddSkillComponent(EventCommand):
     nid = 'add_skill_component'
     tag = Tags.MODIFY_SKILL_PROPERTIES
@@ -1665,7 +1693,7 @@ Adds a *SkillComponent* with optional value of *Expression* to *Skill* belonging
 
     keywords = ["GlobalUnit", "Skill", "SkillComponent"]
     optional_keywords = ["Expression"]
-    
+
 class ModifySkillComponent(EventCommand):
     nid = 'modify_skill_component'
     tag = Tags.MODIFY_SKILL_PROPERTIES
@@ -1683,7 +1711,7 @@ Use the *additive* flag to add rather than set the value.
     optional_keywords = ["ComponentProperty"]
     keyword_types = ["GlobalUnit", "Skill", "SkillComponent", "Expression", "String"]
     _flags = ['additive']
-    
+
 class RemoveSkillComponent(EventCommand):
     nid = 'remove_skill_component'
     tag = Tags.MODIFY_SKILL_PROPERTIES
@@ -1923,7 +1951,7 @@ Changes *GlobalUnit*'s description to *String*.
 class ChangeAffinity(EventCommand):
     nid = 'change_affinity'
     tag = Tags.MODIFY_UNIT_PROPERTIES
-    
+
     desc = \
         """
 Changes *GlobalUnit*'s affinity to *Affinity*.
@@ -2530,8 +2558,8 @@ class Shop(EventCommand):
 
     desc = \
         """
-Causes *Unit* to enter a shop that sells *ItemList* items. 
-The optional *ShopFlavor* keyword determines whether the shop appears as a vendor, armory, or your own custom flavor. 
+Causes *Unit* to enter a shop that sells *ItemList* items.
+The optional *ShopFlavor* keyword determines whether the shop appears as a vendor, armory, or your own custom flavor.
 The optional *StockList* keyword determines if an item should have a limited stock. The order will be the same as ItemList. Use -1 for unlimited stock.
 The optional *ShopId* keyword is available if you want to save what was bought from the shop in future shops. Memory will be preserved across shops with the same *ShopId*.
         """
@@ -2832,6 +2860,22 @@ Displays the game's guide screen.
 
     _flags = ["immediate"]
 
+class OpenUnitManagement(EventCommand):
+    nid = 'open_unit_management'
+    tag = Tags.MISCELLANEOUS
+
+    desc = \
+        """
+Displays the unit management screen, as if it were accessed from Base.
+If given, uses the (*Panorama*) as the background image.
+The (*Scroll*) flag determines whether the background image will move.
+1. *immediate* flag skips the transition between screens
+        """
+
+    optional_keywords = ['Panorama']
+    keyword_types = ['Panorama']
+    _flags = ["scroll", "immediate"]
+
 class LocationCard(EventCommand):
     nid = 'location_card'
     tag = Tags.DIALOGUE_TEXT
@@ -2948,7 +2992,7 @@ For example, if you called `trigger_script_with_args;MyEvent;Color,Purple,Animal
 
 class LoopUnits(EventCommand):
     nid = 'loop_units'
-    tag = Tags.MISCELLANEOUS
+    tag = Tags.HIDDEN   # command is deprecated
 
     desc = \
         """
@@ -3108,6 +3152,14 @@ class SetOverworldMenuOptionVisible(EventCommand):
     keywords = ['OverworldNodeNID', 'OverworldNodeMenuOption', 'Setting']
     keyword_types = ['OverworldNodeNID', 'OverworldNodeMenuOption', 'Bool']
 
+class EnterLevelFromOverworld(EventCommand):
+    nid = 'enter_level_from_overworld'
+    tag =  Tags.OVERWORLD
+    desc = ('Begin the level with the specified NID. Only intended to work from the Overword')
+
+    keywords = ['LevelNid']
+    keyword_types = ['String']
+
 class CreateAchievement(EventCommand):
     nid = 'create_achievement'
     tag = Tags.ACHIEVEMENT
@@ -3177,20 +3229,6 @@ class UnlockDifficulty(EventCommand):
     keywords = ['DifficultyMode']
     keyword_types = ['DifficultyMode']
 
-class Python(EventCommand):
-    nid = 'python'
-    tag = Tags.HIDDEN
-    special_handling = True
-
-    desc = "Executes the following lines in python. End with `end_python`"
-
-class EndPython(EventCommand):
-    nid = 'end_python'
-    tag = Tags.HIDDEN
-    special_handling = True
-
-    desc = "Ends a block of python code."
-
 def get_commands():
     return EventCommand.__subclasses__()
 
@@ -3211,6 +3249,13 @@ def restore_command(dat) -> EventCommand:
         return Comment(display_values=[nid + ';' + str.join(';', display_values)])
 
 evaluables = ('Expression', 'String', 'StringList', 'PointList', 'DashList', 'Nid')
+
+ALL_EVENT_COMMANDS: Dict[NID, Type[EventCommand]] = {
+    command.nid: command for command in EventCommand.__subclasses__()
+}
+ALL_EVENT_COMMANDS.update({
+    command.nickname: command for command in EventCommand.__subclasses__() if command.nickname
+})
 
 @dataclass
 class ArgToken():
@@ -3251,11 +3296,7 @@ def determine_command_type(text: str) -> Type[EventCommand]:
         return Comment
     arguments = [arg.string for arg in get_command_arguments(text)]
     command_nid = arguments[0]
-    subclasses = EventCommand.__subclasses__()
-    for command_type in subclasses:
-        if command_type.nid == command_nid or command_type.nickname == command_nid:
-            return command_type
-    return Comment
+    return ALL_EVENT_COMMANDS.get(command_nid, Comment)
 
 def parse_text_to_command(text: str, strict: bool = False) -> Tuple[EventCommand, int]:
     """parses a line into a command
@@ -3351,13 +3392,12 @@ def parse_text_to_command(text: str, strict: bool = False) -> Tuple[EventCommand
     arguments = [arg.string for arg in get_command_arguments(text)]
 
     command_nid = arguments[0]
-    subclasses = EventCommand.__subclasses__()
     bad_idx = None
-    for command_type in subclasses:
-        if command_type.nid == command_nid or command_type.nickname == command_nid:
-            output, bad_idx = _parse_command(command_type, arguments)
-            if output:
-                return output, None
+    if command_nid in ALL_EVENT_COMMANDS:
+        command_type = ALL_EVENT_COMMANDS[command_nid]
+        output, bad_idx = _parse_command(command_type, arguments)
+        if output:
+            return output, None
     # Only gets here if it couldn't find a good match
     if strict:
         return None, bad_idx

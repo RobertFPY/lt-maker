@@ -115,7 +115,7 @@ class UnitSpecification(QWidget):
 
     def sub_spec_changed(self):
         unit_spec = self.box1.currentText()
-        if self.box2.currentIndex() in (0, 2, 3, 4):
+        if self.box2.currentIndex() in (0, 2, 3):
             sub_spec = self.box2.currentWidget().currentText()
         else:
             sub_spec = self.box2.currentWidget().edit.currentText()
@@ -127,7 +127,7 @@ class UnitSpecification(QWidget):
     def set_current(self, target_spec):
         self.except_check_box.setChecked(bool(self.window.current.invert_targeting))
         if target_spec:
-            self.box1.setValue(target_spec[0])
+            self.box1.setValue(str(target_spec[0]))
             self.unit_spec_changed(recurse=False)
             self.box2.currentWidget().setValue(target_spec[1])
         else:

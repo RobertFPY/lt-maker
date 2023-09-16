@@ -21,7 +21,7 @@ run_tests:
         - pip install -r requirements_editor.txt
     script:
         - echo "Running tests"
-        - python -m app.engine.component_system.source_generator
+        - python -m app.engine.codegen.source_generator
         - python -m unittest discover -s app/tests -p 'test*.py'
 
 build_engine:
@@ -42,7 +42,7 @@ build_engine:
         - echo "Prereqs successfully installed"
     script:
         - echo "Generating component files"
-        - "C:\\Python37\\python.exe -m app.engine.component_system.source_generator"
+        - "C:\\Python37\\python.exe -m app.engine.codegen.source_generator"
         - start powershell
         - echo "Building generic engine..."
         - cp ./utilities/build_tools/generic_engine.spec .
@@ -79,7 +79,7 @@ build_editor:
         - echo "Prereqs successfully installed"
     script:
         - echo "Generating component files"
-        - "C:\\Python37\\python.exe -m app.engine.component_system.source_generator"
+        - "C:\\Python37\\python.exe -m app.engine.codegen.source_generator"
         - start powershell
         - echo "Now building main editor..."
         - cp ./utilities/build_tools/editor.spec .

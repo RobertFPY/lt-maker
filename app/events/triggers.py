@@ -157,11 +157,13 @@ class UnitWait(EventTrigger):
         unit1: the unit that waited.
         position: the position they waited at.
         region: region under the unit (can be None)
+        actively_chosen: boolean for whether the player actively selected Wait
     """
     nid: ClassVar[NID] = 'unit_wait'
     unit1: UnitObject
     position: Tuple[int, int]
     region: Optional[RegionObject]
+    actively_chosen: bool
 
 @dataclass(init=True)
 class UnitSelect(EventTrigger):
@@ -355,9 +357,11 @@ class RoamPressStart(EventTrigger):
     Occurs when the `start` key is pressed in Free Roam.
 
         unit1: The current roam unit.
+        unit2: the closest nearby other unit.
     """
     nid: ClassVar[NID] = 'roam_press_start'
     unit1: UnitObject
+    unit2: UnitObject
 
 @dataclass(init=True)
 class RoamPressInfo(EventTrigger):
@@ -368,6 +372,18 @@ class RoamPressInfo(EventTrigger):
         unit2: the closest nearby other unit.
     """
     nid: ClassVar[NID] = 'roam_press_info'
+    unit1: UnitObject
+    unit2: UnitObject
+
+@dataclass(init=True)
+class RoamPressAux(EventTrigger):
+    """
+    Occurs when the `aux` key is pressed in Free Roam.
+
+        unit1: The current roam unit.
+        unit2: the closest nearby other unit.
+    """
+    nid: ClassVar[NID] = 'roam_press_aux'
     unit1: UnitObject
     unit2: UnitObject
 

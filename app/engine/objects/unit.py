@@ -7,7 +7,6 @@ from app.data.database.database import DB
 from app.data.database.difficulty_modes import GrowthOption
 from app.data.database.level_units import GenericUnit, UniqueUnit
 from app.data.database.units import UnitPrefab
-from app.data.database.weapons import WexpGain
 from app.engine import (combat_calcs, equations, item_funcs, item_system,
                         skill_system, unit_funcs)
 from app.engine.objects.difficulty_mode import DifficultyModeObject
@@ -159,7 +158,11 @@ class UnitObject(Prefab):
             # Generics have defualt stat cap modifiers of 0
             self.stat_cap_modifiers = {stat_nid: 0 for stat_nid in DB.stats.keys()}
             weapon_gain = klass_obj.wexp_gain
-            self.wexp = {weapon_nid: weapon_gain.get(weapon_nid, DB.weapons.default()).wexp_gain for weapon_nid in DB.weapons.keys()}
+            self.wexp = {
+                weapon_nid: 
+                utils.clamp(weapon_gain.get(weapon_nid, DB.weapons.default(DB)).wexp_gain, 0, unit_funcs.get_weapon_cap(self, weapon_nid)) 
+                for weapon_nid in DB.weapons.keys()
+            }
         else:
             bases = prefab.bases
             growths = prefab.growths
@@ -172,7 +175,11 @@ class UnitObject(Prefab):
                 self.growths = {stat_nid: self.growths[stat_nid] + klass_obj.growths.get(stat_nid, 0) for stat_nid in DB.stats.keys()}
             self.stat_cap_modifiers = {stat_nid: stat_cap_modifiers.get(stat_nid, 0) for stat_nid in DB.stats.keys()}
             weapon_gain = prefab.wexp_gain
-            self.wexp = {weapon_nid: weapon_gain.get(weapon_nid, DB.weapons.default()).wexp_gain for weapon_nid in DB.weapons.keys()}
+            self.wexp = {
+                weapon_nid: 
+                utils.clamp(weapon_gain.get(weapon_nid, DB.weapons.default(DB)).wexp_gain, 0, unit_funcs.get_weapon_cap(self, weapon_nid)) 
+                for weapon_nid in DB.weapons.keys()
+            }
 
         # status bools
         self.dead = False
@@ -642,8 +649,8 @@ class UnitObject(Prefab):
                     return running_total
             return running_total
 
-    def wait(self):
-        unit_funcs.wait(self)
+    def wait(self, actively_chosen: bool = False):
+        unit_funcs.wait(self, actively_chosen)
 
     @property
     def finished(self):

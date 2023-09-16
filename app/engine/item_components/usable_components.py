@@ -4,6 +4,8 @@ from app.data.database.components import ComponentType
 
 from app.engine import action, item_funcs
 
+import logging
+
 class Uses(ItemComponent):
     nid = 'uses'
     desc = "Number of uses of item"
@@ -42,20 +44,20 @@ class Uses(ItemComponent):
 
     def on_broken(self, unit, item):
         from app.engine.game_state import game
-        if self.is_broken(unit, item):
-            if item in unit.items:
-                action.do(action.RemoveItem(unit, item))
-            elif item in game.party.convoy:
-                action.do(action.RemoveItemFromConvoy(item))
-            else:
-                for other_unit in game.get_units_in_party():
-                    if item in other_unit.items:
-                        action.do(action.RemoveItem(other_unit, item))
-            return True
-        return False
+        if item in unit.items:
+            action.do(action.RemoveItem(unit, item))
+        elif item in game.party.convoy:
+            action.do(action.RemoveItemFromConvoy(item))
+        else:
+            for other_unit in game.get_units_in_party():
+                if item in other_unit.items:
+                    action.do(action.RemoveItem(other_unit, item))
+
+    def broken_alert(self, unit, item):
+        return self.is_broken(unit, item)
 
     def end_combat(self, playback, unit, item, target, mode):
-        if self._did_something:
+        if self._did_something and 'uses' in item.data:
             action.do(action.SetObjData(item, 'uses', item.data['uses'] - 1))
             action.do(action.UpdateRecords('item_use', (unit.nid, item.nid)))
         self._did_something = False
@@ -109,16 +111,16 @@ class ChapterUses(ItemComponent):
                 actions.append(action.UpdateRecords('item_use', (unit.nid, item.nid)))
 
     def on_broken(self, unit, item):
-        if self.is_broken(unit, item):
-            if unit.equipped_weapon is item:
-                action.do(action.UnequipItem(unit, item))
-            elif unit.equipped_accessory is item:
-                action.do(action.UnequipItem(unit, item))
-            return True
-        return False
+        if unit.equipped_weapon is item:
+            action.do(action.UnequipItem(unit, item))
+        elif unit.equipped_accessory is item:
+            action.do(action.UnequipItem(unit, item))
+
+    def broken_alert(self, unit, item):
+        return self.is_broken(unit, item)
 
     def end_combat(self, playback, unit, item, target, mode):
-        if self._did_something:
+        if self._did_something and 'c_uses' in item.data:
             action.do(action.SetObjData(item, 'c_uses', item.data['c_uses'] - 1))
             action.do(action.UpdateRecords('item_use', (unit.nid, item.nid)))
         self._did_something = False
@@ -208,6 +210,8 @@ class ManaCost(ItemComponent):
             action.do(action.UnequipItem(unit, item))
         elif unit.equipped_accessory is item:
             action.do(action.UnequipItem(unit, item))
+
+    def broken_alert(self, unit, item):
         return False
 
     def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
@@ -290,6 +294,8 @@ class Cooldown(ItemComponent):
             action.do(action.UnequipItem(unit, item))
         elif unit.equipped_accessory is item:
             action.do(action.UnequipItem(unit, item))
+
+    def broken_alert(self, unit, item):
         return False
 
     def on_upkeep(self, actions, playback, unit, item):
@@ -371,7 +377,7 @@ class EvalAvailable(ItemComponent):
     def available(self, unit, item) -> bool:
         from app.engine import evaluate
         try:
-            return int(evaluate.evaluate(self.value, unit, local_args={'item': item}))
+            return bool(evaluate.evaluate(self.value, unit, local_args={'item': item}))
         except:
             logging.error("EvalAvailable: Couldn't evaluate %s conditional" % self.value)
         return False

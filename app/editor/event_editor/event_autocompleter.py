@@ -1,4 +1,7 @@
-from typing import List, Tuple, Type
+from dataclasses import dataclass
+from enum import Enum
+from functools import lru_cache
+from typing import List, Optional, Tuple, Type
 
 from PyQt5.QtCore import QStringListModel, Qt, pyqtSignal
 from PyQt5.QtWidgets import QCompleter
@@ -10,9 +13,68 @@ from app.events import event_commands, event_validators
 from app.utilities import str_utils
 from app.utilities.typing import NID
 
+class EventScriptFunctionHinter():
+    @staticmethod
+    @lru_cache(16)
+    def _generate_hint_for_command(command: Type[event_commands.EventCommand], param: str) -> str:
+        command = command()
+        args = []
+        args.append(command.nid)
+        all_keywords = command.keywords + command.optional_keywords
+        curr_keyword = None
+        for idx, keyword in enumerate(all_keywords):
+            if command.keyword_types:
+                keyword_type = command.keyword_types[idx]
+                hint_str = "%s=%s" % (keyword, keyword_type)
+                if keyword == param:
+                    hint_str = "<b>%s</b>" % hint_str
+                    curr_keyword = keyword_type
+                args.append(hint_str)
+            else:
+                hint_str = keyword
+                if keyword == param:
+                    hint_str = "<b>%s</b>" % hint_str
+                    curr_keyword = keyword
+                args.append(hint_str)
+        if command.flags:
+            hint_str = 'FLAGS'
+            if param == 'FLAGS':
+                hint_str = "<b>%s</b>" % hint_str
+                curr_keyword = 'FLAGS'
+            args.append(hint_str)
+        hint_cmd_str = ';\u200b'.join(args)
+        hint_cmd_str = '<div class="command_text">' + hint_cmd_str + '</div>'
+
+        hint_desc = ''
+        if curr_keyword == 'FLAGS':
+            hint_desc = 'Must be one of: %s' % ', '.join(command.flags)
+        else:
+            validator = event_validators.get(curr_keyword)
+            if validator:
+                hint_desc = '<div class="desc_text">' + validator().desc + '</div>'
+
+        style = """
+            <style>
+                .command_text {font-family: 'Courier New', Courier, monospace;}
+                .desc_text {font-family: Arial, Helvetica, sans-serif;}
+            </style>
+        """
+
+        hint_text = style + hint_cmd_str + '<hr>' + hint_desc
+        return hint_text
+
+    @staticmethod
+    def generate_hint_for_line(line: str, cursor_pos: int):
+        if cursor_pos != 0 and line[cursor_pos - 1] not in ';=':
+            return None
+        command = detect_command_under_cursor(line)
+        param = detect_param_under_cursor(command, line, cursor_pos)
+        return EventScriptFunctionHinter._generate_hint_for_command(command, param)
+
 
 class EventScriptCompleter(QCompleter):
     insertText = pyqtSignal(str)
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.settings = MainSettingsController()
@@ -71,6 +133,125 @@ class EventScriptCompleter(QCompleter):
         self.popup().setCurrentIndex(self.completionModel().index(0, 0))
         return True
 
+class ParseMode(Enum):
+    COMMAND = 1
+    ARGS = 2
+    NESTED_ARG = 3
+    FINISHED_ARGS = 4
+    FLAGS = 5
+    FINISHED = 6
+
+@dataclass
+class ParseInfo():
+    command: Optional[Type[event_commands.EventCommand]]
+    arg_under_cursor: str
+    type_under_cursor: Optional[Type[event_validators.Validator]]
+    final_mode: ParseMode = ParseMode.FINISHED
+
+class PythonEventScriptCompleter(EventScriptCompleter):
+    def get_parse_info(self, line: str, cursor_pos: int) -> Optional[ParseInfo]:
+        if not line.startswith('$'):
+            return None
+        mode = ParseMode.COMMAND
+        command = ''
+        curr_arg = ''
+        arg_list = []
+        paren_depth = 0
+        for i in range(cursor_pos):
+            c = line[i]
+            if mode == ParseMode.COMMAND:
+                if c == '$':
+                    continue
+                elif c == '(':
+                    mode = ParseMode.ARGS
+                else:
+                    command += c
+            elif mode == ParseMode.ARGS:
+                if c == ',':
+                    arg_list.append(curr_arg.strip())
+                    curr_arg = ''
+                    continue
+                elif c == '(':
+                    mode = ParseMode.NESTED_ARG
+                    curr_arg += c
+                    paren_depth += 1
+                elif c == ')':
+                    mode = ParseMode.FINISHED_ARGS
+                    curr_arg = ''
+                else:
+                    curr_arg += c
+            elif mode == ParseMode.NESTED_ARG:
+                if c == '(':
+                    paren_depth += 1
+                elif c == ')':
+                    paren_depth -= 1
+                    if paren_depth == 0:
+                        mode = ParseMode.ARGS
+                curr_arg += c
+            elif mode == ParseMode.FINISHED_ARGS:
+                if curr_arg == '.FLAGS':
+                    curr_arg = ''
+                    mode = ParseMode.FLAGS
+                    continue
+                elif not '.FLAGS'.startswith(curr_arg):
+                    mode = ParseMode.FINISHED
+                    break
+                curr_arg += c
+            elif mode == ParseMode.FLAGS:
+                if c == ',':
+                    curr_arg = ''
+                    continue
+                curr_arg += c
+        if mode == ParseMode.COMMAND: # not finished typing the command:
+            return ParseInfo(None, command, event_validators.EventFunction, mode)
+        command_t = event_commands.ALL_EVENT_COMMANDS.get(command)
+        if not command_t:
+            return None
+        validator_nid = None
+        if '=' in curr_arg:
+            maybe_keyword, arg_text = curr_arg.split('=', 1)
+            validator_nid = command_t.get_validator_from_keyword(maybe_keyword)
+        else:
+            arg_text = curr_arg
+            arg_idx = len(arg_list)
+            if arg_idx < len(command_t.get_keyword_types()):
+                validator_nid = command_t.get_keyword_types()[arg_idx]
+        validator = event_validators.get(validator_nid)
+        arg_text = arg_text.strip()
+        if arg_text.startswith(('"', "'")):
+            quote = arg_text[0]
+            arg_text.replace(quote, '')
+        return ParseInfo(command_t, arg_text, validator, mode)
+
+    def setTextToComplete(self, line: str, cursor_pos: int, level_nid: NID):
+        line_info = self.get_parse_info(line, cursor_pos)
+        if not line_info:
+            return False
+        if line_info.final_mode == ParseMode.FLAGS:
+            autofill_dict = line_info.command().flags
+            autofill_dict = [f'"{arg}"' for arg in autofill_dict]
+        elif line_info.final_mode == ParseMode.FINISHED_ARGS:
+            autofill_dict = ['.FLAGS']
+        elif line_info.final_mode == ParseMode.FINISHED:
+            return False
+        else:
+            validator = line_info.type_under_cursor
+            autofill_dict = generate_wordlist_from_validator_type(validator, level_nid, line_info.arg_under_cursor, DB, RESOURCES)
+            # wrap in quotes bc python. specifically don't do this for command names since they aren't string args
+            if line_info.final_mode != ParseMode.COMMAND:
+                autofill_dict = [f'"{arg}"' for arg in autofill_dict]
+        if len(autofill_dict) == 0:
+            try:
+                if self.popup().isVisible():
+                    self.popup().hide()
+            except: # popup doesn't exist?
+                pass
+            return False
+        self.setModel(QStringListModel(autofill_dict, self))
+        self.setCompletionPrefix(line_info.arg_under_cursor)
+        self.popup().setCurrentIndex(self.completionModel().index(0, 0))
+        return True
+
 def generate_wordlist_from_validator_type(validator: Type[event_validators.Validator], level: NID = None, arg: str = None,
                                           db: Database = None, resources: Resources = None) -> List[str]:
     if not validator:
@@ -87,7 +268,6 @@ def generate_wordlist_from_validator_type(validator: Type[event_validators.Valid
                 name=entry[0], nid=entry[1]))
     return autofill_dict
 
-
 def generate_flags_wordlist(flags: List[str] = []) -> List[str]:
     flaglist = []
     if len(flags) > 0:
@@ -98,6 +278,27 @@ def generate_flags_wordlist(flags: List[str] = []) -> List[str]:
 
 def detect_command_under_cursor(line: str) -> Type[event_commands.EventCommand]:
     return event_commands.determine_command_type(line)
+
+def detect_param_under_cursor(command: event_commands.EventCommand, line: str, cursor_pos: int):
+    if isinstance(command, event_commands.Comment):
+        return None
+    as_tokens = line[:cursor_pos].split(';')
+    if not as_tokens[0] in (command.nid, command.nickname): # should never happen
+        return None
+    if len(as_tokens) == 1:
+        return None
+    as_tokens = as_tokens[1:]
+    all_keywords = command.keywords + command.optional_keywords
+
+    curr_arg = as_tokens[-1]
+    if '=' in curr_arg:
+        param = curr_arg.split('=')[0]
+        if param in all_keywords:
+            return param
+    curr_arg_idx = len(as_tokens) - 1
+    if curr_arg_idx < len(all_keywords):
+        return all_keywords[curr_arg_idx]
+    return 'FLAGS'
 
 def detect_type_under_cursor(line: str, cursor_pos: int, arg_under_cursor: str = None) -> Tuple[event_validators.Validator, List[str]]:
     # turn off typechecking for comments

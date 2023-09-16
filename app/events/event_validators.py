@@ -413,7 +413,7 @@ class Affinity(Validator):
         if affinity in self._db.affinities.keys():
             return affinity
         return None
-    
+
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
         valids = [(None, affinity.nid) for affinity in self._db.affinities]
         return valids
@@ -1058,7 +1058,7 @@ class ItemComponent(Validator):
         from app.engine import item_component_access as ICA
         valids = [(None, component.nid) for component in ICA.get_item_components()]
         return valids
-        
+
 class SkillComponent(Validator):
     desc = "accepts a skill component."
 
@@ -1424,7 +1424,7 @@ def convert(var_type, text):
     except:
         return text
 
-def get(keyword) -> Validator:
+def get(keyword) -> Type[Validator]:
     if keyword in validators:
         return validators[keyword]
     elif keyword in option_validators:

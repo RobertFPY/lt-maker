@@ -6,6 +6,9 @@ from app.events import speak_style, event_commands
 from app.events.event import Event
 from app.engine.sprites import SPRITES
 from app.engine.text_evaluator import TextEvaluator
+from app.events.event_parser import EventParser
+
+from app.utilities.typing import NID
 
 class IfStatementStrategy(Enum):
     ALWAYS_TRUE = 1
@@ -38,9 +41,7 @@ class MockEvent(Event):
         self._transition_color = (0, 0, 0)
         
         self.nid = nid
-        self.commands: List[event_commands.EventCommand] = commands.copy()
-        self.command_idx = command_idx
-        self.if_statement_strategy = if_statement_strategy
+        self.command_queue: List[event_commands.EventCommand] = []
 
         self.background = None
         self.bg_black = SPRITES.get('bg_black').copy()
@@ -49,6 +50,7 @@ class MockEvent(Event):
         self._generic_setup()
 
         self.text_evaluator = TextEvaluator(self.logger, None)
+        self.parser = MockEventParser('Mock', commands.copy(), self.text_evaluator, if_statement_strategy)
 
     def update(self):
         # update all internal updates, remove the ones that are finished
@@ -64,41 +66,6 @@ class MockEvent(Event):
         surf = super().draw(surf)
         return surf
 
-    def handle_loop(self, command: event_commands.EventCommand) -> bool:
-        if command.nid == 'for':
-            internal_fors = 0
-
-            curr_idx = self.command_idx + 1
-            curr_command = self.commands[curr_idx]
-            looped_commands: List[event_commands.EventCommand] = []
-            while curr_command.nid != 'endf' or internal_fors > 0:
-                if curr_command.nid == 'for':
-                    internal_fors += 1
-                if curr_command.nid == 'endf':
-                    internal_fors -= 1
-                looped_commands.append(curr_command)
-                curr_idx += 1
-                if curr_idx > len(self.commands):
-                    self.logger.error("%s: could not find endf command for loop %s" % ('handle_loop'))
-                    return True
-                curr_command = self.commands[curr_idx]
-
-            # skip the stuff inthe middle
-            self.command_idx = curr_idx
-            return True
-        # Skip endf command here
-        elif command.nid == 'endf':
-            return True
-        return False
-
-    def _get_truth(self, command):
-        if self.if_statement_strategy == IfStatementStrategy.ALWAYS_TRUE:
-            truth = True
-        else:
-            truth = False
-        self.logger.info("Result: %s" % truth)
-        return truth
-
     def run_command(self, command: event_commands.EventCommand):
         # Only certain commands will be processed
         if command.nid in self.available:
@@ -106,3 +73,17 @@ class MockEvent(Event):
 
     def _get_unit(self, text):
         return None
+
+class MockEventParser(EventParser):
+    def __init__(self, nid: NID, commands: List[event_commands.EventCommand],
+                 text_evaluator: TextEvaluator, if_statement_strategy=IfStatementStrategy.ALWAYS_TRUE):
+        self.if_statement_strategy = if_statement_strategy
+        super().__init__(nid, commands, text_evaluator)
+
+    def _get_truth(self, command: event_commands.EventCommand) -> bool:
+        if self.if_statement_strategy == IfStatementStrategy.ALWAYS_TRUE:
+            truth = True
+        else:
+            truth = False
+        self.logger.info("Result: %s" % truth)
+        return truth

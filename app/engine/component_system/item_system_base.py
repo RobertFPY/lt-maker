@@ -116,7 +116,7 @@ def get_all_components(unit, item) -> list:
     override_component_nids = [c.nid for c in override_components]
     if not item:
         return override_components
-    all_components = override_components + [c for c in item.components if c.nid not in override_component_nids]
+    all_components = [c for c in item.components] + override_components
     return all_components
 
 def available(unit, item) -> bool:
@@ -182,17 +182,27 @@ def is_broken(unit, item) -> bool:
                     return True
     return False
 
-def on_broken(unit, item) -> bool:
-    alert = False
+def on_broken(unit, item):
     all_components = get_all_components(unit, item)
     for component in all_components:
         if component.defines('on_broken'):
-            if component.on_broken(unit, item):
-                alert = True
+            component.on_broken(unit, item)
     if item.parent_item:
         for component in item.parent_item.components:
             if component.defines('on_broken'):
-                if component.on_broken(unit, item.parent_item):
+                component.on_broken(unit, item.parent_item)
+
+def broken_alert(unit, item) -> bool:
+    alert = False
+    all_components = get_all_components(unit, item)
+    for component in all_components:
+        if component.defines('broken_alert'):
+            if component.broken_alert(unit, item):
+                alert = True
+    if item.parent_item:
+        for component in item.parent_item.components:
+            if component.defines('broken_alert'):
+                if component.broken_alert(unit, item.parent_item):
                     alert = True
     return alert
 
@@ -202,17 +212,6 @@ def valid_targets(unit, item) -> set:
     for component in all_components:
         if component.defines('valid_targets'):
             targets |= component.valid_targets(unit, item)
-    return targets
-
-def ai_targets(unit, item) -> set:
-    targets = set()
-    all_components = get_all_components(unit, item)
-    for component in all_components:
-        if component.defines('ai_targets'):
-            if targets:  # If we already have targets, just make them smaller
-                targets &= component.ai_targets(unit, item)
-            else:
-                targets |= component.ai_targets(unit, item)
     return targets
 
 def target_restrict(unit, item, def_pos, splash) -> bool:

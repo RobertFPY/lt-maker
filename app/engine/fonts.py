@@ -9,17 +9,28 @@ class FontType():
         self.colors = {}
         self.default = default
 
-NORMAL_FONT_COLORS = ['white', 'blue', 'green', 'red', 'grey', 'yellow', 'brown']
+NORMAL_FONT_COLORS = ['white', 'blue', 'green', 'red', 'orange', 'grey', 'yellow', 'brown', 'purple']
 
 text = FontType('text', 'white')
-text.colors['white'] = ((248, 248, 248, 255), (160, 136, 216, 255), (40, 32, 24, 255))
+text.colors['white'] = ((248, 248, 248, 255), (160, 136, 216, 255), (56, 48, 40, 255))
 text.colors['blue'] = ((192, 248, 248, 255), (80, 112, 248, 255), (24, 24, 88, 255))
 text.colors['green'] = ((72, 232, 32, 255), (112, 160, 72, 255), (24, 88, 24, 255))
 text.colors['red'] = ((224, 96, 80, 255), (160, 88, 72, 255), (88, 24, 24, 255))
+text.colors['orange'] = ((248, 168, 88, 255), (160, 100, 85, 255), (138, 64, 0, 255))
 text.colors['grey'] = ((184, 176, 176, 255), (136, 128, 120, 255), (56, 48, 40, 255))
 text.colors['yellow'] = ((248, 240, 136, 255), (168, 168, 72, 255), (72, 64, 8, 255))
 text.colors['brown'] = ((248, 248, 248, 255), (144, 112, 88, 255), (80, 40, 0, 255))
 text.colors['purple'] = ((199, 155, 232, 255), (147, 61, 212, 255), (62, 37, 82, 255))
+#growth colors stat < 20 to stat < 100
+text.colors['red-orange'] = ((248, 64, 64), (152, 72, 96), (80, 24, 32))
+text.colors['light-red'] = ((248, 88, 96), (152, 72, 96), (80, 24, 32))
+text.colors['pink-orange'] = ((248, 128, 96), (152, 72, 96), (80, 24, 32))
+text.colors['light-orange'] = ((248, 168, 88), (152, 72, 96), (80, 24, 32))
+text.colors['corn-yellow'] = ((232, 248, 112), (80, 152, 72), (64, 56, 24))
+text.colors['light-green'] = ((200, 232, 136), (80, 152, 72), (24, 88, 24))
+text.colors['olive-green'] = ((168, 208, 96), (80, 152, 72), (24, 88, 24))
+text.colors['soft-green'] = ((128, 192, 104), (80, 152, 72), (24, 88, 24))
+text.colors['yellow-green'] = ((57, 206, 16), (80, 152, 72), (24, 88, 24))
 
 narrow = FontType('narrow', 'white')
 narrow.colors = text.colors

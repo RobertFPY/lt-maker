@@ -15,6 +15,7 @@
             ]
         ],
         "only_once": true,
-        "priority": 20
+        "priority": 20,
+        "source": ""
     }
 ]

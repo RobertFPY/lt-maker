@@ -2,7 +2,7 @@ from app.engine.game_state import game
 from app.utilities import utils
 from app.data.database.database import DB
 from app.data.database import weapons
-from app.engine import equations, item_system, item_funcs, skill_system
+from app.engine import equations, item_system, item_funcs, skill_system, line_of_sight
 
 def get_weapon_rank_bonus(unit, item):
     weapon_type = item_system.weapon_type(unit, item)
@@ -104,14 +104,28 @@ def compute_advantage(unit1, unit2, item1, item2, advantage=True):
     return new_adv
 
 def can_counterattack(attacker, aweapon, defender, dweapon) -> bool:
-    if dweapon and item_funcs.available(defender, dweapon):
-        if item_system.can_be_countered(attacker, aweapon) and \
-                item_system.can_counter(defender, dweapon):
-            if not attacker.position or \
-                    attacker.position in item_system.valid_targets(defender, dweapon) or \
-                    skill_system.distant_counter(defender) or \
-                    (skill_system.close_counter(defender) and utils.calculate_distance(attacker.position, defender.position) == 1):
-                return True
+    from app.engine import target_system
+    if not dweapon:
+        return False
+    if not item_funcs.available(defender, dweapon):
+        return False
+    if not item_system.can_be_countered(attacker, aweapon):
+        return False
+    if not item_system.can_counter(defender, dweapon):
+        return False
+    if DB.constants.value('line_of_sight'):
+        if not item_system.ignore_line_of_sight(defender, dweapon) and len(line_of_sight.line_of_sight([defender.position], [attacker.position], 99)) == 0:
+            return False
+    
+    if not attacker.position:
+        return True
+    valid_targets = target_system.targets_in_range(defender, dweapon)
+    if attacker.position in valid_targets:
+        return True
+    if skill_system.distant_counter(defender):
+        return True
+    if skill_system.close_counter(defender) and utils.calculate_distance(attacker.position, defender.position) == 1:
+        return True
     return False
 
 def accuracy(unit, item=None):

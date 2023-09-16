@@ -236,19 +236,20 @@ class SeparateAbility(Ability):
         game.cursor.set_pos(unit.position)
         unit.wait()
 
-class SwapAbility(Ability):
-    name = 'Swap'
+class SwitchAbility(Ability):
+    name = 'Switch'
 
     @staticmethod
     def targets(unit) -> set:
-        if DB.constants.value('pairup') and unit.traveler:
+        if DB.constants.value('pairup') and unit.traveler and \
+                movement_funcs.check_traversable(game.get_unit(unit.traveler), unit.position):
             return {unit.position}
         return set()
 
     @staticmethod
     def do(unit):
         u = game.get_unit(unit.traveler)
-        action.do(action.SwapPaired(unit, u))
+        action.do(action.SwitchPaired(unit, u))
         game.cursor.cur_unit = u
         game.state.clear()
         game.state.change('menu')

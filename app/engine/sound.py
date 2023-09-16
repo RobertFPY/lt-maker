@@ -197,6 +197,15 @@ class Channel():
 
     def fade_out(self):
         logging.debug("%s Fade Out: %s", self.nid, self.last_state)
+        # Immediately finish crossfading
+        if self.state == 'crossfade_out':
+            self.crossfade_volume = 0
+            self.reset_volume()
+            self.last_state = "playing"
+        elif self.state == 'crossfade_in':
+            self.crossfade_volume = 1
+            self.reset_volume()
+            self.last_state = "playing"
         self.state = "fade_out"
         self.last_update = engine.get_time()
 

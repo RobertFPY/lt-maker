@@ -647,8 +647,9 @@ class MoveState(MapState):
         game.cursor.show()
         cur_unit = game.cursor.cur_unit
 
-        if cur_unit.is_dying or cur_unit.dead:
+        if cur_unit.is_dying or cur_unit.dead or not cur_unit.position:
             # This is sometimes possible if a unit dies after combat somehow but also has canto
+            # Also sometimes possible if you remove a unit in or after combat but they have canto
             # Combat will figure out that you are supposed to go to canto move (here)
             # But you then die and therefore don't have a position and shouldn't be moving
             # So we clean this up here
@@ -663,7 +664,7 @@ class MoveState(MapState):
         if cur_unit.previous_position != cur_unit.position:
             action.do(action.SetPreviousPosition(cur_unit))
 
-        # To keep track of for swapping
+        # To keep track of for switching
         if cur_unit.traveler:
             cur_unit.lead_unit = True
 
@@ -733,8 +734,6 @@ class MoveState(MapState):
                     else:
                         cur_unit.current_move = action.Move(cur_unit, game.cursor.position)
                         game.state.change('menu')
-                    if cur_unit.traveler:
-                        game.get_unit(cur_unit.traveler).current_move = cur_unit.current_move
                     game.state.change('movement')
                     action.do(cur_unit.current_move)
             else:
@@ -825,7 +824,7 @@ class MoveCameraState(State):
 class MenuState(MapState):
     name = 'menu'
     menu = None
-    normal_options = {'Item', 'Wait', 'Take', 'Give', 'Rescue', 'Trade', 'Drop', 'Visit', 'Armory', 'Vendor', 'Spells', 'Attack', 'Steal', 'Shove', 'Pair Up', 'Swap', 'Separate', 'Transfer'}
+    normal_options = {'Item', 'Wait', 'Take', 'Give', 'Rescue', 'Trade', 'Drop', 'Visit', 'Armory', 'Vendor', 'Spells', 'Attack', 'Steal', 'Shove', 'Pair Up', 'Switch', 'Separate', 'Transfer'}
 
     def start(self):
         self._proceed_with_targets_item = False
@@ -968,15 +967,13 @@ class MenuState(MapState):
                         game.state.change('free')
                         self.cur_unit.wait()
                 else:
-                    # Reverse Swap here
+                    # Reverse Switch here
                     if self.cur_unit.lead_unit:
                         logging.info("Lead unit is " + str(self.cur_unit.lead_unit))
                     if self.cur_unit.traveler:
                         logging.info("Traveler is " + self.cur_unit.traveler)
                     if not self.cur_unit.lead_unit and self.cur_unit.traveler:
                         u = game.get_unit(self.cur_unit.traveler)
-                        act = action.SwapPaired(self.cur_unit, u)
-                        act.do()
                         self.cur_unit = u
                         game.cursor.cur_unit = u
                         game.leave(self.cur_unit)
@@ -1023,7 +1020,7 @@ class MenuState(MapState):
             elif selection == 'Wait':
                 game.state.clear()
                 game.state.change('free')
-                self.cur_unit.wait()
+                self.cur_unit.wait(actively_chosen=True)
             # A region event
             elif selection in [region.sub_nid for region in self.valid_regions]:
                 for region in self.valid_regions:

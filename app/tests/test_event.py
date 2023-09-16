@@ -1,3 +1,4 @@
+from app.events.event_prefab import EventPrefab
 from app.events.speak_style import SpeakStyle, SpeakStyleLibrary
 from app.events.triggers import GenericTrigger
 from typing import List
@@ -5,12 +6,14 @@ import unittest
 from unittest.mock import MagicMock, patch, call
 
 from app.tests.mocks.mock_game import get_mock_game
-from app.events.event_commands import parse_text_to_command
+from app.events.event_commands import EventCommand, parse_text_to_command
 from app.utilities.enums import Alignments
+from app.engine.codegen import source_generator
 
 class EventUnitTests(unittest.TestCase):
     def setUp(self):
         from app.data.database.database import DB
+        source_generator.event_command_codegen()
         DB.load('testing_proj.ltproj')
         self.patchers = self.initialize_patchers()
         for patcher in self.patchers:
@@ -29,23 +32,27 @@ class EventUnitTests(unittest.TestCase):
         for patcher in self.patchers:
             patcher.stop()
 
-    def create_event(self, test_commands):
-        from app.events.event import Event
-        parsed_test_commands = [parse_text_to_command(command)[0] for command in test_commands]
-        event = Event('test_nid', parsed_test_commands, GenericTrigger(), game=self.game)
-        return event
+    def create_event(self, test_commands: List[EventCommand]):
+        from app.events.event import Event        
+        prefab = EventPrefab('test_nid')
+        prefab.commands = test_commands
+        return Event(prefab, GenericTrigger(), game=self.game)
+
+
+    def create_event_from_script(self, test_script: List[str]):
+        parsed_test_commands = [parse_text_to_command(command)[0] for command in test_script]
+        return self.create_event(parsed_test_commands)
 
     def run_all_commands(self, event):
         while event.state != 'complete':
             event.update()
 
-    def MACRO_test_event_commands(self, test_commands):
+    def MACRO_test_event(self, test_commands: List[EventCommand]):
         from app.events.function_catalog import get_catalog, reset_catalog
-        command_names = set([command.split(';')[0] for command in test_commands])
         event = self.create_event(test_commands)
         mocked_commands: List[MagicMock] = []
         catalog = get_catalog()
-        for name in command_names:
+        for name in [command.nid for command in test_commands]:
             mocked_command = MagicMock()
             catalog[name] = mocked_command
             mocked_commands.append(mocked_command)
@@ -55,13 +62,18 @@ class EventUnitTests(unittest.TestCase):
             mocked_command.assert_called_once()
         reset_catalog()
 
+
+    def MACRO_test_event_script(self, test_script):
+        parsed_test_commands = [parse_text_to_command(command)[0] for command in test_script]
+        return self.MACRO_test_event(parsed_test_commands)
+
     def test_event_terminates_eventually(self):
         test_commands = [
             "speak;Eirika;SPEAK_TEXT",
             "speak;Eirika;SPEAK_TEXT",
             "speak;Eirika;SPEAK_TEXT",
         ]
-        event = self.create_event(test_commands)
+        event = self.create_event_from_script(test_commands)
         self.run_all_commands(event)
         self.assertEqual(event.state, 'complete')
 
@@ -72,7 +84,7 @@ class EventUnitTests(unittest.TestCase):
             "break",
             "speak;Eirika;SPEAK_TEXT"
         ]
-        event = self.create_event(test_commands)
+        event = self.create_event_from_script(test_commands)
         catalog = get_catalog()
         catalog['speak'] = MagicMock()
         self.run_all_commands(event)
@@ -84,7 +96,7 @@ class EventUnitTests(unittest.TestCase):
     def test_speak_command(self):
         from app.events import event_functions
         # test that event correctly parses speak commands
-        self.MACRO_test_event_commands(['speak;Eirika;SPEAK_TEXT'])
+        self.MACRO_test_event_script(['speak;Eirika;SPEAK_TEXT'])
 
         # replaces the imported class so we can intercept calls
         dialog_patch = patch('app.engine.dialog.Dialog')
@@ -99,7 +111,7 @@ class EventUnitTests(unittest.TestCase):
         #   - Dialog object uses correct default arguments
         # initialize testing command(s)
         # we test event command parsing in another test, so just use a dummy event
-        event = self.create_event([])
+        event = self.create_event_from_script([])
         event_functions.speak(event, None, '\u2028SPEAK_TEXT\u2028SPEAK_TEXT', flags={'no_block'})
         mock_dialog.assert_called_with('SPEAK_TEXT{sub_break}SPEAK_TEXT{no_wait}', None, 'message_bg_base',
                                        None, None, speaker=None, style_nid=None,
@@ -115,7 +127,7 @@ class EventUnitTests(unittest.TestCase):
         #   - Test correctly increments priority
         #   - Test dialog object correctly parses position, width, and text_speed
         mock_portrait = MagicMock()
-        event = self.create_event([])
+        event = self.create_event_from_script([])
         event.portraits['Eirika'] = mock_portrait
         event_functions.speak(event, 'Eirika', 'SPEAK_TEXT', text_position='1,2', width='3', text_speed='5.0')
         mock_dialog.assert_called_with('SPEAK_TEXT', mock_portrait, 'message_bg_base',
@@ -141,7 +153,7 @@ class EventUnitTests(unittest.TestCase):
 
         # test #3: dialog with speak style
         from app.events.speak_style import SpeakStyle
-        event = self.create_event([])
+        event = self.create_event_from_script([])
         self.game.speak_styles['test_style'] = SpeakStyle('test_style', 'Eirika', (1, 2), 3,
                                                           4.5, 'some_color', 'some_font', 'some_box_type',
                                                           6, True, 'message_bg_thought_tail', 0.2)
@@ -171,10 +183,10 @@ class EventUnitTests(unittest.TestCase):
             "set_overworld_menu_option_visible;1;Battle;t",
             "set_overworld_menu_option_enabled;1;Battle;t"
         ]
-        event = self.create_event(test_commands)
+        event = self.create_event_from_script(test_commands)
 
-        event.run_command(event.commands[0])
-        event.run_command(event.commands[1])
+        event.run_command(event.parser.commands[0])
+        event.run_command(event.parser.commands[1])
 
         self.game.overworld_controller.toggle_menu_option_enabled.assert_called_with('1', 'Battle', True)
         self.game.overworld_controller.toggle_menu_option_visible.assert_called_with('1', 'Battle', True)
@@ -182,7 +194,7 @@ class EventUnitTests(unittest.TestCase):
     def test_textbox_command(self):
         from app.events import event_functions
         # test that event correctly parses speak commands
-        self.MACRO_test_event_commands(['textbox;Eirika;textbox_text'])
+        self.MACRO_test_event_script(['textbox;Eirika;textbox_text'])
 
         # replaces the imported class so we can intercept calls
         dialog_patch = patch('app.engine.dialog.Dialog')
@@ -197,7 +209,7 @@ class EventUnitTests(unittest.TestCase):
         #   - Dialog object uses correct default arguments
         # initialize testing command(s)
         # we test event command parsing in another test, so just use a dummy event
-        event = self.create_event([])
+        event = self.create_event_from_script([])
         event_functions.speak(event, None, '\u2028SPEAK_TEXT\u2028SPEAK_TEXT', flags={'no_block'})
         mock_dialog.assert_called_with('SPEAK_TEXT{sub_break}SPEAK_TEXT{no_wait}', None, 'message_bg_base',
                                        None, None, speaker=None, style_nid=None,
@@ -211,6 +223,11 @@ class EventUnitTests(unittest.TestCase):
         # disable intercepting calls at the end of the test
         dialog_patch.stop()
 
+    def test_python_event_command_wrapper(self):
+        from app.events.python_eventing.python_event_command_wrappers import add_unit
+        from app.events.event import Event
+        add_unit_command = add_unit("Eirika", "2,5", "Normal")
+        self.MACRO_test_event([add_unit_command])
 
 if __name__ == '__main__':
     unittest.main()

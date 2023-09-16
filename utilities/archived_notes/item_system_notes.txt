@@ -76,7 +76,7 @@ dynamic_multiattacks input target mode int 1  # Used for things like brave
 # Event behaviours
 init  # Called when item is created
 on_use  # Called whenever the item is used
-on_broken returns True when user should be alerted# Called whenever the item becomes not usable after being used in an interaction
+on_broken # Called whenever the item becomes not usable after being used in an interaction
 on_end_chapter  # Called on ending the chapter
 on_upkeep  # Called on owner's upkeep
 on_endstep  # Called on owner's endstep

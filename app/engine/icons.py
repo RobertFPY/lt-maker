@@ -216,9 +216,9 @@ def draw_stat(surf, stat_nid, unit, topright, compact=False):
         value = value + subtle_bonus
         bonus = bonus - subtle_bonus
         if value >= max_stat:
-            FONT['small-yellow'].blit_right(str(value), surf, topright)
+            FONT['text-yellow'].blit_right(str(value), surf, topright)
         else:
-            FONT['small-blue'].blit_right(str(value), surf, topright)
+            FONT['text-blue'].blit_right(str(value), surf, topright)
         if bonus > 0:
             FONT['small-green'].blit("+%d" % bonus, surf, topright)
         elif bonus < 0:

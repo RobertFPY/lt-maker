@@ -116,7 +116,7 @@ constants = ConstantCatalog([
     Constant('combat_convos', 'Allow support conversations in combat', ConstantType.BOOL, True),
     Constant('base_convos', 'Allow support conversations in base', ConstantType.BOOL, False),
     Constant("battle_buddy_system", "Allows characters to swap current support bonus partner in base", ConstantType.BOOL, False),
-    Constant('break_supports_on_death', "Break supports on death (applies with Permadeath only)", ConstantType.BOOL, True),
+    Constant('break_supports_on_death', "Break supports on death (applies only to Permadeath)", ConstantType.BOOL, True),
     Constant('bonus_method', 'How are support bonuses calculated?', ["No Bonus", "Use Personal Affinity Bonus", "Use Partner's Affinity Bonus", "Use Average of Affinity Bonuses", "Use Sum of Affinity Bonuses"], "Use Average of Affinity Bonuses"),
     Constant('bonus_range', "How far do a support's effects reach (0 - can both attack same enemy, 99 - entire map)", ConstantType.INT, 3),
     Constant('growth_range', "How close to partner for support growth (0 - can both attack same enemy, 99 - entire map)", ConstantType.INT, 1),

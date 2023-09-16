@@ -76,7 +76,7 @@ class DatabaseValidatorEngine():
         all_stats = set(self.db.stats.keys())
         for unit in self.db.units:
             # make sure each unit has an entry for every weapon type, and no extraneous ones
-            self.fill_and_trim(unit.wexp_gain, all_weapon_types, set(unit.wexp_gain.keys()), lambda: WexpGain(False, 0))
+            self.fill_and_trim(unit.wexp_gain, all_weapon_types, set(unit.wexp_gain.keys()), lambda: WexpGain(False, 0, 0))
             # make sure each unit has an entry for every stat, and no extraneous ones
             self.fill_and_trim(unit.bases, all_stats, set(unit.bases.keys()), lambda: 0)
             self.fill_and_trim(unit.growths, all_stats, set(unit.growths.keys()), lambda: 0)
@@ -86,7 +86,7 @@ class DatabaseValidatorEngine():
         all_stats = set(self.db.stats.keys())
         for klass in self.db.classes:
             # make sure each klass has an entry for every weapon type, and no extraneous ones
-            self.fill_and_trim(klass.wexp_gain, all_weapon_types, set(klass.wexp_gain.keys()), lambda: WexpGain(False, 0))
+            self.fill_and_trim(klass.wexp_gain, all_weapon_types, set(klass.wexp_gain.keys()), lambda: WexpGain(False, 0, 0))
             # make sure each klass has an entry for every stat in all dicts
             self.fill_and_trim(klass.bases, all_stats, set(klass.bases.keys()), lambda: 0)
             self.fill_and_trim(klass.growths, all_stats, set(klass.growths.keys()), lambda: 0)

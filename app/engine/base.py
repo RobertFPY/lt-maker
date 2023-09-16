@@ -357,7 +357,6 @@ class SupportDisplay():
             else:
                 continue
             other_unit_nids.append(other_unit_nid)
-        other_unit_nids = sorted(other_unit_nids)
         return other_unit_nids
 
     def click_selection(self) -> bool:
@@ -565,6 +564,8 @@ class BaseSupportsState(State):
         # Filter only to units with supports
         self.units = [unit for unit in player_units if
                       any(prefab.unit1 == unit.nid or prefab.unit2 == unit.nid for prefab in DB.support_pairs)]
+        # sort to official unit order
+        self.units = sorted(self.units, key=lambda unit: DB.units.index(unit.nid) if unit.nid in DB.units.keys() else 999999)
 
         self.menu = menus.Table(None, self.units, (9, 1), (4, 4))
         self.menu.set_mode('unit')
@@ -1496,7 +1497,7 @@ class BaseSoundRoomState(State):
 
     def draw_sound_room_title(self, surf, topleft, music_name):
         surf.blit(SPRITES.get('chapter_select_green'), (topleft[0], topleft[1]))
-        FONT['chapter-white'].blit_center(music_name, surf, (topleft[0] + 98, topleft[1] + 8))
+        FONT['convo-white'].blit_center(music_name, surf, (topleft[0] + 98, topleft[1] + 8))
         return surf
 
     def draw_volume(self, surf):

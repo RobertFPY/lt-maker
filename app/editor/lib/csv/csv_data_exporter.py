@@ -141,9 +141,9 @@ def update_db_with_unit_csv(db: Database, unit_csv_str):
                 weapon = headers[i]
                 rank = int(unit_data[i])
                 if rank > 0:
-                    curr_unit.wexp_gain[weapon] = WexpGain(True, rank)
+                    curr_unit.wexp_gain[weapon] = WexpGain(True, rank, 251)
                 else:
-                    curr_unit.wexp_gain[weapon] = WexpGain(False, rank)
+                    curr_unit.wexp_gain[weapon] = WexpGain(False, rank, 251)
 
 
 def validate_type(db: Database, expose_type: ComponentType, value: str):

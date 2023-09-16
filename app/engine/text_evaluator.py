@@ -3,7 +3,7 @@ from app.data.database.database import DB
 from app.engine.game_state import GameState
 from app.engine import evaluate
 import re
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 
 from app.utilities import str_utils
 import logging
@@ -18,7 +18,7 @@ class TextEvaluator():
         self.local_args = local_args or {}
 
     def direct_eval(self, to_eval):
-        return evaluate.evaluate(to_eval, self.unit, self.unit2, self.position, self.local_args)
+        return evaluate.evaluate(to_eval, self.unit, self.unit2, self.position, self.local_args, self.game)
 
     @property
     def created_unit(self):
@@ -36,7 +36,7 @@ class TextEvaluator():
         else:
             return str(obj)
 
-    def _evaluate_phrase(self, text: str) -> str:
+    def _evaluate_phrase(self, text: str, local_args=None) -> str:
         """Accepts a string such as {eval:expr}, and returns its evaluation
         """
         if re.match(r'\{e:[^{}]*\}', text) or re.match(r'\{eval:[^{}]*\}', text): # eval statement
@@ -51,10 +51,12 @@ class TextEvaluator():
             return self._evaluate_skill_db(text)
         elif re.match(r'\{i:[^{}]*\}', text) or re.match(r'\{item:[^{}]*\}', text):
             return self._evaluate_item_db(text)
+        elif re.match(r'\{[^:{}]*\}', text):
+            return self._evaluate_locals(text, local_args or {})
         else:
             return text
 
-    def _evaluate_all(self, text: str) -> str:
+    def _evaluate_all(self, text: str, local_args=None) -> str:
         def recursive_parse(parse_list) -> str:
             copy = [""] * len(parse_list)
             for idx, nested in enumerate(parse_list):
@@ -63,13 +65,43 @@ class TextEvaluator():
                     copy[idx] = recursively_parsed
                 else:
                     copy[idx] = nested
-            return str(self._evaluate_phrase('{' + ''.join(copy) + '}'))
+            return str(self._evaluate_phrase('{' + ''.join(copy) + '}', local_args))
         to_evaluate = str_utils.matched_expr(text, '{', '}')
         evaluated = []
         for to_eval in to_evaluate:
             parsed = str_utils.nested_expr(to_eval, '{', '}')
             evaled = recursive_parse(parsed)
             evaluated.append(evaled)
+        evaluated_pairs = zip(to_evaluate, evaluated)
+        # sort by length so we don't accidentally substitute a shorter inside a longer,
+        # e.g. "{e:1} or {e:2 + {e:1}}". which would end up not working
+        evaluated_pairs = sorted(evaluated_pairs, key=lambda pair: len(pair[0]), reverse=True)
+        for to_eval, evaled in evaluated_pairs:
+            text = text.replace(to_eval, evaled)
+        return text
+
+    def _evaluate_locals(self, text, local_args: Dict[str, str]) -> str:
+        local_args = local_args or {}
+        to_evaluate: List[str] = re.findall(r'\{[^{}]*\}', text)
+        evaluated = []
+        for to_eval in to_evaluate:
+            to_eval = to_eval[1:-1]
+            if to_eval in local_args:
+                evaluated.append(self._object_to_str(local_args[to_eval]))
+            elif to_eval in self.local_args:
+                evaluated.append(self._object_to_str(self.local_args[to_eval]))
+            elif to_eval == 'unit':
+                if self.unit:
+                    evaluated.append(self.unit.nid)
+                else:
+                    evaluated.append("??")
+            elif to_eval == 'unit2':
+                if self.unit2:
+                    evaluated.append(self.unit2.nid)
+                else:
+                    evaluated.append("??")
+            else:
+                evaluated.append('{%s}' % to_eval)
         for idx in range(len(to_evaluate)):
             text = text.replace(to_evaluate[idx], evaluated[idx])
         return text
@@ -229,14 +261,14 @@ class TextEvaluator():
             text = text.replace(to_evaluate[idx], evaluated[idx])
         return text
 
-    def _evaluate_evals(self, text) -> str:
+    def _evaluate_evals(self, text: str) -> str:
         # Set up variables so evals work well
         to_evaluate = re.findall(r'\{e:[^{}]*\}', text) + re.findall(r'\{eval:[^{}]*\}', text)
         evaluated = []
         for to_eval in to_evaluate:
             to_eval = self.trim_eval_tags(to_eval)
             try:
-                val = evaluate.evaluate(to_eval, self.unit, self.unit2, self.position, self.local_args)
+                val = evaluate.evaluate(to_eval, self.unit, self.unit2, self.position, self.local_args, self.game)
                 evaluated.append(self._object_to_str(val))
             except Exception as e:
                 self.logger.error("Could not evaluate %s (%s)" % (to_eval, e))

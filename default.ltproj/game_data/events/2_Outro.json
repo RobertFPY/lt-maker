@@ -826,6 +826,7 @@
             ]
         ],
         "only_once": false,
-        "priority": 20
+        "priority": 20,
+        "source": ""
     }
 ]

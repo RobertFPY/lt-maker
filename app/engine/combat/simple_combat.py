@@ -1,3 +1,6 @@
+from __future__ import annotations
+from typing import Optional
+
 from app.data.database.database import DB
 from app.engine import (action, banner, item_system, skill_system,
                         supports)
@@ -156,6 +159,11 @@ class SimpleCombat():
 
         self.handle_records(self.full_playback, all_units)
 
+        asp = self.attacker.strike_partner
+        dsp = None
+        if self.defender:
+            dsp = self.defender.strike_partner
+
         self.end_combat()
 
         self.attacker.built_guard = True
@@ -165,8 +173,7 @@ class SimpleCombat():
 
         self.handle_death(all_units)
 
-        a_broke, d_broke = self.find_broken_items()
-        self.handle_broken_items(a_broke, d_broke)
+        self.handle_broken_items(asp, dsp)
 
     def start_event(self, full_animation=False):
         # region is set to True or False depending on whether we are in a battle anim
@@ -323,7 +330,6 @@ class SimpleCombat():
                 game.state.change('move')
                 action.do(action.SetMovementLeft(self.attacker, skill_system.canto_movement(self.attacker, self.defender)))
                 game.cursor.place_arrows()
-
             else:
                 game.state.clear()
                 game.state.change('free')
@@ -352,7 +358,7 @@ class SimpleCombat():
                             flags = {'no_banner'}
                         command = event_commands.GiveItem({'GlobalUnitOrConvoy': '{unit}', 'Item': str(item.uid)}, flags)
                         trigger = triggers.GenericTrigger(self.attacker, unit, self.attacker.position, {'item_uid': item.uid})
-                        game.events._add_event(event_nid, [command], trigger)
+                        game.events._add_event_from_commands(event_nid, [command], trigger)
                         counter += 1
 
         if self.attacker.is_dying and self.defender:
@@ -371,30 +377,35 @@ class SimpleCombat():
                         flags = {'no_banner'}
                     command = event_commands.GiveItem({'GlobalUnitOrConvoy': '{unit}', 'Item': str(item.uid)}, flags)
                     trigger = triggers.GenericTrigger(self.defender, self.attacker, self.defender.position, {'item_uid': item.uid})
-                    game.events._add_event(event_nid, [command], trigger)
+                    game.events._add_event_from_commands(event_nid, [command], trigger)
                     counter += 1
 
-    def find_broken_items(self):
-        a_broke, d_broke = False, False
+    def handle_broken_items(self, attack_partner: Optional[UnitObject], defense_partner: Optional[UnitObject]):
+        """
+        Checks if any of the items used in battle are broken,
+        and if so unequips them.
+        Provides an alert for the attacker and defender's broken
+        item if nobody died
+        """
         if item_system.is_broken(self.attacker, self.main_item):
-            a_broke = True
-        if self.def_item and item_system.is_broken(self.defender, self.def_item):
-            d_broke = True
-        return a_broke, d_broke
-
-    def handle_broken_items(self, a_broke, d_broke):
-        if a_broke:
-            alert = item_system.on_broken(self.attacker, self.main_item)
+            item_system.on_broken(self.attacker, self.main_item)
+            alert = item_system.broken_alert(self.attacker, self.main_item)
             if self.alerts and self.attacker is not self.defender and alert and \
                     self.attacker.team == 'player' and not self.attacker.is_dying:
                 game.alerts.append(banner.BrokenItem(self.attacker, self.main_item))
                 game.state.change('alert')
-        if d_broke:
-            alert = item_system.on_broken(self.defender, self.def_item)
+        if self.def_item and item_system.is_broken(self.defender, self.def_item):
+            item_system.on_broken(self.defender, self.def_item)
+            alert = item_system.broken_alert(self.defender, self.def_item)
             if self.alerts and self.attacker is not self.defender and alert and \
                     self.defender.team == 'player' and not self.defender.is_dying:
                 game.alerts.append(banner.BrokenItem(self.defender, self.def_item))
                 game.state.change('alert')
+        # No alert - just break the item
+        if attack_partner and item_system.is_broken(attack_partner, attack_partner.get_weapon()):
+            item_system.on_broken(attack_partner, attack_partner.get_weapon())
+        if defense_partner and item_system.is_broken(defense_partner, defense_partner.get_weapon()):
+            item_system.on_broken(defense_partner, defense_partner.get_weapon())
 
     def handle_wexp(self, unit, item, target):
         marks = self.get_from_full_playback('mark_hit')
@@ -453,21 +464,22 @@ class SimpleCombat():
                     action.do(action.ChangeMana(self.defender, mana_gain))
 
     def handle_exp(self, combat_object=None):
+        from app.engine.level_up import ExpState
         # handle exp
         if self.attacker.team == 'player' and not self.attacker.is_dying:
             exp = self.calculate_exp(self.attacker, self.main_item)
-            exp = int(utils.clamp(exp, 0, 100))
+            exp = int(utils.clamp(exp, -100, 100))
 
             if DB.constants.value('pairup') and self.main_item:
                 self.handle_paired_exp(self.attacker, combat_object)
 
             # Make sure to check if mana happened
-            if ((self.alerts and exp > 0) or exp + self.attacker.exp >= 100) or \
+            if ((self.alerts and exp != 0) or exp + self.attacker.exp >= 100 or exp + self.attacker.exp < 0) or \
                     any(mana_instance[0] == self.attacker for mana_instance in game.mana_instance):
                 game.exp_instance.append((self.attacker, exp, combat_object, 'init'))
                 game.state.change('exp')
                 game.ai.end_skip()
-            elif not self.alerts and exp > 0:
+            elif not self.alerts and exp != 0 and ExpState.can_give_exp(self.attacker, exp):
                 action.do(action.GainExp(self.attacker, exp))
 
         elif self.defender and self.defender.team == 'player' and not self.defender.is_dying:
@@ -477,12 +489,12 @@ class SimpleCombat():
             if DB.constants.value('pairup') and self.def_item:
                 self.handle_paired_exp(self.defender, combat_object)
 
-            if ((self.alerts and exp > 0) or exp + self.defender.exp >= 100) or \
+            if ((self.alerts and exp != 0) or exp + self.defender.exp >= 100 or exp + self.defender.exp < 0) or \
                     any(mana_instance[0] == self.defender for mana_instance in game.mana_instance):
                 game.exp_instance.append((self.defender, exp, combat_object, 'init'))
                 game.state.change('exp')
                 game.ai.end_skip()
-            elif not self.alerts and exp > 0:
+            elif not self.alerts and exp != 0 and ExpState.can_give_exp(self.defender, exp):
                 action.do(action.GainExp(self.defender, exp))
 
     def handle_paired_exp(self, leader_unit, combat_object=None):

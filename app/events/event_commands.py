@@ -3382,6 +3382,8 @@ def parse_text_to_command(text: str, strict: bool = False) -> Tuple[EventCommand
     if not text:
         return Comment(), None
     text = text.lstrip()
+    if not text:
+        return Comment(), None
     if text.startswith('#'):
         return Comment(display_values=[text]), None
     if text.startswith('comment;'):

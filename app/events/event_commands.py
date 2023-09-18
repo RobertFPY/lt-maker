@@ -128,11 +128,13 @@ class Comment(EventCommand):
         """
 
     def to_plain_text(self) -> str:
-        if self.display_values and not self.display_values[0].startswith('#'):
+        if not self.display_values:
+            return ''
+        if not self.display_values[0]:
+            return ''
+        if not self.display_values[0].startswith('#'):
             self.display_values[0] = '#' + self.display_values[0]
-        if self.display_values:
-            return self.display_values[0]
-        return ''
+        return self.display_values[0]
 
 class If(EventCommand):
     nid = "if"
@@ -3378,8 +3380,10 @@ def parse_text_to_command(text: str, strict: bool = False) -> Tuple[EventCommand
 
     # Main function starts here
     if not text:
-        return None, None
+        return Comment(), None
     text = text.lstrip()
+    if not text:
+        return Comment(), None
     if text.startswith('#'):
         return Comment(display_values=[text]), None
     if text.startswith('comment;'):

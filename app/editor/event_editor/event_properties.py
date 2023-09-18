@@ -519,8 +519,7 @@ class EventProperties(QWidget):
         lines = []
         for doc_idx in range(self.text_box.document().blockCount()):
             line = self.text_box.document().findBlockByNumber(doc_idx).text().strip()
-            if line:
-                lines.append(line)
+            lines.append(line)
         for line in lines:
             command, error_loc = event_commands.parse_text_to_command(line)
             if command:

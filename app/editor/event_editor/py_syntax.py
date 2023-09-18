@@ -66,6 +66,7 @@ class PythonHighlighter(QtGui.QSyntaxHighlighter):
 
             # event command
             (r'(\$[^\(]*)\(?', 1, format(styles.command, 'italic')),
+            (r'FLAGS', 0, format(styles.command)),
             # Double-quoted string, possibly containing escape sequences
             (r'"[^"\\]*(\\.[^"\\]*)*"', 0, format(styles.string)),
             # Single-quoted string, possibly containing escape sequences

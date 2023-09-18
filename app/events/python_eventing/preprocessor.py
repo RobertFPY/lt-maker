@@ -22,7 +22,7 @@ def check_valid_event_function_call(node: ast.stmt):
             return False
     return True
 
-def check_safe_event_function_call(node: ast.stmt, parents: List[Type[ast.stmt]]):
+def check_safe_event_function_call(node: ast.stmt, parents: List[ast.stmt]):
     """Expectations: if 'node' is an EventFunction call, e.g. 'speak(*args)'
       and the parents are the ast nodes above it. We assert that the immediate
       parent must be an solitary Expr, and that this cannot be nested in a function.
@@ -50,9 +50,9 @@ def check_safe_event_function_call(node: ast.stmt, parents: List[Type[ast.stmt]]
     """
     if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and \
       isinstance(node.func.value, ast.Name) and node.func.value.id == EVENT_INSTANCE:
-        if not parents[-1] == ast.Expr:
+        if parents[-1].__class__ != ast.Expr and not (isinstance(parents[-1], ast.Attribute) and parents[-1].attr == 'FLAGS'):
             return False
-        elif ast.FunctionDef in parents:
+        elif any([parent.__class__ == ast.FunctionDef for parent in parents]):
             return False
     return True
 
@@ -118,7 +118,7 @@ class Preprocessor():
         is_invalid_python_error = self.verify_valid_python(event_name, event_script)
         if is_invalid_python_error:
             return [is_invalid_python_error]
-        
+
         event_info = EventContext.from_event(event_name, event_script)
         self._parsed_events[event_name] = event_info
 
@@ -126,7 +126,7 @@ class Preprocessor():
         loop_save_errors = self.verify_no_loop_save(event_info)
         yield_errors = self.verify_no_yields(event_info)
         return event_command_call_errors + loop_save_errors + yield_errors
-    
+
     def verify_valid_python(self, event_name: str, event_script: str) -> Optional[InvalidPythonError]:
         preprocessed = ast_preprocess(event_script)
         try:
@@ -137,7 +137,7 @@ class Preprocessor():
             error = InvalidPythonError(event_name, e.lineno, as_lines[e.lineno - 1])
             error.what = e.msg
             return error
-    
+
     def verify_no_yields(self, event: EventContext) -> List[CannotUseYieldError]:
         """Since the event engine uses yields as its primary mode of extracting EventCommands,
         yields should not be used in the script."""
@@ -146,12 +146,12 @@ class Preprocessor():
             if isinstance(cnode, ast.Yield):
                 yield_errors.append(CannotUseYieldError(event.event_name, cnode.lineno, event.source_as_lines[cnode.lineno - 1]))
         return yield_errors
-        
+
     def verify_event_calls(self, event: EventContext) -> List[PreprocessorError]:
         """see `check_safe_event_function_call` above for details on what this function verifies.
         It also verifies that all event calls are valid commands, via `check_valid_event_function_call`.
         """
-        def recursive_tree_verify(node: ast.stmt, parents: List[Type[ast.stmt]] = None):
+        def recursive_tree_verify(node: ast.stmt, parents: List[ast.stmt] = None):
             if parents is None:
                 curr_parents = []
             else:
@@ -162,12 +162,12 @@ class Preprocessor():
                 unsafe_event_function_calls.append(NestedEventError(event.event_name, node.lineno, event.source_as_lines[node.lineno - 1]))
             if not check_valid_event_function_call(node):
                 unsafe_event_function_calls.append(InvalidCommandError(event.event_name, node.lineno, event.source_as_lines[node.lineno - 1]))
-            curr_parents.append(node.__class__)
+            curr_parents.append(node)
             for cnode in ast.iter_child_nodes(node):
                 unsafe_event_function_calls += recursive_tree_verify(cnode, curr_parents)
             return unsafe_event_function_calls
         return recursive_tree_verify(event.source_as_ast)
-    
+
     def verify_no_loop_save(self, event: EventContext, from_event_names: List[str] = None, from_event_lines: List[int] = None) -> List[NoSaveInLoopError | MalformedTriggerScriptCall]:
         """Events cannot be resumed in the middle of a for loop. Therefore, any save commands
         cannot be run inside a for loop. Because for loops can call other events, we
@@ -183,7 +183,7 @@ class Preprocessor():
             previous_event_list = [self.get_event_info(event_name).source_as_lines[event_line - 1] for event_name, event_line in zip(from_event_names, from_event_lines)]
             error_info = (from_event_names + [current_event], from_event_lines + [node.lineno], previous_event_list + [event.source_as_lines[node.lineno - 1]])
             return error_info
-        
+
         def recursive_tree_verify(snode: ast.stmt, parents: List[Type[ast.stmt]] = None):
             unsafe_save_calls: List[NoSaveInLoopError] = []
             if parents is None:
@@ -211,7 +211,7 @@ class Preprocessor():
                     unsafe_save_calls += recursive_tree_verify(cnode, curr_parents + [snode.__class__])
             return unsafe_save_calls
         return recursive_tree_verify(event.source_as_ast)
-    
+
 # python -m app.events.python_eventing.preprocessor
 if __name__ == '__main__':
     from pathlib import Path

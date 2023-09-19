@@ -12,7 +12,7 @@ import app.engine.graphics.ui_framework as uif
 from app.constants import WINHEIGHT, WINWIDTH
 from app.data.database.database import DB
 from app.engine import (action, background, dialog, engine, evaluate,
-                        target_system, image_mods, item_funcs)
+                        image_mods, item_funcs)
 from app.engine.game_state import GameState
 from app.engine.movement import movement_funcs
 from app.engine.objects.overworld import OverworldNodeObject
@@ -388,7 +388,7 @@ class Event():
             if unit.position == position:
                 # Don't bother if identical
                 return
-            path = target_system.get_path(unit, position)
+            path = game.target_system.get_path(unit, position)
             action.do(action.Move(unit, position, path, event=True, follow=follow))
         return position
 
@@ -463,13 +463,13 @@ class Event():
             elif placement == 'stack':
                 return position
             elif placement == 'closest':
-                position = target_system.get_nearest_open_tile(unit, position)
+                position = game.target_system.get_nearest_open_tile(unit, position)
                 if not position:
                     self.logger.warning("Somehow wasn't able to find a nearby open tile")
                     return None
                 return position
             elif placement == 'push':
-                new_pos = target_system.get_nearest_open_tile(current_occupant, position)
+                new_pos = game.target_system.get_nearest_open_tile(current_occupant, position)
                 action.do(action.ForcedMovement(current_occupant, new_pos))
                 return position
         else:

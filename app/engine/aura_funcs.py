@@ -4,7 +4,7 @@ from app.utilities.typing import Color3, NID
 from app.engine.objects.unit import UnitObject
 from app.data.database.database import DB
 
-from app.engine import action, skill_system, target_system, line_of_sight
+from app.engine import action, skill_system, line_of_sight
 
 import logging
 
@@ -67,7 +67,7 @@ def propagate_aura(unit, skill, game):
     game.board.reset_aura(skill.subskill)
     aura_range = skill.aura_range.value
     aura_range = set(range(1, aura_range + 1))
-    positions = target_system.get_shell({unit.position}, aura_range, game.board.bounds)
+    positions = game.target_system.get_shell({unit.position}, aura_range, game.board.bounds)
     for pos in positions:
         game.board.add_aura(pos, unit, skill.subskill, skill.aura_target.value)
         # Propagate my aura to others
@@ -83,7 +83,7 @@ def repopulate_aura(unit, skill, game):
     game.board.reset_aura(skill.subskill)
     aura_range = skill.aura_range.value
     aura_range = set(range(1, aura_range + 1))
-    positions = target_system.get_shell({unit.position}, aura_range, game.board.bounds)
+    positions = game.target_system.get_shell({unit.position}, aura_range, game.board.bounds)
     for pos in positions:
         game.board.add_aura(pos, unit, skill.subskill, skill.aura_target.value)
 

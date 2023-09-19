@@ -14,6 +14,7 @@ def get_mock_game() -> GameState:
     game.movement = MagicMock()
     game.speak_styles = {}
     game.overworld_controller = mock_overworld_manager()
+    game.target_system = MagicMock()
 
     game.get_item = MagicMock()
     game.query_engine = GameQueryEngine(MagicMock(), game)

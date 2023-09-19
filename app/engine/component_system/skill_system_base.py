@@ -388,7 +388,7 @@ def ai_priority_multiplier(unit) -> float:
     return ai_priority_multiplier
 
 def get_combat_arts(unit):
-    from app.engine import action, item_funcs, target_system
+    from app.engine import action, item_funcs
     combat_arts = {}
     unit_skills = unit.skills[:]
     for skill in unit_skills:
@@ -410,7 +410,7 @@ def get_combat_arts(unit):
                 # activate_combat_art(unit, skill)
                 act = action.AddSkill(unit, skill.combat_art.value)
                 act.do()
-                targets = target_system.get_valid_targets(unit, weapon)
+                targets = game.target_system.get_valid_targets(unit, weapon)
                 act.reverse()
                 # deactivate_combat_art(unit, skill)
                 if targets:

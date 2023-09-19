@@ -6,7 +6,7 @@ from app.utilities.typing import NID
 
 from app.data.database.database import DB
 from app.engine.game_state import game
-from app.engine import action, ai_controller, engine, equations, evaluate, target_system
+from app.engine import action, ai_controller, engine, equations, evaluate
 from app.engine.roam import roam_ai_action
 from app.engine.movement.roam_ai_movement_component import RoamAIMovementComponent
 from app.engine.objects.region import RegionObject
@@ -131,7 +131,7 @@ class RoamAI:
             next_behaviour = None
 
     def get_path(self, pos) -> List[Tuple[int, int]]:
-        return target_system.get_path(self.unit, pos, free_movement=True)
+        return game.target_system.get_path(self.unit, pos, free_movement=True)
 
     def _calc_state(self) -> bool:
         # Returns whether we should try again
@@ -179,7 +179,7 @@ class RoamAI:
     def get_filtered_target_positions(self) -> List[Tuple[Tuple[int, int], float]]:
         target_positions = ai_controller.get_targets(self.unit, self.behaviour)
 
-        zero_move = max(target_system.find_potential_range(self.unit, True, True), default=0)
+        zero_move = max(game.target_system.find_potential_range(self.unit, True, True), default=0)
         single_move = zero_move + equations.parser.movement(self.unit)
         double_move = single_move + equations.parser.movement(self.unit)
 
@@ -214,7 +214,7 @@ class RoamAI:
         """
         # Returns best position furthest away from the target
         """
-        valid_positions = target_system.get_valid_moves(self.unit)
+        valid_positions = game.target_system.get_valid_moves(self.unit)
         target_positions = self.get_filtered_target_positions()
 
         if target_positions:

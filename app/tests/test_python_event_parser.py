@@ -30,35 +30,35 @@ class PythonEventParserUnitTests(unittest.TestCase):
         # normal command
         mu_speak = parser.fetch_next_command()
         self.assertTrue(isinstance(mu_speak, event_commands.Speak))
-        self.assertEqual(mu_speak.parameters['Speaker'], 'MU')
+        self.assertEqual(mu_speak.parameters['SpeakerOrStyle'], 'MU')
         self.assertEqual(mu_speak.parameters['Text'], 'I am a custom named character.')
 
         # eval
         seth_speak = parser.fetch_next_command()
         self.assertTrue(isinstance(seth_speak, event_commands.Speak))
-        self.assertEqual(seth_speak.parameters['Speaker'], 'Seth')
+        self.assertEqual(seth_speak.parameters['SpeakerOrStyle'], 'Seth')
         self.assertEqual(seth_speak.parameters['Text'], 'Princess Erika!')
 
         # variable
         rescue_speak = parser.fetch_next_command()
         self.assertTrue(isinstance(rescue_speak, event_commands.Speak))
-        self.assertEqual(rescue_speak.parameters['Speaker'], 'MU')
+        self.assertEqual(rescue_speak.parameters['SpeakerOrStyle'], 'MU')
         self.assertEqual(rescue_speak.parameters['Text'], "You've rescued me 10 times")
 
         # if/else/processing
         iftrue_speak = parser.fetch_next_command()
         self.assertTrue(isinstance(iftrue_speak, event_commands.Speak))
-        self.assertEqual(iftrue_speak.parameters['Speaker'], 'MU')
+        self.assertEqual(iftrue_speak.parameters['SpeakerOrStyle'], 'MU')
         self.assertEqual(iftrue_speak.parameters['Text'], "A bit ridiculous, isn't it?")
 
         # for
         eirika_for = parser.fetch_next_command()
         seth_for = parser.fetch_next_command()
         self.assertTrue(isinstance(eirika_for, event_commands.Speak))
-        self.assertEqual(eirika_for.parameters['Speaker'], 'Eirika')
+        self.assertEqual(eirika_for.parameters['SpeakerOrStyle'], 'Eirika')
         self.assertEqual(eirika_for.parameters['Text'], "My name is Eirika")
         self.assertTrue(isinstance(seth_for, event_commands.Speak))
-        self.assertEqual(seth_for.parameters['Speaker'], 'Seth')
+        self.assertEqual(seth_for.parameters['SpeakerOrStyle'], 'Seth')
         self.assertEqual(seth_for.parameters['Text'], "My name is Seth")
 
         # while
@@ -73,14 +73,14 @@ class PythonEventParserUnitTests(unittest.TestCase):
         self.mock_game.level_vars['TimesToRepeat'] -= 1
         for cmd in [first, second, third]:
             self.assertTrue(isinstance(cmd, event_commands.Speak))
-            self.assertEqual(cmd.parameters['Speaker'], 'MU')
+            self.assertEqual(cmd.parameters['SpeakerOrStyle'], 'MU')
             self.assertEqual(cmd.parameters['Text'], 'I am speaking in a while loop')
-        
+
         for cmd in [first_dec, second_dec, third_dec]:
             self.assertTrue(isinstance(cmd, event_commands.IncLevelVar))
             self.assertEqual(cmd.parameters['Nid'], 'TimesToRepeat')
             self.assertEqual(cmd.parameters['Expression'], -1)
-        
+
         parser.fetch_next_command()
         self.assertTrue(parser.is_finished)
 

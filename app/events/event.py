@@ -312,7 +312,7 @@ class Event():
             except Exception as e:
                 raise Exception("Event execution failed with error in command %s" % command) from e
 
-    def skip(self, super_skip=False):
+    def skip(self, super_skip: bool = False):
         self.do_skip = True
         self.super_skip = super_skip
         if self.state != 'paused':
@@ -505,7 +505,7 @@ class Event():
         item = [item for item in item_list if (item.nid == item_id or (str_utils.is_int(item_id) and item.uid == int(item_id)))][0]
         return unit, item
 
-    def _get_skill(self, unit_nid: str, skill: str) -> tuple[UnitObject, SkillObject]:
+    def _get_skill(self, unit_nid: str, skill: str, all_stacks: bool = False) -> tuple[UnitObject, SkillObject | List[SkillObject]]:
         unit = self._get_unit(unit_nid)
         if not unit:
             self.logger.error("Couldn't find unit with nid %s" % unit_nid)
@@ -517,7 +517,9 @@ class Event():
         if (skill_id not in snids) and (not str_utils.is_int(skill_id) or not int(skill_id) in suids):
             self.logger.error("Couldn't find skill with id %s" % skill)
             return None, None
-        skill = [skill for skill in skill_list if (skill.nid == skill_id or (str_utils.is_int(skill_id) and skill.uid == int(skill_id)))][0]
+        skill = [skill for skill in skill_list if (skill.nid == skill_id or (str_utils.is_int(skill_id) and skill.uid == int(skill_id)))]
+        if not all_stacks:
+            skill = skill[0]
         return unit, skill
 
     def _apply_stat_changes(self, unit, stat_changes, flags):

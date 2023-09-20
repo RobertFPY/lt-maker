@@ -806,6 +806,12 @@ def battle_save(self: Event, flags=None):
     else:  # Wait until after this event to make the save
         self.battle_save_flag = True
 
+def delete_save(self: Event, save_slot=None, flags=None):
+    if save_slot.lower() == 'suspend':
+        save.delete_suspend()
+    else:
+        save.delete_save(save_slot)
+
 def clear_turnwheel(self: Event, flags=None):
     self.game.action_log.set_first_free_action()
 

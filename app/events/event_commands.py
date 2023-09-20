@@ -957,6 +957,17 @@ The optional flag *immediately* will cause the prompt to appear immediately.
 
     _flags = ["immediately"]
 
+class DeleteSave(EventCommand):
+    nid = 'delete_save'
+    tag = Tags.MISCELLANEOUS
+
+    desc = \
+        """
+Delete the save at the current *SaveSlot*. If *SaveSlot* is not provided, deletes the current save.
+        """
+
+    optional_keywords = ['SaveSlot']
+
 class ClearTurnwheel(EventCommand):
     nid = 'clear_turnwheel'
     tag = Tags.MISCELLANEOUS

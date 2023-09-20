@@ -948,8 +948,10 @@ class Region(Validator):
         if level_obj:
             valids = [(None, region.nid) for region in level_obj.regions]
         return valids
+
 class AnimationType(OptionValidator):
     valid = ['north', 'east', 'west', 'south', 'fade']
+
 class CardinalDirection(OptionValidator):
     valid = ['north', 'east', 'west', 'south']
 
@@ -1383,6 +1385,21 @@ class DifficultyMode(Validator):
         valids = [(difficulty.name, difficulty.nid) for difficulty in self._db.difficulty_modes.values()]
         return valids
 
+class SaveSlot(Validator):
+    desc = 'accepts an integer for the save slot, or "suspend" for the suspend slot'
+
+    def validate(self, text, level: NID):
+        if text.lower() == 'suspend':
+            return text
+        if utils.is_int(text) and int(text) < DB.constants.value('num_save_slots'):
+            return text
+        return None
+
+    def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
+        valids = [(None, str(i)) for i in range(DB.constants.value('num_save_slots'))]
+        valids.insert((None, "suspend"))
+        return valids
+        
 validators: Dict[str, Type[Validator]]= {validator.__name__: validator for validator in Validator.__subclasses__()}
 option_validators: Dict[str, Type[OptionValidator]] = {validator.__name__: validator for validator in OptionValidator.__subclasses__()}
 eval_validators: Dict[str, Type[EvalValidator]] = {}

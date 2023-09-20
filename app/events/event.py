@@ -23,6 +23,7 @@ from app.events.event_parser import EventParser
 from app.events.event_portrait import EventPortrait
 from app.events.event_prefab import EventPrefab
 from app.events.python_eventing.python_event_parser import PythonEventParser
+from app.events.speak_style import SpeakStyle
 from app.utilities import str_utils, utils, static_random
 from app.utilities.typing import NID, Color3
 
@@ -388,7 +389,7 @@ class Event():
             if unit.position == position:
                 # Don't bother if identical
                 return
-            path = game.target_system.get_path(unit, position)
+            path = self.game.target_system.get_path(unit, position)
             action.do(action.Move(unit, position, path, event=True, follow=follow))
         return position
 
@@ -463,13 +464,13 @@ class Event():
             elif placement == 'stack':
                 return position
             elif placement == 'closest':
-                position = game.target_system.get_nearest_open_tile(unit, position)
+                position = self.game.target_system.get_nearest_open_tile(unit, position)
                 if not position:
                     self.logger.warning("Somehow wasn't able to find a nearby open tile")
                     return None
                 return position
             elif placement == 'push':
-                new_pos = game.target_system.get_nearest_open_tile(current_occupant, position)
+                new_pos = self.game.target_system.get_nearest_open_tile(current_occupant, position)
                 action.do(action.ForcedMovement(current_occupant, new_pos))
                 return position
         else:
@@ -524,6 +525,20 @@ class Event():
             return None, None
         skill = [skill for skill in skill_list if (skill.nid == skill_id or (str_utils.is_int(skill_id) and skill.uid == int(skill_id)))][0]
         return unit, skill
+
+    def _resolve_speak_style(self, speaker_or_style, *styles) -> SpeakStyle:
+        curr_style = self.game.speak_styles['__default']
+        if not self.game.speak_styles.get(speaker_or_style):
+            curr_style.speaker = speaker_or_style
+        else:
+            styles = list(styles)
+            styles.append(speaker_or_style)
+        for style in styles:
+            if isinstance(style, str):
+                style = self.game.speak_styles.get(style)
+            if style:
+                curr_style = curr_style.update(style)
+        return curr_style
 
     def _apply_stat_changes(self, unit, stat_changes, flags):
         # clamp stat changes

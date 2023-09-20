@@ -574,9 +574,8 @@ class DialogVariant(Validator):
 
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
         slots = [(None, style) for style in self.built_in]
-        text = text.split(',')
         predefined_variants = EventInspectorEngine(self._db.events).find_all_calls_of_command(event_commands.SpeakStyle())
-        slots += [(None, style) for style in list(set([variant.parameters['Style'] for variant in predefined_variants.values()]))]
+        slots += [(None, style) for style in set([variant.parameters['Style'] for variant in predefined_variants.values()])]
         return slots
 
 class StringList(Validator):
@@ -625,7 +624,10 @@ class PointList(Validator):
             return text
 
 class Speaker(Validator):
-    pass  # Any text will do
+    def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
+        predefined_variants = EventInspectorEngine(self._db.events).find_all_calls_of_command(event_commands.SpeakStyle())
+        slots = [(None, style) for style in set([variant.parameters['Style'] for variant in predefined_variants.values()])]
+        return slots
 
 class Panorama(Validator):
     def validate(self, text, level):

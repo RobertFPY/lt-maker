@@ -33,7 +33,7 @@ class EventUnitTests(unittest.TestCase):
             patcher.stop()
 
     def create_event(self, test_commands: List[EventCommand]):
-        from app.events.event import Event        
+        from app.events.event import Event
         prefab = EventPrefab('test_nid')
         prefab.commands = test_commands
         return Event(prefab, GenericTrigger(), game=self.game)
@@ -114,7 +114,7 @@ class EventUnitTests(unittest.TestCase):
         event = self.create_event_from_script([])
         event_functions.speak(event, None, '\u2028SPEAK_TEXT\u2028SPEAK_TEXT', flags={'no_block'})
         mock_dialog.assert_called_with('SPEAK_TEXT{sub_break}SPEAK_TEXT{no_wait}', None, 'message_bg_base',
-                                       None, None, speaker=None, style_nid=None,
+                                       None, None, speaker='', style_nid=None,
                                        autosize=False, speed=1, font_color=None,
                                        font_type='convo', num_lines=2, draw_cursor=True,
                                        message_tail='message_bg_tail', transparency=0.05,
@@ -165,10 +165,32 @@ class EventUnitTests(unittest.TestCase):
                                        message_tail='message_bg_thought_tail', transparency=0.2,
                                        name_tag_bg='name_tag', flags=set())
 
+        # test #3.1: speak style in the speaker slot
+        self.game.speak_styles['Eirika'] = SpeakStyle('Eirika', 'Eirika', (1, 2), 3,
+                                                        4.5, 'some_color', 'some_font', 'some_box_type',
+                                                        6, True, 'message_bg_thought_tail', 0.2)
+        event_functions.speak(event, 'Eirika', 'SPEAK_TEXT')
+        mock_dialog.assert_called_with('SPEAK_TEXT', None, 'some_box_type', (1, 2), 3,
+                                       speaker='Eirika', style_nid=None,
+                                       autosize=False, speed=4.5, font_color='some_color',
+                                       font_type='some_font', num_lines=6, draw_cursor=True,
+                                       message_tail='message_bg_thought_tail', transparency=0.2,
+                                       name_tag_bg='name_tag', flags=set())
+
+        # test #3.2: quoted speaker doesn't use style
+        event_functions.speak(event, '"Eirika"', 'SPEAK_TEXT')
+        mock_dialog.assert_called_with('SPEAK_TEXT', None, 'message_bg_base',
+                                       None, None, speaker="Eirika", style_nid=None,
+                                       autosize=False, speed=1, font_color=None,
+                                       font_type='convo', num_lines=2, draw_cursor=True,
+                                       message_tail='message_bg_tail', transparency=0.05,
+                                       name_tag_bg='name_tag', flags=set())
+
+
         # test #4: special center text position
         event_functions.speak(event, None, 'SPEAK_TEXT', text_position='center')
         mock_dialog.assert_called_with('SPEAK_TEXT', None, 'message_bg_base',
-                                       Alignments.CENTER, None, speaker=None, style_nid=None,
+                                       Alignments.CENTER, None, speaker='', style_nid=None,
                                        autosize=False, speed=1, font_color=None,
                                        font_type='convo', num_lines=2, draw_cursor=True,
                                        message_tail='message_bg_tail', transparency=0.05,
@@ -212,7 +234,7 @@ class EventUnitTests(unittest.TestCase):
         event = self.create_event_from_script([])
         event_functions.speak(event, None, '\u2028SPEAK_TEXT\u2028SPEAK_TEXT', flags={'no_block'})
         mock_dialog.assert_called_with('SPEAK_TEXT{sub_break}SPEAK_TEXT{no_wait}', None, 'message_bg_base',
-                                       None, None, speaker=None, style_nid=None,
+                                       None, None, speaker='', style_nid=None,
                                        autosize=False, speed=1, font_color=None,
                                        font_type='convo', num_lines=2, draw_cursor=True,
                                        message_tail='message_bg_tail', transparency=0.05,

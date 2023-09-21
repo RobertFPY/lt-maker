@@ -89,6 +89,37 @@ class GameQueryEngine():
         return None
 
     @categorize(QueryType.ITEM)
+    def get_subitem(self, unit, parent_item, child_item) -> Optional[ItemObject]:
+        """Returns a item object by nid.
+
+        Args:
+            unit: unit to check
+            parent_item: parent item (multi-item) to check
+            child_item: child item (subitem) to check
+
+        Returns:
+            Optional[ItemObject] | None: Item if exists on unit, otherwise None
+        """
+        parent_item = self._resolve_to_nid(parent_item)
+        child_item = self._resolve_to_nid(child_item)
+        found_items = []
+        if unit == 'convoy':
+            found_items = []
+            possible_parent_items = [it for it in self.game.get_convoy_inventory() if it.uid == parent_item or it.nid == parent_item]
+            for item in possible_parent_items:
+                found_items += [it for it in item.subitems if it.uid == child_item or it.nid == child_item]
+        else:
+            unit = self._resolve_to_unit(unit)
+            if unit:
+                found_items = []
+                possible_parent_items = [it for it in unit.items if it.uid == parent_item or it.nid == parent_item]
+                for item in possible_parent_items:
+                    found_items += [it for it in item.subitems if it.uid == child_item or it.nid == child_item]
+        if found_items:
+            return found_items[0]
+        return None
+
+    @categorize(QueryType.ITEM)
     def has_item(self, item, nid=None, team=None, tag=None, party=None) -> bool:
         """Check if any unit matching criteria has item.
 

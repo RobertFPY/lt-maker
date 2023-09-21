@@ -1694,10 +1694,12 @@ class AddSkillComponent(EventCommand):
     desc = \
         """
 Adds a *SkillComponent* with optional value of *Expression* to *Skill* belonging to *GlobalUnit*.
+If the *stack* flag is set, all stacks of the *Skill* will be affected.
         """
 
     keywords = ["GlobalUnit", "Skill", "SkillComponent"]
     optional_keywords = ["Expression"]
+    _flags = ['stack']
 
 class ModifySkillComponent(EventCommand):
     nid = 'modify_skill_component'
@@ -1708,14 +1710,14 @@ class ModifySkillComponent(EventCommand):
 Sets the value of an *SkillComponent* to *Expression* for a *Skill* belonging to *GlobalUnit*.
 
 Use **ComponentProperty* to change a specific value if the SkillComponent has more than one option available.
-
+If the *stack* flag is set, all stacks of the *Skill* will be affected.
 Use the *additive* flag to add rather than set the value.
         """
 
     keywords = ["GlobalUnit", "Skill", "SkillComponent", "Expression"]
     optional_keywords = ["ComponentProperty"]
     keyword_types = ["GlobalUnit", "Skill", "SkillComponent", "Expression", "String"]
-    _flags = ['additive']
+    _flags = ['additive', 'stack']
 
 class RemoveSkillComponent(EventCommand):
     nid = 'remove_skill_component'
@@ -1724,9 +1726,11 @@ class RemoveSkillComponent(EventCommand):
     desc = \
         """
 Removes *SkillComponent* from *Skill* in the inventory of *GlobalUnit*.
+If the *stack* flag is set, all stacks of the *Skill* will be affected.
         """
 
     keywords = ["GlobalUnit", "Skill", "SkillComponent"]
+    _flags = ['stack']
 
 class GiveMoney(EventCommand):
     nid = 'give_money'

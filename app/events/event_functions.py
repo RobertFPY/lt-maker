@@ -1890,11 +1890,6 @@ def add_skill_component(self: Event, global_unit, skill, skill_component, expres
     flags = flags or set()
     component_nid = skill_component
 
-    unit, skill = self._get_skill(global_unit, skill)
-    if not unit or not skill:
-        self.logger.error("add_skill_component: Either unit or skill was invalid, see above")
-        return
-
     if expression is not None:
         try:
             component_value = self.text_evaluator.direct_eval(expression)
@@ -1904,17 +1899,22 @@ def add_skill_component(self: Event, global_unit, skill, skill_component, expres
     else:
         component_value = None
 
-    action.do(action.AddSkillComponent(skill, component_nid, component_value))
+    unit, skill = self._get_skill(global_unit, skill, 'stack' in flags)
+    if not unit or not skill:
+        self.logger.error("add_skill_component: Either unit or skill was invalid, see above")
+        return
+
+    if 'stack' in flags:
+        # skill is a List of Skills
+        for sk in skill:
+            action.do(action.AddSkillComponent(sk, component_nid, component_value))
+    else:
+        action.do(action.AddSkillComponent(skill, component_nid, component_value))
 
 def modify_skill_component(self: Event, global_unit, skill, skill_component, expression, component_property=None, flags=None):
     flags = flags or set()
     component_nid = skill_component
     is_additive = 'additive' in flags
-
-    unit, skill = self._get_skill(global_unit, skill)
-    if not unit or not skill:
-        self.logger.error("modify_skill_component: Either unit or skill was invalid, see above")
-        return
 
     try:
         component_value = self.text_evaluator.direct_eval(expression)
@@ -1922,18 +1922,32 @@ def modify_skill_component(self: Event, global_unit, skill, skill_component, exp
         self.logger.error("modify_skill_component: %s: Could not evalute {%s}" % (e, expression))
         return
 
-    action.do(action.ModifySkillComponent(skill, component_nid, component_value, component_property, is_additive))
+    unit, skill = self._get_skill(global_unit, skill, 'stack' in flags)
+    if not unit or not skill:
+        self.logger.error("modify_skill_component: Either unit or skill was invalid, see above")
+        return
+
+    if 'stack' in flags:
+        # skill is a List of Skills
+        for sk in skill:
+            action.do(action.ModifySkillComponent(sk, component_nid, component_value, component_property, is_additive))
+    else:
+        action.do(action.ModifySkillComponent(skill, component_nid, component_value, component_property, is_additive))
 
 def remove_skill_component(self: Event, global_unit, skill, skill_component, flags=None):
     flags = flags or set()
     component_nid = skill_component
 
-    unit, skill = self._get_skill(global_unit, skill)
+    unit, skill = self._get_skill(global_unit, skill, 'stack' in flags)
     if not unit or not skill:
         self.logger.error("remove_skill_component: Either unit or item was invalid, see above")
         return
 
-    action.do(action.RemoveSkillComponent(skill, component_nid))
+    if 'stack' in flags:
+        for sk in skill:
+            action.do(action.RemoveSkillComponent(sk, component_nid))
+    else:
+        action.do(action.RemoveSkillComponent(skill, component_nid))
 
 def give_money(self: Event, money, party=None, flags=None):
     flags = flags or set()

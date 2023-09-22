@@ -109,8 +109,9 @@ class GameBoard(object):
 
     def set_unit(self, pos: Tuple[int, int], unit: UnitObject):
         idx = pos[0] * self.height + pos[1]
-        self.unit_grid[idx].append(unit)
-        self.team_grid[idx].append(unit.team)
+        if unit not in self.unit_grid[idx]:
+            self.unit_grid[idx].append(unit)
+            self.team_grid[idx].append(unit.team)
 
     def remove_unit(self, pos: Tuple[int, int], unit: UnitObject):
         idx = pos[0] * self.height + pos[1]

@@ -1,10 +1,11 @@
 from dataclasses import dataclass
 from enum import Enum
 from functools import lru_cache
-from typing import List, Optional, Tuple, Type
+from typing import Any, Dict, List, Optional, Tuple, Type
 
-from PyQt5.QtCore import QStringListModel, Qt, pyqtSignal
-from PyQt5.QtWidgets import QCompleter
+from PyQt5.QtCore import QStringListModel, Qt, pyqtSignal, QSize
+from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import QCompleter, QStyledItemDelegate
 
 from app.data.database.database import DB, Database
 from app.data.resources.resources import RESOURCES, Resources
@@ -12,6 +13,7 @@ from app.editor.settings import MainSettingsController
 from app.events import event_commands, event_validators
 from app.utilities import str_utils
 from app.utilities.typing import NID
+
 
 class EventScriptFunctionHinter():
     @staticmethod
@@ -71,6 +73,32 @@ class EventScriptFunctionHinter():
         param = detect_param_under_cursor(command, line, cursor_pos)
         return EventScriptFunctionHinter._generate_hint_for_command(command, param)
 
+@dataclass
+class NIDCompletion():
+    nid: str
+    name: Optional[str] = None
+    is_flag: bool = False
+
+class CompleterItemDelegate(QStyledItemDelegate):
+    def __init__(self, completion_list: Dict[NID, NIDCompletion], parent=None) -> None:
+        super().__init__(parent)
+        self.completion_list = completion_list
+
+    def displayText(self, value, locale) -> str:
+        option_text = value
+        if option_text in self.completion_list:
+            completion_info = self.completion_list[option_text]
+            option_text = completion_info.nid
+            if completion_info.is_flag:
+                option_text = "FLAG(%s)" % completion_info.nid
+            else:
+                name, nid = completion_info.name, completion_info.nid
+                if name and nid and name != nid:
+                    option_text = "%s (%s)" % (name, nid)
+        return option_text
+
+    def sizeHint(self, option, index) -> QSize:
+        return QSize(300, 24)
 
 class EventScriptCompleter(QCompleter):
     insertText = pyqtSignal(str)
@@ -116,8 +144,7 @@ class EventScriptCompleter(QCompleter):
         # determine what dictionary to use for completion
         validator, flags = detect_type_under_cursor(line, cursor_pos, arg_under_cursor)
         autofill_dict = generate_wordlist_from_validator_type(validator, level_nid, arg_under_cursor, DB, RESOURCES)
-        if flags:
-            autofill_dict = autofill_dict + generate_flags_wordlist(flags)
+        autofill_dict.update(generate_flags_wordlist(flags))
         if len(autofill_dict) == 0:
             try:
                 if self.popup().isVisible():
@@ -125,7 +152,8 @@ class EventScriptCompleter(QCompleter):
             except: # popup doesn't exist?
                 pass
             return False
-        self.setModel(QStringListModel(autofill_dict, self))
+        self.setModel(QStringListModel(list(autofill_dict.keys()), self))
+        self.popup().setItemDelegate(CompleterItemDelegate(autofill_dict, self))
         trimmed_line = line[0:cursor_pos]
         start_last_arg = max(max([trimmed_line.rfind(c) for c in ';,']), -1)
         completionPrefix = trimmed_line[start_last_arg + 1:]
@@ -229,9 +257,9 @@ class PythonEventScriptCompleter(EventScriptCompleter):
             return False
         if line_info.final_mode == ParseMode.FLAGS:
             autofill_dict = line_info.command().flags
-            autofill_dict = [f'"{arg}"' for arg in autofill_dict]
+            autofill_dict = {f'"{arg}"': NIDCompletion(arg) for arg in autofill_dict}
         elif line_info.final_mode == ParseMode.FINISHED_ARGS:
-            autofill_dict = ['.FLAGS']
+            autofill_dict = {'.FLAGS': NIDCompletion('.FLAGS')}
         elif line_info.final_mode == ParseMode.FINISHED:
             return False
         else:
@@ -239,7 +267,7 @@ class PythonEventScriptCompleter(EventScriptCompleter):
             autofill_dict = generate_wordlist_from_validator_type(validator, level_nid, line_info.arg_under_cursor, DB, RESOURCES)
             # wrap in quotes bc python. specifically don't do this for command names since they aren't string args
             if line_info.final_mode != ParseMode.COMMAND:
-                autofill_dict = [f'"{arg}"' for arg in autofill_dict]
+                autofill_dict = {f'"{nid}"': NIDCompletion(nid, cmpl.name, False) for nid, cmpl in autofill_dict.items()}
         if len(autofill_dict) == 0:
             try:
                 if self.popup().isVisible():
@@ -247,34 +275,22 @@ class PythonEventScriptCompleter(EventScriptCompleter):
             except: # popup doesn't exist?
                 pass
             return False
-        self.setModel(QStringListModel(autofill_dict, self))
+        self.setModel(QStringListModel(list(autofill_dict.keys()), self))
+        self.popup().setItemDelegate(CompleterItemDelegate(autofill_dict, self))
         self.setCompletionPrefix(line_info.arg_under_cursor)
         self.popup().setCurrentIndex(self.completionModel().index(0, 0))
         return True
 
 def generate_wordlist_from_validator_type(validator: Type[event_validators.Validator], level: NID = None, arg: str = None,
-                                          db: Database = None, resources: Resources = None) -> List[str]:
+                                          db: Database = None, resources: Resources = None) -> Dict[NID, NIDCompletion]:
     if not validator:
-        return []
+        return {}
     valid_entries = validator(db, resources).valid_entries(level, arg)
-    autofill_dict = []
-    for entry in valid_entries:
-        if entry[0] is None:
-            # no name, but has nid
-            autofill_dict.append('{}'.format(entry[1]))
-        else:
-            # has name and nid
-            autofill_dict.append('{name} ({nid})'.format(
-                name=entry[0], nid=entry[1]))
+    autofill_dict = {nid: NIDCompletion(nid, name) for name, nid in valid_entries}
     return autofill_dict
 
-def generate_flags_wordlist(flags: List[str] = []) -> List[str]:
-    flaglist = []
-    if len(flags) > 0:
-        # then we can also put flags in this slot
-        for flag in flags:
-            flaglist.append('FLAG({flag})'.format(flag=flag))
-    return flaglist
+def generate_flags_wordlist(flags: List[str] = []) -> List[NIDCompletion]:
+    return {flag: NIDCompletion(flag, is_flag=True) for flag in flags}
 
 def detect_command_under_cursor(line: str) -> Type[event_commands.EventCommand]:
     return event_commands.determine_command_type(line)

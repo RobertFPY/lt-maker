@@ -1107,7 +1107,7 @@ class KlassList(Validator):
         return text
 
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
-        valids = [(None, klass.nid) for klass in self._db.classes.values()]
+        valids = [(klass.name, klass.nid) for klass in self._db.classes.values()]
         return valids
 
 class ArgList(Validator):

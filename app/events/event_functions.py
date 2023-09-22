@@ -601,49 +601,36 @@ def screen_shake_end(self: Event, flags=None):
         self.background.reset_shake()
 
 def game_var(self: Event, nid, expression, flags=None):
-    try:
-        val = self.text_evaluator.direct_eval(expression)
-        if check_valid_type(val):
-            action.do(action.SetGameVar(nid, val))
-        else:
-            self.logger.error("game_var: %s is not a valid variable", val)
-    except Exception as e:
-        self.logger.error("game_var: Could not evaluate %s (%s)" % (expression, e))
+    val = self._eval_expr(expression, 'from_python' in flags)
+    if check_valid_type(val):
+        action.do(action.SetGameVar(nid, val))
+    else:
+        self.logger.error("game_var: %s is not a valid variable", val)
 
 def inc_game_var(self: Event, nid, expression=None, flags=None):
     if expression:
-        try:
-            val = self.text_evaluator.direct_eval(expression)
-            if check_valid_type(val):
-                action.do(action.SetGameVar(nid, self.game.game_vars.get(nid, 0) + val))
-            else:
-                self.logger.error("inc_game_var: %s is not a valid variable", val)
-        except Exception as e:
-            self.logger.error("inc_game_var: Could not evaluate %s (%s)" % (expression, e))
+        val = self._eval_expr(expression, 'from_python' in flags)
+        if check_valid_type(val):
+            action.do(action.SetGameVar(nid, self.game.game_vars.get(nid, 0) + val))
+        else:
+            self.logger.error("inc_game_var: %s is not a valid variable", val)
     else:
         action.do(action.SetGameVar(nid, self.game.game_vars.get(nid, 0) + 1))
 
 def level_var(self: Event, nid, expression, flags=None):
-    try:
-        val = self.text_evaluator.direct_eval(expression)
-        if check_valid_type(val):
-            action.do(action.SetLevelVar(nid, val))
-        else:
-            self.logger.error("level_var: %s is not a valid variable", val)
-    except Exception as e:
-        self.logger.error("level_var: Could not evaluate %s (%s)" % (expression, e))
-        return
+    val = self._eval_expr(expression, 'from_python' in flags)
+    if check_valid_type(val):
+        action.do(action.SetLevelVar(nid, val))
+    else:
+        self.logger.error("level_var: %s is not a valid variable", val)
 
 def inc_level_var(self: Event, nid, expression=None, flags=None):
     if expression:
-        try:
-            val = self.text_evaluator.direct_eval(expression)
-            if check_valid_type(val):
-                action.do(action.SetLevelVar(nid, self.game.level_vars.get(nid, 0) + val))
-            else:
-                self.logger.error("inc_level_var: %s is not a valid variable", val)
-        except Exception as e:
-            self.logger.error("inc_level_var: Could not evaluate %s (%s)" % (expression, e))
+        val = self._eval_expr(expression, 'from_python' in flags)
+        if check_valid_type(val):
+            action.do(action.SetLevelVar(nid, self.game.level_vars.get(nid, 0) + val))
+        else:
+            self.logger.error("inc_level_var: %s is not a valid variable", val)
     else:
         action.do(action.SetLevelVar(nid, self.game.level_vars.get(nid, 0) + 1))
 
@@ -1646,12 +1633,7 @@ def set_item_data(self: Event, global_unit_or_convoy, item, nid, expression, fla
         self.logger.error("set_item_data: Either unit or item was invalid, see above")
         return
 
-    try:
-        data_value = self.text_evaluator.direct_eval(expression)
-    except Exception as e:
-        self.logger.error("set_item_data: %s: Could not evaluate {%s}" % (e, expression))
-        return
-
+    data_value = self._eval_expr(expression, 'from_python' in flags)
     action.do(action.SetObjData(item, nid, data_value))
 
 def break_item(self: Event, global_unit_or_convoy, item, flags=None):
@@ -1770,11 +1752,7 @@ def add_item_component(self: Event, global_unit_or_convoy, item, item_component,
         return
 
     if expression is not None:
-        try:
-            component_value = self.text_evaluator.direct_eval(expression)
-        except Exception as e:
-            self.logger.error("add_item_component: %s: Could not evalute {%s}" % (e, expression))
-            return
+        component_value = self._eval_expr(expression, 'from_python' in flags)
     else:
         component_value = None
 
@@ -1791,12 +1769,7 @@ def modify_item_component(self: Event, global_unit_or_convoy, item, item_compone
         self.logger.error("modify_item_component: Either unit or item was invalid, see above")
         return
 
-    try:
-        component_value = self.text_evaluator.direct_eval(expression)
-    except Exception as e:
-        self.logger.error("modify_item_component: %s: Could not evalute {%s}" % (e, expression))
-        return
-
+    component_value = self._eval_expr(expression, 'from_python' in flags)
     action.do(action.ModifyItemComponent(item, component_nid, component_value, component_property, is_additive))
 
 def remove_item_component(self: Event, global_unit_or_convoy, item, item_component, flags=None):
@@ -1821,11 +1794,7 @@ def add_skill_component(self: Event, global_unit, skill, skill_component, expres
         return
 
     if expression is not None:
-        try:
-            component_value = self.text_evaluator.direct_eval(expression)
-        except Exception as e:
-            self.logger.error("add_skill_component: %s: Could not evalute {%s}" % (e, expression))
-            return
+        component_value = self._eval_expr(expression, 'from_python' in flags)
     else:
         component_value = None
 
@@ -1841,12 +1810,7 @@ def modify_skill_component(self: Event, global_unit, skill, skill_component, exp
         self.logger.error("modify_skill_component: Either unit or skill was invalid, see above")
         return
 
-    try:
-        component_value = self.text_evaluator.direct_eval(expression)
-    except Exception as e:
-        self.logger.error("modify_skill_component: %s: Could not evalute {%s}" % (e, expression))
-        return
-
+    component_value = self._eval_expr(expression, 'from_python' in flags)
     action.do(action.ModifySkillComponent(skill, component_nid, component_value, component_property, is_additive))
 
 def remove_skill_component(self: Event, global_unit, skill, skill_component, flags=None):
@@ -2030,11 +1994,7 @@ def set_skill_data(self: Event, global_unit, skill, nid, expression, flags=None)
     if not found_skill:
         self.logger.error("set_skill_data: Couldn't find skill with nid %s on unit selected" % skill)
         return
-    try:
-        data_value = self.text_evaluator.direct_eval(expression)
-    except Exception as e:
-        self.logger.error("set_skill_data: %s: Could not evaluate {%s}" % (e, expression))
-        return
+    data_value = self._eval_expr(expression, 'from_python' in flags)
 
     action.do(action.SetObjData(found_skill, nid, data_value))
 

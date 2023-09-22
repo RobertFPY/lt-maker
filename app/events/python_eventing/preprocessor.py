@@ -6,7 +6,7 @@ from typing import Dict, List, Optional, Set, Tuple, Type
 
 from app.events.event_prefab import EventCatalog
 from app.events.python_eventing.compilation import ast_preprocess
-from app.events.python_eventing.errors import CannotUseYieldError, InvalidCommandError, InvalidPythonError, MalformedTriggerScriptCall, NestedEventError, NoSaveInLoopError, PreprocessorError
+from app.events.python_eventing.errors import CannotUseYieldError, InvalidCommandError, InvalidPythonError, MalformedTriggerScriptCall, NestedEventError, NoSaveInLoopError, EventError
 from app.events.python_eventing.utils import EVENT_CALL_COMMAND_NIDS, EVENT_INSTANCE, FORBIDDEN_PYTHON_COMMAND_NIDS, SAVE_COMMAND_NIDS
 from app.utilities.typing import NID
 
@@ -109,7 +109,7 @@ class Preprocessor():
         except:
             return None
 
-    def verify_event(self, event_name: str, event_script: str = None) -> List[PreprocessorError]:
+    def verify_event(self, event_name: str, event_script: str = None) -> List[EventError]:
         self._parsed_events.clear() # no reason to load all events simultaneously in memory
         event_info = None
         if not event_script:
@@ -147,7 +147,7 @@ class Preprocessor():
                 yield_errors.append(CannotUseYieldError(event.event_name, cnode.lineno, event.source_as_lines[cnode.lineno - 1]))
         return yield_errors
 
-    def verify_event_calls(self, event: EventContext) -> List[PreprocessorError]:
+    def verify_event_calls(self, event: EventContext) -> List[EventError]:
         """see `check_safe_event_function_call` above for details on what this function verifies.
         It also verifies that all event calls are valid commands, via `check_valid_event_function_call`.
         """
@@ -156,7 +156,7 @@ class Preprocessor():
                 curr_parents = []
             else:
                 curr_parents = parents[:]
-            unsafe_event_function_calls: List[PreprocessorError] = []
+            unsafe_event_function_calls: List[EventError] = []
             # base case
             if not check_safe_event_function_call(node, curr_parents):
                 unsafe_event_function_calls.append(NestedEventError(event.event_name, node.lineno, event.source_as_lines[node.lineno - 1]))

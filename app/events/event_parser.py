@@ -228,6 +228,12 @@ class EventParser():
     def finished(self):
         return self.command_pointer >= len(self.commands)
 
+    def get_source_line(self, line: int) -> str:
+        return str(self.commands[line])
+
+    def get_current_line(self) -> int:
+        return self.command_pointer - 1
+
     def _object_to_str(self, obj) -> str:
         if hasattr(obj, 'uid'):
             return str(obj.uid)

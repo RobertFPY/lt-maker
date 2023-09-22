@@ -22,9 +22,13 @@ from app.events import event_commands, triggers
 from app.events.event_parser import EventParser
 from app.events.event_portrait import EventPortrait
 from app.events.event_prefab import EventPrefab
+from app.events.python_eventing.errors import EventError
 from app.events.python_eventing.python_event_parser import PythonEventParser
 from app.utilities import str_utils, utils, static_random
 from app.utilities.typing import NID, Color3
+
+class EvaluateException(EventError):
+    what = "Could not evaluate expression."
 
 class Event():
     true_vals = ('t', 'true', 'True', '1', 'y', 'yes')
@@ -61,7 +65,6 @@ class Event():
             self.parser = PythonEventParser(self.nid, event_prefab.source, self.game)
         else:
             self.parser = EventParser(self.nid, event_prefab.commands.copy(), self.text_evaluator)
-
 
     def _generic_setup(self):
         self.portraits: Dict[str, EventPortrait] = {}
@@ -314,6 +317,8 @@ class Event():
                     pass
                 else:
                     self.run_command(command)
+            except EventError as e:
+                raise e
             except Exception as e:
                 raise Exception("Event execution failed with error in command %s" % command) from e
 
@@ -349,6 +354,18 @@ class Event():
             return str(obj.nid)
         else:
             return str(obj)
+
+    def _eval_expr(self, expr: str, from_python: bool) -> Any:
+        if from_python:
+            return expr
+        try:
+            return self.text_evaluator.direct_eval(expr)
+        except Exception as e:
+            line = self.parser.get_current_line()
+            exc = EvaluateException(self.nid, line + 1, self.parser.get_source_line(line))
+            self.logger.error("'%s' Line %d: Could not evaluate %s (%s)" % (self.nid, line + 1, expr, e))
+            exc.what = str(e)
+            raise exc
 
     def _queue_command(self, event_command_str: str):
         try:

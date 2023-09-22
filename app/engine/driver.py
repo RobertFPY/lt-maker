@@ -30,7 +30,7 @@ def start(title, from_editor=False):
     engine.set_title(title + ' - v' + VERSION)
     print("Version: %s" % VERSION)
     if DB.game_flags.has_fatal_errors:
-        raise Exception("Fatal errors detected in game. If you are the developer, please validate your game data. Aborting launch.")
+        raise Exception("Fatal errors detected in game. If you are the developer, please validate and then save your game data before proceeding. Aborting launch.")
 
 screenshot = False
 def save_screenshot(raw_events: list, surf):

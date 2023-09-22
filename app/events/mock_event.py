@@ -7,6 +7,7 @@ from app.events.event import Event
 from app.engine.sprites import SPRITES
 from app.engine.text_evaluator import TextEvaluator
 from app.events.event_parser import EventParser
+from app.events.python_eventing.python_event_parser import PythonEventParser
 
 from app.utilities.typing import NID
 
@@ -34,9 +35,7 @@ class MockEvent(Event):
                  "remove_overlay_sprite", "location_card", "credits", 
                  "ending", "pop_dialog", "unpause"}
 
-    loop_commands = {'for', 'endf'}
-
-    def __init__(self, nid, commands, command_idx=0, if_statement_strategy=IfStatementStrategy.ALWAYS_TRUE):
+    def __init__(self, nid, event_prefab, command_idx=0, if_statement_strategy=IfStatementStrategy.ALWAYS_TRUE):
         self._transition_speed = 250
         self._transition_color = (0, 0, 0)
         
@@ -50,7 +49,10 @@ class MockEvent(Event):
         self._generic_setup()
 
         self.text_evaluator = TextEvaluator(self.logger, None)
-        self.parser = MockEventParser('Mock', commands.copy(), self.text_evaluator, if_statement_strategy)
+        if event_prefab.is_python_event():
+            self.parser = MockPythonEventParser('Mock', event_prefab.source)
+        else:
+            self.parser = MockEventParser('Mock', event_prefab.commands.copy(), self.text_evaluator, if_statement_strategy)
 
     def update(self):
         # update all internal updates, remove the ones that are finished
@@ -87,3 +89,7 @@ class MockEventParser(EventParser):
             truth = False
         self.logger.info("Result: %s" % truth)
         return truth
+
+class MockPythonEventParser(PythonEventParser):
+    def __init__(self, nid: NID, source: str):
+        super().__init__(nid, source, None)

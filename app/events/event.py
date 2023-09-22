@@ -65,7 +65,7 @@ class Event():
         if event_prefab.is_python_event():
             self.parser = PythonEventParser(self.nid, event_prefab.source, self.game)
         else:
-            self.parser = EventParser(self.nid, event_prefab.commands.copy(), self.text_evaluator)
+            self.parser = EventParser(self.nid, event_prefab.source, self.text_evaluator)
 
     def _generic_setup(self):
         self.portraits: Dict[str, EventPortrait] = {}

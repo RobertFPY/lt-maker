@@ -17,7 +17,7 @@ class EventPrefab(Prefab):
         self.only_once = False
         self.priority: int = 20
 
-        self.source: str = ""
+        self._source: List[str] = []
 
     @property
     def nid(self):
@@ -28,21 +28,32 @@ class EventPrefab(Prefab):
         else:
             return "Global " + self.name
 
+    @property
+    def source(self):
+        return '\n'.join(self._source)
+
+    @source.setter
+    def source(self, value: str):
+        self._source = value.split('\n')
+
     @lru_cache(1)
-    def _is_python_event(self, source: str):
-        lines = source.split('\n')
-        if lines and lines[0].strip() == '#python':
+    def _is_python_event(self, first_line: str):
+        if first_line.strip() == '#python':
             return True
         return False
 
     def is_python_event(self):
-        if not self.source:
+        if not self._source:
             return False
-        return self._is_python_event(self.source)
+        return self._is_python_event(self._source[0])
 
     def save_attr(self, name, value):
         if name == 'commands':
-            value = [c.save() for c in value if c]
+            value = []
+        elif name == '_source':
+            if not self._source and self.commands:
+                self._source = [str(cmd) for cmd in self.commands]
+            value = self._source
         else:
             value = super().save_attr(name, value)
         return value

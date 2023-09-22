@@ -34,14 +34,13 @@ class EventUnitTests(unittest.TestCase):
 
     def create_event(self, test_commands: List[EventCommand]):
         from app.events.event import Event
-        prefab = EventPrefab('test_nid')
-        prefab.commands = test_commands
-        return Event(prefab, GenericTrigger(), game=self.game)
-
+        return self.create_event_from_script([str(cmd) for cmd in test_commands])
 
     def create_event_from_script(self, test_script: List[str]):
-        parsed_test_commands = [parse_text_to_command(command)[0] for command in test_script]
-        return self.create_event(parsed_test_commands)
+        from app.events.event import Event
+        prefab = EventPrefab('test_nid')
+        prefab.source = '\n'.join(test_script)
+        return Event(prefab, GenericTrigger(), game=self.game)
 
     def run_all_commands(self, event):
         while event.state != 'complete':

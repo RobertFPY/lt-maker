@@ -65,9 +65,10 @@ class IteratorInfo():
         return self
 
 class EventParser():
-    def __init__(self, nid: NID, commands: List[event_commands.EventCommand], text_evaluator: TextEvaluator):
+    def __init__(self, nid: NID, script: str, text_evaluator: TextEvaluator):
         self.nid = nid
-        self.commands: List[event_commands.EventCommand] = commands.copy()
+        self.script = script
+        self.commands: List[event_commands.EventCommand] = event_commands.parse_script_to_commands(script)
         self.command_pointer = 0
 
         self.logger = logging.getLogger()
@@ -245,16 +246,16 @@ class EventParser():
     def save(self):
         s_dict = {}
         s_dict['nid'] = self.nid
-        s_dict['commands'] = self.commands
+        s_dict['script'] = self.script
         s_dict['iterators'] = [info.save() for info in self.iterator_stack]
         s_dict['command_pointer'] = self.command_pointer
         return s_dict
 
     @classmethod
     def restore(cls, s_dict, text_evaluator: TextEvaluator):
-        commands = s_dict['commands']
+        script = s_dict['script']
         nid = s_dict['nid']
-        self = cls(nid, commands, text_evaluator)
+        self = cls(nid, script, text_evaluator)
         self.command_pointer = s_dict['command_pointer']
         self.iterator_stack = [IteratorInfo.restore(info_dict) for info_dict in s_dict['iterators']]
         return self

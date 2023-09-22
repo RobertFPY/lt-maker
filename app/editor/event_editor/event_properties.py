@@ -525,15 +525,6 @@ class EventProperties(QWidget):
         self.current.priority = value
 
     def text_changed(self):
-        self.current.commands.clear()
-        lines = []
-        for doc_idx in range(self.text_box.document().blockCount()):
-            line = self.text_box.document().findBlockByNumber(doc_idx).text().strip()
-            lines.append(line)
-        for line in lines:
-            command, error_loc = event_commands.parse_text_to_command(line)
-            if command:
-                self.current.commands.append(command)
         self.current.source = self.text_box.document().toPlainText()
         self.set_editor_language(EditorLanguageMode.PYTHON if self.current.is_python_event() else EditorLanguageMode.EVENT)
         self.set_test_event_button_visible()
@@ -578,21 +569,9 @@ class EventProperties(QWidget):
         self.priority_box.edit.setValue(current.priority)
 
         if not self.current.is_python_event():
-            # Convert text
-            text = ''
-            num_tabs = 0
-            for command in current.commands:
-                if command:
-                    if command.nid in ('else', 'elif', 'end', 'endf'):
-                        num_tabs -= 1
-                    text += '    ' * num_tabs
-                    text += command.to_plain_text()
-                    text += '\n'
-                    if command.nid in ('if', 'elif', 'else', 'for'):
-                        num_tabs += 1
-                else:
-                    logging.warning("NoneType in current.commands")
-            self.text_box.setPlainText(text)
+            if not self.current.source:
+                self.current.source = '\n'.join([str(cmd) for cmd in self.current.commands])
+            self.text_box.setPlainText(self.current.source)
             self.set_editor_language(EditorLanguageMode.EVENT)
         else:
             self.text_box.setPlainText(self.current.source)

@@ -88,39 +88,48 @@
         "wexp_gain": {
             "Sword": [
                 true,
-                1
+                1,
+                251
             ],
             "Lance": [
                 true,
-                1
+                1,
+                251
             ],
             "Axe": [
                 true,
-                31
+                31,
+                251
             ],
             "Bow": [
                 false,
-                0
+                0,
+                251
             ],
             "Staff": [
                 false,
-                0
+                0,
+                251
             ],
             "Light": [
                 false,
-                0
+                0,
+                251
             ],
             "Anima": [
                 false,
-                0
+                0,
+                251
             ],
             "Dark": [
                 false,
-                0
+                0,
+                251
             ],
             "Default": [
                 false,
-                0
+                0,
+                251
             ]
         },
         "icon_nid": "Generic_Portrait_Great_Knight",

@@ -9,6 +9,8 @@ from app.engine.objects.item import ItemObject
 from app.engine.objects.skill import SkillObject
 from app.utilities import utils
 
+from app.engine.game_state import game
+
 if TYPE_CHECKING:
     from app.engine.objects.unit import UnitObject
     from app.utilities.typing import NID

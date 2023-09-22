@@ -540,7 +540,7 @@ class GameState():
                     unit.traveler = None
                     action.RemoveSkill(unit, 'Rescue').execute()
                 else:
-                    pos = game.target_system.get_nearest_open_tile(droppee, unit.position)
+                    pos = self.target_system.get_nearest_open_tile(droppee, unit.position)
                     action.Drop(unit, droppee, pos).execute()
                 skill_system.on_separate(droppee, unit)
             unit.set_hp(1000)  # Set to full health

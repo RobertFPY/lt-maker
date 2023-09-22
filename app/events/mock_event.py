@@ -25,20 +25,20 @@ class MockGame():
 
 class MockEvent(Event):
     # These are the only commands that will be processed by this event
-    available = {"finish", "wait", "end_skip", "music", "music_clear", 
-                 "sound", "add_portrait", "multi_add_portrait", 
-                 "remove_portrait", "multi_remove_portrait", 
-                 "move_portrait", "mirror_portrait", "bop_portrait", 
-                 "expression", "speak_style", "speak", "unhold", 
-                 "transition", "change_background", "table", 
-                 "remove_table", "draw_overlay_sprite", 
-                 "remove_overlay_sprite", "location_card", "credits", 
+    available = {"finish", "wait", "end_skip", "music", "music_clear",
+                 "sound", "add_portrait", "multi_add_portrait",
+                 "remove_portrait", "multi_remove_portrait",
+                 "move_portrait", "mirror_portrait", "bop_portrait",
+                 "expression", "speak_style", "speak", "unhold",
+                 "transition", "change_background", "table",
+                 "remove_table", "draw_overlay_sprite",
+                 "remove_overlay_sprite", "location_card", "credits",
                  "ending", "pop_dialog", "unpause"}
 
     def __init__(self, nid, event_prefab, command_idx=0, if_statement_strategy=IfStatementStrategy.ALWAYS_TRUE):
         self._transition_speed = 250
         self._transition_color = (0, 0, 0)
-        
+
         self.nid = nid
         self.command_queue: List[event_commands.EventCommand] = []
 
@@ -52,7 +52,7 @@ class MockEvent(Event):
         if event_prefab.is_python_event():
             self.parser = MockPythonEventParser('Mock', event_prefab.source)
         else:
-            self.parser = MockEventParser('Mock', event_prefab.commands.copy(), self.text_evaluator, if_statement_strategy)
+            self.parser = MockEventParser('Mock', event_prefab.source, self.text_evaluator, if_statement_strategy)
 
     def update(self):
         # update all internal updates, remove the ones that are finished
@@ -77,10 +77,10 @@ class MockEvent(Event):
         return None
 
 class MockEventParser(EventParser):
-    def __init__(self, nid: NID, commands: List[event_commands.EventCommand],
+    def __init__(self, nid: NID, script: str,
                  text_evaluator: TextEvaluator, if_statement_strategy=IfStatementStrategy.ALWAYS_TRUE):
         self.if_statement_strategy = if_statement_strategy
-        super().__init__(nid, commands, text_evaluator)
+        super().__init__(nid, script, text_evaluator)
 
     def _get_truth(self, command: event_commands.EventCommand) -> bool:
         if self.if_statement_strategy == IfStatementStrategy.ALWAYS_TRUE:

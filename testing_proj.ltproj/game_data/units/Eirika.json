@@ -33,6 +33,7 @@
             "MOV": 0,
             "RES": 30
         },
+        "stat_cap_modifiers": {},
         "starting_items": [
             [
                 "Vulnerary",
@@ -57,39 +58,48 @@
         "wexp_gain": {
             "Sword": [
                 true,
-                1
+                1,
+                251
             ],
             "Lance": [
                 false,
-                0
+                0,
+                251
             ],
             "Axe": [
                 false,
-                0
+                0,
+                251
             ],
             "Bow": [
                 false,
-                0
+                0,
+                251
             ],
             "Staff": [
                 false,
-                0
+                0,
+                251
             ],
             "Light": [
                 false,
-                0
+                0,
+                251
             ],
             "Anima": [
                 false,
-                0
+                0,
+                251
             ],
             "Dark": [
                 false,
-                0
+                0,
+                251
             ],
             "Default": [
                 false,
-                0
+                0,
+                251
             ]
         },
         "alternate_classes": [],

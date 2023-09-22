@@ -3300,6 +3300,10 @@ def determine_command_type(text: str) -> Type[EventCommand]:
     command_nid = arguments[0]
     return ALL_EVENT_COMMANDS.get(command_nid, Comment)
 
+def parse_script_to_commands(text: str) -> List[EventCommand]:
+    lines = text.split('\n')
+    return [parse_text_to_command(line)[0] for line in lines]
+
 def parse_text_to_command(text: str, strict: bool = False) -> Tuple[EventCommand, int]:
     """parses a line into a command
 

@@ -1226,13 +1226,13 @@ A *CombatScript* can optionally be provided to ensure a pre-set outcome to the b
 *Ability* can be used to specify which item or ability the attacker will use.
 *PositiveInteger* can be set to determine the number of rounds the combat will go on for. Defaults to 1. Useful for arena combats (set to 20+).
 The *arena* flag should be set when you want to allow the player to be able to press B and leave the combat between rounds. It also sets the combat background to the arena.
-The *force_animation* flag tells the engine to ignore the player's settings and forcibly display a combat animation. Useful for arena combats.
+The *force_animation* and *force_no_animation* flags tell the engine whether to ignore the player's settings when choosing to display a combat animation. Useful for arena combats.
         """
 
     keywords = ["Unit", "Position"]
     optional_keywords = ["CombatScript", "Ability", "Rounds"]
     keyword_types = ["Unit", "Position", "CombatScript", "Ability", "PositiveInteger"]
-    _flags = ["arena", "force_animation"]
+    _flags = ["arena", "force_animation", "force_no_animation"]
 
 class SetName(EventCommand):
     nid = 'set_name'

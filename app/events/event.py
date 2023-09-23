@@ -544,7 +544,7 @@ class Event():
         return unit, skill
 
     def _resolve_speak_style(self, speaker_or_style, *styles) -> SpeakStyle:
-        curr_style = self.game.speak_styles['__default']
+        curr_style = self.game.speak_styles['__default'].copy()
         if not self.game.speak_styles.get(speaker_or_style):
             curr_style.speaker = speaker_or_style
         else:

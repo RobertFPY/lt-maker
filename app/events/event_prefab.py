@@ -34,6 +34,7 @@ class EventPrefab(Prefab):
 
     @source.setter
     def source(self, value: str):
+        value = value.replace('\u2029', '\n')
         self._source = value.split('\n')
 
     @lru_cache(1)

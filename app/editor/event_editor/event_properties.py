@@ -525,7 +525,7 @@ class EventProperties(QWidget):
         self.current.priority = value
 
     def text_changed(self):
-        self.current.source = self.text_box.document().toPlainText()
+        self.current.source = self.text_box.document().toRawText()
         self.set_editor_language(EditorLanguageMode.PYTHON if self.current.is_python_event() else EditorLanguageMode.EVENT)
         self.set_test_event_button_visible()
 

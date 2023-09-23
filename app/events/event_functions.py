@@ -1186,7 +1186,7 @@ def interact_unit(self: Event, unit, position, combat_script=None, ability=None,
 
     interaction.start_combat(
         actor, target, item, event_combat=True, script=script, total_rounds=total_rounds,
-        arena='arena' in flags, force_animation='force_animation' in flags)
+        arena='arena' in flags, force_animation='force_animation' in flags, force_no_animation='force_no_animation' in flags)
     self.state = "paused"
 
 def recruit_generic(self: Event, unit, nid, name, flags=None):

@@ -526,6 +526,8 @@ class EventProperties(QWidget):
 
     def text_changed(self):
         self.current.source = self.text_box.document().toRawText()
+        # reset cached event info
+        DB.events.inspector.clear_cache(self.current.nid)
         self.set_editor_language(EditorLanguageMode.PYTHON if self.current.is_python_event() else EditorLanguageMode.EVENT)
         self.set_test_event_button_visible()
 

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from typing import Callable, List, Optional, Tuple
-from app.editor.event_editor.event_inspector import EventInspectorEngine
 from collections import OrderedDict
 
 from app.constants import TILEWIDTH, TILEHEIGHT, WINWIDTH, WINHEIGHT, TILEX
@@ -54,7 +53,7 @@ class LoadingState(State):
         if game.level:
             logging.debug("Loading music for level %s" % self.level_nid)
             level_songs = set(game.level.music.values())
-            inspector = EventInspectorEngine(DB.events)
+            inspector = DB.events.inspector
             for music_command in inspector.find_all_calls_of_command(event_commands.Music(), self.level_nid).values():
                 level_songs.add(music_command.parameters.get('Music'))
             for music_command in inspector.find_all_calls_of_command(event_commands.ChangeMusic(), self.level_nid).values():

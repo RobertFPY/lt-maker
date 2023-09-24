@@ -389,6 +389,7 @@ def ai_priority_multiplier(unit) -> float:
 
 def get_combat_arts(unit):
     from app.engine import action, item_funcs
+    from app.engine.game_state import game
     combat_arts = {}
     unit_skills = unit.skills[:]
     for skill in unit_skills:

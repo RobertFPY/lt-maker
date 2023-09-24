@@ -4,7 +4,7 @@ import math
 import os
 from typing import TYPE_CHECKING, Optional, Tuple, Type
 
-from PyQt5.QtCore import QRect, QSize, Qt, pyqtSignal
+from PyQt5.QtCore import QRect, QSize, Qt, pyqtSignal, QMimeData
 from PyQt5.QtGui import QFontMetrics, QPainter, QPalette, QTextCursor
 from PyQt5.QtWidgets import QCompleter, QLabel, QPlainTextEdit, QWidget
 
@@ -193,6 +193,11 @@ class EventTextEditor(QPlainTextEdit):
 
         if rect.contains(self.viewport().rect()):
             self.updateLineNumberAreaWidth(0)
+
+    def createMimeDataFromSelection(self):
+        mimedata = QMimeData()
+        mimedata.setText(self.textCursor().selectedText())
+        return mimedata
 
     def should_show_completion_box(self):
         if not self.completer or not bool(self.settings.get_event_autocomplete()):

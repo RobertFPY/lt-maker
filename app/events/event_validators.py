@@ -7,7 +7,6 @@ import re
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type
 
 from app.data.database.database import Database
-from app.editor.event_editor.event_inspector import EventInspectorEngine
 from app.engine.fonts import FONT
 from app.utilities.enums import HAlignment, VAlignment
 from app.events import event_commands
@@ -157,7 +156,7 @@ class VarValidator(EvalValidator):
 
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
         vars_in_level = set(self._db.game_var_slots.keys())
-        vars_in_level = vars_in_level | EventInspectorEngine(self._db.events).find_all_variables_in_level(level)
+        vars_in_level = vars_in_level | self._db.events.inspector.find_all_variables_in_level(level)
         return [(None, var_name) for var_name in vars_in_level]
 
 class SkillAttrValidator(EvalValidator):
@@ -242,7 +241,7 @@ class Achievement(Validator):
         return text
 
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
-        achs = EventInspectorEngine(self._db.events).find_all_calls_of_command(event_commands.CreateAchievement())
+        achs = self._db.events.inspector.find_all_calls_of_command(event_commands.CreateAchievement())
         slots = [(None, command.parameters['Nid']) for command in achs.values()]
         return slots
 
@@ -254,7 +253,7 @@ class GeneralVar(Validator):
 
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
         vars_in_level = set(self._db.game_var_slots.keys())
-        vars_in_level = vars_in_level | EventInspectorEngine(self._db.events).find_all_variables_in_level(level)
+        vars_in_level = vars_in_level | self._db.events.inspector.find_all_variables_in_level(level)
         return [(None, var_name) for var_name in vars_in_level]
 
 class EventFunction(Validator):
@@ -566,16 +565,16 @@ class DialogVariant(Validator):
 
     def validate(self, text, level):
         slots = self.built_in.copy()
-        # predefined_variants = EventInspectorEngine(self._db.events).find_all_calls_of_command(event_commands.SpeakStyle())
-        # slots += list(set([variant.parameters['Style'] for variant in predefined_variants.values()]))
+        predefined_variants = self._db.events.inspector.find_all_calls_of_command(event_commands.SpeakStyle())
+        slots += list(set([variant.parameters['Style'] for variant in predefined_variants.values()]))
         if text in slots:
             return text
         return None
 
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
         slots = [(None, style) for style in self.built_in]
-        # predefined_variants = EventInspectorEngine(self._db.events).find_all_calls_of_command(event_commands.SpeakStyle())
-        # slots += [(None, style) for style in set([variant.parameters['Style'] for variant in predefined_variants.values()])]
+        predefined_variants = self._db.events.inspector.find_all_calls_of_command(event_commands.SpeakStyle())
+        slots += [(None, style) for style in set([variant.parameters['Style'] for variant in predefined_variants.values()])]
         return slots
 
 class StringList(Validator):
@@ -625,8 +624,8 @@ class PointList(Validator):
 
 class Speaker(Validator):
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
-        # predefined_variants = EventInspectorEngine(self._db.events).find_all_calls_of_command(event_commands.SpeakStyle())
-        # slots = [(None, style) for style in set([variant.parameters['Style'] for variant in predefined_variants.values()])]
+        predefined_variants = self._db.events.inspector.find_all_calls_of_command(event_commands.SpeakStyle())
+        slots = [(None, style) for style in set([variant.parameters['Style'] for variant in predefined_variants.values()])]
         return []
 
 class Panorama(Validator):

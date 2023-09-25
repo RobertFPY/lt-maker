@@ -173,8 +173,11 @@ class PlayerChoiceState(MapState):
             if not help_box:
                 pass
             else:
-                half = len(self.help_boxes) / 2
-                help_box.draw(
-                    surf, (WINWIDTH//4, int(WINHEIGHT//2 + (idx - half) * 16)))
+                topleft = self.menu.get_topleft_of_idx(idx)
+                if topleft[0] < WINWIDTH // 2:
+                    help_box.draw(surf, (topleft[0] - 4, topleft[1] + 16))
+                else:
+                    width, _ = self.menu._get_pixel_size()
+                    help_box.draw(surf, (topleft[0] + width, topleft[1] + 16), right=True)
 
         return surf

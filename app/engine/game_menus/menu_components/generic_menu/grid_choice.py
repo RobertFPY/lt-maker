@@ -329,6 +329,21 @@ class GridChoiceMenu():
             return self._data[self._cursor_idx]
         raise ValueError("Cursor at invalid index")
 
+    def get_topleft_of_idx(self, idx: int) -> Tuple[int, int]:
+        """
+        Return the pixel position of the topleft of this index
+        """
+        menu_left, menu_top = self._get_screen_position()
+        if self._title:
+            menu_top += 16
+        sel_x, sel_y = self._get_coord_of_option_idx(idx)
+        scroll_x, scroll_y = self._scroll
+        offset_coord = sel_x - scroll_x, sel_y - scroll_y
+        px, py = self._get_pixel_coord_of_coord(offset_coord)
+        px = clamp(px + menu_left, 0, WINWIDTH)
+        py = clamp(py + menu_top, 0, WINHEIGHT)
+        return (px, py)
+
     def _autosize_grid(self, data: List[Any]):
         return (1, min(len(data), 1))
 

@@ -101,14 +101,18 @@ class Action():
             setattr(self, name, self.restore_obj(value))
         return self
 
+def recalc_unit(unit):
+    unit.autoequip()
+    if unit.position and game.tilemap and game.boundary:
+        game.boundary.recalculate_unit(unit)
+
 def recalculate_unit(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         func(*args, **kwargs)
         self = args[0]
-        self.unit.autoequip()
-        if self.unit.position and game.tilemap and game.boundary:
-            game.boundary.recalculate_unit(self.unit)
+        recalc_unit(self.unit)
+
     return wrapper
 
 def recalculate_unit_sprite(func):
@@ -1361,8 +1365,6 @@ class TradeItem(Action):
         self.item_index1 = unit1.items.index(item1) if item1 else DB.constants.total_items() - 1
         self.item_index2 = unit2.items.index(item2) if item2 else DB.constants.total_items() - 1
 
-        self.subactions = []
-
     def swap(self, unit1, unit2, item1, item2, item_index1, item_index2):
         # Do the swap
         if item1:
@@ -1372,48 +1374,17 @@ class TradeItem(Action):
             unit2.remove_item(item2)
             unit1.insert_item(item_index1, item2)
 
-    def equip_items(self, unit):
-        all_items = item_funcs.get_all_items(unit)
-        for item in all_items:
-            if not item_system.is_accessory(unit, item):
-                if unit.can_equip(item):
-                    self.subactions.append(EquipItem(unit, item))
-                    break
-        for item in all_items:
-            if item_system.is_accessory(unit, item):
-                if unit.can_equip(item):
-                    self.subactions.append(EquipItem(unit, item))
-                    break
-        # keep accessories sorted after items
-        self.items = sorted(unit.items, key=lambda item: item_system.is_accessory(unit, item))
-
     def do(self):
-        self.subactions.clear()
-
         self.swap(self.unit1, self.unit2, self.item1, self.item2, self.item_index1, self.item_index2)
 
-        self.equip_items(self.unit1)
-        self.equip_items(self.unit2)
-
-        for act in self.subactions:
-            act.do()
-
-        if self.unit1.position and game.tilemap and game.boundary:
-            game.boundary.recalculate_unit(self.unit1)
-        if self.unit2.position and game.tilemap and game.boundary:
-            game.boundary.recalculate_unit(self.unit2)
+        recalc_unit(self.unit1)
+        recalc_unit(self.unit2)
 
     def reverse(self):
         self.swap(self.unit1, self.unit2, self.item2, self.item1, self.item_index2, self.item_index1)
 
-        for act in self.subactions:
-            act.reverse()
-
-        if self.unit1.position and game.tilemap and game.boundary:
-            game.boundary.recalculate_unit(self.unit1)
-        if self.unit2.position and game.tilemap and game.boundary:
-            game.boundary.recalculate_unit(self.unit2)
-
+        recalc_unit(self.unit1)
+        recalc_unit(self.unit2)
 
 class RepairItem(Action):
     def __init__(self, item):

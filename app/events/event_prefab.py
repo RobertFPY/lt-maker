@@ -115,12 +115,18 @@ class EventInspectorEngine():
         if event_nid in self.parsed:
             del self.parsed[event_nid]
 
-    def get_commands(self, event_nid):
+    def get_commands(self, event_nid) -> List[EventCommand]:
         if event_nid not in self.parsed:
             event = self.event_db.get_by_nid_or_name(event_nid)[0]
-            if event and not event.is_python_event():
-                parsed_commands = event_commands.parse_script_to_commands(event.source)
-            self.parsed[event_nid] = parsed_commands
+            if event:
+                # TODO(mag/rainlash) How do we find which commands are used in Python source? 
+                if event.is_python_event():
+                    return []
+                else:
+                    parsed_commands = event_commands.parse_script_to_commands(event.source)
+                    self.parsed[event_nid] = parsed_commands
+            else:
+                return []
         return self.parsed[event_nid]
 
     def find_all_variables_in_level(self, level_nid: Optional[NID]) -> Set[NID]:

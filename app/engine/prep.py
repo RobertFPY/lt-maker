@@ -34,6 +34,9 @@ class PrepMainState(MapState):
         if cf.SETTINGS['debug']:
             options.insert(0, 'Debug')
         ignore = [False for option in options]
+        # Don't manage units if there's nobody in the party!
+        if not game.get_units_in_party():
+            ignore[0] = True
 
         # initialize custom options and events
         events = [None for option in options]

@@ -9,7 +9,7 @@ def format_tabs(script: List[str]) -> List[str]:
         command, _ = parse_text_to_command(line)
         if command and command.nid in ('else', 'elif', 'end', 'endf'):
             num_tabs -= 1
-        formatted.append('    ' * num_tabs + line)
+        formatted.append('    ' * num_tabs + line.lstrip())
         if command and command.nid in ('if', 'elif', 'else', 'for'):
             num_tabs += 1
     return formatted

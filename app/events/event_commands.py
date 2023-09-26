@@ -3326,7 +3326,7 @@ def parse_text_to_command(text: str, strict: bool = False) -> Tuple[EventCommand
             return arg[arg.find("(") + 1 : arg.rfind(")")]
         return arg
 
-    def _parse_command(command: EventCommand, arguments: List[str]) -> Tuple:
+    def _parse_command(command: EventCommand, arguments: List[str]) -> Tuple[Optional[EventCommand], Optional[int]]:
         # Start parsing
         keyword_argument_mode: bool = False
         cmd_args = arguments[1:]

@@ -37,7 +37,7 @@ class EventPrefab(Prefab):
 
     @source.setter
     def source(self, value: str):
-        value = value.replace('\u2029', '\n')
+        value = str_utils.convert_raw_text_newlines(value)
         self._source = value.split('\n')
 
     def is_python_event(self):

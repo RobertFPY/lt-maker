@@ -1,6 +1,10 @@
 import functools
 import re
 
+
+def convert_raw_text_newlines(s: str) -> str:
+    return s.replace('\u2029', '\n')
+
 def get_next_name(name, names, infix='_'):
     if name not in names:
         return name

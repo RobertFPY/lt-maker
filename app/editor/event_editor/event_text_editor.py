@@ -6,12 +6,13 @@ from typing import TYPE_CHECKING, Optional, Tuple, Type
 
 from PyQt5.QtCore import QRect, QSize, Qt, pyqtSignal, QMimeData
 from PyQt5.QtGui import QFontMetrics, QPainter, QPalette, QTextCursor
-from PyQt5.QtWidgets import QCompleter, QLabel, QPlainTextEdit, QWidget
+from PyQt5.QtWidgets import QCompleter, QLabel, QPlainTextEdit, QWidget, QAction
 
 from app import dark_theme
-from app.editor.event_editor import event_autocompleter
+from app.editor.event_editor import event_autocompleter, event_formatter
 from app.editor.event_editor.utils import EditorLanguageMode
 from app.editor.settings import MainSettingsController
+from app.utilities import str_utils
 
 if TYPE_CHECKING:
     from app.editor.event_editor.event_properties import EventProperties
@@ -57,6 +58,9 @@ class EventTextEditor(QPlainTextEdit):
         # completer
         self.textChanged.connect(self.complete)
         self.prev_keyboard_press = None
+        
+        self.format_action = QAction("Format...", self, shortcut="Ctrl+Alt+F", triggered=self.autoformat)
+        self.addAction(self.format_action)
 
         self.function_annotator: QLabel = QLabel(self)
         if bool(self.settings.get_event_autocomplete()):
@@ -68,6 +72,15 @@ class EventTextEditor(QPlainTextEdit):
             self.function_annotator.setWordWrap(True)
             with open(os.path.join(os.path.dirname(__file__),'event_styles.css'), 'r') as stylecss:
                 self.function_annotator.setStyleSheet(stylecss.read())
+
+    def autoformat(self):
+        if self.event_properties.language_mode == EditorLanguageMode.EVENT:
+            text = self.document().toRawText()
+            text = str_utils.convert_raw_text_newlines(text)
+            formatted = event_formatter.format_event_script(text)
+            self.document().setPlainText(formatted)
+        else:
+            pass
 
     def set_completer(self, completer):
         if not completer:

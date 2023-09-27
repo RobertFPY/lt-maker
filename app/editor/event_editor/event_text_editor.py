@@ -59,7 +59,7 @@ class EventTextEditor(QPlainTextEdit):
         self.textChanged.connect(self.complete)
         self.prev_keyboard_press = None
         
-        self.format_action = QAction("Format...", self, shortcut="Ctrl+Shift+F", triggered=self.autoformat)
+        self.format_action = QAction("Format...", self, shortcut="Ctrl+Alt+F", triggered=self.autoformat)
         self.addAction(self.format_action)
 
         self.function_annotator: QLabel = QLabel(self)

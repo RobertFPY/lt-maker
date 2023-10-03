@@ -292,31 +292,56 @@ def generate_wordlist_from_validator_type(validator: Type[event_validators.Valid
 def generate_flags_wordlist(flags: List[str] = []) -> List[NIDCompletion]:
     return {flag: NIDCompletion(flag, is_flag=True) for flag in flags}
 
+def determine_arg_index_from_list_of_args_and_cursor_pos(args: List[str], cursor_pos: int) -> int:
+    """
+    Find the current argument under the cursor_pos
+    Returns -1 if argument is the command itself
+    Returns 0, 1, 2, etc. for the first keyword, second keyword, third keyword and so on
+    """
+    curr_arg_idx = -1
+    curr_arg = args[curr_arg_idx]
+    while cursor_pos > len(curr_arg):
+        curr_arg_idx += 1
+        cursor_pos -= (len(curr_arg) + 1)  # Add the semicolon
+        curr_arg = args[curr_arg_idx]
+    return curr_arg_idx
+
 def detect_command_under_cursor(line: str) -> Type[event_commands.EventCommand]:
     return event_commands.determine_command_type(line)
 
-def detect_param_under_cursor(command: event_commands.EventCommand, line: str, cursor_pos: int):
+def detect_param_under_cursor(command: event_commands.EventCommand, line: str, cursor_pos: int) -> Optional[str]:
+    """
+    Returns the string name for the keyword in line currently under the cursor_pos
+    Returns FLAGS if the cursor is at the end of the keywords
+    """
     if isinstance(command, event_commands.Comment):
         return None
-    as_tokens = line[:cursor_pos].split(';')
-    if not as_tokens[0] in (command.nid, command.nickname): # should never happen
+    as_tokens = [arg.string for arg in event_commands.get_command_arguments(line)]
+    if as_tokens[0] not in (command.nid, command.nickname): # should never happen
         return None
     if len(as_tokens) == 1:
         return None
-    as_tokens = as_tokens[1:]
-    all_keywords = command.keywords + command.optional_keywords
 
-    curr_arg = as_tokens[-1]
+    curr_arg_idx = determine_arg_index_from_list_of_args_and_cursor_pos(as_tokens, cursor_pos)
+    curr_arg = as_tokens[curr_arg_idx]
+
+    # hovering over the command itself
+    if curr_arg_idx == -1:  
+        return None
+
+    all_keywords = command.keywords + command.optional_keywords
     if '=' in curr_arg:
         param = curr_arg.split('=')[0]
         if param in all_keywords:
             return param
-    curr_arg_idx = len(as_tokens) - 1
     if curr_arg_idx < len(all_keywords):
         return all_keywords[curr_arg_idx]
     return 'FLAGS'
 
 def detect_type_under_cursor(line: str, cursor_pos: int, arg_under_cursor: str = None) -> Tuple[event_validators.Validator, List[str]]:
+    """
+    Determines the keyword type and returns it's validator for the cursor_pos in line
+    """
     # turn off typechecking for comments
     comment_index = line.find("#")
     if cursor_pos > comment_index and comment_index > 0:
@@ -335,16 +360,12 @@ def detect_type_under_cursor(line: str, cursor_pos: int, arg_under_cursor: str =
             return (event_validators.get(eval_tag), [])
 
     args = [arg.string for arg in event_commands.get_command_arguments(line)]
-    arg_idx = -1
-    while cursor_pos > 0:
-        current_arg = args.pop()
-        cursor_pos -= len(current_arg) + 1
-        arg_idx += 1
-    arg_idx -= 1
+    # find the current argument under the cursor_pos
+    curr_arg_idx = determine_arg_index_from_list_of_args_and_cursor_pos(args, cursor_pos)
 
     flags = []
     # -1 is the command itself, and 0, 1, 2, etc. are the args
-    if arg_idx <= -1:
+    if curr_arg_idx <= -1:
         return (event_validators.EventFunction, [])
     try:
         command_type = detect_command_under_cursor(line)
@@ -353,16 +374,16 @@ def detect_type_under_cursor(line: str, cursor_pos: int, arg_under_cursor: str =
         if arg_under_cursor and '=' in arg_under_cursor:
             arg_name = arg_under_cursor.split('=')[0]
             if command.get_index_from_keyword(arg_name) != 0:
-                arg_idx = command.get_index_from_keyword(arg_name)
+                curr_arg_idx = command.get_index_from_keyword(arg_name)
         if command:
-            if arg_idx >= len(command.keywords):
+            if curr_arg_idx >= len(command.keywords):
                 # no longer required keywords, now add optionals and flags
                 flags = command.flags
-                i = arg_idx - len(command.keywords)
+                i = curr_arg_idx - len(command.keywords)
                 if i < len(command.optional_keywords):
-                    validator_name = command.get_keyword_types()[arg_idx]
+                    validator_name = command.get_keyword_types()[curr_arg_idx]
             else:
-                validator_name = command.get_keyword_types()[arg_idx]
+                validator_name = command.get_keyword_types()[curr_arg_idx]
         if validator_name:
             validator = event_validators.get(validator_name)
         else:

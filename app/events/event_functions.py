@@ -1088,6 +1088,7 @@ def remove_unit(self: Event, unit, remove_type=None, animation_type=None, flags=
         fade_direction = None
     else:
         fade_direction = animation_type
+
     if DB.constants.value('initiative'):
         action.do(action.RemoveInitiative(unit))
     if self.do_skip:

@@ -415,6 +415,11 @@ class RemoveFromMap(Action):
         self.update_fow_action = UpdateFogOfWar(self.unit)
 
     def do(self):
+        # In case the unit is currently still moving
+        if game.movement.is_moving(self.unit):
+            game.movement.stop(self.unit)
+            self.unit.sprite.reset()
+
         self.unit.position = None
         self.update_fow_action.do()
 

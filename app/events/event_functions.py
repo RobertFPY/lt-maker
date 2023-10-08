@@ -2,19 +2,18 @@ from __future__ import annotations
 
 import ast
 import random
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING
 
 from app.constants import WINHEIGHT, WINWIDTH
 from app.data.database.database import DB
 from app.data.database.level_units import GenericUnit, UniqueUnit
 from app.data.resources.resources import RESOURCES
 from app.engine import (action, background, banner, base_surf, dialog, engine,
-                        evaluate, icons, image_mods, item_funcs, item_system,
-                        skill_system, unit_funcs)
+                        icons, image_mods, item_funcs, item_system,
+                        save, skill_system, unit_funcs)
 from app.engine.achievements import ACHIEVEMENTS
 from app.engine.animations import MapAnimation
 from app.engine.combat import interaction
-from app.engine.fonts import FONT
 from app.engine.game_menus.menu_components.generic_menu.simple_menu_wrapper import \
     SimpleMenuUI
 from app.engine.graphics.text.text_renderer import rendered_text_width
@@ -728,7 +727,7 @@ def delete_save(self: Event, save_slot=None, flags=None):
     if save_slot.lower() == 'suspend':
         save.delete_suspend()
     else:
-        save.delete_save(save_slot)
+        save.delete_save(self.game, save_slot)
 
 def clear_turnwheel(self: Event, flags=None):
     self.game.action_log.set_first_free_action()

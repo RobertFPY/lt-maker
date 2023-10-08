@@ -21,7 +21,7 @@ from app.events.regions import RegionType as RegionTypeEnum
 class Validator():
     desc = ""
 
-    def __init__(self, db: Optional[Database]=None, resources: Optional[Resources]=None):
+    def __init__(self, db: Optional[Database] = None, resources: Optional[Resources] = None):
         self._db = db or Database()
         self._resources = resources or Resources()
 
@@ -1392,13 +1392,13 @@ class SaveSlot(Validator):
     def validate(self, text, level: NID):
         if text.lower() == 'suspend':
             return text
-        if utils.is_int(text) and int(text) < DB.constants.value('num_save_slots'):
+        if str_utils.is_int(text) and int(text) < self._db.constants.value('num_save_slots'):
             return text
         return None
 
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
-        valids = [(None, str(i)) for i in range(DB.constants.value('num_save_slots'))]
-        valids.insert((None, "suspend"))
+        valids = [(None, str(i)) for i in range(self._db.constants.value('num_save_slots'))]
+        valids.append((None, "suspend"))
         return valids
         
 validators: Dict[str, Type[Validator]]= {validator.__name__: validator for validator in Validator.__subclasses__()}

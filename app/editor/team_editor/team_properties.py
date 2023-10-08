@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QWidget, QLineEdit, QMessageBox, QHBoxLayout, QVBoxLayout, \
-    QSpacerItem, QSizePolicy
+    QSpacerItem, QSizePolicy, QPushButton
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
 
@@ -10,6 +10,7 @@ from app.editor.combat_animation_editor.palette_model import PaletteModel
 from app.editor.icon_editor.icon_view import IconView
 from app.editor.lib.components.validated_line_edit import NidLineEdit
 from app.editor.map_sprite_editor import map_sprite_model
+from app.editor.sound_editor import sound_tab
 from app.extensions.custom_gui import ComboBox, PropertyBox
 from app.extensions.multi_select_combo_box import MultiSelectComboBox
 

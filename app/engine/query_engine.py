@@ -74,7 +74,7 @@ class GameQueryEngine():
             item: item to check
 
         Returns:
-            Optional[ItemObject] | None: Item if exists on unit, otherwise None
+            Optional[ItemObject]: Item if exists on unit, otherwise None
         """
         item = self._resolve_to_nid(item)
         found_items = []
@@ -98,7 +98,7 @@ class GameQueryEngine():
             child_item: child item (subitem) to check
 
         Returns:
-            Optional[ItemObject] | None: Item if exists on unit, otherwise None
+            Optional[ItemObject]: Item if exists on unit, otherwise None
         """
         parent_item = self._resolve_to_nid(parent_item)
         child_item = self._resolve_to_nid(child_item)

@@ -206,7 +206,7 @@ def delete_suspend():
     if os.path.exists(SUSPEND_LOC):
         os.remove(SUSPEND_LOC)
 
-def delete_save(num: Optional[int] = None):
+def delete_save(game_state, num: Optional[int] = None):
     """
     If num is not provided, deletes current save
     """ 

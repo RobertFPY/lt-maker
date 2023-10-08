@@ -299,11 +299,11 @@ def determine_arg_index_from_list_of_args_and_cursor_pos(args: List[str], cursor
     Returns 0, 1, 2, etc. for the first keyword, second keyword, third keyword and so on
     """
     curr_arg_idx = -1
-    curr_arg = args[curr_arg_idx]
+    curr_arg = args[curr_arg_idx + 1]
     while cursor_pos > len(curr_arg):
         curr_arg_idx += 1
         cursor_pos -= (len(curr_arg) + 1)  # Add the semicolon
-        curr_arg = args[curr_arg_idx]
+        curr_arg = args[curr_arg_idx + 1]
     return curr_arg_idx
 
 def detect_command_under_cursor(line: str) -> Type[event_commands.EventCommand]:
@@ -316,14 +316,14 @@ def detect_param_under_cursor(command: event_commands.EventCommand, line: str, c
     """
     if isinstance(command, event_commands.Comment):
         return None
-    as_tokens = [arg.string for arg in event_commands.get_command_arguments(line)]
+    as_tokens = [arg.string for arg in event_commands.get_command_arguments(line.strip())]
     if as_tokens[0] not in (command.nid, command.nickname): # should never happen
         return None
     if len(as_tokens) == 1:
         return None
 
     curr_arg_idx = determine_arg_index_from_list_of_args_and_cursor_pos(as_tokens, cursor_pos)
-    curr_arg = as_tokens[curr_arg_idx]
+    curr_arg = as_tokens[curr_arg_idx + 1]
 
     # hovering over the command itself
     if curr_arg_idx == -1:  

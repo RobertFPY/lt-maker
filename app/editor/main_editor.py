@@ -16,7 +16,7 @@ from app.editor.settings import MainSettingsController
 from app.constants import VERSION
 from app.data.database.database import DB
 
-from app.editor import log_viewer, timer
+from app.editor import log_viewer, timer, error_viewer
 
 # components
 from app.editor.lib.components.menubar import MenuBar
@@ -208,6 +208,8 @@ class MainEditor(QMainWindow):
             _("Check for updates..."), self, triggered=self.check_for_updates)
         self.view_logs_act = QAction(
             _("View logs..."), self, triggered=self.show_logs)
+        self.view_errors_act = QAction(
+            _("View Error Report..."), self, triggered=self.show_errors)
 
         # Test actions
         self.test_current_act = QAction(
@@ -309,6 +311,7 @@ class MainEditor(QMainWindow):
         help_menu.addAction(self.remove_unused_resources_act)
         help_menu.addAction(self.check_for_updates_act)
         help_menu.addAction(self.view_logs_act)
+        help_menu.addAction(self.view_errors_act)
         self.menubar = MenuBar(self.menuBar())
         self.menubar.addMenu(file_menu)
         self.menubar.addMenu(edit_menu)
@@ -601,6 +604,10 @@ class MainEditor(QMainWindow):
     def show_logs(self):
         # reference to keep sub window alive
         self._log_window_ref = log_viewer.show_logs()
+
+    def show_errors(self):
+        # reference to keep sub window alive
+        self._error_window_ref = error_viewer.show_error_report()
 
 # Testing
 # Run "python -m app.editor.main_editor" from main directory

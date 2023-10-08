@@ -54,6 +54,11 @@ class UnitPathMovementComponent(MovementComponent):
         if not self.active:
             return
 
+        if not self.unit.position:
+            logging.error("Unit %s is no longer on the map", self.unit)
+            self.active = False
+            return
+
         dt = current_time - self._last_update
         progress: float = utils.clamp(dt / max(self.speed, 1), 0, 1)
 
@@ -70,11 +75,6 @@ class UnitPathMovementComponent(MovementComponent):
 
         if progress >= 1:
             self._last_update = current_time
-
-            if not self.unit.position:
-                logging.error("Unit %s is no longer on the map", self.unit)
-                self.active = False
-                return
 
             if self.path:
                 self._handle_path()

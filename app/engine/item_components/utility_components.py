@@ -113,7 +113,7 @@ class Restore(ItemComponent):
         return False
 
     def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
-        for skill in target.skills:
+        for skill in target.all_skills[:]:
             if self._can_be_restored(skill):
                 actions.append(action.RemoveSkill(target, skill))
                 playback.append(pb.RestoreHit(unit, item, target))

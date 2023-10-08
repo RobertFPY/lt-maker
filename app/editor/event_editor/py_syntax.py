@@ -7,11 +7,14 @@ from app import dark_theme
 # from https://wiki.python.org/moin/PyQt/Python%20syntax%20highlighting
 # with some modification
 
-def format(color: QtGui.QColor):
+def format(color: QtGui.QColor, style: str=''):
     """Return a QTextCharFormat with the given attributes.
     """
     _format = QtGui.QTextCharFormat()
     _format.setForeground(color)
+    _format.setFontWeight(QtGui.QFont.Bold)
+    if 'italic' in style:
+        _format.setFontItalic(True)
     return _format
 
 class PythonHighlighter(QtGui.QSyntaxHighlighter):
@@ -61,6 +64,9 @@ class PythonHighlighter(QtGui.QSyntaxHighlighter):
             (r'\b[+-]?0[xX][0-9A-Fa-f]+[lL]?\b', 0, format(styles.numbers)),
             (r'\b[+-]?[0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\b', 0, format(styles.numbers)),
 
+            # event command
+            (r'(\$[^\(]*)\(?', 1, format(styles.command, 'italic')),
+            (r'FLAGS', 0, format(styles.command)),
             # Double-quoted string, possibly containing escape sequences
             (r'"[^"\\]*(\\.[^"\\]*)*"', 0, format(styles.string)),
             # Single-quoted string, possibly containing escape sequences

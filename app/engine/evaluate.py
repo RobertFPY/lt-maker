@@ -8,7 +8,7 @@ from app.data.database.database import DB
 import app.engine.config as cf
 from app.engine.persistent_records import RECORDS
 from app.engine import engine, item_funcs, item_system, skill_system, \
-    combat_calcs, unit_funcs, target_system
+    combat_calcs, unit_funcs
 from app.engine.movement import movement_funcs
 
 """
@@ -16,8 +16,11 @@ Essentially just a repository that imports a lot of different things so that man
 will be accepted
 """
 
-def evaluate(string: str, unit1=None, unit2=None, position=None,
-             local_args: Dict = None, game=None) -> Any:
+def get_context(unit1=None, unit2=None, position=None,
+                local_args: Dict = None, game=None) -> Dict:
+    """
+    Returns the local + global namespace context to be used for evaling expressions
+    """
     if not game:
         from app.engine.game_state import game
 
@@ -52,11 +55,17 @@ def evaluate(string: str, unit1=None, unit2=None, position=None,
         'position': position,
         'check_pair': check_pair,
         'check_default': check_default,
-        'game': game
+        'game': game,
+        'target_system': game.target_system,
     })
     if game:
         temp_globals.update(game.query_engine.func_dict)
     if local_args:
         temp_globals.update(local_args)
+    return temp_globals
+
+def evaluate(string: str, unit1=None, unit2=None, position=None,
+             local_args: Dict = None, game=None) -> Any:
+    context = get_context(unit1, unit2, position, local_args, game)
     string = string.strip()
-    return eval(string, temp_globals)
+    return eval(string, context)

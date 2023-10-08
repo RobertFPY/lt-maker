@@ -2,16 +2,20 @@ from __future__ import annotations
 
 import math
 import os
-from typing import Optional, Type
+from typing import TYPE_CHECKING, Optional, Tuple, Type
 
-from PyQt5.QtCore import QRect, QSize, Qt, pyqtSignal
+from PyQt5.QtCore import QRect, QSize, Qt, pyqtSignal, QMimeData
 from PyQt5.QtGui import QFontMetrics, QPainter, QPalette, QTextCursor
-from PyQt5.QtWidgets import QCompleter, QLabel, QPlainTextEdit, QWidget
+from PyQt5.QtWidgets import QCompleter, QLabel, QPlainTextEdit, QWidget, QAction
 
 from app import dark_theme
-from app.editor.event_editor import event_autocompleter
+from app.editor.event_editor import event_autocompleter, event_formatter
+from app.editor.event_editor.utils import EditorLanguageMode
 from app.editor.settings import MainSettingsController
+from app.utilities import str_utils
 
+if TYPE_CHECKING:
+    from app.editor.event_editor.event_properties import EventProperties
 
 class LineNumberArea(QWidget):
     def __init__(self, parent: EventTextEditor):
@@ -33,7 +37,7 @@ class EventTextEditor(QPlainTextEdit):
 
     def __init__(self, parent):
         super().__init__(parent)
-        self.window = parent
+        self.event_properties: EventProperties = parent
         self.line_number_area = LineNumberArea(self)
 
         self.settings = MainSettingsController()
@@ -54,6 +58,9 @@ class EventTextEditor(QPlainTextEdit):
         # completer
         self.textChanged.connect(self.complete)
         self.prev_keyboard_press = None
+        
+        self.format_action = QAction("Format...", self, shortcut="Ctrl+Alt+F", triggered=self.autoformat)
+        self.addAction(self.format_action)
 
         self.function_annotator: QLabel = QLabel(self)
         if bool(self.settings.get_event_autocomplete()):
@@ -65,6 +72,15 @@ class EventTextEditor(QPlainTextEdit):
             self.function_annotator.setWordWrap(True)
             with open(os.path.join(os.path.dirname(__file__),'event_styles.css'), 'r') as stylecss:
                 self.function_annotator.setStyleSheet(stylecss.read())
+
+    def autoformat(self):
+        if self.event_properties.language_mode == EditorLanguageMode.EVENT:
+            text = self.document().toRawText()
+            text = str_utils.convert_raw_text_newlines(text)
+            formatted = event_formatter.format_event_script(text)
+            self.document().setPlainText(formatted)
+        else:
+            pass
 
     def set_completer(self, completer):
         if not completer:
@@ -119,14 +135,24 @@ class EventTextEditor(QPlainTextEdit):
         self.function_annotator.move(tc_top_right)
         self.function_annotator.show()
 
+    def get_event_command_context(self) -> Tuple[str, int]: # returns code line, and position in line
+        if self.event_properties.language_mode == EditorLanguageMode.EVENT:
+            return self.textCursor().block().text(), self.textCursor().positionInBlock()
+        elif self.event_properties.language_mode == EditorLanguageMode.PYTHON:
+            curr_pos = self.textCursor().position()
+            terminal_pos = curr_pos
+            while terminal_pos > 0 and self.document().characterAt(terminal_pos) != '$':
+                terminal_pos -= 1
+            return self.document().toRawText()[terminal_pos:curr_pos], curr_pos - terminal_pos
+        else:
+            return None
+
     def complete(self):
         if not self.should_show_completion_box():
             self.hide_completion_box()
             return
-        tc = self.textCursor()
-        line = tc.block().text()
-        cursor_pos = tc.positionInBlock()
-        if not self.completer.setTextToComplete(line, cursor_pos, self.window.current.level_nid):
+        line, cursor_pos = self.get_event_command_context()
+        if not self.completer.setTextToComplete(line, cursor_pos, self.event_properties.current.level_nid):
             return
         cr = self.cursorRect()
         cr.setWidth(
@@ -180,6 +206,11 @@ class EventTextEditor(QPlainTextEdit):
 
         if rect.contains(self.viewport().rect()):
             self.updateLineNumberAreaWidth(0)
+
+    def createMimeDataFromSelection(self):
+        mimedata = QMimeData()
+        mimedata.setText(self.textCursor().selectedText())
+        return mimedata
 
     def should_show_completion_box(self):
         if not self.completer or not bool(self.settings.get_event_autocomplete()):

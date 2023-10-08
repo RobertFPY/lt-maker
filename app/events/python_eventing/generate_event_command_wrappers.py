@@ -2,15 +2,16 @@ from typing import Type
 
 from app.engine.codegen.codegen_utils import get_codegen_header
 from app.events.event_commands import ALL_EVENT_COMMANDS, EventCommand, Tags
+from app.events.python_eventing.utils import FORBIDDEN_PYTHON_COMMAND_NIDS
 
 
-def create_wrapper_func(command_t: Type[EventCommand]):
-    command_name = command_t.__name__
-
+def create_wrapper_func(command_name: str, command_t: Type[EventCommand]):
     command_param_names = command_t.keywords
     command_params = ', '.join(command_param_names)
     if command_params:
         command_params += ', '
+
+    command_params_list = '[' + ', '.join([f'"{param}"' for param in command_param_names]) + ']'
 
     command_optional_param_names = command_t.optional_keywords
     command_optional_params = ', '.join(["%s=None" % param for param in command_optional_param_names])
@@ -21,13 +22,11 @@ def create_wrapper_func(command_t: Type[EventCommand]):
     command_param_dict_str = '{' + command_param_dict_str + '}'
     func = \
 """
-def {command_nid}({command_params}{command_optional_params}flags=None):
-    if flags and not isinstance(flags, list):
-        raise SyntaxError("Flags must be a list")
-    if not flags:
-        flags = []
-    return event_commands.{command_name}(parameters={command_param_dict}, flags=set(flags))
-""".format(command_nid=command_t.nid, command_name=command_name,
+def {command_name}({command_params}{command_optional_params}):
+    parameters = {command_param_dict}
+    parameters = dict(filter(optional_value_filter({command_params_list}), parameters.items()))
+    return event_commands.{command_type}(parameters=parameters).FLAGS('from_python')
+""".format(command_name=command_name, command_type=command_t.__name__, command_params_list=command_params_list,
            command_params=command_params, command_optional_params=command_optional_params,
            command_param_dict=command_param_dict_str)
     return func
@@ -44,9 +43,11 @@ def generate_event_command_python_wrappers():
         for line in event_commands_base.readlines():
             generated_event_wrappers.write(line)
 
-    for command_t in set(ALL_EVENT_COMMANDS.values()):
+    for command_name, command_t in ALL_EVENT_COMMANDS.items():
         if not command_t.tag in [Tags.HIDDEN, Tags.FLOW_CONTROL]:
-            func_str = create_wrapper_func(command_t)
-            generated_event_wrappers.write(func_str)
+            if not command_t.nid in FORBIDDEN_PYTHON_COMMAND_NIDS:
+                func_str = create_wrapper_func(command_name, command_t)
+                generated_event_wrappers.write(func_str)
+
 
     generated_event_wrappers.close()

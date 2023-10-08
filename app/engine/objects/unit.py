@@ -539,7 +539,7 @@ class UnitObject(Prefab):
         return item_system.equippable(self, item) and item_funcs.available(self, item)
 
     def autoequip(self):
-        logging.debug("Autoequipping")
+        logging.debug("Autoequipping...")
         all_items = item_funcs.get_all_items(self)
         # Do an an initial check that the weapon is still good
         if self.equipped_weapon and not self.can_equip(self.equipped_weapon):
@@ -601,6 +601,7 @@ class UnitObject(Prefab):
             self.items.insert(0, item)
 
     def insert_item(self, index, item):
+        logging.debug("Unit insert_item %s at %s" % (item, index))
         if item in self.items:
             self.items.remove(item)
             self.items.insert(index, item)
@@ -614,6 +615,7 @@ class UnitObject(Prefab):
     def remove_item(self, item):
         # Remove item before we unequip, so that the autoequip does not
         # re-equip the item
+        logging.debug("Unit remove_item %s" % item)
         self.items.remove(item)
         if self.equipped_weapon is item or self.equipped_accessory is item:
             self.unequip(item)

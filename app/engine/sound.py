@@ -646,12 +646,13 @@ class SoundController():
             should_interrupt_current_song (bool, optional): Whether or not to keep the current song playing while flushing all others.
                                                             Defaults to True.
         """
-        current_song = None
+        current_song_nid = None
         if not should_interrupt_current_song:
             current_song = self.get_current_song()
             if current_song:
                 print(current_song.nid)
-        MUSIC.clear(current_song)
+                current_song_nid = current_song.nid
+        MUSIC.clear(current_song_nid)
         SFX.clear()
 
     def reset(self):

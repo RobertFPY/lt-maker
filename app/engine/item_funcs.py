@@ -4,10 +4,12 @@ import math
 from typing import TYPE_CHECKING, List
 
 from app.data.database.database import DB
-from app.engine import item_system, skill_system, target_system, text_funcs
+from app.engine import item_system, skill_system, text_funcs
 from app.engine.objects.item import ItemObject
 from app.engine.objects.skill import SkillObject
 from app.utilities import utils
+
+from app.engine.game_state import game
 
 if TYPE_CHECKING:
     from app.engine.objects.unit import UnitObject
@@ -36,7 +38,7 @@ def has_magic(unit) -> bool:
 
 def can_use(unit, item) -> bool:
     if item_system.can_use(unit, item) and available(unit, item):
-        targets = target_system.get_valid_targets(unit, item)
+        targets = game.target_system.get_valid_targets(unit, item)
         if targets:
             return True
     return False

@@ -19,6 +19,10 @@
             ]
         ],
         "only_once": false,
-        "priority": 20
+        "priority": 20,
+        "_source": [
+            "alert;Switch Pulled!",
+            "has_attacked;{unit}"
+        ]
     }
 ]

@@ -2,7 +2,7 @@ from typing import Set, Tuple
 from app.data.database.skill_components import SkillComponent, SkillTags
 from app.data.database.components import ComponentType
 
-from app.engine import equations, target_system, action
+from app.engine import equations, action
 from app.engine.game_state import game
 from app.engine.movement import movement_funcs
 from app.engine.objects.unit import UnitObject
@@ -141,7 +141,11 @@ class SpecificWitchWarp(SkillComponent):
             else:
                 continue
             if partner_pos:
-                positions += [pos for pos in target_system.get_adjacent_positions(partner_pos) if movement_funcs.check_weakly_traversable(unit, pos) and not game.board.get_unit(pos)]
+                positions += [
+                    pos for pos in game.target_system.get_adjacent_positions(partner_pos)
+                    if movement_funcs.check_weakly_traversable(unit, pos) and 
+                    not game.board.get_unit(pos)
+                ]
         return positions
 
 class WitchWarpExpression(SkillComponent):
@@ -159,7 +163,11 @@ class WitchWarpExpression(SkillComponent):
             if target.position:
                 try:
                     if evaluate.evaluate(self.value, target, unit, target.position):
-                        positions += target_system.get_adjacent_positions(target.position)
+                        positions += [
+                            pos for pos in game.target_system.get_adjacent_positions(target.position) 
+                            if movement_funcs.check_weakly_traversable(unit, pos) and 
+                            not game.board.get_unit(pos)
+                        ]
                 except Exception as e:
                     logging.error("Could not evaluate %s (%s)", self.value, e)
                     return positions

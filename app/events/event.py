@@ -12,7 +12,7 @@ import app.engine.graphics.ui_framework as uif
 from app.constants import WINHEIGHT, WINWIDTH
 from app.data.database.database import DB
 from app.engine import (action, background, dialog, engine, evaluate,
-                        target_system, image_mods, item_funcs)
+                        image_mods, item_funcs)
 from app.engine.game_state import GameState
 from app.engine.movement import movement_funcs
 from app.engine.objects.overworld import OverworldNodeObject
@@ -22,8 +22,14 @@ from app.events import event_commands, triggers
 from app.events.event_parser import EventParser
 from app.events.event_portrait import EventPortrait
 from app.events.event_prefab import EventPrefab
+from app.events.python_eventing.errors import EventError
+from app.events.python_eventing.python_event_parser import PythonEventParser
+from app.events.speak_style import SpeakStyle
 from app.utilities import str_utils, utils, static_random
 from app.utilities.typing import NID, Color3
+
+class EvaluateException(EventError):
+    what = "Could not evaluate expression."
 
 class Event():
     true_vals = ('t', 'true', 'True', '1', 'y', 'yes')
@@ -56,7 +62,10 @@ class Event():
         self._generic_setup()
 
         self.text_evaluator = TextEvaluator(self.logger, self.game, self.unit, self.unit2, self.position, self.local_args)
-        self.parser = EventParser(event_prefab.nid, event_prefab.commands.copy(), self.text_evaluator)
+        if event_prefab.is_python_event():
+            self.parser = PythonEventParser(self.nid, event_prefab.source, self.game)
+        else:
+            self.parser = EventParser(self.nid, event_prefab.source, self.text_evaluator)
 
     def _generic_setup(self):
         self.portraits: Dict[str, EventPortrait] = {}
@@ -309,6 +318,8 @@ class Event():
                     pass
                 else:
                     self.run_command(command)
+            except EventError as e:
+                raise e
             except Exception as e:
                 raise Exception("Event execution failed with error in command %s" % command) from e
 
@@ -344,6 +355,18 @@ class Event():
             return str(obj.nid)
         else:
             return str(obj)
+
+    def _eval_expr(self, expr: str, from_python: bool) -> Any:
+        if from_python:
+            return expr
+        try:
+            return self.text_evaluator.direct_eval(expr)
+        except Exception as e:
+            line = self.parser.get_current_line()
+            exc = EvaluateException(self.nid, line + 1, self.parser.get_source_line(line))
+            self.logger.error("'%s' Line %d: Could not evaluate %s (%s)" % (self.nid, line + 1, expr, e))
+            exc.what = str(e)
+            raise exc
 
     def _queue_command(self, event_command_str: str):
         try:
@@ -383,7 +406,7 @@ class Event():
             if unit.position == position:
                 # Don't bother if identical
                 return
-            path = target_system.get_path(unit, position)
+            path = self.game.target_system.get_path(unit, position)
             action.do(action.Move(unit, position, path, event=True, follow=follow))
         return position
 
@@ -458,13 +481,13 @@ class Event():
             elif placement == 'stack':
                 return position
             elif placement == 'closest':
-                position = target_system.get_nearest_open_tile(unit, position)
+                position = self.game.target_system.get_nearest_open_tile(unit, position)
                 if not position:
                     self.logger.warning("Somehow wasn't able to find a nearby open tile")
                     return None
                 return position
             elif placement == 'push':
-                new_pos = target_system.get_nearest_open_tile(current_occupant, position)
+                new_pos = self.game.target_system.get_nearest_open_tile(current_occupant, position)
                 action.do(action.ForcedMovement(current_occupant, new_pos))
                 return position
         else:
@@ -521,6 +544,20 @@ class Event():
         if not all_stacks:
             skill = skill[0]
         return unit, skill
+
+    def _resolve_speak_style(self, speaker_or_style, *styles) -> SpeakStyle:
+        curr_style = self.game.speak_styles['__default'].copy()
+        if not self.game.speak_styles.get(speaker_or_style):
+            curr_style.speaker = speaker_or_style
+        else:
+            styles = list(styles)
+            styles.append(speaker_or_style)
+        for style in styles:
+            if isinstance(style, str):
+                style = self.game.speak_styles.get(style)
+            if style:
+                curr_style = curr_style.update(style)
+        return curr_style
 
     def _apply_stat_changes(self, unit, stat_changes, flags):
         # clamp stat changes

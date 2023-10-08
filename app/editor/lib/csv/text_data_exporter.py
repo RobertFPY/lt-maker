@@ -1,6 +1,6 @@
 from typing import Dict, List
+from app.data.database.database import DB
 from app.data.database.levels import LevelCatalog
-from app.editor.event_editor.event_inspector import EventInspectorEngine
 from app.events.event_commands import EventCommand, Speak
 from app.events.event_prefab import EventCatalog
 from app.utilities.typing import NID
@@ -17,7 +17,7 @@ def dump_script(event_db: EventCatalog, level_db: LevelCatalog=None) -> Dict[NID
         level_order = level_db.keys()
     else:
         level_order = ['all']
-    inspector = EventInspectorEngine(event_db)
+    inspector = DB.events.inspector
     ret = {}
     for level in level_order:
         level_event_ret = {}

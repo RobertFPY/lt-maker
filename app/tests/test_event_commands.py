@@ -63,9 +63,9 @@ class EventCommandUnitTests(unittest.TestCase):
         command6, bad_idx = event_commands.parse_text_to_command("flgjklskl;sumerian;lorem ipsum")
         self.assertTrue(isinstance(command6, event_commands.Comment))
         command7, bad_idx = event_commands.parse_text_to_command(None)
-        self.assertTrue(command7 is None)
+        self.assertTrue(command7 == event_commands.Comment())
         command8, bad_idx = event_commands.parse_text_to_command("")
-        self.assertTrue(command8 is None)
+        self.assertTrue(command8 == event_commands.Comment())
 
     def test_parse_text_to_command_strict(self):
         # Test with keyword arguments

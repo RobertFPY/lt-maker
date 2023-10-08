@@ -23,6 +23,7 @@
         "roam": false,
         "roam_unit": "Eirika",
         "go_to_overworld": false,
+        "should_record": true,
         "units": [
             {
                 "nid": "Eirika",
@@ -131,6 +132,7 @@
                     ]
                 }
             }
-        ]
+        ],
+        "ai_groups": []
     }
 ]

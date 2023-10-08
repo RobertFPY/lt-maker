@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Optional
+from typing import Optional, Tuple
 
 from app.data.database.database import DB
 from app.engine import help_menu, icons, item_funcs, item_system, text_funcs
@@ -109,13 +109,13 @@ class ItemOptionModes(Enum):
     STOCK_AND_VALUE = 5
 
 
-class BasicItemOption(BaseOption[ItemObject]):
-    def __init__(self, idx: int, item: ItemObject, display_value: str | None = None,  width: int = 0,
+class BasicItemOption(BaseOption[Optional[ItemObject]]):
+    def __init__(self, idx: int, item: Optional[ItemObject] = None, display_value: str | None = None,  width: int = 0,
                  height: int = 0, ignore: bool = False, font: NID = 'text', text_color: Optional[NID] = None,
                  align: HAlignment = HAlignment.LEFT, mode: ItemOptionModes = ItemOptionModes.NO_USES):
         super().__init__(idx, item, display_value, width, height, ignore)
         self._disp_value = text_funcs.translate(
-            display_value or self._value.name)
+            display_value or (self._value.name if self._value else "None"))
         self._align = align
         self._color = text_color
         self._font = font
@@ -146,14 +146,23 @@ class BasicItemOption(BaseOption[ItemObject]):
                   align: HAlignment = HAlignment.LEFT, mode: ItemOptionModes = ItemOptionModes.NO_USES):
         return cls(idx, value, display_value, width, height, ignore, font, text_color, align, mode)
 
+    @classmethod
+    def empty_option(cls, idx, display_value: str | None = "None", width: int = 0,
+                  height: int = 0, ignore: bool = False, font: NID = 'text', text_color: Optional[NID] = None,
+                  align: HAlignment = HAlignment.LEFT, mode: ItemOptionModes = ItemOptionModes.NO_USES):
+        return cls(idx, None, display_value, width, height, ignore, font, text_color, align, mode)
+
     def width(self):
         return self._width or 104
 
-    def set(self, val: ItemObject, disp_val: Optional[str] = None):
+    def set(self, val: Optional[ItemObject], disp_val: Optional[str] = None):
         self._value = val
-        self._disp_value = text_funcs.translate(disp_val or self._value.name)
+        self._disp_value = text_funcs.translate(
+            disp_val or (self._value.name if self._value else "None"))
 
-    def get_color(self):
+    def get_color(self) -> Tuple[str, str]:
+        if not self._value:
+            return 'grey', 'grey'
         owner = game.get_unit(self._value.owner_nid)
         main_color = 'grey'
         uses_color = 'grey'
@@ -174,7 +183,7 @@ class BasicItemOption(BaseOption[ItemObject]):
         return main_color, uses_color
 
     def get_help_box(self):
-        if not self._help_box:
+        if not self._help_box and self._value:
             if item_system.is_weapon(None, self._value) or item_system.is_spell(None, self._value):
                 self._help_box = help_menu.ItemHelpDialog(self._value)
             else:
@@ -183,7 +192,10 @@ class BasicItemOption(BaseOption[ItemObject]):
 
     def draw(self, surf, x, y):
         main_color, uses_color = self.get_color()
-        if self._mode == ItemOptionModes.NO_USES:
+        if not self._value:
+            blit_loc = anchor_align(x, self.width(), self._align, (5, 5)), y
+            render_text(surf, [self._font], [self._disp_value], [main_color], blit_loc, self._align)
+        elif self._mode == ItemOptionModes.NO_USES:
             ItemOptionUtils.draw_without_uses(
                 surf, x, y, self._value, self._font, main_color, self.width(), self._align, self._disp_value)
         elif self._mode == ItemOptionModes.USES:

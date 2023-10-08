@@ -134,7 +134,7 @@ def add_portrait(self: Event, portrait, screen_position, slide=None, expression_
     if 'immediate' in flags or self.do_skip:
         transition = False
     speed_mult = speed_mult or 1
-    speed_mult = 1 / max(speed_mult, 0.001)
+    speed_mult = 1 / max(float(speed_mult), 0.001)
 
     new_portrait = EventPortrait(portrait, position, priority, transition,
                                  slide, mirror, name, speed_mult=speed_mult)
@@ -177,13 +177,13 @@ def remove_portrait(self: Event, portrait, speed_mult=1, flags=None):
     if name not in self.portraits:
         return False
 
-    speed_mult = 1 / max(speed_mult, 0.001)
+    speed_mult = 1 / max(float(speed_mult), 0.001)
 
     if 'immediate' in flags or self.do_skip:
         portrait = self.portraits.pop(name)
     else:
         portrait = self.portraits[name]
-        portrait.end(float(speed_mult))
+        portrait.end(speed_mult)
 
     if 'immediate' in flags or 'no_block' in flags or self.do_skip:
         pass

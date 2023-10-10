@@ -97,6 +97,7 @@ class ComponentObjectEditor(QWidget, Generic[T]):
             return False
         self.data.change_key(old_nid, new_nid)
         self.tree_list.update_nid(old_nid, new_nid)
+        self.tree_list.on_filter_changed(self.tree_list.search_box.text())
         return True
 
     def on_select(self, entry_nid: Optional[NID]):

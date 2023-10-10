@@ -81,7 +81,7 @@ class MainEditor(QMainWindow):
         self.app_state_manager.subscribe_to_key(
             MainEditor.__name__, 'main_editor_mode', self.render_editor)
 
-    def __init__(self, project_path: Optional[str] = None):
+    def __init__(self, project_path: str):
         super().__init__()
         self.window_title = _('LT Maker')
         self.setWindowTitle(self.window_title)
@@ -478,7 +478,8 @@ class MainEditor(QMainWindow):
             self._open()
 
     def auto_open(self, project_path: Optional[str]):
-        self.project_save_load_handler.auto_open(project_path)
+        if not self.project_save_load_handler.auto_open(project_path):
+            exit(0)
         self._open()
 
     def _save(self):
@@ -614,6 +615,6 @@ class MainEditor(QMainWindow):
 if __name__ == '__main__':
     import sys
     app = QApplication(sys.argv)
-    window = MainEditor()
+    window = MainEditor('default.ltproj')
     window.show()
     app.exec_()

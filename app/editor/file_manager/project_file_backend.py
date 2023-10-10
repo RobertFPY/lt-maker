@@ -258,11 +258,6 @@ class ProjectFileBackend():
                 return False
         return False
 
-    def auto_open_fallback(self):
-        self.current_proj = DEFAULT_PROJECT
-        self.settings.set_current_project(self.current_proj)
-        self.load()
-
     def auto_open(self, project_path: Optional[str] = None):
         path = project_path or self.settings.get_current_project()
         logging.info("Auto Open: %s" % path)
@@ -278,47 +273,19 @@ class ProjectFileBackend():
                     path, RESOURCES.get_custom_components_path()))
                 QMessageBox.warning(self.parent, "Load of project failed",
                                     "Failed to load project at %s due to syntax error. Likely there's a problem in your Custom Components file, located at %s. Exception:\n%s." % (path, RESOURCES.get_custom_components_path(), e))
-                logging.warning("falling back to %s" % DEFAULT_PROJECT)
-                self.auto_open_fallback()
                 return False
             except Exception as e:
                 logging.exception(e)
-                backup_project_name = path + '.lttmp'
-                corrupt_project_name = path + '.ltcorrupt'
                 logging.warning(
                     "Failed to load project at %s. Likely that project is corrupted.", path)
-                logging.warning(
-                    "the corrupt project will be stored at %s.", corrupt_project_name)
                 QMessageBox.warning(self.parent, "Load of project failed",
-                                    "Failed to load project at %s. Likely that project is corrupted.\nLoading from backup if available." % path)
-                logging.info(
-                    "Attempting load from backup project %s, which will be renamed to %s", backup_project_name, path)
-                if os.path.exists(backup_project_name):
-                    try:
-                        if os.path.exists(corrupt_project_name):
-                            shutil.rmtree(corrupt_project_name)
-                        shutil.copytree(path, corrupt_project_name)
-                        shutil.rmtree(path)
-                        shutil.copytree(backup_project_name, path)
-                        self.current_proj = path
-                        self.settings.set_current_project(self.current_proj)
-                        self.load()
-                        return True
-                    except Exception as e:
-                        logging.error(e)
-                        logging.warning(
-                            "failed to load project at %s.", backup_project_name)
-                else:
-                    logging.warning("no project found at %s",
-                                    backup_project_name)
-                logging.warning("falling back to %s" % DEFAULT_PROJECT)
-                self.auto_open_fallback()
+                                    "Failed to load project at %s with exception %s" % (path, str(e)))
                 return False
-        else:
-            logging.warning(
-                "path %s not found. Falling back to %s" % (path, DEFAULT_PROJECT))
-            self.auto_open_fallback()
-            return False
+        logging.warning(
+            "path %s not found. Falling back to %s" % (path, DEFAULT_PROJECT))
+        QMessageBox.warning(self.parent, "Load of project failed",
+                            "Failed to load project at %s - path doesn't exist" % path)
+        return False
 
     def load(self):
         if os.path.exists(self.current_proj):

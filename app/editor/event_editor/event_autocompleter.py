@@ -154,7 +154,7 @@ class EventScriptCompleter(QCompleter):
             return False
         self.setModel(QStringListModel(list(autofill_dict.keys()), self))
         self.popup().setItemDelegate(CompleterItemDelegate(autofill_dict, self))
-        trimmed_line = line[0:cursor_pos]
+        trimmed_line = line[0:cursor_pos].strip()
         start_last_arg = max(max([trimmed_line.rfind(c) for c in ';,']), -1)
         completionPrefix = trimmed_line[start_last_arg + 1:]
         self.setCompletionPrefix(completionPrefix)

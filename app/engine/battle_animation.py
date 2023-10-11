@@ -1,5 +1,4 @@
 from app.constants import WINWIDTH, WINHEIGHT, COLORKEY
-from app.utilities import utils
 from app.data.resources.resources import RESOURCES
 from app.data.database.database import DB
 

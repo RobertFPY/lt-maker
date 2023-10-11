@@ -34,6 +34,9 @@ class PrepMainState(MapState):
         if cf.SETTINGS['debug']:
             options.insert(0, 'Debug')
         ignore = [False for option in options]
+        # Don't manage units if there's nobody in the party!
+        if not game.get_units_in_party():
+            ignore[0] = True
 
         # initialize custom options and events
         events = [None for option in options]
@@ -1044,7 +1047,8 @@ class PrepRestockState(State):
 
         topleft = (6, 72)
         self.menu = menus.Inventory(self.unit, self.unit.items, topleft)
-        ignore = [not convoy_funcs.can_restock(item) for item in self.unit.items]
+        # ignore = [not convoy_funcs.can_restock(item) for item in self.unit.items]
+        ignore = [not convoy_funcs.can_restock(option.get()) if option.get() else True for option in self.menu.options]
         self.menu.set_ignore(ignore)
 
     def take_input(self, event):
@@ -1063,8 +1067,9 @@ class PrepRestockState(State):
             get_sound_thread().play_sfx('Select 1')
             item = self.menu.get_current()
             convoy_funcs.restock(item)
-            ignore = [not convoy_funcs.can_restock(item) for item in self.unit.items]
-            if all(ignore):
+            true_ignore = [not convoy_funcs.can_restock(item) for item in self.unit.items]
+            ignore = [not convoy_funcs.can_restock(option.get()) if option.get() else True for option in self.menu.options]
+            if all(true_ignore):
                 self.menu.set_ignore(ignore)
                 game.state.back()
             else:

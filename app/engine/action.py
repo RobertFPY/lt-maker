@@ -101,14 +101,18 @@ class Action():
             setattr(self, name, self.restore_obj(value))
         return self
 
+def recalc_unit(unit):
+    unit.autoequip()
+    if unit.position and game.tilemap and game.boundary:
+        game.boundary.recalculate_unit(unit)
+
 def recalculate_unit(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         func(*args, **kwargs)
         self = args[0]
-        self.unit.autoequip()
-        if self.unit.position and game.tilemap and game.boundary:
-            game.boundary.recalculate_unit(self.unit)
+        recalc_unit(self.unit)
+
     return wrapper
 
 def recalculate_unit_sprite(func):
@@ -411,6 +415,11 @@ class RemoveFromMap(Action):
         self.update_fow_action = UpdateFogOfWar(self.unit)
 
     def do(self):
+        # In case the unit is currently still moving
+        if game.movement.is_moving(self.unit):
+            game.movement.stop(self.unit)
+            self.unit.sprite.reset()
+
         self.unit.position = None
         self.update_fow_action.do()
 
@@ -822,7 +831,7 @@ class Take(Action):
 
 # === PAIR UP ACTIONS =======================================================
 class PairUp(Action):
-    def __init__(self, unit, target):
+    def __init__(self, unit: UnitObject, target: UnitObject):
         self.unit = unit
         self.target = target
         self.old_pos = self.unit.position
@@ -835,7 +844,9 @@ class PairUp(Action):
         self.subactions.clear()
         self.target.traveler = self.unit.nid
 
+        move_left = self.unit.movement_left
         self.subactions.append(Reset(self.unit))
+        self.subactions.append(SetMovementLeft(self.unit, move_left))
         skill_system.on_pairup(self.unit, self.target)
         game.leave(self.unit)
         self.unit.position = None
@@ -888,7 +899,7 @@ class PairUp(Action):
         self.unit.sprite.change_state('normal')
 
 
-class SwapPaired(Action):
+class SwitchPaired(Action):
     def __init__(self, leader, follower):
         self.leader = leader
         self.follower = follower
@@ -905,7 +916,7 @@ class SwapPaired(Action):
         self.follower.set_guard_gauge(self.orig_guard_gauge)
         self.leader.set_guard_gauge(0)
 
-        logging.info(self.leader.nid + " and " + self.follower.nid + " swapped. The first was leader but is now follower, and vice versa.")
+        logging.info(self.leader.nid + " and " + self.follower.nid + " switched. The first was leader but is now follower, and vice versa.")
 
         game.leave(self.leader)
         self.leader.position = None
@@ -923,7 +934,7 @@ class SwapPaired(Action):
         self.leader.set_guard_gauge(self.orig_guard_gauge)
         self.follower.set_guard_gauge(0)
 
-        logging.info(self.leader.nid + " and " + self.follower.nid + " reversed their earlier swap")
+        logging.info(self.leader.nid + " and " + self.follower.nid + " reversed their earlier switch")
 
         skill_system.on_separate(self.leader, self.follower)
         skill_system.on_pairup(self.follower, self.leader)
@@ -1359,8 +1370,6 @@ class TradeItem(Action):
         self.item_index1 = unit1.items.index(item1) if item1 else DB.constants.total_items() - 1
         self.item_index2 = unit2.items.index(item2) if item2 else DB.constants.total_items() - 1
 
-        self.subactions = []
-
     def swap(self, unit1, unit2, item1, item2, item_index1, item_index2):
         # Do the swap
         if item1:
@@ -1370,48 +1379,17 @@ class TradeItem(Action):
             unit2.remove_item(item2)
             unit1.insert_item(item_index1, item2)
 
-    def equip_items(self, unit):
-        all_items = item_funcs.get_all_items(unit)
-        for item in all_items:
-            if not item_system.is_accessory(unit, item):
-                if unit.can_equip(item):
-                    self.subactions.append(EquipItem(unit, item))
-                    break
-        for item in all_items:
-            if item_system.is_accessory(unit, item):
-                if unit.can_equip(item):
-                    self.subactions.append(EquipItem(unit, item))
-                    break
-        # keep accessories sorted after items
-        self.items = sorted(unit.items, key=lambda item: item_system.is_accessory(unit, item))
-
     def do(self):
-        self.subactions.clear()
-
         self.swap(self.unit1, self.unit2, self.item1, self.item2, self.item_index1, self.item_index2)
 
-        self.equip_items(self.unit1)
-        self.equip_items(self.unit2)
-
-        for act in self.subactions:
-            act.do()
-
-        if self.unit1.position and game.tilemap and game.boundary:
-            game.boundary.recalculate_unit(self.unit1)
-        if self.unit2.position and game.tilemap and game.boundary:
-            game.boundary.recalculate_unit(self.unit2)
+        recalc_unit(self.unit1)
+        recalc_unit(self.unit2)
 
     def reverse(self):
         self.swap(self.unit1, self.unit2, self.item2, self.item1, self.item_index2, self.item_index1)
 
-        for act in self.subactions:
-            act.reverse()
-
-        if self.unit1.position and game.tilemap and game.boundary:
-            game.boundary.recalculate_unit(self.unit1)
-        if self.unit2.position and game.tilemap and game.boundary:
-            game.boundary.recalculate_unit(self.unit2)
-
+        recalc_unit(self.unit1)
+        recalc_unit(self.unit2)
 
 class RepairItem(Action):
     def __init__(self, item):
@@ -2257,7 +2235,7 @@ class Die(Action):
         self.unit = unit
         self.old_pos = unit.position
         self.leave_map = LeaveMap(self.unit)
-        if DB.support_constants.value('break_supports_on_death') and not game.current_mode.permadeath:
+        if DB.support_constants.value('break_supports_on_death') and game.current_mode.permadeath:
             self.lock_all_support_ranks = \
                 [LockAllSupportRanks(pair.nid) for pair in game.supports.get_pairs(self.unit.nid)]
         else:

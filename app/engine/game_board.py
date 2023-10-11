@@ -2,7 +2,7 @@ from app.engine.objects.unit import UnitObject
 from typing import Any, Dict, List, Optional, Tuple
 
 from app.data.database.database import DB
-from app.engine import line_of_sight, target_system
+from app.engine import line_of_sight
 from app.engine.pathfinding.node import Node
 from app.engine.game_state import game
 from app.utilities.typing import NID
@@ -109,8 +109,9 @@ class GameBoard(object):
 
     def set_unit(self, pos: Tuple[int, int], unit: UnitObject):
         idx = pos[0] * self.height + pos[1]
-        self.unit_grid[idx].append(unit)
-        self.team_grid[idx].append(unit.team)
+        if unit not in self.unit_grid[idx]:
+            self.unit_grid[idx].append(unit)
+            self.team_grid[idx].append(unit.team)
 
     def remove_unit(self, pos: Tuple[int, int], unit: UnitObject):
         idx = pos[0] * self.height + pos[1]
@@ -168,7 +169,7 @@ class GameBoard(object):
         # Add new vision
         if pos:
             self.fow_vantage_point[unit.nid] = pos
-            positions = target_system.find_manhattan_spheres(range(sight_range + 1), pos[0], pos[1])
+            positions = game.target_system.find_manhattan_spheres(range(sight_range + 1), pos[0], pos[1])
             positions = {pos for pos in positions if 0 <= pos[0] < self.width and 0 <= pos[1] < self.height}
             for position in positions:
                 idx = position[0] * self.height + position[1]
@@ -180,7 +181,7 @@ class GameBoard(object):
             fog_range = int(region.sub_nid) if region.sub_nid else 0
             positions = set()
             for pos in region.get_all_positions():
-                positions |= target_system.find_manhattan_spheres(range(fog_range + 1), pos[0], pos[1])
+                positions |= game.target_system.find_manhattan_spheres(range(fog_range + 1), pos[0], pos[1])
             positions = {pos for pos in positions if 0 <= pos[0] < self.width and 0 <= pos[1] < self.height}
             for position in positions:
                 idx = position[0] * self.height + position[1]
@@ -196,7 +197,7 @@ class GameBoard(object):
             vision_range = int(region.sub_nid) if region.sub_nid else 0
             positions = set()
             for pos in region.get_all_positions():
-                positions |= target_system.find_manhattan_spheres(range(vision_range + 1), pos[0], pos[1])
+                positions |= game.target_system.find_manhattan_spheres(range(vision_range + 1), pos[0], pos[1])
             positions = {pos for pos in positions if 0 <= pos[0] < self.width and 0 <= pos[1] < self.height}
             for position in positions:
                 idx = position[0] * self.height + position[1]

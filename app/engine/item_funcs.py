@@ -4,10 +4,12 @@ import math
 from typing import TYPE_CHECKING, List
 
 from app.data.database.database import DB
-from app.engine import item_system, skill_system, target_system, text_funcs
+from app.engine import item_system, skill_system, text_funcs
 from app.engine.objects.item import ItemObject
 from app.engine.objects.skill import SkillObject
 from app.utilities import utils
+
+from app.engine.game_state import game
 
 if TYPE_CHECKING:
     from app.engine.objects.unit import UnitObject
@@ -36,7 +38,7 @@ def has_magic(unit) -> bool:
 
 def can_use(unit, item) -> bool:
     if item_system.can_use(unit, item) and available(unit, item):
-        targets = target_system.get_valid_targets(unit, item)
+        targets = game.target_system.get_valid_targets(unit, item)
         if targets:
             return True
     return False
@@ -194,16 +196,8 @@ def inventory_full(unit, item) -> bool:
         return len(unit.nonaccessories) >= get_num_items(unit)
 
 def get_range(unit, item) -> set:
-    min_range, max_range = 0, 0
-    all_components = item_system.get_all_components(unit, item)
-    for component in all_components:
-        if component.defines('minimum_range'):
-            min_range = component.minimum_range(unit, item)
-            break
-    for component in all_components:
-        if component.defines('maximum_range'):
-            max_range = component.maximum_range(unit, item)
-            break
+    min_range = item_system.minimum_range(unit, item)
+    max_range = item_system.maximum_range(unit, item)
 
     max_range = max(0, max_range)
     max_range += skill_system.modify_maximum_range(unit, item)

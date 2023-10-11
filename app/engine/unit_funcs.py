@@ -341,11 +341,11 @@ def check_flanked(unit) -> bool:
 
 check_flanking = check_flanked
 
-def wait(unit):
+def wait(unit, actively_chosen: bool = False):
     from app.engine import action
     if not unit.finished:  # Only wait if we aren't finished
         # To prevent double-waiting
-        game.events.trigger(triggers.UnitWait(unit, unit.position, game.get_region_under_pos(unit.position)))
+        game.events.trigger(triggers.UnitWait(unit, unit.position, game.get_region_under_pos(unit.position), actively_chosen))
         action.do(action.Wait(unit))
 
 def usable_wtypes(unit) -> Set[NID]:

@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QWidget, QLineEdit, QMessageBox, QHBoxLayout, QVBoxLayout, \
-    QSpacerItem, QSizePolicy
+    QSpacerItem, QSizePolicy, QPushButton
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
 
@@ -10,6 +10,7 @@ from app.editor.combat_animation_editor.palette_model import PaletteModel
 from app.editor.icon_editor.icon_view import IconView
 from app.editor.lib.components.validated_line_edit import NidLineEdit
 from app.editor.map_sprite_editor import map_sprite_model
+from app.editor.sound_editor import sound_tab
 from app.extensions.custom_gui import ComboBox, PropertyBox
 from app.extensions.multi_select_combo_box import MultiSelectComboBox
 
@@ -57,6 +58,17 @@ class TeamProperties(QWidget):
         self.color_box.edit.editingFinished.connect(self.color_changed)
         mid_section.addWidget(self.color_box)
 
+        self.sfx_box = PropertyBox("Phase Change Sound Effect", QLineEdit, self)
+        self.sfx_box.edit.setReadOnly(True)
+        self.sfx_box.add_button(QPushButton('...'))
+        self.sfx_box.button.setMaximumWidth(40)
+        self.sfx_box.button.clicked.connect(self.change_phase_change_sound_effect)
+        self.sfx_box.delete_button = QPushButton('X')
+        self.sfx_box.bottom_section.addWidget(self.sfx_box.delete_button)
+        self.sfx_box.delete_button.setMaximumWidth(30)
+        self.sfx_box.delete_button.clicked.connect(self.delete_phase_change_sound_effect)
+        mid_section.addWidget(self.sfx_box)
+
         self.allies_box = PropertyBox("Allies", MultiSelectComboBox, self)
         self.allies_box.edit.addItems(DB.teams.keys())
         self.allies_box.edit.updated.connect(self.allies_changed)
@@ -98,6 +110,17 @@ class TeamProperties(QWidget):
     def color_changed(self):
         self.current.combat_color = self.color_box.edit.text()
 
+    def change_phase_change_sound_effect(self):
+        res, ok = sound_tab.get_sfx()
+        if ok and res:
+            nid = res[0].nid
+            self.current.phase_change_sound_effect = nid
+            self.sfx_box.edit.setText(nid)
+
+    def delete_phase_change_sound_effect(self):
+        self.current.phase_change_sound_effect = None
+        self.sfx_box.edit.setText('')
+
     def allies_changed(self):
         DB.teams.set_allies(self.current.nid, self.allies_box.edit.currentText())
 
@@ -108,6 +131,7 @@ class TeamProperties(QWidget):
         self.palette_box.edit.setValue(current.map_sprite_palette)
         self.combat_palette_box.edit.setText(current.combat_variant_palette)
         self.color_box.edit.setText(current.combat_color)
+        self.sfx_box.edit.setText(current.phase_change_sound_effect or "")
 
         allies = DB.teams.get_allies(current.nid)[:] # Must make a copy
         self.allies_box.edit.clear()

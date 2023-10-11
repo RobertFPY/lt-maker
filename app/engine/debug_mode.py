@@ -74,7 +74,7 @@ class DebugState(MapState):
         event_command, error_loc = event_commands.parse_text_to_command(command)
         if not event_command:
             return
-        game.events._add_event('debug_console', [event_command], GenericTrigger(unit1=game.cursor.get_hover(), position=game.cursor.position))
+        game.events._add_event_from_script('debug_console', str(command), GenericTrigger(unit1=game.cursor.get_hover(), position=game.cursor.position))
 
     def draw(self, surf):
         surf = super().draw(surf)

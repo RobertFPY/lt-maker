@@ -197,6 +197,15 @@ class Channel():
 
     def fade_out(self):
         logging.debug("%s Fade Out: %s", self.nid, self.last_state)
+        # Immediately finish crossfading
+        if self.state == 'crossfade_out':
+            self.crossfade_volume = 0
+            self.reset_volume()
+            self.last_state = "playing"
+        elif self.state == 'crossfade_in':
+            self.crossfade_volume = 1
+            self.reset_volume()
+            self.last_state = "playing"
         self.state = "fade_out"
         self.last_update = engine.get_time()
 
@@ -637,12 +646,13 @@ class SoundController():
             should_interrupt_current_song (bool, optional): Whether or not to keep the current song playing while flushing all others.
                                                             Defaults to True.
         """
-        current_song = None
+        current_song_nid = None
         if not should_interrupt_current_song:
             current_song = self.get_current_song()
             if current_song:
                 print(current_song.nid)
-        MUSIC.clear(current_song)
+                current_song_nid = current_song.nid
+        MUSIC.clear(current_song_nid)
         SFX.clear()
 
     def reset(self):

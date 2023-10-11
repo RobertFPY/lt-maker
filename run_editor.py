@@ -3,7 +3,7 @@ import sys
 from app.editor.recent_project_dialog import choose_recent_project
 
 from app.editor.editor_locale import init_locale
-from app.engine.component_system import source_generator
+from app.engine.codegen import source_generator
 
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import QLockFile, QDir, Qt
@@ -24,7 +24,7 @@ def initialize_icon():
 def code_gen():
     # compile necessary files
     if not hasattr(sys, 'frozen'):
-        source_generator.generate_component_system_source()
+        source_generator.generate_all()
 
 def initialize_logger():
     from app import lt_log
@@ -49,7 +49,7 @@ if __name__ == '__main__':
         from app import dark_theme
         theme = dark_theme.get_theme()
         dark_theme.set(ap, theme)
-        selected_path = choose_recent_project()
+        selected_path = choose_recent_project(allow_auto_open=True)
         if selected_path:
             from app.editor.main_editor import MainEditor
             window = MainEditor(selected_path)

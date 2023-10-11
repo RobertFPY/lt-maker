@@ -2,19 +2,18 @@ from __future__ import annotations
 
 import ast
 import random
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING
 
 from app.constants import WINHEIGHT, WINWIDTH
 from app.data.database.database import DB
 from app.data.database.level_units import GenericUnit, UniqueUnit
 from app.data.resources.resources import RESOURCES
 from app.engine import (action, background, banner, base_surf, dialog, engine,
-                        evaluate, icons, image_mods, item_funcs, item_system,
-                        skill_system, target_system, unit_funcs)
+                        icons, image_mods, item_funcs, item_system,
+                        save, skill_system, unit_funcs)
 from app.engine.achievements import ACHIEVEMENTS
 from app.engine.animations import MapAnimation
 from app.engine.combat import interaction
-from app.engine.fonts import FONT
 from app.engine.game_menus.menu_components.generic_menu.simple_menu_wrapper import \
     SimpleMenuUI
 from app.engine.graphics.text.text_renderer import rendered_text_width
@@ -134,7 +133,7 @@ def add_portrait(self: Event, portrait, screen_position, slide=None, expression_
     if 'immediate' in flags or self.do_skip:
         transition = False
     speed_mult = speed_mult or 1
-    speed_mult = 1 / max(speed_mult, 0.001)
+    speed_mult = 1 / max(float(speed_mult), 0.001)
 
     new_portrait = EventPortrait(portrait, position, priority, transition,
                                  slide, mirror, name, speed_mult=speed_mult)
@@ -165,9 +164,7 @@ def multi_add_portrait(self: Event, portrait1, screen_position1, portrait2, scre
         commands.append(event_commands.AddPortrait({'Portrait': portrait3, 'ScreenPosition': screen_position3}, flags))
     if portrait4:
         commands.append(event_commands.AddPortrait({'Portrait': portrait4, 'ScreenPosition': screen_position4}, set()))
-    for command in reversed(commands):
-        # Done backwards to preserve order upon insertion
-        self.commands.insert(self.command_idx + 1, command)
+    self.command_queue += commands
 
 def remove_portrait(self: Event, portrait, speed_mult=1, flags=None):
     flags = flags or set()
@@ -179,13 +176,13 @@ def remove_portrait(self: Event, portrait, speed_mult=1, flags=None):
     if name not in self.portraits:
         return False
 
-    speed_mult = 1 / max(speed_mult, 0.001)
+    speed_mult = 1 / max(float(speed_mult), 0.001)
 
     if 'immediate' in flags or self.do_skip:
         portrait = self.portraits.pop(name)
     else:
         portrait = self.portraits[name]
-        portrait.end(float(speed_mult))
+        portrait.end(speed_mult)
 
     if 'immediate' in flags or 'no_block' in flags or self.do_skip:
         pass
@@ -203,10 +200,7 @@ def multi_remove_portrait(self: Event, portrait1, portrait2, portrait3=None, por
         commands.append(event_commands.RemovePortrait({'Portrait': portrait3}, flags))
     if portrait4:
         commands.append(event_commands.RemovePortrait({'Portrait': portrait4}, set()))
-
-    for command in reversed(commands):
-        # Done backwards to preserve order upon insertion
-        self.commands.insert(self.command_idx + 1, command)
+    self.command_queue += commands
 
 def move_portrait(self: Event, portrait, screen_position, speed_mult=1, flags=None):
     flags = flags or set()
@@ -247,11 +241,11 @@ def mirror_portrait(self: Event, portrait, flags=None):
 
     flipped_portrait = \
         EventPortrait(
-            self.portraits[name].portrait,
-            self.portraits[name].position,
-            self.portraits[name].priority,
-            False, None, not self.portraits[name].mirror, name)
-    if self.text_boxes:
+            portrait.portrait,
+            portrait.position,
+            portrait.priority,
+            False, None, not portrait.mirror, name)
+    if self.text_boxes and self.text_boxes[-1].portrait == portrait:
         self.text_boxes[-1].portrait = flipped_portrait
 
     if self.do_skip:
@@ -267,9 +261,7 @@ def mirror_portrait(self: Event, portrait, flags=None):
             if 'no_block' in flags:
                 command_flags.add("no_block")
             commands.append(event_commands.AddPortrait({'Portrait': name, 'ScreenPosition': str(self.portraits[name].position)}, command_flags))
-            for command in reversed(commands):
-                # Done backwards to preserve order upon insertion
-                self.commands.insert(self.command_idx + 1, command)
+            self.command_queue += commands
         else:
             # Immediate removal followed by a transition in
             self.portraits[name] = flipped_portrait
@@ -350,7 +342,7 @@ def speak_style(self: Event, style, speaker=None, position=None, width=None, spe
         style.flags = flags
     self.game.speak_styles[style.nid] = style
 
-def speak(self: Event, speaker, text, text_position=None, width=None, style_nid=None, text_speed=None,
+def speak(self: Event, speaker_or_style: str, text, text_position=None, width=None, style_nid=None, text_speed=None,
           font_color=None, font_type=None, dialog_box=None, num_lines=None, draw_cursor=None,
           message_tail=None, transparency=None, name_tag_bg=None, flags=None):
     flags = flags or set()
@@ -359,13 +351,25 @@ def speak(self: Event, speaker, text, text_position=None, width=None, style_nid=
     if 'no_block' in flags:
         text += '{no_wait}'
 
-    speak_style = None
-    if style_nid and style_nid in self.game.speak_styles:
-        speak_style = self.game.speak_styles[style_nid]
-    default_speak_style = self.game.speak_styles['__default']
+    if text_position:
+        try:
+            position = Alignments(text_position)
+        except:
+            position = self._parse_pos(text_position)
+    else:
+        position = None
+    if draw_cursor:
+        cursor = draw_cursor.lower() in self.true_vals
+    else:
+        cursor = None
 
-    if not speaker and speak_style:
-        speaker = speak_style.speaker
+    manual_style = SpeakStyle(None, None, position, int(width) if width else None, float(text_speed) if text_speed else None, font_color,
+                              font_type, dialog_box, int(num_lines) if num_lines else None, cursor, message_tail, float(transparency) if transparency else None, name_tag_bg, flags)
+
+    style = self._resolve_speak_style(speaker_or_style, style_nid, manual_style)
+    speaker = style.speaker or speaker_or_style or ''
+    if speaker.startswith('"') and speaker.endswith('"'):
+        speaker = speaker[1:-1]
     unit = self._get_unit(speaker)
     if unit:
         speaker = unit.nid
@@ -373,7 +377,7 @@ def speak(self: Event, speaker, text, text_position=None, width=None, style_nid=
 
     # Process text for commands
     blocks = str_utils.matched_block_expr(text, '{', '}')
-    for block in reversed(blocks):  # reversed to preserve order upon insertion
+    for block in blocks:
         if block.startswith('{command:') and block.endswith('}'):
             event_command_str = block[len('{command:'):-1]
         elif block.startswith('{c:') and block.endswith('}'):
@@ -381,108 +385,26 @@ def speak(self: Event, speaker, text, text_position=None, width=None, style_nid=
         else:
             continue
         text = text.replace(block, '{p}', 1)  # Replace first instance
-        # Done backwards to preserve order
+        self._queue_command(event_command_str)
         if speaker:
             self._queue_command('unpause;%s' % speaker)
         else:
             self._queue_command('unpause')
-        self._queue_command(event_command_str)
+
+    flags = style.flags
 
     # Determine whether this should be skipped
     # Hold speaks are not skipped
     if self.do_skip and 'hold' not in flags:
         pass  # Skip me!
     else:
-        if text_position:
-            try:
-                position = Alignments(text_position)
-            except:
-                position = self._parse_pos(text_position)
-        elif speak_style and speak_style.position:
-            position = speak_style.position
-        else:
-            position = default_speak_style.position
-
-        if width:
-            box_width = int(width)
-        elif speak_style and speak_style.width:
-            box_width = speak_style.width
-        else:
-            box_width = default_speak_style.width
-
-        if text_speed:
-            speed = float(text_speed)
-        elif speak_style and speak_style.speed:
-            speed = speak_style.speed
-        else:
-            speed = default_speak_style.speed
-
-        if font_color:
-            fcolor = font_color
-        elif speak_style and speak_style.font_color:
-            fcolor = speak_style.font_color
-        else:
-            fcolor = default_speak_style.font_color
-
-        if font_type:
-            ftype = font_type
-        elif speak_style and speak_style.font_type:
-            ftype = speak_style.font_type
-        else:
-            ftype = default_speak_style.font_type
-
-        if dialog_box:
-            bg = dialog_box
-        elif speak_style and speak_style.background:
-            bg = speak_style.background
-        else:
-            bg = default_speak_style.background
-
-        if num_lines:
-            lines = int(num_lines)
-        elif speak_style and speak_style.num_lines:
-            lines = speak_style.num_lines
-        else:
-            lines = default_speak_style.num_lines
-
-        if draw_cursor:
-            cursor = draw_cursor.lower() in self.true_vals
-        elif speak_style and speak_style.draw_cursor is not None:
-            cursor = speak_style.draw_cursor
-        else:
-            cursor = default_speak_style.draw_cursor
-
-        if message_tail:
-            tail = message_tail
-        elif speak_style and speak_style.message_tail:
-            tail = speak_style.message_tail
-        else:
-            tail = default_speak_style.message_tail
-
-        if transparency:
-            transparency = float(transparency)
-        elif speak_style and speak_style.transparency is not None:
-            transparency = speak_style.transparency
-        else:
-            transparency = 0.05
-
-        if name_tag_bg:
-            nametag = name_tag_bg
-        elif speak_style and speak_style.name_tag_bg:
-            nametag = speak_style.name_tag_bg
-        else:
-            nametag = default_speak_style.name_tag_bg
-
-        if speak_style and speak_style.flags:
-            flags = speak_style.flags.union(flags)
-
         autosize = 'fit' in flags
         new_dialog = \
-            dialog.Dialog(text, portrait, bg, position, box_width, speaker=speaker,
-                          style_nid=style_nid, autosize=autosize, speed=speed,
-                          font_color=fcolor, font_type=ftype, num_lines=lines,
-                          draw_cursor=cursor, message_tail=tail, transparency=transparency,
-                          name_tag_bg=nametag, flags=flags)
+            dialog.Dialog(text, portrait, style.background, style.position, style.width, speaker=speaker,
+                          style_nid=style_nid, autosize=autosize, speed=style.speed,
+                          font_color=style.font_color, font_type=style.font_type, num_lines=style.num_lines,
+                          draw_cursor=style.draw_cursor, message_tail=style.message_tail, transparency=style.transparency,
+                          name_tag_bg=style.name_tag_bg, flags=flags)
         self.text_boxes.append(new_dialog)
 
         if self.do_skip:
@@ -635,11 +557,12 @@ def flicker_cursor(self: Event, position, flags=None):
     disp_cursor_command1 = event_commands.DispCursor({'ShowCursor': '1'})
     wait_command = event_commands.Wait({'Time': '1000'})
     disp_cursor_command2 = event_commands.DispCursor({'ShowCursor': '0'})
-    # Done backwards to presever order upon insertion
-    self.commands.insert(self.command_idx + 1, disp_cursor_command2)
-    self.commands.insert(self.command_idx + 1, wait_command)
-    self.commands.insert(self.command_idx + 1, disp_cursor_command1)
-    self.commands.insert(self.command_idx + 1, move_cursor_command)
+    self.command_queue += [
+        move_cursor_command,
+        disp_cursor_command1,
+        wait_command,
+        disp_cursor_command2
+    ]
 
 def screen_shake(self: Event, duration, shake_type=None, flags=None):
     flags = flags or set()
@@ -677,49 +600,36 @@ def screen_shake_end(self: Event, flags=None):
         self.background.reset_shake()
 
 def game_var(self: Event, nid, expression, flags=None):
-    try:
-        val = self.text_evaluator.direct_eval(expression)
-        if check_valid_type(val):
-            action.do(action.SetGameVar(nid, val))
-        else:
-            self.logger.error("game_var: %s is not a valid variable", val)
-    except Exception as e:
-        self.logger.error("game_var: Could not evaluate %s (%s)" % (expression, e))
+    val = self._eval_expr(expression, 'from_python' in flags)
+    if check_valid_type(val):
+        action.do(action.SetGameVar(nid, val))
+    else:
+        self.logger.error("game_var: %s is not a valid variable", val)
 
 def inc_game_var(self: Event, nid, expression=None, flags=None):
     if expression:
-        try:
-            val = self.text_evaluator.direct_eval(expression)
-            if check_valid_type(val):
-                action.do(action.SetGameVar(nid, self.game.game_vars.get(nid, 0) + val))
-            else:
-                self.logger.error("inc_game_var: %s is not a valid variable", val)
-        except Exception as e:
-            self.logger.error("inc_game_var: Could not evaluate %s (%s)" % (expression, e))
+        val = self._eval_expr(expression, 'from_python' in flags)
+        if check_valid_type(val):
+            action.do(action.SetGameVar(nid, self.game.game_vars.get(nid, 0) + val))
+        else:
+            self.logger.error("inc_game_var: %s is not a valid variable", val)
     else:
         action.do(action.SetGameVar(nid, self.game.game_vars.get(nid, 0) + 1))
 
 def level_var(self: Event, nid, expression, flags=None):
-    try:
-        val = self.text_evaluator.direct_eval(expression)
-        if check_valid_type(val):
-            action.do(action.SetLevelVar(nid, val))
-        else:
-            self.logger.error("level_var: %s is not a valid variable", val)
-    except Exception as e:
-        self.logger.error("level_var: Could not evaluate %s (%s)" % (expression, e))
-        return
+    val = self._eval_expr(expression, 'from_python' in flags)
+    if check_valid_type(val):
+        action.do(action.SetLevelVar(nid, val))
+    else:
+        self.logger.error("level_var: %s is not a valid variable", val)
 
 def inc_level_var(self: Event, nid, expression=None, flags=None):
     if expression:
-        try:
-            val = self.text_evaluator.direct_eval(expression)
-            if check_valid_type(val):
-                action.do(action.SetLevelVar(nid, self.game.level_vars.get(nid, 0) + val))
-            else:
-                self.logger.error("inc_level_var: %s is not a valid variable", val)
-        except Exception as e:
-            self.logger.error("inc_level_var: Could not evaluate %s (%s)" % (expression, e))
+        val = self._eval_expr(expression, 'from_python' in flags)
+        if check_valid_type(val):
+            action.do(action.SetLevelVar(nid, self.game.level_vars.get(nid, 0) + val))
+        else:
+            self.logger.error("inc_level_var: %s is not a valid variable", val)
     else:
         action.do(action.SetLevelVar(nid, self.game.level_vars.get(nid, 0) + 1))
 
@@ -770,7 +680,6 @@ def end_turn(self: Event, team: NID = None, flags=None):
             return
         # Skip turns until the next team is the one we want
         while self.game.phase.get_next() != team:
-            print(self.game.phase.get_next())
             self.game.phase.next()
 
     if self.game.phase.get_next() == 'player':
@@ -813,6 +722,12 @@ def battle_save(self: Event, flags=None):
         self.game.state.change('transition_to')
     else:  # Wait until after this event to make the save
         self.battle_save_flag = True
+
+def delete_save(self: Event, save_slot=None, flags=None):
+    if save_slot.lower() == 'suspend':
+        save.delete_suspend()
+    else:
+        save.delete_save(self.game, save_slot)
 
 def clear_turnwheel(self: Event, flags=None):
     self.game.action_log.set_first_free_action()
@@ -1145,7 +1060,7 @@ def move_unit(self: Event, unit, position=None, movement_type=None, placement=No
     elif movement_type == 'fade':
         action.do(action.FadeMove(unit, position))
     elif movement_type == 'normal':
-        path = target_system.get_path(unit, position)
+        path = self.game.target_system.get_path(unit, position)
         if path:
             if self.do_skip:
                 action.do(action.Teleport(unit, position))
@@ -1178,6 +1093,7 @@ def remove_unit(self: Event, unit, remove_type=None, animation_type=None, flags=
         fade_direction = None
     else:
         fade_direction = animation_type
+
     if DB.constants.value('initiative'):
         action.do(action.RemoveInitiative(unit))
     if self.do_skip:
@@ -1276,7 +1192,7 @@ def interact_unit(self: Event, unit, position, combat_script=None, ability=None,
 
     interaction.start_combat(
         actor, target, item, event_combat=True, script=script, total_rounds=total_rounds,
-        arena='arena' in flags, force_animation='force_animation' in flags)
+        arena='arena' in flags, force_animation='force_animation' in flags, force_no_animation='force_no_animation' in flags)
     self.state = "paused"
 
 def recruit_generic(self: Event, unit, nid, name, flags=None):
@@ -1723,12 +1639,7 @@ def set_item_data(self: Event, global_unit_or_convoy, item, nid, expression, fla
         self.logger.error("set_item_data: Either unit or item was invalid, see above")
         return
 
-    try:
-        data_value = self.text_evaluator.direct_eval(expression)
-    except Exception as e:
-        self.logger.error("set_item_data: %s: Could not evaluate {%s}" % (e, expression))
-        return
-
+    data_value = self._eval_expr(expression, 'from_python' in flags)
     action.do(action.SetObjData(item, nid, data_value))
 
 def break_item(self: Event, global_unit_or_convoy, item, flags=None):
@@ -1750,7 +1661,8 @@ def break_item(self: Event, global_unit_or_convoy, item, flags=None):
         self.logger.error("break_item: Item %s does not have uses!" % item.nid)
         return
 
-    alert = item_system.on_broken(unit, item)
+    item_system.on_broken(unit, item)
+    alert = item_system.broken_alert(unit, item)
     if alert and unit.team == 'player' and banner_flag:
         self.game.alerts.append(banner.BrokenItem(unit, item))
         self.game.state.change('alert')
@@ -1846,11 +1758,7 @@ def add_item_component(self: Event, global_unit_or_convoy, item, item_component,
         return
 
     if expression is not None:
-        try:
-            component_value = self.text_evaluator.direct_eval(expression)
-        except Exception as e:
-            self.logger.error("add_item_component: %s: Could not evalute {%s}" % (e, expression))
-            return
+        component_value = self._eval_expr(expression, 'from_python' in flags)
     else:
         component_value = None
 
@@ -1867,12 +1775,7 @@ def modify_item_component(self: Event, global_unit_or_convoy, item, item_compone
         self.logger.error("modify_item_component: Either unit or item was invalid, see above")
         return
 
-    try:
-        component_value = self.text_evaluator.direct_eval(expression)
-    except Exception as e:
-        self.logger.error("modify_item_component: %s: Could not evalute {%s}" % (e, expression))
-        return
-
+    component_value = self._eval_expr(expression, 'from_python' in flags)
     action.do(action.ModifyItemComponent(item, component_nid, component_value, component_property, is_additive))
 
 def remove_item_component(self: Event, global_unit_or_convoy, item, item_component, flags=None):
@@ -1886,55 +1789,61 @@ def remove_item_component(self: Event, global_unit_or_convoy, item, item_compone
         return
 
     action.do(action.RemoveItemComponent(item, component_nid))
-    
+
 def add_skill_component(self: Event, global_unit, skill, skill_component, expression=None, flags=None):
     flags = flags or set()
     component_nid = skill_component
 
-    unit, skill = self._get_skill(global_unit, skill)
+    if expression is not None:
+        component_value = self._eval_expr(expression, 'from_python' in flags)
+    else:
+        component_value = None
+
+    unit, skill = self._get_skill(global_unit, skill, 'stack' in flags)
     if not unit or not skill:
         self.logger.error("add_skill_component: Either unit or skill was invalid, see above")
         return
 
-    if expression is not None:
-        try:
-            component_value = self.text_evaluator.direct_eval(expression)
-        except Exception as e:
-            self.logger.error("add_skill_component: %s: Could not evalute {%s}" % (e, expression))
-            return
+    if 'stack' in flags:
+        # skill is a List of Skills
+        for sk in skill:
+            action.do(action.AddSkillComponent(sk, component_nid, component_value))
     else:
-        component_value = None
+        action.do(action.AddSkillComponent(skill, component_nid, component_value))
 
-    action.do(action.AddSkillComponent(skill, component_nid, component_value))
-    
 def modify_skill_component(self: Event, global_unit, skill, skill_component, expression, component_property=None, flags=None):
     flags = flags or set()
     component_nid = skill_component
     is_additive = 'additive' in flags
 
-    unit, skill = self._get_skill(global_unit, skill)
+    unit, skill = self._get_skill(global_unit, skill, 'stack' in flags)
     if not unit or not skill:
         self.logger.error("modify_skill_component: Either unit or skill was invalid, see above")
         return
 
-    try:
-        component_value = self.text_evaluator.direct_eval(expression)
-    except Exception as e:
-        self.logger.error("modify_skill_component: %s: Could not evalute {%s}" % (e, expression))
-        return
+    component_value = self._eval_expr(expression, 'from_python' in flags)
 
-    action.do(action.ModifySkillComponent(skill, component_nid, component_value, component_property, is_additive))
-    
+    if 'stack' in flags:
+        # skill is a List of Skills
+        for sk in skill:
+            action.do(action.ModifySkillComponent(sk, component_nid, component_value, component_property, is_additive))
+    else:
+        action.do(action.ModifySkillComponent(skill, component_nid, component_value, component_property, is_additive))
+
 def remove_skill_component(self: Event, global_unit, skill, skill_component, flags=None):
     flags = flags or set()
     component_nid = skill_component
 
-    unit, skill = self._get_skill(global_unit, skill)
+    unit, skill = self._get_skill(global_unit, skill, 'stack' in flags)
     if not unit or not skill:
         self.logger.error("remove_skill_component: Either unit or item was invalid, see above")
         return
 
-    action.do(action.RemoveSkillComponent(skill, component_nid))
+    if 'stack' in flags:
+        for sk in skill:
+            action.do(action.RemoveSkillComponent(sk, component_nid))
+    else:
+        action.do(action.RemoveSkillComponent(skill, component_nid))
 
 def give_money(self: Event, money, party=None, flags=None):
     flags = flags or set()
@@ -2106,11 +2015,7 @@ def set_skill_data(self: Event, global_unit, skill, nid, expression, flags=None)
     if not found_skill:
         self.logger.error("set_skill_data: Couldn't find skill with nid %s on unit selected" % skill)
         return
-    try:
-        data_value = self.text_evaluator.direct_eval(expression)
-    except Exception as e:
-        self.logger.error("set_skill_data: %s: Could not evaluate {%s}" % (e, expression))
-        return
+    data_value = self._eval_expr(expression, 'from_python' in flags)
 
     action.do(action.SetObjData(found_skill, nid, data_value))
 
@@ -2954,7 +2859,7 @@ def base(self: Event, background: str, music: str = None, other_options: str = N
     self.game.state.change('base_main')
     self.state = 'paused'
 
-def set_custom_options(self: Event, custom_options: str, custom_options_enabled: str = None, 
+def set_custom_options(self: Event, custom_options: str, custom_options_enabled: str = None,
                        custom_options_desc: str = None, custom_options_on_select: str = None, flags=None):
     flags = flags or set()
 
@@ -3048,6 +2953,7 @@ def choice(self: Event, nid: NID, title: str, choices: str, row_width: str = Non
         dtype = entry_type
 
     # figure out function or list of NIDs
+    data = []
     if 'expression' in flags:
         try:
             ast.parse(choices)
@@ -3055,7 +2961,7 @@ def choice(self: Event, nid: NID, title: str, choices: str, row_width: str = Non
                 try:
                     val = self.text_evaluator.direct_eval(self.text_evaluator._evaluate_all(callback_expr))
                     if isinstance(val, list):
-                        return val
+                        return val or ['']
                     else:
                         return [self._object_to_str(val)]
                 except Exception as e:
@@ -3068,6 +2974,7 @@ def choice(self: Event, nid: NID, title: str, choices: str, row_width: str = Non
         choices = self.text_evaluator._evaluate_all(choices)
         data = choices.split(',')
         data = [s.strip().replace('{comma}', ',') for s in data]
+    data = data or ['']
 
     row_width = int(row_width)
 
@@ -3109,7 +3016,6 @@ def choice(self: Event, nid: NID, title: str, choices: str, row_width: str = Non
         'position': self.position,
         'local_args': self.local_args
     }
-
     self.game.memory['player_choice'] = (nid, header, data, row_width,
                                     actual_orientation, dtype, should_persist,
                                     align, bg, event_nid, size, no_cursor,
@@ -3259,6 +3165,7 @@ def table(self: Event, nid: NID, table_data: str, title: str = None,
         dtype = entry_type
 
     # figure out function or list of NIDs
+    data = []
     if 'expression' in flags:
         try:
             # eval once to make sure it's eval-able
@@ -3267,7 +3174,7 @@ def table(self: Event, nid: NID, table_data: str, title: str = None,
                 try:
                     val = self.text_evaluator.direct_eval(self.text_evaluator._evaluate_all(callback_expr))
                     if isinstance(val, list):
-                        return val
+                        return val or ['']
                     else:
                         return [self._object_to_str(val)]
                 except:
@@ -3280,6 +3187,7 @@ def table(self: Event, nid: NID, table_data: str, title: str = None,
         table_data = self.text_evaluator._evaluate_all(table_data)
         data = table_data.split(',')
         data = [s.strip().replace('{comma}', ',') for s in data]
+    data = data or [""]
 
     align = Alignments.TOP_LEFT
     if alignment:
@@ -3481,13 +3389,13 @@ def open_guide(self: Event, flags=None):
         self.logger.warning("open_guide: Skipping opening guide because there is no unlocked lore in the guide category")
 
 def open_unit_management(self: Event, panorama=None, flags=None):
-    flags = flags or set() 
+    flags = flags or set()
     if 'scroll' in flags:
         bg = background.create_background(panorama, True)
     else:
         bg = background.create_background(panorama, False)
     self.game.memory['base_bg'] = bg
-    
+
     self.state = "paused"
     if 'immediate' in flags:
         self.game.state.change('base_manage')
@@ -3538,9 +3446,8 @@ def unlock(self: Event, unit, flags=None):
     # This is a macro that just adds new commands to command list
     find_unlock_command = event_commands.FindUnlock({'Unit': unit})
     spend_unlock_command = event_commands.SpendUnlock({'Unit': unit})
-    # Done backwards to preseve order upon insertion
-    self.commands.insert(self.command_idx + 1, spend_unlock_command)
-    self.commands.insert(self.command_idx + 1, find_unlock_command)
+    self.command_queue.append(find_unlock_command)
+    self.command_queue.append(spend_unlock_command)
 
 def find_unlock(self: Event, unit, flags=None):
     new_unit = self._get_unit(unit)
@@ -3599,7 +3506,8 @@ def spend_unlock(self: Event, unit, flags=None):
 
     # Check to see if we broke the item we were using
     if item_system.is_broken(unit, chosen_item):
-        alert = item_system.on_broken(unit, chosen_item)
+        alert = item_system.broken_alert(unit, chosen_item)
+        item_system.on_broken(unit, chosen_item)
         if alert and unit.team == 'player':
             self.game.alerts.append(banner.BrokenItem(unit, chosen_item))
             self.game.state.change('alert')
@@ -3656,11 +3564,11 @@ def loop_units(self: Event, expression, event, flags=None):
     if not all((isinstance(unit_nid, str) or isinstance(unit_nid, UnitObject)) for unit_nid in unit_list):
         self.logger.error("loop_units: %s: could not evaluate to NID list {%s}" % ('loop_units', unit_list_str))
         return
-    for unit_nid in reversed(unit_list):
+    for unit_nid in unit_list:
         if not isinstance(unit_nid, str):
             unit_nid = unit_nid.nid  # Try this!
         macro_command = event_commands.TriggerScript({'Event': event, 'Unit1': unit_nid})
-        self.commands.insert(self.command_idx + 1, macro_command)
+        self.command_queue.append(macro_command)
 
 def change_roaming(self: Event, free_roam_enabled, flags=None):
     val = free_roam_enabled.lower()
@@ -3794,7 +3702,7 @@ def complete_achievement(self: Event, achievement: str, completed: str, flags=No
             self.wait_time = engine.get_time() + 2000
             self.state = 'waiting'
             remove_overlay_sprite_command = event_commands.RemoveOverlaySprite({'Nid': anim_nid}, flags={'foreground'})
-            self.commands.insert(self.command_idx + 1, remove_overlay_sprite_command)
+            self.command_queue.append(remove_overlay_sprite_command)
 
 def clear_achievements(self: Event, flags=None):
     ACHIEVEMENTS.clear_achievements()

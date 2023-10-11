@@ -232,5 +232,15 @@
     "PromoWhiteOrb_Image": 230,
     "DragonMyrrh": 231,
     "ManaketeMyrrh": 232,
-    "TransformMyrrh": 233
+    "TransformMyrrh": 233,
+    "map_sprite_blue": 234,
+    "map_sprite_red": 235,
+    "map_sprite_green": 236,
+    "map_sprite_purple": 237,
+    "map_sprite_wait": 238,
+    "map_sprite_black": 239,
+    "map_sprite_dark_blue": 240,
+    "map_sprite_dark_red": 241,
+    "map_sprite_dark_green": 242,
+    "map_sprite_dark_wait": 243
 }

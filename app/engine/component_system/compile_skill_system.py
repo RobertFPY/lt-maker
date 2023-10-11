@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import Any, Dict
+from app.engine.codegen.codegen_utils import get_codegen_header
 from app.engine.component_system.utils import ARG_TYPE_MAP, HookInfo, ResolvePolicy
 
 SKILL_HOOKS: Dict[str, HookInfo] = {
@@ -175,11 +176,9 @@ def compile_skill_system():
         dir_path, '..', 'skill_system.py'), 'w')
     skill_system_base = open(os.path.join(
         dir_path, 'skill_system_base.py'), 'r')
-    warning_msg = open(os.path.join(dir_path, 'warning_msg.txt'), 'r')
 
     # write warning msg
-    for line in warning_msg.readlines():
-        compiled_skill_system.write(line)
+    compiled_skill_system.writelines(get_codegen_header())
 
     # copy skill system base
     for line in skill_system_base.readlines():
@@ -191,4 +190,3 @@ def compile_skill_system():
 
     skill_system_base.close()
     compiled_skill_system.close()
-    warning_msg.close()

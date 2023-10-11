@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Dict, List, Set, Tuple
 
 from app.constants import TILEHEIGHT, TILEWIDTH
 from app.data.database.database import DB
+from app.data.resources.resources import RESOURCES
 from app.utilities.utils import magnitude, tuple_sub
 
 if TYPE_CHECKING:
@@ -152,13 +153,13 @@ class OverworldObject():
     @property
     def music(self) -> Song:
         if not self._music:
-            self._music = self.prefab.get_music_resource()
+            self._music = RESOURCES.music.get(self.prefab.music)
         return self._music
 
     @classmethod
     def from_prefab(cls, prefab: OverworldPrefab, party_registry: Dict[NID, PartyObject], unit_registry: Dict[NID, UnitObject]):
         overworld = cls()
-        tilemap_prefab = prefab.get_tilemap_resource()
+        tilemap_prefab = RESOURCES.tilemaps.get(prefab.tilemap)
         if tilemap_prefab:
             overworld.tilemap = TileMapObject.from_prefab(tilemap_prefab)
         overworld.prefab = prefab

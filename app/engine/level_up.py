@@ -45,8 +45,7 @@ class ExpState(State):
         self.old_exp = self.unit.exp
         self.old_level = self.unit.level
         self.unit_klass = DB.classes.get(self.unit.klass)
-        self.auto_promote = (DB.constants.value('auto_promote') or 'AutoPromote' in self.unit.tags) and \
-            self.unit_klass.turns_into and 'NoAutoPromote' not in self.unit.tags
+        self.auto_promote = ExpState.has_autopromote(self.unit)
 
         # For mana
         self.old_mana = self.unit.get_mana()
@@ -77,8 +76,10 @@ class ExpState(State):
         self.stat_changes = None
         self.new_wexp = None
 
-        if self.unit.level >= self.unit_klass.max_level and not self.mana_to_gain and self.exp_gain >= 0 and \
-                not self.auto_promote and self.starting_state not in ('promote', 'class_change', 'stat_booster'):
+        if ExpState.can_give_exp(self.unit, self.exp_gain) or self.mana_to_gain or \
+                self.starting_state in ('promote', 'class_change', 'stat_booster'):
+            pass
+        else:
             # We're done here, since the unit is at max level and has no stats to gain, mana to gain, or exp to lose
             game.state.back()
             return 'repeat'
@@ -95,6 +96,23 @@ class ExpState(State):
 
         self.level_up_sound_played = False
 
+    @staticmethod
+    def has_autopromote(unit) -> bool:
+        unit_klass = DB.classes.get(unit.klass)
+        return (DB.constants.value('auto_promote') or 'AutoPromote' in unit.tags) and \
+            unit_klass.turns_into and 'NoAutoPromote' not in unit.tags
+
+    @staticmethod
+    def can_give_exp(unit, exp: int) -> bool:
+        unit_klass = DB.classes.get(unit.klass)
+        if unit.level < unit_klass.max_level:
+            return True
+        if exp < 0:
+            return True
+        if ExpState.has_autopromote(unit):
+            return True
+        return False
+        
     def begin(self):
         game.cursor.hide()
 
@@ -179,7 +197,7 @@ class ExpState(State):
                 else:
                     self.state.change('exp100')
 
-            if exp_set <= 0 and self.exp_gain < 0:
+            if exp_set < 0 and self.exp_gain < 0:
                 if self.unit.level > 1:
                     self.state.change('exp-100')
                 else:

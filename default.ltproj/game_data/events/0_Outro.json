@@ -88,6 +88,7 @@
             ]
         ],
         "only_once": false,
-        "priority": 22
+        "priority": 22,
+        "source": ""
     }
 ]

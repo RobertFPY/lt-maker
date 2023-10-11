@@ -774,7 +774,7 @@ class TitleExtrasState(TitleLoadState):
                 game.sweep()  # Set up event manager
                 event_prefab = DB.events.get_from_nid('Global Credits')
                 if event_prefab:
-                    event = Event(event_prefab.nid, event_prefab.commands, triggers.GenericTrigger())
+                    event = Event(event_prefab, triggers.GenericTrigger())
                     game.events.append(event)
                     game.memory['next_state'] = 'event'
                     game.state.change('transition_to')
@@ -864,7 +864,10 @@ class TitleSaveState(State):
     def start(self):
         if game.memory.get('_skip_save', False):
             game.memory['_skip_save'] = False
-            self.go_to_next_level(False)
+            if game.game_vars['_should_go_to_overworld']:
+                self.go_to_overworld(make_save=False)
+            else:
+                self.go_to_next_level(make_save=False)
             return 'repeat'
         self.fluid = FluidScroll(128)
         imgs = RESOURCES.panoramas.get('title_background')

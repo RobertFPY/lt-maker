@@ -1,24 +1,19 @@
 from __future__ import annotations
 
 from ast import literal_eval as make_tuple
-from typing import TYPE_CHECKING, Dict, List
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 from app.utilities.typing import Point
 
-if TYPE_CHECKING:
-    from app.data.resources.sounds import Song
-    from app.data.resources.tiles import TileMapPrefab
-
 from app.data.database.overworld_node import OverworldNodeCatalog, OverworldNodePrefab
-from app.data.resources.resources import RESOURCES
 from app.utilities.data import Data, Prefab
 
 class OverworldPrefab(Prefab):
     def __init__(self, nid: str, name: str):
         self.nid: str = nid
         self.name: str = name
-        self.tilemap: str = None               # Tilemap Nid - background\
-        self.music: str = None                 # Music Nid
+        self.tilemap: Optional[str] = None               # Tilemap Nid - background
+        self.music: Optional[str] = None                 # Music Nid
         self.overworld_nodes: OverworldNodeCatalog = OverworldNodeCatalog()
         self.map_paths: Dict[str, List[Point]] = {}   # dict that maps string points_to_key(start_point, end_point) to a
                                                       # list of coords that define the road between those two nodes
@@ -26,12 +21,6 @@ class OverworldPrefab(Prefab):
         self.border_tile_width: int = 0        # how many tiles thick the border should be around the overworld map.
                                                # this is to support maps with fancy borders that shouldn't be navigable or selectable,
                                                # or just to lock off the sides of the map (Sacred Stones does this)
-
-    def get_music_resource(self) -> Song:
-        return RESOURCES.music.get(self.music)
-
-    def get_tilemap_resource(self) -> TileMapPrefab:
-        return RESOURCES.tilemaps.get(self.tilemap)
 
     def save_attr(self, name, value):
         if name == 'overworld_nodes':

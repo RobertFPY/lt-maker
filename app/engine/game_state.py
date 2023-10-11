@@ -29,6 +29,7 @@ if TYPE_CHECKING:
     from app.engine.objects.ai_group import AIGroupObject
     from app.engine.dialog_log import DialogLog
     from app.events.event_manager import EventManager
+    from app.engine.target_system import TargetSystem
     from app.utilities.typing import NID, UID
 
 from app.constants import VERSION
@@ -108,6 +109,8 @@ class GameState():
         self.mana_instance: List[Tuple[UnitObject, int]] = []
         self.ai: ai_controller.AIController = None
         self.overworld_controller: OverworldManager = None
+
+        self.target_system: TargetSystem = None
 
         self.clear()
 
@@ -212,6 +215,7 @@ class GameState():
         from app.engine import (ai_controller, camera, death, highlight,
                                 map_view, phase, ui_view)
         from app.engine.movement import movement_system
+        from app.engine.target_system import TargetSystem
 
         # Systems
         self.camera = camera.Camera(self)
@@ -225,6 +229,7 @@ class GameState():
         self.exp_instance = []
         self.mana_instance = []
         self.ai = ai_controller.AIController()
+        self.target_system = TargetSystem()
 
         self.alerts.clear()
 
@@ -336,7 +341,6 @@ class GameState():
         self.boundary = boundary.BoundaryInterface(tilemap.width, tilemap.height)
 
     def save(self):
-
         s_dict = {'units': [unit.save() for unit in self.unit_registry.values()],
                   'items': [item.save() for item in self.item_registry.values()],
                   'skills': [skill.save() for skill in self.skill_registry.values()],
@@ -364,7 +368,7 @@ class GameState():
                   'talk_options': self.talk_options,
                   'base_convos': self.base_convos,
                   'current_random_state': static_random.get_combat_random_state(),
-                  'bounds': self.board.bounds,
+                  'bounds': self.board.bounds if self.board else None,
                   'roam_info': self.roam_info,
                   }
         meta_dict = {'playtime': self.playtime,
@@ -517,7 +521,7 @@ class GameState():
         '''
 
         from app.engine import (action, item_funcs, item_system, skill_system,
-                                supports, target_system)
+                                supports)
 
         supports.increment_end_chapter_supports()
 
@@ -536,7 +540,7 @@ class GameState():
                     unit.traveler = None
                     action.RemoveSkill(unit, 'Rescue').execute()
                 else:
-                    pos = target_system.get_nearest_open_tile(droppee, unit.position)
+                    pos = self.target_system.get_nearest_open_tile(droppee, unit.position)
                     action.Drop(unit, droppee, pos).execute()
                 skill_system.on_separate(droppee, unit)
             unit.set_hp(1000)  # Set to full health

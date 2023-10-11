@@ -12,30 +12,38 @@ import app.engine.graphics.ui_framework as uif
 from app.constants import WINHEIGHT, WINWIDTH
 from app.data.database.database import DB
 from app.engine import (action, background, dialog, engine, evaluate,
-                        target_system, image_mods, item_funcs)
+                        image_mods, item_funcs)
 from app.engine.game_state import GameState
 from app.engine.movement import movement_funcs
 from app.engine.objects.overworld import OverworldNodeObject
 from app.engine.objects.unit import UnitObject
 from app.engine.sound import get_sound_thread
 from app.events import event_commands, triggers
+from app.events.event_parser import EventParser
 from app.events.event_portrait import EventPortrait
+from app.events.event_prefab import EventPrefab
+from app.events.python_eventing.errors import EventError
+from app.events.python_eventing.python_event_parser import PythonEventParser
+from app.events.python_eventing.utils import SAVE_COMMAND_NIDS
+from app.events.speak_style import SpeakStyle
 from app.utilities import str_utils, utils, static_random
 from app.utilities.typing import NID, Color3
+
+class EvaluateException(EventError):
+    what = "Could not evaluate expression."
 
 class Event():
     true_vals = ('t', 'true', 'True', '1', 'y', 'yes')
 
-    skippable = {"wait", "bop_portrait", "sound", 
+    skippable = {"wait", "bop_portrait", "sound",
                  "location_card", "credits", "ending"}
 
-    def __init__(self, nid, commands, trigger: triggers.EventTrigger, game: GameState = None):
+    def __init__(self, event_prefab: EventPrefab, trigger: triggers.EventTrigger, game: GameState = None):
         self._transition_speed: int = 250
         self._transition_color: Color3 = (0, 0, 0)
 
-        self.nid = nid
-        self.commands: List[event_commands.EventCommand] = commands.copy()
-        self.command_idx = 0
+        self.nid = event_prefab.nid
+        self.command_queue: List[event_commands.EventCommand] = []
 
         self.background = None
 
@@ -55,6 +63,10 @@ class Event():
         self._generic_setup()
 
         self.text_evaluator = TextEvaluator(self.logger, self.game, self.unit, self.unit2, self.position, self.local_args)
+        if event_prefab.is_python_event():
+            self.parser = PythonEventParser(self.nid, event_prefab.source, self.game)
+        else:
+            self.parser = EventParser(self.nid, event_prefab.source, self.text_evaluator)
 
     def _generic_setup(self):
         self.portraits: Dict[str, EventPortrait] = {}
@@ -77,9 +89,6 @@ class Event():
         self.priority_counter = 1
         self.do_skip = False
         self.super_skip = False
-
-        self.if_stack = [] # Keeps track of how many ifs we've encountered while searching for the bad ifs 'end'.
-        self.parse_stack = [] # Keeps track of whether we've encountered a truth this level or not
 
         # For transition
         self.transition_state = None
@@ -115,14 +124,11 @@ class Event():
     def save(self):
         ser_dict = {}
         ser_dict['nid'] = self.nid
-        ser_dict['commands'] = self.commands
-        ser_dict['command_idx'] = self.command_idx
         ser_dict['unit1'] = self.unit.nid if self.unit else None
         ser_dict['unit2'] = self.unit2.nid if self.unit2 else None
         ser_dict['position'] = self.position
         ser_dict['local_args'] = {k: action.Action.save_obj(v) for k, v in self.local_args.items()}
-        ser_dict['if_stack'] = self.if_stack
-        ser_dict['parse_stack'] = self.parse_stack
+        ser_dict['parser_state'] = self.parser.save()
         return ser_dict
 
     @classmethod
@@ -132,13 +138,14 @@ class Event():
         position = ser_dict['position']
         local_args = ser_dict.get('local_args', {})
         local_args = {k: action.Action.restore_obj(v) for k, v in local_args.items()}
-        commands = ser_dict['commands']
         nid = ser_dict['nid']
-        self = cls(nid, commands, triggers.GenericTrigger(unit, unit2, position, local_args), game)
-        self.command_idx = ser_dict['command_idx']
-        self.if_stack = ser_dict['if_stack']
-        self.parse_stack = ser_dict['parse_stack']
+        prefab = DB.events.get_by_nid_or_name(nid)[0]
+        self = cls(prefab, triggers.GenericTrigger(unit, unit2, position, local_args), game)
+        self.parser = EventParser.restore(ser_dict['parser_state'], self.text_evaluator)
         return self
+
+    def finished(self):
+        return self.parser.finished() and not self.command_queue
 
     def update(self):
         # update all internal updates, remove the ones that are finished
@@ -168,7 +175,7 @@ class Event():
                     break
 
             elif self.state == 'processing':
-                if self.command_idx >= len(self.commands):
+                if self.finished():
                     self.end()
                 else:
                     self.process()
@@ -297,142 +304,34 @@ class Event():
         self.state = 'almost_complete'
 
     def process(self):
-        while self.command_idx < len(self.commands) and self.state == 'processing':
-            command = self.commands[self.command_idx]
+        while self.state == 'processing':
+            if not self.command_queue:
+                next_command = self.parser.fetch_next_command()
+                if not next_command:
+                    break
+                self.command_queue.append(next_command)
+            command = self.command_queue.pop(0)
+            
+            # This shunts all SAVE COMMANDS to the back of the command queue, so that we never save the game while there are still commands on the queue.
+            # This is unlikely to happen unless you used a macro to put multiple commands on the queue at once (and one of them is a save).
+            while command.nid in SAVE_COMMAND_NIDS and self.command_queue: # if we have a save command but there are still more commands in the queue. We cannot save while there are commands on the queue. This should never happen
+                if all([c.nid in SAVE_COMMAND_NIDS for c in self.command_queue]): # avoid infinite loop. This should NEVER happen (will happen if multiple save commands were queued).
+                    raise Exception("Queued multiple save commands in event %s, line %d" % (self.nid, self.parser.get_current_line()))
+                self.command_queue.append(command)  # Move the save command to the back of the queue
+                command = self.command_queue.pop(0)
+
             self.logger.debug("Run Event Command: %s", command)
             try:
-                if self.handle_conditional(command):
-                    if self.handle_loop(command):
-                        pass  # Just builds the next commands
-                    elif self.do_skip and command.nid in self.skippable:
-                        pass
-                    else:
-                        self.run_command(command)
-                self.command_idx += 1
+                if self.do_skip and command.nid in self.skippable:
+                    pass
+                else:
+                    self.run_command(command)
+            except EventError as e:
+                raise e
             except Exception as e:
                 raise Exception("Event execution failed with error in command %s" % command) from e
 
-    def handle_loop(self, command: event_commands.EventCommand) -> bool:
-        """
-        Returns true if a loop was found
-        """
-        self.logger.disabled = False
-        if command.nid == 'for':
-            self.logger.info('%s: %s, %s', command.nid, command.parameters, command.chosen_flags)
-            show_warning = True
-            if 'no_warn' in command.chosen_flags:
-                show_warning = False
-            iterator_nid = command.parameters['Nid']
-            cond = command.parameters['Expression']
-            cond = self._evaluate_all(cond)
-            try:
-                arg_list = self.text_evaluator.direct_eval(cond)
-                arg_list = [self._object_to_str(arg) for arg in arg_list]
-            except Exception as e:
-                self.logger.error("%s: Could not evaluate {%s} in %s" % (e, command.parameters['Expression'], command.to_plain_text()))
-                return True
-            if not arg_list:
-                if show_warning:
-                    self.logger.warning("Arg list is empty for: %s in %s" % (command.parameters['Expression'], command.to_plain_text()))
-
-            # template and paste all commands inside the for loop
-            # to find the correct endf, we'll need to make sure that
-            # every nested for-loop is accounted for
-            internal_fors = 0
-
-            curr_idx = self.command_idx + 1
-            curr_command = self.commands[curr_idx]
-            looped_commands: List[event_commands.EventCommand] = []
-            while curr_command.nid != 'endf' or internal_fors > 0:
-                if curr_command.nid == 'for':
-                    internal_fors += 1
-                if curr_command.nid == 'endf':
-                    internal_fors -= 1
-                looped_commands.append(curr_command)
-                curr_idx += 1
-                if curr_idx >= len(self.commands):
-                    self.logger.error("%s: could not find endf command for loop %s" % ('handle_conditional', cond))
-                    return True
-                curr_command = self.commands[curr_idx]
-
-            # remove the initial for-loop, as we've templated out all the child fors
-            self.commands = self.commands[:self.command_idx + 1] + self.commands[curr_idx:]
-            for arg in reversed(arg_list):
-                for command in reversed(looped_commands):
-                    new_command = command.__class__.copy(command)
-                    if iterator_nid:
-                        new_command.parameters = {k: v.replace('{' + iterator_nid + '}', arg) for k, v in new_command.parameters.items()}
-                    self.commands.insert(self.command_idx + 1, new_command)
-            return True
-        # Skip endf command here
-        elif command.nid == 'endf':
-            return True
-        return False
-
-    def _get_truth(self, command: event_commands.EventCommand) -> bool:
-        try:
-            cond = command.parameters['Expression']
-            cond = self._evaluate_all(cond)
-            truth = bool(self.text_evaluator.direct_eval(cond))
-        except Exception as e:
-            self.logger.error("%s: Could not evaluate {%s} in %s" % (e, cond, command.to_plain_text()))
-            truth = False
-        self.logger.info("Result: %s" % truth)
-        return truth
-
-    def handle_conditional(self, command) -> bool:
-        """
-        Returns true if the processor should be processing this command
-        """
-        self.logger.disabled = False
-        if command.nid == 'if':
-            self.logger.info('%s: %s, %s', command.nid, command.parameters, command.chosen_flags)
-            if not self.if_stack or self.if_stack[-1]:
-                truth = self._get_truth(command)                
-                self.if_stack.append(truth)
-                self.parse_stack.append(truth)
-            else:
-                self.if_stack.append(False)
-                self.parse_stack.append(True)
-            return False
-        elif command.nid == 'elif':
-            self.logger.info('%s: %s, %s', command.nid, command.parameters, command.chosen_flags)
-            if not self.if_stack:
-                self.logger.error("Syntax Error somewhere in script. 'elif' needs to be after if statement.")
-                return False
-            # If we haven't encountered a truth yet
-            if not self.parse_stack[-1]:
-                truth = self._get_truth(command)
-                self.if_stack[-1] = truth
-                self.parse_stack[-1] = truth
-            else:
-                self.if_stack[-1] = False
-            return False
-        elif command.nid == 'else':
-            self.logger.info('%s: %s, %s', command.nid, command.parameters, command.chosen_flags)
-            if not self.if_stack:
-                self.logger.error("Syntax Error somewhere in script. 'else' needs to be after if statement.")
-                return False
-            # If the most recent is False but the rest below are non-existent or true
-            if not self.parse_stack[-1]:
-                self.if_stack[-1] = True
-                self.parse_stack[-1] = True
-            else:
-                self.if_stack[-1] = False
-            return False
-        elif command.nid == 'end':
-            self.logger.info('%s: %s, %s', command.nid, command.parameters, command.chosen_flags)
-            if self.if_stack:
-                self.if_stack.pop()
-            if self.parse_stack:
-                self.parse_stack.pop()
-            return False
-
-        if self.if_stack and not self.if_stack[-1]:
-            return False
-        return True
-
-    def skip(self, super_skip=False):
+    def skip(self, super_skip: bool = False):
         self.do_skip = True
         self.super_skip = super_skip
         if self.state != 'paused':
@@ -451,25 +350,8 @@ class Event():
 
     def run_command(self, command: event_commands.EventCommand):
         from app.events.function_catalog import get_catalog
-
         self.logger.info('%s: %s, %s', command.nid, command.parameters, command.chosen_flags)
-
-        parameters, flags = event_commands.convert_parse(command, self._evaluate_all)
-
-        # Handle the weird cases where we don't want to handle evaluation
-        if command.nid == 'choice':
-            unevaled_parameters, _ = event_commands.convert_parse(command, None)
-            parameters['Choices'] = unevaled_parameters['Choices']
-        elif command.nid == 'table':
-            unevaled_parameters, _ = event_commands.convert_parse(command, None)
-            parameters['TableData'] = unevaled_parameters['TableData']
-        elif command.nid == 'textbox':
-            unevaled_parameters, _ = event_commands.convert_parse(command, None)
-            parameters['Text'] = unevaled_parameters['Text']
-        if 'no_warn' in flags:
-            self.logger.disabled = True
-        else:
-            self.logger.disabled = False
+        parameters, flags = command.parameters, command.chosen_flags
         parameters = {str_utils.camel_to_snake(k): v for k, v in parameters.items()}
         self.logger.debug("%s, %s", parameters, flags)
         get_catalog()[command.nid](self, **parameters, flags=flags)
@@ -482,15 +364,24 @@ class Event():
         else:
             return str(obj)
 
-    def _evaluate_all(self, text: str) -> str:
-        return self.text_evaluator._evaluate_all(text)
+    def _eval_expr(self, expr: str, from_python: bool) -> Any:
+        if from_python:
+            return expr
+        try:
+            return self.text_evaluator.direct_eval(expr)
+        except Exception as e:
+            line = self.parser.get_current_line()
+            exc = EvaluateException(self.nid, line + 1, self.parser.get_source_line(line))
+            self.logger.error("'%s' Line %d: Could not evaluate %s (%s)" % (self.nid, line + 1, expr, e))
+            exc.what = str(e)
+            raise exc
 
     def _queue_command(self, event_command_str: str):
         try:
             event_command, _ = event_commands.parse_text_to_command(event_command_str, strict=True)
             if not event_command:
                 raise SyntaxError("Unable to parse command", ("event.py", 0, 0, event_command_str))
-            self.commands.insert(self.command_idx + 1, event_command)
+            self.command_queue.append(event_command)
         except Exception as e:
             logging.error('_queue_command: Unable to parse command "%s". %s', event_command_str, e)
 
@@ -523,7 +414,7 @@ class Event():
             if unit.position == position:
                 # Don't bother if identical
                 return
-            path = target_system.get_path(unit, position)
+            path = self.game.target_system.get_path(unit, position)
             action.do(action.Move(unit, position, path, event=True, follow=follow))
         return position
 
@@ -598,13 +489,13 @@ class Event():
             elif placement == 'stack':
                 return position
             elif placement == 'closest':
-                position = target_system.get_nearest_open_tile(unit, position)
+                position = self.game.target_system.get_nearest_open_tile(unit, position)
                 if not position:
                     self.logger.warning("Somehow wasn't able to find a nearby open tile")
                     return None
                 return position
             elif placement == 'push':
-                new_pos = target_system.get_nearest_open_tile(current_occupant, position)
+                new_pos = self.game.target_system.get_nearest_open_tile(current_occupant, position)
                 action.do(action.ForcedMovement(current_occupant, new_pos))
                 return position
         else:
@@ -644,8 +535,8 @@ class Event():
             return None, None
         item = [item for item in item_list if (item.nid == item_id or (str_utils.is_int(item_id) and item.uid == int(item_id)))][0]
         return unit, item
-        
-    def _get_skill(self, unit_nid: str, skill: str) -> tuple[UnitObject, SkillObject]:
+
+    def _get_skill(self, unit_nid: str, skill: str, all_stacks: bool = False) -> tuple[UnitObject, SkillObject | List[SkillObject]]:
         unit = self._get_unit(unit_nid)
         if not unit:
             self.logger.error("Couldn't find unit with nid %s" % unit_nid)
@@ -657,8 +548,24 @@ class Event():
         if (skill_id not in snids) and (not str_utils.is_int(skill_id) or not int(skill_id) in suids):
             self.logger.error("Couldn't find skill with id %s" % skill)
             return None, None
-        skill = [skill for skill in skill_list if (skill.nid == skill_id or (str_utils.is_int(skill_id) and skill.uid == int(skill_id)))][0]
+        skill = [skill for skill in skill_list if (skill.nid == skill_id or (str_utils.is_int(skill_id) and skill.uid == int(skill_id)))]
+        if not all_stacks:
+            skill = skill[0]
         return unit, skill
+
+    def _resolve_speak_style(self, speaker_or_style, *styles) -> SpeakStyle:
+        curr_style = self.game.speak_styles['__default'].copy()
+        if not self.game.speak_styles.get(speaker_or_style):
+            curr_style.speaker = speaker_or_style
+        else:
+            styles = list(styles)
+            styles.append(speaker_or_style)
+        for style in styles:
+            if isinstance(style, str):
+                style = self.game.speak_styles.get(style)
+            if style:
+                curr_style = curr_style.update(style)
+        return curr_style
 
     def _apply_stat_changes(self, unit, stat_changes, flags):
         # clamp stat changes

@@ -23,6 +23,7 @@
         "roam": false,
         "roam_unit": null,
         "go_to_overworld": false,
+        "should_record": true,
         "units": [
             {
                 "nid": "Bone",
@@ -70,6 +71,7 @@
                         false
                     ]
                 ],
+                "starting_skills": [],
                 "team": "enemy",
                 "ai": "None",
                 "roam_ai": null,
@@ -136,6 +138,7 @@
                         false
                     ]
                 ],
+                "starting_skills": [],
                 "team": "player",
                 "ai": "None",
                 "roam_ai": null,
@@ -162,6 +165,7 @@
                 ],
                 "sub_nid": "Armory",
                 "condition": "True",
+                "time_left": null,
                 "only_once": false,
                 "interrupt_move": false
             },
@@ -178,10 +182,12 @@
                 ],
                 "sub_nid": "Door",
                 "condition": "unit.can_unlock(region)",
+                "time_left": null,
                 "only_once": true,
                 "interrupt_move": false
             }
         ],
-        "unit_groups": []
+        "unit_groups": [],
+        "ai_groups": []
     }
 ]

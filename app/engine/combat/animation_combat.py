@@ -476,21 +476,22 @@ class AnimationCombat(BaseCombat, MockCombat):
                     self.right_battle_anim.finish()
                     if self.rp_battle_anim:
                         self.rp_battle_anim.finish()
-                    if self.battle_background and not self._skip:
-                        self.battle_background.fade_out(utils.frames2ms(10))
+                    if self.battle_background:
+                        fade_time = utils.frames2ms(2.5 if self._skip else 10)
+                        self.battle_background.fade_out(fade_time)
                     self.state = 'name_tags_out'
 
         elif self.state == 'name_tags_out':
-            exit_time = utils.frames2ms(10)
+            exit_time = utils.frames2ms(2.5 if self._skip else 10)
             self.name_offset = 1 - current_time / exit_time
-            if self._skip or current_time > exit_time:
+            if current_time > exit_time:
                 self.name_offset = 0
                 self.state = 'all_out'
 
         elif self.state == 'all_out':
-            exit_time = utils.frames2ms(10)
+            exit_time = utils.frames2ms(2.5 if self._skip else 10)
             self.bar_offset = 1 - current_time / exit_time
-            if self._skip or current_time > exit_time:
+            if current_time > exit_time:
                 self.bar_offset = 0
                 self.state = 'fade_out'
 
@@ -503,9 +504,9 @@ class AnimationCombat(BaseCombat, MockCombat):
                 return True
 
         elif self.state == 'arena_out':
-            exit_time = utils.frames2ms(10)
+            exit_time = utils.frames2ms(2.5 if self._skip else 10)
             self.bg_black_progress = 1 - current_time / exit_time
-            if self._skip or current_time > exit_time:
+            if current_time > exit_time:
                 self.bg_black_progress = 0
                 self.finish()
                 self.clean_up2()
@@ -1192,17 +1193,21 @@ class AnimationCombat(BaseCombat, MockCombat):
         self.handle_support_pairs(pairs)
         self.handle_records(self.full_playback, all_units)
 
+        asp = self.attacker.strike_partner
+        dsp = None
+        if self.defender:
+            dsp = self.defender.strike_partner
+
         self.end_combat()
 
         self.handle_death(all_units)
+
+        self.handle_broken_items(asp, dsp)
 
         self.attacker.built_guard = True
         if self.defender:
             self.defender.strike_partner = None
             self.defender.built_guard = True
-
-        a_broke, d_broke = self.find_broken_items()
-        self.handle_broken_items(a_broke, d_broke)
 
         # Clean up battle anims so we can re-use them later
         self.left_battle_anim.reset_unit()

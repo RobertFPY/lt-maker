@@ -22,8 +22,8 @@ from app.utilities.typing import NID
 
 class Database(object):
     save_data_types = ("constants", "stats", "equations", "mcost", "terrain", "weapon_ranks",
-                       "weapons", "teams", "factions", "items", "skills", "tags", "game_var_slots", 
-                       "classes", "support_constants", "support_ranks", "affinities", "units", 
+                       "weapons", "teams", "factions", "items", "skills", "tags", "game_var_slots",
+                       "classes", "support_constants", "support_ranks", "affinities", "units",
                        "support_pairs", "ai", "parties", "difficulty_modes",
                        "translations", "lore", "levels", "events", "overworlds", "raw_data", 'game_flags')
     save_as_chunks = ("events", 'items', 'skills', 'units', 'classes', 'levels')
@@ -98,7 +98,7 @@ class Database(object):
             with open(single_data_file_loc) as load_file:
                 categories = Categories.load(json.load(load_file))
         return categories
-    
+
     def json_load(self, data_dir: str, key: str) -> Dict | List:
         data_path = Path(data_dir, key)
         if data_path.exists(): # data type is a directory, browse within
@@ -116,7 +116,8 @@ class Database(object):
         else:   # data type is a singular file
             save_loc = Path(data_dir, key + '.json')
             if not save_loc.exists():
-                raise Exception("%s does not exist!" % save_loc)
+                logging.warning("%s does not exist!", save_loc)
+                return None
             return load_json(save_loc)
 
     # === Saving and loading important data functions ===

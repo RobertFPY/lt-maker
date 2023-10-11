@@ -24,6 +24,7 @@ from app.events.event_portrait import EventPortrait
 from app.events.event_prefab import EventPrefab
 from app.events.python_eventing.errors import EventError
 from app.events.python_eventing.python_event_parser import PythonEventParser
+from app.events.python_eventing.utils import SAVE_COMMAND_NIDS
 from app.events.speak_style import SpeakStyle
 from app.utilities import str_utils, utils, static_random
 from app.utilities.typing import NID, Color3
@@ -126,7 +127,6 @@ class Event():
         ser_dict['unit1'] = self.unit.nid if self.unit else None
         ser_dict['unit2'] = self.unit2.nid if self.unit2 else None
         ser_dict['position'] = self.position
-        ser_dict['command_queue'] = self.command_queue
         ser_dict['local_args'] = {k: action.Action.save_obj(v) for k, v in self.local_args.items()}
         ser_dict['parser_state'] = self.parser.save()
         return ser_dict
@@ -141,7 +141,6 @@ class Event():
         nid = ser_dict['nid']
         prefab = DB.events.get_by_nid_or_name(nid)[0]
         self = cls(prefab, triggers.GenericTrigger(unit, unit2, position, local_args), game)
-        self.command_queue = ser_dict['command_queue']
         self.parser = EventParser.restore(ser_dict['parser_state'], self.text_evaluator)
         return self
 
@@ -312,6 +311,15 @@ class Event():
                     break
                 self.command_queue.append(next_command)
             command = self.command_queue.pop(0)
+            
+            # This shunts all SAVE COMMANDS to the back of the command queue, so that we never save the game while there are still commands on the queue.
+            # This is unlikely to happen unless you used a macro to put multiple commands on the queue at once (and one of them is a save).
+            while command.nid in SAVE_COMMAND_NIDS and self.command_queue: # if we have a save command but there are still more commands in the queue. We cannot save while there are commands on the queue. This should never happen
+                if all([c.nid in SAVE_COMMAND_NIDS for c in self.command_queue]): # avoid infinite loop. This should NEVER happen (will happen if multiple save commands were queued).
+                    raise Exception("Queued multiple save commands in event %s, line %d" % (self.nid, self.parser.get_current_line()))
+                self.command_queue.append(command)  # Move the save command to the back of the queue
+                command = self.command_queue.pop(0)
+
             self.logger.debug("Run Event Command: %s", command)
             try:
                 if self.do_skip and command.nid in self.skippable:

@@ -252,7 +252,7 @@ class MiniMap(object):
         if terrain:
             minimap_nid = terrain.minimap
         else:
-            minimap_nid = DB.minimap.single_map[0]
+            minimap_nid = DB.minimap.single_map['Grass']
         return minimap_nid
 
     def handle_key(self, key, position):

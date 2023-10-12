@@ -1400,7 +1400,7 @@ class SaveSlot(Validator):
         valids = [(None, str(i)) for i in range(self._db.constants.value('num_save_slots'))]
         valids.append((None, "suspend"))
         return valids
-        
+
 validators: Dict[str, Type[Validator]]= {validator.__name__: validator for validator in Validator.__subclasses__()}
 option_validators: Dict[str, Type[OptionValidator]] = {validator.__name__: validator for validator in OptionValidator.__subclasses__()}
 eval_validators: Dict[str, Type[EvalValidator]] = {}

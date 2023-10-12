@@ -509,7 +509,7 @@ NOTE: You can set the `__default` speak style, which will automatically apply to
 
     keywords = ['Style']
     optional_keywords = ['Speaker', 'Position', 'Width', 'Speed', 'FontColor', 'FontType', 'Background', 'NumLines', 'DrawCursor', 'MessageTail', 'Transparency', 'NameTagBg']
-    keyword_types = ['Nid', 'Speaker', 'AlignOrPosition', 'Width', 'Float', 'FontColor', 'Font', 'MaybeSprite', 'PositiveInteger', 'Bool', 'MaybeSprite', 'Float', 'MaybeSprite']
+    keyword_types = ['Nid', 'Speaker', 'AlignOrPosition', 'Width', 'Float', 'FontColor', 'Font', 'MaybeSprite', 'WholeNumber', 'Bool', 'MaybeSprite', 'Float', 'MaybeSprite']
     _flags = ['low_priority', 'hold', 'no_popup', 'fit', 'no_talk', 'no_sound']
 
 class Speak(EventCommand):
@@ -549,7 +549,7 @@ Extra flags:
 
     keywords = ['SpeakerOrStyle', 'Text']
     optional_keywords = ['TextPosition', 'Width', 'StyleNid', 'TextSpeed', 'FontColor', 'FontType', 'DialogBox', 'NumLines', 'DrawCursor', 'MessageTail', 'Transparency', 'NameTagBg']
-    keyword_types = ['Speaker', 'Text', 'AlignOrPosition', 'Width', 'DialogVariant', 'Float', 'FontColor', 'Font', 'MaybeSprite', 'PositiveInteger', 'Bool', 'MaybeSprite', 'Float', 'MaybeSprite']
+    keyword_types = ['Speaker', 'Text', 'AlignOrPosition', 'Width', 'DialogVariant', 'Float', 'FontColor', 'Font', 'MaybeSprite', 'WholeNumber', 'Bool', 'MaybeSprite', 'Float', 'MaybeSprite']
     _flags = ['low_priority', 'hold', 'no_popup', 'fit', 'no_block', 'no_talk', 'no_sound']
 
 class Unhold(EventCommand):

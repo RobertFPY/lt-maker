@@ -14,9 +14,10 @@ from app.engine import (action, background, banner, base_surf, dialog, engine,
 from app.engine.achievements import ACHIEVEMENTS
 from app.engine.animations import MapAnimation
 from app.engine.combat import interaction
+from app.engine.fonts import FONT
 from app.engine.game_menus.menu_components.generic_menu.simple_menu_wrapper import \
     SimpleMenuUI
-from app.engine.graphics.text.text_renderer import rendered_text_width
+from app.engine.graphics.text.text_renderer import rendered_text_width, text_width
 from app.engine.graphics.ui_framework.premade_animations.animation_templates import (
     fade_anim, translate_anim)
 from app.engine.graphics.ui_framework.premade_components.plain_text_component import \
@@ -346,7 +347,7 @@ def speak(self: Event, speaker_or_style: str, text, text_position=None, width=No
           font_color=None, font_type=None, dialog_box=None, num_lines=None, draw_cursor=None,
           message_tail=None, transparency=None, name_tag_bg=None, flags=None):
     flags = flags or set()
-    text = dialog.clean_newlines(text)
+    text = dialog.process_dialog_shorthand(text)
 
     if 'no_block' in flags:
         text += '{no_wait}'
@@ -374,6 +375,11 @@ def speak(self: Event, speaker_or_style: str, text, text_position=None, width=No
     if unit:
         speaker = unit.nid
     portrait = self.portraits.get(speaker)
+
+    if portrait and style.num_lines == 0: # should auto choose 1 or 2 lines
+        style.num_lines = 2
+        if '{br}' not in text and '{clear}' not in text and text_width(style.font_type, text) < WINWIDTH // 2:
+            style.num_lines = 1
 
     # Process text for commands
     blocks = str_utils.matched_block_expr(text, '{', '}')
@@ -3126,7 +3132,7 @@ def textbox(self: Event, nid: str, text: str, box_position=None,
             draw_cursor=False, transparency=transparency)
     else:
         text = self.text_evaluator._evaluate_all(text)
-        text = dialog.clean_newlines(text)
+        text = dialog.process_dialog_shorthand(text)
         # textboxes shouldn't use {w} or |
         text = text.replace('{w}', '').replace('|', '{br}')
         textbox = \

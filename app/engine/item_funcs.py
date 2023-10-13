@@ -200,7 +200,9 @@ def get_range(unit, item) -> set:
     max_range = item_system.maximum_range(unit, item)
 
     max_range = max(0, max_range)
+    min_range = max(0, min_range)
     max_range += skill_system.modify_maximum_range(unit, item)
+    min_range += skill_system.modify_minimum_range(unit, item)
     limit_max = skill_system.limit_maximum_range(unit, item)
     max_range = utils.clamp(max_range, 0, limit_max)
 

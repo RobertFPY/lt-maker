@@ -82,6 +82,8 @@ SKILL_HOOKS: Dict[str, HookInfo] = {
     'modify_attack_speed':                  HookInfo(['unit', 'item'], ResolvePolicy.NUMERIC_ACCUM),
     'modify_defense_speed':                 HookInfo(['unit', 'item'], ResolvePolicy.NUMERIC_ACCUM),
     'modify_maximum_range':                 HookInfo(['unit', 'item'], ResolvePolicy.NUMERIC_ACCUM),
+    'modify_minimum_range':                 HookInfo(['unit', 'item'], ResolvePolicy.NUMERIC_ACCUM),
+
     # dynamic numeric modifiers (as item numberic modifiers)
     'dynamic_damage':                       HookInfo(['unit', 'item', 'target', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
     'dynamic_resist':                       HookInfo(['unit', 'item', 'target', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),

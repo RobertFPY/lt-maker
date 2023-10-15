@@ -1867,7 +1867,7 @@ def give_money(self: Event, money, party=None, flags=None):
         if money >= 0:
             b = banner.Advanced('Got <blue>{money}</> gold.'.format(money = str(money)), 'Item')
         else:
-            b = banner.Advanced('Lost <blue>{money}</> gold.'.format(money = str(money)), 'ItemBreak')
+            b = banner.Advanced('Lost <blue>{money}</> gold.'.format(money = str(money * -1)), 'ItemBreak')
         self.game.alerts.append(b)
         self.game.state.change('alert')
         self.state = 'paused'

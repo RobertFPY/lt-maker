@@ -2772,9 +2772,10 @@ def arrange_formation(self: Event, flags=None):
         num_slots = len(all_formation_spots)
     assign_these = unstuck_units[:num_slots]
     for idx, unit in enumerate(assign_these):
-        position = all_formation_spots[idx]
-        action.execute(action.ArriveOnMap(unit, position))
-        action.execute(action.Reset(unit))
+        if len(all_formation_spots) > idx:
+            position = all_formation_spots[idx]
+            action.execute(action.ArriveOnMap(unit, position))
+            action.execute(action.Reset(unit))
 
 def prep(self: Event, pick_units_enabled: str = None, music: str = None, other_options: str = None,
          other_options_enabled: str = None, other_options_on_select: str = None, flags=None):

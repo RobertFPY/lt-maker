@@ -243,7 +243,12 @@ class PrepPickUnitsState(State):
                         is_fatigued = True
                 if 'Blacklist' in unit.tags:  # Blacklisted unit can't be added
                     is_fatigued = True
-                if possible_position and not is_fatigued:
+                num_slots = game.level_vars.get('_prep_slots')
+                if num_slots is None:
+                    num_slots = len(game.get_all_formation_spots())
+                on_map = [unit for unit in game.units if unit.position and unit in game.get_units_in_party() 
+                            and game.check_for_region(unit.position, 'formation')]
+                if possible_position and not is_fatigued and len(on_map) < num_slots:
                     get_sound_thread().play_sfx('Select 1')
                     action.do(action.ArriveOnMap(unit, possible_position))
                     action.do(action.Reset(unit))

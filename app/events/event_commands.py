@@ -3154,6 +3154,16 @@ class ToggleNarrationMode(EventCommand):
     keywords = ['Direction']
     optional_keywords = ['Speed']
 
+class HideCombatUI(EventCommand):
+    nid = 'hide_combat_ui'
+    tag = Tags.DIALOGUE_TEXT
+    desc = ('Hides the combat ui. Combat UI will remain hidden until Show Combat UI command is called.')
+
+class ShowCombatUI(EventCommand):
+    nid = 'show_combat_ui'
+    tag = Tags.DIALOGUE_TEXT
+    desc = ('Shows the combat ui. Usually only called after hide_combat_ui has been called. Also usually caleld at the end of the boss conversation.')
+
 class SetOverworldMenuOptionEnabled(EventCommand):
     nid = 'set_overworld_menu_option_enabled'
     tag = Tags.OVERWORLD

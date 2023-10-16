@@ -369,7 +369,7 @@ def speak(self: Event, speaker_or_style: str, text, text_position=None, width=No
                               font_type, dialog_box, int(num_lines) if num_lines else None, cursor, message_tail, float(transparency) if transparency else None, name_tag_bg, flags)
 
     style = self._resolve_speak_style(speaker_or_style, style_nid, manual_style)
-    speaker = style.speaker or speaker_or_style or ''
+    speaker = speaker_or_style or style.speaker or ''
     if speaker.startswith('"') and speaker.endswith('"'):
         speaker = speaker[1:-1]
     unit = self._get_unit(speaker)

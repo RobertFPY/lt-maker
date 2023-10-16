@@ -1832,12 +1832,13 @@ class GiveSkill(EventCommand):
         """
 *GlobalUnit* gains *Skill*. If the *no_banner* flag is set, the player will not be informed of this.
 Optional *Initiator* global unit can be given to give the skill an initiator.
+Use the persistent flag to have the skill be treated as a personal skill rather than a temporary status.
          """
 
     keywords = ["GlobalUnit", "Skill"]
     optional_keywords = ["Initiator"]
     keyword_types = ["GlobalUnit", "Skill", "GlobalUnit"]
-    _flags = ['no_banner']
+    _flags = ['no_banner', 'persistent']
 
 class RemoveSkill(EventCommand):
     nid = 'remove_skill'

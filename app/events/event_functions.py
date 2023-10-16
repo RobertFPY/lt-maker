@@ -40,6 +40,7 @@ from app.utilities import str_utils, utils
 from app.utilities.enums import Alignments, HAlignment, Orientation, VAlignment
 from app.utilities.type_checking import check_valid_type
 from app.utilities.typing import NID
+from app.engine.source_type import SourceType
 
 if TYPE_CHECKING:
     from app.events.event import Event
@@ -1966,6 +1967,7 @@ def set_wexp(self: Event, global_unit, weapon_type, whole_number, flags=None):
 def give_skill(self: Event, global_unit, skill, initiator=None, flags=None):
     flags = flags or set()
 
+    is_persistent = 'persistent' in flags
     unit = self._get_unit(global_unit)
     if not unit:
         self.logger.error("give_skill: Couldn't find unit with nid %s" % global_unit)
@@ -1980,7 +1982,10 @@ def give_skill(self: Event, global_unit, skill, initiator=None, flags=None):
             self.logger.error("Couldn't find unit with nid %s" % initiator)
             return
     banner_flag = 'no_banner' not in flags
-    action.do(action.AddSkill(unit, skill_nid, initiator))
+    if is_persistent:
+        action.do(action.AddSkill(unit, skill_nid, initiator, source=unit.nid, source_type=SourceType.PERSONAL))
+    else:
+        action.do(action.AddSkill(unit, skill_nid, initiator))
     if banner_flag:
         skill = DB.skills.get(skill_nid)
         b = banner.GiveSkill(unit, skill)

@@ -174,6 +174,7 @@ class SimpleCombat():
         self.handle_death(all_units)
 
         self.handle_broken_items(asp, dsp)
+        self.handle_unusable_items(asp, dsp)
 
     def start_event(self, full_animation=False):
         # region is set to True or False depending on whether we are in a battle anim
@@ -383,7 +384,7 @@ class SimpleCombat():
     def handle_broken_items(self, attack_partner: Optional[UnitObject], defense_partner: Optional[UnitObject]):
         """
         Checks if any of the items used in battle are broken,
-        and if so unequips them.
+        and if so calls the corresponding function.
         Provides an alert for the attacker and defender's broken
         item if nobody died
         """
@@ -406,6 +407,22 @@ class SimpleCombat():
             item_system.on_broken(attack_partner, attack_partner.get_weapon())
         if defense_partner and item_system.is_broken(defense_partner, defense_partner.get_weapon()):
             item_system.on_broken(defense_partner, defense_partner.get_weapon())
+
+    def handle_unusable_items(self, attack_partner: Optional[UnitObject], defense_partner: Optional[UnitObject]):
+        """
+        Checks if any of the items used in battle are now unusable,
+        and if so calls the corresponding function.
+        No alerts
+        """
+        if item_system.is_unusable(self.attacker, self.main_item):
+            item_system.on_unusable(self.attacker, self.main_item)
+        if self.def_item and item_system.is_unusable(self.defender, self.def_item):
+            item_system.on_unusable(self.defender, self.def_item)
+        # No alert - just break the item
+        if attack_partner and item_system.is_unusable(attack_partner, attack_partner.get_weapon()):
+            item_system.on_unusable(attack_partner, attack_partner.get_weapon())
+        if defense_partner and item_system.is_unusable(defense_partner, defense_partner.get_weapon()):
+            item_system.on_unusable(defense_partner, defense_partner.get_weapon())
 
     def handle_wexp(self, unit, item, target):
         marks = self.get_from_full_playback('mark_hit')

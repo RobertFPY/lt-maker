@@ -1202,6 +1202,7 @@ class AnimationCombat(BaseCombat, MockCombat):
 
         self.handle_death(all_units)
 
+        self.handle_unusable_items(asp, dsp)
         self.handle_broken_items(asp, dsp)
 
         self.attacker.built_guard = True

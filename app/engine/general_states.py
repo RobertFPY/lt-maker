@@ -342,7 +342,7 @@ class FreeState(MapState):
             if DB.constants.value('initiative'):
                 get_sound_thread().play_sfx('Select 5')
                 game.initiative.toggle_draw()
-            elif DB.constants.value('minimap'):
+            elif DB.constants.value('minimap') and game.game_vars.get('_minimap', True):
                 get_sound_thread().play_sfx('Select 5')
                 game.state.change('minimap')
             else:

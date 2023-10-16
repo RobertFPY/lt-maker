@@ -185,7 +185,7 @@ class EventTextEditor(QPlainTextEdit):
 
     def lineNumberAreaWidth(self) -> int:
         num_blocks = max(1, self.blockCount())
-        digits = math.ceil(math.log(num_blocks, 10))
+        digits = int(math.log10(num_blocks)) + 1
         space = 3 + self.fontMetrics().horizontalAdvance("9") * digits
 
         return space

@@ -27,7 +27,6 @@ class SkillObject():
 
         self.data = {}
         self.initiator_nid = None
-
         # For subskill
         self.subskill = None
         self.subskill_uid = None

@@ -9,6 +9,7 @@ from app.engine.state import MapState
 from app.engine import engine, text_funcs, menus, action, \
     icons, help_menu, banner, base_surf
 from app.engine.game_state import game
+from app.engine.source_type import SourceType
 
 class SkillOption(menu_options.BasicOption):
     """
@@ -113,7 +114,7 @@ class FeatChoiceState(MapState):
             get_sound_thread().play_sfx('Select 1')
             selection = self.menu.get_current()
             game.state.back()
-            act = action.AddSkill(self.unit, selection.nid)
+            act = action.AddSkill(self.unit, selection.nid, source=unit.nid, source_type=SourceType.PERSONAL)
             action.do(act)
             if act.skill_obj:
                 game.alerts.append(banner.GiveSkill(self.unit, act.skill_obj))

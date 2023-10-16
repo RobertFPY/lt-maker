@@ -173,8 +173,8 @@ class SimpleCombat():
 
         self.handle_death(all_units)
 
-        self.handle_broken_items(asp, dsp)
         self.handle_unusable_items(asp, dsp)
+        self.handle_broken_items(asp, dsp)
 
     def start_event(self, full_animation=False):
         # region is set to True or False depending on whether we are in a battle anim
@@ -418,7 +418,7 @@ class SimpleCombat():
             item_system.on_unusable(self.attacker, self.main_item)
         if self.def_item and item_system.is_unusable(self.defender, self.def_item):
             item_system.on_unusable(self.defender, self.def_item)
-        # No alert - just break the item
+
         if attack_partner and item_system.is_unusable(attack_partner, attack_partner.get_weapon()):
             item_system.on_unusable(attack_partner, attack_partner.get_weapon())
         if defense_partner and item_system.is_unusable(defense_partner, defense_partner.get_weapon()):

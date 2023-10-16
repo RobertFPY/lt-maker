@@ -1780,7 +1780,7 @@ class GiveExp(EventCommand):
 
     desc = \
         """
-Gives *Experience* to *GlobalUnit*.
+Gives *Experience* to *GlobalUnit*. Can only give between -100 and 100 experience at a time.
         """
 
     keywords = ["GlobalUnit", "Experience"]

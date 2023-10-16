@@ -1917,7 +1917,7 @@ def give_exp(self: Event, global_unit, experience, flags=None):
                 action.do(action.SetExp(unit, 99))
         elif old_exp + exp < 0:
             if unit.level > 1:
-                action.do(action.SetExp(unit, 100 + old_exp - exp))
+                action.do(action.SetExp(unit, 100 + old_exp + exp))
                 autolevel_to(self, global_unit, unit.level - 1)
             else:
                 action.do(action.SetExp(unit, 0))

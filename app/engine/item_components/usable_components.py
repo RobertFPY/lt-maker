@@ -264,10 +264,11 @@ class Cooldown(ItemComponent):
     expose = ComponentType.Int
     value = 1
 
+    _used_in_combat = False
+
     def init(self, item):
         item.data['cooldown'] = 0
         item.data['starting_cooldown'] = self.value
-        self._used_in_combat = False
 
     def available(self, unit, item) -> bool:
         return item.data['cooldown'] == 0

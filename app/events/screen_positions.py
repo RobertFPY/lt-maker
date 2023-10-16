@@ -2,6 +2,7 @@ from app.constants import WINHEIGHT, WINWIDTH
 
 horizontal_screen_positions = {'OffscreenLeft': -96,
                                'FarLeft': -24,
+                               'LeftCorner': -16,
                                'Left': 0,
                                'MidLeft': 24,
                                'CenterLeft': 24,
@@ -9,6 +10,7 @@ horizontal_screen_positions = {'OffscreenLeft': -96,
                                'MidRight': WINWIDTH - 120,
                                'LevelUpRight': WINWIDTH - 100,
                                'Right': WINWIDTH - 96,
+                               'RightCorner': WINWIDTH - 80,
                                'FarRight': WINWIDTH - 72,
                                'OffscreenRight': WINWIDTH}
 

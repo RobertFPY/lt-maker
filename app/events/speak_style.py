@@ -67,6 +67,10 @@ class SpeakStyleLibrary(Dict[NID, SpeakStyle]):
                                          font_color='white', message_tail='None'),
              'clear': SpeakStyle('clear', background='None', font_color='white', draw_cursor=False, message_tail='None'),
              'thought_bubble': SpeakStyle('thought_bubble', message_tail='message_bg_thought_tail', flags={'no_talk'}),
+             'boss_convo_left': SpeakStyle('boss_convo_left', speed=1, font_type='convo', background='message_bg_base', num_lines=2, draw_cursor=True,
+                                           message_tail='message_bg_tail', transparency=0.0, position=(72, 112), width=WINWIDTH - 80),
+             'boss_convo_right': SpeakStyle('boss_convo_right', speed=1, font_type='convo', background='message_bg_base', num_lines=2, draw_cursor=True,
+                                            message_tail='message_bg_tail', transparency=0.0, position=(8, 112), width=WINWIDTH - 80),
              }
         )
 

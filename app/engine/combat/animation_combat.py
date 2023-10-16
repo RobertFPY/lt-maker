@@ -1078,7 +1078,7 @@ class AnimationCombat(BaseCombat, MockCombat):
         if self.ui_should_be_hidden() and self.bar_offset > 0:
             self.name_offset -= 0.1
             self.bar_offset -= 0.1
-        elif not self.hide_ui() and self.state not in ui_fade_states:
+        elif not self.ui_should_be_hidden() and self.state not in ui_fade_states:
             # Combat UI comes in without a fade
             self.name_offset = 1
             self.bar_offset = 1

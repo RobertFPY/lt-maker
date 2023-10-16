@@ -132,4 +132,6 @@ class EventHighlighter(QSyntaxHighlighter):
     def highlightBlock(self, text: str):
         to_format = self.event_syntax_formatter.match_line(text)
         for piece_to_format in to_format:
+            if piece_to_format.length == 0:
+                piece_to_format.length += 1
             self.setFormat(piece_to_format.start, piece_to_format.length, piece_to_format._format)

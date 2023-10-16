@@ -94,7 +94,7 @@ constants = ConstantCatalog([
     Constant('line_of_sight', "Force items and abilities to obey line of sight rules", ConstantType.BOOL, False, ConstantTag.LINE_OF_SIGHT),
     Constant('aura_los', "Force auras to obey line of sight rules", ConstantType.BOOL, False, ConstantTag.LINE_OF_SIGHT),
     Constant('fog_los', "Fog of War will also be affected by line of sight", ConstantType.BOOL, False, ConstantTag.LINE_OF_SIGHT),
-    Constant('ai_fog_of_war', "AI will also be affected by Fog of War", ConstantType.BOOL, False, ConstantTag.LINE_OF_SIGHT),
+    Constant('ai_fog_of_war', "AI will also be affected by Fog of War", ConstantType.BOOL, False, ConstantTag.AI),
     Constant('def_double', "Defender can double counterattack", ConstantType.BOOL, True, ConstantTag.OTHER),
     Constant('unit_stats_as_bonus', "Add class stats to non-generic base stats", ConstantType.BOOL, False, ConstantTag.LEVELING),
     Constant('enemy_leveling', "Method for autoleveling generic units", [growth.value for growth in GrowthOption if growth != GrowthOption.PLAYER_CHOICE] + ["Match"], "Match", ConstantTag.LEVELING),

@@ -193,7 +193,7 @@ class ModifyRegionWidget(QWidget):
             self.region_type_changed)
         layout.addWidget(self.region_type_box)
 
-        self.sub_nid_box = PropertyBox("Event Name", NidLineEdit, self)
+        self.sub_nid_box = PropertyBox("Event Name", QLineEdit, self)
         # if self.current.sub_nid and self.current.region_type == 'Event':
         #     self.sub_nid_box.edit.setText(self.current.sub_nid)
         self.sub_nid_box.edit.textChanged.connect(self.sub_nid_changed)

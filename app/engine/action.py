@@ -725,7 +725,11 @@ class Drop(Action):
         self.unit = unit
         self.droppee = droppee
         self.pos = pos
-        self.droppee_wait_action = Wait(self.droppee)
+        if self.droppee.team == game.phase.get_current():
+            # Only "wait" units that are in our phase
+            self.droppee_wait_action = Wait(self.droppee)
+        else:
+            self.droppee_wait_action = None
         self.subactions = []
 
     def do(self):
@@ -733,7 +737,8 @@ class Drop(Action):
         self.droppee.position = self.pos
         game.arrive(self.droppee)
         self.droppee.sprite.change_state('normal')
-        self.droppee_wait_action.do()
+        if self.droppee_wait_action:
+            self.droppee_wait_action.do()
 
         self.unit.traveler = None
         self.unit.has_dropped = True
@@ -751,7 +756,8 @@ class Drop(Action):
         self.droppee.position = self.pos
         game.arrive(self.droppee)
         self.droppee.sprite.change_state('normal')
-        self.droppee_wait_action.execute()
+        if self.droppee_wait_action:
+            self.droppee_wait_action.execute()
 
         for action in self.subactions:
             action.execute()
@@ -762,7 +768,8 @@ class Drop(Action):
     def reverse(self):
         self.unit.traveler = self.droppee.nid
 
-        self.droppee_wait_action.reverse()
+        if self.droppee_wait_action:
+            self.droppee_wait_action.reverse()
         game.leave(self.droppee)
         self.droppee.position = None
         self.unit.has_dropped = False

@@ -1,10 +1,16 @@
+from __future__ import annotations
+from app.data.database.components import ComponentType
+from app.data.database.database_types import DatabaseType
 from app.data.database.weapons import WexpGain
 from dataclasses import dataclass
 import logging
 from app.data.database.database import Database
+from app.data.resources.resource_types import ResourceType
+from app.data.resources.resources import Resources
+from app.utilities.data import Data
 from app.utilities.typing import NID
 import re
-from typing import Callable, Dict, List, Set
+from typing import Any, Callable, Dict, List, Set
 
 @dataclass
 class ValidationError():
@@ -20,47 +26,57 @@ class ValidationError():
     def does_not_exist(self, nid):
         return "%s does not exist" % nid
 
+def _nid_in_data(data: Data):
+    return lambda nid: nid in data.keys()
+
 class DatabaseValidatorEngine():
-    def __init__(self, db: Database):
+    def __init__(self, db: Database, resources: Resources):
         self.db = db
+        self.resources = resources
+        self._vmap: Dict[ComponentType | ResourceType | DatabaseType, Callable[[NID], bool]] = {
+            ComponentType.WeaponType: _nid_in_data(db.weapons),
+            ComponentType.WeaponRank: _nid_in_data(db.weapon_ranks),
+            ComponentType.Unit: _nid_in_data(db.units),
+            ComponentType.Class: _nid_in_data(db.classes),
+            ComponentType.Tag: _nid_in_data(db.tags),
+            ComponentType.Item: _nid_in_data(db.items),
+            ComponentType.Skill: _nid_in_data(db.skills),
+            ComponentType.Stat: _nid_in_data(db.stats),
+            ComponentType.MapAnimation: _nid_in_data(resources.animations),
+            ComponentType.Equation: _nid_in_data(db.equations),
+            ComponentType.MovementType: lambda mtype: mtype in db.mcost.get_unit_types(),
+            ComponentType.Sound: _nid_in_data(resources.sfx),
+            ComponentType.AI: _nid_in_data(db.ai),
+            ComponentType.Music: _nid_in_data(resources.music),
+            ComponentType.CombatAnimation: _nid_in_data(resources.combat_anims),
+            ComponentType.EffectAnimation: _nid_in_data(resources.combat_effects),
+            ComponentType.Affinity: _nid_in_data(db.affinities),
+            ComponentType.Terrain: _nid_in_data(db.terrain),
+            ComponentType.Event: _nid_in_data(db.events),
+        }
 
-    def validate_unit(self, unit_nid):
-        return unit_nid in self.db.units.keys()
+        # native types, don't really need to check these
+        for ctype in (ComponentType.Bool, ComponentType.Int, ComponentType.Float, ComponentType.String,
+                      ComponentType.Color3, ComponentType.Color4, ComponentType.StringDict, ComponentType.MultipleOptions):
+            def _trivial_type(val):
+                return True
+            self._vmap[ctype] = _trivial_type
 
-    def validate_wtype(self, wtype_nid):
-        return wtype_nid in self.db.weapons.keys()
+        # we shouldn't be validating these types. instead we should parse their elements and validate separately
+        for ctype in (ComponentType.List, ComponentType.Dict, ComponentType.FloatDict,
+                      ComponentType.MultipleChoice, ComponentType.NewMultipleOptions):
+            def should_not_be_validating(nid):
+                raise ValueError('%s should not be validated. Validate contents instead' % ctype)
+            self._vmap[ctype] = should_not_be_validating
 
-    def validate_wrank(self, wrank_nid):
-        return wrank_nid in self.db.weapons.keys()
-
-    def validate_class(self, klass_nid):
-        return klass_nid in self.db.classes.keys()
-
-    def validate_tag(self, tag_nid):
-        return tag_nid in self.db.tags.keys()
-
-    def validate_item(self, item_nid):
-        return item_nid in self.db.items.keys()
-
-    def validate_skill(self, skill_nid):
-        return skill_nid in self.db.skills.keys()
-
-    def validate_stat(self, stat_nid):
-        return stat_nid in self.db.stats.keys()
+    def validate(self, dtype: ComponentType | ResourceType | DatabaseType, value: Any):
+        return self._vmap[dtype](value)
 
     def validate_units(self):
         errors: List[ValidationError] = []
         for unit in self.db.units:
             if not self.validate_class(unit.klass):
                 errors.append(ValidationError("Units", unit.nid, "klass", ValidationError.does_not_exist(unit.klass)))
-        return errors
-
-    def validate(self):
-        # @TODO(mag): WIP
-        errors: List[ValidationError] = []
-        errors += self.validate_units()
-        for error in errors:
-            logging.error("validation failed: %s", error)
         return errors
 
     def fill_and_trim(self, data_dict: dict, expected_keys: set, real_keys: set, default_value_factory: Callable):

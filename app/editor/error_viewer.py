@@ -49,7 +49,7 @@ class ErrorViewer(QWidget):
         skill_errors = validate_skills(DB, RESOURCES)
         if skill_errors:
             skill_errors_as_str = '\n'.join(str(error) for error in skill_errors)
-            text_body += generate_header("SKILL ERRORS")
+            text_body += generate_header("SKILL AND ITEM ERRORS")
             text_body += skill_errors_as_str
 
         if not text_body:

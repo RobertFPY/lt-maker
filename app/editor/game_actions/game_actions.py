@@ -48,7 +48,7 @@ def test_play_current(level_nid):
     except Exception as e:
         handle_exception(e)
 
-def get_saved_games():
+def get_preloaded_games():
     GAME_NID = str(DB.constants.value('game_nid'))
     return glob.glob('saves/' + GAME_NID + '-preload-*-*.p')
 

@@ -420,7 +420,7 @@ class MainEditor(QMainWindow):
         self.test_full_act.setEnabled(True)
 
     def test_play_load(self):
-        saved_games = GAME_ACTIONS.get_saved_games()
+        saved_games = GAME_ACTIONS.get_preloaded_games()
         if saved_games:
             save_loc = SaveViewer.get(saved_games, self)
             if not save_loc:

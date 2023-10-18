@@ -49,7 +49,7 @@ def validate_items_and_skills(database: Database, resources: Resources) -> List:
             elif container == ComponentType.MultipleChoice:
                 # short-circuit. we don't use DB validation for this
                 if not cval in value_type:
-                    return [error_cls(obj_name, component_name, value_type, cval)]
+                    return [error_cls(obj_name, component_name, ComponentType.MultipleChoice, cval)]
         else:
             types_and_values = [(ctype, cval)]
 

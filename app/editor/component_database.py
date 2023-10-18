@@ -187,7 +187,10 @@ class DropDownItemComponent(BoolItemComponent):
         self.editor.addItems(self.options)
         if not self._data.value:
             self._data.value = self.options[0]
-        self.editor.setCurrentIndex(self.options.index(self._data.value))
+        if self._data.value in self.options:
+            self.editor.setCurrentIndex(self.options.index(self._data.value))
+        else:
+            self.editor.setCurrentIndex(0)
         self.editor.currentIndexChanged.connect(self.on_value_changed)
         hbox.addWidget(self.editor)
 

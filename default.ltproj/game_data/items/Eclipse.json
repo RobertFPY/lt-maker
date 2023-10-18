@@ -52,10 +52,6 @@
                 12
             ],
             [
-                "status_on_equip",
-                "Eclipse_Helper"
-            ],
-            [
                 "wexp",
                 8
             ],
@@ -70,6 +66,10 @@
             [
                 "max_range",
                 10
+            ],
+            [
+                "status_on_hit",
+                "Eclipse_Helper"
             ],
             [
                 "siege_weapon",

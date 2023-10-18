@@ -38,5 +38,8 @@
     "Torch.json": 36,
     "Void_Curse.json": 37,
     "Inspiration.json": 38,
-    "Inspiration_child.json": 39
+    "Inspiration_child.json": 39,
+    "Devil_Luck.json": 40,
+    "Eclipse_Helper.json": 41,
+    "Ignore_RES.json": 42
 }

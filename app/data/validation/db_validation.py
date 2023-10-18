@@ -9,7 +9,7 @@ from app.data.validation.validation_errors import ItemComponentValidationError, 
 from app.events.python_eventing.preprocessor import Preprocessor
 
 
-def validate_skills(database: Database, resources: Resources) -> List:
+def validate_items_and_skills(database: Database, resources: Resources) -> List:
     validator = DatabaseValidatorEngine(database, resources)
     all_errors = []
     for skill in database.skills:
@@ -78,6 +78,6 @@ def validate_events(database: Database, resources: Resources) -> List:
 
 def validate_all(database: Database, resources: Resources) -> List:
     event_errors = validate_events(database, resources)
-    skill_errors = validate_skills(database, resources)
+    skill_errors = validate_items_and_skills(database, resources)
     all_errors = event_errors + skill_errors
     return all_errors

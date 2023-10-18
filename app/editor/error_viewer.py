@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import QApplication, QTextEdit, QVBoxLayout, QWidget, QPush
 from app.data.database.database import DB
 from app.data.resources.resources import RESOURCES
 
-from app.data.validation.db_validation import validate_events, validate_skills
+from app.data.validation.db_validation import validate_events, validate_items_and_skills
 
 MAX_NUM_CHARS = 100000
 
@@ -46,7 +46,7 @@ class ErrorViewer(QWidget):
             text_body += generate_header("EVENT ERRORS")
             text_body += event_errors_as_str
 
-        skill_errors = validate_skills(DB, RESOURCES)
+        skill_errors = validate_items_and_skills(DB, RESOURCES)
         if skill_errors:
             skill_errors_as_str = '\n'.join(str(error) for error in skill_errors)
             text_body += generate_header("SKILL AND ITEM ERRORS")

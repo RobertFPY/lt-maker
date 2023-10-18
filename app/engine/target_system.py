@@ -3,10 +3,9 @@ from typing import FrozenSet, TYPE_CHECKING, List, Optional, Set, Tuple
 from functools import lru_cache
 
 from app.data.database.database import DB
-from app.engine import (combat_calcs, equations, item_funcs, item_system,
+from app.engine import (combat_calcs, item_funcs, item_system,
                         line_of_sight, skill_system)
 from app.engine.movement import movement_funcs
-from app.engine.pathfinding import pathfinding
 from app.engine.game_state import GameState
 from app.utilities import utils
 from app.utilities.typing import Pos

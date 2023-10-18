@@ -30,6 +30,7 @@ if TYPE_CHECKING:
     from app.engine.dialog_log import DialogLog
     from app.events.event_manager import EventManager
     from app.engine.target_system import TargetSystem
+    from app.engine.pathfinding.path_system import PathSystem
     from app.utilities.typing import NID, UID
 
 from app.constants import VERSION
@@ -112,6 +113,7 @@ class GameState():
         self.overworld_controller: OverworldManager = None
 
         self.target_system: TargetSystem = None
+        self.path_system: PathSystem = None
 
         self.clear()
 
@@ -217,6 +219,7 @@ class GameState():
                                 map_view, phase, ui_view)
         from app.engine.movement import movement_system
         from app.engine.target_system import TargetSystem
+        from app.engine.pathfinding.path_system import PathSystem
 
         # Systems
         self.camera = camera.Camera(self)
@@ -231,6 +234,7 @@ class GameState():
         self.mana_instance = []
         self.ai = ai_controller.AIController()
         self.target_system = TargetSystem()
+        self.path_system = PathSystem()
 
         self.alerts.clear()
 

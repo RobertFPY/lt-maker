@@ -124,7 +124,7 @@ class ProjectFileBackend():
         # the user can make a game
         try:
             any_errors = validate_all(DB, RESOURCES)
-            DB.game_flags.has_fatal_errors = False if not any_errors else True
+            DB.game_flags.has_fatal_errors = bool(any_errors)
         except Exception as e:
             QMessageBox.warning(self.parent, "Validation warning", "Validation failed with error. Please send this message to the devs.\nYour save will continue as normal.\nException:\n%s" % str(e))
             DB.game_flags.has_fatal_errors = False

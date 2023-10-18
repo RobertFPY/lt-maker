@@ -59,6 +59,7 @@ class FatalErrorDialog(SimpleDialog):
 
     def open_error_viewer(self):
         self.main_window_ref._error_window_ref = show_error_report()
+        self.close()
 
 class ProjectFileBackend():
     def __init__(self, parent, app_state_manager):

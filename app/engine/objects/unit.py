@@ -29,12 +29,12 @@ class UnitSkill():
     skill_obj: SkillObject
     source: Union[str, tuple, int]
     source_type: tuple
-    
+
     def __init__(self, skill_obj, source = None, source_type = SourceType.DEFAULT):
         self.skill_obj = skill_obj
         self.source = source
         self.source_type = source_type
-    
+
     def get(self):
         return self.skill_obj
 
@@ -918,4 +918,4 @@ class UnitObject(Prefab):
         return hash(self.nid)
 
     def __eq__(self, other: UnitObject) -> bool:
-        return other and self.nid == other.nid
+        return isinstance(other, UnitObject) and self.nid == other.nid

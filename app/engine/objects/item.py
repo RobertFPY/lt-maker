@@ -102,7 +102,7 @@ class ItemObject():
         return hash(self.uid)
 
     def __eq__(self, other: ItemObject) -> bool:
-        return other and self.uid == other.uid
+        return isinstance(other, ItemObject) and self.uid == other.uid
 
     def save(self):
         serial_dict = {}

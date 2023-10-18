@@ -25,8 +25,24 @@ from app.engine import engine
 from app.utilities import utils, static_random
 from app.engine.source_type import SourceType
 
+def alters_game_state(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        func(*args, **kwargs)
+        game.on_alter_game_state()
+    return wrapper
+
+def wrap_do_exec_reverse(_cls):
+    for func in ['do', 'execute', 'reverse']:
+      setattr(_cls, func, alters_game_state(getattr(_cls, func)))
+    def wrapper():
+        return _cls()
+    return wrapper
 
 class Action():
+    def __init_subclass__(cls, **kwargs):
+        return wrap_do_exec_reverse(_cls=cls)
+
     def __init__(self):
         pass
 
@@ -285,6 +301,27 @@ class FadeMove(SimpleMove):
         game.arrive(self.unit)
         self.update_fow_action.do()
 
+class PutUnitDown(Action):
+    def __init__(self, unit, test=False):
+        self.unit = unit
+        self.test = test
+
+    def do(self):
+        game.arrive(self.unit, self.test)
+
+    def reverse(self):
+        game.leave(self.unit, self.test)
+
+class PickUnitUp(Action):
+    def __init__(self, unit, test=False):
+        self.unit = unit
+        self.test = test
+
+    def do(self):
+        game.leave(self.unit, self.test)
+
+    def reverse(self):
+        game.arrive(self.unit, self.test)
 
 class ArriveOnMap(Action):
     def __init__(self, unit, pos):
@@ -298,7 +335,6 @@ class ArriveOnMap(Action):
     def reverse(self):
         game.leave(self.unit)
         self.place_on_map.reverse()
-
 
 class WarpIn(ArriveOnMap):
     def do(self):
@@ -2607,10 +2643,10 @@ class ChangeAffinity(Action):
         self.unit = unit
         self.old_affinity = unit.affinity
         self.new_affinity = affinity
-        
+
     def do(self):
         self.unit.affinity = self.new_affinity
-    
+
     def reverse(self):
         self.unit.affinity = self.old_affinity
 
@@ -3438,7 +3474,7 @@ class RemoveSkill(Action):
                 game.boundary.unregister_unit_auras(self.unit)
                 aura_funcs.propagate_aura(self.unit, skill, game)
                 game.boundary.register_unit_auras(self.unit)
-                
+
             skill_system.after_add(self.unit, skill)
 
 

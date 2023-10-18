@@ -115,6 +115,10 @@ class GameState():
 
         self.clear()
 
+    def on_alter_game_state(self):
+        from app.engine import skill_system
+        skill_system.reset_cache()
+
     def is_displaying_overworld(self) -> bool:
         from app.engine.overworld.overworld_map_view import OverworldMapView
         return isinstance(self.map_view, OverworldMapView)
@@ -623,6 +627,7 @@ class GameState():
         else:
             self.turncount = 1
             self.action_log.set_first_free_action()
+        self.on_alter_game_state()
 
     @property
     def level(self):

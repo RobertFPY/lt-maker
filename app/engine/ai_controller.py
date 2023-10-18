@@ -435,9 +435,9 @@ class PrimaryAI():
             return []
 
     def quick_move(self, move):
-        game.leave(self.unit, test=True)
+        action.PickUnitUp(self.unit, True).do()
         self.unit.position = move
-        game.arrive(self.unit, test=True)
+        action.PutUnitDown(self.unit, True).do()
 
     def run(self):
         if self.item_index >= len(self.items):
@@ -694,7 +694,7 @@ def get_targets(unit, behaviour):
     if behaviour.target != 'Position':
         if DB.constants.value('ai_fog_of_war'):
             all_targets = [
-                pos for pos in all_targets if 
+                pos for pos in all_targets if
                 game.board.in_vision(pos, unit.team) or
                 (game.board.get_unit(pos) and 'Tile' in game.board.get_unit(pos).tags) # Can always targets Tiles
             ]

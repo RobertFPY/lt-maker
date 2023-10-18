@@ -4,29 +4,13 @@
         "trigger": "Armory",
         "level_nid": "5",
         "condition": "True",
-        "commands": [
-            [
-                "transition",
-                [
-                    "Close"
-                ]
-            ],
-            [
-                "shop",
-                [
-                    "{unit}",
-                    "Iron Sword,Slim Sword,Steel Sword,Iron Lance,Slim Lance,Steel Lance,Iron Axe,Steel Axe,Iron Bow,Steel Bow"
-                ]
-            ],
-            [
-                "transition",
-                [
-                    "Open"
-                ]
-            ]
-        ],
+        "commands": [],
         "only_once": false,
         "priority": 20,
-        "source": ""
+        "_source": [
+            "transition;Close",
+            "shop;{unit};Iron Sword,Slim Sword,Steel Sword,Iron Lance,Slim Lance,Steel Lance,Iron Axe,Steel Axe,Iron Bow,Steel Bow",
+            "transition;Open"
+        ]
     }
 ]

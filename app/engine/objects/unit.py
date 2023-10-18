@@ -175,8 +175,8 @@ class UnitObject(Prefab):
             self.stat_cap_modifiers = {stat_nid: 0 for stat_nid in DB.stats.keys()}
             weapon_gain = klass_obj.wexp_gain
             self.wexp = {
-                weapon_nid: 
-                utils.clamp(weapon_gain.get(weapon_nid, DB.weapons.default(DB)).wexp_gain, 0, unit_funcs.get_weapon_cap(self, weapon_nid)) 
+                weapon_nid:
+                utils.clamp(weapon_gain.get(weapon_nid, DB.weapons.default(DB)).wexp_gain, 0, unit_funcs.get_weapon_cap(self, weapon_nid))
                 for weapon_nid in DB.weapons.keys()
             }
         else:
@@ -192,8 +192,8 @@ class UnitObject(Prefab):
             self.stat_cap_modifiers = {stat_nid: stat_cap_modifiers.get(stat_nid, 0) for stat_nid in DB.stats.keys()}
             weapon_gain = prefab.wexp_gain
             self.wexp = {
-                weapon_nid: 
-                utils.clamp(weapon_gain.get(weapon_nid, DB.weapons.default(DB)).wexp_gain, 0, unit_funcs.get_weapon_cap(self, weapon_nid)) 
+                weapon_nid:
+                utils.clamp(weapon_gain.get(weapon_nid, DB.weapons.default(DB)).wexp_gain, 0, unit_funcs.get_weapon_cap(self, weapon_nid))
                 for weapon_nid in DB.weapons.keys()
             }
 
@@ -459,7 +459,7 @@ class UnitObject(Prefab):
         skills = list(reversed(skills)) # Reverse back to correct direction
         self._visible_skills_cache = skills
         return skills
-    
+
     def stat_bonus(self, stat_nid: NID) -> int:
         bonus = skill_system.stat_change(self, stat_nid)
         weapon = self.equipped_weapon
@@ -916,3 +916,6 @@ class UnitObject(Prefab):
 
     def __hash__(self):
         return hash(self.nid)
+
+    def __eq__(self, other: UnitObject) -> bool:
+        return other and self.nid == other.nid

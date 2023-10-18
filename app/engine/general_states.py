@@ -455,7 +455,7 @@ class OptionMenuState(MapState):
         additional_events = game.game_vars.get('_custom_options_events', [])
 
         option_idx = options.index('Options')
-        
+
         options = options[:option_idx] + additional_options + options[option_idx:]
         info_desc = info_desc[:option_idx] + additional_info_desc + info_desc[option_idx:]
         ignore = ignore[:option_idx] + additional_ignore + ignore[option_idx:]
@@ -468,7 +468,7 @@ class OptionMenuState(MapState):
         options, info_desc, ignore, events = self._populate_options()
 
         self.events_on_option_select = events
-        
+
         self.menu = menus.Choice(None, options, info=info_desc)
         self.menu.set_limit(9)
         self.menu.set_ignore(ignore)
@@ -975,7 +975,7 @@ class MenuState(MapState):
                         u = game.get_unit(self.cur_unit.traveler)
                         self.cur_unit = u
                         game.cursor.cur_unit = u
-                        game.leave(self.cur_unit)
+                        action.PickUnitUp(self.cur_unit).do()
                     if self.cur_unit.current_move:
                         logging.info("Reversing " + self.cur_unit.nid + "'s move")
                         action.reverse(self.cur_unit.current_move)
@@ -1333,7 +1333,7 @@ class ItemChildState(MapState):
                     # if it targets items, must use combat targeting routine to handle
                     game.memory['item'] = item
                     game.state.change('combat_targeting')
-                else: 
+                else:
                     targets: set = game.target_system.get_valid_targets(self.cur_unit, item)
                     # No need to select when only target is yourself
                     if len(targets) == 1 and next(iter(targets)) == self.cur_unit.position:
@@ -1409,7 +1409,7 @@ class ItemDiscardState(MapState):
         if not item_funcs.too_much_in_inventory(self.cur_unit):
             game.state.back()
             return 'repeat'
-            
+
     def check_locked_inventory(self) -> bool:
         locked_items = [item for item in self.cur_unit.items if item_system.locked(self.cur_unit, item) and not item_system.is_accessory(self.cur_unit, item)]
         if len(locked_items) > item_funcs.get_num_items(self.cur_unit):
@@ -1836,7 +1836,7 @@ class TargetingState(MapState):
 
         elif event == 'AUX':
             get_sound_thread().play_sfx('Select 6')
-            _handle_direction(self.selection.get_next)            
+            _handle_direction(self.selection.get_next)
 
     def draw_rescue_preview(self, rescuee, surf):
         window = SPRITES.get('rescue_window').copy()

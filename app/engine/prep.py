@@ -407,17 +407,17 @@ class PrepFormationSelectState(MapState):
                 if cur_unit and (cur_unit.team != 'player' or cur_unit is self.unit):
                     pass
                 elif cur_unit:
-                    game.leave(cur_unit)
-                    game.leave(self.unit)
+                    action.PickUnitUp(cur_unit).do()
+                    action.PickUnitUp(self.unit).do()
                     cur_unit.position, self.unit.position = self.unit.position, cur_unit.position
-                    game.arrive(cur_unit)
-                    game.arrive(self.unit)
+                    action.PutUnitDown(cur_unit).do()
+                    action.PutUnitDown(self.unit).do()
                     action.UpdateFogOfWar(cur_unit).do()
                     action.UpdateFogOfWar(self.unit).do()
                 else:
-                    game.leave(self.unit)
+                    action.PickUnitUp(self.unit).do()
                     self.unit.position = game.cursor.position
-                    game.arrive(self.unit)
+                    action.PutUnitDown(self.unit).do()
                     action.UpdateFogOfWar(self.unit).do()
                 game.state.back()
                 game.ui_view.remove_unit_display()

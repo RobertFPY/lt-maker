@@ -625,9 +625,13 @@ class PrepManageSelectState(State):
         self.unit = game.memory['current_unit']
         self.current_index = self.menu.current_index
 
-        options = ['Trade', 'Restock', 'Give all', 'Optimize', 'Items', 'Market']
+        options = ['Trade', 'Restock', 'Give all', 'Optimize', 'Use', 'Market']
+        # Replace Optimize with Repair when the repair shop is available
         if DB.constants.value('repair_shop'):
             options[3] = 'Repair'
+        # Replace Use with Items when the convoy is available
+        if game.game_vars.get('_convoy'):
+            options[4] = 'Items'
         ignore = self.get_ignore()
         self.select_menu = menus.Table(self.unit, options, (3, 2), (120, 80))
         self.select_menu.set_ignore(ignore)
@@ -635,12 +639,16 @@ class PrepManageSelectState(State):
     def get_ignore(self) -> list:
         ignore = [False, True, True, True, True, True]
         if game.game_vars.get('_convoy'):
+            # Turn Optimize and Items on
             ignore = [False, True, True, False, False, True]
             tradeable_items = item_funcs.get_all_tradeable_items(self.unit)
             if tradeable_items:
-                ignore[2] = False
+                ignore[2] = False  # Give all
             if any(convoy_funcs.can_restock(item) for item in tradeable_items):
-                ignore[1] = False
+                ignore[1] = False  # Restock
+        else:  # Handle Use
+            if any((item_funcs.can_be_used_in_base(self.unit, item) for item in self.unit.items)):
+                ignore[4] = False
         if self.name == 'base_manage_select':
             if game.game_vars.get('_base_market') and game.market_items:
                 ignore[5] = False
@@ -699,6 +707,8 @@ class PrepManageSelectState(State):
             elif choice == 'Repair':
                 game.memory['next_state'] = 'repair_shop'
                 game.state.change('transition_to')
+            elif choice == 'Use':
+                game.state.change('prep_use')
 
         elif event == 'BACK':
             get_sound_thread().play_sfx('Select 4')
@@ -864,10 +874,7 @@ class PrepItemsState(State):
                             options.append('Store')
                             options.append('Trade')
                         if self.name != 'supply_items' and \
-                                item_system.can_use(self.unit, current) and \
-                                item_funcs.available(self.unit, current) and \
-                                item_system.can_use_in_base(self.unit, current) and \
-                                item_system.simple_target_restrict(self.unit, current):
+                                item_funcs.can_be_used_in_base(self.unit, current):
                             options.append('Use')
                         if convoy_funcs.can_restock(current):
                             options.append('Restock')
@@ -882,10 +889,7 @@ class PrepItemsState(State):
                 elif context == 'convoy':
                     if current:
                         if self.name != 'supply_items' and \
-                                item_system.can_use(self.unit, current) and \
-                                item_funcs.available(self.unit, current) and \
-                                item_system.can_use_in_base(self.unit, current) and \
-                                item_system.simple_target_restrict(self.unit, current):
+                                item_funcs.can_be_used_in_base(self.unit, current):
                             self.state = 'convoy_item'
                             topleft = (80, (self.menu.get_current_index() - self.menu.get_scrolled_index()) * 16 + 36)
                             if item_funcs.inventory_full(self.unit, current):
@@ -1101,6 +1105,81 @@ class PrepRestockState(State):
         self.unit_menu.draw(surf)
         self.menu.draw(surf)
         return surf
+
+
+class PrepUseState(State):
+    name = 'prep_use'
+
+    def start(self):
+        self.fluid = FluidScroll()
+
+        self.bg = game.memory['prep_bg']
+        self.unit = game.memory['current_unit']
+        self.unit_menu = game.memory['manage_menu']
+
+        topleft = (6, 72)
+        self.menu = menus.Inventory(self.unit, self.unit.items, topleft)
+
+    def begin(self):
+        self.menu.update_options(self.unit.items)
+        ignore = self.get_ignore()
+        self.menu.set_ignore(ignore)
+        if all(ignore):
+            game.state.back()
+
+    def get_ignore(self) -> List[bool]:
+        items = [option.get() for option in self.menu.options]
+        ignore = [not item_funcs.can_be_used_in_base(self.unit, item)
+                  for item in items]
+        return ignore
+
+    def take_input(self, event):
+        first_push = self.fluid.update()
+        directions = self.fluid.get_directions()
+
+        self.menu.handle_mouse()
+        if 'DOWN' in directions:
+            get_sound_thread().play_sfx('Select 5')
+            self.menu.move_down(first_push)
+        elif 'UP' in directions:
+            get_sound_thread().play_sfx('Select 5')
+            self.menu.move_up(first_push)
+
+        if event == 'SELECT':
+            get_sound_thread().play_sfx('Select 1')
+            item = self.menu.get_current()
+            # Actually Use item
+            if item_system.targets_items(self.unit, item):
+                game.memory['target'] = self.unit
+                game.memory['item'] = item
+                self._proceed_with_targets_item = True
+                game.state.change('item_targeting')
+            else:
+                action.do(action.HasTraded(self.unit))
+                interaction.start_combat(self.unit, None, item)
+
+        elif event == 'BACK':
+            get_sound_thread().play_sfx('Select 4')
+            game.state.back()
+
+        elif event == 'INFO':
+            self.menu.toggle_info()
+            if self.menu.info_flag:
+                get_sound_thread().play_sfx('Info In')
+            else:
+                get_sound_thread().play_sfx('Info Out')
+
+    def update(self):
+        self.menu.update()
+        self.unit_menu.update()
+
+    def draw(self, surf):
+        if self.bg:
+            self.bg.draw(surf)
+        self.unit_menu.draw(surf)
+        self.menu.draw(surf)
+        return surf
+
 
 class PrepMarketState(State):
     name = 'prep_market'

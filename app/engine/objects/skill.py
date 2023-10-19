@@ -58,7 +58,7 @@ class SkillObject():
         return hash(self.uid)
 
     def __eq__(self, other: SkillObject) -> bool:
-        return other and self.uid == other.uid
+        return isinstance(other, SkillObject) and self.uid == other.uid
 
     def save(self):
         serial_dict = {}

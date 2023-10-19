@@ -712,8 +712,6 @@ class Position(Validator):
                 return text
             elif text in ('{unit}', '{unit1}', '{unit2}', '{position}'):
                 return text
-            elif text in self.valid_overworld_nids().values():
-                return text
             if level and level.regions:
                 if text in level.regions.keys():
                     return text
@@ -741,26 +739,10 @@ class Position(Validator):
             valids.append((None, "{unit1}"))
             valids.append((None, "{unit2}"))
             valids.append((None, "{position}"))
-            for pair in self.valid_overworld_nids().items():
-                valids.append(pair)
             for region in level_prefab.regions.values():
                 valids.append((None, region.nid))
             return valids
-        else:
-            valids = []
-            for pair in self.valid_overworld_nids().items():
-                valids.append(pair)
-            return valids
-
-    def valid_overworld_nids(self) -> Dict[str, NID]:
-        # list of all valid nids in overworld
-        nids = {}
-        for overworld in self._db.overworlds.values():
-            node_nids = {node.name: node.nid for node in overworld.overworld_nodes.values()}
-            nids.update(node_nids)
-        party_nids = {party.name: party.nid for party in self._db.parties.values()}
-        nids.update(party_nids)
-        return nids
+        return []
 
 class FloatPosition(Position, Validator):
     desc = """accepts a valid `(x, y)` position, but also allows fractional positions,

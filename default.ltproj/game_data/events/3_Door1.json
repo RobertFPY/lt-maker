@@ -4,22 +4,12 @@
         "trigger": "Door",
         "level_nid": "3",
         "condition": "region.nid == 'Door1'",
-        "commands": [
-            [
-                "unlock",
-                [
-                    "{unit}"
-                ]
-            ],
-            [
-                "show_layer",
-                [
-                    "Door1"
-                ]
-            ]
-        ],
+        "commands": [],
         "only_once": false,
         "priority": 20,
-        "source": ""
+        "_source": [
+            "unlock;{unit}",
+            "show_layer;Door1"
+        ]
     }
 ]

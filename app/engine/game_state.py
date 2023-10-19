@@ -542,8 +542,8 @@ class GameState():
             if unit.traveler:
                 droppee = self.get_unit(unit.traveler)
                 if full:
-                    unit.traveler = None
                     action.RemoveSkill(unit, 'Rescue', source=unit.traveler, source_type=SourceType.TRAVELER).execute()
+                    unit.traveler = None
                 else:
                     pos = self.target_system.get_nearest_open_tile(droppee, unit.position)
                     action.Drop(unit, droppee, pos).execute()

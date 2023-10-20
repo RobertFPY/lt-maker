@@ -1259,10 +1259,9 @@ class PrepMarketState(State):
                         new_item = item_funcs.create_item(self.unit, item.nid)
                         game.register_item(new_item)
                         if not item_funcs.inventory_full(self.unit, new_item):
-                            self.unit.add_item(new_item)
+                            action.GiveItem(self.unit, new_item).do()
                         else:
-                            new_item.change_owner(None)
-                            game.party.convoy.append(new_item)
+                            action.PutItemInConvoy(new_item).do()
                         self.update_options()
                     elif self.menu.get_stock() == 0:
                         # Market is out of stock
@@ -1285,9 +1284,9 @@ class PrepMarketState(State):
                         self.money_counter_disp.start(value)
                         if item.owner_nid:
                             owner = game.get_unit(item.owner_nid)
-                            owner.remove_item(item)
+                            action.RemoveItem(owner, item).do()
                         else:
-                            game.party.convoy.remove(item)
+                            action.RemoveItemFromConvoy(item).do()
                         self.update_options()
                     else:
                         # No value, can't be sold

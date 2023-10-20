@@ -9,13 +9,13 @@
         "priority": 20,
         "_source": [
             "make_generic;;Soldier;1;other;Pursue",
-            "add_unit;{unit};{position};warp;closest",
+            "add_unit;{created_unit};{position};warp;closest",
             "make_generic;;Soldier;1;other;Pursue",
-            "add_unit;{unit};{position};warp;closest",
+            "add_unit;{created_unit};{position};warp;closest",
             "make_generic;;Soldier;1;other;Pursue",
-            "add_unit;{unit};{position};warp;closest",
+            "add_unit;{created_unit};{position};warp;closest",
             "make_generic;;Soldier;1;other;Pursue",
-            "add_unit;{unit};{position};warp;closest",
+            "add_unit;{created_unit};{position};warp;closest",
             "wait;200"
         ]
     }

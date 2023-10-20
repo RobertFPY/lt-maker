@@ -3,7 +3,7 @@
         "name": "FightONeill",
         "trigger": "combat_start",
         "level_nid": "0",
-        "condition": "unit.nid == \"O'Neill\" or unit2.nid == \"O'Neill\"",
+        "condition": "check_default(\"O'Neill\",['Eirika'])",
         "commands": [],
         "only_once": true,
         "priority": 20,

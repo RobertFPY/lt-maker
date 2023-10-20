@@ -4,7 +4,6 @@ from typing import Optional
 from app.utilities import str_utils
 from app.utilities.data import Data
 
-
 class ComponentType(IntEnum):
     Bool = 0
     Int = 1

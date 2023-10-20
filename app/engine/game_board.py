@@ -1,12 +1,11 @@
 from app.engine.objects.unit import UnitObject
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 from app.data.database.database import DB
 from app.engine import line_of_sight
 from app.engine.pathfinding.node import Node
 from app.engine.game_state import game
-from app.utilities.typing import NID
-from app.utilities import utils
+from app.utilities.typing import NID, Pos
 
 class GameBoard(object):
     def __init__(self, tilemap):
@@ -42,8 +41,11 @@ class GameBoard(object):
     def set_bounds(self, min_x, min_y, max_x, max_y):
         self.bounds = (min_x, min_y, max_x, max_y)
 
-    def check_bounds(self, pos):
+    def check_bounds(self, pos: Pos):
         return self.bounds[0] <= pos[0] <= self.bounds[2] and self.bounds[1] <= pos[1] <= self.bounds[3]
+
+    def get_all_positions_in_bounds(self) -> Set[Pos]:
+        return {(x, y) for x in range(self.bounds[0], self.bounds[2]) for y in range(self.bounds[1], self.bounds[3])}
 
     def reset_grid(self, tilemap):
         # For each movement type
@@ -107,19 +109,19 @@ class GameBoard(object):
                 cells.append([])
         return cells
 
-    def set_unit(self, pos: Tuple[int, int], unit: UnitObject):
+    def set_unit(self, pos: Pos, unit: UnitObject):
         idx = pos[0] * self.height + pos[1]
         if unit not in self.unit_grid[idx]:
             self.unit_grid[idx].append(unit)
             self.team_grid[idx].append(unit.team)
 
-    def remove_unit(self, pos: Tuple[int, int], unit: UnitObject):
+    def remove_unit(self, pos: Pos, unit: UnitObject):
         idx = pos[0] * self.height + pos[1]
         if unit in self.unit_grid[idx]:
             self.unit_grid[idx].remove(unit)
             self.team_grid[idx].remove(unit.team)
 
-    def get_unit(self, pos: Tuple[int, int]) -> Optional[UnitObject]:
+    def get_unit(self, pos: Pos) -> Optional[UnitObject]:
         if not pos:
             return None
         idx = pos[0] * self.height + pos[1]
@@ -127,19 +129,23 @@ class GameBoard(object):
             return self.unit_grid[idx][0]
         return None
 
-    def get_units(self, pos: Tuple[int, int]) -> List[UnitObject]:
+    def get_units(self, pos: Pos) -> List[UnitObject]:
         if not pos:
             return []
         idx = pos[0] * self.height + pos[1]
         return self.unit_grid[idx]
 
-    def get_team(self, pos: Tuple[int, int]) -> NID:
+    def get_team(self, pos: Pos) -> NID:
         if not pos:
             return None
         idx = pos[0] * self.height + pos[1]
         if self.team_grid[idx]:
             return self.team_grid[idx][0]
         return None
+
+    def is_tile(self, pos: Pos) -> bool:
+        """Returns whether a Tile tagged unit is on the given position"""
+        return self.get_unit(pos) and 'Tile' in self.get_unit(pos).tags
 
     def can_move_through(self, team, adj) -> bool:
         unit_team = self.get_team((adj.x, adj.y))
@@ -159,7 +165,7 @@ class GameBoard(object):
                 return True
         return False
 
-    # Fog of war
+    # === Fog of War ===
     def update_fow(self, pos, unit, sight_range: int):
         grid = self.fog_of_war_grids[unit.team]
         # Remove the old vision
@@ -256,7 +262,15 @@ class GameBoard(object):
             fog_of_war_radius = ai_fog_of_war_radius
         return fog_of_war_radius
 
-    # Line of sight
+    def check_fog_of_war(self, unit: UnitObject, pos: Pos) -> bool:
+        """Returns True if unit can see position for targeting.
+
+        Units can always see their own position and the position of Tile-tagged units."""
+        return (pos == unit.position or
+                self.in_vision(pos, unit.team) or
+                self.is_tile(pos))
+
+    # === Line of Sight ===
     def init_opacity_grid(self, tilemap):
         cells = []
         for x in range(self.width):
@@ -275,7 +289,7 @@ class GameBoard(object):
         idx = pos[0] * self.height + pos[1]
         return self.opacity_grid[idx]
 
-    # Auras
+    # === Auras ===
     def init_aura_grid(self):
         cells = []
         for x in range(self.width):

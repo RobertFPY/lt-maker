@@ -83,7 +83,7 @@ class HighlightController():
         self.add_highlights(valid_attacks, name)
 
     def display_highlights(self, unit, light=False):
-        valid_moves = game.target_system.get_valid_moves(unit)
+        valid_moves = game.path_system.get_valid_moves(unit)
 
         if DB.constants.value('zero_move') and unit.get_ai() and not game.ai_group_active(unit.ai_group):
             ai_prefab = DB.ai.get(unit.get_ai())

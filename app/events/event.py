@@ -414,7 +414,7 @@ class Event():
             if unit.position == position:
                 # Don't bother if identical
                 return
-            path = self.game.target_system.get_path(unit, position)
+            path = self.game.path_system.get_path(unit, position)
             action.do(action.Move(unit, position, path, event=True, follow=follow))
         return position
 

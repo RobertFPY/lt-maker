@@ -23,7 +23,19 @@ class TargetSystem():
             self.game = game
 
     # Consider making these sections faster
-    def get_shell(self, valid_moves: Set[Pos], potential_range: Set[int], bounds: Tuple[int, int, int, int], manhattan_restriction: set = None) -> Set[Pos]:
+    def get_shell(self, valid_moves: Set[Pos], potential_range: Set[int], 
+                  bounds: Tuple[int, int, int, int], manhattan_restriction: Optional[Set[Pos]] = None) -> Set[Pos]:
+        """Finds positions in a shell of radius {potential_range} from each of the positions in {valid_moves}.
+
+        Args:
+            valid_moves (Set[Pos]): Set of positions to find shells from.
+            potential_range (Set[int]): Radii of the shells.
+            bounds (Tuple[int, int, int, int]): Left bound, Upper bound, Right bound, Lower bound (inclusive) of legal positions.
+            manhattan_restriction (Optional[Set[Pos]]): If present, set of valid positions for the shell to be in.
+
+        Returns:
+            The set of positions in the shell within {bounds} and that fall within the {manhattan_restriction}
+        """
         valid_attacks = set()
         if manhattan_restriction:
             for valid_move in valid_moves:
@@ -34,20 +46,20 @@ class TargetSystem():
         return {pos for pos in valid_attacks if bounds[0] <= pos[0] <= bounds[2] and bounds[1] <= pos[1] <= bounds[3]}
 
     def restricted_manhattan_spheres(self, rng: Set[int], x: int, y: int, manhattan_restriction: Set[Pos]) -> Set[Pos]:
-        sphere = self.cached_base_manhattan_spheres(frozenset(rng))
+        sphere = self._cached_base_manhattan_spheres(frozenset(rng))
         sphere = {(a + x, b + y) for (a, b) in sphere if (a, b) in manhattan_restriction}
         return sphere
 
-    # Consider making these sections faster -- use memory?
     def find_manhattan_spheres(self, rng: Set[int], x: int, y: int) -> Set[Pos]:
-        sphere = self.cached_base_manhattan_spheres(frozenset(rng))
+        """Returns the set of positions at radius {rng} from position {x, y}"""
+        sphere = self._cached_base_manhattan_spheres(frozenset(rng))
         sphere = {(a + x, b + y) for (a, b) in sphere}
         return sphere
 
     @lru_cache(1024)
-    def cached_base_manhattan_spheres(self, rng: FrozenSet[int]) -> Set[Pos]:
-        _range = range
-        _abs = abs
+    def _cached_base_manhattan_spheres(self, rng: FrozenSet[int]) -> Set[Pos]:
+        _range = range  # For speed
+        _abs = abs  # For speed
         sphere = set()
         for r in rng:
             for i in _range(-r, r+1):
@@ -59,6 +71,18 @@ class TargetSystem():
         return sphere
 
     def get_nearest_open_tile(self, unit: UnitObject, position: Pos) -> Optional[Pos]:
+        """Given a unit and their position, determines the nearest tile without a unit on it.
+
+        The nearest tile must be weakly traversable by the unit and not have a unit on it or in the process of moving to it.
+        If all tiles within 10 tiles of the starting point do not meet the requirements, returns None
+
+        Args:
+            unit (UnitObject): This unit's movement capabilities are used for determining valid tiles.
+            position (Pos): Where to start looking for a nearby open tile.
+
+        Returns:
+            The nearest tile without a unit on it.
+        """
         r = 0
         _abs = abs
         while r < 10:
@@ -73,22 +97,11 @@ class TargetSystem():
             r += 1
         return None
 
-    def get_nearest_open_tile_rationalization(self, unit: UnitObject, position: Pos, taken_positions: Set[Pos]) -> Optional[Pos]:
-        r = 0
-        _abs = abs
-        while r < 10:
-            for x in range(-r, r + 1):
-                magn = _abs(x)
-                n1 = position[0] + x, position[1] + r - magn
-                n2 = position[0] + x, position[1] - r + magn
-                if movement_funcs.check_weakly_traversable(unit, n1) and not self.game.board.get_unit(n1) and n1 not in taken_positions:
-                    return n1
-                elif movement_funcs.check_weakly_traversable(unit, n2) and not self.game.board.get_unit(n2) and n2 not in taken_positions:
-                    return n2
-            r += 1
-        return None
-
     def distance_to_closest_enemy(self, unit: UnitObject, pos: Optional[Pos] = None) -> int:
+        """Returns the distance in tiles to the closest enemy.
+
+        If no enemies are within 100 tiles, returns 100.
+        """
         if pos is None:
             pos = unit.position
         enemy_list = [u for u in self.game.units if u.position and skill_system.check_enemy(u, unit)]
@@ -98,53 +111,54 @@ class TargetSystem():
         return min(dist_list)
 
     def get_adjacent_positions(self, pos: Pos) -> List[Pos]:
+        """Returns a list of adjacent positions to the given position that are within the game board bounds"""
         x, y = pos
         adjs = ((x, y - 1), (x - 1, y), (x + 1, y), (x, y + 1))
         return [a for a in adjs if self.game.board.check_bounds(a)]
 
     def get_adj_units(self, unit: UnitObject) -> List[UnitObject]:
+        """Returns a list of adjacent units to the unit that are within game board bounds. Does not include the unit itself."""
         adj_positions = self.get_adjacent_positions(unit.position)
         adj_units = [self.game.board.get_unit(pos) for pos in adj_positions]
         adj_units = [u for u in adj_units if u]
         return adj_units
 
     def get_adj_allies(self, unit: UnitObject) -> List[UnitObject]:
+        """
+        Returns a list of adjacent allies to the unit that are within game board bounds. Does not include the unit itself."""
         adj_units = self.get_adj_units(unit)
         adj_allies = [u for u in adj_units if skill_system.check_ally(unit, u)]
         return adj_allies
 
-    def is_tile(self, pos: Pos) -> bool:
-        return self.game.board.get_unit(pos) and 'Tile' in self.game.board.get_unit(pos).tags
-
-    def fog_of_war(self, unit: UnitObject, item: ItemObject) -> bool:
+    def apply_fog_of_war(self, unit: UnitObject, item: ItemObject) -> bool:
+        """Returns whether fog of war applies to this unit and item combination"""
         return (unit.team == 'player' or DB.constants.value('ai_fog_of_war')) and not item_system.ignore_fog_of_war(unit, item)
 
-    def check_fog_of_war(self, unit: UnitObject, pos: Pos) -> bool:
-        """
-        Returns True if unit can see position
-        """
-        return (pos == unit.position or
-                self.game.board.in_vision(pos, unit.team) or
-                self.is_tile(pos))
-
-    def filter_splash_through_fog_of_war(self, unit, main_target_pos: Optional[Pos], 
-                                         splash_positions: List[Pos]
-                                         ) -> Tuple[Optional[Pos], List[Pos]]:
-        """
-        Returns only the main target pos and the splash positions that can be seen in fog of war
-        """
+    def _filter_splash_through_fog_of_war(self, unit, main_target_pos: Optional[Pos], 
+                                          splash_positions: List[Pos]
+                                          ) -> Tuple[Optional[Pos], List[Pos]]:
+        """Returns only the main target pos and the splash positions that can be seen in fog of war."""
         # Handle main target position first
         if main_target_pos:
-            main_target_pos = main_target_pos if self.check_fog_of_war(unit, main_target_pos) else None
-        splash_positions = [splash_pos for splash_pos in splash_positions if self.check_fog_of_war(unit, splash_pos)]
+            main_target_pos = main_target_pos if self.game.board.check_fog_of_war(unit, main_target_pos) else None
+        splash_positions = [splash_pos for splash_pos in splash_positions if self.game.baord.check_fog_of_war(unit, splash_pos)]
         return main_target_pos, splash_positions
 
-    def get_attacks(self, unit: UnitObject, item: ItemObject = None, force: bool = False) -> Set[Pos]:
-        """
-        Determines all possible positions the unit could attack given the item's range
-        from the unit's current position
-        Does not attempt to determine if an enemy is actually in that place 
-        or if the item could actually target that position (can't heal a full health unit, etc.)
+    def get_attackable_positions(self, unit: UnitObject, item: Optional[ItemObject] = None, force: bool = False) -> Set[Pos]:
+        """Returns all positions the unit could attack given the item's range.
+
+        Takes into account the unit's current position, whether the unit has attacked already, the item's range,
+        line of sight, any positional restrictions, and game board bounds. Does not attempt to determine if an 
+        enemy is actually in the location or if the item would actually target that position, 
+        (ie. can't heal a full health unit, can't damage an empty tile).
+
+        Args:
+            unit (UnitObject): The unit to get attackable positions for.
+            item (Optional[ItemObject]): What item to check. If not supplied, use the unit's currently equipped weapon.
+            force (bool): Ignore whether the unit has already attacked. Defaults to False.
+
+        Returns:
+            All attackable positions
         """
         if not force and unit.has_attacked:
             return set()
@@ -153,121 +167,156 @@ class TargetSystem():
         if not item:
             return set()
         no_attack_after_move = item_system.no_attack_after_move(unit, item) or skill_system.no_attack_after_move(unit)
-        if no_attack_after_move and unit.has_moved_any_distance:
+        if not force and no_attack_after_move and unit.has_moved_any_distance:
             return set()
 
         item_range = item_funcs.get_range(unit, item)
         if not item_range:
             return set()
+        max_range = max(item_range)
 
-        if max(item_range) >= 99:
-            attacks = {(x, y) for x in range(self.game.tilemap.width) for y in range(self.game.tilemap.height)}
+        if max_range >= 99:
+            attacks = self.game.board.get_all_positions_in_bounds()
         else:
             manhattan_restriction = item_system.range_restrict(unit, item)
             attacks = self.get_shell({unit.position}, item_range, self.game.board.bounds, manhattan_restriction)
 
+        # Filter away those that aren't in line of sight
+        if DB.constants.value('line_of_sight'):
+            attacks = set(line_of_sight.line_of_sight({unit.position}, attacks, max_range))
+
         return attacks
         
-    def _get_all_attacks(self, unit: UnitObject, valid_moves: List[Tuple[int, int]],
-                         items: List[ItemObject]) -> (Set[Tuple[int, int]], int):
+    def _get_all_attackable_positions(self, unit: UnitObject, valid_moves: List[Pos],
+                                      items: List[ItemObject]) -> Set[Pos]:
+        """Returns all positions that the unit can attack at given a list of valid moves and a list of items available.
+        
+        Takes into account the item's range, line of sight, any positional restrictions, and game board bounds. 
+        Does not attempt to determine if an enemy is actually in the location or 
+        if the item would actually target that position, (ie. can't heal a full health unit, can't damage an empty tile).
+
+        Args:
+            unit (UnitObject): The unit to get all attackable positions for.
+            valid_moves (List[Pos]): All possible moves the unit could use this turn.
+            items (List[ItemObject]): Items to check.
+
+        Returns:
+            All attackable positions
         """
-        Returns a set of all positions that the unit can attack at given a list of valid moves
-        and the max range of all items they can use
-        """
-        attacks = set()
-        max_range = 0
+        attacks: Set[Pos] = set()
+        ignore_los_attacks: Set[Pos] = set()
+        max_range: int = 0
+
         for item in items:
+            if unit.has_attacked:
+                continue
             no_attack_after_move = item_system.no_attack_after_move(unit, item) or skill_system.no_attack_after_move(unit)
             if no_attack_after_move and unit.has_moved_any_distance:
                 continue
+
             item_range = item_funcs.get_range(unit, item)
             if not item_range:  # Possible if you have a weapon with say range 2-3 but your maximum range is limited to 1
                 continue
             max_range = max(max_range, max(item_range))
+
             if max_range >= 99:
-                attacks = {(x, y) for x in range(self.game.tilemap.width) for y in range(self.game.tilemap.height)}
+                item_attacks = self.game.board.get_all_positions_in_bounds()
             else:
                 manhattan_restriction = item_system.range_restrict(unit, item)
                 if no_attack_after_move:
-                    attacks |= self.get_shell({unit.position}, item_range, self.game.board.bounds, manhattan_restriction)
+                    item_attacks = self.get_shell({unit.position}, item_range, self.game.board.bounds, manhattan_restriction)
                 else:
-                    attacks |= self.get_shell(valid_moves, item_range, self.game.board.bounds, manhattan_restriction)
-        return (attacks, max_range)
+                    item_attacks = self.get_shell(valid_moves, item_range, self.game.board.bounds, manhattan_restriction)
 
-    def get_all_attacks_in_range(self, unit: UnitObject, valid_moves: List[Tuple[int, int]],
-                                 items: List[ItemObject]) -> Set[Tuple[int, int]]:
-        """
-        Returns all possible attacks by a unit from any of their positions with any of their items.
-        Considers target restrictions and vision restrictions.
-        Does not consider line of sight.
-        """
-        attacks, _ = self._get_all_attacks(unit, valid_moves, items)
-        all_valid_targets = set()
-        for item in items:
-            # A list of positions if the position
-            # 1. Is a valid target
-            # 2. Is not a restricted target
-            pos_list = set()
-            if item.sequence_item and item.subitems:
-                item = item.subitems[0]
-            for pos in item_system.valid_targets(unit, item):
-                splash = item_system.splash(unit, item, pos)
-                if self.fog_of_war(unit, item):
-                    splash = self.filter_splash_through_fog_of_war(unit, *splash)
-                if item_system.target_restrict(unit, item, *splash):
-                    pos_list.add(pos)
-            all_valid_targets |= pos_list
-        return attacks.intersection(all_valid_targets)
-        
-    def _get_possible_attacks(self, unit: UnitObject, valid_moves: List[Tuple[int, int]], items: List[ItemObject]) -> Set[Tuple[int, int]]:
-        """
-        Returns all possible attacks by a unit from any of their positions with any of the items.
-        Does not consider target restrictions or vision restrictions except line of sight.
-        """
-        items_standard, items_ignore_los = [], []
-        for item in items:
-            (items_standard, items_ignore_los)[item_system.ignore_line_of_sight(unit, item)].append(item)
-        # First get all attacks by items that obey line of sight
-        attacks, max_range = self._get_all_attacks(unit, valid_moves, items_standard)
-        # max_range is used only for making line of sight calculation faster
-        # Filter away those that aren't in line of sight
+            attacks |= item_attacks
+            if item_system.ignore_line_of_sight(unit, item):
+                ignore_los_attacks |= item_attacks
+
+        # Filter away attacks that aren't in line of sight
         if DB.constants.value('line_of_sight'):
-            attacks = set(line_of_sight.line_of_sight(valid_moves, attacks, max_range))
-        # Now get all attacks by items that ignore line of sight
-        attacks2, _ = self._get_all_attacks(unit, valid_moves, items_ignore_los)
-        attacks |= attacks2
-        return attacks
+            attacks = set(line_of_sight.line_of_sight({unit.position}, attacks, max_range))
+        final_attacks = attacks | ignore_los_attacks  
+        return final_attacks
 
-    def get_possible_attacks(self, unit: UnitObject, valid_moves: List[Tuple[int, int]]) -> Set[Tuple[int, int]]:
-        """
-        Returns all possible attacks by a unit from any of their valid moves with any of their WEAPONS
-        Does not consider target restrictions or vision restrictions except line of sight
-        """
-        return self._get_possible_attacks(unit, valid_moves, self.get_all_weapons(unit))
+    def get_all_valid_attacks(self, unit: UnitObject, valid_moves: List[Pos],
+                              items: List[ItemObject]) -> Set[Pos]:
+        """Returns all valid attacks by a unit from any of their valid moves with any of their items.
+        
+        Considers fog of war as well as targeting restrictions in addition to the usual 
+        item's range, line of sight, any positional restrictions, and game board bounds.
+        
+        Args:
+            unit (UnitObject): The unit to get all attackable positions for.
+            valid_moves (List[Pos]): All possible moves the unit could use this turn.
+            items (List[ItemObject]): Items to check.
 
-    def get_possible_spell_attacks(self, unit: UnitObject, valid_moves: List[Tuple[int, int]]) -> Set[Tuple[int, int]]:
+        Returns:
+            All valid attacks
         """
-        Returns all possible attacks by a unit from any of their valid moves with any of their SPELLS
-        Does not consider target restrictions or vision restrictions except line of sight
-        """
-        return self._get_possible_attacks(unit, valid_moves, self.get_all_spells(unit))
-
-    # Uses all weapons the unit has access to to find its potential range
-    def find_potential_range(self, unit, weapon=True, spell=False, boundary=False) -> set:
-        if weapon and spell:
-            items = [item for item in unit.items if item_funcs.available(unit, item) and
-                     item_system.is_weapon(unit, item) or item_system.is_spell(unit, item)]
-        elif weapon:
-            items = self.get_all_weapons(unit)
-        elif spell:
-            items = self.get_all_spells(unit)
-        else:
-            return set()
-        potential_range = set()
+        possible_attacks, _ = self._get_all_attackable_positions(unit, valid_moves, items)
+        all_valid_attacks: Set[Pos] = set()
         for item in items:
-            for rng in item_funcs.get_range(unit, item):
-                potential_range.add(rng)
-        return potential_range
+            # Handle sequence items
+            if item.sequence_item and item.subitems:
+                for subitem in item.subitems:
+                    possible_targets: Set[Pos] = self.targets_in_range(unit, subitem)
+                    valid_targets: Set[Pos] = set()
+                    for pos in possible_targets:
+                        splash = item_system.splash(unit, subitem, pos)
+                        if self.apply_fog_of_war(unit, subitem):
+                            splash = self._filter_splash_through_fog_of_war(unit, *splash)
+                        if item_system.target_restrict(unit, subitem, *splash):
+                            valid_targets.add(pos)
+                    if not valid_targets:
+                        break
+                else:
+                    all_valid_attacks |= self._check_targets_from_position(unit, item.subitems[0])
+            else:
+                all_valid_attacks |= self._check_targets_from_position(unit, item)
+
+        return possible_attacks.intersection(all_valid_attacks)
+
+    def _check_targets_from_position(self, unit: UnitObject, item: ItemObject):
+        positions: Set[Pos] = set()
+        for pos in item_system.valid_targets(unit, item):
+            splash = item_system.splash(unit, item, pos)
+            if self.apply_fog_of_war(unit, item):
+                splash = self._filter_splash_through_fog_of_war(unit, *splash)
+            if item_system.target_restrict(unit, item, *splash):
+                positions.add(pos)
+        return positions
+
+    def get_all_attackable_positions_weapons(self, unit: UnitObject, valid_moves: List[Pos]) -> Set[Pos]:
+        """Returns all positions that the unit can attack with their WEAPONS given a list of valid moves to attack from
+        
+        Takes into account the item's range, line of sight, any positional restrictions, and game board bounds. 
+        Does not attempt to determine if an enemy is actually in the location or 
+        if the item would actually target that position, (ie. can't heal a full health unit, can't damage an empty tile).
+
+        Args:
+            unit (UnitObject): The unit to get all attackable positions for.
+            valid_moves (List[Pos]): All possible moves the unit could use this turn.
+
+        Returns:
+            All attackable positions
+        """
+        return self._get_all_attackable_positions(unit, valid_moves, self._get_all_weapons(unit))
+
+    def get_all_attackable_positions_spells(self, unit: UnitObject, valid_moves: List[Pos]) -> Set[Pos]:
+        """Returns all positions that the unit can attack with their SPELLS given a list of valid moves to attack from
+        
+        Takes into account the item's range, line of sight, any positional restrictions, and game board bounds. 
+        Does not attempt to determine if an enemy is actually in the location or 
+        if the item would actually target that position, (ie. can't heal a full health unit, can't damage an empty tile).
+
+        Args:
+            unit (UnitObject): The unit to get all attackable positions for.
+            valid_moves (List[Pos]): All possible moves the unit could use this turn.
+
+        Returns:
+            All attackable positions
+        """
+        return self._get_all_attackable_positions(unit, valid_moves, self._get_all_spells(unit))
 
     def targets_in_range(self, unit: UnitObject, item: ItemObject) -> set:
         """
@@ -306,7 +355,7 @@ class TargetSystem():
         valid_targets = set()
         for position in all_targets:
             splash = item_system.splash(unit, item, position)
-            if self.fog_of_war(unit, item):
+            if self.apply_fog_of_war(unit, item):
                 splash = self.filter_splash_through_fog_of_war(unit, *splash)
             if item_system.target_restrict(unit, item, *splash):
                 valid_targets.add(position)
@@ -339,7 +388,7 @@ class TargetSystem():
     def get_weapons(self, unit: UnitObject) -> List[ItemObject]:
         return [item for item in unit.items if item_funcs.is_weapon_recursive(unit, item) and item_funcs.available(unit, item)]
 
-    def get_all_weapons(self, unit: UnitObject) -> List[ItemObject]:
+    def _get_all_weapons(self, unit: UnitObject) -> List[ItemObject]:
         return [item for item in item_funcs.get_all_items(unit) if item_system.is_weapon(unit, item) and item_funcs.available(unit, item)]
 
     def get_all_targets_with_items(self, unit, items: List[ItemObject]) -> set:
@@ -349,17 +398,17 @@ class TargetSystem():
         return targets
 
     def get_all_weapon_targets(self, unit) -> set:
-        weapons = self.get_all_weapons(unit)
+        weapons = self._get_all_weapons(unit)
         return self.get_all_targets_with_items(unit, weapons)
 
     def get_spells(self, unit: UnitObject) -> List[ItemObject]:
         return [item for item in unit.items if item_funcs.is_spell_recursive(unit, item) and item_funcs.available(unit, item)]
 
-    def get_all_spells(self, unit):
+    def _get_all_spells(self, unit):
         return [item for item in item_funcs.get_all_items(unit) if item_system.is_spell(unit, item) and item_funcs.available(unit, item)]
 
     def get_all_spell_targets(self, unit) -> set:
-        spells = self.get_all_spells(unit)
+        spells = self._get_all_spells(unit)
         return self.get_all_targets_with_items(unit, spells)
 
     def find_strike_partners(self, attacker, defender, item):

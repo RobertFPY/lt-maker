@@ -101,12 +101,12 @@ class AIController():
 
     def move(self):
         if self.goal_position and self.goal_position != self.unit.position:
-            normal_moves = game.target_system.get_valid_moves(self.unit, witch_warp=False)
+            normal_moves = game.path_system.get_valid_moves(self.unit, witch_warp=False)
             witch_warp = set(skill_system.witch_warp(self.unit))
             if self.goal_position in witch_warp and self.goal_position not in normal_moves:
                 action.do(action.Warp(self.unit, self.goal_position))
             else:
-                path = game.target_system.get_path(self.unit, self.goal_position)
+                path = game.path_system.get_path(self.unit, self.goal_position)
                 game.state.change('movement')
                 action.do(action.Move(self.unit, self.goal_position, path))
             return True
@@ -185,7 +185,9 @@ class AIController():
 
         target_positions = get_targets(self.unit, self.behaviour)
 
-        zero_move = max(game.target_system.find_potential_range(self.unit, True, True), default=0)
+        items = [item for item in item_funcs.get_all_items(self.unit) if
+                 item_funcs.available(self.unit, item)]
+        zero_move = max([item_funcs.get_range(self.unit, item) for item in items], default=0)
         single_move = zero_move + equations.parser.movement(self.unit)
         double_move = single_move + equations.parser.movement(self.unit)
 
@@ -213,7 +215,7 @@ class AIController():
         if self.behaviour.view_range == -1 and not game.ai_group_active(self.unit.ai_group):
             return {self.unit.position}
         else:
-            valid_moves = game.target_system.get_valid_moves(self.unit)
+            valid_moves = game.path_system.get_valid_moves(self.unit)
             other_unit_positions = {unit.position for unit in game.units if unit.position and unit is not self.unit}
             valid_moves -= other_unit_positions
             return valid_moves
@@ -713,7 +715,9 @@ class SecondaryAI():
         # Determine all targets
         self.all_targets = get_targets(self.unit, behaviour)
 
-        self.zero_move = max(game.target_system.find_potential_range(self.unit, True, True), default=0)
+        items = [item for item in item_funcs.get_all_items(self.unit) if
+                 item_funcs.available(self.unit, item)]
+        self.zero_move = max([item_funcs.get_range(self.unit, item) for item in items], default=0)
         self.single_move = self.zero_move + equations.parser.movement(self.unit)
         self.double_move = self.single_move + equations.parser.movement(self.unit)
 
@@ -771,7 +775,7 @@ class SecondaryAI():
                 self.best_path = path
 
         elif self.best_target:
-            self.best_position = game.target_system.travel_algorithm(self.best_path, self.unit.movement_left, self.unit, self.grid)
+            self.best_position = game.path_system.travel_algorithm(self.best_path, self.unit.movement_left, self.unit, self.grid)
             logging.info("Best Target: %s", self.best_target)
             logging.info("Best Position: %s", self.best_position)
             return True, self.best_position

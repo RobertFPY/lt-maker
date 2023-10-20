@@ -30,6 +30,7 @@ SKILL_HOOKS: Dict[str, HookInfo] = {
     'no_trade':                             HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
     # false priority, true if any (set to True if result is True in any component, False if not defined)
     'can_unlock':                           HookInfo(['unit', 'region'], ResolvePolicy.ANY_DEFAULT_FALSE),
+    'has_canto':                            HookInfo(['unit', 'target'], ResolvePolicy.ANY_DEFAULT_FALSE),
     # exclusive (returns last component value, returns None if not defined)
     'alternate_splash':                     HookInfo(['unit'], ResolvePolicy.UNIQUE),
     # exclusive (returns last component value, has default value if not defined)
@@ -68,7 +69,6 @@ SKILL_HOOKS: Dict[str, HookInfo] = {
     'enemy_exp_multiplier':                 HookInfo(['unit', 'target'], ResolvePolicy.UNIQUE, has_default_value=True),
     'wexp_multiplier':                      HookInfo(['unit', 'target'], ResolvePolicy.UNIQUE, has_default_value=True),
     'enemy_wexp_multiplier':                HookInfo(['unit', 'target'], ResolvePolicy.UNIQUE, has_default_value=True),
-    'has_canto':                            HookInfo(['unit', 'target'], ResolvePolicy.UNIQUE, has_default_value=True),
     'empower_heal':                         HookInfo(['unit', 'target'], ResolvePolicy.UNIQUE, has_default_value=True),
     'empower_heal_received':                HookInfo(['unit', 'target'], ResolvePolicy.UNIQUE, has_default_value=True),
     'canto_movement':                       HookInfo(['unit', 'target'], ResolvePolicy.UNIQUE, has_default_value=True),

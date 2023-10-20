@@ -80,7 +80,7 @@
         "learned_skills": [
             [
                 1,
-                "Crit +15"
+                "Crit_Plus15"
             ]
         ],
         "wexp_gain": {

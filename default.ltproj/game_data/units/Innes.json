@@ -34,11 +34,11 @@
         "stat_cap_modifiers": {},
         "starting_items": [
             [
-                "Silver Bow",
+                "Silver_Bow",
                 false
             ],
             [
-                "White Gem",
+                "White_Gem",
                 false
             ],
             [

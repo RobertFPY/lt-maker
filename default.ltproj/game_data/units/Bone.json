@@ -36,7 +36,7 @@
         "stat_cap_modifiers": {},
         "starting_items": [
             [
-                "Iron Axe",
+                "Iron_Axe",
                 false
             ]
         ],
@@ -91,7 +91,7 @@
         },
         "alternate_classes": [],
         "portrait_nid": "Bone",
-        "affinity": null,
+        "affinity": "None",
         "fields": []
     }
 ]

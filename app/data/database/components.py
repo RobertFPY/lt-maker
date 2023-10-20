@@ -1,3 +1,4 @@
+import copy
 from enum import Enum, IntEnum
 from typing import Optional
 
@@ -81,6 +82,7 @@ class Component():
         if isinstance(self.value, Data):
             return self.nid, self.value.save()
         elif isinstance(self.value, list):
-            return self.nid, self.value.copy()
+            # Handle lists of lists with deepcopy
+            return self.nid, copy.deepcopy(self.value)
         else:
             return self.nid, self.value

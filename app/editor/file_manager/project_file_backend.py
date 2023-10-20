@@ -59,6 +59,7 @@ class FatalErrorDialog(SimpleDialog):
 
     def open_error_viewer(self):
         self.main_window_ref._error_window_ref = show_error_report()
+        self.close()
 
 class ProjectFileBackend():
     def __init__(self, parent, app_state_manager):
@@ -117,6 +118,17 @@ class ProjectFileBackend():
         return True
 
     def save(self, new=False) -> bool:
+        # make sure no errors in DB exist
+        # if we make a mistake in validation,
+        # we should allow the save so
+        # the user can make a game
+        try:
+            any_errors = validate_all(DB, RESOURCES)
+            DB.game_flags.has_fatal_errors = bool(any_errors)
+        except Exception as e:
+            QMessageBox.warning(self.parent, "Validation warning", "Validation failed with error. Please send this message to the devs.\nYour save will continue as normal.\nException:\n%s" % str(e))
+            DB.game_flags.has_fatal_errors = False
+
         # Returns whether we successfully saved
         # check if we're editing default, if so, prompt to save as
         if self.current_proj and os.path.basename(self.current_proj) == DEFAULT_PROJECT:
@@ -180,11 +192,6 @@ class ProjectFileBackend():
             display_error("resources")
             return False
         self.save_progress.setValue(75)
-
-        # make sure no errors in DB exist
-        # any_errors = self.validate(DB)
-        any_errors = validate_all(DB, RESOURCES)
-        DB.game_flags.has_fatal_errors = False if not any_errors else True
 
         success = DB.serialize(self.current_proj)
         if not success:

@@ -117,6 +117,10 @@ class GameState():
 
         self.clear()
 
+    def on_alter_game_state(self):
+        from app.engine import skill_system
+        skill_system.reset_cache()
+
     def is_displaying_overworld(self) -> bool:
         from app.engine.overworld.overworld_map_view import OverworldMapView
         return isinstance(self.map_view, OverworldMapView)
@@ -542,8 +546,8 @@ class GameState():
             if unit.traveler:
                 droppee = self.get_unit(unit.traveler)
                 if full:
-                    unit.traveler = None
                     action.RemoveSkill(unit, 'Rescue', source=unit.traveler, source_type=SourceType.TRAVELER).execute()
+                    unit.traveler = None
                 else:
                     pos = self.target_system.get_nearest_open_tile(droppee, unit.position)
                     action.Drop(unit, droppee, pos).execute()
@@ -627,6 +631,7 @@ class GameState():
         else:
             self.turncount = 1
             self.action_log.set_first_free_action()
+        self.on_alter_game_state()
 
     @property
     def level(self):

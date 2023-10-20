@@ -31,7 +31,7 @@ def start(title, from_editor=False):
     engine.DISPLAYSURF = engine.build_display(engine.SCREENSIZE)
     engine.set_title(title + ' - v' + VERSION)
     print("Version: %s" % VERSION)
-    if DB.game_flags.has_fatal_errors:
+    if DB.game_flags.has_fatal_errors and not from_editor:
         raise Exception("Fatal errors detected in game. If you are the developer, please validate and then save your game data before proceeding. Aborting launch.")
 
 screenshot = False

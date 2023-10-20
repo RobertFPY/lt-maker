@@ -4,23 +4,12 @@
         "trigger": "turn_change",
         "level_nid": "5",
         "condition": "game.turncount == 4",
-        "commands": [
-            [
-                "center_cursor",
-                [
-                    "14,7"
-                ]
-            ],
-            [
-                "add_group",
-                [
-                    "Brigand2",
-                    "Brigand2"
-                ]
-            ]
-        ],
+        "commands": [],
         "only_once": false,
         "priority": 20,
-        "source": ""
+        "_source": [
+            "center_cursor;14,7",
+            "add_group;Brigand2;Brigand2"
+        ]
     }
 ]

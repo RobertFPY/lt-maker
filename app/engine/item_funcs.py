@@ -267,3 +267,9 @@ def create_skills(unit, skill_nid_list: list) -> list:
 
 def num_stacks(unit: UnitObject, skill_nid: NID) -> int:
     return len([skill for skill in unit.skills if skill.nid == skill_nid])
+
+def can_be_used_in_base(unit: UnitObject, item: ItemObject) -> bool:
+    return (item_system.can_use(unit, item) and
+            available(unit, item) and
+            item_system.can_use_in_base(unit, item) and
+            item_system.simple_target_restrict(unit, item))

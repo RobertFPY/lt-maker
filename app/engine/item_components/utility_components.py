@@ -134,6 +134,7 @@ class UnlockStaff(ItemComponent):
     tag = ItemTags.UTILITY
 
     _did_hit = False
+    _target_position = None
 
     def _valid_region(self, region) -> bool:
         return region.region_type == RegionType.EVENT and 'can_unlock' in region.condition
@@ -158,10 +159,11 @@ class UnlockStaff(ItemComponent):
 
     def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
         self._did_hit = True
+        self._target_position = target_pos
 
     def end_combat(self, playback, unit, item, target, mode):
         if self._did_hit:
-            pos = game.cursor.position
+            pos = self._target_position
             region = None
             for reg in game.level.regions:
                 if self._valid_region(reg) and reg.contains(pos):
@@ -172,6 +174,7 @@ class UnlockStaff(ItemComponent):
                 if did_trigger and region.only_once:
                     action.do(action.RemoveRegion(region))
         self._did_hit = False
+        self._target_position = None
 
 class CanUnlock(ItemComponent):
     nid = 'can_unlock'

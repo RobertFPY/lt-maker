@@ -76,8 +76,8 @@
                 2
             ],
             [
-                "status_on_equip",
-                "Ignore_RES"
+                "alternate_resist_formula",
+                "ZERO"
             ]
         ]
     }

@@ -1,6 +1,6 @@
 [
     {
-        "nid": "Wind Sword",
+        "nid": "Wind_Sword",
         "name": "Wind Sword",
         "desc": "Uses MAG to determine damage. Effective against fliers.",
         "icon_nid": "Sword",

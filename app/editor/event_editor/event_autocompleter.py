@@ -329,7 +329,7 @@ def detect_param_under_cursor(command: event_commands.EventCommand, line: str, c
     curr_arg = as_tokens[curr_arg_idx + 1]
 
     # hovering over the command itself
-    if curr_arg_idx == -1:  
+    if curr_arg_idx == -1:
         return None
 
     all_keywords = command.keywords + command.optional_keywords

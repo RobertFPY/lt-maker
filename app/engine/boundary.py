@@ -135,8 +135,8 @@ class BoundaryInterface():
             if guard:
                 valid_moves = {unit.position}
 
-        valid_attacks = game.target_system.get_possible_attacks(unit, valid_moves)
-        valid_spells = game.target_system.get_possible_spell_attacks(unit, valid_moves)
+        valid_attacks = game.target_system.get_all_attackable_positions_weapons(unit, valid_moves)
+        valid_spells = game.target_system.get_all_attackable_positions_spells(unit, valid_moves)
         self._set(valid_attacks, 'attack', unit.nid)
         self._set(valid_spells, 'spell', unit.nid)
 

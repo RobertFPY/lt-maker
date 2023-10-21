@@ -28,7 +28,7 @@ class AttackAbility(Ability):
 
     @staticmethod
     def highlights(unit) -> bool:
-        valid_attacks = game.target_system.get_possible_attacks(unit, {unit.position})
+        valid_attacks = game.target_system.get_all_attackable_positions_weapons(unit, {unit.position})
         game.highlight.display_possible_attacks(valid_attacks)
         return bool(valid_attacks)
 
@@ -43,7 +43,7 @@ class SpellAbility(Ability):
 
     @staticmethod
     def highlights(unit) -> bool:
-        valid_attacks = game.target_system.get_possible_spell_attacks(unit, {unit.position})
+        valid_attacks = game.target_system.get_all_attackable_positions_spells(unit, {unit.position})
         game.highlight.display_possible_spell_attacks(valid_attacks)
         return bool(valid_attacks)
 

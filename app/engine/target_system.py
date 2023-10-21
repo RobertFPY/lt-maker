@@ -270,54 +270,37 @@ class TargetSystem():
         """
         return self._get_all_attackable_positions(unit, valid_moves, self._get_all_spells(unit))
 
-    def get_all_valid_targets(self, unit: UnitObject, valid_moves: List[Pos],
-                              items: List[ItemObject]) -> Set[Pos]:
-        """Returns all valid targets by a unit from any of their valid moves with any of their items.
-        
-        Considers fog of war as well as targeting restrictions in addition to the usual 
-        item's range, line of sight, any positional restrictions, and game board bounds.
-        
+    def get_possible_attack_positions(self, unit: UnitObject, target: Pos, moves: Set[Pos],
+                                      item: ItemObject) -> List[Pos]:
+        """
+        Given a unit, a target, an item, and the set of the unit's possible moves,
+        determines where the unit is able to move so that the unit can strike the 
+        target with the item.
+
         Args:
-            unit (UnitObject): The unit to get all attackable positions for.
-            valid_moves (List[Pos]): All possible moves the unit could use this turn.
-            items (List[ItemObject]): Items to check.
+            unit (UnitObject): The attacking unit.
+            target (Pos): the position of the target.
+            moves (Set[Pos]): the set of tiles the unit can reach this turn.
+            item (ItemObject): What item the unit is using to attack with.
 
         Returns:
-            All valid attacks
+            the subset of moves that the unit can attack the target from with the item.
         """
-        attackable_positions = self._get_all_attackable_positions(unit, valid_moves, items)
-        all_valid_targets: Set[Pos] = set()
-        for item in items:
-            # Handle sequence items
-            if item.sequence_item and item.subitems:
-                for subitem in item.subitems:
-                    possible_targets: Set[Pos] = self.targets_in_range(unit, subitem)
-                    valid_targets: Set[Pos] = set()
-                    for pos in possible_targets:
-                        splash = item_system.splash(unit, subitem, pos)
-                        if self.apply_fog_of_war(unit, subitem):
-                            splash = self._filter_splash_through_fog_of_war(unit, *splash)
-                        if item_system.target_restrict(unit, subitem, *splash):
-                            valid_targets.add(pos)
-                    if not valid_targets:
-                        break
-                else:
-                    all_valid_targets |= self._check_targets_from_position(unit, item.subitems[0])
-            else:
-                all_valid_targets |= self._check_targets_from_position(unit, item)
+        item_range = item_funcs.get_range(unit, item)
+        restriction = item_system.range_restrict(unit, item)
+        valid_moves: Set[Pos] = set()
+        for move in moves:
+            possible_strike_locations = \
+                self.get_shell({move}, item_range, self.game.board.bounds, restriction)
+            if target in possible_strike_locations:
+                valid_moves.add(move)
 
-        return attackable_positions.intersection(all_valid_targets)
-
-    def _check_targets_from_position(self, unit: UnitObject, item: ItemObject):
-        positions: Set[Pos] = set()
-        for pos in item_system.valid_targets(unit, item):
-            splash = item_system.splash(unit, item, pos)
-            if self.apply_fog_of_war(unit, item):
-                splash = self._filter_splash_through_fog_of_war(unit, *splash)
-            if item_system.target_restrict(unit, item, *splash):
-                positions.add(pos)
-        return positions
-
+        # Filter away possible attacks that aren't in line of sight
+        if DB.constants.value('line_of_sight') and not item_system.ignore_line_of_sight(unit, item):
+            valid_moves = list(line_of_sight.line_of_sight({target}, valid_moves, max(item_range, default=0)))
+        return valid_moves
+    
+    # === Finding valid targets ===
     def targets_in_range(self, unit: UnitObject, item: ItemObject) -> Set[Pos]:
         """Given a unit and an item, finds a set of positions that are within range of the item
         and count as possible targets
@@ -396,6 +379,51 @@ class TargetSystem():
             valid_targets |= self.get_valid_targets(unit, subitem)
         return valid_targets
 
+    def get_all_valid_targets(self, unit: UnitObject, valid_moves: List[Pos],
+                              items: List[ItemObject]) -> Set[Pos]:
+        """Returns all valid targets of a unit from any of their valid moves with any of their items.
+        
+        Considers fog of war as well as targeting restrictions in addition to the usual 
+        item's range, line of sight, any positional restrictions, and game board bounds.
+        
+        Args:
+            unit (UnitObject): The unit to get all attackable positions for.
+            valid_moves (List[Pos]): All possible moves the unit could use this turn.
+            items (List[ItemObject]): Items to check.
+
+        Returns:
+            All valid attacks
+        """
+        attackable_positions = self._get_all_attackable_positions(unit, valid_moves, items)
+        all_valid_targets: Set[Pos] = set()
+        for item in items:
+            # Handle sequence items
+            if item.sequence_item and item.subitems:
+                for subitem in item.subitems:
+                    valid_targets = self._check_targets_from_position(unit, subitem)
+                    if not valid_targets:
+                        return set()  # Sequence item has no good target, give up
+                # Give the player access to the target of the first subitem
+                all_valid_targets |= self._check_targets_from_position(unit, item.subitems[0])
+            else:
+                all_valid_targets |= self._check_targets_from_position(unit, item)
+
+        return attackable_positions.intersection(all_valid_targets)
+
+    def _check_targets_from_position(self, unit: UnitObject, item: ItemObject) -> Set[Pos]:
+        # `targets_in_range` is used in this function instead of the simpler item_system.valid_targets
+        # purely as a matter of efficiency. Either way, all extraneous ranges will be filtered out
+        # by intersecting the result with the possible attackable_positions
+        positions: Set[Pos] = set()
+        for pos in self.targets_in_range(unit, item):
+            splash = item_system.splash(unit, item, pos)
+            if self.apply_fog_of_war(unit, item):
+                splash = self._filter_splash_through_fog_of_war(unit, *splash)
+            if item_system.target_restrict(unit, item, *splash):
+                positions.add(pos)
+        return positions
+
+    # === Item Filtering ===
     def get_weapons(self, unit: UnitObject) -> List[ItemObject]:
         return [item for item in unit.items if item_funcs.is_weapon_recursive(unit, item) and item_funcs.available(unit, item)]
 
@@ -416,10 +444,11 @@ class TargetSystem():
         spells: List[ItemObject] = self._get_all_spells(unit)
         return self.get_all_valid_targets(unit, [unit.position], spells)
 
+    # === PAIRUP ===
     def find_strike_partners(self, attacker, defender, item):
-        '''Finds and returns a tuple of strike partners for the specified units
+        """Finds and returns a tuple of strike partners for the specified units
         First item in tuple is attacker partner, second is target partner
-        Returns a tuple of None if no valid partner'''
+        Returns a tuple of None if no valid partner"""
         if not DB.constants.value('pairup'):
             return None, None
         if not attacker or not defender:
@@ -458,10 +487,7 @@ class TargetSystem():
         return attacker_partner, defender_partner
 
     def strike_partner_formula(self, allies: list, attacker, defender, mode, attack_info):
-        '''
-        This is the formula for the best choice to make
-        when autoselecting strike partners
-        '''
+        """This is the formula for the best choice to make when autoselecting strike partners"""
         if not allies:
             return None
         damage = [combat_calcs.compute_assist_damage(ally, defender, ally.get_weapon(), defender.get_weapon(), mode, attack_info) for ally in allies]
@@ -470,25 +496,3 @@ class TargetSystem():
         max_score = max(score)
         max_index = score.index(max_score)
         return allies[max_index]
-
-    def get_possible_attack_positions(self, unit, target, moves, item) -> list:
-        """
-        Copied from AI controller and modified slightly to exclude taken positions
-        Finds all valid squares given a target and possible moves
-        """
-        restriction = item_system.range_restrict(unit, item)
-        if restriction:
-            return self._get_possible_attack_positions_restriction(unit, target, moves, item, restriction)
-        
-        a = self.find_manhattan_spheres(item_funcs.get_range(unit, item), *target)
-        b = set(moves)
-        positions = list(a & b)
-        return [pos for pos in positions if not self.game.board.get_unit(pos) or self.game.board.get_unit(pos) == unit]
-    
-    def _get_possible_attack_positions_restriction(self, unit, target, moves, item, restriction) -> list:
-        positions = set()
-        for move in moves:
-            a = self.restricted_manhattan_spheres(item_funcs.get_range(unit, item), *move, restriction)
-            if target in a:
-                positions.add(move)
-        return list(positions)

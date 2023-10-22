@@ -189,7 +189,7 @@ class AIController():
 
         items = [item for item in item_funcs.get_all_items(self.unit) if
                  item_funcs.available(self.unit, item)]
-        zero_move = max([item_funcs.get_range(self.unit, item) for item in items], default=0)
+        zero_move = max([max(item_funcs.get_range(self.unit, item)) for item in items], default=0)
         single_move = zero_move + equations.parser.movement(self.unit)
         double_move = single_move + equations.parser.movement(self.unit)
 
@@ -397,7 +397,7 @@ class PrimaryAI():
     def get_all_valid_targets(self):
         item = self.items[self.item_index]
         logging.info("Determining targets for item: %s", item)
-        self.valid_targets = game.target_system.get_all_valid_targets(self.unit, self.valid_moves, [item])
+        self.valid_targets = list(game.target_system.get_all_valid_targets(self.unit, self.valid_moves, [item]))
         # Only if we already have some legal targets (ie, ourself)
         if self.valid_targets and 0 in item_funcs.get_range(self.unit, item):
             self.valid_targets += self.valid_moves  # Hack to target self in all valid positions
@@ -695,7 +695,7 @@ class SecondaryAI():
 
         items = [item for item in item_funcs.get_all_items(self.unit) if
                  item_funcs.available(self.unit, item)]
-        self.zero_move = max([item_funcs.get_range(self.unit, item) for item in items], default=0)
+        self.zero_move = max([max(item_funcs.get_range(self.unit, item)) for item in items], default=0)
         self.single_move = self.zero_move + equations.parser.movement(self.unit)
         self.double_move = self.single_move + equations.parser.movement(self.unit)
 

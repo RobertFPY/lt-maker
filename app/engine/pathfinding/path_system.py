@@ -88,7 +88,7 @@ class PathSystem():
         movement = unit.movement_left
         prev_pos = None
         for pos in path[:-1]:  # Don't need to count the starting position
-            if prev_pos and pos not in self.get_adjacent_positions(prev_pos):
+            if prev_pos and pos not in self.game.target_system.get_adjacent_positions(prev_pos):
                 return False
             mcost = movement_funcs.get_mcost(unit, pos)
             movement -= mcost

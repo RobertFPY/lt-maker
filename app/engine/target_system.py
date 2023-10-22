@@ -141,7 +141,7 @@ class TargetSystem():
         # Handle main target position first
         if main_target_pos:
             main_target_pos = main_target_pos if self.game.board.check_fog_of_war(unit, main_target_pos) else None
-        splash_positions = [splash_pos for splash_pos in splash_positions if self.game.baord.check_fog_of_war(unit, splash_pos)]
+        splash_positions = [splash_pos for splash_pos in splash_positions if self.game.board.check_fog_of_war(unit, splash_pos)]
         return main_target_pos, splash_positions
 
     def get_attackable_positions(self, unit: UnitObject, item: Optional[ItemObject] = None, force: bool = False) -> Set[Pos]:
@@ -204,8 +204,6 @@ class TargetSystem():
             All attackable positions
         """
         attacks: Set[Pos] = set()
-        ignore_los_attacks: Set[Pos] = set()
-        max_range: int = 0
 
         for item in items:
             if unit.has_attacked:
@@ -217,7 +215,7 @@ class TargetSystem():
             item_range = item_funcs.get_range(unit, item)
             if not item_range:  # Possible if you have a weapon with say range 2-3 but your maximum range is limited to 1
                 continue
-            max_range = max(max_range, max(item_range))
+            max_range = max(item_range)
 
             if max_range >= 99:
                 item_attacks = self.game.board.get_all_positions_in_bounds()
@@ -227,16 +225,9 @@ class TargetSystem():
                     item_attacks = self.get_shell({unit.position}, item_range, self.game.board.bounds, manhattan_restriction)
                 else:
                     item_attacks = self.get_shell(valid_moves, item_range, self.game.board.bounds, manhattan_restriction)
-
             attacks |= item_attacks
-            if item_system.ignore_line_of_sight(unit, item):
-                ignore_los_attacks |= item_attacks
 
-        # Filter away attacks that aren't in line of sight
-        if DB.constants.value('line_of_sight'):
-            attacks = set(line_of_sight.line_of_sight({unit.position}, attacks, max_range))
-        final_attacks = attacks | ignore_los_attacks  
-        return final_attacks
+        return attacks
 
     def get_all_attackable_positions_weapons(self, unit: UnitObject, valid_moves: List[Pos]) -> Set[Pos]:
         """Returns all positions that the unit can attack with their WEAPONS given a list of valid moves to attack from
@@ -342,13 +333,13 @@ class TargetSystem():
         # Handle regular item targeting
         all_targets = item_system.valid_targets(unit, item)
         attackable_positions = self.get_attackable_positions(unit, item)
-        all_targets.intersection(attackable_positions)
+        all_targets &= attackable_positions
 
         valid_targets = set()
         for position in all_targets:
             splash = item_system.splash(unit, item, position)
             if self.apply_fog_of_war(unit, item):
-                splash = self.filter_splash_through_fog_of_war(unit, *splash)
+                splash = self._filter_splash_through_fog_of_war(unit, *splash)
             if item_system.target_restrict(unit, item, *splash):
                 valid_targets.add(position)
 
@@ -384,7 +375,15 @@ class TargetSystem():
         """Returns all valid targets of a unit from any of their valid moves with any of their items.
         
         Considers fog of war as well as targeting restrictions in addition to the usual 
-        item's range, line of sight, any positional restrictions, and game board bounds.
+        item's range, any positional restrictions, and game board bounds.
+
+        Does NOT consider line of sight in any way. Handle line of sight checks later on in 
+        processing if so desired.
+        For instance, the AI controller does so while iterating over (move, item, target) triples
+        Reason: Figuring out line of sight here would be:
+            1. Not efficient: we would have to iterate over every pair of (move, target) to find the good ones.
+            2. Not useful: You are going to have to do this check again later since just because
+                a target is valid, doesn't mean that every (move, target) pair is valid.
         
         Args:
             unit (UnitObject): The unit to get all attackable positions for.
@@ -408,14 +407,13 @@ class TargetSystem():
             else:
                 all_valid_targets |= self._check_targets_from_position(unit, item)
 
-        return attackable_positions.intersection(all_valid_targets)
+        valid_targets = attackable_positions.intersection(all_valid_targets)
+        return valid_targets
 
     def _check_targets_from_position(self, unit: UnitObject, item: ItemObject) -> Set[Pos]:
-        # `targets_in_range` is used in this function instead of the simpler item_system.valid_targets
-        # purely as a matter of efficiency. Either way, all extraneous ranges will be filtered out
-        # by intersecting the result with the possible attackable_positions
         positions: Set[Pos] = set()
-        for pos in self.targets_in_range(unit, item):
+        possible_targets = item_system.valid_targets(unit, item)
+        for pos in possible_targets:
             splash = item_system.splash(unit, item, pos)
             if self.apply_fog_of_war(unit, item):
                 splash = self._filter_splash_through_fog_of_war(unit, *splash)

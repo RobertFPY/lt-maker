@@ -310,7 +310,7 @@ class TargetSystem():
         return {t for t in possible_targets if utils.calculate_distance(unit.position, t) in item_range}
 
     def get_valid_targets(self, unit: UnitObject, item: Optional[ItemObject] = None) -> Set[Pos]:
-        """Returns valid targets the unit could attack given the item's range.
+        """Returns valid targets the unit could attack from their current position using the item.
         
         Considers fog of war as well as targeting restrictions in addition to the usual 
         item's range, line of sight, any positional restrictions, and game board bounds.

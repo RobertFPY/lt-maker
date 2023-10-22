@@ -1,5 +1,6 @@
 import logging
 import math
+from typing import List
 
 from app.constants import FRAMERATE
 from app.data.database.database import DB
@@ -13,6 +14,7 @@ from app.engine.movement import movement_funcs
 from app.events import triggers
 from app.events.regions import RegionType
 from app.utilities import utils
+from app.utilities.typing import Pos
 
 
 class AIController():
@@ -392,47 +394,23 @@ class PrimaryAI():
             self.possible_moves = self.get_possible_moves()
             logging.info(self.possible_moves)
 
-    def get_valid_targets(self, unit, item, valid_moves) -> list:
-        item_range = item_funcs.get_range(unit, item)
-        ai_targets = item_system.valid_targets(unit, item)
-        if len(ai_targets) < 20:
-            logging.info("AI Targets: %s", ai_targets)
-        filtered_targets = set()
-
-        for pos in ai_targets:
-            for valid_move in valid_moves:
-                # Determine if we can hit this unit at one of our moves
-                if utils.calculate_distance(pos, valid_move) in item_range:
-                    if DB.constants.value('ai_fog_of_war'):
-                        if game.board.in_vision(pos, unit.team) or \
-                                item_system.ignore_fog_of_war(unit, item) or \
-                                (game.board.get_unit(pos) and 'Tile' in game.board.get_unit(pos).tags):
-                            filtered_targets.add(pos)
-                            break
-                    else:
-                        filtered_targets.add(pos)
-                        break
-
-        return list(filtered_targets)
-
     def get_all_valid_targets(self):
         item = self.items[self.item_index]
         logging.info("Determining targets for item: %s", item)
-        self.valid_targets = self.get_valid_targets(self.unit, item, self.valid_moves)
+        self.valid_targets = game.target_system.get_all_valid_targets(self.unit, self.valid_moves, [item])
         # Only if we already have some legal targets (ie, ourself)
         if self.valid_targets and 0 in item_funcs.get_range(self.unit, item):
             self.valid_targets += self.valid_moves  # Hack to target self in all valid positions
             self.valid_targets = list(set(self.valid_targets))  # Only uniques
         logging.info("Valid Targets: %s", self.valid_targets)
 
-    def get_possible_moves(self) -> list:
+    def get_possible_moves(self) -> List[Pos]:
+        """Given an item and a target, find all positions in valid_moves that I can strike the target at."""
         if self.target_index < len(self.valid_targets) and self.item_index < len(self.items):
-            # Given an item and a target, find all positions in valid_moves that I can strike the target at.
             item = self.items[self.item_index]
             target = self.valid_targets[self.target_index]
-            a = game.target_system.find_manhattan_spheres(item_funcs.get_range(self.unit, item), *target)
-            b = set(self.valid_moves)
-            return list(a & b)
+            moves: List[Pos] = game.target_system.get_possible_attack_positions(self.unit, target, self.valid_moves, item)
+            return moves
         else:
             return []
 

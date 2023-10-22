@@ -191,7 +191,7 @@ class TargetSystem():
                                       items: List[ItemObject]) -> Set[Pos]:
         """Returns all positions that the unit can attack at given a list of valid moves and a list of items available.
         
-        Takes into account the item's range, line of sight, any positional restrictions, and game board bounds. 
+        Takes into account the item's range, any positional restrictions, and game board bounds. 
         Does not attempt to determine if an enemy is actually in the location or 
         if the item would actually target that position, (ie. can't heal a full health unit, can't damage an empty tile).
 
@@ -232,7 +232,7 @@ class TargetSystem():
     def get_all_attackable_positions_weapons(self, unit: UnitObject, valid_moves: List[Pos]) -> Set[Pos]:
         """Returns all positions that the unit can attack with their WEAPONS given a list of valid moves to attack from
         
-        Takes into account the item's range, line of sight, any positional restrictions, and game board bounds. 
+        Takes into account the item's range, any positional restrictions, and game board bounds. 
         Does not attempt to determine if an enemy is actually in the location or 
         if the item would actually target that position, (ie. can't heal a full health unit, can't damage an empty tile).
 
@@ -248,7 +248,7 @@ class TargetSystem():
     def get_all_attackable_positions_spells(self, unit: UnitObject, valid_moves: List[Pos]) -> Set[Pos]:
         """Returns all positions that the unit can attack with their SPELLS given a list of valid moves to attack from
         
-        Takes into account the item's range, line of sight, any positional restrictions, and game board bounds. 
+        Takes into account the item's range, any positional restrictions, and game board bounds. 
         Does not attempt to determine if an enemy is actually in the location or 
         if the item would actually target that position, (ie. can't heal a full health unit, can't damage an empty tile).
 

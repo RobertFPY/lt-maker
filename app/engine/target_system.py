@@ -297,8 +297,8 @@ class TargetSystem():
 
         # Filter away possible attacks that aren't in line of sight
         if DB.constants.value('line_of_sight') and not item_system.ignore_line_of_sight(unit, item):
-            valid_moves = list(line_of_sight.line_of_sight({target}, valid_moves, max(item_range, default=0)))
-        return valid_moves
+            valid_moves = line_of_sight.line_of_sight({target}, valid_moves, max(item_range, default=0))
+        return list(valid_moves)
     
     # === Finding valid targets ===
     def targets_in_range(self, unit: UnitObject, item: ItemObject) -> Set[Pos]:

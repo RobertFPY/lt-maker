@@ -16,6 +16,7 @@ class TargetSystemUnitTests(unittest.TestCase):
         self.target_system = self.create_target_system()
 
         self.game.board = GameBoard(MagicMock())
+        self.game.board.bounds = (0, 0, 99, 99)
         self.game.units = []
 
         self.player_unit = UnitObject('player')         
@@ -98,8 +99,9 @@ class TargetSystemUnitTests(unittest.TestCase):
 
         weapon = self.mock_weapon(self.enemy_unit.position, 1, 1)
 
-        expected_positions = [(0, 2), (0, 0), (1, 1)]
-        self.assertEqual(self.target_system.get_possible_attack_positions(self.player_unit, (0, 1), valid_moves, weapon), expected_positions)
+        expected_positions = {(0, 2), (0, 0), (1, 1)}
+        possible_positions = self.target_system.get_possible_attack_positions(self.player_unit, (0, 1), valid_moves, weapon)
+        self.assertEqual(set(possible_positions), expected_positions)
 
     def test_get_possible_attack_positions_range_restrict(self):
         self.player_unit.position = (0, 0)

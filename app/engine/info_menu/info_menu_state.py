@@ -922,7 +922,7 @@ class InfoMenuState(State):
 
     def create_fatigue_surf(self):
         surf = engine.create_surface((WINWIDTH - 96, WINHEIGHT), transparent=True)
-        max_fatigue = max(1, equations.parser.max_fatigue(self.unit))
+        max_fatigue = max(1, self.unit.get_max_fatigue())
         fatigue = self.unit.get_fatigue()
         build_groove(surf, (27, WINHEIGHT - 9), 88, utils.clamp(fatigue / max_fatigue, 0, 1))
         x_pos = 27 + 88 // 2

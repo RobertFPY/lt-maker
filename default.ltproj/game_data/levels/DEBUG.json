@@ -59,11 +59,11 @@
                 "faction": "Soldier",
                 "starting_items": [
                     [
-                        "Iron Lance",
+                        "Iron_Lance",
                         false
                     ],
                     [
-                        "Slim Lance",
+                        "Slim_Lance",
                         false
                     ],
                     [

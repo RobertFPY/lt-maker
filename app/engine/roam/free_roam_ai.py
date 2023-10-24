@@ -184,9 +184,7 @@ class RoamAI:
     def get_filtered_target_positions(self) -> List[Tuple[Tuple[int, int], float]]:
         target_positions = ai_controller.get_targets(self.unit, self.behaviour)
 
-        items = [item for item in item_funcs.get_all_items(self.unit) if
-                 item_funcs.available(self.unit, item)]
-        zero_move = max([max(item_funcs.get_range(self.unit, item), default=0) for item in items], default=0)
+        zero_move = item_funcs.get_max_range(self.unit)
         single_move = zero_move + equations.parser.movement(self.unit)
         double_move = single_move + equations.parser.movement(self.unit)
 

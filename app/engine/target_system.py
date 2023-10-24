@@ -100,13 +100,13 @@ class TargetSystem():
     def distance_to_closest_enemy(self, unit: UnitObject, pos: Optional[Pos] = None) -> int:
         """Returns the distance in tiles to the closest enemy.
 
-        If no enemies are within 100 tiles, returns 100.
+        If no enemies exist at all, returns -1.
         """
         if pos is None:
             pos = unit.position
         enemy_list = [u for u in self.game.units if u.position and skill_system.check_enemy(u, unit)]
         if not enemy_list:
-            return 100  # No enemies
+            return -1  # No enemies
         dist_list = [utils.calculate_distance(enemy.position, pos) for enemy in enemy_list]
         return min(dist_list)
 

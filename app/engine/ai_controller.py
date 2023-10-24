@@ -187,9 +187,7 @@ class AIController():
 
         target_positions = get_targets(self.unit, self.behaviour)
 
-        items = [item for item in item_funcs.get_all_items(self.unit) if
-                 item_funcs.available(self.unit, item)]
-        zero_move = max([max(item_funcs.get_range(self.unit, item), default=0) for item in items], default=0)
+        zero_move = item_funcs.get_max_range(self.unit)
         single_move = zero_move + equations.parser.movement(self.unit)
         double_move = single_move + equations.parser.movement(self.unit)
 
@@ -693,9 +691,7 @@ class SecondaryAI():
         # Determine all targets
         self.all_targets = get_targets(self.unit, behaviour)
 
-        items = [item for item in item_funcs.get_all_items(self.unit) if
-                 item_funcs.available(self.unit, item)]
-        self.zero_move = max([max(item_funcs.get_range(self.unit, item), default=0) for item in items], default=0)
+        self.zero_move = item_funcs.get_max_range(self.unit)
         self.single_move = self.zero_move + equations.parser.movement(self.unit)
         self.double_move = self.single_move + equations.parser.movement(self.unit)
 

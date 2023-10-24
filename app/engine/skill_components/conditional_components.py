@@ -1,6 +1,6 @@
 from app.data.database.skill_components import SkillComponent, SkillTags
 from app.data.database.components import ComponentType
-
+from app.engine.game_state import game
 
 class CombatCondition(SkillComponent):
     nid = 'combat_condition'
@@ -14,6 +14,7 @@ class CombatCondition(SkillComponent):
     _condition = False
 
     def pre_combat(self, playback, unit, item, target, mode):
+        game.on_alter_game_state()
         from app.engine import evaluate
         try:
             x = bool(evaluate.evaluate(self.value, unit, target,
@@ -25,15 +26,18 @@ class CombatCondition(SkillComponent):
                   (e, self.value))
 
     def post_combat_unconditional(self, playback, unit, item, target, mode):
+        game.on_alter_game_state()
         self._condition = False
 
     def condition(self, unit, item):
         return self._condition
 
     def test_on(self, playback, unit, item, target, mode):
+        game.on_alter_game_state()
         self.pre_combat(playback, unit, item, target, mode)
 
     def test_off(self, playback, unit, item, target, mode):
+        game.on_alter_game_state()
         self._condition = False
 
 

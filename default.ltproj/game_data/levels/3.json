@@ -173,7 +173,7 @@
                 "faction": "Cutthroat",
                 "starting_items": [
                     [
-                        "Iron Axe",
+                        "Iron_Axe",
                         false
                     ]
                 ],
@@ -197,7 +197,7 @@
                 "faction": "Cutthroat",
                 "starting_items": [
                     [
-                        "Hand Axe",
+                        "Hand_Axe",
                         false
                     ]
                 ],
@@ -221,7 +221,7 @@
                 "faction": "Cutthroat",
                 "starting_items": [
                     [
-                        "Hand Axe",
+                        "Hand_Axe",
                         false
                     ]
                 ],
@@ -245,11 +245,11 @@
                 "faction": "Cutthroat",
                 "starting_items": [
                     [
-                        "Iron Axe",
+                        "Iron_Axe",
                         false
                     ],
                     [
-                        "Door Key",
+                        "Door_Key",
                         true
                     ]
                 ],
@@ -273,11 +273,11 @@
                 "faction": "Cutthroat",
                 "starting_items": [
                     [
-                        "Iron Axe",
+                        "Iron_Axe",
                         false
                     ],
                     [
-                        "Chest Key",
+                        "Chest_Key",
                         true
                     ]
                 ],
@@ -301,11 +301,11 @@
                 "faction": "Cutthroat",
                 "starting_items": [
                     [
-                        "Steel Axe",
+                        "Steel_Axe",
                         false
                     ],
                     [
-                        "Pure Water",
+                        "Pure_Water",
                         false
                     ]
                 ],
@@ -329,11 +329,11 @@
                 "faction": "Cutthroat",
                 "starting_items": [
                     [
-                        "Iron Sword",
+                        "Iron_Sword",
                         false
                     ],
                     [
-                        "Pure Water",
+                        "Pure_Water",
                         false
                     ]
                 ],
@@ -357,7 +357,7 @@
                 "faction": "Cutthroat",
                 "starting_items": [
                     [
-                        "Iron Bow",
+                        "Iron_Bow",
                         false
                     ]
                 ],
@@ -381,7 +381,7 @@
                 "faction": "Cutthroat",
                 "starting_items": [
                     [
-                        "Iron Sword",
+                        "Iron_Sword",
                         false
                     ]
                 ],

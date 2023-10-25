@@ -98,7 +98,7 @@
                 "faction": "Soldier",
                 "starting_items": [
                     [
-                        "Iron Lance",
+                        "Iron_Lance",
                         false
                     ]
                 ],
@@ -106,7 +106,7 @@
                 "team": "enemy",
                 "ai": "Defend",
                 "roam_ai": null,
-                "ai_group": null,
+                "ai_group": "",
                 "starting_position": [
                     1,
                     3
@@ -122,7 +122,7 @@
                 "faction": "Soldier",
                 "starting_items": [
                     [
-                        "Iron Lance",
+                        "Iron_Lance",
                         false
                     ]
                 ],
@@ -130,7 +130,7 @@
                 "team": "enemy",
                 "ai": "Defend",
                 "roam_ai": null,
-                "ai_group": null,
+                "ai_group": "",
                 "starting_position": [
                     3,
                     3
@@ -146,7 +146,7 @@
                 "faction": "Soldier",
                 "starting_items": [
                     [
-                        "Iron Axe",
+                        "Iron_Axe",
                         false
                     ]
                 ],
@@ -154,7 +154,7 @@
                 "team": "enemy",
                 "ai": "Defend",
                 "roam_ai": null,
-                "ai_group": null,
+                "ai_group": "",
                 "starting_position": [
                     2,
                     8
@@ -170,7 +170,7 @@
                 "faction": "Soldier",
                 "starting_items": [
                     [
-                        "Iron Axe",
+                        "Iron_Axe",
                         false
                     ]
                 ],
@@ -178,7 +178,7 @@
                 "team": "enemy",
                 "ai": "Attack",
                 "roam_ai": null,
-                "ai_group": null,
+                "ai_group": "",
                 "starting_position": [
                     4,
                     7
@@ -194,7 +194,7 @@
                 "faction": "Soldier",
                 "starting_items": [
                     [
-                        "Iron Axe",
+                        "Iron_Axe",
                         false
                     ]
                 ],
@@ -202,7 +202,7 @@
                 "team": "enemy",
                 "ai": "Attack",
                 "roam_ai": null,
-                "ai_group": null,
+                "ai_group": "",
                 "starting_position": [
                     9,
                     5
@@ -218,7 +218,7 @@
                 "faction": "Soldier",
                 "starting_items": [
                     [
-                        "Iron Lance",
+                        "Iron_Lance",
                         false
                     ]
                 ],
@@ -226,7 +226,7 @@
                 "team": "enemy",
                 "ai": "Guard",
                 "roam_ai": null,
-                "ai_group": null,
+                "ai_group": "",
                 "starting_position": [
                     8,
                     3
@@ -242,7 +242,7 @@
                 "faction": "Soldier",
                 "starting_items": [
                     [
-                        "Iron Lance",
+                        "Iron_Lance",
                         false
                     ]
                 ],
@@ -250,7 +250,7 @@
                 "team": "enemy",
                 "ai": "Pursue",
                 "roam_ai": null,
-                "ai_group": null,
+                "ai_group": "",
                 "starting_position": null,
                 "starting_traveler": null,
                 "generic": true
@@ -263,7 +263,7 @@
                 "faction": "Soldier",
                 "starting_items": [
                     [
-                        "Iron Axe",
+                        "Iron_Axe",
                         false
                     ]
                 ],
@@ -271,7 +271,7 @@
                 "team": "enemy",
                 "ai": "Attack",
                 "roam_ai": null,
-                "ai_group": null,
+                "ai_group": "",
                 "starting_position": null,
                 "starting_traveler": null,
                 "generic": true
@@ -284,7 +284,7 @@
                 "faction": "Soldier",
                 "starting_items": [
                     [
-                        "Iron Axe",
+                        "Iron_Axe",
                         false
                     ]
                 ],
@@ -292,7 +292,7 @@
                 "team": "enemy",
                 "ai": "Attack",
                 "roam_ai": null,
-                "ai_group": null,
+                "ai_group": "",
                 "starting_position": null,
                 "starting_traveler": null,
                 "generic": true
@@ -308,7 +308,7 @@
                 "team": "other",
                 "ai": "None",
                 "roam_ai": null,
-                "ai_group": null,
+                "ai_group": "",
                 "starting_position": null,
                 "starting_traveler": null,
                 "generic": true
@@ -321,7 +321,7 @@
                 "faction": "Soldier",
                 "starting_items": [
                     [
-                        "Iron Sword",
+                        "Iron_Sword",
                         false
                     ]
                 ],
@@ -329,7 +329,7 @@
                 "team": "other",
                 "ai": "None",
                 "roam_ai": null,
-                "ai_group": null,
+                "ai_group": "",
                 "starting_position": null,
                 "starting_traveler": null,
                 "generic": true
@@ -487,6 +487,11 @@
                 "positions": {}
             }
         ],
-        "ai_groups": []
+        "ai_groups": [
+            {
+                "nid": "",
+                "trigger_threshold": 1
+            }
+        ]
     }
 ]

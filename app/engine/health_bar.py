@@ -92,7 +92,7 @@ class CombatHealthBar(HealthBar):
     def _create_hp_bar_surf(self, full_hp: int, actual_hp: int, overflow: int = 0) -> engine.Surface:
         """Creates a single hp bar row.
         """
-        surf = engine.create_surface((full_hp * 2 + 1, self.full_hp_blip.get_height()))
+        surf = engine.create_surface((full_hp * 2 + 1, self.full_hp_blip.get_height()), transparent=True)
         if overflow > 2:
             hp_blip = engine.subsurface(self.overflowpurple_hp_blip, (self.colors[self.color_tick] * 2, 0, 2, self.overflowpurple_hp_blip.get_height()))
             damage_blip = hp_blip

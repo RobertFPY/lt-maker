@@ -152,7 +152,8 @@ class EventScriptCompleter(QCompleter):
             except: # popup doesn't exist?
                 pass
             return False
-        self.setModel(QStringListModel(list(autofill_dict.keys()), self))
+        # Order by shortest length first
+        self.setModel(QStringListModel(sorted(autofill_dict.keys(), key=lambda x: len(x)), self))
         self.popup().setItemDelegate(CompleterItemDelegate(autofill_dict, self))
         trimmed_line = line[0:cursor_pos].strip()
         start_last_arg = max(max([trimmed_line.rfind(c) for c in ';,']), -1)

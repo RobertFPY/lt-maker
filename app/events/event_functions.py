@@ -1744,11 +1744,17 @@ def remove_item_from_multiitem(self: Event, global_unit_or_convoy, multi_item, c
             action.do(action.RemoveItemFromMultiItem(owner_nid, item, subitem))
     else:
         # Check if item in multiitem
-        subitem_nids = [subitem.nid for subitem in item.subitems]
-        if child_item not in subitem_nids:
-            self.logger.error("remove_item_from_multiitem: Couldn't find subitem with nid %s" % child_item)
+        subitem = None
+        subitem_uids = [str(subitem.uid) for subitem in item.subitems]
+        if str(child_item) in subitem_uids:
+            subitem = [subitem for subitem in item.subitems if str(subitem.uid) == str(child_item)][0]
+        else:
+            subitem_nids = [subitem.nid for subitem in item.subitems]
+            if child_item in subitem_nids:
+                subitem = [subitem for subitem in item.subitems if subitem.nid == child_item][0]
+        if not subitem:
+            self.logger.error("remove_item_from_multiitem: Couldn't find subitem with nid/uid %s" % child_item)
             return
-        subitem = [subitem for subitem in item.subitems if subitem.nid == child_item][0]
         # Unequip subitem if necessary
         if owner_nid:
             action.do(action.UnequipItem(unit, subitem))

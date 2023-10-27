@@ -170,6 +170,25 @@ class ItemSubcomponentEditor(BaseSubcomponentEditor):
         self.option_dict[self.field_name] = val
 
 
+class AffinitySubcomponentEditor(BaseSubcomponentEditor):
+    @override
+    def _create_editor(self, hbox):
+        self.editor = ComboBox(self)
+        for affinity in DB.affinities.values():
+            self.editor.addItem(affinity.nid)
+        width = utils.clamp(self.editor.minimumSizeHint().width(
+        ) + DROP_DOWN_BUFFER, MIN_DROP_DOWN_WIDTH, MAX_DROP_DOWN_WIDTH)
+        self.editor.setMaximumWidth(width)
+        if not self.option_dict.get(self.field_name):
+            self.option_dict[self.field_name] = DB.affinities[0].nid
+        self.editor.setValue(self.option_dict[self.field_name])
+        self.editor.currentTextChanged.connect(self.on_value_changed)
+        hbox.addWidget(self.editor)
+
+    def on_value_changed(self, val):
+        self.option_dict[self.field_name] = val
+
+
 class SoundSubcomponentEditor(BaseSubcomponentEditor):
     @override
     def _create_editor(self, hbox):
@@ -234,6 +253,7 @@ EDITOR_MAP: Dict[ComponentType, BaseSubcomponentEditor] = {
     ComponentType.Item: ItemSubcomponentEditor,
     ComponentType.Event: EventSubcomponentEditor,
     ComponentType.Sound: SoundSubcomponentEditor,
+    ComponentType.Affinity: AffinitySubcomponentEditor
 }
 
 CONTAINER_EDITOR_MAP: Dict[ComponentType, BaseContainerSubcomponentEditor] = {

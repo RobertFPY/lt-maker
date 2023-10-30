@@ -565,6 +565,8 @@ class Event():
                 curr_style = curr_style.update(style)
         if not self.game.speak_styles.get(speaker_or_style):
             curr_style.speaker = speaker_or_style
+        elif self.game.speak_styles.get(speaker_or_style).speaker:
+            curr_style.speaker = self.game.speak_styles.get(speaker_or_style).speaker
         return curr_style
 
     def _apply_stat_changes(self, unit, stat_changes, flags):

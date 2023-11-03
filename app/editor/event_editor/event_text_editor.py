@@ -82,14 +82,14 @@ class EventTextEditor(QPlainTextEdit):
         else:
             pass
 
-    def set_completer(self, completer):
-        if not completer:
+    def set_completer(self, completer_t: Type[QCompleter]):
+        if not completer_t:
             self.completer = None
             return
-        completer.setWidget(self)
-        completer.setCompletionMode(QCompleter.PopupCompletion)
-        completer.setCaseSensitivity(Qt.CaseInsensitive)
-        self.completer = completer
+        self.completer = completer_t(self)
+        self.completer.setWidget(self)
+        self.completer.setCompletionMode(QCompleter.PopupCompletion)
+        self.completer.setCaseSensitivity(Qt.CaseInsensitive)
         self.completer.insertText.connect(self.insert_completion)
 
     def set_function_hinter(self, function_hinter: Type[event_autocompleter.EventScriptFunctionHinter]):

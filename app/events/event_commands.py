@@ -340,6 +340,17 @@ Plays the *Sound* once.
     keywords = ['Sound']
     optional_keywords = ['Volume']
 
+class StopSound(EventCommand):
+    nid = "stop_sound"
+    tag = Tags.MUSIC_SOUND
+
+    desc = \
+        """
+Stops the currently playing *Sound* immediately.
+        """
+
+    keywords = ['Sound']
+
 class ChangeMusic(EventCommand):
     nid = 'change_music'
     tag = Tags.MUSIC_SOUND

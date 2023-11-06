@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from difflib import SequenceMatcher as SM
 from enum import Enum
 from functools import lru_cache
 from typing import Any, Dict, List, Optional, Tuple, Type
@@ -79,15 +80,27 @@ class NIDCompletion():
     name: Optional[str] = None
     is_flag: bool = False
 
+    def text(self):
+        return self.name or self.nid
+
+def _fuzzy_match(text: str, completion: NIDCompletion) -> float:
+    # nid match
+    start_bonus = 0.5 if completion.nid.startswith(text) else 0
+    matches = [SM(None, text.lower(), completion.nid.lower()).ratio() + start_bonus]
+    if completion.name:
+        start_bonus = 0.5 if completion.name.startswith(text) else 0
+        matches.append(SM(None, text.lower(), completion.name.lower()).ratio() + start_bonus)
+    return max(matches)
+
 class CompleterItemDelegate(QStyledItemDelegate):
-    def __init__(self, completion_list: Dict[NID, NIDCompletion], parent=None) -> None:
+    def __init__(self, completion_list: List[NIDCompletion], parent=None) -> None:
         super().__init__(parent)
-        self.completion_list = completion_list
+        self.completion_dict: Dict[NID, NIDCompletion] = {completion.nid: completion for completion in completion_list}
 
     def displayText(self, value, locale) -> str:
         option_text = value
-        if option_text in self.completion_list:
-            completion_info = self.completion_list[option_text]
+        if option_text in self.completion_dict:
+            completion_info = self.completion_dict[option_text]
             option_text = completion_info.nid
             if completion_info.is_flag:
                 option_text = "FLAG(%s)" % completion_info.nid
@@ -143,17 +156,19 @@ class EventScriptCompleter(QCompleter):
         arg_under_cursor = arg_text_under_cursor(line, cursor_pos)
         # determine what dictionary to use for completion
         validator, flags = detect_type_under_cursor(line, cursor_pos, arg_under_cursor)
-        autofill_dict = generate_wordlist_from_validator_type(validator, level_nid, arg_under_cursor, DB, RESOURCES)
-        autofill_dict.update(generate_flags_wordlist(flags))
-        if len(autofill_dict) == 0:
+        autofill = generate_wordlist_from_validator_type(validator, level_nid, arg_under_cursor, DB, RESOURCES)
+        autofill += generate_flags_wordlist(flags)
+        if len(autofill) == 0:
             try:
                 if self.popup().isVisible():
                     self.popup().hide()
             except: # popup doesn't exist?
                 pass
             return False
-        self.setModel(QStringListModel(list(autofill_dict.keys()), self))
-        self.popup().setItemDelegate(CompleterItemDelegate(autofill_dict, self))
+        # Order by matching to current arg
+        autofill = sorted(autofill, key=lambda compl: _fuzzy_match(arg_under_cursor, compl), reverse=True)
+        self.setModel(QStringListModel(list(set([compl.text() for compl in autofill])), self))
+        self.popup().setItemDelegate(CompleterItemDelegate(autofill, self))
         trimmed_line = line[0:cursor_pos].strip()
         start_last_arg = max(max([trimmed_line.rfind(c) for c in ';,']), -1)
         completionPrefix = trimmed_line[start_last_arg + 1:]
@@ -256,41 +271,39 @@ class PythonEventScriptCompleter(EventScriptCompleter):
         if not line_info:
             return False
         if line_info.final_mode == ParseMode.FLAGS:
-            autofill_dict = line_info.command().flags
-            autofill_dict = {f'"{arg}"': NIDCompletion(arg) for arg in autofill_dict}
+            autofill = [NIDCompletion(flag) for flag in line_info.command().flags]
         elif line_info.final_mode == ParseMode.FINISHED_ARGS:
-            autofill_dict = {'.FLAGS': NIDCompletion('.FLAGS')}
+            autofill = [NIDCompletion('.FLAGS')]
         elif line_info.final_mode == ParseMode.FINISHED:
             return False
         else:
             validator = line_info.type_under_cursor
-            autofill_dict = generate_wordlist_from_validator_type(validator, level_nid, line_info.arg_under_cursor, DB, RESOURCES)
+            autofill = generate_wordlist_from_validator_type(validator, level_nid, line_info.arg_under_cursor, DB, RESOURCES)
             # wrap in quotes bc python. specifically don't do this for command names since they aren't string args
-            if line_info.final_mode != ParseMode.COMMAND:
-                autofill_dict = {f'"{nid}"': NIDCompletion(nid, cmpl.name, False) for nid, cmpl in autofill_dict.items()}
-        if len(autofill_dict) == 0:
+        if len(autofill) == 0:
             try:
                 if self.popup().isVisible():
                     self.popup().hide()
             except: # popup doesn't exist?
                 pass
             return False
-        self.setModel(QStringListModel(list(autofill_dict.keys()), self))
-        self.popup().setItemDelegate(CompleterItemDelegate(autofill_dict, self))
+        # order by distance to current arg
+        autofill = sorted(autofill, key=lambda compl: _fuzzy_match(line_info.arg_under_cursor, compl), reverse=True)
+        self.setModel(QStringListModel(list(set([compl.text() for compl in autofill])), self))
+        self.popup().setItemDelegate(CompleterItemDelegate(autofill, self))
         self.setCompletionPrefix(line_info.arg_under_cursor)
         self.popup().setCurrentIndex(self.completionModel().index(0, 0))
         return True
 
 def generate_wordlist_from_validator_type(validator: Type[event_validators.Validator], level: NID = None, arg: str = None,
-                                          db: Database = None, resources: Resources = None) -> Dict[NID, NIDCompletion]:
+                                          db: Database = None, resources: Resources = None) -> List[NIDCompletion]:
     if not validator:
-        return {}
+        return []
     valid_entries = validator(db, resources).valid_entries(level, arg)
-    autofill_dict = {nid: NIDCompletion(nid, name) for name, nid in valid_entries}
-    return autofill_dict
+    return [NIDCompletion(nid, name) for name, nid in valid_entries]
 
 def generate_flags_wordlist(flags: List[str] = []) -> List[NIDCompletion]:
-    return {flag: NIDCompletion(flag, is_flag=True) for flag in flags}
+    return [NIDCompletion(flag, is_flag=True) for flag in flags]
 
 def determine_arg_index_from_list_of_args_and_cursor_pos(args: List[str], cursor_pos: int) -> int:
     """

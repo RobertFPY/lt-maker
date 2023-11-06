@@ -140,6 +140,7 @@ class EventCollection(QWidget):
         self.toolbar.addAction(self.delete_action)
 
     def delete(self):
+        self.window.right_frame.name_done_editing()  # Necessary for handling deletion right after you change the name if you don't click off
         current_index = self.view.currentIndex()
         model_index = self.name_filtered_model.mapToSource(self.level_filtered_model.mapToSource(current_index))
         row = current_index.row()
@@ -300,10 +301,11 @@ class EventProperties(QWidget):
 
         self.text_box = EventTextEditor(self)
         self.text_box.textChanged.connect(self.text_changed)
+        self.find_and_replace_window = find_and_replace.Find(self)
 
-        self.find_action = QAction("Find...", self, shortcut="Ctrl+F", triggered=find_and_replace.Find(self).show)
-        self.replace_action = QAction("Replace...", self, shortcut="Ctrl+H", triggered=find_and_replace.Find(self).show)
-        self.replace_all_action = QAction("Replace all...", self, shortcut="Ctrl+Shift+H", triggered=find_and_replace.Find(self).show)
+        self.find_action = QAction("Find...", self, shortcut="Ctrl+F", triggered=self.show_find_and_replace)
+        self.replace_action = QAction("Replace...", self, shortcut="Ctrl+H", triggered=self.show_find_and_replace)
+        self.replace_all_action = QAction("Replace all...", self, shortcut="Ctrl+Shift+H", triggered=self.show_find_and_replace)
         self.addAction(self.find_action)
         self.addAction(self.replace_action)
         self.addAction(self.replace_all_action)
@@ -449,6 +451,17 @@ class EventProperties(QWidget):
             self.show_commands_dialog.done(0)
             self.show_commands_dialog = None
 
+    def show_find_and_replace(self):
+        if not self.find_and_replace_window:
+            self.find_and_replace_window = find_and_replace.Find(self)
+        self.find_and_replace_window.show()
+        self.find_and_replace_window.raise_()
+
+    def close_find_and_replace(self):
+        if self.find_and_replace_window:
+            self.find_and_replace_window.done(0)
+            self.find_and_replace_window = None
+
     def test_event(self, strategy):
         if self.current:
             cursor_position = 0
@@ -545,11 +558,11 @@ class EventProperties(QWidget):
         self.language_mode = lang
         if lang == EditorLanguageMode.PYTHON:
             self.highlighter = PythonHighlighter(self.text_box.document())
-            self.text_box.set_completer(event_autocompleter.PythonEventScriptCompleter())
+            self.text_box.set_completer(event_autocompleter.PythonEventScriptCompleter)
             self.text_box.set_function_hinter(None)
         else:
             self.highlighter = EventHighlighter(self.text_box.document(), self)
-            self.text_box.set_completer(event_autocompleter.EventScriptCompleter())
+            self.text_box.set_completer(event_autocompleter.EventScriptCompleter)
             self.text_box.set_function_hinter(event_autocompleter.EventScriptFunctionHinter)
 
     def set_current(self, current: EventPrefab):
@@ -583,6 +596,7 @@ class EventProperties(QWidget):
     def hideEvent(self, event):
         self.close_map()
         self.close_commands()
+        self.close_find_and_replace()
 
 class ShowMapDialog(QDialog):
     def __init__(self, current_level: LevelPrefab, parent=None):

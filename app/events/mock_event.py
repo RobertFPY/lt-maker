@@ -26,7 +26,7 @@ class MockGame():
 class MockEvent(Event):
     # These are the only commands that will be processed by this event
     available = {"finish", "wait", "end_skip", "music", "music_clear",
-                 "sound", "add_portrait", "multi_add_portrait",
+                 "sound", "stop_sound", "add_portrait", "multi_add_portrait",
                  "remove_portrait", "multi_remove_portrait",
                  "move_portrait", "mirror_portrait", "bop_portrait",
                  "expression", "speak_style", "speak", "unhold",

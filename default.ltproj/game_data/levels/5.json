@@ -85,7 +85,7 @@
                 "faction": "Soldier",
                 "starting_items": [
                     [
-                        "Iron Lance",
+                        "Iron_Lance",
                         false
                     ]
                 ],
@@ -109,7 +109,7 @@
                 "faction": "Soldier",
                 "starting_items": [
                     [
-                        "Iron Bow",
+                        "Iron_Bow",
                         false
                     ]
                 ],
@@ -133,7 +133,7 @@
                 "faction": "Soldier",
                 "starting_items": [
                     [
-                        "Iron Axe",
+                        "Iron_Axe",
                         false
                     ]
                 ],
@@ -157,7 +157,7 @@
                 "faction": "Soldier",
                 "starting_items": [
                     [
-                        "Iron Sword",
+                        "Iron_Sword",
                         false
                     ]
                 ],
@@ -181,7 +181,7 @@
                 "faction": "Soldier",
                 "starting_items": [
                     [
-                        "Iron Axe",
+                        "Iron_Axe",
                         false
                     ]
                 ],
@@ -205,7 +205,7 @@
                 "faction": "Soldier",
                 "starting_items": [
                     [
-                        "Iron Bow",
+                        "Iron_Bow",
                         false
                     ]
                 ],
@@ -229,7 +229,7 @@
                 "faction": "Soldier",
                 "starting_items": [
                     [
-                        "Iron Lance",
+                        "Iron_Lance",
                         false
                     ]
                 ],
@@ -253,7 +253,7 @@
                 "faction": "Soldier",
                 "starting_items": [
                     [
-                        "Iron Lance",
+                        "Iron_Lance",
                         false
                     ]
                 ],
@@ -277,7 +277,7 @@
                 "faction": "Soldier",
                 "starting_items": [
                     [
-                        "Iron Lance",
+                        "Iron_Lance",
                         false
                     ]
                 ],
@@ -301,7 +301,7 @@
                 "faction": "Soldier",
                 "starting_items": [
                     [
-                        "Iron Axe",
+                        "Iron_Axe",
                         false
                     ]
                 ],
@@ -325,7 +325,7 @@
                 "faction": "Soldier",
                 "starting_items": [
                     [
-                        "Iron Axe",
+                        "Iron_Axe",
                         false
                     ]
                 ],
@@ -349,7 +349,7 @@
                 "faction": "Soldier",
                 "starting_items": [
                     [
-                        "Iron Lance",
+                        "Iron_Lance",
                         false
                     ]
                 ],
@@ -373,7 +373,7 @@
                 "faction": "Soldier",
                 "starting_items": [
                     [
-                        "Iron Lance",
+                        "Iron_Lance",
                         false
                     ]
                 ],
@@ -397,7 +397,7 @@
                 "faction": "Soldier",
                 "starting_items": [
                     [
-                        "Iron Bow",
+                        "Iron_Bow",
                         false
                     ]
                 ],
@@ -421,7 +421,7 @@
                 "faction": "Soldier",
                 "starting_items": [
                     [
-                        "Iron Axe",
+                        "Iron_Axe",
                         false
                     ]
                 ],
@@ -445,7 +445,7 @@
                 "faction": "Bandit",
                 "starting_items": [
                     [
-                        "Iron Axe",
+                        "Iron_Axe",
                         false
                     ]
                 ],
@@ -466,7 +466,7 @@
                 "faction": "Bandit",
                 "starting_items": [
                     [
-                        "Iron Axe",
+                        "Iron_Axe",
                         false
                     ]
                 ],
@@ -487,7 +487,7 @@
                 "faction": "Bandit",
                 "starting_items": [
                     [
-                        "Iron Axe",
+                        "Iron_Axe",
                         false
                     ]
                 ],
@@ -508,7 +508,7 @@
                 "faction": "Bandit",
                 "starting_items": [
                     [
-                        "Iron Axe",
+                        "Iron_Axe",
                         false
                     ]
                 ],
@@ -529,7 +529,7 @@
                 "faction": "Bandit",
                 "starting_items": [
                     [
-                        "Iron Axe",
+                        "Iron_Axe",
                         false
                     ]
                 ],
@@ -550,7 +550,7 @@
                 "faction": "Bandit",
                 "starting_items": [
                     [
-                        "Iron Axe",
+                        "Iron_Axe",
                         false
                     ]
                 ],

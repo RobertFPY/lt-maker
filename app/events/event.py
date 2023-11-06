@@ -311,7 +311,7 @@ class Event():
                     break
                 self.command_queue.append(next_command)
             command = self.command_queue.pop(0)
-            
+
             # This shunts all SAVE COMMANDS to the back of the command queue, so that we never save the game while there are still commands on the queue.
             # This is unlikely to happen unless you used a macro to put multiple commands on the queue at once (and one of them is a save).
             while command.nid in SAVE_COMMAND_NIDS and self.command_queue: # if we have a save command but there are still more commands in the queue. We cannot save while there are commands on the queue. This should never happen
@@ -555,16 +555,19 @@ class Event():
 
     def _resolve_speak_style(self, speaker_or_style, *styles) -> SpeakStyle:
         curr_style = self.game.speak_styles['__default'].copy()
-        if not self.game.speak_styles.get(speaker_or_style):
-            curr_style.speaker = speaker_or_style
-        else:
-            styles = list(styles)
-            styles.append(speaker_or_style)
+        styles = list(styles)
+        o_style = self.game.speak_styles.get(speaker_or_style)
+        if o_style:
+            styles.append(o_style)
         for style in styles:
             if isinstance(style, str):
                 style = self.game.speak_styles.get(style)
             if style:
                 curr_style = curr_style.update(style)
+        if speaker_or_style and not o_style:
+            curr_style.speaker = speaker_or_style
+        elif o_style and o_style.speaker:
+            curr_style.speaker = self.game.speak_styles.get(speaker_or_style).speaker
         return curr_style
 
     def _apply_stat_changes(self, unit, stat_changes, flags):

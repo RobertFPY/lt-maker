@@ -84,6 +84,9 @@ def music_clear(self: Event, fade_out=0, flags=None):
 def sound(self: Event, sound, volume=1.0, flags=None):
     get_sound_thread().play_sfx(sound, volume=float(volume))
 
+def stop_sound(self: Event, sound, flags=None):
+    get_sound_thread().stop_sfx(sound)
+
 def change_music(self: Event, phase, music, flags=None):
     if music == 'None':
         action.do(action.ChangePhaseMusic(phase, None))
@@ -369,7 +372,9 @@ def speak(self: Event, speaker_or_style: str, text, text_position=None, width=No
                               font_type, dialog_box, int(num_lines) if num_lines else None, cursor, message_tail, float(transparency) if transparency else None, name_tag_bg, flags)
 
     style = self._resolve_speak_style(speaker_or_style, style_nid, manual_style)
-    speaker = speaker_or_style or style.speaker or ''
+    speaker = style.speaker or ''
+    if speaker == 'None':
+        speaker = ''
     if speaker.startswith('"') and speaker.endswith('"'):
         speaker = speaker[1:-1]
     unit = self._get_unit(speaker)
@@ -1744,11 +1749,17 @@ def remove_item_from_multiitem(self: Event, global_unit_or_convoy, multi_item, c
             action.do(action.RemoveItemFromMultiItem(owner_nid, item, subitem))
     else:
         # Check if item in multiitem
-        subitem_nids = [subitem.nid for subitem in item.subitems]
-        if child_item not in subitem_nids:
-            self.logger.error("remove_item_from_multiitem: Couldn't find subitem with nid %s" % child_item)
+        subitem = None
+        subitem_uids = [str(subitem.uid) for subitem in item.subitems]
+        if str(child_item) in subitem_uids:
+            subitem = [subitem for subitem in item.subitems if str(subitem.uid) == str(child_item)][0]
+        else:
+            subitem_nids = [subitem.nid for subitem in item.subitems]
+            if child_item in subitem_nids:
+                subitem = [subitem for subitem in item.subitems if subitem.nid == child_item][0]
+        if not subitem:
+            self.logger.error("remove_item_from_multiitem: Couldn't find subitem with nid/uid %s" % child_item)
             return
-        subitem = [subitem for subitem in item.subitems if subitem.nid == child_item][0]
         # Unequip subitem if necessary
         if owner_nid:
             action.do(action.UnequipItem(unit, subitem))

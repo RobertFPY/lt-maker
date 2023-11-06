@@ -14,6 +14,7 @@ from app.engine.game_counters import ANIMATION_COUNTERS
 from app.engine.game_state import game
 from app.engine.sprites import SPRITES
 from app.utilities import utils
+from app.utilities.enums import HAlignment
 
 from typing import List
 
@@ -272,7 +273,7 @@ class UIView():
             at_icon = SPRITES.get('icon_attackable_terrain')
             bg_surf.blit(at_icon, (7, bg_surf.get_height() - 7 - at_icon.get_height()))
             cur = str(current_hp)
-            FONT['small'].blit_right(cur, bg_surf, (bg_surf.get_width() - 9, 24))
+            render_text(bg_surf, ['small'], [cur], [None], (bg_surf.get_width() - 9, 24), HAlignment.RIGHT)
         else:
             bg_surf = SPRITES.get('tile_info_quick_opaque').copy()
             bg_surf = image_mods.make_translucent(bg_surf, .1)
@@ -287,13 +288,14 @@ class UIView():
                             tile_avoid += component.tile_avoid()
                 else:
                     logging.error("Could not find status %s for terrain %s", terrain.status, terrain.nid)
-            FONT['small'].blit_right(str(tile_def), bg_surf, (bg_surf.get_width() - 4, 17))
-            FONT['small'].blit_right(str(tile_avoid), bg_surf, (bg_surf.get_width() - 4, 25))
+            render_text(bg_surf, ['small'], [str(tile_def)], [None], (bg_surf.get_width() - 4, 17), HAlignment.RIGHT)
+            render_text(bg_surf, ['small'], [str(tile_avoid)], [None], (bg_surf.get_width() - 4, 25), HAlignment.RIGHT)
 
         name = terrain.name
-        width, height = FONT['text'].size(name)
+        width = text_width('text', name)
+        height = FONT['text'].height
         pos = (bg_surf.get_width()//2 - width//2, 22 - height)
-        FONT['text'].blit(name, bg_surf, pos)
+        render_text(bg_surf, ['text'], [name], [None], pos)
         return bg_surf
 
     def create_obj_info(self):

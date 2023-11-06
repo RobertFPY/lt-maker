@@ -35,8 +35,8 @@ class McostDialog(SimpleDialog):
         row_header_view = RowHeaderView()
         self.view.setHorizontalHeader(column_header_view)
         self.view.setVerticalHeader(row_header_view)
-        self.view.horizontalHeader().sectionDoubleClicked.connect(self.model.change_col_header)
-        self.view.verticalHeader().sectionDoubleClicked.connect(self.model.change_row_header)
+        self.view.horizontalHeader().sectionDoubleClicked.connect(column_header_view.rename)
+        self.view.verticalHeader().sectionDoubleClicked.connect(row_header_view.rename)
 
         self.view.resizeColumnsToContents()
 
@@ -140,6 +140,7 @@ class ColumnHeaderView(QHeaderView):
             QMessageBox.critical(self.parent(), 'Error', 'Cannot delete when only one column left!')
 
     def rename(self, idx):
+        print("rename", idx)
         old_column_name = DB.mcost.column_headers[idx]
         self.parent().model().change_col_header(idx)
         new_column_name = DB.mcost.column_headers[idx]

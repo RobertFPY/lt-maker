@@ -12,6 +12,7 @@ class SourceType(Enum):
     TRAVELER = ('traveler', False, False)
     KLASS = ('klass', False, True)
     PERSONAL = ('personal', False, True)
+    FATIGUE = ('fatigue', False, True)
     GLOBAL = ('global', False, False)
     DEFAULT = ('default', True, True)
 

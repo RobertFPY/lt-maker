@@ -1,12 +1,15 @@
 from app.engine.objects.unit import UnitObject
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple, TYPE_CHECKING
 
 from app.data.database.database import DB
 from app.engine import line_of_sight
 from app.engine.pathfinding.node import Node
 from app.engine.game_state import game
 from app.utilities.grid import Grid
-from app.utilities.typing import NID, Pos
+from app.utilities.typing import NID, Pos, UID
+
+if TYPE_CHECKING:
+    from app.engine.objects.skill import SkillObject
 
 class GameBoard(object):
     def __init__(self, tilemap):
@@ -25,14 +28,14 @@ class GameBoard(object):
         # Fog of War -- one for each team
         self.fog_of_war_grids = {}
         for team in DB.teams:
-            self.fog_of_war_grids[team.nid] = self.init_aura_grid()
+            self.fog_of_war_grids[team.nid] = self.init_set_grid()
         self.fow_vantage_point = {}  # Unit: Position where the unit is that's looking
-        self.fog_regions = self.init_aura_grid()
+        self.fog_regions = self.init_set_grid()
         self.fog_region_set = set()  # Set of Fog region nids so we can tell how many fog regions exist at all times
-        self.vision_regions = self.init_aura_grid()
+        self.vision_regions = self.init_set_grid()
 
         # For Auras
-        self.aura_grid = self.init_aura_grid()
+        self.aura_grid = self.init_set_grid()
         # Key: Aura Skill Uid, Value: Set of positions
         self.known_auras = {}
 
@@ -254,54 +257,51 @@ class GameBoard(object):
                 self.is_tile(pos))
 
     # === Line of Sight ===
-    def init_opacity_grid(self, tilemap):
-        cells = []
+    def init_opacity_grid(self, tilemap) -> Grid[bool]:
+        grid = Grid[bool]((self.width, self.height))
         for x in range(self.width):
             for y in range(self.height):
                 terrain_nid = game.get_terrain_nid(tilemap, (x, y))
                 t = DB.terrain.get(terrain_nid)
                 if t:
-                    cells.append(t.opaque)
+                    grid.insert((x, y), t.opaque)
                 else:
-                    cells.append(False)
-        return cells
+                    grid.insert((x, y), False)
+        return grid
 
-    def get_opacity(self, pos) -> bool:
+    def get_opacity(self, pos: Pos) -> bool:
         if not pos:
             return False
-        idx = pos[0] * self.height + pos[1]
-        return self.opacity_grid[idx]
+        return self.opacity_grid.get(pos)
 
     # === Auras ===
-    def init_aura_grid(self):
-        cells = []
+    def init_set_grid(self) -> Grid[set]:
+        grid = Grid[set]((self.width, self.height))
         for x in range(self.width):
             for y in range(self.height):
-                cells.append(set())
-        return cells
+                grid.insert((x, y), set())
+        return grid
 
-    def reset_aura(self, child_skill):
+    def reset_aura(self, child_skill: SkillObject):
         if child_skill.uid in self.known_auras:
             self.known_auras[child_skill.uid].clear()
 
-    def add_aura(self, pos, unit, child_skill, target):
-        idx = pos[0] * self.height + pos[1]
-        self.aura_grid[idx].add((child_skill.uid, target))
+    def add_aura(self, pos: Pos, child_skill: SkillObject, target: str):
+        # Target is one of ('Ally', 'Enemy', 'Unit')
+        self.aura_grid.get(pos).add((child_skill.uid, target))
         if child_skill.uid not in self.known_auras:
             self.known_auras[child_skill.uid] = set()
         self.known_auras[child_skill.uid].add(pos)
 
-    def remove_aura(self, pos, child_skill):
-        idx = pos[0] * self.height + pos[1]
-        for aura_data in list(self.aura_grid[idx]):
+    def remove_aura(self, pos: Pos, child_skill: SkillObject):
+        for aura_data in list(self.aura_grid.get(pos)):
             if aura_data[0] == child_skill.uid:
-                self.aura_grid[idx].discard(aura_data)
+                self.aura_grid.get(pos).discard(aura_data)
         if child_skill.uid in self.known_auras:
             self.known_auras[child_skill.uid].discard(pos)
 
-    def get_auras(self, pos):
-        idx = pos[0] * self.height + pos[1]
-        return self.aura_grid[idx]
+    def get_auras(self, pos: Pos) -> Set[Tuple[UID, str]]:
+        return self.aura_grid.get(pos)
 
-    def get_aura_positions(self, child_skill) -> set:
+    def get_aura_positions(self, child_skill: SkillObject) -> Set[Pos]:
         return self.known_auras.get(child_skill.uid, set())

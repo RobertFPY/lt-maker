@@ -91,7 +91,7 @@ class PathfindingTests(unittest.TestCase):
         path = pathfinder.process(can_move_through)
         self.assertEqual(path[-1], (1, 1), 'Did not find the end')
         self.assertEqual(path[0], (5, 5), 'Did not start at the beginning')
-        self.assertEqual(len(path), 2, 'Longer path than necessary')
+        self.assertEqual(len(path), 2, f'Longer path than necessary {path}')
 
         # Test the complex grid
         pathfinder = pathfinding.ThetaStar((1, 7), (7, 7), self.complex_grid)

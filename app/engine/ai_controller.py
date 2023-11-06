@@ -696,7 +696,7 @@ class SecondaryAI():
         self.double_move = self.single_move + equations.parser.movement(self.unit)
 
         movement_group = movement_funcs.get_movement_group(self.unit)
-        self.grid = game.board.get_grid(movement_group)
+        self.grid = game.board.get_movement_grid(movement_group)
         self.pathfinder = \
             pathfinding.AStar(self.unit.position, None, self.grid,
                               game.board.bounds, game.tilemap.height,

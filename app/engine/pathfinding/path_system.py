@@ -27,7 +27,7 @@ class PathSystem():
         if not force and unit.finished:
             return set()
         mtype = movement_funcs.get_movement_group(unit)
-        grid = self.game.board.get_grid(mtype)
+        grid = self.game.board.get_movement_grid(mtype)
         bounds = self.game.board.bounds
         height = self.game.board.height
         start_pos = unit.position
@@ -52,7 +52,7 @@ class PathSystem():
         Returns the path (a list of positions), with the goal position first and the start position last
         """
         mtype = movement_funcs.get_movement_group(unit)
-        grid = self.game.board.get_grid(mtype)
+        grid = self.game.board.get_movement_grid(mtype)
         start_pos = unit.position
 
         bounds = self.game.board.bounds

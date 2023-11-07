@@ -1,4 +1,5 @@
 import logging
+import functools
 import math
 from typing import List
 
@@ -698,9 +699,7 @@ class SecondaryAI():
         movement_group = movement_funcs.get_movement_group(self.unit)
         self.grid = game.board.get_movement_grid(movement_group)
         self.pathfinder = \
-            pathfinding.AStar(self.unit.position, None, self.grid,
-                              game.board.bounds, game.tilemap.height,
-                              self.unit.team)
+            pathfinding.AStar(self.unit.position, None, self.grid)
 
         self.widen_flag = False  # Determines if we've widened our search
         self.reset()
@@ -776,9 +775,9 @@ class SecondaryAI():
 
         limit = self.get_limit()
         if skill_system.pass_through(self.unit):
-            can_move_through = lambda team, adj: True
+            can_move_through = lambda adj: True
         else:
-            can_move_through = game.board.can_move_through
+            can_move_through = functools.partial(game.board.can_move_through, self.unit.team)
         path = self.pathfinder.process(can_move_through, adj_good_enough=adj_good_enough, limit=limit)
         self.pathfinder.reset()
         return path

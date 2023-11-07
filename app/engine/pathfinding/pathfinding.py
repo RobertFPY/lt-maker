@@ -7,20 +7,20 @@ from app.engine.pathfinding.node import Node
 from app.utilities.grid import BoundedGrid
 from app.utilities.typing import Pos
 
-class Djikstra():
-    __slots__ = ['open', 'closed', 'nodes', 'start_pos', 'start_node']
+class Djikstra:
+    __slots__ = ['open', 'closed', 'grid', 'start_pos', 'start_node']
 
     def __init__(self, start_pos: Pos, grid: BoundedGrid[Node]):
         self.open: List[Node] = []
         heapq.heapify(self.open)
         self.closed: Set[Node] = set()
-        self.nodes: BoundedGrid[Node] = grid
+        self.grid: BoundedGrid[Node] = grid
         self._reset_grid()
         self.start_pos: Pos = start_pos
-        self.start_node: Node = self.nodes.get(*start_pos)
+        self.start_node: Node = self.grid.get(start_pos)
 
     def _reset_grid(self):
-        for node in self.nodes:
+        for node in self.grid.cells():
             node.reset()
 
     def _get_adj_nodes(self, node: Node) -> List[Node]:
@@ -30,8 +30,8 @@ class Djikstra():
         nodes: List[Node] = []
         for adj in [(node.x, node.y + 1), (node.x + 1, node.y), 
                     (node.x - 1, node.y), (node.x, node.y - 1)]:
-            if self.nodes.check_bounds(adj):
-                nodes.append(self.nodes.get(adj))
+            if self.grid.check_bounds(adj):
+                nodes.append(self.grid.get(adj))
         return nodes
 
     def _update_node(self, adj: Node, node: Node):
@@ -56,7 +56,7 @@ class Djikstra():
             adj_nodes = self._get_adj_nodes(node)
             for adj in adj_nodes:
                 if adj.reachable and adj not in self.closed:
-                    if can_move_through(adj):
+                    if can_move_through((adj.x, adj.y)):
                         if (adj.g, adj) in self.open:
                             # if adj node in open list, check if current path
                             # is better than the one previously found for this adj node
@@ -71,23 +71,23 @@ class Djikstra():
         # Sometimes gets here if unit is fully enclosed
         return {(node.x, node.y) for node in self.closed}
 
-class AStar():
+class AStar:
     def __init__(self, start_pos: Pos, goal_pos: Optional[Pos], grid: BoundedGrid[Node]):
-        self.nodes = grid
+        self.grid = grid
         self.start_pos = start_pos
         self.goal_pos = goal_pos
 
         self.start_node: Node = self.grid.get(start_pos)
         self.end_node: Node = self.grid.get(goal_pos) if goal_pos else None
-        self.adj_end: List[Node] = self.get_adj_nodes(self.end_node) if self.end_node else None
+        self.adj_end: List[Node] = self._get_adj_nodes(self.end_node) if self.end_node else None
 
-        self._reset()
+        self.reset()
 
     def _reset_grid(self):
-        for node in self.nodes:
+        for node in self.grid.cells():
             node.reset()
 
-    def _reset(self):
+    def reset(self):
         self.open: List[Node] = []
         heapq.heapify(self.open)
         self.closed: Set[Node] = set()
@@ -96,7 +96,7 @@ class AStar():
     def set_goal_pos(self, goal_pos: Pos):
         self.goal_pos = goal_pos
         self.end_node = self.grid.get(goal_pos)
-        self.adj_end = self.get_adj_nodes(self.end_node)
+        self.adj_end = self._get_adj_nodes(self.end_node)
 
     def _get_simple_heuristic(self, node: Node) -> float:
         """
@@ -131,8 +131,8 @@ class AStar():
         nodes: List[Node] = []
         for adj in [(node.x, node.y + 1), (node.x + 1, node.y), 
                     (node.x - 1, node.y), (node.x, node.y - 1)]:
-            if self.nodes.check_bounds(adj):
-                nodes.append(self.nodes.get(adj))
+            if self.grid.check_bounds(adj):
+                nodes.append(self.grid.get(adj))
         return nodes
 
     def _update_node(self, adj: Node, node: Node):
@@ -169,10 +169,10 @@ class AStar():
             if node is self.end_node or (adj_good_enough and node in self.adj_end):
                 return self._return_path(node)
             # get adjacent nodes for node
-            adj_nodes = self._get_adjacent_nodes(node)
+            adj_nodes = self._get_adj_nodes(node)
             for adj in adj_nodes:
                 if adj.reachable and adj not in self.closed:
-                    if can_move_through(adj):
+                    if can_move_through((adj.x, adj.y)):
                         if (adj.f, adj) in self.open:
                             # if adj node in open list, check if current path
                             # is better than the one previously found for this adj node
@@ -209,7 +209,7 @@ class ThetaStar(AStar):
 
     def _line_of_sight(self, node1: Node, node2: Node) -> bool:
         def cannot_move_through(pos: Tuple[int, int]) -> bool:
-            node = self.get_node(*pos)
+            node = self.grid.get(pos)
             return not node.reachable
 
         pos1 = node1.x, node1.y

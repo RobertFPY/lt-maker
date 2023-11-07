@@ -1,11 +1,13 @@
+from __future__ import annotations
+
 from app.engine.objects.unit import UnitObject
-from typing import Any, Dict, List, Optional, Set, Tuple, TYPE_CHECKING
+from typing import Dict, List, Optional, Set, Tuple, TYPE_CHECKING
 
 from app.data.database.database import DB
 from app.engine import line_of_sight
 from app.engine.pathfinding.node import Node
 from app.engine.game_state import game
-from app.utilities.grid import Grid
+from app.utilities.grid import Grid, BoundedGrid
 from app.utilities.typing import NID, Pos, UID
 
 if TYPE_CHECKING:
@@ -21,9 +23,9 @@ class GameBoard(object):
         self.reset_tile_grids(tilemap)
 
         # Keeps track of what team occupies which tile
-        self.team_grid: Grid[List[NID]] = Grid[List[NID]]((self.width, self.height))
+        self.team_grid: Grid[List[NID]] = self.initialize_list_grid()
         # Keeps track of which unit occupies which tile
-        self.unit_grid: Grid[List[UnitObject]] = Grid[List[UnitObject]]((self.width, self.height))
+        self.unit_grid: Grid[List[UnitObject]] = self.initialize_list_grid()
 
         # Fog of War -- one for each team
         self.fog_of_war_grids = {}
@@ -60,8 +62,8 @@ class GameBoard(object):
                 terrain = DB.terrain.get(terrain_nid)
                 if not terrain:
                     terrain = DB.terrain[0]
-                mtype_grid.insert((x, y), terrain.mtype)
-        for idx, mode in enumerate(DB.mcost.unit_types):
+                mtype_grid.append(terrain.mtype)
+        for mode in DB.mcost.unit_types:
             self.mcost_grids[mode] = self.init_movement_grid(mode, tilemap, mtype_grid)
         self.opacity_grid = self.init_opacity_grid(tilemap)
 
@@ -97,17 +99,24 @@ class GameBoard(object):
                     tile_cost = DB.mcost.get_mcost(movement_group, mtype)
                 else:
                     tile_cost = 1
-                grid.insert((x, y), (Node(x, y, tile_cost < 99, tile_cost)))
+                grid.append(Node(x, y, tile_cost < 99, tile_cost))
 
         return grid
 
-    def get_movement_grid(self, movement_group: NID) -> Grid[Node]:
-        return self.mcost_grids[movement_group]
+    def get_movement_grid(self, movement_group: NID) -> BoundedGrid[Node]:
+        return self.mcost_grids[movement_group].apply_bounds(self.bounds)
+
+    def initialize_list_grid(self) -> Grid[List]:
+        grid = Grid[List[NID]]((self.width, self.height))
+        for x in range(self.width):
+            for y in range(self.height):
+                grid.append([])
+        return grid
 
     def set_unit(self, pos: Pos, unit: UnitObject):
         if unit not in self.unit_grid.get(pos):
-            self.unit_grid.insert(pos, unit)
-            self.team_grid.insert(pos, unit.team)
+            self.unit_grid.get(pos).append(unit)
+            self.team_grid.get(pos).append(unit.team)
 
     def remove_unit(self, pos: Pos, unit: UnitObject):
         if unit in self.unit_grid.get(pos):
@@ -264,9 +273,9 @@ class GameBoard(object):
                 terrain_nid = game.get_terrain_nid(tilemap, (x, y))
                 t = DB.terrain.get(terrain_nid)
                 if t:
-                    grid.insert((x, y), t.opaque)
+                    grid.append(t.opaque)
                 else:
-                    grid.insert((x, y), False)
+                    grid.append(False)
         return grid
 
     def get_opacity(self, pos: Pos) -> bool:
@@ -279,7 +288,7 @@ class GameBoard(object):
         grid = Grid[set]((self.width, self.height))
         for x in range(self.width):
             for y in range(self.height):
-                grid.insert((x, y), set())
+                grid.append(set())
         return grid
 
     def reset_aura(self, child_skill: SkillObject):

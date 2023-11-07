@@ -1,5 +1,8 @@
 import unittest
-from unittest.mock import MagicMock, Mock, patch, call
+from unittest.mock import MagicMock, Mock
+
+import time
+
 from app.engine.item_components.target_components import EvalSpecialRange, MaximumRange, MinimumRange, TargetsEnemies
 from app.engine.objects.item import ItemObject
 from app.engine.game_board import GameBoard
@@ -15,9 +18,17 @@ class TargetSystemUnitTests(unittest.TestCase):
         self.game = get_mock_game()
         self.target_system = self.create_target_system()
 
-        self.game.board = GameBoard(MagicMock())
-        self.game.board.bounds = (0, 0, 99, 99)
+        start = time.time_ns() / 1e6
+
+        tilemap = MagicMock()
+        tilemap.width = 29
+        tilemap.height = 29
+        self.game.board = GameBoard(tilemap)
+        self.game.board.bounds = (0, 0, 28, 28)
         self.game.units = []
+
+        end = time.time_ns() / 1e6
+        print(f'\nBig Game Board creation: {end - start} ms')
 
         self.player_unit = UnitObject('player')         
         self.player_unit.team = 'player'
@@ -44,9 +55,9 @@ class TargetSystemUnitTests(unittest.TestCase):
         return TargetSystem(game=self.game)
     
     def test_targets_in_range_adjacent(self):
-        '''
+        """
         An adjacent enemy should be a valid target
-        '''
+        """
         self.player_unit.position = (0, 0)
         self.enemy_unit.position = (0, 1)
         self.game.units.append(self.player_unit)
@@ -57,9 +68,9 @@ class TargetSystemUnitTests(unittest.TestCase):
         self.assertEqual(len(self.target_system.targets_in_range(self.player_unit, weapon)), 1)
 
     def test_targets_in_range_adjacent_ally(self):
-        '''
+        """
         An adjacent ally is not a valid target to attack
-        '''
+        """
         self.player_unit.position = (0, 0)
         self.ally_unit.position = (0, 1)
         self.game.units.append(self.player_unit)
@@ -70,9 +81,9 @@ class TargetSystemUnitTests(unittest.TestCase):
         self.assertEqual(len(self.target_system.targets_in_range(self.player_unit, weapon)), 0)
 
     def test_targets_in_range_too_far(self):
-        '''
+        """
         This enemy is too far from the player's position
-        '''
+        """
         self.player_unit.position = (0, 0)
         self.enemy_unit.position = (0, 3)
         self.game.units.append(self.player_unit)

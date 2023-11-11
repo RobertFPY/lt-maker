@@ -11,6 +11,7 @@ from app.data.resources.resources import Resources
 from app.data.validation.validation_errors import (
     ComponentValidationError, ItemComponentValidationError, LevelValidationError, SkillComponentValidationError)
 from app.events.python_eventing.preprocessor import Preprocessor
+from app.events import event_commands
 
 
 def validate_levels(database: Database, resources: Resources) -> List:
@@ -89,6 +90,24 @@ def validate_events(database: Database, resources: Resources) -> List:
     for event in database.events:
         if event.is_python_event():
             all_errors += ppsr.verify_event(event.nid, event.source)
+        else:
+            # TODO(mag): delete this on 1/1/2024, temporary measure to correctly format projects
+            new_source = []
+            for line in event._source:
+                as_command, _ = event_commands.parse_text_to_command(line)
+                if as_command:
+                    nid_or_nickname = event_commands.get_command_arguments(line)[0].string
+                    text = as_command.to_plain_text()
+                    s = text.split(';', 1)
+                    if len(s) == 1: # only command
+                        reconstituted = nid_or_nickname
+                    else:
+                        reconstituted = nid_or_nickname + ';' + s[1]
+                    new_source.append(reconstituted)
+                else:
+                    new_source.append(line)
+            event.source = '\n'.join(new_source)
+            # END
     return all_errors
 
 def validate_all(database: Database, resources: Resources) -> List:

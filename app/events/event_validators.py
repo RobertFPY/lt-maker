@@ -757,8 +757,6 @@ class FloatPosition(Position, Validator):
                 return text
             elif text in ('{unit}', '{unit1}', '{unit2}', '{position}'):
                 return text
-            elif text in self.valid_overworld_nids().values():
-                return text
             return None
         if len(text) > 2:
             return None

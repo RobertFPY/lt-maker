@@ -1056,16 +1056,20 @@ class Separate(Action):
         self.droppee.set_guard_gauge(0)
 
 class RemovePartner(Action):
-    '''Removes the unit's partner but does nothing else'''
+    '''Removes the unit's partner and the rescue status if applicable'''
     def __init__(self, unit):
         self.unit = unit
         self.partner = self.unit.traveler
+        self.status_action = \
+            RemoveSkill(self.unit, "Rescue", source=self.partner, source_type=SourceType.TRAVELER)
 
     def do(self):
         self.unit.traveler = None
+        self.status_action.do()
 
     def reverse(self):
         self.unit.traveler = self.partner
+        self.status_action.reverse()
 
 class IncGauge(Action):
     def __init__(self, unit, amount):

@@ -103,7 +103,7 @@ class TurnChangeState(MapState):
                 # Increment guard gauge
                 if not unit.built_guard:
                     action.do(action.IncGauge(unit, -unit.get_gauge_inc()))
-                # Apply pair up bonuses to units starting with a traveler
+                # Apply pair up bonuses to units starting with a traveler on the first turn
                 if game.turncount - 1 <= 0:
                     skill_system.on_pairup(game.get_unit(unit.traveler), unit)
             if unit.built_guard: # Switch built_guard to false for all units

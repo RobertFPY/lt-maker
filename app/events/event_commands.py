@@ -2473,7 +2473,7 @@ class RemoveMapAnim(EventCommand):
     nid = 'remove_map_anim'
     tag = Tags.TILEMAP
     desc = ('Removes a map animation denoted by the nid *MapAnim* at *Position*. Only removes MapAnims that were created using'
-            ' the "permanent" flag')
+            ' the "permanent" flag. Must include "overlay" flag to remove an overlaid map animation.')
     keywords = ["MapAnim", "Position"]
     _flags = ['overlay']
 
@@ -3078,6 +3078,7 @@ class MoveInInitiative(EventCommand):
 
 class PairUp(EventCommand):
     nid = 'pair_up'
+    nickname = 'rescue'
     tag = Tags.MISCELLANEOUS
     desc = "Pairs the first unit into the second"
 
@@ -3086,6 +3087,7 @@ class PairUp(EventCommand):
 
 class Separate(EventCommand):
     nid = 'separate'
+    nickname = 'drop'
     tag = Tags.MISCELLANEOUS
     desc = "Sets the unit's traveler to none. Does not place that partner on the map."
 

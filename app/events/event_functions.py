@@ -3641,13 +3641,16 @@ def pair_up(self: Event, unit1, unit2, flags=None):
     if not new_unit1:
         self.logger.error("pair_up: Couldn't find unit with nid %s" % unit1)
         return
-    unit1 = new_unit1
+    follower = new_unit1
     new_unit2 = self._get_unit(unit2)
     if not new_unit2:
         self.logger.error("pair_up: Couldn't find unit with nid %s" % unit2)
         return
-    unit2 = new_unit2
-    action.do(action.PairUp(unit1, unit2))
+    leader = new_unit2
+    if unit_funcs.can_pairup(leader, follower):
+        action.do(action.PairUp(follower, leader))
+    else:
+        action.do(action.Rescue(leader, follower))
 
 def separate(self: Event, unit, flags=None):
     new_unit = self._get_unit(unit)

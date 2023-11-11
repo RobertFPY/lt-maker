@@ -312,6 +312,12 @@ def can_unlock(unit, region) -> bool:
             return True
     return False
 
+def can_pairup(rescuer, rescuee) -> bool:
+    valid = DB.constants.value('pairup') and not DB.constants.value('attack_stance_only')
+    if valid and DB.constants.value('player_pairup_only'):
+        valid = rescuer.team == 'player' and rescuee.team == 'player'
+    return valid
+
 def check_focus(unit, limit=3) -> int:
     from app.engine import skill_system
     from app.engine.game_state import game

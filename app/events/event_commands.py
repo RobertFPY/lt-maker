@@ -75,6 +75,10 @@ class EventCommand(Prefab):
         return self.to_plain_text()
 
     @classmethod
+    def get_keywords(cls) -> list:
+        return cls.keywords + cls.optional_keywords
+
+    @classmethod
     def get_keyword_types(cls) -> list:
         if len(cls.keyword_types) == len(cls.keywords + cls.optional_keywords):
             return cls.keyword_types
@@ -3380,6 +3384,7 @@ def parse_text_to_command(text: str, strict: bool = False) -> Tuple[EventCommand
             # Check for flag first
             if _process_arg(None, arg) in command_info.flags:
                 flags.add(_process_arg(None, arg))
+                cmd_args[idx] = _process_arg(None, arg)
 
             # Handle Python style keyword arguments
             # For example `s;Speaker=Eirika;Text=Hi!;Nid=normal`
@@ -3388,7 +3393,9 @@ def parse_text_to_command(text: str, strict: bool = False) -> Tuple[EventCommand
                 cmd_keyword, arg = arg.split('=', 1)
                 cmd_validator = command_info.get_validator_from_keyword(cmd_keyword)
                 if cmd_validator:
-                    parameters[cmd_keyword] = _process_arg(cmd_validator, arg)
+                    arg = _process_arg(cmd_validator, arg)
+                    parameters[cmd_keyword] = arg
+                    cmd_args[idx] = '%s=%s' % (cmd_keyword, arg)
                 else:
                     logging.debug("Keyword argument %s not found", cmd_keyword)
                     return None, idx
@@ -3401,11 +3408,15 @@ def parse_text_to_command(text: str, strict: bool = False) -> Tuple[EventCommand
                 if idx < len(command_info.keywords):
                     cmd_keyword = command_info.keywords[idx]
                     cmd_validator = command_info.get_keyword_types()[idx]
-                    parameters[cmd_keyword] = _process_arg(cmd_validator, arg)
+                    arg = _process_arg(cmd_validator, arg)
+                    parameters[cmd_keyword] = arg
+                    cmd_args[idx] = arg
                 elif idx - len(command_info.keywords) < len(command_info.optional_keywords):
                     cmd_keyword = command_info.optional_keywords[idx - len(command_info.keywords)]
                     cmd_validator = command_info.get_keyword_types()[idx]
-                    parameters[cmd_keyword] = _process_arg(cmd_validator, arg)
+                    arg = _process_arg(cmd_validator, arg)
+                    parameters[cmd_keyword] = arg
+                    cmd_args[idx] = arg
                 else:
                     logging.debug("too many arguments: %s, %s", arg, arguments)
                     return None, idx

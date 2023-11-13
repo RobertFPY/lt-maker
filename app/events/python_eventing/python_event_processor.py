@@ -13,7 +13,7 @@ from app.events.python_eventing.errors import InvalidPythonError
 from app.events.python_eventing.utils import DO_NOT_EXECUTE_SENTINEL
 from app.utilities.typing import NID
 
-class PythonEventParser():
+class PythonEventProcessor():
     def __init__(self, nid: NID, source: str, game: GameState):
         self.nid = nid
         self.source = source
@@ -47,7 +47,7 @@ class PythonEventParser():
             for tb in reversed(tbs):
                 exception_fname, exception_lineno = tb[:2]
                 if exception_fname == "<string>":
-                    # This means that we failed in the python script itself and 
+                    # This means that we failed in the python script itself and
                     # can therefore figure out exactly what line in the python script is wrong
                     diff_lines = Compiler.num_diff_lines()
                     true_lineno = exception_lineno - diff_lines
@@ -73,7 +73,7 @@ class PythonEventParser():
         return s_dict
 
     @classmethod
-    def restore(cls, s_dict, game: GameState) -> PythonEventParser:
+    def restore(cls, s_dict, game: GameState) -> PythonEventProcessor:
         source = s_dict['source']
         nid = s_dict['nid']
         self = cls(nid, source, game)

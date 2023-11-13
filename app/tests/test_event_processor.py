@@ -6,12 +6,12 @@ from unittest.mock import MagicMock
 
 from app.engine.text_evaluator import TextEvaluator
 from app.events import event_commands
-from app.events.event_parser import EventParser, IteratorInfo
+from app.events.event_processor import EventProcessor, IteratorInfo
 from app.events.triggers import GenericTrigger
 from app.tests.mocks.mock_game import get_mock_game
 
 
-class EventParserUnitTests(unittest.TestCase):
+class EventProcessorUnitTests(unittest.TestCase):
     def setUp(self):
         self.mock_game = get_mock_game()
         mock_unit = MagicMock()
@@ -27,31 +27,31 @@ class EventParserUnitTests(unittest.TestCase):
         logging.disable(logging.NOTSET)
 
     def test_conditional_handling(self):
-        script_path = Path(__file__).parent / 'data' / 'parser' / 'conditionals.event'
-        parser = EventParser('conditionals', script_path.read_text(), self.text_evaluator)
+        script_path = Path(__file__).parent / 'data' / 'processor' / 'conditionals.event'
+        processor = EventProcessor('conditionals', script_path.read_text(), self.text_evaluator)
 
         # basic tests
-        self.assertEqual(parser._find_end(1), 6)
-        self.assertEqual(parser._jump_conditional(1), 2)
-        self.assertEqual(parser._find_end(3), 6)
+        self.assertEqual(processor._find_end(1), 6)
+        self.assertEqual(processor._jump_conditional(1), 2)
+        self.assertEqual(processor._find_end(3), 6)
 
         # elif
-        self.assertEqual(parser._jump_conditional(8), 12)
-        self.assertEqual(parser._jump_conditional(9), 10)
-        self.assertEqual(parser._jump_conditional(11), 12)
-        self.assertEqual(parser._find_end(11), 15)
+        self.assertEqual(processor._jump_conditional(8), 12)
+        self.assertEqual(processor._jump_conditional(9), 10)
+        self.assertEqual(processor._jump_conditional(11), 12)
+        self.assertEqual(processor._find_end(11), 15)
 
         # nested for
-        self.assertEqual(parser._jump_conditional(18), 19)
-        self.assertEqual(parser._find_end(19), 21)
+        self.assertEqual(processor._jump_conditional(18), 19)
+        self.assertEqual(processor._find_end(19), 21)
 
-    def test_event_parser_handles_conditionals(self):
-        script_path = Path(__file__).parent / 'data' / 'parser' / 'second_conditional.event'
-        parser = EventParser('conditionals', script_path.read_text(), self.text_evaluator)
+    def test_event_processor_handles_conditionals(self):
+        script_path = Path(__file__).parent / 'data' / 'processor' / 'second_conditional.event'
+        processor = EventProcessor('conditionals', script_path.read_text(), self.text_evaluator)
 
         called_commands = []
-        while not parser.finished():
-            next_command = parser.fetch_next_command()
+        while not processor.finished():
+            next_command = processor.fetch_next_command()
             if next_command:
                 called_commands.append(next_command)
         self.assertEqual(len(called_commands), 1)
@@ -59,36 +59,36 @@ class EventParserUnitTests(unittest.TestCase):
         self.assertEqual(called_commands[0].parameters['Text'], '2')
 
     def test_parse_events(self):
-        script_path = Path(__file__).parent / 'data' / 'parser' / 'test.event'
-        parser = EventParser('test', script_path.read_text(), self.text_evaluator)
+        script_path = Path(__file__).parent / 'data' / 'processor' / 'test.event'
+        processor = EventProcessor('test', script_path.read_text(), self.text_evaluator)
 
         # normal command
-        mu_speak = parser.fetch_next_command()
+        mu_speak = processor.fetch_next_command()
         self.assertTrue(isinstance(mu_speak, event_commands.Speak))
         self.assertEqual(mu_speak.parameters['SpeakerOrStyle'], 'MU')
         self.assertEqual(mu_speak.parameters['Text'], 'I am a custom named character.')
 
         # eval
-        seth_speak = parser.fetch_next_command()
+        seth_speak = processor.fetch_next_command()
         self.assertTrue(isinstance(seth_speak, event_commands.Speak))
         self.assertEqual(seth_speak.parameters['SpeakerOrStyle'], 'Seth')
         self.assertEqual(seth_speak.parameters['Text'], 'Princess Erika!')
 
         # variable
-        rescue_speak = parser.fetch_next_command()
+        rescue_speak = processor.fetch_next_command()
         self.assertTrue(isinstance(rescue_speak, event_commands.Speak))
         self.assertEqual(rescue_speak.parameters['SpeakerOrStyle'], 'MU')
         self.assertEqual(rescue_speak.parameters['Text'], "You've rescued me 10 times.")
 
         # if/else/processing
-        iftrue_speak = parser.fetch_next_command()
+        iftrue_speak = processor.fetch_next_command()
         self.assertTrue(isinstance(iftrue_speak, event_commands.Speak))
         self.assertEqual(iftrue_speak.parameters['SpeakerOrStyle'], 'MU')
         self.assertEqual(iftrue_speak.parameters['Text'], "A bit ridiculous, isn't it?")
 
         # for
-        eirika_for = parser.fetch_next_command()
-        seth_for = parser.fetch_next_command()
+        eirika_for = processor.fetch_next_command()
+        seth_for = processor.fetch_next_command()
         self.assertTrue(isinstance(eirika_for, event_commands.Speak))
         self.assertEqual(eirika_for.parameters['SpeakerOrStyle'], 'Eirika')
         self.assertEqual(eirika_for.parameters['Text'], "My name is Eirika.")
@@ -111,19 +111,19 @@ class EventParserUnitTests(unittest.TestCase):
         self.assertEqual(new_iterator.iterator.items, TEST_ITEMS)
         self.assertEqual(new_iterator.iterator.get(), 'c')
 
-    def test_save_restore_parser_state(self):
-        script_path = Path(__file__).parent / 'data' / 'parser' / 'test.event'
-        parser = EventParser('test', script_path.read_text(), self.text_evaluator)
+    def test_save_restore_processor_state(self):
+        script_path = Path(__file__).parent / 'data' / 'processor' / 'test.event'
+        processor = EventProcessor('test', script_path.read_text(), self.text_evaluator)
 
-        parser.fetch_next_command()
-        parser.fetch_next_command()
-        parser.fetch_next_command()
-        parser.fetch_next_command()
-        # parser just returned "speak;MU;A bit ridiculous, isn't it?"
+        processor.fetch_next_command()
+        processor.fetch_next_command()
+        processor.fetch_next_command()
+        processor.fetch_next_command()
+        # processor just returned "speak;MU;A bit ridiculous, isn't it?"
 
-        new_parser = EventParser.restore(parser.save(), self.text_evaluator)
-        self.assertEqual(new_parser.nid, 'test')
-        next_command = new_parser.fetch_next_command()
+        new_processor = EventProcessor.restore(processor.save(), self.text_evaluator)
+        self.assertEqual(new_processor.nid, 'test')
+        next_command = new_processor.fetch_next_command()
         self.assertTrue(isinstance(next_command, event_commands.Speak))
         self.assertEqual(next_command.parameters['SpeakerOrStyle'], 'Eirika')
         self.assertEqual(next_command.parameters['Text'], "My name is Eirika.")

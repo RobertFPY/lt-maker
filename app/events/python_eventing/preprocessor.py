@@ -32,7 +32,7 @@ def check_safe_event_function_call(node: ast.stmt, parents: List[ast.stmt]):
       EventCommand objects, thus allowing us to cede control
       to the actual Event object and execute the yielded EventCommand.
       Once the EventCommand is executed, we then return control
-      to the Parser, which can resume the execution of the script,
+      to the Processor, which can resume the execution of the script,
       until the next EventCommand is hit, which is then yielded, control ceded,
       etc.
 

@@ -64,7 +64,7 @@ class IteratorInfo():
         self.iterator = EventIterator.restore(s_dict['iterator'])
         return self
 
-class EventParser():
+class EventProcessor():
     def __init__(self, nid: NID, script: str, text_evaluator: TextEvaluator):
         self.nid = nid
         self.script = script

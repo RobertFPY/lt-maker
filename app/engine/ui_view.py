@@ -102,11 +102,11 @@ class UIView():
         # Objective info handling
         if game.state.current() in self.legal_states and cf.SETTINGS['show_objective']:
             self.obj_info_disp = self.create_obj_info()
-            self.obj_info_offset -= 20
+            self.obj_info_offset -= 10
             self.obj_info_offset = max(0, self.obj_info_offset)
         elif self.obj_info_disp:
-            self.obj_info_offset += 20
-            if self.obj_info_offset >= 200:
+            self.obj_info_offset += 10
+            if self.obj_info_offset >= 100:
                 self.obj_info_disp = None
 
         if (game.state.current() in self.legal_states or game.state.current() in self.initiative_states) \
@@ -172,16 +172,17 @@ class UIView():
                 # Gotta place in bottomright, because cursor is in topright
                 if self.obj_top:
                     self.obj_top = False
-                    self.obj_info_offset = self.obj_info_disp.get_width()
-                pos = (WINWIDTH - 4 + self.obj_info_offset - self.obj_info_disp.get_width(),
-                       WINHEIGHT - 4 - self.obj_info_disp.get_height())
+                    self.obj_info_offset = self.obj_info_disp.get_height()
+                pos = (WINWIDTH - 4 - self.obj_info_disp.get_width(),
+                       WINHEIGHT - 4 + self.obj_info_offset - self.obj_info_disp.get_height())
                 surf.blit(self.obj_info_disp, pos) # Should be bottom right
             else:
                 # Place in topright
                 if not self.obj_top:
                     self.obj_top = True
-                    self.obj_info_offset = self.obj_info_disp.get_width()
-                surf.blit(self.obj_info_disp, (WINWIDTH - 4 + self.obj_info_offset - self.obj_info_disp.get_width(), 1))
+                    self.obj_info_offset = self.obj_info_disp.get_height()
+                pos = (WINWIDTH - 4 - self.obj_info_disp.get_width(), 1 - self.obj_info_offset)
+                surf.blit(self.obj_info_disp, pos)
 
         if self.initiative_info_disp:
             surf.blit(self.initiative_info_disp, (0, 0))

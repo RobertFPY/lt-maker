@@ -328,11 +328,12 @@ class FreeState(MapState):
                 else:
                     player_team_enemies = DB.teams.enemies
                     if cur_unit.team in player_team_enemies:
-                        get_sound_thread().play_sfx('Select 3')
+                        get_sound_thread().play_sfx('Select 2')
                         game.boundary.toggle_unit(cur_unit)
                     else:
                         get_sound_thread().play_sfx('Error')
             else:
+                get_sound_thread().play_sfx('Select 2')
                 game.state.change('option_menu')
 
         elif event == 'BACK':

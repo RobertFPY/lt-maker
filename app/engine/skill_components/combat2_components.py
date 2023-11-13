@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from app.data.database.skill_components import SkillComponent, SkillTags
 from app.data.database.components import ComponentType
 
@@ -476,13 +478,15 @@ class SkillBeforeCombat(SkillComponent):
     def get_skill_nid(self):
         return self.value['skill']
 
-    def _resolve_targets(self, unit, target):
+    def _resolve_targets(self, unit, target) -> list:
         recipient = self.value['recipient']
         allegiance = self.value['allegiance']
-        is_ally = skill_system.check_ally(unit, target)
         if recipient == 'self':
             return [unit]
         if recipient == 'target':
+            if not target:
+                return []
+            is_ally = skill_system.check_ally(unit, target)
             if allegiance == 'enemy' and is_ally:
                 return []
             if allegiance == 'ally' and not is_ally:

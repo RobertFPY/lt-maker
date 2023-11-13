@@ -1,4 +1,4 @@
-# DO NOT MODIFY THIS FILE UNLESS YOU ARE MODIFYING `test_event_parser.py::test_conditional_handling`
+# DO NOT MODIFY THIS FILE UNLESS YOU ARE MODIFYING `test_event_processor.py::test_conditional_handling`
 if;True
 #
 else

@@ -193,7 +193,7 @@ class SimpleCombat():
                 def_item = self.def_items[idx]
                 skill_system.pre_combat(self.full_playback, defender, def_item, self.attacker, 'defense')
         for unit in self.all_splash:
-            skill_system.pre_combat(self.full_playback, unit, None, None, 'defense')
+            skill_system.pre_combat(self.full_playback, unit, None, self.attacker, 'defense')
 
         skill_system.start_combat(self.full_playback, self.attacker, self.main_item, self.defender, 'attack')
         item_system.start_combat(self.full_playback, self.attacker, self.main_item, self.defender, 'attack')
@@ -207,7 +207,7 @@ class SimpleCombat():
                 if def_item:
                     item_system.start_combat(self.full_playback, defender, def_item, self.attacker, 'defense')
         for unit in self.all_splash:
-            skill_system.start_combat(self.full_playback, unit, None, None, 'defense')
+            skill_system.start_combat(self.full_playback, unit, None, self.attacker, 'defense')
 
     def cleanup_combat(self):
         skill_system.cleanup_combat(self.full_playback, self.attacker, self.main_item, self.defender, 'attack')

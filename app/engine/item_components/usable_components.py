@@ -141,7 +141,7 @@ class UsesOptions(ItemComponent):
     desc = 'Additional options for uses'
     tag = ItemTags.HIDDEN
 
-    expose = (ComponentType.MultipleOptions)
+    expose = ComponentType.MultipleOptions
 
     value = [
         ['LoseUsesOnMiss (T/F)', 'F', 'Lose uses even on miss'],

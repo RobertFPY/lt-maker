@@ -11,7 +11,7 @@ class LostOnEndCombat(SkillComponent):
     desc = "Remove after combat"
     tag = SkillTags.DEPRECATED
 
-    expose = (ComponentType.MultipleOptions)
+    expose = ComponentType.MultipleOptions
 
     value = [
             ["LostOnSelf (T/F)", "T",

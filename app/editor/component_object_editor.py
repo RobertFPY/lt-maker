@@ -26,6 +26,7 @@ class ComponentObjectEditor(QWidget, Generic[T]):
 
     def __init__(self, parent, database: Database) -> None:
         QWidget.__init__(self, parent)
+        self.window = parent
         self._db = database
         self.categories = self.data.categories
 
@@ -95,10 +96,18 @@ class ComponentObjectEditor(QWidget, Generic[T]):
         if self.data.get(new_nid):
             QMessageBox.warning(self, 'Warning', 'ID %s already in use' % new_nid)
             return False
+        self._on_nid_changed(old_nid, new_nid)
         self.data.change_key(old_nid, new_nid)
         self.tree_list.update_nid(old_nid, new_nid)
         self.tree_list.on_filter_changed(self.tree_list.search_box.text())
         return True
+
+    def _on_nid_changed(self, old_nid: NID, new_nid: NID) -> None:
+        """
+        Handles updating other objects in the engine with this nid change
+        Should be implemented in the child class
+        """
+        raise NotImplementedError
 
     def on_select(self, entry_nid: Optional[NID]):
         if not entry_nid:
@@ -115,8 +124,18 @@ class ComponentObjectEditor(QWidget, Generic[T]):
     def delete_from_db(self, nid):
         if len(self.data) == 1:
             return False
-        self.data.remove_key(nid)
-        return True
+        if self._on_delete(nid):
+            self.data.remove_key(nid)
+            return True
+        return False
+
+    def _on_delete(self, nid: NID) -> bool:
+        """
+        Handles updating other objects in the engine with this deletion
+        Returns whether the user wants to proceed with the deletion
+        Should be implemented in the child class
+        """
+        raise NotImplementedError
 
     def create_new(self, nid):
         if self.data.get(nid):

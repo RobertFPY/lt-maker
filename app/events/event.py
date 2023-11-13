@@ -21,7 +21,7 @@ from app.engine.sound import get_sound_thread
 from app.events import event_commands, triggers
 from app.events.event_processor import EventProcessor
 from app.events.event_portrait import EventPortrait
-from app.events.event_prefab import EventPrefab
+from app.events.event_prefab import EventPrefab, EventVersion
 from app.events.python_eventing.errors import EventError
 from app.events.python_eventing.python_event_processor import PythonEventProcessor
 from app.events.python_eventing.utils import SAVE_COMMAND_NIDS
@@ -63,7 +63,7 @@ class Event():
         self._generic_setup()
 
         self.text_evaluator = TextEvaluator(self.logger, self.game, self.unit, self.unit2, self.position, self.local_args)
-        if event_prefab.is_python_event():
+        if event_prefab.version() != EventVersion.EVENT:
             self.processor = PythonEventProcessor(self.nid, event_prefab.source, self.game)
         else:
             self.processor = EventProcessor(self.nid, event_prefab.source, self.text_evaluator)

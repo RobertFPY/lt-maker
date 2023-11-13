@@ -18,7 +18,6 @@ from PyQt5.QtWidgets import (QAbstractItemView, QAction, QApplication,
                              QSpinBox, QSplitter, QStyle, QStyledItemDelegate,
                              QTextEdit, QToolBar, QVBoxLayout, QWidget)
 from app.editor.event_editor.event_text_editor import EventTextEditor
-from app.editor.event_editor.utils import EditorLanguageMode
 
 import app.editor.game_actions.game_actions as GAME_ACTIONS
 from app import dark_theme
@@ -36,7 +35,7 @@ from app.editor.lib.components.validated_line_edit import \
 from app.editor.map_view import SimpleMapView
 from app.editor.settings import MainSettingsController
 from app.events import event_commands, event_validators
-from app.events.event_prefab import EventPrefab
+from app.events.event_prefab import EventPrefab, EventVersion
 from app.events.mock_event import IfStatementStrategy
 from app.events.regions import RegionType
 from app.events.triggers import ALL_TRIGGERS
@@ -297,7 +296,7 @@ class EventProperties(QWidget):
         self._data = self.window._data
 
         self.current = current
-        self.language_mode = EditorLanguageMode.UNSET
+        self.version = None
 
         self.text_box = EventTextEditor(self)
         self.text_box.textChanged.connect(self.text_changed)
@@ -541,24 +540,24 @@ class EventProperties(QWidget):
         self.current.source = self.text_box.document().toRawText()
         # reset cached event info
         DB.events.inspector.clear_cache(self.current.nid)
-        self.set_editor_language(EditorLanguageMode.PYTHON if self.current.is_python_event() else EditorLanguageMode.EVENT)
+        self.set_editor_language(self.current.version())
         self.set_test_event_button_visible()
 
     def set_test_event_button_visible(self):
-        if self.current and self.current.is_python_event():
+        if self.current and self.current.version() != EventVersion.EVENT:
             self.test_event_button.hide()
             self.test_python_event_button.show()
         else:
             self.test_event_button.show()
             self.test_python_event_button.hide()
 
-    def set_editor_language(self, lang: EditorLanguageMode):
-        if lang == self.language_mode:
+    def set_editor_language(self, version: EventVersion):
+        if version == self.version:
             return
-        self.language_mode = lang
-        if lang == EditorLanguageMode.PYTHON:
+        self.version = version
+        if version != EventVersion.EVENT:
             self.highlighter = PythonHighlighter(self.text_box.document())
-            self.text_box.set_completer(event_autocompleter.PythonEventScriptCompleter)
+            self.text_box.set_completer(None)
             self.text_box.set_function_hinter(None)
         else:
             self.highlighter = EventHighlighter(self.text_box.document(), self)
@@ -583,14 +582,14 @@ class EventProperties(QWidget):
         self.only_once_box.edit.setChecked(bool(current.only_once))
         self.priority_box.edit.setValue(current.priority)
 
-        if not self.current.is_python_event():
+        if self.current.version() == EventVersion.EVENT:
             if not self.current.source:
                 self.current.source = '\n'.join([str(cmd) for cmd in self.current.commands])
             self.text_box.setPlainText(self.current.source)
-            self.set_editor_language(EditorLanguageMode.EVENT)
+            self.set_editor_language(self.current.version())
         else:
             self.text_box.setPlainText(self.current.source)
-            self.set_editor_language(EditorLanguageMode.PYTHON)
+            self.set_editor_language(self.current.version())
         self.set_test_event_button_visible()
 
     def hideEvent(self, event):

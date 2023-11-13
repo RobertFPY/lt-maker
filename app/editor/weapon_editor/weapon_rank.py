@@ -10,7 +10,7 @@ from app.extensions.list_dialogs import MultiAttrListDialog
 from app.extensions.list_models import MultiAttrListModel, DefaultMultiAttrListModel
 
 from app.data.database.weapons import WeaponRank
-from app.data.database import item_components
+from app.data.database import item_components, components
 
 class WeaponRankMultiModel(MultiAttrListModel):
     def delete(self, idx):
@@ -37,7 +37,7 @@ class WeaponRankMultiModel(MultiAttrListModel):
             obj_idx, ok = DeletionDialog.get_simple_swap(affected, model, msg, combo_box)
             if ok:
                 swap = objs[obj_idx]
-                item_components.swap_values(affected_items, item_components.ComponentType.WeaponRank, element.rank, swap.rank)
+                components.swap_values(affected_items, item_components.ComponentType.WeaponRank, element.rank, swap.rank)
                 for weapon in affected_weapons:
                     weapon.rank_bonus.swap_rank(element.rank, swap.rank)
                     weapon.advantage.swap_rank(element.rank, swap.rank)
@@ -61,7 +61,7 @@ class WeaponRankMultiModel(MultiAttrListModel):
                 weapon.advantage.swap_rank(old_value, new_value)
                 weapon.disadvantage.swap_rank(old_value, new_value)
             affected_items = item_components.get_items_using(item_components.ComponentType.WeaponRank, old_value, DB)
-            item_components.swap_values(affected_items, item_components.ComponentType.WeaponRank, old_value, new_value)
+            components.swap_values(affected_items, item_components.ComponentType.WeaponRank, old_value, new_value)
 
 class RankDialog(MultiAttrListDialog):
     @classmethod

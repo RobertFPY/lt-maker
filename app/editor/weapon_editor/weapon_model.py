@@ -92,7 +92,7 @@ class WeaponModel(DragDropCollectionModel):
             weapon.advantage.swap_type(old_nid, new_nid)
             weapon.disadvantage.swap_type(old_nid, new_nid)
         affected_items = item_components.get_items_using(components.ComponentType.WeaponType, old_nid, DB)
-        item_components.swap_values(affected_items, components.ComponentType.WeaponType, old_nid, new_nid)
+        components.swap_values(affected_items, components.ComponentType.WeaponType, old_nid, new_nid)
 
     def create_new(self):
         new_weapon = DB.weapons.create_new(DB)

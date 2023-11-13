@@ -93,7 +93,7 @@ class EquationMultiModel(MultiAttrListModel):
             obj_idx, ok = DeletionDialog.get_simple_swap(affected, model, msg, combo_box)
             if ok:
                 swap = objs[obj_idx]
-                item_components.swap_values(affected_items, components.ComponentType.Equation, element.nid, swap.nid)
+                components.swap_values(affected_items, components.ComponentType.Equation, element.nid, swap.nid)
             else:
                 return
         super().delete(idx)
@@ -109,7 +109,7 @@ class EquationMultiModel(MultiAttrListModel):
         if attr == 'nid':
             self._data.update_nid(data, new_value)
             affected_items = item_components.get_items_using(components.ComponentType.Equation, old_value, DB)
-            item_components.swap_values(affected_items, components.ComponentType.Equation, old_value, new_value)
+            components.swap_values(affected_items, components.ComponentType.Equation, old_value, new_value)
 
 class EquationDialog(MultiAttrListDialog):
     locked_vars = {"HIT", "AVOID", "CRIT_HIT", "CRIT_AVOID",

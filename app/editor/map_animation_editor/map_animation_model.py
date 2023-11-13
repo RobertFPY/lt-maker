@@ -9,7 +9,7 @@ from app.data.resources.resources import RESOURCES
 
 from app.utilities.data import Data
 from app.data.database.database import DB
-from app.data.database import item_components
+from app.data.database import item_components, components
 
 from app.extensions.custom_gui import DeletionDialog
 
@@ -81,4 +81,4 @@ class MapAnimationModel(ResourceCollectionModel):
         # What uses Animations
         # Certain item components
         affected_items = item_components.get_items_using(item_components.ComponentType.MapAnimation, old_nid, DB)
-        item_components.swap_values(affected_items, item_components.ComponentType.MapAnimation, old_nid, new_nid)
+        components.swap_values(affected_items, item_components.ComponentType.MapAnimation, old_nid, new_nid)

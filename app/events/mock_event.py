@@ -7,6 +7,7 @@ from app.events.event import Event
 from app.engine.sprites import SPRITES
 from app.engine.text_evaluator import TextEvaluator
 from app.events.event_processor import EventProcessor
+from app.events.event_prefab import EventPrefab, EventVersion
 from app.events.python_eventing.python_event_processor import PythonEventProcessor
 
 from app.utilities.typing import NID
@@ -35,7 +36,7 @@ class MockEvent(Event):
                  "remove_overlay_sprite", "location_card", "credits",
                  "ending", "pop_dialog", "unpause"}
 
-    def __init__(self, nid, event_prefab, command_idx=0, if_statement_strategy=IfStatementStrategy.ALWAYS_TRUE):
+    def __init__(self, nid, event_prefab: EventPrefab, command_idx=0, if_statement_strategy=IfStatementStrategy.ALWAYS_TRUE):
         self._transition_speed = 250
         self._transition_color = (0, 0, 0)
 
@@ -49,7 +50,7 @@ class MockEvent(Event):
         self._generic_setup()
 
         self.text_evaluator = TextEvaluator(self.logger, None)
-        if event_prefab.is_python_event():
+        if event_prefab.version() != EventVersion.EVENT:
             self.processor = MockPythonEventProcessor('Mock', event_prefab.source)
         else:
             self.processor = MockEventProcessor('Mock', event_prefab.source, self.text_evaluator, if_statement_strategy)

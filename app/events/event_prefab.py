@@ -1,4 +1,5 @@
 from __future__ import annotations
+from enum import Enum
 from functools import lru_cache
 import re
 from typing import Dict, List, Optional, Set, Tuple
@@ -9,6 +10,22 @@ from app.utilities.typing import NID
 from app.events.event_commands import EventCommand, GameVar, LevelVar
 from app.utilities import str_utils
 
+class EventVersion(Enum):
+    EVENT = 0
+    PYEV1 = 1
+
+def get_event_version(script: str) -> EventVersion.EVENT:
+    if not script.startswith('#pyev'):
+        return EventVersion.EVENT
+    # should always look like
+    # #pyevXX
+    # where XX is version number
+    version = script[5:7]
+    version = version.strip()
+    try:
+        return EventVersion(int(version))
+    except:
+        return EventVersion.EVENT
 
 class EventPrefab(Prefab):
     def __init__(self, name):
@@ -40,13 +57,10 @@ class EventPrefab(Prefab):
         value = str_utils.convert_raw_text_newlines(value)
         self._source = value.split('\n')
 
-    def is_python_event(self):
+    def version(self) -> EventVersion.EVENT:
         if not self._source:
-            return False
-        first_line = self._source[0]
-        if first_line.strip() == '#python':
-            return True
-        return False
+            return EventVersion.EVENT
+        return get_event_version(self._source[0])
 
     def save_attr(self, name, value):
         if name == 'commands':
@@ -119,8 +133,8 @@ class EventInspectorEngine():
         if event_nid not in self.parsed:
             event = self.event_db.get_by_nid_or_name(event_nid)[0]
             if event:
-                # TODO(mag/rainlash) How do we find which commands are used in Python source? 
-                if event.is_python_event():
+                # TODO(mag/rainlash) How do we find which commands are used in Python source?
+                if event.version() != EventVersion.EVENT:
                     return []
                 else:
                     parsed_commands = event_commands.parse_script_to_commands(event.source)

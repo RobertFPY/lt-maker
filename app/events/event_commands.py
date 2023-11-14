@@ -3295,7 +3295,7 @@ def restore_command(dat) -> EventCommand:
     else:
         return Comment(display_values=[nid + ';' + str.join(';', display_values)])
 
-evaluables = ('Expression', 'String', 'StringList', 'PointList', 'DashList', 'Nid')
+evaluables = ('Expression', 'String', 'StringList', 'PointList', 'DashList', 'Nid', 'Text')
 
 ALL_EVENT_COMMANDS: Dict[NID, Type[EventCommand]] = {
     command.nid: command for command in EventCommand.__subclasses__()

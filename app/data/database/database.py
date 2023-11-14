@@ -16,6 +16,7 @@ from app.data.database import (ai, constants, difficulty_modes, equations,
                                terrain, translations, units, varslot, weapons)
 from app.data.database.game_flags import GameFlags
 from app.events import event_prefab
+from app.utilities.data_order import parse_order_keys_file
 from app.utilities.serialization import load_json, save_json
 from app.utilities.typing import NID
 
@@ -103,12 +104,11 @@ class Database(object):
         data_path = Path(data_dir, key)
         if data_path.exists(): # data type is a directory, browse within
             data_fnames = os.listdir(data_path)
-            order_keys = {}
+            ordering = []
             if '.orderkeys' in data_fnames:
-                with open(Path(data_dir, key, '.orderkeys')) as load_file:
-                    order_keys = json.load(load_file)
-            data_fnames = [Path(data_dir, key, fname) for fname in data_fnames if fname.endswith('.json')]
-            data_fnames = sorted(data_fnames, key=lambda fname: order_keys.get(fname.name, 99999))
+                ordering = parse_order_keys_file(Path(data_dir, key, '.orderkeys'))
+            data_fnames: List[Path] = [Path(data_dir, key, fname) for fname in data_fnames if fname.endswith('.json')]
+            data_fnames = sorted(data_fnames, key=lambda fname: ordering.index(fname.stem) if fname.stem in ordering else 99999)
             full_data = []
             for fname in data_fnames:
                 full_data += load_json(fname)
@@ -160,7 +160,7 @@ class Database(object):
                     if os.path.exists(save_dir):
                         shutil.rmtree(save_dir)
                     os.mkdir(save_dir)
-                    orderkeys: Dict[str, int] = {}
+                    orderkeys: List[str] = []
                     for idx, subvalue in enumerate(value):
                         # ordering
                         if 'nid' in subvalue:
@@ -174,8 +174,7 @@ class Database(object):
                             name = str(idx).zfill(6)
                         name = re.sub(r'[\\/*?:"<>|]', "", name)
                         name = name.replace(' ', '_')
-                        fname = name + '.json'
-                        orderkeys[fname] = idx
+                        orderkeys.append(name)
                         save_loc = Path(save_dir, name + '.json')
                         # logging.info("Serializing %s to %s" % ('%s/%s.json' % (key, name), save_loc))
                         save_json(save_loc, [subvalue])

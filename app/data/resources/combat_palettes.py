@@ -1,13 +1,15 @@
 import json
 import os
+from pathlib import Path
 import re
 import shutil
-from typing import Dict
+from typing import Dict, List
 from app.utilities.data import Prefab
 from app.data.resources.base_catalog import ManifestCatalog
 from app.data.resources.default_palettes import default_palettes
 
 from app.constants import COLORKEY
+from app.utilities.data_order import parse_order_keys_file
 
 class Palette(Prefab):
     def __init__(self, nid):
@@ -86,9 +88,8 @@ class PaletteCatalog(ManifestCatalog[Palette]):
                     for data in json.load(load_file):
                         save_data.append(data)
             if '.orderkeys' in data_fnames: # using order key file
-                with open(os.path.join(multi_loc, '.orderkeys')) as load_file:
-                    orderkeys = json.load(load_file)
-                    save_data = sorted(save_data, key=lambda data: orderkeys.get(data[0], 999999))
+                ordering = parse_order_keys_file(Path(multi_loc, '.orderkeys'))
+                save_data = sorted(save_data, key=lambda data: ordering.index(data[0]) if data[0] in ordering else 99999)
             else:
                 save_data = sorted(save_data, key=lambda obj: obj[2])
             for s_dict in save_data:
@@ -107,12 +108,12 @@ class PaletteCatalog(ManifestCatalog[Palette]):
         if os.path.exists(save_dir):
             shutil.rmtree(save_dir)
         os.mkdir(save_dir)
-        orderkeys: Dict[str, int] = {}
+        orderkeys: List[str] = []
         for idx, save in enumerate(saves):
             # ordering
             save = list(save)  # by default a tuple
             nid = save[0]
-            orderkeys[nid] = idx
+            orderkeys.append(nid)
             nid = re.sub(r'[\\/*?:"<>|]', "", nid)
             nid = nid.replace(' ', '_')
             save_loc = os.path.join(save_dir, nid + '.json')

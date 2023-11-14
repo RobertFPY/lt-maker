@@ -48,7 +48,7 @@ class TargetsAllies(ItemComponent):
 
 class TargetsSpecificTiles(ItemComponent):
     nid = 'target_specific_tile'
-    desc = "Item targets tiles specified by the condition. Condition must return a list of positions, or a list of lists of positions. Positions must be within the item's range."
+    desc = "Item targets tiles specified by the expression. Expression must return a list of positions, or a list of lists of positions. Positions must be within the item's range."
     tag = ItemTags.TARGET
 
     expose = ComponentType.String
@@ -177,12 +177,12 @@ class TraversableTargetRestrict(ItemComponent):
             if movement_funcs.check_traversable(unit, def_pos):
                 return True
         return False
-        
+
 class IgnoreLineOfSight(ItemComponent):
     nid = 'ignore_line_of_sight'
     desc = 'Item ignores line of sight rules even when line of sight constant is enabled.'
     tag = ItemTags.TARGET
-    
+
     def ignore_line_of_sight(self, unit, item) -> bool:
         return True
 
@@ -190,7 +190,7 @@ class IgnoreFogOfWar(ItemComponent):
     nid = 'ignore_fog_of_war'
     desc = 'Item can target positions even if they are in fog of war.'
     tag = ItemTags.TARGET
-    
+
     def ignore_fog_of_war(self, unit, item) -> bool:
         return True
 

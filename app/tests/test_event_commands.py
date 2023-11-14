@@ -2,6 +2,7 @@ import unittest
 import logging
 
 from app.events import event_commands
+from app.events.event_structs import EOL
 
 class EventCommandUnitTests(unittest.TestCase):
     def setUp(self):
@@ -268,3 +269,35 @@ class EventCommandUnitTests(unittest.TestCase):
                     self.assertTrue(param.default is not param.empty, traceback_str)
                 else:
                     self.assertTrue(param.default is param.empty, traceback_str)
+
+    def test_parse_event_line_to_tokens(self):
+        command = 'speak;Eirika;Hello;no_block'
+        toks = event_commands.parse_event_line(command)
+        self.assertEqual(toks.tokens, ['speak', 'Eirika', 'Hello', 'no_block'])
+        self.assertEqual(toks.source, command)
+        self.assertEqual(toks.token_idx, [0, 6, 13, 19])
+        self.assertEqual(toks._flag_idx, 3)
+
+        command2 = 'speak;Eirika;Hello;no_block;no_warn'
+        toks2 = event_commands.parse_event_line(command2)
+        self.assertEqual(toks2.flags(), ['no_block', 'no_warn'])
+
+        command3 = ' speak;Eirika;Hello'
+        toks3 = event_commands.parse_event_line(command3)
+        self.assertEqual(toks3.token_idx, [1, 7, 14])
+
+        command4 = 'speak;Eirika;;;'
+        toks4 = event_commands.parse_event_line(command4)
+        self.assertEqual(toks4.tokens, ['speak', 'Eirika', '', '', ''])
+
+        command5 = 'speak;Eirika #this is a comment'
+        toks5 = event_commands.parse_event_line(command5)
+        self.assertEqual(toks5.tokens, ['speak', 'Eirika ', EOL])
+
+        command6 = 'speak;Eirika;"; no new arg'
+        toks6 = event_commands.parse_event_line(command6)
+        self.assertEqual(toks6.tokens, ['speak', 'Eirika', '"; no new arg'])
+
+        command7 = 'speak;Eirika;nested {c:wait;500};NumLines=1'
+        toks7 = event_commands.parse_event_line(command7)
+        self.assertEqual(toks7.tokens, ['speak', 'Eirika', 'nested {c:wait;500}', 'NumLines=1'])

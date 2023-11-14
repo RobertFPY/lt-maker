@@ -49,7 +49,7 @@ class PythonEventProcessorUnitTests(unittest.TestCase):
         iftrue_speak = processor.fetch_next_command()
         self.assertTrue(isinstance(iftrue_speak, event_commands.Speak))
         self.assertEqual(iftrue_speak.parameters['SpeakerOrStyle'], 'MU')
-        self.assertEqual(iftrue_speak.parameters['Text'], "A bit ridiculous, isn't it?")
+        self.assertEqual(iftrue_speak.parameters['Text'], "A bit ridiculous isn't it?")
 
         # for
         eirika_for = processor.fetch_next_command()

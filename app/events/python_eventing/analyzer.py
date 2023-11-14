@@ -4,9 +4,11 @@ import ast
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Set, Tuple, Type
 
-from app.events.event_prefab import EventCatalog
-from app.events.python_eventing.compilation import ast_preprocess
+from app.events.event_prefab import EventCatalog, get_event_version
+from app.events.python_eventing.compiler import VERSION_MAP, Compiler
 from app.events.python_eventing.errors import CannotUseYieldError, InvalidCommandError, InvalidPythonError, MalformedTriggerScriptCall, NestedEventError, NoSaveInLoopError, EventError
+from app.events.python_eventing.postcomp.analyzer_postcomp import AnalyzerPostComp
+from app.events.python_eventing.swscomp.comp_utils import COMMAND_SENTINEL
 from app.events.python_eventing.utils import EVENT_CALL_COMMAND_NIDS, EVENT_INSTANCE, FORBIDDEN_PYTHON_COMMAND_NIDS, SAVE_COMMAND_NIDS
 from app.utilities.typing import NID
 
@@ -41,7 +43,7 @@ def check_safe_event_function_call(node: ast.stmt, parents: List[ast.stmt]):
       `speak(args...) and speak(args2...)`. This line tries to
       execute both speak commands at once, which is not how the EventEngine
       works. Therefore, it is invalid. Likewise, creating a function definition
-      with multiple EventCommand and then calling them would also be problematic.
+      with multiple EventCommands and then calling them would also be problematic.
 
       Therefore, we must be sure to uphold that EventCommand are *always* yieldable, i.e.
       either top-level Exprs, or equivalent (in the bodies of for and while-loops, which can be yielded)
@@ -50,7 +52,7 @@ def check_safe_event_function_call(node: ast.stmt, parents: List[ast.stmt]):
     """
     if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and \
       isinstance(node.func.value, ast.Name) and node.func.value.id == EVENT_INSTANCE:
-        if parents[-1].__class__ != ast.Expr and not (isinstance(parents[-1], ast.Attribute) and parents[-1].attr == 'FLAGS'):
+        if parents[-1].__class__ != ast.Expr and not (isinstance(parents[-1], ast.Attribute) and parents[-1].attr == 'set_flags'):
             return False
         elif any([parent.__class__ == ast.FunctionDef for parent in parents]):
             return False
@@ -93,10 +95,10 @@ class EventContext():
     @classmethod
     def from_event(cls: Type[EventContext], event_name: str, source: str):
         as_lines = source.split('\n')
-        as_ast = ast.parse(ast_preprocess(source))
+        as_ast = ast.parse(Compiler.compile_analyzer(source))
         return cls(event_name, as_lines, as_ast)
 
-class Preprocessor():
+class PyEventAnalyzer():
     def __init__(self, event_db: EventCatalog = None) -> None:
         self._catalog: EventCatalog = event_db
         self._parsed_events: Dict[NID, EventContext] = {}
@@ -114,23 +116,45 @@ class Preprocessor():
         event_info = None
         if not event_script:
             event_script = self._catalog.get_from_nid(event_name).source
-
-        is_invalid_python_error = self.verify_valid_python(event_name, event_script)
+        python_version_errors = self._verify_python_version_is_correct(event_name, event_script)
+        if python_version_errors:
+            return [python_version_errors]
+        forbidden_symbols_errors = self._verify_no_forbidden_symbols(event_name, event_script)
+        if forbidden_symbols_errors:
+            return forbidden_symbols_errors
+        event_script = Compiler.compile_analyzer(event_script)
+        is_invalid_python_error = self._verify_valid_python(event_name, event_script)
         if is_invalid_python_error:
             return [is_invalid_python_error]
 
         event_info = EventContext.from_event(event_name, event_script)
         self._parsed_events[event_name] = event_info
 
-        event_command_call_errors = self.verify_event_calls(event_info)
-        loop_save_errors = self.verify_no_loop_save(event_info)
-        yield_errors = self.verify_no_yields(event_info)
+        event_command_call_errors = self._verify_event_calls(event_info)
+        loop_save_errors = self._verify_no_loop_save(event_info)
+        yield_errors = self._verify_no_yields(event_info)
         return event_command_call_errors + loop_save_errors + yield_errors
 
-    def verify_valid_python(self, event_name: str, event_script: str) -> Optional[InvalidPythonError]:
-        preprocessed = ast_preprocess(event_script)
+    def _verify_python_version_is_correct(self, event_name: str, precompiled_event_script: str) -> Optional[InvalidPythonError]:
+        version = get_event_version(precompiled_event_script)
+        if not version or version not in VERSION_MAP:
+            err = InvalidPythonError(event_name, 1, precompiled_event_script.split('\n')[0])
+            err.what = "In event %s: Unknown python event version: %s" %(event_name, version)
+            return err
+
+    def _verify_no_forbidden_symbols(self, event_name: str, precompiled_event_script: str) -> Optional[List[InvalidPythonError]]:
+        as_lines = precompiled_event_script.split('\n')
+        errors = []
+        for idx, line in enumerate(as_lines):
+            if COMMAND_SENTINEL in line:
+                error = InvalidPythonError(event_name, idx + 1, line)
+                error.what = f"{COMMAND_SENTINEL} invalid symbol. Do not use this string in events."
+                errors.append(error)
+        return errors
+
+    def _verify_valid_python(self, event_name: str, event_script: str) -> Optional[InvalidPythonError]:
         try:
-            ast.parse(preprocessed)
+            ast.parse(event_script)
             return None
         except Exception as e:
             as_lines = event_script.split('\n')
@@ -138,7 +162,7 @@ class Preprocessor():
             error.what = e.msg
             return error
 
-    def verify_no_yields(self, event: EventContext) -> List[CannotUseYieldError]:
+    def _verify_no_yields(self, event: EventContext) -> List[CannotUseYieldError]:
         """Since the event engine uses yields as its primary mode of extracting EventCommands,
         yields should not be used in the script."""
         yield_errors: List[CannotUseYieldError] = []
@@ -147,7 +171,7 @@ class Preprocessor():
                 yield_errors.append(CannotUseYieldError(event.event_name, cnode.lineno, event.source_as_lines[cnode.lineno - 1]))
         return yield_errors
 
-    def verify_event_calls(self, event: EventContext) -> List[EventError]:
+    def _verify_event_calls(self, event: EventContext) -> List[EventError]:
         """see `check_safe_event_function_call` above for details on what this function verifies.
         It also verifies that all event calls are valid commands, via `check_valid_event_function_call`.
         """
@@ -168,7 +192,7 @@ class Preprocessor():
             return unsafe_event_function_calls
         return recursive_tree_verify(event.source_as_ast)
 
-    def verify_no_loop_save(self, event: EventContext, from_event_names: List[str] = None, from_event_lines: List[int] = None) -> List[NoSaveInLoopError | MalformedTriggerScriptCall]:
+    def _verify_no_loop_save(self, event: EventContext, from_event_names: List[str] = None, from_event_lines: List[int] = None) -> List[NoSaveInLoopError | MalformedTriggerScriptCall]:
         """Events cannot be resumed in the middle of a for loop. Therefore, any save commands
         cannot be run inside a for loop. Because for loops can call other events, we
         must also verify the other scripts."""
@@ -205,19 +229,9 @@ class Preprocessor():
                                 unsafe_save_calls.append(MalformedTriggerScriptCall(*generate_error_info(cnode)))
                             else:
                                 error_info = generate_error_info(cnode)
-                                triggered_script_unsafe_save_calls = self.verify_no_loop_save(nested_event_info, error_info[0], error_info[1])
+                                triggered_script_unsafe_save_calls = self._verify_no_loop_save(nested_event_info, error_info[0], error_info[1])
                                 unsafe_save_calls += triggered_script_unsafe_save_calls
                 else: # command is neither trigger script nor save; continue walking
                     unsafe_save_calls += recursive_tree_verify(cnode, curr_parents + [snode.__class__])
             return unsafe_save_calls
         return recursive_tree_verify(event.source_as_ast)
-
-# python -m app.events.python_eventing.preprocessor
-if __name__ == '__main__':
-    from pathlib import Path
-    SCRIPT_NAME = "example_script.txt"
-    script_path = Path(__file__).with_name(SCRIPT_NAME)
-    script = script_path.read_text()
-    preprocessor = Preprocessor(script, SCRIPT_NAME)
-    for error in preprocessor.verify_event(SCRIPT_NAME, script):
-        print(error)

@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import logging
 from enum import Enum
 from typing import Callable, List, Dict, Optional, Set, Tuple, Type
-from app.events.event_structs import EOL, EventCommandTokens, ParseMode
+from app.events.event_structs import EOL, EventCommandTokens
 
 from app.utilities.data import Prefab
 from app.utilities.str_utils import mirror_bracket
@@ -63,7 +63,7 @@ class EventCommand(Prefab):
             else:
                 self.display_values = []
 
-    def FLAGS(self, *args) -> EventCommand:
+    def set_flags(self, *args) -> EventCommand:
         self.chosen_flags |= set(args)
         return self
 

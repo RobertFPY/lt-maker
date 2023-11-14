@@ -17,8 +17,8 @@ from app.data.resources.tiles import TileMapPrefab
 from app.data.validation.utils import LTType
 import app.data.validation.validation_errors as ltdb
 from app.events.event_prefab import EventVersion
+from app.events.python_eventing.analyzer import PyEventAnalyzer
 from app.events import event_commands
-from app.events.python_eventing.preprocessor import Preprocessor
 from app.events.regions import Region
 from app.utilities.typing import NID
 
@@ -184,11 +184,11 @@ class DBChecker():
         return res
 
     def validate_events(self) -> ValidationResult:
-        ppsr = Preprocessor(self.db.events)
+        alz = PyEventAnalyzer(self.db.events)
         all_errors = []
         for event in self.db.events:
             if event.version() != EventVersion.EVENT:
-                all_errors += ppsr.verify_event(event.nid, event.source)
+                all_errors += alz.verify_event(event.nid, event.source)
         return ValidationResult(all_errors)
 
     def _val_or_err(self, nids: List[NID] | NID, dtype: LTType, parent_error: ltdb.Error, optional=True) -> List[ltdb.Error]:

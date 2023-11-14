@@ -1,4 +1,4 @@
-#python
+#pyev1
 
 # this is normally fine, but is called from another event inside a for loop
-$battle_save()
+$battle_save

@@ -1,8 +1,11 @@
 from typing import Any, Dict, List, Optional, Set, Tuple, Type
 
+from app.events.event_structs import EventCommandTokens
+
 from .. import event_commands
-    
+
 EVENT_INSTANCE = "EC"
+EVENT_GEN_NAME = "_lt_event_gen"
 
 FORBIDDEN_PYTHON_COMMANDS: List[event_commands.EventCommand] = [event_commands.Comment, event_commands.If, event_commands.Elif, event_commands.Else,
                                                                 event_commands.End, event_commands.For, event_commands.Endf, event_commands.LoopUnits]
@@ -24,3 +27,11 @@ class ResumeCheck():
         if line_no == self.line_no:
             self.catching_up = False
         return is_catching_up
+
+def to_py_event_command(tokens: EventCommandTokens) -> Tuple[str, int]:
+    """returns command text, and indent"""
+    command = tokens.command()
+    args = ','.join(tokens.args())
+    # flags are always strings
+    flags = ','.join([f'"{flag}"' for flag in tokens.flags()])
+    return "%s(%s).set_flags(%s)" % (command, args, flags), tokens.start_idx

@@ -25,7 +25,7 @@ def create_wrapper_func(command_name: str, command_t: Type[EventCommand]):
 def {command_name}({command_params}{command_optional_params}):
     parameters = {command_param_dict}
     parameters = dict(filter(optional_value_filter({command_params_list}), parameters.items()))
-    return event_commands.{command_type}(parameters=parameters).FLAGS('from_python')
+    return event_commands.{command_type}(parameters=parameters).set_flags('from_python')
 """.format(command_name=command_name, command_type=command_t.__name__, command_params_list=command_params_list,
            command_params=command_params, command_optional_params=command_optional_params,
            command_param_dict=command_param_dict_str)

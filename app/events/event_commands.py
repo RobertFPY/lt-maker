@@ -4,8 +4,10 @@ from dataclasses import dataclass
 import logging
 from enum import Enum
 from typing import Callable, List, Dict, Optional, Set, Tuple, Type
+from app.events.event_structs import EOL, EventCommandTokens, ParseMode
 
 from app.utilities.data import Prefab
+from app.utilities.str_utils import mirror_bracket
 from app.utilities.typing import NID
 
 
@@ -3489,3 +3491,68 @@ def convert_parse(command: EventCommand, _eval_evals: Callable[[str], str] = Non
         parameters[keyword] = convert(keyword_type, value)
 
     return parameters, command.chosen_flags
+
+def parse_event_line(line: str) -> EventCommandTokens:
+    sline = line.lstrip()
+    lpad = len(line) - len(sline)
+
+    tokens = ['']
+    token_idxs = [lpad]
+
+    bracket_nest = 0
+    bracket = ''
+
+    idx = 0
+    EOF = 'EOF'
+    def peek():
+        if idx >= len(sline) - 1:
+            return EOF
+        return sline[idx + 1]
+
+    while idx < len(sline):
+        c = sline[idx]
+        if c in '\'"':
+            q_char = c
+            tokens[-1] += c
+            while peek() not in (EOF, q_char):
+                idx += 1
+                tokens[-1] += sline[idx]
+            if peek() == q_char:
+                idx += 1
+                tokens[-1] += sline[idx]
+            idx += 1
+            continue
+        elif c == bracket:
+            bracket_nest += 1
+        elif c == mirror_bracket(bracket):
+            bracket_nest -= 1
+        elif c in '({[':
+            bracket_nest += 1
+            bracket = c
+        elif bracket_nest == 0 and c == ';':
+            tokens.append('')
+            token_idxs.append(idx + lpad + 1)
+            idx += 1
+            # do not save semicolons
+            continue
+        elif bracket_nest == 0 and c == '#':
+            # stop parsing if we hit a comment
+            tokens.append(EOL)
+            break
+        tokens[-1] += c
+        idx += 1
+    ectoks = EventCommandTokens(tokens, line, token_idxs)
+
+    # sort out flags vs args
+    command_t = ALL_EVENT_COMMANDS.get(ectoks.command())
+    if not command_t:
+        # nonexistent command, just return as if all args
+        return ectoks
+    flags = command_t().flags
+    # by default, the flag idx is the end of the args, plus 1 for the command
+    ectoks._flag_idx = len(command_t.get_keyword_types()) + 1
+    for idx, tok in enumerate(ectoks.tokens):
+        if tok in flags: # found a flag; assume we're in the flag zone
+            ectoks._flag_idx = idx
+            break
+    return ectoks

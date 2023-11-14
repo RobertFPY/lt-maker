@@ -153,7 +153,7 @@ def generate_completions(line: str, level_nid: NID) -> List[CompletionEntry]:
         arg_name = get_arg_name(command_t, arg, len(as_tokens.tokens) - 2)
         arg_validator = event_validators.get(command_t.get_validator_from_keyword(arg_name))
         if arg_validator:
-            valids = arg_validator(DB, RESOURCES).valid_entries(level_nid)
+            valids = arg_validator(DB, RESOURCES).valid_entries(level_nid, arg)
             completions = [create_completion(nid, name) for name, nid in valids]
             return completions
 

@@ -1,14 +1,16 @@
 import json
 import logging
 import os
+from pathlib import Path
 import re
 import shutil
-from typing import Dict
+from typing import Dict, List
 
 from app.constants import AUTOTILE_FRAMES, TILEHEIGHT, TILEWIDTH, TILEX, TILEY
 from app.data.resources.base_catalog import ManifestCatalog
 from app.utilities import str_utils
 from app.utilities.data import Data, Prefab
+from app.utilities.data_order import parse_order_keys_file, rchop
 
 
 class TileMapPrefab(Prefab):
@@ -300,9 +302,8 @@ class TileMapCatalog(ManifestCatalog[TileMapPrefab]):
                         data['fname'] = os.path.basename(fname)
                         save_data.append(data)
             if '.orderkeys' in data_fnames: # using order key file
-                with open(os.path.join(multi_loc, '.orderkeys')) as load_file:
-                    orderkeys = json.load(load_file)
-                    save_data = sorted(save_data, key=lambda data: orderkeys.get(data['fname'], 999999))
+                ordering = parse_order_keys_file(Path(multi_loc, '.orderkeys'))
+                save_data = sorted(save_data, key=lambda data: ordering.index(rchop(data['fname'], '.json')) if rchop(data['fname'], '.json') in ordering else 99999)
             else: # using order keys per object
                 save_data = sorted(save_data, key=lambda obj: obj['_orderkey'])
             for s_dict in save_data:
@@ -315,14 +316,14 @@ class TileMapCatalog(ManifestCatalog[TileMapPrefab]):
         if os.path.exists(save_dir):
             shutil.rmtree(save_dir)
         os.mkdir(save_dir)
-        orderkeys: Dict[str, int] = {}
+        orderkeys: List[str] = []
         for idx, save in enumerate(saves):
             # ordering
             nid = save['nid']
             nid = re.sub(r'[\\/*?:"<>|]',"", nid)
             nid = nid.replace(' ', '_')
             fname = nid + '.json'
-            orderkeys[fname] = idx
+            orderkeys.append(fname)
             save_loc = os.path.join(save_dir, nid + '.json')
             with open(save_loc, 'w') as serialize_file:
                 json.dump([save], serialize_file, indent=4)

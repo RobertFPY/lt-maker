@@ -32,6 +32,8 @@ ITEM_HOOKS: Dict[str, HookInfo] = {
     'force_map_anim':                                  HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'ignore_line_of_sight':                            HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'ignore_fog_of_war':                               HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    # default true, return false if any component returns false
+    'alerts_when_broken':                              HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_TRUE, inherits_parent=True),
     # returns latest value defined by a component, or default value if not defined
     'damage_formula':                                  HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
     'resist_formula':                                  HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),

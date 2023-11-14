@@ -390,15 +390,15 @@ class SimpleCombat():
         """
         if item_system.is_broken(self.attacker, self.main_item):
             item_system.on_broken(self.attacker, self.main_item)
-            alert = item_system.broken_alert(self.attacker, self.main_item)
-            if self.alerts and self.attacker is not self.defender and alert and \
+            should_alert = item_system.alerts_when_broken(self.attacker, self.main_item)
+            if self.alerts and self.attacker is not self.defender and should_alert and \
                     self.attacker.team == 'player' and not self.attacker.is_dying:
                 game.alerts.append(banner.BrokenItem(self.attacker, self.main_item))
                 game.state.change('alert')
         if self.def_item and item_system.is_broken(self.defender, self.def_item):
             item_system.on_broken(self.defender, self.def_item)
-            alert = item_system.broken_alert(self.defender, self.def_item)
-            if self.alerts and self.attacker is not self.defender and alert and \
+            should_alert = item_system.alerts_when_broken(self.defender, self.def_item)
+            if self.alerts and self.attacker is not self.defender and should_alert and \
                     self.defender.team == 'player' and not self.defender.is_dying:
                 game.alerts.append(banner.BrokenItem(self.defender, self.def_item))
                 game.state.change('alert')

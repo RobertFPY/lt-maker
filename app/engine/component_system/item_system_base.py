@@ -218,20 +218,6 @@ def on_unusable(unit, item):
             if component.defines('on_unusable'):
                 component.on_unusable(unit, item.parent_item)
 
-def broken_alert(unit, item) -> bool:
-    alert = False
-    all_components = get_all_components(unit, item)
-    for component in all_components:
-        if component.defines('broken_alert'):
-            if component.broken_alert(unit, item):
-                alert = True
-    if item.parent_item:
-        for component in item.parent_item.components:
-            if component.defines('broken_alert'):
-                if component.broken_alert(unit, item.parent_item):
-                    alert = True
-    return alert
-
 def valid_targets(unit, item) -> set:
     targets = set()
     all_components = get_all_components(unit, item)

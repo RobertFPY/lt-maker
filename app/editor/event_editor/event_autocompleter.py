@@ -187,6 +187,9 @@ def generate_event_completions(line: str, level_nid: NID) -> List[CompletionEntr
 
 def generate_pyev1_completions(line: str, level_nid: NID) -> List[CompletionEntry]:
     as_tokens = SWSCompilerV1.parse_line(line)
+    if not as_tokens:
+        return []
+
     arg = as_tokens.tokens[-1]
 
     def create_completion(nid, name, is_command: bool=False):

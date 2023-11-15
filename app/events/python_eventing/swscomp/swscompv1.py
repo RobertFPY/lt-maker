@@ -2,13 +2,13 @@ from __future__ import annotations
 import re
 from app.events.event_structs import EOL, EventCommandTokens, ParseMode
 from app.events.python_eventing.swscomp.comp_utils import COMMAND_SENTINEL, ScriptWithSentinel
-from app.utilities.str_utils import mirror_bracket
+from app.utilities.str_utils import RAW_NEWLINE, mirror_bracket
 
 EOF = "EOF"
 
 class SWSCompilerV1():
     def __init__(self, event_script: str) -> None:
-        self.source = event_script.replace('\u2029', ' ')
+        self.source = event_script.replace(RAW_NEWLINE, '\n')
 
     @staticmethod
     def parse_line(line: str) -> EventCommandTokens:

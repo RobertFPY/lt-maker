@@ -5,7 +5,7 @@ import os
 from typing import TYPE_CHECKING, List, Optional, Tuple, Type
 
 from PyQt5.QtCore import QRect, QSize, Qt, pyqtSignal, QMimeData
-from PyQt5.QtGui import QFontMetrics, QPainter, QPalette, QTextCursor
+from PyQt5.QtGui import QFontMetrics, QPainter, QPalette, QTextCursor, QKeyEvent
 from PyQt5.QtWidgets import QCompleter, QLabel, QPlainTextEdit, QWidget, QAction
 
 from app import dark_theme
@@ -139,13 +139,9 @@ class EventTextEditor(QPlainTextEdit):
 
     def get_command_text_before_cursor(self) -> str:
         if self.event_properties.version == EventVersion.EVENT:
-            return self.textCursor().block().text()[:self.textCursor().positionInBlock()]
+            return self.get_line_before_cursor()
         elif self.event_properties.version == EventVersion.PYEV1:
-            curr_pos = self.textCursor().position()
-            terminal_pos = curr_pos
-            while terminal_pos > 0 and self.document().characterAt(terminal_pos) not in '$\n':
-                terminal_pos -= 1
-            return self.document().toRawText()[terminal_pos:curr_pos]
+            return self.get_line_before_cursor("$" + str_utils.RAW_NEWLINE)
         else:
             return None
 
@@ -272,7 +268,14 @@ class EventTextEditor(QPlainTextEdit):
         self.hide_completion_box()
         self.disable_hinter = True
 
-    def keyPressEvent(self, event):
+    def get_line_before_cursor(self, delim: str=str_utils.RAW_NEWLINE):
+        curr_pos = self.textCursor().position()
+        terminal_pos = curr_pos - 1
+        while terminal_pos > 0 and self.document().characterAt(terminal_pos) not in delim:
+            terminal_pos -= 1
+        return self.document().toRawText()[terminal_pos:curr_pos]
+
+    def keyPressEvent(self, event: QKeyEvent):
         self.prev_keyboard_press = event.key()
         # Shift + Tab is not the same as catching a shift modifier + tab key
         # Shift + Tab is a Backtab
@@ -287,7 +290,20 @@ class EventTextEditor(QPlainTextEdit):
             return super().keyPressEvent(event)
         elif event.key() == Qt.Key_Tab:
             cur = self.textCursor()
-            cur.insertText("    ")
+            pos = cur.positionInBlock()
+            fill = 4 - pos % 4
+            cur.insertText(" " * fill)
+        elif event.key() == Qt.Key.Key_Return:
+            # enter - let's intelligently indent
+            newline = str_utils.RAW_NEWLINE
+            if event.modifiers() & Qt.KeyboardModifier.ShiftModifier:
+                newline = str_utils.SHIFT_NEWLINE
+            cursor = self.textCursor()
+            line = self.get_line_before_cursor(str_utils.RAW_NEWLINE + str_utils.SHIFT_NEWLINE)
+            indent = len(line) - len(line.lstrip()) - 1
+            nl = newline + ' ' * indent
+            cursor.insertText(nl)
+            return
         elif event.key() == Qt.Key_Backspace:
             # autofill functionality, hides autofill windows
             self.disable_helpers()

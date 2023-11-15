@@ -7,7 +7,7 @@ from typing import Callable, List, Dict, Optional, Set, Tuple, Type
 from app.events.event_structs import EOL, EventCommandTokens
 
 from app.utilities.data import Prefab
-from app.utilities.str_utils import mirror_bracket
+from app.utilities.str_utils import SHIFT_NEWLINE, mirror_bracket
 from app.utilities.typing import NID
 
 
@@ -3454,7 +3454,7 @@ def parse_text_to_command(text: str, strict: bool = False) -> Tuple[EventCommand
         for idx, arg in enumerate(cmd_args):
             # remove line break chars. speak has its own handling, so keep them
             if command_info.nid not in ('speak', 'textbox'):
-                arg = arg.replace('\u2028', '')
+                arg = arg.replace(SHIFT_NEWLINE, '')
 
             all_keywords = command_info.keywords + command_info.optional_keywords
 

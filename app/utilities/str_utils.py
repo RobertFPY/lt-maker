@@ -2,6 +2,9 @@ import functools
 import re
 
 
+RAW_NEWLINE = '\u2029'
+SHIFT_NEWLINE = '\u2028'
+
 def convert_raw_text_newlines(s: str) -> str:
     return s.replace('\u2029', '\n')
 

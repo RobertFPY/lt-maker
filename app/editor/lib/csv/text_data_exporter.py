@@ -3,6 +3,7 @@ from app.data.database.database import DB
 from app.data.database.levels import LevelCatalog
 from app.events.event_commands import EventCommand, Speak
 from app.events.event_prefab import EventCatalog
+from app.utilities.str_utils import SHIFT_NEWLINE
 from app.utilities.typing import NID
 from collections import defaultdict
 def dump_script(event_db: EventCatalog, level_db: LevelCatalog=None) -> Dict[NID, Dict[NID, str]]:
@@ -34,9 +35,9 @@ def dump_script(event_db: EventCatalog, level_db: LevelCatalog=None) -> Dict[NID
                 text = line.parameters['Text']
                 if not speaker:
                     speaker = line.parameters.get('StyleNid', "")
-                if text.startswith('\u2028'):
+                if text.startswith(SHIFT_NEWLINE):
                     text = text[1:]
-                text = text.replace("{w}", '').replace("|", "\n\t").replace("{br}", "\n\t").replace("\u2028", '\n\t').replace("{clear}", "")
+                text = text.replace("{w}", '').replace("|", "\n\t").replace("{br}", "\n\t").replace(SHIFT_NEWLINE, '\n\t').replace("{clear}", "")
                 event_str += "%s: %s\n" % (speaker, text)
             escaped_event_nid_filename = ''.join([c for c in event_nid if c.isalnum()])
             level_event_ret[escaped_event_nid_filename] = event_str

@@ -9,6 +9,7 @@ from app.tests.mocks.mock_game import get_mock_game
 from app.events.event_commands import EventCommand, parse_text_to_command
 from app.utilities.enums import Alignments
 from app.engine.codegen import source_generator
+from app.utilities.str_utils import SHIFT_NEWLINE
 
 class EventUnitTests(unittest.TestCase):
     def setUp(self):
@@ -111,7 +112,7 @@ class EventUnitTests(unittest.TestCase):
         # initialize testing command(s)
         # we test event command parsing in another test, so just use a dummy event
         event = self.create_event_from_script([])
-        event_functions.speak(event, None, '\u2028SPEAK_TEXT\u2028SPEAK_TEXT', flags={'no_block'})
+        event_functions.speak(event, None, f'{SHIFT_NEWLINE}SPEAK_TEXT{SHIFT_NEWLINE}SPEAK_TEXT', flags={'no_block'})
         mock_dialog.assert_called_with('SPEAK_TEXT{sub_break}SPEAK_TEXT{no_wait}', None, 'message_bg_base',
                                        None, None, speaker='', style_nid=None,
                                        autosize=False, speed=1, font_color=None,
@@ -231,7 +232,7 @@ class EventUnitTests(unittest.TestCase):
         # initialize testing command(s)
         # we test event command parsing in another test, so just use a dummy event
         event = self.create_event_from_script([])
-        event_functions.speak(event, None, '\u2028SPEAK_TEXT\u2028SPEAK_TEXT', flags={'no_block'})
+        event_functions.speak(event, None, f'{SHIFT_NEWLINE}SPEAK_TEXT{SHIFT_NEWLINE}SPEAK_TEXT', flags={'no_block'})
         mock_dialog.assert_called_with('SPEAK_TEXT{sub_break}SPEAK_TEXT{no_wait}', None, 'message_bg_base',
                                        None, None, speaker='', style_nid=None,
                                        autosize=False, speed=1, font_color=None,

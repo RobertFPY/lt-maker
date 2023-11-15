@@ -3,9 +3,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from difflib import SequenceMatcher as SM
-from functools import lru_cache
 from typing import List, Optional, Type
-from PyQt5 import QtCore
 
 from PyQt5.QtCore import (QAbstractListModel, QLocale, QModelIndex, QSize, Qt,
                           pyqtSignal)
@@ -18,7 +16,9 @@ from app.data.database.database import DB
 from app.data.resources.resources import RESOURCES
 from app.editor.settings import MainSettingsController
 from app.events import event_commands, event_validators
+from app.events.event_prefab import EventVersion
 from app.events.event_structs import ParseMode
+from app.events.python_eventing.swscomp.swscompv1 import SWSCompilerV1
 from app.utilities.typing import NID
 
 
@@ -37,6 +37,7 @@ class CompletionEntry():
 @dataclass
 class CompletionLocation():
     word_to_complete: str       # word to complete
+    word_to_match: str          # word to match against. can differ from above (e.g. completing `"Eir` but only matching against `Eir`)
     index: int                  # index of the word to complete
 
 COMPLETION_DATA_ROLE = 100
@@ -54,9 +55,13 @@ class EventScriptCompleter(QCompleter):
         self.setFilterMode(Qt.MatchContains)
         self.activated[QModelIndex].connect(self.do_complete)
         self.completion_location: Optional[CompletionLocation] = None
+        self.version = EventVersion.EVENT
+
+    def set_version(self, version: EventVersion):
+        self.version = version
 
     def do_complete(self, completion_index: QModelIndex):
-        completion = completion_index.data(COMPLETION_DATA_ROLE)
+        completion: CompletionEntry = completion_index.data(COMPLETION_DATA_ROLE)
         self.insertText.emit([CompletionToInsert(completion.value, self.completion_location.index, len(self.completion_location.word_to_complete))])
         self.popup().hide()
 
@@ -73,22 +78,23 @@ class EventScriptCompleter(QCompleter):
         return False
 
     def setTextToComplete(self, line: str, end_idx: int, level_nid: NID):
-        completions = generate_completions(line, level_nid)
+        completions = generate_completions(line, level_nid, self.version)
         if not completions:
             self.setModel(self.ESInternalModel([], self))
             return
         self.completion_location = get_arg_info(line, end_idx)
         # sort completions based on similarity
-        completions = sorted(completions, key=lambda compl: _fuzzy_match(self.completion_location.word_to_complete, compl), reverse=True)
+        completions = sorted(completions, key=lambda compl: _fuzzy_match(self.completion_location.word_to_match, compl), reverse=True)
         self.setModel(self.ESInternalModel(completions, self))
         self.popup().setItemDelegate(self.ESInternalDelegate(self))
-        self.setCompletionPrefix(self.completion_location.word_to_complete)
+        self.setCompletionPrefix(self.completion_location.word_to_match)
         self.popup().setCurrentIndex(self.completionModel().index(0, 0))
         return True
 
     class ESInternalDelegate(QStyledItemDelegate):
         def __init__(self, parent=None) -> None:
             super().__init__(parent)
+            self.settings = MainSettingsController()
             theme = dark_theme.get_theme()
             self.syntax_colors = theme.event_syntax_highlighting()
 
@@ -101,7 +107,7 @@ class EventScriptCompleter(QCompleter):
 
         def initStyleOption(self, option: QStyleOptionViewItem, index: QModelIndex) -> None:
             super().initStyleOption(option, index)
-            option.font.setFamily('Consolas')
+            option.font.setFamily(self.settings.get_code_font())
             option.font.setBold(True)
             completion: CompletionEntry = index.data(COMPLETION_DATA_ROLE)
             if completion.name.startswith('{') and completion.name.endswith('}'):
@@ -131,7 +137,14 @@ class EventScriptCompleter(QCompleter):
             else:
                 return None
 
-def generate_completions(line: str, level_nid: NID) -> List[CompletionEntry]:
+def generate_completions(line: str, level_nid: NID, version: EventVersion) -> List[CompletionEntry]:
+    if version == EventVersion.EVENT:
+        return generate_event_completions(line, level_nid)
+    elif version == EventVersion.PYEV1:
+        return generate_pyev1_completions(line, level_nid)
+    return []
+
+def generate_event_completions(line: str, level_nid: NID) -> List[CompletionEntry]:
     as_tokens = event_commands.parse_event_line(line)
     arg = as_tokens.tokens[-1]
 
@@ -172,12 +185,48 @@ def generate_completions(line: str, level_nid: NID) -> List[CompletionEntry]:
         return completions
     return []
 
+def generate_pyev1_completions(line: str, level_nid: NID) -> List[CompletionEntry]:
+    as_tokens = SWSCompilerV1.parse_line(line)
+    arg = as_tokens.tokens[-1]
+
+    def create_completion(nid, name, is_command: bool=False):
+        nid_or_name = nid
+        if name and nid != name:
+            nid_or_name = "%s (%s)" % (name, nid)
+        if not is_command:
+            nid = '"%s"' % nid
+        return CompletionEntry(nid_or_name, nid_or_name, nid)
+
+    if as_tokens.mode() == ParseMode.COMMAND:
+        commands = event_validators.EventFunction().valid_entries()
+        completions = [create_completion(nid, name, True) for name, nid in commands]
+        return completions
+
+    command_t = event_commands.ALL_EVENT_COMMANDS.get(as_tokens.command(), None)
+    if not command_t:
+        return []
+
+    if as_tokens.mode() == ParseMode.ARGS:
+        arg_name = get_arg_name(command_t, arg, len(as_tokens.tokens) - 2)
+        arg_validator = event_validators.get(command_t.get_validator_from_keyword(arg_name))
+        if arg_validator:
+            valids = arg_validator(DB, RESOURCES).valid_entries(level_nid)
+            completions = [create_completion(nid, name) for name, nid in valids]
+            return completions
+
+    elif as_tokens.mode() == ParseMode.FLAGS:
+        flags = command_t().flags
+        flag_key = "FLAG(%s)"
+        completions = [CompletionEntry(flag_key % flag, flag, flag) for flag in flags]
+        return completions
+
 def get_arg_info(line: str, end_idx: int) -> CompletionLocation:
     """Returns the arg at the end of line, as well as its starting index in the document"""
     as_tokens = event_commands.parse_event_line(line)
     full_arg = as_tokens.tokens[-1]
-    arg = trim_arg_text(full_arg)
-    return CompletionLocation(arg, end_idx - len(arg))
+    arg_to_match = trim_arg_match(full_arg)
+    arg_to_replace = trim_arg_text(full_arg)
+    return CompletionLocation(arg_to_replace, arg_to_match, end_idx - len(arg_to_replace))
 
 def get_arg_name(command_t: Type[event_commands.EventCommand], arg_text: str, arg_idx: int) -> Optional[str]:
     # is this a keyword arg?
@@ -191,74 +240,8 @@ def get_arg_name(command_t: Type[event_commands.EventCommand], arg_text: str, ar
         return None
     return command_t.get_keywords()[arg_idx]
 
+def trim_arg_match(arg_text: str) -> str:
+    return re.split('[^a-zA-Z0-9_]', arg_text)[-1]
+
 def trim_arg_text(arg_text: str) -> str:
     return re.split('[^a-zA-Z0-9_"\'\{]', arg_text)[-1]
-
-class EventScriptFunctionHinter():
-    @staticmethod
-    @lru_cache(16)
-    def _generate_hint_for_command(command: Type[event_commands.EventCommand], param: str) -> str:
-        command = command()
-        args = []
-        args.append(command.nid)
-        curr_keyword = None
-        for idx, keyword in enumerate(command.get_keywords()):
-            if command.keyword_types:
-                keyword_type = command.keyword_types[idx]
-                hint_str = "%s=%s" % (keyword, keyword_type)
-                if keyword == param:
-                    hint_str = "<b>%s</b>" % hint_str
-                    curr_keyword = keyword_type
-                args.append(hint_str)
-            else:
-                hint_str = keyword
-                if keyword == param:
-                    hint_str = "<b>%s</b>" % hint_str
-                    curr_keyword = keyword
-                args.append(hint_str)
-        if command.flags:
-            hint_str = 'FLAGS'
-            if param == 'FLAGS':
-                hint_str = "<b>%s</b>" % hint_str
-                curr_keyword = 'FLAGS'
-            args.append(hint_str)
-        hint_cmd_str = ';\u200b'.join(args)
-        hint_cmd_str = '<div class="command_text">' + hint_cmd_str + '</div>'
-
-        hint_desc = ''
-        if curr_keyword == 'FLAGS':
-            hint_desc = 'Must be one of: %s' % ', '.join(command.flags)
-        else:
-            validator = event_validators.get(curr_keyword)
-            if validator:
-                hint_desc = '<div class="desc_text">' + validator().desc + '</div>'
-
-        settings = MainSettingsController()
-        style = """
-            <style>
-                .command_text {font-family: '%s', %s, monospace;}
-                .desc_text {font-family: Arial, Helvetica, sans-serif;}
-            </style>
-        """ % (settings.get_code_font(), settings.get_code_font())
-
-        hint_text = style + hint_cmd_str + '<hr>' + hint_desc
-        return hint_text
-
-    @staticmethod
-    def generate_hint_for_line(line: str):
-        if not line:
-            return None
-        as_tokens = event_commands.parse_event_line(line)
-        if as_tokens.mode() in (ParseMode.COMMAND, ParseMode.EOL):
-            return None
-
-        arg = as_tokens.tokens[-1]
-        command = as_tokens.command()
-        command_t = event_commands.ALL_EVENT_COMMANDS.get(command, None)
-        if not command_t:
-            return None
-        if as_tokens.mode() == ParseMode.FLAGS:
-            return EventScriptFunctionHinter._generate_hint_for_command(command_t, 'FLAGS')
-        else:
-            param = get_arg_name(command_t, arg, len(as_tokens.tokens) - 2)
-            return EventScriptFunctionHinter._generate_hint_for_command(command_t, param or 'FLAGS')

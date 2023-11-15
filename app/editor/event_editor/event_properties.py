@@ -17,6 +17,7 @@ from PyQt5.QtWidgets import (QAbstractItemView, QAction, QApplication,
                              QPlainTextEdit, QPushButton, QSizePolicy,
                              QSpinBox, QSplitter, QStyle, QStyledItemDelegate,
                              QTextEdit, QToolBar, QVBoxLayout, QWidget)
+from app.editor.event_editor.event_function_hinter import EventScriptFunctionHinter
 from app.editor.event_editor.event_text_editor import EventTextEditor
 
 import app.editor.game_actions.game_actions as GAME_ACTIONS
@@ -556,14 +557,13 @@ class EventProperties(QWidget):
         if version == self.version:
             return
         self.version = version
+        self.text_box.set_completer_version(self.version)
         if version != EventVersion.EVENT:
             self.highlighter = PythonHighlighter(self.text_box.document())
-            self.text_box.set_completer(None)
             self.text_box.set_function_hinter(None)
         else:
             self.highlighter = EventHighlighter(self.text_box.document(), self)
-            self.text_box.set_completer(event_autocompleter.EventScriptCompleter)
-            self.text_box.set_function_hinter(event_autocompleter.EventScriptFunctionHinter)
+            self.text_box.set_function_hinter(EventScriptFunctionHinter)
 
     def set_current(self, current: EventPrefab):
         self.current = current

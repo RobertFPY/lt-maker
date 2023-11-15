@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import QCompleter, QLabel, QPlainTextEdit, QWidget, QAction
 
 from app import dark_theme
 from app.editor.event_editor import event_autocompleter, event_formatter
+from app.editor.event_editor.event_function_hinter import EventScriptFunctionHinter
 from app.editor.settings import MainSettingsController
 from app.events.event_prefab import EventVersion
 from app.utilities import str_utils
@@ -55,8 +56,13 @@ class EventTextEditor(QPlainTextEdit):
         fm = QFontMetrics(self.font())
         self.setTabStopWidth(4 * fm.width(' '))
 
-        self.completer: Optional[QCompleter] = None
-        self.function_hinter: Optional[Type[event_autocompleter.EventScriptFunctionHinter]] = None
+        self.completer: event_autocompleter.EventScriptCompleter = event_autocompleter.EventScriptCompleter(self)
+        self.completer.setWidget(self)
+        self.completer.setCompletionMode(QCompleter.PopupCompletion)
+        self.completer.setCaseSensitivity(Qt.CaseInsensitive)
+        self.completer.insertText.connect(self.insert_completions)
+
+        self.function_hinter: Optional[Type[EventScriptFunctionHinter]] = None
         # completer
         self.textChanged.connect(self.complete)
         self.prev_keyboard_press = None
@@ -86,17 +92,10 @@ class EventTextEditor(QPlainTextEdit):
         else:
             pass
 
-    def set_completer(self, completer_t: Type[QCompleter]):
-        if not completer_t:
-            self.completer = None
-            return
-        self.completer = completer_t(self)
-        self.completer.setWidget(self)
-        self.completer.setCompletionMode(QCompleter.PopupCompletion)
-        self.completer.setCaseSensitivity(Qt.CaseInsensitive)
-        self.completer.insertText.connect(self.insert_completions)
+    def set_completer_version(self, version: EventVersion):
+        self.completer.set_version(version)
 
-    def set_function_hinter(self, function_hinter: Type[event_autocompleter.EventScriptFunctionHinter]):
+    def set_function_hinter(self, function_hinter: Type[EventScriptFunctionHinter]):
         self.function_hinter = function_hinter
 
     def insert_completions(self, completions: List[event_autocompleter.CompletionToInsert]):

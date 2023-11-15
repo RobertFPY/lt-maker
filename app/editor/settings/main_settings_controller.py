@@ -58,6 +58,12 @@ class MainSettingsController():
     def get_theme(self, fallback=0):
         return self.state.value("theme", fallback, type=int)
 
+    def set_code_font(self, value):
+        self.state.setValue("code_font", value)
+
+    def get_code_font(self, fallback='Courier New'):
+        return self.state.value("code_font", fallback, type=str)
+
     def set_event_autocomplete(self, value):
         self.state.setValue("event_autocomplete", value)
 

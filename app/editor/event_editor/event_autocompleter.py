@@ -225,12 +225,13 @@ class EventScriptFunctionHinter():
             if validator:
                 hint_desc = '<div class="desc_text">' + validator().desc + '</div>'
 
+        settings = MainSettingsController()
         style = """
             <style>
-                .command_text {font-family: 'Courier New', Courier, monospace;}
+                .command_text {font-family: '%s', %s, monospace;}
                 .desc_text {font-family: Arial, Helvetica, sans-serif;}
             </style>
-        """
+        """ % (settings.get_code_font(), settings.get_code_font())
 
         hint_text = style + hint_cmd_str + '<hr>' + hint_desc
         return hint_text

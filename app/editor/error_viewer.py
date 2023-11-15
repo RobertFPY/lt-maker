@@ -7,6 +7,7 @@ from app.data.database.database import DB
 from app.data.resources.resources import RESOURCES
 
 from app.data.validation.db_validation import validate_events, validate_items_and_skills, validate_levels
+from app.editor.settings.main_settings_controller import MainSettingsController
 
 MAX_NUM_CHARS = 100000
 
@@ -21,9 +22,10 @@ class ErrorViewer(QWidget):
         self.setWindowTitle("Error report")
         self.resize(800,800)
 
+        self.settings = MainSettingsController()
         self.textEdit = QTextEdit()
         self.textEdit.setReadOnly(True)
-        self.textEdit.setFont(QFont('Consolas', 10))
+        self.textEdit.setFontFamily(self.settings.get_code_font())
         self.textEdit.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.textEdit.setLineWrapMode(QTextEdit.NoWrap)
 

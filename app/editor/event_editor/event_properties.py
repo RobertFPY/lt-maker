@@ -295,6 +295,7 @@ class EventProperties(QWidget):
         self.window = parent
         self._data = self.window._data
 
+        self.settings = MainSettingsController()
         self.current = current
         self.version = None
 
@@ -312,7 +313,7 @@ class EventProperties(QWidget):
         # Text setup
         self.cursor = self.text_box.textCursor()
         self.code_font = QFont()
-        self.code_font.setFamily("Courier")
+        self.code_font.setFamily(self.settings.get_code_font())
         self.code_font.setFixedPitch(True)
         self.code_font.setPointSize(10)
         self.text_box.setFont(self.code_font)

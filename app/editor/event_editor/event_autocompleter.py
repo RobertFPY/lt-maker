@@ -155,7 +155,11 @@ def generate_completions(line: str, level_nid: NID) -> List[CompletionEntry]:
         if arg_validator:
             valids = arg_validator(DB, RESOURCES).valid_entries(level_nid, arg)
             completions = [create_completion(nid, name) for name, nid in valids]
-            return completions
+        # add flags anyway
+        flags = command_t().flags
+        flag_key = "FLAG(%s)"
+        flag_cmpls = [CompletionEntry(flag_key % flag, flag, flag) for flag in flags]
+        return completions + flag_cmpls
 
     elif as_tokens.mode() == ParseMode.FLAGS:
         flags = command_t().flags

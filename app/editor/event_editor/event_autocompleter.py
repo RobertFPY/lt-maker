@@ -1,4 +1,6 @@
 from __future__ import annotations
+from collections import Counter
+from enum import Enum
 
 import re
 from dataclasses import dataclass
@@ -21,6 +23,11 @@ from app.events.event_structs import ParseMode
 from app.events.python_eventing.swscomp.swscompv1 import SWSCompilerV1
 from app.utilities.typing import NID
 
+class CompletionType(Enum):
+    GENERIC = 0      # completions that are just any words that appear in document
+    NORMAL = 1       # completions that are valid args
+    FLAG = 2         # completions that are flags
+    SPECIAL = 3      # completions that are special args (e.g. `{unit}``)
 
 @dataclass
 class CompletionToInsert():
@@ -33,11 +40,12 @@ class CompletionEntry():
     name: str                   # what the completion actually shows
     match_text: str             # what the completer matches against
     value: str                  # what the completer inserts
+    ctype: CompletionType       # what kind of completion this is
 
 @dataclass
 class CompletionLocation():
     word_to_complete: str       # word to complete
-    word_to_match: str          # word to match against. can differ from above (e.g. completing `"Eir` but only matching against `Eir`)
+    word_to_match: str          # word to match with. can differ from above (e.g. completing `"Eir` but only matching with `Eir`)
     index: int                  # index of the word to complete
 
 COMPLETION_DATA_ROLE = 100
@@ -56,6 +64,28 @@ class EventScriptCompleter(QCompleter):
         self.activated[QModelIndex].connect(self.do_complete)
         self.completion_location: Optional[CompletionLocation] = None
         self.version = EventVersion.EVENT
+
+    def _get_word_under_cursor(self, source: str, cursor_idx: int) -> str:
+        r = cursor_idx
+        l = r - 1
+        while l > 0 and re.match(r'[a-zA-Z0-9_]', source[l]):
+            l -= 1
+        while r < len(source) and re.match(r'[a-zA-Z0-9_]', source[r]):
+            r += 1
+        return source[l:r].strip()
+
+    def generate_generic_completions(self, source: str, cursor_idx: int) -> List[CompletionEntry]:
+        """Generates generic completions from all strings in the document.
+        Not used for events, since that's a restricted language without variables"""
+        if self.version == EventVersion.EVENT:
+            return []
+        else:
+            word_under_cursor = self._get_word_under_cursor(source, cursor_idx)
+            all_compl = source.replace('\n', ' ').split()
+            all_compl = [t for t in all_compl if re.match('^[A-Za-z_]+$', t) and len(t) > 3]
+            all_compl = Counter(all_compl)
+            all_compl[word_under_cursor] -= 1
+            return [CompletionEntry(trim_arg_text(key), trim_arg_text(key), trim_arg_text(key), CompletionType.GENERIC) for key in all_compl.keys() if all_compl[key] > 0]
 
     def set_version(self, version: EventVersion):
         self.version = version
@@ -77,17 +107,19 @@ class EventScriptCompleter(QCompleter):
             self.popup().hide()
         return False
 
-    def setTextToComplete(self, line: str, end_idx: int, level_nid: NID):
+    def setTextToComplete(self, line: str, cursor_idx: int, level_nid: NID, source: str):
         completions = generate_completions(line, level_nid, self.version)
+        generic_completions = self.generate_generic_completions(source, cursor_idx)
+        completions = completions + generic_completions
         if not completions:
             self.setModel(self.ESInternalModel([], self))
             return
-        self.completion_location = get_arg_info(line, end_idx)
+        self.completion_location = get_arg_info(line, cursor_idx)
         # sort completions based on similarity
         completions = sorted(completions, key=lambda compl: _fuzzy_match(self.completion_location.word_to_match, compl), reverse=True)
         self.setModel(self.ESInternalModel(completions, self))
         self.popup().setItemDelegate(self.ESInternalDelegate(self))
-        self.setCompletionPrefix(self.completion_location.word_to_match)
+        self.setCompletionPrefix(self.completion_location.word_to_match.lower())
         self.popup().setCurrentIndex(self.completionModel().index(0, 0))
         return True
 
@@ -97,6 +129,7 @@ class EventScriptCompleter(QCompleter):
             self.settings = MainSettingsController()
             theme = dark_theme.get_theme()
             self.syntax_colors = theme.event_syntax_highlighting()
+            self.python_colors = theme.python_syntax_highlighting()
 
         def displayText(self, value: CompletionEntry, locale: QLocale) -> str:
             return value.name
@@ -110,9 +143,15 @@ class EventScriptCompleter(QCompleter):
             option.font.setFamily(self.settings.get_code_font())
             option.font.setBold(True)
             completion: CompletionEntry = index.data(COMPLETION_DATA_ROLE)
+            def set_text_color(color: QColor):
+                option.palette.setBrush(QPalette.ColorRole.Text, color)
+                option.palette.setBrush(QPalette.ColorRole.HighlightedText, color)
             if completion.name.startswith('{') and completion.name.endswith('}'):
-                option.palette.setBrush(QPalette.ColorRole.Text, QColor(self.syntax_colors.special_text_color))
-                option.palette.setBrush(QPalette.ColorRole.HighlightedText, QColor(self.syntax_colors.special_text_color))
+                set_text_color(self.syntax_colors.special_text_color)
+            elif completion.ctype == CompletionType.FLAG:
+                set_text_color(self.python_colors.flag)
+            elif completion.ctype == CompletionType.GENERIC:
+                option.font.setBold(False)
 
     class ESInternalModel(QAbstractListModel):
         def __init__(self, data: List[CompletionEntry], parent: EventScriptCompleter):
@@ -127,7 +166,7 @@ class EventScriptCompleter(QCompleter):
                 return None
             # completer uses this field to match against
             elif role == Qt.ItemDataRole.EditRole:
-                return self._data[index.row()].match_text
+                return self._data[index.row()].match_text.lower()
             # what the completer ultimately returns
             elif role == COMPLETION_DATA_ROLE:
                 return self._data[index.row()]
@@ -152,7 +191,7 @@ def generate_event_completions(line: str, level_nid: NID) -> List[CompletionEntr
         nid_or_name = nid
         if name and nid != name:
             nid_or_name = "%s (%s)" % (name, nid)
-        return CompletionEntry(nid_or_name, nid_or_name, nid)
+        return CompletionEntry(nid_or_name, nid_or_name, nid, CompletionType.NORMAL)
 
     if as_tokens.mode() == ParseMode.COMMAND:
         commands = event_validators.EventFunction().valid_entries()
@@ -175,13 +214,13 @@ def generate_event_completions(line: str, level_nid: NID) -> List[CompletionEntr
             # add flags when we're done with required
             flags = command_t().flags
             flag_key = "FLAG(%s)"
-            flag_cmpls = [CompletionEntry(flag_key % flag, flag, flag) for flag in flags]
+            flag_cmpls = [CompletionEntry(flag_key % flag, flag, flag, CompletionType.FLAG) for flag in flags]
         return completions + flag_cmpls
 
     elif as_tokens.mode() == ParseMode.FLAGS:
         flags = command_t().flags
         flag_key = "FLAG(%s)"
-        completions = [CompletionEntry(flag_key % flag, flag, flag) for flag in flags]
+        completions = [CompletionEntry(flag_key % flag, flag, flag, CompletionType.FLAG) for flag in flags]
         return completions
     return []
 
@@ -198,7 +237,7 @@ def generate_pyev1_completions(line: str, level_nid: NID) -> List[CompletionEntr
             nid_or_name = "%s (%s)" % (name, nid)
         if not is_command:
             nid = '"%s"' % nid
-        return CompletionEntry(nid_or_name, nid_or_name, nid)
+        return CompletionEntry(nid_or_name, nid_or_name, nid, CompletionType.NORMAL)
 
     if as_tokens.mode() == ParseMode.COMMAND:
         commands = event_validators.EventFunction().valid_entries()
@@ -220,7 +259,7 @@ def generate_pyev1_completions(line: str, level_nid: NID) -> List[CompletionEntr
     elif as_tokens.mode() == ParseMode.FLAGS:
         flags = command_t().flags
         flag_key = "FLAG(%s)"
-        completions = [CompletionEntry(flag_key % flag, flag, flag) for flag in flags]
+        completions = [CompletionEntry(flag_key % flag, flag, flag, CompletionType.FLAG) for flag in flags]
         return completions
 
 def get_arg_info(line: str, end_idx: int) -> CompletionLocation:

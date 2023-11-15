@@ -149,8 +149,8 @@ class EventTextEditor(QPlainTextEdit):
         if not self.should_show_completion_box():
             self.hide_completion_box()
             return
-        line = self.get_command_text_before_cursor()
-        if not self.completer.setTextToComplete(line, self.textCursor().position(), self.event_properties.current.level_nid):
+        line = self.get_command_text_under_cursor()
+        if not self.completer.setTextToComplete(line, self.textCursor().position(), self.event_properties.current.level_nid, self.document().toPlainText()):
             return
         cr = self.cursorRect()
         cr.setWidth(

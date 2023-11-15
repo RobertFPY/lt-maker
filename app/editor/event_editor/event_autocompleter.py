@@ -75,6 +75,7 @@ class EventScriptCompleter(QCompleter):
     def setTextToComplete(self, line: str, end_idx: int, level_nid: NID):
         completions = generate_completions(line, level_nid)
         if not completions:
+            self.setModel(self.ESInternalModel([], self))
             return
         self.completion_location = get_arg_info(line, end_idx)
         # sort completions based on similarity
@@ -149,13 +150,20 @@ def generate_completions(line: str, level_nid: NID) -> List[CompletionEntry]:
     if not command_t:
         return []
 
+    completions = []
     if as_tokens.mode() == ParseMode.ARGS:
         arg_name = get_arg_name(command_t, arg, len(as_tokens.tokens) - 2)
         arg_validator = event_validators.get(command_t.get_validator_from_keyword(arg_name))
         if arg_validator:
             valids = arg_validator(DB, RESOURCES).valid_entries(level_nid, arg)
             completions = [create_completion(nid, name) for name, nid in valids]
-            return completions
+        flag_cmpls = []
+        if arg_name in command_t.optional_keywords:
+            # add flags when we're done with required
+            flags = command_t().flags
+            flag_key = "FLAG(%s)"
+            flag_cmpls = [CompletionEntry(flag_key % flag, flag, flag) for flag in flags]
+        return completions + flag_cmpls
 
     elif as_tokens.mode() == ParseMode.FLAGS:
         flags = command_t().flags

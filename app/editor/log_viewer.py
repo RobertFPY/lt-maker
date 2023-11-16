@@ -78,7 +78,8 @@ class LogViewer(QWidget):
         at_bottom = (vscroll.value() >= (vscroll.maximum() - 4))
         prev_scroll = vscroll.value()
         self.textEdit.moveCursor(QTextCursor.End)
-        self.textEdit.insertPlainText(''.join(lines))
+        self.textEdit.setFontFamily(self.settings.get_code_font())
+        self.textEdit.textCursor().insertText(''.join(lines))
         if not at_bottom:
             vscroll.setValue(prev_scroll)
         else:

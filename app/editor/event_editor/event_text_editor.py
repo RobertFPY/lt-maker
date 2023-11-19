@@ -108,7 +108,7 @@ class EventTextEditor(QPlainTextEdit):
             self.hide_function_hint()
             return
         tc = self.textCursor()
-        line = self.get_command_text_under_cursor()
+        line = self.get_command_text_before_cursor()
         hint_text = self.function_hinter.generate_hint_for_line(line)
         if not hint_text:
             self.hide_function_hint()
@@ -134,9 +134,9 @@ class EventTextEditor(QPlainTextEdit):
         self.function_annotator.move(tc_top_right)
         self.function_annotator.show()
 
-    def get_command_text_under_cursor(self) -> str:
+    def get_command_text_before_cursor(self) -> str:
         if self.event_properties.version == EventVersion.EVENT:
-            return self.textCursor().block().text()
+            return self.textCursor().block().text()[:self.textCursor().positionInBlock()]
         elif self.event_properties.version == EventVersion.PYEV1:
             curr_pos = self.textCursor().position()
             terminal_pos = curr_pos
@@ -150,7 +150,8 @@ class EventTextEditor(QPlainTextEdit):
         if not self.should_show_completion_box():
             self.hide_completion_box()
             return
-        line = self.get_command_text_under_cursor()
+        line = self.get_command_text_before_cursor()
+        print(line)
         if not self.completer.setTextToComplete(line, self.textCursor().position(), self.event_properties.current.level_nid):
             return
         cr = self.cursorRect()

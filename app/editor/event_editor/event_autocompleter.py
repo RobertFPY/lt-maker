@@ -249,13 +249,16 @@ class EventScriptFunctionHinter():
         if not line:
             return None
         as_tokens = event_commands.parse_event_line(line)
-        if not as_tokens.mode() in (ParseMode.ARGS, ParseMode.FLAGS):
+        if as_tokens.mode() in (ParseMode.COMMAND, ParseMode.EOL):
             return None
-        arg = as_tokens.tokens[-1]
 
+        arg = as_tokens.tokens[-1]
         command = as_tokens.command()
         command_t = event_commands.ALL_EVENT_COMMANDS.get(command, None)
         if not command_t:
             return None
-        param = get_arg_name(command_t, arg, len(as_tokens.tokens) - 2)
-        return EventScriptFunctionHinter._generate_hint_for_command(command_t, param or 'FLAGS')
+        if as_tokens.mode() == ParseMode.FLAGS:
+            return EventScriptFunctionHinter._generate_hint_for_command(command_t, 'FLAGS')
+        else:
+            param = get_arg_name(command_t, arg, len(as_tokens.tokens) - 2)
+            return EventScriptFunctionHinter._generate_hint_for_command(command_t, param or 'FLAGS')

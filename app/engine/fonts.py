@@ -35,7 +35,6 @@ text.colors['yellow-green'] = ((57, 206, 16), (80, 152, 72), (24, 88, 24))
 narrow = FontType('narrow', 'white')
 narrow.colors = text.colors
 
-
 small = FontType('small', 'white')
 small.colors = text.colors
 
@@ -60,6 +59,12 @@ convo.colors['pink'] = ((255, 102, 178, 255), (255, 204, 229, 255))
 nconvo = FontType('nconvo', 'black')
 nconvo.colors = convo.colors
 
+iconvo = FontType('iconvo', 'black')
+iconvo.colors = convo.colors
+
+bconvo = FontType('bconvo', 'black')
+bconvo.colors = convo.colors
+
 chapter = FontType('chapter', 'yellow')
 chapter.colors['yellow'] = ((248, 248, 248, 255), (232, 240, 96, 255), (168, 176, 128, 255),
                             (144, 152, 112, 255), (128, 128, 96, 255), (96, 104, 56, 255),
@@ -81,7 +86,7 @@ stat = FontType('stat', 'white')
 stat.colors['white'] = ((248, 248, 200, 255), (248, 112, 40, 255), (152, 32, 0, 255), (80, 56, 32, 255))
 stat.colors['purple'] = ((184, 184, 248, 255), (104, 156, 184, 255), (0, 120, 152, 255), (80, 56, 32, 255))
 
-font_types = [text, narrow, small, info, nconvo, convo, chapter, stat]
+font_types = [text, narrow, small, info, nconvo, convo, iconvo, bconvo, chapter, stat]
 
 # Load in default, uncolored fonts
 FONT: Dict[NID, bmpfont.BmpFont] = {}

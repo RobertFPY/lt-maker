@@ -1,8 +1,6 @@
 import unittest
 from unittest.mock import MagicMock, patch, PropertyMock
 
-import time
-
 from app.engine.game_board import GameBoard
 from app.engine.target_system import TargetSystem
 from app.engine.objects.unit import UnitObject
@@ -25,17 +23,12 @@ class PathSystemTests(unittest.TestCase):
         self.game.target_system = TargetSystem(game=self.game)
         self.path_system = PathSystem(game=self.game)
 
-        start = time.time_ns() / 1e6
-
         tilemap = MagicMock(name='tilemap')
         tilemap.width = 29
         tilemap.height = 29
         self.game.board = GameBoard(tilemap)
         self.game.board.bounds = (0, 0, 28, 28)
         self.game.units = []
-
-        end = time.time_ns() / 1e6
-        print(f'\nBig Game Board creation: {end - start} ms')
 
         self.player_unit = UnitObject('player')
         self.player_unit.klass = 'Citizen'
@@ -83,9 +76,7 @@ class PathSystemTests(unittest.TestCase):
 
             # Test Limit
             path = self.path_system.get_path(self.player_unit, goal, use_limit=True)
-            self.assertGreater(len(path), 0, 'path is empty')
-            self.assertNotEqual(path[0], goal, 'Somehow found the end')
-            self.assertEqual(path[-1], (1, 1), 'Did not start at the beginning')
+            self.assertEqual(len(path), 0, 'path is not empty')
 
             # Test ThetaStar
             path = self.path_system.get_path(self.player_unit, goal, free_movement=True)
@@ -99,8 +90,7 @@ class PathSystemTests(unittest.TestCase):
              patch('app.engine.objects.unit.UnitObject.movement_left', new_callable=PropertyMock) as movement_left_mock:
             movement_instance = movement_mock.return_value
             movement_instance.method.return_value = 5
-            mcost_instance = mcost_mock.return_value
-            mcost_instance.return_value = 1
+            mcost_mock.return_value = 1
             movement_left_mock.return_value = 5
 
             good_path = [(0, 0), (1, 0), (1, 1), (2, 1), (2, 2), (2, 3)]

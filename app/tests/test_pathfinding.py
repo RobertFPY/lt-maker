@@ -1,7 +1,5 @@
 import unittest
 
-import time
-
 from app.utilities.grid import BoundedGrid
 from app.engine.pathfinding import node, pathfinding
 
@@ -47,7 +45,6 @@ x   x   x   x   x   x   x   x   x
             x   x   x               
                 x                   
         """
-        start = time.time_ns() / 1e6
         # Testing the simple grid
         pathfinder = pathfinding.Djikstra((5, 5), self.simple_grid)
         can_move_through = lambda x: True
@@ -72,12 +69,7 @@ x   x   x   x   x   x   x   x   x
         self.assertNotIn((3, 6), valid_moves, 'Ignored wall')
         self.assertNotIn((3, 6), valid_moves, 'Ignored wall')
 
-        end = time.time_ns() / 1e6
-        print(f"\nTest Djikstra: {end - start} ms")
-
     def test_astar(self):
-        start = time.time_ns() / 1e6
-
         # Test the simple grid with no limit
         pathfinder = pathfinding.AStar((5, 5), None, self.simple_grid)
         pathfinder.set_goal_pos((1, 1))
@@ -106,12 +98,7 @@ x   x   x   x   x   x   x   x   x
         path = pathfinder.process(can_move_through, adj_good_enough=True)
         self.assertEqual(path[0], (7, 8), f'Did not find the best end: {path}')
 
-        end = time.time_ns() / 1e6
-        print(f"\nTest AStar: {end - start} ms")
-
     def test_thetastar(self):
-        start = time.time_ns() / 1e6
-
         # Test the simple grid
         pathfinder = pathfinding.ThetaStar((5, 5), (1, 1), self.simple_grid)
         can_move_through = lambda x: True
@@ -126,9 +113,6 @@ x   x   x   x   x   x   x   x   x
         self.assertEqual(path[0], (7, 7), 'Did not find the end')
         self.assertEqual(path[-1], (1, 7), 'Did not start at the beginning')
         self.assertEqual(len(path), 5, f'Longer path than necessary {path}')
-
-        end = time.time_ns() / 1e6
-        print(f"\nTest ThetaStar: {end - start} ms")
 
 if __name__ == '__main__':
     unittest.main()

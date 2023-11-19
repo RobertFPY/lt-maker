@@ -18,17 +18,12 @@ class TargetSystemUnitTests(unittest.TestCase):
         self.game = get_mock_game()
         self.target_system = self.create_target_system()
 
-        start = time.time_ns() / 1e6
-
         tilemap = MagicMock()
         tilemap.width = 29
         tilemap.height = 29
         self.game.board = GameBoard(tilemap)
         self.game.board.bounds = (0, 0, 28, 28)
         self.game.units = []
-
-        end = time.time_ns() / 1e6
-        print(f'\nBig Game Board creation: {end - start} ms')
 
         self.player_unit = UnitObject('player')         
         self.player_unit.team = 'player'
@@ -53,52 +48,29 @@ class TargetSystemUnitTests(unittest.TestCase):
 
     def create_target_system(self):
         return TargetSystem(game=self.game)
-    
-    def test_targets_in_range_adjacent(self):
-        """
-        An adjacent enemy should be a valid target
-        """
-        self.player_unit.position = (0, 0)
-        self.enemy_unit.position = (0, 1)
-        self.game.units.append(self.player_unit)
-        self.game.units.append(self.enemy_unit)
 
-        weapon = self.mock_weapon(self.enemy_unit.position, 1, 1)
-        
-        self.assertEqual(len(self.target_system.targets_in_range(self.player_unit, weapon)), 1)
+    def test_get_shell(self):
+        valid_moves = {(0, 0)}
+        potential_range = {5}
+        bounds = (0, 0, 10, 10)
+        # Used optionally
+        manhattan_restriction = {(x, y) for x in range(10) for y in range(10) if x == 0 or y == 0}
 
-    def test_targets_in_range_adjacent_ally(self):
-        """
-        An adjacent ally is not a valid target to attack
-        """
-        self.player_unit.position = (0, 0)
-        self.ally_unit.position = (0, 1)
-        self.game.units.append(self.player_unit)
-        self.game.units.append(self.ally_unit)
+        # Test basic shell
+        valid_positions = self.target_system.get_shell(valid_moves, potential_range, bounds)
+        self.assertNotIn((0, 0), valid_positions)
+        self.assertIn((0, 5), valid_positions)
+        self.assertIn((5, 0), valid_positions)
+        self.assertIn((4, 1), valid_positions)
+        self.assertNotIn((-5, 0), valid_positions)
 
-        weapon = self.mock_weapon(None, 1, 1)
-
-        self.assertEqual(len(self.target_system.targets_in_range(self.player_unit, weapon)), 0)
-
-    def test_targets_in_range_too_far(self):
-        """
-        This enemy is too far from the player's position
-        """
-        self.player_unit.position = (0, 0)
-        self.enemy_unit.position = (0, 3)
-        self.game.units.append(self.player_unit)
-        self.game.units.append(self.enemy_unit)
-
-        weapon = self.mock_weapon(self.enemy_unit.position, 1, 1)
-
-        self.assertEqual(len(self.target_system.targets_in_range(self.player_unit, weapon)), 0)
-
-    def _setup_board(self) -> list:
-        valid_moves = [(0, 2), (1, 1), (0, 1), (0, 0)]
-        self.game.board.unit_grid = [[self.player_unit], [self.enemy_unit], [], [], [], []]
-        self.game.board.team_grid = [['player'], ['enemy'], [], [], [], []]
-        self.game.board.height = 3
-        return valid_moves
+        # Test mnahattan restriction
+        valid_positions = self.target_system.get_shell(valid_moves, potential_range, bounds, manhattan_restriction)
+        self.assertNotIn((0, 0), valid_positions)
+        self.assertIn((0, 5), valid_positions)
+        self.assertIn((5, 0), valid_positions)
+        self.assertNotIn((4, 1), valid_positions)
+        self.assertNotIn((-5, 0), valid_positions)
 
     def test_get_possible_attack_positions(self):
         self.player_unit.position = (0, 0)
@@ -106,7 +78,7 @@ class TargetSystemUnitTests(unittest.TestCase):
         self.game.units.append(self.player_unit)
         self.game.units.append(self.enemy_unit)
 
-        valid_moves = self._setup_board()
+        valid_moves = [(0, 2), (1, 1), (0, 1), (0, 0)]
 
         weapon = self.mock_weapon(self.enemy_unit.position, 1, 1)
 
@@ -120,15 +92,81 @@ class TargetSystemUnitTests(unittest.TestCase):
         self.game.units.append(self.player_unit)
         self.game.units.append(self.enemy_unit)
 
-        valid_moves = self._setup_board()
+        valid_moves = [(0, 2), (1, 1), (0, 1), (0, 0)]
 
         weapon = self.mock_weapon(self.enemy_unit.position, 1, 1)
         eval_special_range = EvalSpecialRange(value='y > 0')
         weapon.components.append(eval_special_range)
 
         expected_positions = [(0, 0)]
-        self.assertEqual(self.target_system.get_possible_attack_positions(self.player_unit, (0, 1), valid_moves, weapon), expected_positions)
+        possible_positions = self.target_system.get_possible_attack_positions(self.player_unit, (0, 1), valid_moves, weapon)
+        self.assertEqual(possible_positions, expected_positions)
 
+    def test_get_attackable_positions(self):
+        self.player_unit.position = (1, 1)
+        weapon = self.mock_weapon(None, 1, 1)
+
+        valid_positions = self.target_system.get_attackable_positions(self.player_unit, weapon)
+        expected_positions = {(1, 0), (0, 1), (2, 1), (1, 2)}
+        self.assertEqual(valid_positions, expected_positions)
+
+        # Test with bounds
+        self.game.board.bounds = (1, 1, 27, 27)
+        valid_positions = self.target_system.get_attackable_positions(self.player_unit, weapon)
+        expected_positions = {(2, 1), (1, 2)}
+        self.assertEqual(valid_positions, expected_positions)
+
+    def test_get_attackable_positions_global_range(self):
+        self.player_unit.position = (1, 1)
+        weapon = self.mock_weapon(None, 1, 99)
+
+        valid_positions = self.target_system.get_attackable_positions(self.player_unit, weapon)
+
+        num_positions = (self.game.board.bounds[2] - self.game.board.bounds[0]) * (self.game.board.bounds[3] - self.game.board.bounds[1])
+        self.assertEqual(len(valid_positions), num_positions)
+
+    def test_targets_in_range_adjacent(self):
+        """
+        An adjacent enemy should be a valid target
+        """
+        self.player_unit.position = (0, 0)
+        self.enemy_unit.position = (0, 1)
+        self.game.units.append(self.player_unit)
+        self.game.units.append(self.enemy_unit)
+
+        weapon = self.mock_weapon(self.enemy_unit.position, 1, 1)
+        
+        targets = self.target_system.targets_in_range(self.player_unit, weapon)
+        self.assertEqual(len(targets), 1)
+        self.assertIn((0, 1), targets)
+
+    def test_targets_in_range_adjacent_ally(self):
+        """
+        An adjacent ally is not a valid target to attack
+        """
+        self.player_unit.position = (0, 0)
+        self.ally_unit.position = (0, 1)
+        self.game.units.append(self.player_unit)
+        self.game.units.append(self.ally_unit)
+
+        weapon = self.mock_weapon(None, 1, 1)
+
+        targets = self.target_system.targets_in_range(self.player_unit, weapon)
+        self.assertEqual(len(targets), 0)
+
+    def test_targets_in_range_too_far(self):
+        """
+        This enemy is too far from the player's position
+        """
+        self.player_unit.position = (0, 0)
+        self.enemy_unit.position = (0, 3)
+        self.game.units.append(self.player_unit)
+        self.game.units.append(self.enemy_unit)
+
+        weapon = self.mock_weapon(self.enemy_unit.position, 1, 1)
+
+        targets = self.target_system.targets_in_range(self.player_unit, weapon)
+        self.assertEqual(len(targets), 0)
 
 if __name__ == '__main__':
     unittest.main()

@@ -82,9 +82,9 @@ class RecentProjectDialog(SimpleDialog):
         self.open_other_button = QPushButton("Open other...", self)
         self.open_other_button.clicked.connect(self.on_click_open)
         button_layout.addWidget(self.open_other_button)
-        self.new_button = QPushButton("Create New...", self)
-        self.new_button.clicked.connect(self.on_click_new)
         if not load_only:
+            self.new_button = QPushButton("Create New...", self)
+            self.new_button.clicked.connect(self.on_click_new)
             button_layout.addWidget(self.new_button)
 
         layout.addWidget(self.project_table)

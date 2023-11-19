@@ -3511,18 +3511,7 @@ def parse_event_line(line: str) -> EventCommandTokens:
 
     while idx < len(sline):
         c = sline[idx]
-        if c in '\'"':
-            q_char = c
-            tokens[-1] += c
-            while peek() not in (EOF, q_char):
-                idx += 1
-                tokens[-1] += sline[idx]
-            if peek() == q_char:
-                idx += 1
-                tokens[-1] += sline[idx]
-            idx += 1
-            continue
-        elif c == bracket:
+        if c == bracket:
             bracket_nest += 1
         elif c == mirror_bracket(bracket):
             bracket_nest -= 1

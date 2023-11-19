@@ -294,10 +294,6 @@ class EventCommandUnitTests(unittest.TestCase):
         toks5 = event_commands.parse_event_line(command5)
         self.assertEqual(toks5.tokens, ['speak', 'Eirika ', EOL])
 
-        command6 = 'speak;Eirika;"; no new arg'
-        toks6 = event_commands.parse_event_line(command6)
-        self.assertEqual(toks6.tokens, ['speak', 'Eirika', '"; no new arg'])
-
         command7 = 'speak;Eirika;nested {c:wait;500};NumLines=1'
         toks7 = event_commands.parse_event_line(command7)
         self.assertEqual(toks7.tokens, ['speak', 'Eirika', 'nested {c:wait;500}', 'NumLines=1'])

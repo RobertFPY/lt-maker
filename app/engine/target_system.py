@@ -393,7 +393,6 @@ class TargetSystem():
         Returns:
             All valid attacks
         """
-        attackable_positions = self._get_all_attackable_positions(unit, valid_moves, items)
         all_valid_targets: Set[Pos] = set()
         for item in items:
             # Handle sequence items
@@ -401,14 +400,14 @@ class TargetSystem():
                 for subitem in item.subitems:
                     valid_targets = self._check_targets_from_position(unit, subitem)
                     if not valid_targets:
-                        return set()  # Sequence item has no good target, give up
-                # Give the player access to the target of the first subitem
-                all_valid_targets |= self._check_targets_from_position(unit, item.subitems[0])
+                        break  # Sequence item has no good target, give up
+                else:
+                    # Give the player access to the target of the first subitem
+                    all_valid_targets |= self._check_targets_from_position(unit, item.subitems[0])
             else:
                 all_valid_targets |= self._check_targets_from_position(unit, item)
 
-        valid_targets = attackable_positions.intersection(all_valid_targets)
-        return valid_targets
+        return all_valid_targets
 
     def _check_targets_from_position(self, unit: UnitObject, item: ItemObject) -> Set[Pos]:
         positions: Set[Pos] = set()
@@ -419,7 +418,17 @@ class TargetSystem():
                 splash = self._filter_splash_through_fog_of_war(unit, *splash)
             if item_system.target_restrict(unit, item, *splash):
                 positions.add(pos)
-        return positions
+
+        attackable_positions = self.get_attackable_positions(unit, item)
+        filtered_positions = attackable_positions & positions
+
+        # Make sure we have enough targets to satisfy the item
+        if not item_system.allow_same_target(unit, item) and \
+                not item_system.allow_less_than_max_targets(unit, item) and \
+                len(filtered_positions) < item_system.num_targets(unit, item):
+            return set()
+
+        return filtered_positions
 
     # === Item Filtering ===
     def get_weapons(self, unit: UnitObject) -> List[ItemObject]:

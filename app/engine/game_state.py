@@ -821,26 +821,29 @@ class GameState():
     def get_units_in_ai_group(self, ai_group_nid: NID) -> List[UnitObject]:
         return [unit for unit in self.get_all_units() if unit.ai_group == ai_group_nid]
 
-    def get_all_units(self) -> List[UnitObject]:
-        return [unit for unit in self.units if unit.position and not unit.dead and not unit.is_dying and 'Tile' not in unit.tags]
+    def get_all_units(self, only_on_field=True) -> List[UnitObject]:
+        if only_on_field:
+            return [unit for unit in self.units if unit.position and not unit.dead and not unit.is_dying and 'Tile' not in unit.tags]
+        else:
+            return self.units
 
-    def get_player_units(self) -> List[UnitObject]:
-        return [unit for unit in self.get_all_units() if unit.team == 'player']
+    def get_player_units(self, only_on_field=True) -> List[UnitObject]:
+        return [unit for unit in self.get_all_units(only_on_field) if unit.team == 'player']
 
-    def get_enemy_units(self) -> List[UnitObject]:
-        return [unit for unit in self.get_all_units() if unit.team in DB.teams.enemies]
+    def get_enemy_units(self, only_on_field=True) -> List[UnitObject]:
+        return [unit for unit in self.get_all_units(only_on_field) if unit.team in DB.teams.enemies]
 
-    def get_enemy1_units(self) -> List[UnitObject]:
-        return [unit for unit in self.get_all_units() if unit.team == 'enemy']
+    def get_enemy1_units(self, only_on_field=True) -> List[UnitObject]:
+        return [unit for unit in self.get_all_units(only_on_field) if unit.team == 'enemy']
 
-    def get_enemy2_units(self) -> List[UnitObject]:
-        return [unit for unit in self.get_all_units() if unit.team == 'enemy2']
+    def get_enemy2_units(self, only_on_field=True) -> List[UnitObject]:
+        return [unit for unit in self.get_all_units(only_on_field) if unit.team == 'enemy2']
 
-    def get_other_units(self) -> List[UnitObject]:
-        return [unit for unit in self.get_all_units() if unit.team == 'other']
+    def get_other_units(self, only_on_field=True) -> List[UnitObject]:
+        return [unit for unit in self.get_all_units(only_on_field) if unit.team == 'other']
 
-    def get_team_units(self, team: str) -> List[UnitObject]:
-        return [unit for unit in self.get_all_units() if unit.team == team]
+    def get_team_units(self, team: str, only_on_field=True) -> List[UnitObject]:
+        return [unit for unit in self.get_all_units(only_on_field) if unit.team == team]
 
     def get_travelers(self) -> List[UnitObject]:
         return [self.get_unit(unit.traveler) for unit in self.get_all_units() if unit.traveler]

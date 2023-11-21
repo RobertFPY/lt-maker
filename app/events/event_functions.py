@@ -931,7 +931,7 @@ def make_generic(self: Event, nid, klass, level, team, ai=None, faction=None, an
 
     if assign_unit:
         self.created_unit = new_unit
-        self.text_evaluator.created_unit = new_unit
+        self.text_evaluator.local_args['created_unit'] = new_unit
 
 def create_unit(self: Event, unit, nid=None, level=None, position=None, entry_type=None, placement=None, flags=None):
     flags = flags or set()

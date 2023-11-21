@@ -135,26 +135,32 @@ class UsesOptions(ItemComponent):
     desc = 'Additional options for uses'
     tag = ItemTags.HIDDEN
 
-    expose = ComponentType.MultipleOptions
+    expose = ComponentType.NewMultipleOptions
 
-    value = [
-        ['LoseUsesOnMiss (T/F)', 'F', 'Lose uses even on miss'],
-        ['OneLossPerCombat (T/F)', 'F', "Doubling doesn't cost extra uses"]
-    ]
+    options = {
+        'lose_uses_on_miss': ComponentType.Bool,
+        'one_loss_per_combat': ComponentType.Bool
+    }
 
-    @property
-    def values(self) -> Dict[str, str]:
-        return {value[0]: value[1] for value in self.value}
+    def __init__(self, value=None):
+        self.value = {
+            'lose_uses_on_miss': False,
+            'one_loss_per_combat': False
+        }
+        if value and isinstance(value, dict):
+            self.value.update(value)
+        else: # value is a list from the old multiple options
+            try:
+                self.value['lose_uses_on_miss'] = value[0][1] == 'T'
+                self.value['one_loss_per_combat'] = value[1][1] == 'T'
+            except:
+                pass
 
     def lose_uses_on_miss(self) -> bool:
-        if self.values['LoseUsesOnMiss (T/F)'] == 'F':
-            return False
-        return True
+        return self.value.get('lose_uses_on_miss', False)
 
     def one_loss_per_combat(self) -> bool:
-        if self.values.get('OneLossPerCombat (T/F)', 'F') == 'T':
-            return True
-        return False
+        return self.value.get('one_loss_per_combat', False)
 
 class HPCost(ItemComponent):
     nid = 'hp_cost'

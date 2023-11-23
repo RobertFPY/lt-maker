@@ -71,7 +71,7 @@ def get_objs_using(objs: list, expose: ComponentType | Tuple[ComponentType, Comp
             if component.expose == expose and component.value == value:
                 affected_items.append(obj)
             elif isinstance(component.expose, tuple) and component.expose[1] == expose and \
-                    _check(obj, component.expose, component.value):
+                    _check(component.expose, component.value):
                 affected_items.append(obj)
             elif component.expose == ComponentType.NewMultipleOptions:
                 for key, expose_type in component.options.items():
@@ -79,7 +79,7 @@ def get_objs_using(objs: list, expose: ComponentType | Tuple[ComponentType, Comp
                         affected_items.append(obj)
                         break
                     elif isinstance(expose_type, tuple) and expose_type[1] == expose and \
-                            _check(obj, expose_type, component.value[key]):
+                            _check(expose_type, component.value[key]):
                         affected_items.append(obj)
                         break
 

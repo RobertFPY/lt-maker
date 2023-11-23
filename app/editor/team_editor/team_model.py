@@ -3,13 +3,10 @@ from PyQt5.QtCore import Qt
 from app.utilities.data import Data
 from app.data.database.database import DB
 
-from app.extensions.custom_gui import DeletionDialog
+from app.extensions.custom_gui import DeletionTab, DeletionDialog
 
 from app.editor.custom_widgets import TeamBox
 from app.editor.base_database_gui import DragDropCollectionModel
-from app.utilities import str_utils
-
-from app.data.database import teams
 
 class TeamModel(DragDropCollectionModel):
     def data(self, index, role):
@@ -30,16 +27,21 @@ class TeamModel(DragDropCollectionModel):
         nid = team.nid
         affected_ais = [ai for ai in DB.ai if ai.has_unit_spec("Team", nid)]
         affected_levels = [level for level in DB.levels if any(unit.team == nid for unit in level.units)]
+
+        deletion_tabs = []
         if affected_ais:
-            affected = Data(affected_ais)
             from app.editor.ai_editor.ai_model import AIModel
             model = AIModel
-        elif affected_levels:
-            affected = Data(affected_levels)
+            msg = "Deleting Team <b>%s</b> would affect these objects" % nid
+            deletion_tabs.append(DeletionTab(affected_ais, model, msg, "AIs"))
+        if affected_levels:
             from app.editor.global_editor.level_menu import LevelModel
             model = LevelModel
-            msg = "Deleting Team <b>%s</b> would affect these objects" % nid
-            swap, ok = DeletionDialog.get_swap(affected, model, msg, TeamBox(self.window, exclude=team), self.window)
+            msg = "Deleting Team <b>%s</b> would affect units in these levels" % nid
+            deletion_tabs.append(DeletionTab(affected_levels, model, msg, "Levels"))
+
+        if deletion_tabs:
+            swap, ok = DeletionDialog.get_swap(deletion_tabs, TeamBox(self.window, exclude=team), self.window)
             if ok:
                 self.on_nid_changed(nid, swap.nid)
             else:

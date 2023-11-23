@@ -8,7 +8,7 @@ from app.utilities import utils
 from app.utilities.data import Data
 
 from app.data.resources.combat_palettes import Palette
-from app.extensions.custom_gui import DeletionDialog
+from app.extensions.custom_gui import DeletionTab, DeletionDialog
 from app.editor.base_database_gui import DragDropCollectionModel
 from app.utilities import str_utils
 
@@ -60,11 +60,11 @@ class PaletteModel(DragDropCollectionModel):
         nid = res.nid
         affected_combat_anims = [anim for anim in RESOURCES.combat_anims if nid in anim.palettes]
         if affected_combat_anims:
-            affected = Data(affected_combat_anims)
             from app.editor.combat_animation_editor.combat_animation_model import CombatAnimationModel
             model = CombatAnimationModel
             msg = "Deleting Palette <b>%s</b> would affect these combat animations."
-            ok = DeletionDialog.inform(affected, model, msg, self.window)
+            deletion_tab = DeletionTab(affected_combat_anims, model, msg, "Combat Animations")
+            ok = DeletionDialog.inform([deletion_tab], self.window)
             if ok:
                 pass
             else:

@@ -13,7 +13,7 @@ from app.data.resources.resources import RESOURCES
 from app.utilities.data import Data
 from app.data.database.database import DB
 
-from app.extensions.custom_gui import DeletionDialog
+from app.extensions.custom_gui import DeletionTab, DeletionDialog
 from app.editor.base_database_gui import ResourceCollectionModel
 from app.editor.settings import MainSettingsController
 from app.utilities import str_utils
@@ -129,13 +129,14 @@ class PortraitModel(ResourceCollectionModel):
         nid = res.nid
         affected_units = [unit for unit in DB.units if unit.portrait_nid == nid]
         if affected_units:
-            affected = Data(affected_units)
             from app.editor.unit_editor.unit_model import UnitModel
             model = UnitModel
             msg = "Deleting Portrait <b>%s</b> would affect these units." % nid
-            ok = DeletionDialog.inform(affected, model, msg, self.window)
+            deletion_tab = DeletionTab(affected_units, model, msg, "Units")
+            ok = DeletionDialog.inform([deletion_tab], self.window)
             if ok:
-                pass
+                for unit in affected_units:
+                    unit.portrait_nid = None
             else:
                 return
         super().delete(idx)

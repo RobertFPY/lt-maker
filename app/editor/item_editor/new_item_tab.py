@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import QFileDialog
 from app.utilities.data import Data
 
 import app.engine.item_component_access as ICA
+from app.data.database import item_components, skill_components
 from app.data.database.items import ItemCatalog, ItemPrefab
 from app.data.database.components import swap_values, ComponentType
 from app.editor import timer
@@ -17,7 +18,7 @@ from app.editor.item_editor import item_import, item_model
 from app.editor.component_editor_properties import NewComponentProperties
 from app.editor.settings.main_settings_controller import MainSettingsController
 from app.editor.component_object_editor import ComponentObjectEditor
-from app.extensions.custom_gui import DeletionDialog
+from app.extensions.custom_gui import DeletionTab, DeletionDialog
 from app.editor.custom_widgets import ItemBox
 
 from app.utilities.typing import NID
@@ -58,17 +59,33 @@ class NewItemDatabase(ComponentObjectEditor):
         item = self.data.get(nid)
         affected_units = [unit for unit in self._db.units if nid in unit.get_items()]
         affected_levels = [level for level in self._db.levels if any(nid in unit.get_items() for unit in level.units)]
-        if affected_units or affected_levels:
-            if affected_units:
-                affected = Data(affected_units)
-                from app.editor.unit_editor.unit_model import UnitModel
-                model = UnitModel
-            elif affected_levels:
-                affected = Data(affected_levels)
-                from app.editor.global_editor.level_menu import LevelModel
-                model = LevelModel
-            msg = "Deleting Item <b>%s</b> would affect these objects." % nid
-            swap, ok = DeletionDialog.get_swap(affected, model, msg, ItemBox(self.window, exclude=item), self.window)
+        affected_items = item_components.get_items_using(ComponentType.Item, nid, self._db)
+        affected_skills = skill_components.get_skills_using(ComponentType.Item, nid, self._db)
+
+        deletion_tabs = []
+        if affected_units:
+            from app.editor.unit_editor.unit_model import UnitModel
+            model = UnitModel
+            msg = "Deleting Item <b>%s</b> would affect these units." % nid
+            deletion_tabs.append(DeletionTab(affected_units, model, msg, "Units"))
+        if affected_levels:
+            from app.editor.global_editor.level_menu import LevelModel
+            model = LevelModel
+            msg = "Deleting Item <b>%s</b> would affect units in these levels." % nid
+            deletion_tabs.append(DeletionTab(affected_levels, model, msg, "Levels"))
+        if affected_items:
+            from app.editor.item_editor.item_model import ItemModel
+            model = ItemModel
+            msg = "Deleting Item <b>%s</b> would affect these items" % nid
+            deletion_tabs.append(DeletionTab(affected_items, model, msg, "Items"))
+        if affected_skills:
+            from app.editor.item_editor.item_model import SkillModel
+            model = SkillModel
+            msg = "Deleting Item <b>%s</b> would affect these skills" % nid
+            deletion_tabs.append(DeletionTab(affected_skills, model, msg, "Skills"))
+
+        if deletion_tabs:
+            swap, ok = DeletionDialog.get_swap(deletion_tabs, ItemBox(self.window, exclude=item), self.window)
             if ok:
                 self._on_nid_changed(nid, swap.nid)
             else:

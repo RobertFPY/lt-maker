@@ -376,6 +376,7 @@ class PrimaryAI():
         self.target_index = 0
 
         self.valid_moves = list(valid_moves)
+        logging.debug(f"Valid Moves: {self.valid_moves}")
 
         self.best_target = None
         self.best_position = None

@@ -373,6 +373,8 @@ class TargetSystem():
     def get_all_valid_targets(self, unit: UnitObject, valid_moves: List[Pos],
                               items: List[ItemObject]) -> Set[Pos]:
         """Returns all valid targets of a unit from any of their valid moves with any of their items.
+
+        Only used by ai_controller.py
         
         Considers fog of war as well as targeting restrictions in addition to the usual 
         item's range, any positional restrictions, and game board bounds.
@@ -419,16 +421,13 @@ class TargetSystem():
             if item_system.target_restrict(unit, item, *splash):
                 positions.add(pos)
 
-        attackable_positions = self.get_attackable_positions(unit, item)
-        filtered_positions = attackable_positions & positions
-
         # Make sure we have enough targets to satisfy the item
         if not item_system.allow_same_target(unit, item) and \
                 not item_system.allow_less_than_max_targets(unit, item) and \
-                len(filtered_positions) < item_system.num_targets(unit, item):
+                len(positions) < item_system.num_targets(unit, item):
             return set()
 
-        return filtered_positions
+        return positions
 
     # === Item Filtering ===
     def get_weapons(self, unit: UnitObject) -> List[ItemObject]:
@@ -439,7 +438,10 @@ class TargetSystem():
 
     def get_all_weapon_targets(self, unit: UnitObject) -> Set[Pos]:
         weapons: List[ItemObject] = self._get_all_weapons(unit)
-        return self.get_all_valid_targets(unit, [unit.position], weapons)
+        targets = set()
+        for weapon in weapons:
+            targets |= self.get_valid_targets_recursive_with_availability_check(unit, weapon)
+        return targets
 
     def get_spells(self, unit: UnitObject) -> List[ItemObject]:
         return [item for item in unit.items if item_funcs.is_spell_recursive(unit, item) and item_funcs.available(unit, item)]
@@ -449,7 +451,10 @@ class TargetSystem():
 
     def get_all_spell_targets(self, unit: UnitObject) -> Set[Pos]:
         spells: List[ItemObject] = self._get_all_spells(unit)
-        return self.get_all_valid_targets(unit, [unit.position], spells)
+        targets = set()
+        for spell in spells:
+            targets |= self.get_valid_targets_recursive_with_availability_check(unit, spell)
+        return targets
 
     # === PAIRUP ===
     def find_strike_partners(self, attacker, defender, item):

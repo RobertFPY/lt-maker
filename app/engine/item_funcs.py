@@ -226,6 +226,11 @@ def get_range_string(unit, item):
         rng = '%d' % max_range
     return rng
 
+def get_max_range(unit: UnitObject) -> int:
+    """Returns the maximum range of all available items for the unit"""
+    items = [item for item in get_all_items(unit) if available(unit, item)]
+    return max([max(get_range(unit, item), default=0) for item in items], default=0)
+
 def create_skill(unit, skill_nid):
     skill_prefab = DB.skills.get(skill_nid)
     if not skill_prefab:

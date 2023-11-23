@@ -151,7 +151,9 @@ class UnlockStaff(ItemComponent):
         return position, []
 
     def target_restrict(self, unit, item, def_pos, splash) -> bool:
-        for pos in [def_pos] + splash:
+        positions = [def_pos] if def_pos else []
+        positions += splash
+        for pos in positions:
             for region in game.level.regions:
                 if self._valid_region(region) and region.contains(def_pos):
                     return True

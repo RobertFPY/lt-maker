@@ -46,7 +46,7 @@ def get_support_rank_bonus(unit, target=None):
             continue
         if target and target.position:
             # Unit and other unit can both attack target
-            if target.position in game.target_system.get_attacks(other_unit, force=True):
+            if target.position in game.target_system.get_attackable_positions(other_unit, force=True):
                 pass
             else:
                 continue

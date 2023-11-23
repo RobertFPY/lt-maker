@@ -668,7 +668,7 @@ class MoveState(MapState):
             cur_unit.lead_unit = True
 
         if cur_unit.has_traded:
-            self.valid_moves = game.target_system.get_valid_moves(cur_unit)
+            self.valid_moves = game.path_system.get_valid_moves(cur_unit)
             game.highlight.display_moves(self.valid_moves, light=False)
         else:
             self.valid_moves = game.highlight.display_highlights(cur_unit)
@@ -719,7 +719,7 @@ class MoveState(MapState):
                 if game.board.in_vision(game.cursor.position) and game.board.get_unit(game.cursor.position):
                     get_sound_thread().play_sfx('Error')
                 else:
-                    normal_moves = game.target_system.get_valid_moves(cur_unit, witch_warp=False)
+                    normal_moves = game.path_system.get_valid_moves(cur_unit, witch_warp=False)
                     witch_warp = set(skill_system.witch_warp(cur_unit))
                     if cur_unit.has_attacked or cur_unit.has_traded:
                         if game.cursor.position in witch_warp and game.cursor.position not in normal_moves:
@@ -930,7 +930,7 @@ class MenuState(MapState):
         if skill_system.has_canto(self.cur_unit, self.cur_unit):
             # Shows the canto moves in the menu
             action.do(action.SetMovementLeft(self.cur_unit, skill_system.canto_movement(self.cur_unit, self.cur_unit)))
-            moves = game.target_system.get_valid_moves(self.cur_unit)
+            moves = game.path_system.get_valid_moves(self.cur_unit)
             game.highlight.display_moves(moves)
         game.highlight.display_aura_highlights(self.cur_unit)
         self.menu = menus.Choice(self.cur_unit, options, info=info_descs)
@@ -1485,7 +1485,7 @@ class WeaponChoiceState(MapState):
         return options
 
     def disp_attacks(self, unit, item):
-        valid_attacks = game.target_system.get_attacks(unit, item)
+        valid_attacks = game.target_system.get_attackable_positions(unit, item)
         game.highlight.display_possible_attacks(valid_attacks)
 
     def start(self):
@@ -1619,7 +1619,7 @@ class SpellChoiceState(WeaponChoiceState):
         return options
 
     def disp_attacks(self, unit, item):
-        spell_attacks = game.target_system.get_attacks(unit, item)
+        spell_attacks = game.target_system.get_attackable_positions(unit, item)
         game.highlight.display_possible_spell_attacks(spell_attacks)
 
     def take_input(self, event):
@@ -2003,7 +2003,7 @@ class CombatTargetingState(MapState):
     def display_single_attack(self):
         game.highlight.remove_highlights()
         splash_positions = item_system.splash_positions(self.cur_unit, self.item, game.cursor.position)
-        valid_attacks = game.target_system.get_attacks(self.cur_unit, self.item)
+        valid_attacks = game.target_system.get_attackable_positions(self.cur_unit, self.item)
         if item_system.is_spell(self.cur_unit, self.item):
             game.highlight.display_possible_spell_attacks(valid_attacks, light=True)
             game.highlight.display_possible_spell_attacks(splash_positions)

@@ -1072,7 +1072,7 @@ def move_unit(self: Event, unit, position=None, movement_type=None, placement=No
     elif movement_type == 'fade':
         action.do(action.FadeMove(unit, position))
     elif movement_type == 'normal':
-        path = self.game.target_system.get_path(unit, position)
+        path = self.game.path_system.get_path(unit, position)
         if path:
             if self.do_skip:
                 action.do(action.Teleport(unit, position))

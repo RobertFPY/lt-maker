@@ -127,7 +127,7 @@ class BoundaryInterface():
         self.should_reset_aura_surf = True
 
     def _add_unit(self, unit):
-        valid_moves = game.target_system.get_valid_moves(unit, force=True)
+        valid_moves = game.path_system.get_valid_moves(unit, force=True)
 
         if DB.constants.value('zero_move') and unit.get_ai() and not game.ai_group_active(unit.ai_group):
             ai_prefab = DB.ai.get(unit.get_ai())
@@ -135,8 +135,8 @@ class BoundaryInterface():
             if guard:
                 valid_moves = {unit.position}
 
-        valid_attacks = game.target_system.get_possible_attacks(unit, valid_moves)
-        valid_spells = game.target_system.get_possible_spell_attacks(unit, valid_moves)
+        valid_attacks = game.target_system.get_all_attackable_positions_weapons(unit, valid_moves)
+        valid_spells = game.target_system.get_all_attackable_positions_spells(unit, valid_moves)
         self._set(valid_attacks, 'attack', unit.nid)
         self._set(valid_spells, 'spell', unit.nid)
 

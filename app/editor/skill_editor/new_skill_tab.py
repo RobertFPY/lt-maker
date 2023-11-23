@@ -7,14 +7,12 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QFileDialog
 from app.editor.settings.main_settings_controller import MainSettingsController
 
-from app.utilities.data import Data
-
 import app.engine.skill_component_access as SCA
 from app.data.database.skills import SkillCatalog, SkillPrefab
 from app.data.database import item_components, skill_components
 from app.data.database.components import swap_values, ComponentType
 from app.editor import timer
-from app.editor.component_object_editor import ComponentObjectEditor
+from app.editor.new_editor_tab import NewEditorTab
 from app.editor.data_editor import SingleDatabaseEditor
 from app.editor.component_editor_properties import NewComponentProperties
 from app.editor.skill_editor import skill_model, skill_import
@@ -31,7 +29,7 @@ class NewSkillProperties(NewComponentProperties[SkillPrefab]):
     get_tags = staticmethod(SCA.get_skill_tags)
 
 
-class NewSkillDatabase(ComponentObjectEditor):
+class NewSkillDatabase(NewEditorTab):
     catalog_type = SkillCatalog
     properties_type = NewSkillProperties
 

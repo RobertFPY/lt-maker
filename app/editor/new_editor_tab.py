@@ -2,31 +2,36 @@ from __future__ import annotations
 
 import json
 import logging
-import os
-from typing import Dict, Generic, List, Optional, Type, TypeVar
+from typing import Generic, List, Optional, Type, TypeVar
 
-from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import (QApplication, QGridLayout, QHBoxLayout,
+from PyQt5.QtWidgets import (QGridLayout, QHBoxLayout,
                              QMessageBox, QPushButton, QSplitter, QVBoxLayout,
-                             QWidget)
+                             QWidget, QApplication)
 
-from app.data.category import Categories, CategorizedCatalog
 from app.data.database.database import DB, Database
-from app.editor.component_editor_properties import NewComponentProperties
+from app.data.category import Categories, CategorizedCatalog
+from app.editor import timer
+from app.editor.data_editor import SingleDatabaseEditor
 from app.editor.lib.components.nested_list import LTNestedList
 from app.utilities import str_utils
 from app.utilities.typing import NID
 
 T = TypeVar('T', bound=CategorizedCatalog)
 
-class ComponentObjectEditor(QWidget, Generic[T]):
-    catalog_type: Type[T]
-    properties_type: NewComponentProperties
+class NewEditorTab(QWidget, Generic[T]):
+    """
+    Used as a generic base class for NewXDatabases
+    """
+    # Make sure you define these
+    catalog_type: Type[T] = None
+    properties_type = None 
+    allow_import_from_xml = False
+    allow_import_from_csv = False
+    allow_copy_and_paste = False
 
     def __init__(self, parent, database: Database) -> None:
         QWidget.__init__(self, parent)
-        self.window = parent
         self._db = database
         self.categories = self.data.categories
 
@@ -42,20 +47,28 @@ class ComponentObjectEditor(QWidget, Generic[T]):
 
         button_frame = QWidget()
         button_frame_layout = QGridLayout(button_frame)
-        import_csv_button = QPushButton("Import .csv")
-        import_csv_button.clicked.connect(self.import_csv)
-        button_frame_layout.addWidget(import_csv_button, 0, 0, 1, 4)
-        import_xml_button = QPushButton("Import .xml")
-        import_xml_button.clicked.connect(self.import_xml)
-        button_frame_layout.addWidget(import_xml_button, 1, 0, 1, 4)
-        copy_to_clipboard_button = QPushButton("Copy to clipboard")
-        copy_to_clipboard_button.clicked.connect(self.copy_to_clipboard)
-        button_frame_layout.addWidget(copy_to_clipboard_button, 2, 0, 1, 2)
-        paste_from_clipboard_button = QPushButton("Paste from clipboard")
-        paste_from_clipboard_button.clicked.connect(self.paste_from_clipboard)
-        button_frame_layout.addWidget(paste_from_clipboard_button, 2, 2, 1, 2)
+        
+        if self.allow_import_from_csv:
+            import_csv_button = QPushButton("Import .csv")
+            import_csv_button.clicked.connect(self.import_csv)
+            button_frame_layout.addWidget(import_csv_button, 0, 0, 1, 4)
+
+        if self.allow_import_from_xml:
+            import_xml_button = QPushButton("Import .xml")
+            import_xml_button.clicked.connect(self.import_xml)
+            button_frame_layout.addWidget(import_xml_button, 1, 0, 1, 4)
+
+        if self.allow_copy_and_paste:
+            copy_to_clipboard_button = QPushButton("Copy to clipboard")
+            copy_to_clipboard_button.clicked.connect(self.copy_to_clipboard)
+            button_frame_layout.addWidget(copy_to_clipboard_button, 2, 0, 1, 2)
+            paste_from_clipboard_button = QPushButton("Paste from clipboard")
+            paste_from_clipboard_button.clicked.connect(self.paste_from_clipboard)
+            button_frame_layout.addWidget(paste_from_clipboard_button, 2, 2, 1, 2)
+
         left_frame_layout.addWidget(button_frame)
-        self.right_frame = self.properties_type(self, None, self.attempt_change_nid, lambda: self.tree_list.regenerate_icons(initial_generation=True))
+        self.right_frame = self.properties_type(self, None, self.attempt_change_nid,
+                                                lambda: self.tree_list.regenerate_icons(initial_generation=True))
         self.splitter = QSplitter(self)
         self.splitter.setChildrenCollapsible(False)
         self.splitter.addWidget(self.left_frame)
@@ -68,22 +81,13 @@ class ComponentObjectEditor(QWidget, Generic[T]):
 
         self._layout.addWidget(self.splitter)
 
-    @property
-    def data(self) -> T:
-        raise NotImplementedError("This class must be extended and this method overriden.")
-
     @classmethod
     def edit(cls, parent=None):
-        raise NotImplementedError("This class must be extended and this method overriden.")
-
-    def get_icon(self, nid) -> Optional[QIcon]:
-        raise NotImplementedError("This class must be extended and this method overriden.")
-
-    def import_csv(self):
-        raise NotImplementedError("This class must be extended and this method overriden.")
-
-    def import_xml(self):
-        raise NotImplementedError("This class must be extended and this method overriden.")
+        timer.get_timer().stop_for_editor()  # Don't need these while running game
+        window = SingleDatabaseEditor(cls, parent)
+        window.exec_()
+        timer.get_timer().start_for_editor()
+        return window
 
     def reset(self):
         self.tree_list.reset(self.data.keys(), self.categories)
@@ -101,13 +105,6 @@ class ComponentObjectEditor(QWidget, Generic[T]):
         self.tree_list.update_nid(old_nid, new_nid)
         self.tree_list.on_filter_changed(self.tree_list.search_box.text())
         return True
-
-    def _on_nid_changed(self, old_nid: NID, new_nid: NID) -> None:
-        """
-        Handles updating other objects in the engine with this nid change
-        Should be implemented in the child class
-        """
-        raise NotImplementedError
 
     def on_select(self, entry_nid: Optional[NID]):
         if not entry_nid:
@@ -128,14 +125,6 @@ class ComponentObjectEditor(QWidget, Generic[T]):
             self.data.remove_key(nid)
             return True
         return False
-
-    def _on_delete(self, nid: NID) -> bool:
-        """
-        Handles updating other objects in the engine with this deletion
-        Returns whether the user wants to proceed with the deletion
-        Should be implemented in the child class
-        """
-        raise NotImplementedError
 
     def create_new(self, nid):
         if self.data.get(nid):
@@ -185,11 +174,39 @@ class ComponentObjectEditor(QWidget, Generic[T]):
             logging.warning("Could not read from clipboard! %s" % e)
             QMessageBox.critical(self, "Import Error", "Could not read valid json from clipboard!")
 
-    # @todo(mag) fix the unit tab (which is the only time this callback is used forcibly in data_editor.py) and remove this
-    def on_tab_close(self):
-        pass
-
     @classmethod
     def create(cls, parent=None, db=None):
         db = db or DB
         return cls(parent, db)
+
+    @property
+    def data(self):
+        raise NotImplementedError
+
+    def get_icon(self, unit_nid: NID) -> Optional[QIcon]:
+        raise NotImplementedError
+
+    def import_xml(self):
+        raise NotImplementedError
+
+    def import_csv(self):
+        raise NotImplementedError
+
+    def _on_nid_changed(self, old_nid: NID, new_nid: NID):
+        """
+        Handles updating other objects in the engine with this nid change
+        Should be implemented in the child class
+        """
+        raise NotImplementedError
+
+    def _on_delete(self, nid: NID) -> bool:
+        """
+        Handles updating other objects in the engine with this deletion
+        Returns whether the user wants to proceed with the deletion
+        Should be implemented in the child class
+        """
+        raise NotImplementedError
+
+    # @todo(mag) fix the unit tab (which is the only time this callback is used forcibly in data_editor.py) and remove this
+    def on_tab_close(self):
+        pass

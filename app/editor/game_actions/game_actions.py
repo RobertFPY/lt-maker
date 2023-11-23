@@ -16,7 +16,7 @@ def handle_exception(e: Exception):
         # error in python eventing
         msg = "Engine crashed. \nException occurred during event execution:\n" + str(e)
     else:
-        msg = "Engine crashed. \nFor more detailed logs, please read debug.log.1 in the saves/ directory.\n" + traceback.format_exc()
+        msg = "Engine crashed. \nFor more detailed logs, please click Logs in the Help menu.\n" + traceback.format_exc()
     settings = MainSettingsController()
     if settings.get_should_display_crash_logs():
         error_msg = QMessageBox()

@@ -49,6 +49,9 @@ class Event():
 
         self.trigger = trigger
         event_args = trigger.to_args()
+        # alias
+        if 'unit1' in event_args:
+            event_args['unit'] = event_args['unit1']
         self.unit = event_args.get('unit1', None)
         self.unit2 = event_args.get('unit2', None)
         self.created_unit = None
@@ -594,8 +597,6 @@ class Event():
                 position = tuple(float(_) for _ in text.split(','))
             else:
                 position = tuple(int(_) for _ in text.split(','))
-        elif text == '{position}':
-            position = self.position
         elif not self.game.is_displaying_overworld() and self._get_unit(text):
             unit = self._get_unit(text)
             if unit.position:
@@ -616,14 +617,7 @@ class Event():
         return position
 
     def _get_unit(self, text) -> UnitObject:
-        if text in ('{unit}', '{unit1}'):
-            return self.unit
-        elif text == '{unit2}':
-            return self.unit2
-        elif text == '{created_unit}':
-            return self.created_unit
-        else:
-            return self.game.get_unit(text)
+        return self.game.get_unit(text)
 
     def _get_overworld_location_of_object(self, text, entity_only=False, node_only=False) -> OverworldNodeObject:
         if self.game.overworld_controller:

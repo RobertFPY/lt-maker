@@ -11,7 +11,7 @@ from app.utilities.data import Data
 from app.data.database.database import DB
 from app.data.resources.default_palettes import default_palettes
 
-from app.extensions.custom_gui import DeletionDialog
+from app.extensions.custom_gui import DeletionTab, DeletionDialog
 from app.editor.settings import MainSettingsController
 from app.editor.base_database_gui import ResourceCollectionModel
 import app.editor.utilities as editor_utilities
@@ -160,13 +160,14 @@ class MapSpriteModel(ResourceCollectionModel):
         nid = res.nid
         affected_classes = [klass for klass in DB.classes if nid == klass.map_sprite_nid]
         if affected_classes:
-            affected = Data(affected_classes)
             from app.editor.class_editor.class_model import ClassModel
             model = ClassModel
             msg = "Deleting Map Sprite <b>%s</b> would affect these classes." % nid
-            ok = DeletionDialog.inform(affected, model, msg, self.window)
+            deletion_tab = DeletionTab(affected_classes, model, msg, "Classes")
+            ok = DeletionDialog.inform([deletion_tab], self.window)
             if ok:
-                pass
+                for klass in affected_classes:
+                    klass.map_sprite_nid = None
             else:
                 return
         # Delete watchers

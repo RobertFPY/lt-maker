@@ -6,7 +6,7 @@ from app.utilities.data import Data
 from app.data.database.database import DB
 from app.data.database.level_units import UniqueUnit
 
-from app.extensions.custom_gui import DeletionDialog
+from app.extensions.custom_gui import DeletionTab, DeletionDialog
 
 from app.editor.base_database_gui import DragDropCollectionModel
 import app.editor.utilities as editor_utilities
@@ -47,20 +47,23 @@ class UnitModel(DragDropCollectionModel):
         # check to make sure nothing else is using me!!!
         unit = self._data[idx]
         nid = unit.nid
-        affected = None
         affected_ais = [ai for ai in DB.ai if ai.has_unit_spec("ID", nid)]
         affected_levels = [level for level in DB.levels if any(isinstance(unit, UniqueUnit) and unit.nid == nid for unit in level.units)]
+
+        deletion_tabs = []
         if affected_ais:
-            affected = Data(affected_ais)
             from app.editor.ai_editor.ai_model import AIModel
             model = AIModel
-        elif affected_levels:
-            affected = Data(affected_levels)
+            msg = "Deleting Unit <b>%s</b> would affect these AIs" % nid
+            deletion_tabs.append(DeletionTab(affected_ais, model, msg, "AIs"))
+        if affected_levels:
             from app.editor.global_editor.level_menu import LevelModel
             model = LevelModel
-        if affected:
-            msg = "Deleting Unit <b>%s</b> would affect these objects" % nid
-            ok = DeletionDialog.inform(affected, model, msg, self.window)
+            msg = "Deleting Unit <b>%s</b> would affect these levels" % nid
+            deletion_tabs.append(DeletionTab(affected_levels, model, msg, "Levels"))
+
+        if deletion_tabs:
+            ok = DeletionDialog.inform(deletion_tabs, self.window)
             if ok:
                 self.on_delete(nid)
             else:

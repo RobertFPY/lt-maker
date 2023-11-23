@@ -1,7 +1,6 @@
-from app.utilities.data import Data
 from app.data.database.database import DB
 
-from app.extensions.custom_gui import DeletionDialog, PropertyBox, ComboBox
+from app.extensions.custom_gui import DeletionTab, DeletionDialog, PropertyBox, ComboBox
 from app.extensions.list_dialogs import MultiAttrListDialog
 from app.extensions.list_models import MultiAttrListModel
 
@@ -10,20 +9,23 @@ class TagMultiModel(MultiAttrListModel):
         element = DB.tags[idx]
         affected_units = [unit for unit in DB.units if element.nid in unit.tags]
         affected_classes = [k for k in DB.classes if element.nid in k.tags]
-        if affected_units or affected_classes:
-            if affected_units:
-                affected = Data(affected_units)
-                from app.editor.unit_editor.unit_model import UnitModel
-                model = UnitModel
-            elif affected_classes:
-                affected = Data(affected_classes)
-                from app.editor.class_editor.class_model import ClassModel
-                model = ClassModel
-            msg = "Deleting Tag <b>%s</b> would affected these items" % element.nid
+        deletion_tabs = []
+        if affected_units:
+            from app.editor.unit_editor.unit_model import UnitModel
+            model = UnitModel
+            msg = "Deleting Tag <b>%s</b> would affected these units" % element.nid
+            deletion_tabs.append(DeletionTab(affected_units, model, msg, "Units"))
+        if affected_classes:
+            from app.editor.class_editor.class_model import ClassModel
+            model = ClassModel
+            msg = "Deleting Tag <b>%s</b> would affected these classes" % element.nid
+            deletion_tabs.append(DeletionTab(affected_classes, model, msg, "Classes"))
+
+        if deletion_tabs:
             combo_box = PropertyBox("Tag", ComboBox, self.window)
             objs = [tag for tag in DB.tags if tag.nid != element.nid]
             combo_box.edit.addItems([tag.nid for tag in objs])
-            obj_idx, ok = DeletionDialog.get_simple_swap(affected, model, msg, combo_box, self.window.window)
+            obj_idx, ok = DeletionDialog.get_simple_swap(deletion_tabs, combo_box, self.window.window)
             if ok:
                 swap = objs[obj_idx]
                 for unit in affected_units:
@@ -46,7 +48,8 @@ class TagMultiModel(MultiAttrListModel):
                 klass.tags = [new_value if elem == old_value else elem for elem in klass.tags]
 
 class TagDialog(MultiAttrListDialog):
-    locked_vars = {'Lord', 'Boss', 'Required', 'Mounted', 'Flying', 'Armor', 'Dragon', 'AutoPromote', 'NoAutoPromote', 'Convoy', 'AdjConvoy', 'Tile', 'Blacklist', 'Protect'}
+    locked_vars = {'Lord', 'Boss', 'Required', 'Mounted', 'Flying', 'Armor', 'Dragon', 'AutoPromote', 
+                   'NoAutoPromote', 'Convoy', 'AdjConvoy', 'Tile', 'Blacklist', 'Protect'}
 
     @classmethod
     def create(cls, parent=None):

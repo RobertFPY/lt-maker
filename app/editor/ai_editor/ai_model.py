@@ -2,7 +2,7 @@ from PyQt5.QtCore import Qt
 
 from app.data.database.database import DB
 
-from app.extensions.custom_gui import DeletionDialog
+from app.extensions.custom_gui import DeletionTab, DeletionDialog
 from app.editor.custom_widgets import AIBox
 from app.editor.base_database_gui import DragDropCollectionModel
 
@@ -25,7 +25,8 @@ class AIModel(DragDropCollectionModel):
             from app.editor.global_editor.level_menu import LevelModel
             model = LevelModel
             msg = "Deleting AI <b>%s</b> would affect units in these levels" % nid
-            swap, ok = DeletionDialog.get_swap(affected_levels, model, msg, AIBox(self.window, exclude=ai), self.window)
+            deletion_tab = DeletionTab(affected_levels, model, msg, "Levels")
+            swap, ok = DeletionDialog.get_swap([deletion_tab], AIBox(self.window, exclude=ai), self.window)
             if ok:
                 self.on_nid_changed(nid, swap.nid)
             else:

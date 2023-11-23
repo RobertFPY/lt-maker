@@ -12,7 +12,7 @@ from app.data.resources.resources import RESOURCES
 from app.utilities.data import Data
 from app.data.database.database import DB
 from app.editor.base_database_gui import ResourceCollectionModel
-from app.extensions.custom_gui import DeletionDialog
+from app.extensions.custom_gui import DeletionTab, DeletionDialog
 
 from app.editor.settings import MainSettingsController
 from app.editor.icon_editor import icon_view
@@ -133,20 +133,35 @@ class Icon16Model(IconModel):
         else:
             nid = icon.nid
         # What uses 16x16 icons
-        # Items, Weapons, (Later on Affinities, Skills/Statuses)
+        # Items, Skills, Weapons, Affinities
         affected_items = [item for item in DB.items if item.icon_nid == nid]
+        affected_skills = [skill for skill in DB.skills if skill.icon_nid == nid]
         affected_weapons = [weapon for weapon in DB.weapons if weapon.icon_nid == nid]
-        if affected_items or affected_weapons:
-            if affected_items:
-                affected = Data(affected_items)
-                from app.editor.item_editor.item_model import ItemModel
-                model = ItemModel
-            elif affected_weapons:
-                affected = Data(affected_weapons)
-                from app.editor.weapon_editor.weapon_model import WeaponModel
-                model = WeaponModel
-            msg = "Deleting Icon <b>%s</b> would affect these objects." % nid
-            ok = DeletionDialog.inform(affected, model, msg, self.window)
+        affected_affinities = [affinity for affinity in DB.affinities if affinity.icon_nid == nid]
+        deletion_tabs = []
+        if affected_items:
+            from app.editor.item_editor.item_model import ItemModel
+            model = ItemModel
+            msg = "Deleting Icon <b>%s</b> would affect these items." % nid
+            deletion_tabs.append(DeletionTab(affected_items, model, msg, "Items"))
+        if affected_skills:
+            from app.editor.skill_editor.skill_model import SkillModel
+            model = SkillModel
+            msg = "Deleting Icon <b>%s</b> would affect these skills." % nid
+            deletion_tabs.append(DeletionTab(affected_skills, model, msg, "Skills"))
+        if affected_weapons:
+            from app.editor.weapon_editor.weapon_model import WeaponModel
+            model = WeaponModel
+            msg = "Deleting Icon <b>%s</b> would affect these weapons." % nid
+            deletion_tabs.append(DeletionTab(affected_weapons, model, msg, "Weapons"))
+        if affected_affinities:
+            from app.editor.support_editor.affinity_model import AffinityModel
+            model = AffinityModel
+            msg = "Deleting Icon <b>%s</b> would affect these affinities." % nid
+            deletion_tabs.append(DeletionTab(affected_affinities, model, msg, "Affinities"))
+
+        if deletion_tabs:
+            ok = DeletionDialog.inform(deletion_tabs, self.window)
             if ok:
                 pass
             else:
@@ -156,17 +171,19 @@ class Icon16Model(IconModel):
 
     def on_nid_changed(self, old_nid, new_nid):
         # What uses 16x16 icons
-        # Items, Weapons, Skills, (Later on Affinities)
+        # Items, Skills, Weapons, Affinities
         for item in DB.items:
             if item.icon_nid == old_nid:
                 item.icon_nid = new_nid
-        for weapon in DB.weapons:
-            if weapon.icon_nid == old_nid:
-                weapon.icon_nid = new_nid
         for skill in DB.skills:
             if skill.icon_nid == old_nid:
                 skill.icon_nid = new_nid
-
+        for weapon in DB.weapons:
+            if weapon.icon_nid == old_nid:
+                weapon.icon_nid = new_nid
+        for affinity in DB.affinities:
+            if affinity.icon_nid == old_nid:
+                affinity.icon_nid = new_nid
 
 class Icon32Model(Icon16Model):
     database = RESOURCES.icons32
@@ -183,11 +200,11 @@ class Icon32Model(Icon16Model):
         # Factions
         affected_factions = [faction for faction in DB.factions if faction.icon_nid == nid]
         if affected_factions:
-            affected = Data(affected_factions)
             from app.editor.faction_editor.faction_model import FactionModel
             model = FactionModel
             msg = "Deleting Icon <b>%s</b> would affect these factions." % nid
-            ok = DeletionDialog.inform(affected, model, msg, self.window)
+            deletion_tab = DeletionTab(affected_factions, model, msg, "Factions")
+            ok = DeletionDialog.inform([deletion_tab], self.window)
             if ok:
                 pass
             else:
@@ -217,11 +234,11 @@ class Icon80Model(Icon16Model):
         # Classes
         affected_classes = [klass for klass in DB.classes if klass.icon_nid == nid]
         if affected_classes:
-            affected = Data(affected_classes)
             from app.editor.class_editor.class_model import ClassModel
             model = ClassModel
             msg = "Deleting Icon <b>%s</b> would affect these classes." % nid
-            ok = DeletionDialog.inform(affected, model, msg, self.window)
+            deletion_tab = DeletionTab(affected_classes, model, msg, "Classes")
+            ok = DeletionDialog.inform([deletion_tab], self.window)
             if ok:
                 pass
             else:

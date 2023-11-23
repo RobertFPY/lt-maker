@@ -2994,7 +2994,7 @@ class ShowLayer(Action):
         else:
             layer.show()
         _arrive(layer)
-        game.board.reset_grid(game.level.tilemap)
+        game.board.reset_tile_grids(game.level.tilemap)
         game.boundary.reset()
 
     def execute(self):
@@ -3003,7 +3003,7 @@ class ShowLayer(Action):
         layer.quick_show()
         game.level.tilemap.reset()
         _arrive(layer)
-        game.board.reset_grid(game.level.tilemap)
+        game.board.reset_tile_grids(game.level.tilemap)
         game.boundary.reset()
 
     def reverse(self):
@@ -3012,7 +3012,7 @@ class ShowLayer(Action):
         layer.quick_hide()
         game.level.tilemap.reset()
         _arrive(layer)
-        game.board.reset_grid(game.level.tilemap)
+        game.board.reset_tile_grids(game.level.tilemap)
         game.boundary.reset()
 
 
@@ -3030,7 +3030,7 @@ class HideLayer(Action):
         else:
             layer.hide()
         _arrive(layer)
-        game.board.reset_grid(game.level.tilemap)
+        game.board.reset_tile_grids(game.level.tilemap)
         game.boundary.reset()
 
     def execute(self):
@@ -3039,7 +3039,7 @@ class HideLayer(Action):
         layer.quick_hide()
         game.level.tilemap.reset()
         _arrive(layer)
-        game.board.reset_grid(game.level.tilemap)
+        game.board.reset_tile_grids(game.level.tilemap)
         game.boundary.reset()
 
     def reverse(self):
@@ -3048,7 +3048,7 @@ class HideLayer(Action):
         layer.quick_show()
         game.level.tilemap.reset()
         _arrive(layer)
-        game.board.reset_grid(game.level.tilemap)
+        game.board.reset_tile_grids(game.level.tilemap)
         game.boundary.reset()
 
 class ChangeBGTileMap(Action):

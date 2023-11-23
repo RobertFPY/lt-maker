@@ -6,8 +6,6 @@ from typing import Optional
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QFileDialog
 
-from app.utilities.data import Data
-
 import app.engine.item_component_access as ICA
 from app.data.database import item_components, skill_components
 from app.data.database.items import ItemCatalog, ItemPrefab
@@ -17,7 +15,7 @@ from app.editor.data_editor import SingleDatabaseEditor
 from app.editor.item_editor import item_import, item_model
 from app.editor.component_editor_properties import NewComponentProperties
 from app.editor.settings.main_settings_controller import MainSettingsController
-from app.editor.component_object_editor import ComponentObjectEditor
+from app.editor.new_editor_tab import NewEditorTab
 from app.extensions.custom_gui import DeletionTab, DeletionDialog
 from app.editor.custom_widgets import ItemBox
 
@@ -31,7 +29,7 @@ class NewItemProperties(NewComponentProperties[ItemPrefab]):
     get_tags = staticmethod(ICA.get_item_tags)
 
 
-class NewItemDatabase(ComponentObjectEditor):
+class NewItemDatabase(NewEditorTab):
     catalog_type = ItemCatalog
     properties_type = NewItemProperties
 

@@ -117,8 +117,6 @@ class UnitPortrait(QPushButton):
         self.setStyleSheet("QPushButton {qproperty-iconSize: %dpx %dpx;}" % (self.width, self.height))
         self.pressed.connect(self.onIconSourcePicker)
 
-        self.sourceChanged.connect(self.on_icon_changed)
-
     def render(self):
         if self._nid:
             res = self.database.get(self._nid)
@@ -141,11 +139,6 @@ class UnitPortrait(QPushButton):
 
     def set_current(self, nid):
         self.change_icon(nid)
-
-    def on_icon_changed(self, nid):
-        if self.window.current:
-            self.window.current.portrait_nid = nid
-            self.window.window.update_list()
 
     def onIconSourcePicker(self):
         from app.editor.portrait_editor import portrait_tab

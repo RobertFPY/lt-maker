@@ -6,7 +6,7 @@ from app.editor import timer
 from app.editor.custom_widgets import PartyBox, UnitBox
 from app.editor.sound_editor import sound_tab
 from app.editor.tile_editor import tile_tab
-from app.editor.unit_editor import unit_tab
+from app.editor.unit_editor import new_unit_tab
 from app.extensions.custom_gui import (PropertyBox, PropertyCheckBox, QHLine,
                                        SimpleDialog)
 from app.utilities import str_utils
@@ -266,7 +266,7 @@ class PropertiesMenu(QWidget):
             self.state_manager.change_and_broadcast('ui_refresh_signal', None)
 
     def access_units(self):
-        unit, ok = unit_tab.get(self.current.roam_unit)
+        unit, ok = new_unit_tab.get(self.current.roam_unit)
         if unit and ok:
             self.current.roam_unit = unit.nid
             self.unit_box.edit.setValue(self.current.roam_unit)

@@ -167,30 +167,24 @@ class GBAPoison(SkillComponent):
 
 class ResistStatus(SkillComponent):
     nid = 'resist_status'
-    desc = "Unit is only affected by statuses for a turn"
+    desc = "Unit is only affected by new statuses for a turn"
     tag = SkillTags.STATUS
-
-    def before_add(self, unit, skill):
-        for skill in unit.all_skills:
-            if skill.time or skill.end_time or skill.combined_time:
-                action.do(action.SetObjData(skill, 'turns', min(skill.data['turns'], 1)))
 
     def before_gain_skill(self, unit, other_skill):
         if other_skill.time or other_skill.end_time or other_skill.combined_time:
-            action.do(action.SetObjData(other_skill, 'turns', min(other_skill.data['turns'], 1)))
+            if skill_system.condition(self.skill, unit):
+                action.do(action.SetObjData(other_skill, 'turns', min(other_skill.data['turns'], 1)))
 
 class ImmuneStatus(SkillComponent):
     nid = 'immune_status'
-    desc = "Unit is not affected by negative statuses"
+    desc = "Unit does not receive negative statuses and is not affected by existing negative statuses"
     tag = SkillTags.STATUS
 
-    def after_add(self, unit, skill):
-        for skill in unit.all_skills:
-            if skill.negative:
-                action.do(action.RemoveSkill(unit, skill))
+    def additional_tags(self, unit, skill):
+        return ['Immune']
 
     def after_gain_skill(self, unit, other_skill):
-        if other_skill.negative:
+        if other_skill.negative and skill_system.condition(self.skill, unit):
             action.do(action.RemoveSkill(unit, other_skill))
 
 class ReflectStatus(SkillComponent):
@@ -199,7 +193,7 @@ class ReflectStatus(SkillComponent):
     tag = SkillTags.STATUS
 
     def after_gain_skill(self, unit, other_skill):
-        if other_skill.initiator_nid:
+        if other_skill.initiator_nid and skill_system.condition(self.skill, unit):
             other_unit = game.get_unit(other_skill.initiator_nid)
             if other_unit:
                 # Create a copy of other skill

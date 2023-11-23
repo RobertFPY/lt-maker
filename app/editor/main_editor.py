@@ -40,7 +40,7 @@ from app.editor.overworld_editor.overworld_editor import OverworldEditor
 import app.editor.game_actions.game_actions as GAME_ACTIONS
 
 # Databases
-from app.editor.unit_editor.unit_tab import UnitDatabase
+from app.editor.unit_editor.new_unit_tab import NewUnitDatabase
 from app.editor.team_editor.team_tab import TeamDatabase
 from app.editor.faction_editor.faction_tab import FactionDatabase
 from app.editor.party_editor.party_tab import PartyDatabase
@@ -224,7 +224,7 @@ class MainEditor(QMainWindow):
         #     "Preload Units...", self, triggered=self.edit_preload_units)
 
         # Database actions
-        database_actions = {_("Units"): UnitDatabase.edit,
+        database_actions = {_("Units"): NewUnitDatabase.edit,
                             _("Teams"): TeamDatabase.edit,
                             _("Factions"): FactionDatabase.edit,
                             _("Parties"): PartyDatabase.edit,

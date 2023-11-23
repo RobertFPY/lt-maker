@@ -1,7 +1,8 @@
-from app.editor.lib.components.database_delegate import DBNamesDelegate, UnitFieldDelegate
+from app.editor.lib.components.database_delegate import UnitFieldDelegate
 from app.extensions.key_value_delegate import KeyValueDelegate, KeyValueDoubleListModel
 from app.data.database.database import DB
 from app.editor.custom_widgets import AffinityBox, ClassBox
+from app.editor.component_editor_properties import T
 from app.editor.icons import UnitPortrait
 from app.editor.item_list_widget import ItemListWidget
 from app.editor.learned_skill_delegate import LearnedSkillDelegate
@@ -16,14 +17,16 @@ from app.extensions.list_widgets import (AppendMultiListWidget,
                                          BasicSingleListWidget)
 from app.extensions.multi_select_combo_box import MultiSelectComboBox
 from app.utilities import str_utils
+from app.utilities.typing import NID
 
 from PyQt5.QtCore import QItemSelection, QItemSelectionModel, Qt
 from PyQt5.QtGui import QFontMetrics, QIcon
 from PyQt5.QtWidgets import (QDialog, QGridLayout, QHBoxLayout, QLineEdit,
-                             QMessageBox, QPushButton, QSpinBox, QSplitter,
+                             QPushButton, QSpinBox, QSplitter,
                              QStyledItemDelegate, QTableView, QTextEdit,
                              QVBoxLayout, QWidget)
 
+from typing import (Callable, Optional)
 
 class WexpModel(VirtualListModel):
     def __init__(self, columns, data, parent=None):
@@ -118,27 +121,26 @@ class HorizWeaponListDelegate(QStyledItemDelegate):
             editor.addItem(rank.rank)
         return editor
 
-class UnitProperties(QWidget):
-    def __init__(self, parent):
+class NewUnitProperties(QWidget):
+    title = "Unit"
+    
+    def __init__(self, parent, current: Optional[T] = None,
+                 attempt_change_nid: Optional[Callable[[NID, NID], bool]] = None,
+                 on_icon_change: Optional[Callable] = None):
         super().__init__(parent)
-        self.window = parent
-        self.view = self.window.left_frame.view
-        self.model = self.window.left_frame.model
-        self._data = self.window._data
-        self.current = None
+
+        self.current: Optional[T] = current
+        self.cached_nid: Optional[NID] = self.current.nid if self.current else None
+        self.attempt_change_nid = attempt_change_nid
+        self.on_icon_change = on_icon_change
 
         top_section = QHBoxLayout()
 
         main_section = QGridLayout()
 
         self.icon_edit = UnitPortrait(self)
+        self.icon_edit.sourceChanged.connect(self.on_icon_changed)
         main_section.addWidget(self.icon_edit, 0, 0, 2, 1, Qt.AlignHCenter)
-        # top_section.addWidget(self.icon_edit)
-
-        # horiz_spacer = QSpacerItem(40, 10, QSizePolicy.Fixed, QSizePolicy.Fixed)
-        # top_section.addSpacerItem(horiz_spacer)
-
-        # name_section = QVBoxLayout()
 
         self.nid_box = PropertyBox(_("Unique ID"), NidLineEdit, self)
         self.nid_box.edit.textChanged.connect(self.nid_changed)
@@ -149,8 +151,6 @@ class UnitProperties(QWidget):
 
         self.name_box.edit.textChanged.connect(self.name_changed)
         main_section.addWidget(self.name_box, 0, 2)
-
-        # top_section.addLayout(name_section)
 
         self.variant_box = PropertyBox("Animation Variant", QLineEdit, self)
         self.variant_box.edit.textChanged.connect(self.variant_changed)
@@ -193,14 +193,11 @@ class UnitProperties(QWidget):
         self.unit_stat_widget.model.dataChanged.connect(self.stat_list_model_data_changed)
         self.unit_stat_widget.view.setFixedHeight(130)
         self.averages_dialog = None
-        # self.unit_stat_widget.button.clicked.connect(self.access_stats)
         # Changing of stats done automatically by using model view framework within
 
         attrs = ("level", "skill_nid")
         self.personal_skill_widget = AppendMultiListWidget([], _("Personal Skills"), attrs, LearnedSkillDelegate, self, model=ReverseDoubleListModel)
         self.personal_skill_widget.view.setMaximumHeight(120)
-        # Changing of Personal skills done automatically also
-        # self.personal_skill_widget.activated.connect(self.learned_skills_changed)
 
         noteAttrs = ("Category", "Entries")
         self.unit_notes_widget = AppendMultiListWidget([], "Unit Notes", noteAttrs, KeyValueDelegate, self, model=KeyValueDoubleListModel)
@@ -215,13 +212,10 @@ class UnitProperties(QWidget):
         default_weapons = {weapon_nid: DB.weapons.default(DB) for weapon_nid in DB.weapons.keys()}
         self.wexp_gain_widget = HorizWeaponListWidget(
             default_weapons, "Starting Weapon Experience", HorizWeaponListDelegate, self)
-        # Changing of Weapon Gain done automatically
-        # self.wexp_gain_widget.activated.connect(self.wexp_gain_changed)
 
         item_section = QHBoxLayout()
         self.item_widget = ItemListWidget(_("Starting Items"), self)
         self.item_widget.items_updated.connect(self.items_changed)
-        # self.item_widget.setMaximumHeight(200)
         item_section.addWidget(self.item_widget)
 
         self.alternate_class_box = PropertyBox("Alternate Classes", MultiSelectComboBox, self)
@@ -263,29 +257,37 @@ class UnitProperties(QWidget):
         self.setLayout(final_section)
         final_section.addWidget(self.splitter)
 
+        self.set_current(self.current)
+
+    def on_icon_changed(self, nid):
+        if self.current:
+            self.current.portrait_nid = nid
+            if self.on_icon_change:
+                self.on_icon_change()
+
     def nid_changed(self, text):
-        # Also change name if they are identical
-        if self.current.name == self.current.nid.replace('_', ' '):
-            self.name_box.edit.setText(text.replace('_', ' '))
-        self.current.nid = text
-        self.window.update_list()
+        if self.current:
+            # Also change name if they are identical
+            if self.current.name == self.current.nid.replace('_', ' '):
+                self.name_box.edit.setText(text.replace('_', ' '))
+            self.current.nid = text
 
     def nid_done_editing(self):
-        # Check validity of nid!
-        other_nids = [d.nid for d in self._data.values() if d is not self.current]
-        if self.current.nid in other_nids:
-            QMessageBox.warning(self.window, 'Warning', 'Unit ID %s already in use' % self.current.nid)
-            self.current.nid = str_utils.get_next_name(self.current.nid, other_nids)
-        self.model.on_nid_changed(self._data.find_key(self.current), self.current.nid)
-        self._data.update_nid(self.current, self.current.nid)
-        self.window.update_list()
+        if self.current and self.cached_nid:
+            self.nid_box.edit.blockSignals(True)  # message box causes focus loss which double triggers nid_done_editing
+            # Check validity of nid!
+            if self.attempt_change_nid and self.attempt_change_nid(self.cached_nid, self.current.nid):
+                self.cached_nid = self.current.nid
+            else:
+                self.current.nid = self.cached_nid
+                self.nid_box.edit.setText(self.cached_nid)
+            self.nid_box.edit.blockSignals(False)
 
     def name_changed(self, text):
         self.current.name = text
 
     def desc_changed(self, text=None):
         self.current.desc = self.desc_box.edit.toPlainText()
-        # self.current.desc = text
 
     def level_changed(self, val):
         self.current.level = int(val)
@@ -294,7 +296,6 @@ class UnitProperties(QWidget):
 
     def class_changed(self, index):
         self.current.klass = self.class_box.edit.currentText()
-        # self.level_box.edit.setMaximum(DB.classes.get(self.current.klass).max_level)
         if self.averages_dialog:
             self.averages_dialog.update()
 
@@ -342,12 +343,6 @@ class UnitProperties(QWidget):
         if self.averages_dialog:
             self.averages_dialog.update()
 
-    # def learned_skills_changed(self):
-    #     pass
-
-    # def wexp_gain_changed(self):
-    #     pass
-
     def items_changed(self):
         self.current.starting_items = self.item_widget.get_items()
 
@@ -371,44 +366,49 @@ class UnitProperties(QWidget):
         self.current.affinity = self.affinity_box.edit.currentText()
 
     def set_current(self, current):
-        self.current = current
-        self.nid_box.edit.setText(current.nid)
-        self.name_box.edit.setText(current.name)
-        self.desc_box.edit.setText(current.desc)
-        self.level_box.edit.setValue(int(current.level))
-        self.class_box.edit.setValue(current.klass)
-        tags = current.tags[:]
-        self.tag_box.edit.clear()
-        self.tag_box.edit.addItems(DB.tags.keys())
-        self.tag_box.edit.setCurrentTexts(tags)
-
-        self.unit_stat_widget.update_stats()
-        self.unit_stat_widget.set_new_obj(current)
-        if self.averages_dialog:
-            self.averages_dialog.set_current(current)
-
-        self.personal_skill_widget.set_current(current.learned_skills)
-        self.unit_notes_widget.set_current(current.unit_notes)
-        self.unit_fields_widget.set_current(current.fields)
-        self.wexp_gain_widget.set_current(current.wexp_gain)
-        self.item_widget.set_current(current.starting_items)
-
-        if current.variant:
-            self.variant_box.edit.setText(current.variant)
+        if not current:
+            self.setEnabled(False)
         else:
-            self.variant_box.edit.clear()
+            self.setEnabled(True)
+            self.current = current
+            self.cached_nid = current.nid
+            self.nid_box.edit.setText(current.nid)
+            self.name_box.edit.setText(current.name)
+            self.desc_box.edit.setText(current.desc)
+            self.level_box.edit.setValue(int(current.level))
+            self.class_box.edit.setValue(current.klass)
+            tags = current.tags[:]
+            self.tag_box.edit.clear()
+            self.tag_box.edit.addItems(DB.tags.keys())
+            self.tag_box.edit.setCurrentTexts(tags)
 
-        self.alternate_class_box.edit.clear()
-        self.alternate_class_box.edit.addItems(DB.classes.keys())
-        if current.alternate_classes:
-            alternate_classes = current.alternate_classes[:]
-            self.alternate_class_box.edit.setCurrentTexts(alternate_classes)
-        if current.affinity:
-            self.affinity_box.edit.setValue(current.affinity)
-        else:
-            self.affinity_box.edit.setValue("None")
+            self.unit_stat_widget.update_stats()
+            self.unit_stat_widget.set_new_obj(current)
+            if self.averages_dialog:
+                self.averages_dialog.set_current(current)
 
-        self.icon_edit.set_current(current.portrait_nid)
+            self.personal_skill_widget.set_current(current.learned_skills)
+            self.unit_notes_widget.set_current(current.unit_notes)
+            self.unit_fields_widget.set_current(current.fields)
+            self.wexp_gain_widget.set_current(current.wexp_gain)
+            self.item_widget.set_current(current.starting_items)
+
+            if current.variant:
+                self.variant_box.edit.setText(current.variant)
+            else:
+                self.variant_box.edit.clear()
+
+            self.alternate_class_box.edit.clear()
+            self.alternate_class_box.edit.addItems(DB.classes.keys())
+            if current.alternate_classes:
+                alternate_classes = current.alternate_classes[:]
+                self.alternate_class_box.edit.setCurrentTexts(alternate_classes)
+            if current.affinity:
+                self.affinity_box.edit.setValue(current.affinity)
+            else:
+                self.affinity_box.edit.setValue("None")
+
+            self.icon_edit.set_current(current.portrait_nid)
 
     def hideEvent(self, event):
         self.close_averages()

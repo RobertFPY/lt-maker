@@ -381,10 +381,13 @@ class Event():
 
     def _queue_command(self, event_command_str: str):
         try:
-            event_command, _ = event_commands.parse_text_to_command(event_command_str, strict=True)
-            if not event_command:
+            command, _ = event_commands.parse_text_to_command(event_command_str, strict=True)
+            if not command:
                 raise SyntaxError("Unable to parse command", ("event.py", 0, 0, event_command_str))
-            self.command_queue.append(event_command)
+            # We need to run convert_parse on these commands also!
+            parameters, flags = event_commands.convert_parse(command, None)
+            processed_command = command.__class__(parameters, flags, command.display_values)
+            self.command_queue.append(processed_command)
         except Exception as e:
             logging.error('_queue_command: Unable to parse command "%s". %s', event_command_str, e)
 

@@ -389,7 +389,7 @@ class PrimaryAI():
             item = self.items[self.item_index]
             logging.info("Testing %s" % item)
             if self.unit.can_equip(item):
-                self.unit.equip(item)
+                action.do(action.EquipItem(self.unit, item))
             self.get_all_valid_targets()
             self.possible_moves = self.get_possible_moves()
             logging.info(self.possible_moves)
@@ -423,7 +423,7 @@ class PrimaryAI():
         if self.item_index >= len(self.items):
             self.quick_move(self.orig_pos)
             if self.orig_item and self.unit.can_equip(self.orig_item):
-                self.unit.equip(self.orig_item)
+                action.do(action.EquipItem(self.unit, self.orig_item))
             return (True, self.best_target, self.best_position, self.best_item)
 
         elif self.target_index >= len(self.valid_targets):

@@ -3428,7 +3428,7 @@ def parse_text_to_command(text: str, strict: bool = False) -> Tuple[EventCommand
         # Check that we have all the required keywords
         for keyword in command_info.keywords:
             if keyword not in parameters:
-                logging.debug("Missing required parameter: %s in %s", keyword, parameters)
+                logging.debug("Missing required parameter: %s in %s for command %s", keyword, parameters, command_info.nid)
                 return None, len(cmd_args) - 1
 
         copy = command(parameters, flags, cmd_args)

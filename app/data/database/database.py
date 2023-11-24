@@ -124,7 +124,11 @@ class Database(object):
     def restore(self, save_obj):
         for data_type in self.save_data_types:
             logging.info("Database: Restoring %s..." % (data_type))
-            getattr(self, data_type).restore(save_obj[data_type])
+            data = getattr(self, data_type)
+            data.restore(save_obj[data_type])
+            # Also restore the categories if it has any
+            if isinstance(data, CategorizedCatalog) and save_obj.get(data_type + '_category'):
+                data.categories = Categories.load(save_obj[data_type + '_category'])
 
     def save(self):
         # import time
@@ -132,7 +136,11 @@ class Database(object):
         for data_type in self.save_data_types:
             # logging.info("Saving %s..." % data_type)
             # time1 = time.time_ns()/1e6
-            to_save[data_type] = getattr(self, data_type).save()
+            data = getattr(self, data_type)
+            to_save[data_type] = data.save()
+            # also save the categories if it has any
+            if isinstance(data, CategorizedCatalog):
+                to_save[data_type + '_category'] = data.categories.save()
             # time2 = time.time_ns()/1e6 - time1
             # logging.info("Time taken: %s ms" % time2)
         return to_save

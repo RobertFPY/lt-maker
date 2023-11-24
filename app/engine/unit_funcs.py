@@ -198,6 +198,7 @@ def auto_level(unit, base_level: int, num_levels: int, custom_method=None):
         unit.stats[nid] += total_stat_changes[nid]
     unit.set_hp(1000)  # Go back to full hp
     unit.set_mana(1000)  # Go back to full mana
+    return total_stat_changes
 
 def difficulty_auto_level(unit, base_level, num_levels: int):
     total_stat_changes = {nid: 0 for nid in DB.stats.keys()}

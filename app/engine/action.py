@@ -1826,9 +1826,10 @@ class AutoLevel(Action):
         self.old_hp = self.unit.get_hp()
         self.old_mana = self.unit.get_mana()
         self.growth_method = growth_method
+        self.stat_changes = {}
 
     def do(self):
-        unit_funcs.auto_level(self.unit, self.unit.get_internal_level(), self.diff, self.growth_method)
+        self.stat_changes = unit_funcs.auto_level(self.unit, self.unit.get_internal_level(), self.diff, self.growth_method)
 
     def reverse(self):
         self.unit.stats = self.old_stats

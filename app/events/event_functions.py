@@ -2251,11 +2251,15 @@ def autolevel_to(self: Event, global_unit, level, growth_method=None, flags=None
         self.logger.warning("autolevel_to: Unit %s is already that level!" % global_unit)
         return
 
-    action.do(action.AutoLevel(unit, diff, growth_method))
+    autolevel_act = action.AutoLevel(unit, diff, growth_method)
+    action.do(autolevel_act)
+    stat_changes = autolevel_act.stat_changes
     if 'hidden' in flags:
         pass
     else:
         action.do(action.SetLevel(unit, max(1, final_level)))
+        event_trigger = triggers.UnitLevelUp(unit, stat_changes, 'event')
+        self.game.events.trigger(event_trigger)
     if not unit.generic and DB.units.get(unit.nid):
         unit_prefab = DB.units.get(unit.nid)
         personal_skills = unit_funcs.get_personal_skills(unit, unit_prefab, current_level)

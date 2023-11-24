@@ -22,7 +22,7 @@ class GenericUnit(Prefab):
     roam_ai: Optional[NID] = None
     ai_group: Optional[NID] = None
 
-    starting_position: Optional[Tuple[int, int]] = None 
+    starting_position: Optional[Tuple[int, int]] = None
     starting_traveler: Optional[NID] = None  # unit nid
 
     generic: bool = True

@@ -25,6 +25,7 @@ class LogViewer(QWidget):
         self.textEdit = QTextEdit()
         self.textEdit.setReadOnly(True)
         self.textEdit.setFontFamily(self.settings.get_code_font())
+        self.textEdit.setFontPointSize(12)
         self.textEdit.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.textEdit.setLineWrapMode(QTextEdit.NoWrap)
 

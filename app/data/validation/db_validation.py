@@ -103,7 +103,8 @@ class DBChecker():
             res.warnings += [l_warn.tmplt.null_f("objective:%s" % objtv) for objtv in OBJECTIVE_KEYS if not level.objective.get(objtv)]
 
             # roam
-            res.errors += self._val_or_err(level.roam_unit, DType.UNITS, l_err.field("roam_unit"), not level.roam)
+            if level.roam:
+                res.errors += self._val_or_err(level.roam_unit, DType.UNITS, l_err.field("roam_unit"), False)
 
             all_level_units = set(level.units.keys())
             travelers: Dict[NID, NID] = {unit.nid: unit.starting_traveler for unit in level.units}

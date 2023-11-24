@@ -73,7 +73,7 @@ class Database(object):
         self.game_flags = GameFlags()
 
     @property
-    def music_keys(self):
+    def music_keys(self) -> List[str]:
         keys = []
         for team in self.teams:
             keys.append("%s_phase" % team.nid)

@@ -7,7 +7,8 @@ from typing import Any, List, Optional, Tuple
 from app.utilities import str_utils
 from app.utilities.data import Data
 
-class ComponentType(IntEnum):
+
+class ComponentType(Enum):
     Bool = 0
     Int = 1
     Float = 2
@@ -51,7 +52,7 @@ def convert_type_from_string(tstr: str, ttype: ComponentType):
         return tstr
 
 
-def get_objs_using(objs: list, expose: ComponentType | Tuple[ComponentType, ComponentType], 
+def get_objs_using(objs: list, expose: ComponentType | Tuple[ComponentType, ComponentType],
                    value: Any) -> list:
     affected_items = []
 
@@ -63,7 +64,7 @@ def get_objs_using(objs: list, expose: ComponentType | Tuple[ComponentType, Comp
         elif expose_type[0] in (ComponentType.Dict, ComponentType.FloatDict, ComponentType.StringDict):
             for i, val in enumerate(subvalue):
                 if val[0] == value:
-                    return True 
+                    return True
         return False
 
     for obj in objs:
@@ -86,7 +87,7 @@ def get_objs_using(objs: list, expose: ComponentType | Tuple[ComponentType, Comp
     return affected_items
 
 
-def swap_values(objs: list, expose: ComponentType | Tuple[ComponentType, ComponentType], 
+def swap_values(objs: list, expose: ComponentType | Tuple[ComponentType, ComponentType],
                 old_value: Any, new_value: Any) -> None:
     def _swap(expose_type: Tuple[ComponentType, ComponentType], value: List[Any]) -> None:
         if expose_type[0] == ComponentType.List:

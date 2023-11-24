@@ -86,7 +86,7 @@ def repopulate_aura(unit, skill, game):
     aura_range = set(range(1, aura_range + 1))
     positions = game.target_system.get_shell({unit.position}, aura_range, game.board.bounds)
     for pos in positions:
-        game.board.add_aura(pos, unit, skill.subskill, skill.aura_target.value)
+        game.board.add_aura(pos, skill.subskill, skill.aura_target.value)
 
 def release_aura(unit, skill, game):
     logging.debug("Releasing Aura %s (owned by %s)", skill, unit)

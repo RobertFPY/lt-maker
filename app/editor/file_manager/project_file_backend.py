@@ -13,7 +13,7 @@ from PyQt5.QtWidgets import QFileDialog, QMessageBox, QProgressDialog, QVBoxLayo
 
 from app.constants import VERSION
 from app.data.database.database import DB, Database
-from app.data.resources.resources import RESOURCES
+from app.data.resources.resources import RESOURCES, Resources
 from app.data.validation.db_validation import DBChecker
 from app.editor import timer
 from app.editor.error_viewer import show_error_report
@@ -355,7 +355,7 @@ class ProjectFileBackend():
             self.parent, "Choose dump location", starting_path)
         if fn:
             csv_direc = fn
-            for ttype, tstr in csv_data_exporter.dump_as_csv(db):
+            for ttype, tstr in csv_data_exporter.dump_as_csv(db, RESOURCES):
                 with open(os.path.join(csv_direc, ttype + '.csv'), 'w') as f:
                     f.write(tstr)
         else:

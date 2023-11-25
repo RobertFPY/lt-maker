@@ -34,12 +34,21 @@ class SkillObject():
         self.parent_skill = None
 
     @classmethod
-    def from_prefab(cls, prefab):
+    def from_prefab(cls, prefab, component_data=None):
         # Components NEED To be copies! Since they store individualized information
         components = Data()
-        for component in prefab.components:
-            new_component = SCA.restore_component((component.nid, component.value))
-            components.append(new_component)
+        component_data = component_data or []
+
+        if component_data:
+            for component_nid, component_value in component_data:
+                new_component = SCA.restore_component((component_nid, component_value))
+                components.append(new_component, overwrite=True)
+
+        else:
+            for component in prefab.components:
+                new_component = SCA.restore_component((component.nid, component.value))
+                components.append(new_component, overwrite=True)
+
         return cls(prefab.nid, prefab.name, prefab.desc, prefab.icon_nid, prefab.icon_index, components)
 
     # If the attribute is not found
@@ -68,13 +77,16 @@ class SkillObject():
         serial_dict['data'] = self.data
         serial_dict['initiator_nid'] = self.initiator_nid
         serial_dict['subskill'] = self.subskill_uid
+        components = [(component.nid, component.value) for component in self.components]
+        serial_dict['components'] = components
         return serial_dict
 
     @classmethod
     def restore(cls, dat):
         prefab = DB.skills.get(dat['nid'])
         if prefab:
-            self = cls.from_prefab(prefab)
+            components = dat.get('components', [])
+            self = cls.from_prefab(prefab, components)
         else:
             desc = 'This is a placeholder for %s generated when the database cannot locate a skill' % dat['nid']
             self = cls(dat['nid'], 'Placeholder', desc)

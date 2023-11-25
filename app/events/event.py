@@ -182,8 +182,7 @@ class Event():
                     self.end()
                 else:
                     self.process()
-                if self.state == 'paused':
-                    break  # Necessary so we don't go right back to processing
+                    break
 
             elif self.state == 'dialog':
                 if self.text_boxes:

@@ -92,7 +92,7 @@ class CombatHealthBar(HealthBar):
     def _create_hp_bar_surf(self, full_hp: int, actual_hp: int, overflow: int = 0) -> engine.Surface:
         """Creates a single hp bar row.
         """
-        surf = engine.create_surface((full_hp * 2 + 1, self.full_hp_blip.get_height()))
+        surf = engine.create_surface((full_hp * 2 + 1, self.full_hp_blip.get_height()), transparent=True)
         if overflow > 2:
             hp_blip = engine.subsurface(self.overflowpurple_hp_blip, (self.colors[self.color_tick] * 2, 0, 2, self.overflowpurple_hp_blip.get_height()))
             damage_blip = hp_blip
@@ -354,13 +354,18 @@ class MapCombatInfo():
 
         elif self.draw_method == 'splash':
             pos = self.unit.sprite.position
-            x_pos = pos[0] - game.camera.get_x()
-            x_pos = utils.clamp(x_pos, 3, TILEX - 2)
-            if pos[1] - game.camera.get_y() < TILEY//2:
-                y_pos = pos[1] - game.camera.get_y() + 2
+            if pos:
+                x_pos = pos[0] - game.camera.get_x()
+                x_pos = utils.clamp(x_pos, 3, TILEX - 2)
+                if pos[1] - game.camera.get_y() < TILEY//2:
+                    y_pos = pos[1] - game.camera.get_y() + 2
+                else:
+                    y_pos = pos[1] - game.camera.get_y() - 3
+                self.true_position = (x_pos * TILEWIDTH - width//2, y_pos * TILEHEIGHT - 8)
             else:
-                y_pos = pos[1] - game.camera.get_y() - 3
-            self.true_position = x_pos * TILEWIDTH - width//2, y_pos * TILEHEIGHT - 8
+                x_pos = WINWIDTH//2 - width//2
+                y_pos = WINHEIGHT//2 - height//2
+                self.true_position = (x_pos, y_pos)
             self.ordering = 'middle'
 
     def update_stats(self, stats):

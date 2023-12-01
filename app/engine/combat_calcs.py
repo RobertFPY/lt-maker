@@ -22,7 +22,6 @@ def get_weapon_rank_bonus(unit, item):
     return best_combat_bonus
 
 def get_support_rank_bonus(unit, target=None):
-    from app.engine import target_system
     from app.engine.game_state import game
 
     if not unit.position:
@@ -47,7 +46,7 @@ def get_support_rank_bonus(unit, target=None):
             continue
         if target and target.position:
             # Unit and other unit can both attack target
-            if target.position in target_system.get_attacks(other_unit, force=True):
+            if target.position in game.target_system.get_attackable_positions(other_unit, force=True):
                 pass
             else:
                 continue
@@ -104,7 +103,6 @@ def compute_advantage(unit1, unit2, item1, item2, advantage=True):
     return new_adv
 
 def can_counterattack(attacker, aweapon, defender, dweapon) -> bool:
-    from app.engine import target_system
     if not dweapon:
         return False
     if not item_funcs.available(defender, dweapon):
@@ -119,7 +117,7 @@ def can_counterattack(attacker, aweapon, defender, dweapon) -> bool:
     
     if not attacker.position:
         return True
-    valid_targets = target_system.targets_in_range(defender, dweapon)
+    valid_targets = game.target_system.targets_in_range(defender, dweapon)
     if attacker.position in valid_targets:
         return True
     if skill_system.distant_counter(defender):

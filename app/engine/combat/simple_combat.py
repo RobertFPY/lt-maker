@@ -173,6 +173,7 @@ class SimpleCombat():
 
         self.handle_death(all_units)
 
+        self.handle_unusable_items(asp, dsp)
         self.handle_broken_items(asp, dsp)
 
     def start_event(self, full_animation=False):
@@ -192,7 +193,7 @@ class SimpleCombat():
                 def_item = self.def_items[idx]
                 skill_system.pre_combat(self.full_playback, defender, def_item, self.attacker, 'defense')
         for unit in self.all_splash:
-            skill_system.pre_combat(self.full_playback, unit, None, None, 'defense')
+            skill_system.pre_combat(self.full_playback, unit, None, self.attacker, 'defense')
 
         skill_system.start_combat(self.full_playback, self.attacker, self.main_item, self.defender, 'attack')
         item_system.start_combat(self.full_playback, self.attacker, self.main_item, self.defender, 'attack')
@@ -206,7 +207,7 @@ class SimpleCombat():
                 if def_item:
                     item_system.start_combat(self.full_playback, defender, def_item, self.attacker, 'defense')
         for unit in self.all_splash:
-            skill_system.start_combat(self.full_playback, unit, None, None, 'defense')
+            skill_system.start_combat(self.full_playback, unit, None, self.attacker, 'defense')
 
     def cleanup_combat(self):
         skill_system.cleanup_combat(self.full_playback, self.attacker, self.main_item, self.defender, 'attack')
@@ -358,7 +359,7 @@ class SimpleCombat():
                             flags = {'no_banner'}
                         command = event_commands.GiveItem({'GlobalUnitOrConvoy': '{unit}', 'Item': str(item.uid)}, flags)
                         trigger = triggers.GenericTrigger(self.attacker, unit, self.attacker.position, {'item_uid': item.uid})
-                        game.events._add_event_from_commands(event_nid, [command], trigger)
+                        game.events._add_event_from_script(event_nid, str(command), trigger)
                         counter += 1
 
         if self.attacker.is_dying and self.defender:
@@ -377,27 +378,27 @@ class SimpleCombat():
                         flags = {'no_banner'}
                     command = event_commands.GiveItem({'GlobalUnitOrConvoy': '{unit}', 'Item': str(item.uid)}, flags)
                     trigger = triggers.GenericTrigger(self.defender, self.attacker, self.defender.position, {'item_uid': item.uid})
-                    game.events._add_event_from_commands(event_nid, [command], trigger)
+                    game.events._add_event_from_script(event_nid, str(command), trigger)
                     counter += 1
 
     def handle_broken_items(self, attack_partner: Optional[UnitObject], defense_partner: Optional[UnitObject]):
         """
         Checks if any of the items used in battle are broken,
-        and if so unequips them.
+        and if so calls the corresponding function.
         Provides an alert for the attacker and defender's broken
         item if nobody died
         """
         if item_system.is_broken(self.attacker, self.main_item):
             item_system.on_broken(self.attacker, self.main_item)
-            alert = item_system.broken_alert(self.attacker, self.main_item)
-            if self.alerts and self.attacker is not self.defender and alert and \
+            should_alert = item_system.alerts_when_broken(self.attacker, self.main_item)
+            if self.alerts and self.attacker is not self.defender and should_alert and \
                     self.attacker.team == 'player' and not self.attacker.is_dying:
                 game.alerts.append(banner.BrokenItem(self.attacker, self.main_item))
                 game.state.change('alert')
         if self.def_item and item_system.is_broken(self.defender, self.def_item):
             item_system.on_broken(self.defender, self.def_item)
-            alert = item_system.broken_alert(self.defender, self.def_item)
-            if self.alerts and self.attacker is not self.defender and alert and \
+            should_alert = item_system.alerts_when_broken(self.defender, self.def_item)
+            if self.alerts and self.attacker is not self.defender and should_alert and \
                     self.defender.team == 'player' and not self.defender.is_dying:
                 game.alerts.append(banner.BrokenItem(self.defender, self.def_item))
                 game.state.change('alert')
@@ -406,6 +407,21 @@ class SimpleCombat():
             item_system.on_broken(attack_partner, attack_partner.get_weapon())
         if defense_partner and item_system.is_broken(defense_partner, defense_partner.get_weapon()):
             item_system.on_broken(defense_partner, defense_partner.get_weapon())
+
+    def handle_unusable_items(self, attack_partner: Optional[UnitObject], defense_partner: Optional[UnitObject]):
+        """
+        Checks if any of the items used in battle are now unusable,
+        and if so calls the corresponding function.
+        No alerts
+        """
+        if item_system.is_unusable(self.attacker, self.main_item):
+            item_system.on_unusable(self.attacker, self.main_item)
+        if self.def_item and item_system.is_unusable(self.defender, self.def_item):
+            item_system.on_unusable(self.defender, self.def_item)
+        if attack_partner and item_system.is_unusable(attack_partner, attack_partner.get_weapon()):
+            item_system.on_unusable(attack_partner, attack_partner.get_weapon())
+        if defense_partner and item_system.is_unusable(defense_partner, defense_partner.get_weapon()):
+            item_system.on_unusable(defense_partner, defense_partner.get_weapon())
 
     def handle_wexp(self, unit, item, target):
         marks = self.get_from_full_playback('mark_hit')
@@ -615,7 +631,7 @@ class SimpleCombat():
                 pair = (mark.defender.nid, mark.attacker.nid)
                 if pair not in pairs:  # No duplicates
                     pairs.add(pair)
-                    
+
                     act = action.UpdateRecords('kill', pair)
                     action.do(act)
                     if mark.attacker.team == 'player':  # If player is dying, save this result even if we turnwheel back

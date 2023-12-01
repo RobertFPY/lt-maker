@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from typing import List, Set, Tuple
+from typing import List, Optional, Set, Tuple
 
 from app.utilities.data import Data, Prefab
 from app.utilities.typing import NID
@@ -13,6 +13,7 @@ class Team(Prefab):
     map_sprite_palette: NID = None  # Used for map sprites
     combat_variant_palette: str = None  # Used for battle animation
     combat_color: str = 'red'
+    phase_change_sound_effect: Optional[NID] = None  # Defaults to "Next Turn" in engine
 
     @classmethod
     def default(cls):
@@ -53,6 +54,8 @@ class TeamCatalog(Data[Team]):
         return (vals, list(self.alliance_pairs))
         
     def restore(self, vals):
+        if not vals:
+            vals = []
         if len(vals) == 2:
             vals, alliance_pairs = vals
         else:  # Deprecated support

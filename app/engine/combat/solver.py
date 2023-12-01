@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+import math
 from typing import Callable, List
 
 from app.data.database.database import DB
@@ -421,6 +421,8 @@ class CombatPhaseSolver():
             roll = (static_random.get_combat() + static_random.get_combat()) // 2
         elif rng_mode == RNGOption.TRUE_HIT_PLUS:
             roll = (static_random.get_combat() + static_random.get_combat() + static_random.get_combat()) // 3
+        elif rng_mode == RNGOption.FATES_HIT:
+            roll = static_random.get_combat()
         elif rng_mode == RNGOption.GRANDMASTER:
             roll = 0
         else:  # Default to True Hit
@@ -430,6 +432,15 @@ class CombatPhaseSolver():
 
     def generate_crit_roll(self):
         return static_random.get_combat()
+    
+    def calculate_fates_hit(self, hit):
+        """
+        Modified slightly from the actual Fates formula to instead compare against values from 0 - 100, 
+        rather than from 0 - 10000. This is so we can use the existing functions in the engine that
+        rely on combat rolls being 0-99, rather than 0-9999.
+        The only change is dividing the value by 100 and then rounding it to the nearest integer.
+        """
+        return int(round(hit + (40 / 3) * (hit / 100) * math.sin(math.radians((0.02 * hit - 1) * 180))))
 
     def process(self, actions, playback, attacker, defender, def_pos, item, def_item, mode, attack_info, assist=False):
         # Is the item I am processing the first one?
@@ -438,6 +449,8 @@ class CombatPhaseSolver():
             item = attacker.get_weapon()
 
         to_hit = combat_calcs.compute_hit(attacker, defender, item, def_item, mode, attack_info)
+        if game.mode.rng_choice == RNGOption.FATES_HIT:
+            to_hit = self.calculate_fates_hit(to_hit)
 
         if self.current_command.lower() in ('hit1', 'hit2', 'crit1', 'crit2'):
             roll = -1

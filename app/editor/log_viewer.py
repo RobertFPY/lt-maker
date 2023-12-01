@@ -10,6 +10,8 @@ from PyQt5.QtGui import QWindow
 from app import lt_log
 import os
 
+from app.editor.settings.main_settings_controller import MainSettingsController
+
 MAX_NUM_CHARS = 100000
 
 class LogViewer(QWidget):
@@ -19,9 +21,11 @@ class LogViewer(QWidget):
         self.setWindowTitle("Logs")
         self.resize(800,800)
 
+        self.settings = MainSettingsController()
         self.textEdit = QTextEdit()
         self.textEdit.setReadOnly(True)
-        self.textEdit.setFont(QFont('Consolas', 10))
+        self.textEdit.setFontFamily(self.settings.get_code_font())
+        self.textEdit.setFontPointSize(12)
         self.textEdit.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.textEdit.setLineWrapMode(QTextEdit.NoWrap)
 
@@ -75,7 +79,8 @@ class LogViewer(QWidget):
         at_bottom = (vscroll.value() >= (vscroll.maximum() - 4))
         prev_scroll = vscroll.value()
         self.textEdit.moveCursor(QTextCursor.End)
-        self.textEdit.insertPlainText(''.join(lines))
+        self.textEdit.setFontFamily(self.settings.get_code_font())
+        self.textEdit.textCursor().insertText(''.join(lines))
         if not at_bottom:
             vscroll.setValue(prev_scroll)
         else:

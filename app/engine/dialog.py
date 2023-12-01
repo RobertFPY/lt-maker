@@ -22,7 +22,7 @@ from app.utilities.enums import Alignments
 import logging
 
 MATCH_DIALOG_COMMAND_RE = re.compile('(\{[^\{]*?\})')
-def clean_newlines(text: str) -> str:
+def process_dialog_shorthand(text: str) -> str:
     if not text:
         return text
     # special char: this is a unicode single-line break.
@@ -32,6 +32,8 @@ def clean_newlines(text: str) -> str:
         text = text[1:]
     text = text.replace('\u2028', '{sub_break}')  # sub break to distinguish it
     text = text.replace('\n', '{br}')
+    text = text.replace('|', '{w}{br}')
+    text = text.replace('{semicolon}', ';')
     return text
 
 class DialogState(Enum):
@@ -163,14 +165,12 @@ class Dialog():
         self._state = value
 
     def format_text(self, text):
-        # Pipe character replacement
-        text = text.replace('|', '{w}{br}')
+        text = process_dialog_shorthand(text)
         if text.endswith('{no_wait}'):
             text = text[:-len('{no_wait}')]
             self.no_wait = True
         elif not text.endswith('{w}'):
             text += '{w}'
-        text = text.replace('{semicolon}', ';')
         processed_text: List[str] = []
         # obligatory regex explanation: turns "A line.{w} With some <red>text</>."
         # into ["A line.", "{w}", " With some ", "<red>", "text", "</>", "."]
@@ -301,7 +301,7 @@ class Dialog():
             self.speed = self.starting_speed
         elif command == ' ':  # Check to see if we should move to next line
             # Wow this is cursed
-            # Basically, we need to make sure we are using 
+            # Basically, we need to make sure we are using
             # a fixed tags version of what the dialog would look like,
             # if the next word was added to the current line (self.text_lines[-1])
             next_word = self._get_next_word(self.text_index)
@@ -606,7 +606,7 @@ class DynamicDialogWrapper():
                  name_tag_bg='name_tag', flags=None) -> None:
         # eval trick
         self.resolve_text_func: Callable[[], str] = text_func
-        self.resolved_text = clean_newlines(self.resolve_text_func()).replace('{w}', '').replace('|', '{br}')
+        self.resolved_text = process_dialog_shorthand(self.resolve_text_func()).replace('{w}', '')
         # dialog props
         self.portrait = portrait
         self.background = background
@@ -629,7 +629,7 @@ class DynamicDialogWrapper():
                              font_type, num_lines, draw_cursor, message_tail, transparency, name_tag_bg, flags)
 
     def update(self):
-        new_text = clean_newlines(self.resolve_text_func()).replace('{w}', '').replace('|', '{br}')
+        new_text = process_dialog_shorthand(self.resolve_text_func()).replace('{w}', '')
         if new_text != self.resolved_text:
             self.resolved_text = new_text
             self.dialog = Dialog(self.resolved_text, self.portrait, self.background,

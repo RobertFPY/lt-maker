@@ -207,17 +207,20 @@ class PortraitProperties(QWidget):
             blink_image = None
         # Draw image
         painter = QPainter()
+        main_portrait = editor_utilities.convert_colorkey(main_portrait)
         painter.begin(main_portrait)
         if blink_image:
             blink_image = blink_image.toImage()
+            blink_image = editor_utilities.convert_colorkey(blink_image)
             painter.drawImage(self.current.blinking_offset[0], self.current.blinking_offset[1], blink_image)
+        mouth_image = editor_utilities.convert_colorkey(mouth_image)
         painter.drawImage(self.current.smiling_offset[0], self.current.smiling_offset[1], mouth_image)
         painter.setPen(QPen(Qt.black, 1, Qt.DashLine))
         painter.setOpacity(0.75)
         painter.drawRect(0, self.current.info_offset, 96, 72)
         painter.end()
 
-        final_pix = QPixmap.fromImage(editor_utilities.convert_colorkey(main_portrait))
+        final_pix = QPixmap.fromImage(main_portrait)
         self.portrait_view.set_image(final_pix)
 
         self.portrait_view.show_image()

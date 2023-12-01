@@ -1,6 +1,10 @@
 import functools
 import re
 
+
+def convert_raw_text_newlines(s: str) -> str:
+    return s.replace('\u2029', '\n')
+
 def get_next_name(name, names, infix='_'):
     if name not in names:
         return name
@@ -184,6 +188,18 @@ def remove_all_matched(s: str, opener: str, closer: str):
     while n:
         s, n = re.subn(rstr, '', s)  # remove non-nested/flat balanced parts
     return s
+
+
+_MIRRORED_BRACKETS = {
+    '[': ']',
+    '{': '}',
+    '(': ')',
+}
+for k, v in _MIRRORED_BRACKETS.copy().items():
+    _MIRRORED_BRACKETS[v] = k
+
+def mirror_bracket(c: str) -> str:
+    return _MIRRORED_BRACKETS.get(c, None)
 
 if __name__ == '__main__':
     # print(camel_to_snake("Direction"))

@@ -4,10 +4,12 @@ import math
 from typing import TYPE_CHECKING, List
 
 from app.data.database.database import DB
-from app.engine import item_system, skill_system, target_system, text_funcs
+from app.engine import item_system, skill_system, text_funcs
 from app.engine.objects.item import ItemObject
 from app.engine.objects.skill import SkillObject
 from app.utilities import utils
+
+from app.engine.game_state import game
 
 if TYPE_CHECKING:
     from app.engine.objects.unit import UnitObject
@@ -36,7 +38,7 @@ def has_magic(unit) -> bool:
 
 def can_use(unit, item) -> bool:
     if item_system.can_use(unit, item) and available(unit, item):
-        targets = target_system.get_valid_targets(unit, item)
+        targets = game.target_system.get_valid_targets(unit, item)
         if targets:
             return True
     return False
@@ -198,7 +200,9 @@ def get_range(unit, item) -> set:
     max_range = item_system.maximum_range(unit, item)
 
     max_range = max(0, max_range)
+    min_range = max(0, min_range)
     max_range += skill_system.modify_maximum_range(unit, item)
+    min_range += skill_system.modify_minimum_range(unit, item)
     limit_max = skill_system.limit_maximum_range(unit, item)
     max_range = utils.clamp(max_range, 0, limit_max)
 
@@ -221,6 +225,11 @@ def get_range_string(unit, item):
     else:
         rng = '%d' % max_range
     return rng
+
+def get_max_range(unit: UnitObject) -> int:
+    """Returns the maximum range of all available items for the unit"""
+    items = [item for item in get_all_items(unit) if available(unit, item)]
+    return max([max(get_range(unit, item), default=0) for item in items], default=0)
 
 def create_skill(unit, skill_nid):
     skill_prefab = DB.skills.get(skill_nid)
@@ -263,3 +272,9 @@ def create_skills(unit, skill_nid_list: list) -> list:
 
 def num_stacks(unit: UnitObject, skill_nid: NID) -> int:
     return len([skill for skill in unit.skills if skill.nid == skill_nid])
+
+def can_be_used_in_base(unit: UnitObject, item: ItemObject) -> bool:
+    return (item_system.can_use(unit, item) and
+            available(unit, item) and
+            item_system.can_use_in_base(unit, item) and
+            item_system.simple_target_restrict(unit, item))

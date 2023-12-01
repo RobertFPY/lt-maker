@@ -1,11 +1,13 @@
 import logging
+import functools
 import math
+from typing import List
 
 from app.constants import FRAMERATE
 from app.data.database.database import DB
 from app.engine import (action, combat_calcs, engine, equations, evaluate,
                         item_funcs, item_system, line_of_sight,
-                        skill_system, target_system)
+                        skill_system)
 from app.engine.pathfinding import pathfinding
 from app.engine.combat import interaction
 from app.engine.game_state import game
@@ -13,6 +15,7 @@ from app.engine.movement import movement_funcs
 from app.events import triggers
 from app.events.regions import RegionType
 from app.utilities import utils
+from app.utilities.typing import Pos
 
 
 class AIController():
@@ -101,12 +104,12 @@ class AIController():
 
     def move(self):
         if self.goal_position and self.goal_position != self.unit.position:
-            normal_moves = target_system.get_valid_moves(self.unit, witch_warp=False)
+            normal_moves = game.path_system.get_valid_moves(self.unit, witch_warp=False)
             witch_warp = set(skill_system.witch_warp(self.unit))
             if self.goal_position in witch_warp and self.goal_position not in normal_moves:
                 action.do(action.Warp(self.unit, self.goal_position))
             else:
-                path = target_system.get_path(self.unit, self.goal_position)
+                path = game.path_system.get_path(self.unit, self.goal_position)
                 game.state.change('movement')
                 action.do(action.Move(self.unit, self.goal_position, path))
             return True
@@ -138,7 +141,7 @@ class AIController():
             primary_target = game.board.get_unit(self.goal_target)
             if primary_target:
                 self.unit.strike_partner, primary_target.strike_partner = \
-                    target_system.find_strike_partners(self.unit, primary_target, self.goal_item)
+                    game.target_system.find_strike_partners(self.unit, primary_target, self.goal_item)
 
             # Used for steal
             if item_system.targets_items(self.unit, self.goal_item):
@@ -185,7 +188,7 @@ class AIController():
 
         target_positions = get_targets(self.unit, self.behaviour)
 
-        zero_move = max(target_system.find_potential_range(self.unit, True, True), default=0)
+        zero_move = item_funcs.get_max_range(self.unit)
         single_move = zero_move + equations.parser.movement(self.unit)
         double_move = single_move + equations.parser.movement(self.unit)
 
@@ -213,7 +216,7 @@ class AIController():
         if self.behaviour.view_range == -1 and not game.ai_group_active(self.unit.ai_group):
             return {self.unit.position}
         else:
-            valid_moves = target_system.get_valid_moves(self.unit)
+            valid_moves = game.path_system.get_valid_moves(self.unit)
             other_unit_positions = {unit.position for unit in game.units if unit.position and unit is not self.unit}
             valid_moves -= other_unit_positions
             return valid_moves
@@ -373,6 +376,7 @@ class PrimaryAI():
         self.target_index = 0
 
         self.valid_moves = list(valid_moves)
+        logging.debug(f"Valid Moves: {self.valid_moves}")
 
         self.best_target = None
         self.best_position = None
@@ -385,65 +389,41 @@ class PrimaryAI():
             item = self.items[self.item_index]
             logging.info("Testing %s" % item)
             if self.unit.can_equip(item):
-                self.unit.equip(item)
+                action.do(action.EquipItem(self.unit, item))
             self.get_all_valid_targets()
             self.possible_moves = self.get_possible_moves()
             logging.info(self.possible_moves)
 
-    def get_valid_targets(self, unit, item, valid_moves) -> list:
-        item_range = item_funcs.get_range(unit, item)
-        ai_targets = item_system.valid_targets(unit, item)
-        if len(ai_targets) < 20:
-            logging.info("AI Targets: %s", ai_targets)
-        filtered_targets = set()
-
-        for pos in ai_targets:
-            for valid_move in valid_moves:
-                # Determine if we can hit this unit at one of our moves
-                if utils.calculate_distance(pos, valid_move) in item_range:
-                    if DB.constants.value('ai_fog_of_war'):
-                        if game.board.in_vision(pos, unit.team) or \
-                                item_system.ignore_fog_of_war(unit, item) or \
-                                (game.board.get_unit(pos) and 'Tile' in game.board.get_unit(pos).tags):
-                            filtered_targets.add(pos)
-                            break
-                    else:
-                        filtered_targets.add(pos)
-                        break
-
-        return list(filtered_targets)
-
     def get_all_valid_targets(self):
         item = self.items[self.item_index]
         logging.info("Determining targets for item: %s", item)
-        self.valid_targets = self.get_valid_targets(self.unit, item, self.valid_moves)
+        self.valid_targets = list(game.target_system.get_all_valid_targets(self.unit, self.valid_moves, [item]))
         # Only if we already have some legal targets (ie, ourself)
         if self.valid_targets and 0 in item_funcs.get_range(self.unit, item):
             self.valid_targets += self.valid_moves  # Hack to target self in all valid positions
             self.valid_targets = list(set(self.valid_targets))  # Only uniques
         logging.info("Valid Targets: %s", self.valid_targets)
 
-    def get_possible_moves(self) -> list:
+    def get_possible_moves(self) -> List[Pos]:
+        """Given an item and a target, find all positions in valid_moves that I can strike the target at."""
         if self.target_index < len(self.valid_targets) and self.item_index < len(self.items):
-            # Given an item and a target, find all positions in valid_moves that I can strike the target at.
             item = self.items[self.item_index]
             target = self.valid_targets[self.target_index]
-            a = target_system.find_manhattan_spheres(item_funcs.get_range(self.unit, item), *target)
-            b = set(self.valid_moves)
-            return list(a & b)
+            moves: List[Pos] = game.target_system.get_possible_attack_positions(self.unit, target, self.valid_moves, item)
+            return moves
         else:
             return []
 
     def quick_move(self, move):
-        game.leave(self.unit, test=True)
+        action.PickUnitUp(self.unit, True).do()
         self.unit.position = move
-        game.arrive(self.unit, test=True)
+        action.PutUnitDown(self.unit, True).do()
 
     def run(self):
         if self.item_index >= len(self.items):
             self.quick_move(self.orig_pos)
             if self.orig_item and self.unit.can_equip(self.orig_item):
-                self.unit.equip(self.orig_item)
+                action.do(action.EquipItem(self.unit, self.orig_item))
             return (True, self.best_target, self.best_position, self.best_item)
 
         elif self.target_index >= len(self.valid_targets):
@@ -694,7 +674,7 @@ def get_targets(unit, behaviour):
     if behaviour.target != 'Position':
         if DB.constants.value('ai_fog_of_war'):
             all_targets = [
-                pos for pos in all_targets if 
+                pos for pos in all_targets if
                 game.board.in_vision(pos, unit.team) or
                 (game.board.get_unit(pos) and 'Tile' in game.board.get_unit(pos).tags) # Can always targets Tiles
             ]
@@ -713,16 +693,14 @@ class SecondaryAI():
         # Determine all targets
         self.all_targets = get_targets(self.unit, behaviour)
 
-        self.zero_move = max(target_system.find_potential_range(self.unit, True, True), default=0)
+        self.zero_move = item_funcs.get_max_range(self.unit)
         self.single_move = self.zero_move + equations.parser.movement(self.unit)
         self.double_move = self.single_move + equations.parser.movement(self.unit)
 
         movement_group = movement_funcs.get_movement_group(self.unit)
-        self.grid = game.board.get_grid(movement_group)
+        self.grid = game.board.get_movement_grid(movement_group)
         self.pathfinder = \
-            pathfinding.AStar(self.unit.position, None, self.grid,
-                              game.board.bounds, game.tilemap.height,
-                              self.unit.team)
+            pathfinding.AStar(self.unit.position, None, self.grid)
 
         self.widen_flag = False  # Determines if we've widened our search
         self.reset()
@@ -771,7 +749,7 @@ class SecondaryAI():
                 self.best_path = path
 
         elif self.best_target:
-            self.best_position = target_system.travel_algorithm(self.best_path, self.unit.movement_left, self.unit, self.grid)
+            self.best_position = game.path_system.travel_algorithm(self.best_path, self.unit.movement_left, self.unit, self.grid)
             logging.info("Best Target: %s", self.best_target)
             logging.info("Best Position: %s", self.best_position)
             return True, self.best_position
@@ -798,9 +776,9 @@ class SecondaryAI():
 
         limit = self.get_limit()
         if skill_system.pass_through(self.unit):
-            can_move_through = lambda team, adj: True
+            can_move_through = lambda adj: True
         else:
-            can_move_through = game.board.can_move_through
+            can_move_through = functools.partial(game.board.can_move_through, self.unit.team)
         path = self.pathfinder.process(can_move_through, adj_good_enough=adj_good_enough, limit=limit)
         self.pathfinder.reset()
         return path

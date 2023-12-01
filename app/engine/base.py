@@ -53,9 +53,12 @@ class BaseMainState(State):
         """
         # basic options
         options = ['Manage', 'Convos', 'Codex', 'Options', 'Save', 'Continue']
-        ignore = [False, True, False, False, False, self.is_from_overworld]
+        ignore = [True, True, False, False, False, self.is_from_overworld]
 
         # options from environment
+        # Make sure there's at least one unit before turning on Manage
+        if game.get_units_in_party():
+            ignore[0] = False
         if game.base_convos:
             ignore[1] = False
         if game.game_vars.get('_supports') and DB.support_constants.value('base_convos'):

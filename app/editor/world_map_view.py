@@ -5,7 +5,8 @@ from app.data.database.database import DB
 from app.data.database.overworld import OverworldPrefab
 from app.editor.map_view import SimpleMapView
 from app.editor.overworld_editor.road_sprite_wrapper import RoadSpriteWrapper
-from app.editor.tile_editor import tile_model
+# from app.editor.tile_editor import tile_model
+from app.editor.tilemap_editor import get_tilemap_pixmap
 from app.data.resources.resources import RESOURCES
 from app.sprites import SPRITES
 from app.utilities.typing import Point
@@ -41,7 +42,7 @@ class WorldMapView(SimpleMapView):
             self.current_map = RESOURCES.tilemaps.get(
                 self.current_level.tilemap)
         if self.current_map:
-            pixmap = tile_model.create_tilemap_pixmap(self.current_map)
+            pixmap = get_tilemap_pixmap(self.current_map)
             self.working_image = pixmap
         else:
             self.clear_scene()

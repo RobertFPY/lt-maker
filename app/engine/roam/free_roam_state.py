@@ -120,8 +120,8 @@ class FreeRoamState(MapState):
         region = game.get_region_under_pos(self.roam_unit.position)
         if region and region.region_type == RegionType.EVENT:
             try:
-                truth = evaluate.evaluate(region.condition, self.roam_unit, 
-                                          position=self.roam_unit.position, 
+                truth = evaluate.evaluate(region.condition, self.roam_unit,
+                                          position=self.roam_unit.position,
                                           local_args={'region': region})
                 if truth:
                     return region
@@ -188,7 +188,7 @@ class FreeRoamState(MapState):
         did_trigger = game.events.trigger(triggers.RoamPressAux(self.roam_unit, other_unit))
         if not did_trigger:
             game.state.change('option_menu')
-    
+
     def check_start(self):
         """
         # Called whenever the player presses START
@@ -198,7 +198,7 @@ class FreeRoamState(MapState):
         did_trigger = game.events.trigger(triggers.RoamPressStart(self.roam_unit, other_unit))
         if not did_trigger:
             game.state.change('option_menu')
-    
+
     def take_input(self, event):
         if not self.roam_unit:
             return

@@ -8,7 +8,7 @@ from app.data.database.database import DB
 import app.engine.config as cf
 from app.engine.persistent_records import RECORDS
 from app.engine import engine, item_funcs, item_system, skill_system, \
-    combat_calcs, unit_funcs, target_system
+    combat_calcs, unit_funcs
 from app.engine.movement import movement_funcs
 
 """
@@ -55,7 +55,8 @@ def get_context(unit1=None, unit2=None, position=None,
         'position': position,
         'check_pair': check_pair,
         'check_default': check_default,
-        'game': game
+        'game': game,
+        'target_system': game.target_system,
     })
     if game:
         temp_globals.update(game.query_engine.func_dict)

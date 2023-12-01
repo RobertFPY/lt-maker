@@ -198,6 +198,7 @@ def auto_level(unit, base_level: int, num_levels: int, custom_method=None):
         unit.stats[nid] += total_stat_changes[nid]
     unit.set_hp(1000)  # Go back to full hp
     unit.set_mana(1000)  # Go back to full mana
+    return total_stat_changes
 
 def difficulty_auto_level(unit, base_level, num_levels: int):
     total_stat_changes = {nid: 0 for nid in DB.stats.keys()}
@@ -311,6 +312,12 @@ def can_unlock(unit, region) -> bool:
                 item_system.can_unlock(unit, item, region):
             return True
     return False
+
+def can_pairup(rescuer, rescuee) -> bool:
+    valid = DB.constants.value('pairup') and not DB.constants.value('attack_stance_only')
+    if valid and DB.constants.value('player_pairup_only'):
+        valid = rescuer.team == 'player' and rescuee.team == 'player'
+    return valid
 
 def check_focus(unit, limit=3) -> int:
     from app.engine import skill_system

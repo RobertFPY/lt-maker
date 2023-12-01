@@ -15,7 +15,7 @@ from app.utilities.typing import NID, Protocol
 T = TypeVar('T')
 
 
-class IMenuOption(Protocol, Generic[T]):
+class IMenuOption(Generic[T]):
     get: Callable[[], T]
     set: Callable[[T, str], None]
     height: Callable[[], int]

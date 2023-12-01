@@ -18,6 +18,7 @@ class RNGOption(str, Enum):
     CLASSIC = 'Classic'
     TRUE_HIT = 'True Hit'
     TRUE_HIT_PLUS = 'True Hit Plus'
+    FATES_HIT = 'Fates Hit'
     GRANDMASTER = 'Grandmaster'
 
 @dataclass

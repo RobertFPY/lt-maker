@@ -4,11 +4,12 @@ from PyQt5.QtCore import Qt
 from app.utilities.data import Data
 from app.data.resources.resources import RESOURCES
 from app.data.database.database import DB
-from app.data.database import components, item_components
+from app.data.database import item_components, skill_components
 
 from app.editor.custom_widgets import WeaponTypeBox
-from app.extensions.custom_gui import DeletionDialog
+from app.extensions.custom_gui import DeletionTab, DeletionDialog
 from app.editor.base_database_gui import DragDropCollectionModel
+from app.data.database.components import ComponentType, swap_values
 
 import app.editor.utilities as editor_utilities
 
@@ -42,28 +43,40 @@ class WeaponModel(DragDropCollectionModel):
         # Check to make sure nothing else is using me!!!
         weapon_type = self._data[idx]
         nid = weapon_type.nid
-        affected_klasses = [klass for klass in DB.classes if klass.wexp_gain.get(nid) and klass.wexp_gain.get(nid).wexp_gain > 0]
+        affected_classes = [klass for klass in DB.classes if klass.wexp_gain.get(nid) and klass.wexp_gain.get(nid).wexp_gain > 0]
         affected_units = [unit for unit in DB.units if unit.wexp_gain.get(nid) and unit.wexp_gain.get(nid).wexp_gain > 0]
-        affected_items = item_components.get_items_using(components.ComponentType.WeaponType, nid, DB)
+        affected_items = item_components.get_items_using(ComponentType.WeaponType, nid, DB)
+        affected_skills = skill_components.get_skills_using(ComponentType.WeaponType, nid, DB)
         affected_weapons = [weapon for weapon in DB.weapons if weapon.advantage.contains(nid) or weapon.disadvantage.contains(nid)]
-        if affected_klasses or affected_units or affected_items or affected_weapons:
-            if affected_items:
-                affected = Data(affected_items)
-                from app.editor.item_editor.item_model import ItemModel
-                model = ItemModel
-            elif affected_klasses:
-                affected = Data(affected_klasses)
-                from app.editor.class_editor.class_model import ClassModel
-                model = ClassModel
-            elif affected_units:
-                affected = Data(affected_units)
-                from app.editor.unit_editor.unit_model import UnitModel
-                model = UnitModel
-            elif affected_weapons:
-                affected = Data(affected_weapons)
-                model = WeaponModel
-            msg = "Deleting WeaponType <b>%s</b> would affect these objects." % nid
-            swap, ok = DeletionDialog.get_swap(affected, model, msg, WeaponTypeBox(self.window, exclude=weapon_type), self.window)
+        
+        deletion_tabs = []
+        if affected_items:
+            from app.editor.item_editor.item_model import ItemModel
+            model = ItemModel
+            msg = "Deleting WeaponType <b>%s</b> would affect these items." % nid
+            deletion_tabs.append(DeletionTab(affected_items, model, msg, "Items"))
+        if affected_skills:
+            from app.editor.skill_editor.skill_model import SkillModel
+            model = SkillModel
+            msg = "Deleting WeaponType <b>%s</b> would affect these items." % nid
+            deletion_tabs.append(DeletionTab(affected_skills, model, msg, "Skills"))
+        if affected_classes:
+            from app.editor.class_editor.class_model import ClassModel
+            model = ClassModel
+            msg = "Deleting WeaponType <b>%s</b> would affect these classes." % nid
+            deletion_tabs.append(DeletionTab(affected_classes, model, msg, "Classes"))
+        if affected_units:
+            from app.editor.unit_editor.unit_model import UnitModel
+            model = UnitModel
+            msg = "Deleting WeaponType <b>%s</b> would affect these units." % nid
+            deletion_tabs.append(DeletionTab(affected_units, model, msg, "Units"))
+        if affected_weapons:
+            model = WeaponModel
+            msg = "Deleting WeaponType <b>%s</b> would affect these weapons." % nid
+            deletion_tabs.append(DeletionTab(affected_weapons, model, msg, "Weapons"))
+            
+        if deletion_tabs:
+            swap, ok = DeletionDialog.get_swap(deletion_tabs, WeaponTypeBox(self.window, exclude=weapon_type), self.window)
             if ok:
                 self.on_nid_changed(nid, swap.nid)
             else:
@@ -91,8 +104,8 @@ class WeaponModel(DragDropCollectionModel):
             weapon.rank_bonus.swap_type(old_nid, new_nid)
             weapon.advantage.swap_type(old_nid, new_nid)
             weapon.disadvantage.swap_type(old_nid, new_nid)
-        affected_items = item_components.get_items_using(components.ComponentType.WeaponType, old_nid, DB)
-        item_components.swap_values(affected_items, components.ComponentType.WeaponType, old_nid, new_nid)
+        swap_values(DB.items.values(), ComponentType.WeaponType, old_nid, new_nid)
+        swap_values(DB.skills.values(), ComponentType.WeaponType, old_nid, new_nid)
 
     def create_new(self):
         new_weapon = DB.weapons.create_new(DB)

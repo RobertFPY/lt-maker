@@ -2,7 +2,7 @@ from app.data.database.item_components import ItemComponent, ItemTags
 from app.data.database.components import ComponentType
 
 from app.utilities import utils
-from app.engine import target_system, skill_system
+from app.engine import skill_system
 from app.engine.game_state import game
 
 class BlastAOE(ItemComponent):
@@ -19,7 +19,7 @@ class BlastAOE(ItemComponent):
 
     def splash(self, unit, item, position) -> tuple:
         ranges = set(range(self._get_power(unit)))
-        splash = target_system.find_manhattan_spheres(ranges, position[0], position[1])
+        splash = game.target_system.find_manhattan_spheres(ranges, position[0], position[1])
         splash = {pos for pos in splash if game.tilemap.check_bounds(pos)}
         from app.engine import item_system
         if item_system.is_spell(unit, item):
@@ -35,7 +35,7 @@ class BlastAOE(ItemComponent):
 
     def splash_positions(self, unit, item, position) -> set:
         ranges = set(range(self._get_power(unit)))
-        splash = target_system.find_manhattan_spheres(ranges, position[0], position[1])
+        splash = game.target_system.find_manhattan_spheres(ranges, position[0], position[1])
         splash = {pos for pos in splash if game.tilemap.check_bounds(pos)}
         return splash
 
@@ -46,7 +46,7 @@ class EnemyBlastAOE(BlastAOE):
 
     def splash(self, unit, item, position) -> tuple:
         ranges = set(range(self._get_power(unit)))
-        splash = target_system.find_manhattan_spheres(ranges, position[0], position[1])
+        splash = game.target_system.find_manhattan_spheres(ranges, position[0], position[1])
         splash = {pos for pos in splash if game.board.check_bounds(pos)}
         from app.engine import item_system, skill_system
         if item_system.is_spell(unit, item):
@@ -63,7 +63,7 @@ class EnemyBlastAOE(BlastAOE):
     def splash_positions(self, unit, item, position) -> set:
         from app.engine import skill_system
         ranges = set(range(self._get_power(unit)))
-        splash = target_system.find_manhattan_spheres(ranges, position[0], position[1])
+        splash = game.target_system.find_manhattan_spheres(ranges, position[0], position[1])
         splash = {pos for pos in splash if game.tilemap.check_bounds(pos)}
         # Doesn't highlight allies positions
         splash = {pos for pos in splash if not game.board.get_unit(pos) or skill_system.check_enemy(unit, game.board.get_unit(pos))}
@@ -76,7 +76,7 @@ class AllyBlastAOE(BlastAOE):
 
     def splash(self, unit, item, position) -> tuple:
         ranges = set(range(self._get_power(unit)))
-        splash = target_system.find_manhattan_spheres(ranges, position[0], position[1])
+        splash = game.target_system.find_manhattan_spheres(ranges, position[0], position[1])
         splash = {pos for pos in splash if game.tilemap.check_bounds(pos)}
         from app.engine import skill_system
         splash = [game.board.get_unit(s) for s in splash]

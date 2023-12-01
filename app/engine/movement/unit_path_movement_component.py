@@ -17,8 +17,8 @@ class UnitPathMovementComponent(MovementComponent):
     # Used for moving a unit along a path
     """
     grid_move = True
-    
-    def __init__(self, unit, path: List[Tuple[int, int]], event=False, 
+
+    def __init__(self, unit, path: List[Tuple[int, int]], event=False,
                  follow=True, muted=False, speed: int = 0):
         super().__init__(unit, follow, muted)
         self.path = path
@@ -45,13 +45,18 @@ class UnitPathMovementComponent(MovementComponent):
             next_position = self.path[-1]
             net_position = (next_position[0] - self.unit.position[0], next_position[1] - self.unit.position[1])
             self.unit.sprite.handle_net_position(net_position)
-        game.leave(self.unit)
+        action.PickUnitUp(self.unit).do()
         if not self.muted:
             self.unit.sound.play()
         self._last_update = engine.get_time()
 
     def update(self, current_time: int):
         if not self.active:
+            return
+
+        if not self.unit.position:
+            logging.error("Unit %s is no longer on the map", self.unit)
+            self.active = False
             return
 
         dt = current_time - self._last_update
@@ -61,20 +66,15 @@ class UnitPathMovementComponent(MovementComponent):
         if self.path:
             next_position = self.path[-1]
             net_position = (next_position[0] - self.unit.position[0], next_position[1] - self.unit.position[1])
-            self.unit.sprite.handle_net_position(net_position)   
+            self.unit.sprite.handle_net_position(net_position)
             if progress >= 1:
                 self.unit.sprite.reset()
-            else: 
+            else:
                 self.unit.sprite.offset[0] = int(TILEWIDTH * progress * net_position[0])
                 self.unit.sprite.offset[1] = int(TILEHEIGHT * progress * net_position[1])
 
         if progress >= 1:
             self._last_update = current_time
-
-            if not self.unit.position:
-                logging.error("Unit %s is no longer on the map", self.unit)
-                self.active = False
-                return
 
             if self.path:
                 self._handle_path()
@@ -86,7 +86,7 @@ class UnitPathMovementComponent(MovementComponent):
         next_position = self.path.pop()
         if self.unit.position != next_position:
             if movement_funcs.check_position(
-                    self.unit, next_position, 
+                    self.unit, next_position,
                     self.goal == next_position, self.event):
                 logging.debug("%s moved to %s", self.unit, next_position)
                 mcost = movement_funcs.get_mcost(self.unit, next_position)
@@ -122,7 +122,7 @@ class UnitPathMovementComponent(MovementComponent):
             if game.ai.unit is self.unit:
                 game.ai.interrupt()
 
-        game.arrive(self.unit)
+        action.PutUnitDown(self.unit).do()
         if self.unit.sound:
             self.unit.sound.stop()
 

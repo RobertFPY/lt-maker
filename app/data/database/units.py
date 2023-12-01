@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
-
+from app.data.category import CategorizedCatalog
 from app.data.database.weapons import WexpGain
 from app.utilities.data import Data, Prefab
 from app.utilities.typing import NID
@@ -63,6 +63,8 @@ class UnitPrefab(Prefab):
             return [val.copy() for val in value]  # So we don't make a copy
         elif name == 'unit_notes':
             return [val.copy() for val in value]
+        elif name == 'fields':
+            return [val.copy() for val in value]
         elif name == 'wexp_gain':
             return {k: v.save() for (k, v) in self.wexp_gain.items()}
         else:
@@ -95,7 +97,7 @@ class UnitPrefab(Prefab):
     def default(cls):
         return cls('0')
 
-class UnitCatalog(Data[UnitPrefab]):
+class UnitCatalog(CategorizedCatalog[UnitPrefab]):
     datatype = UnitPrefab
 
     def create_new(self, db):

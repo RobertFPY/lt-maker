@@ -29,6 +29,8 @@ if TYPE_CHECKING:
     from app.engine.objects.ai_group import AIGroupObject
     from app.engine.dialog_log import DialogLog
     from app.events.event_manager import EventManager
+    from app.engine.target_system import TargetSystem
+    from app.engine.pathfinding.path_system import PathSystem
     from app.utilities.typing import NID, UID
 
 from app.constants import VERSION
@@ -41,6 +43,7 @@ from app.engine import state_machine
 from app.engine.roam.roam_info import RoamInfo
 from app.utilities import static_random
 from app.data.resources.resources import RESOURCES
+from app.engine.source_type import SourceType
 
 import logging
 
@@ -109,7 +112,14 @@ class GameState():
         self.ai: ai_controller.AIController = None
         self.overworld_controller: OverworldManager = None
 
+        self.target_system: TargetSystem = None
+        self.path_system: PathSystem = None
+
         self.clear()
+
+    def on_alter_game_state(self):
+        from app.engine import skill_system
+        skill_system.reset_cache()
 
     def is_displaying_overworld(self) -> bool:
         from app.engine.overworld.overworld_map_view import OverworldMapView
@@ -212,6 +222,8 @@ class GameState():
         from app.engine import (ai_controller, camera, death, highlight,
                                 map_view, phase, ui_view)
         from app.engine.movement import movement_system
+        from app.engine.target_system import TargetSystem
+        from app.engine.pathfinding.path_system import PathSystem
 
         # Systems
         self.camera = camera.Camera(self)
@@ -225,6 +237,8 @@ class GameState():
         self.exp_instance = []
         self.mana_instance = []
         self.ai = ai_controller.AIController()
+        self.target_system = TargetSystem()
+        self.path_system = PathSystem()
 
         self.alerts.clear()
 
@@ -516,7 +530,7 @@ class GameState():
         '''
 
         from app.engine import (action, item_funcs, item_system, skill_system,
-                                supports, target_system)
+                                supports)
 
         supports.increment_end_chapter_supports()
 
@@ -532,10 +546,10 @@ class GameState():
             if unit.traveler:
                 droppee = self.get_unit(unit.traveler)
                 if full:
+                    action.RemoveSkill(unit, 'Rescue', source=unit.traveler, source_type=SourceType.TRAVELER).execute()
                     unit.traveler = None
-                    action.RemoveSkill(unit, 'Rescue').execute()
                 else:
-                    pos = target_system.get_nearest_open_tile(droppee, unit.position)
+                    pos = self.target_system.get_nearest_open_tile(droppee, unit.position)
                     action.Drop(unit, droppee, pos).execute()
                 skill_system.on_separate(droppee, unit)
             unit.set_hp(1000)  # Set to full health
@@ -617,6 +631,7 @@ class GameState():
         else:
             self.turncount = 1
             self.action_log.set_first_free_action()
+        self.on_alter_game_state()
 
     @property
     def level(self):
@@ -810,26 +825,29 @@ class GameState():
     def get_units_in_ai_group(self, ai_group_nid: NID) -> List[UnitObject]:
         return [unit for unit in self.get_all_units() if unit.ai_group == ai_group_nid]
 
-    def get_all_units(self) -> List[UnitObject]:
-        return [unit for unit in self.units if unit.position and not unit.dead and not unit.is_dying and 'Tile' not in unit.tags]
+    def get_all_units(self, only_on_field=True) -> List[UnitObject]:
+        if only_on_field:
+            return [unit for unit in self.units if unit.position and not unit.dead and not unit.is_dying and 'Tile' not in unit.tags]
+        else:
+            return self.units
 
-    def get_player_units(self) -> List[UnitObject]:
-        return [unit for unit in self.get_all_units() if unit.team == 'player']
+    def get_player_units(self, only_on_field=True) -> List[UnitObject]:
+        return [unit for unit in self.get_all_units(only_on_field) if unit.team == 'player']
 
-    def get_enemy_units(self) -> List[UnitObject]:
-        return [unit for unit in self.get_all_units() if unit.team in DB.teams.enemies]
+    def get_enemy_units(self, only_on_field=True) -> List[UnitObject]:
+        return [unit for unit in self.get_all_units(only_on_field) if unit.team in DB.teams.enemies]
 
-    def get_enemy1_units(self) -> List[UnitObject]:
-        return [unit for unit in self.get_all_units() if unit.team == 'enemy']
+    def get_enemy1_units(self, only_on_field=True) -> List[UnitObject]:
+        return [unit for unit in self.get_all_units(only_on_field) if unit.team == 'enemy']
 
-    def get_enemy2_units(self) -> List[UnitObject]:
-        return [unit for unit in self.get_all_units() if unit.team == 'enemy2']
+    def get_enemy2_units(self, only_on_field=True) -> List[UnitObject]:
+        return [unit for unit in self.get_all_units(only_on_field) if unit.team == 'enemy2']
 
-    def get_other_units(self) -> List[UnitObject]:
-        return [unit for unit in self.get_all_units() if unit.team == 'other']
+    def get_other_units(self, only_on_field=True) -> List[UnitObject]:
+        return [unit for unit in self.get_all_units(only_on_field) if unit.team == 'other']
 
-    def get_team_units(self, team: str) -> List[UnitObject]:
-        return [unit for unit in self.get_all_units() if unit.team == team]
+    def get_team_units(self, team: str, only_on_field=True) -> List[UnitObject]:
+        return [unit for unit in self.get_all_units(only_on_field) if unit.team == team]
 
     def get_travelers(self) -> List[UnitObject]:
         return [self.get_unit(unit.traveler) for unit in self.get_all_units() if unit.traveler]
@@ -929,9 +947,9 @@ class GameState():
                     skill_obj = self.get_skill(skill_uid)
                     if skill_obj and skill_obj in unit.all_skills:
                         if test:
-                            unit.remove_skill(skill_obj)
+                            unit.remove_skill(skill_obj, source=region.nid, source_type=SourceType.REGION)
                         else:
-                            act = action.RemoveSkill(unit, skill_obj)
+                            act = action.RemoveSkill(unit, skill_obj, source=region.nid, source_type=SourceType.REGION)
                             action.do(act)
             # Tiles and terrain regions
             terrain_nid = self.get_terrain_nid(self.tilemap, unit.position)
@@ -942,9 +960,9 @@ class GameState():
             skill_obj = self.get_skill(skill_uid)
             if skill_obj and skill_obj in unit.all_skills:
                 if test:
-                    unit.remove_skill(skill_obj)
+                    unit.remove_skill(skill_obj, source=unit.position, source_type=SourceType.TERRAIN)
                 else:
-                    act = action.RemoveSkill(unit, skill_obj)
+                    act = action.RemoveSkill(unit, skill_obj, source=unit.position, source_type=SourceType.TERRAIN)
                     action.do(act)
             # Boundary
             if not test:
@@ -1016,9 +1034,9 @@ class GameState():
             if skill_obj not in unit.all_skills:
                 if test:
                     # Don't need to use action for test
-                    unit.add_skill(skill_obj)
+                    unit.add_skill(skill_obj, source=unit.position, source_type=SourceType.TERRAIN)
                 else:
-                    act = action.AddSkill(unit, skill_obj)
+                    act = action.AddSkill(unit, skill_obj, source=unit.position, source_type=SourceType.TERRAIN)
                     action.do(act)
 
     def add_region_status(self, unit: UnitObject, region: RegionObject, test: bool):
@@ -1037,9 +1055,9 @@ class GameState():
             if skill_obj not in unit.all_skills:
                 if test:
                     # Don't need to use action for test
-                    unit.add_skill(skill_obj)
+                    unit.add_skill(skill_obj, source=region.nid, source_type=SourceType.REGION)
                 else:
-                    act = action.AddSkill(unit, skill_obj)
+                    act = action.AddSkill(unit, skill_obj, source=region.nid, source_type=SourceType.REGION)
                     action.do(act)
                     return act
 

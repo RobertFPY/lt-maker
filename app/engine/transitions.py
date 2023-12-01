@@ -43,10 +43,10 @@ class TransitionOutState(TransitionInState):
     transparent = True
 
     def draw(self, surf):
-        proc = (engine.get_time() - self.start_time) / self.wait_time
-        bg = image_mods.make_translucent(self.bg, 1 - proc)
-        engine.blit_center(surf, bg)
-
+        if self.bg:
+            proc = (engine.get_time() - self.start_time) / self.wait_time
+            bg = image_mods.make_translucent(self.bg, 1 - proc)
+            engine.blit_center(surf, bg)
         return surf
 
 class TransitionPopState(TransitionOutState):

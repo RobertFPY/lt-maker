@@ -1,3 +1,13 @@
 {
-    "Archer0_GenericBlue": 0
+    "Archer0_GenericBlue": 0,
+    "map_sprite_blue": 1,
+    "map_sprite_red": 2,
+    "map_sprite_green": 3,
+    "map_sprite_purple": 4,
+    "map_sprite_wait": 5,
+    "map_sprite_black": 6,
+    "map_sprite_dark_blue": 7,
+    "map_sprite_dark_red": 8,
+    "map_sprite_dark_green": 9,
+    "map_sprite_dark_wait": 10
 }

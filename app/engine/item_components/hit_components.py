@@ -218,6 +218,9 @@ class ShoveOnEndCombat(Shove):
             if new_position:
                 action.do(action.ForcedMovement(target, new_position))
 
+    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+        pass
+
 class ShoveTargetRestrict(Shove):
     nid = 'shove_target_restrict'
     desc = "Works the same as shove but will not allow the item to be selected if the action cannot be performed."

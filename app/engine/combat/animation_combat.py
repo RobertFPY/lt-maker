@@ -225,6 +225,9 @@ class AnimationCombat(BaseCombat, MockCombat):
             self.rp_battle_anim.pair(self, self.left_battle_anim, True, self.at_range, 14, right_pos)
             self.rp_battle_anim.entrance_counter = entrance_frames
 
+    def ui_should_be_hidden(self):
+        return game.game_vars.get("_hide_ui")
+
     def update(self) -> bool:
         current_time = engine.get_time() - self.last_update
         current_state = self.state
@@ -257,11 +260,15 @@ class AnimationCombat(BaseCombat, MockCombat):
 
         elif self.state == 'entrance':
             entrance_time = utils.frames2ms(10)
-            self.bar_offset = current_time / entrance_time
-            self.name_offset = current_time / entrance_time
+            if not self.ui_should_be_hidden():
+                self.bar_offset = current_time / entrance_time
+                self.name_offset = current_time / entrance_time
+            self.platform_offset = current_time / entrance_time
             if self._skip or current_time > entrance_time:
-                self.bar_offset = 1
-                self.name_offset = 1
+                if not self.ui_should_be_hidden():
+                    self.bar_offset = 1
+                    self.name_offset = 1
+                self.platform_offset = 1
                 if self.battle_background:
                     self.battle_background.fade_in(utils.frames2ms(25))
                 self.state = 'init_pause'
@@ -270,8 +277,10 @@ class AnimationCombat(BaseCombat, MockCombat):
             self.start_combat()
             self._set_stats(self.playback)
             self.pair_battle_animations(0)
-            self.bar_offset = 1
-            self.name_offset = 1
+            if not self.ui_should_be_hidden():
+                self.bar_offset = 1
+                self.name_offset = 1
+            self.platform_offset = 1
             self.state = 'arena_fade_in'
 
         elif self.state == 'arena_fade_in':
@@ -283,9 +292,9 @@ class AnimationCombat(BaseCombat, MockCombat):
 
         elif self.state == 'init_pause':
             if self._skip or current_time > utils.frames2ms(25):
-                self.start_event(True)
                 if self.battle_background:
                     self.battle_background.set_normal()
+                self.start_event(True)
                 self.state = 'battle_music'
 
         elif self.state == 'battle_music':
@@ -483,15 +492,19 @@ class AnimationCombat(BaseCombat, MockCombat):
 
         elif self.state == 'name_tags_out':
             exit_time = utils.frames2ms(2.5 if self._skip else 10)
-            self.name_offset = 1 - current_time / exit_time
+            if not self.ui_should_be_hidden():
+                self.name_offset = 1 - current_time / exit_time
             if current_time > exit_time:
                 self.name_offset = 0
                 self.state = 'all_out'
 
         elif self.state == 'all_out':
             exit_time = utils.frames2ms(2.5 if self._skip else 10)
-            self.bar_offset = 1 - current_time / exit_time
+            if not self.ui_should_be_hidden():
+                self.bar_offset = 1 - current_time / exit_time
+            self.platform_offset = 1 - current_time / exit_time
             if current_time > exit_time:
+                self.platform_offset = 0
                 self.bar_offset = 0
                 self.state = 'fade_out'
 
@@ -1058,6 +1071,18 @@ class AnimationCombat(BaseCombat, MockCombat):
         # Damage Numbers
         self.draw_damage_numbers(surf, (left_range_offset, right_range_offset, total_shake_x, total_shake_y))
 
+        # make the combat ui (nametags & bars) fade out when appropriate
+        ui_fade_states = ['name_tags_out', 'all_out', 'entrance', 
+                          'fade_in', 'red_cursor', 'init', 'arena_out',
+                          'fade_out']
+        if self.ui_should_be_hidden() and self.bar_offset > 0:
+            self.name_offset -= 0.1
+            self.bar_offset -= 0.1
+        elif not self.ui_should_be_hidden() and self.state not in ui_fade_states:
+            # Combat UI comes in without a fade
+            self.name_offset = 1
+            self.bar_offset = 1
+
         # Combat surf
         combat_surf = engine.copy_surface(self.combat_surf)
         # bar
@@ -1202,6 +1227,7 @@ class AnimationCombat(BaseCombat, MockCombat):
 
         self.handle_death(all_units)
 
+        self.handle_unusable_items(asp, dsp)
         self.handle_broken_items(asp, dsp)
 
         self.attacker.built_guard = True

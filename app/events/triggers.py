@@ -180,11 +180,11 @@ class UnitSelect(EventTrigger):
 @dataclass(init=True)
 class UnitLevelUp(EventTrigger):
     """
-    Occurs whenever a unit reaches the level stat screen.
+    Occurs whenever a unit levels up.
 
-        unit1: the unit that gained/lost stats.
+        unit1: the unit that changed their level.
         stat_changes: a dict containing their stat changes.
-        source: One of ('exp_gain', 'stat_change', 'class_change', 'promote') describing how the unit got to this screen.
+        source: One of ('exp_gain', 'stat_change', 'class_change', 'promote', 'event') describing how the unit got to this point.
     """
     nid: ClassVar[NID] = 'unit_level_up'
     unit1: UnitObject

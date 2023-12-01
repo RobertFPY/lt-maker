@@ -38,9 +38,9 @@ class NewComponentProperties(QWidget, Generic[T]):
     get_templates = None
     get_tags: Callable[[], List[Enum]]
 
-    def __init__(self, parent, current: Optional[T]=None,
-                 attempt_change_nid: Optional[Callable[[NID, NID], bool]]=None,
-                 on_icon_change: Optional[Callable]=None):
+    def __init__(self, parent, current: Optional[T] = None,
+                 attempt_change_nid: Optional[Callable[[NID, NID], bool]] = None,
+                 on_icon_change: Optional[Callable] = None):
         super().__init__(parent)
         self.attempt_change_nid = attempt_change_nid
         self.on_icon_change = on_icon_change

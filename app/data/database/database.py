@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+from pathlib import Path
 import re
 import shutil
 from typing import Any, Dict, List
@@ -15,13 +16,16 @@ from app.data.database import (ai, constants, difficulty_modes, equations,
                                terrain, translations, units, varslot, weapons)
 from app.data.database.game_flags import GameFlags
 from app.events import event_prefab
+from app.utilities.data_order import parse_order_keys_file
+from app.utilities.serialization import load_json, save_json
 from app.utilities.typing import NID
 
+CATEGORY_SUFFIX = '.category'
 
 class Database(object):
     save_data_types = ("constants", "stats", "equations", "mcost", "terrain", "weapon_ranks",
-                       "weapons", "teams", "factions", "items", "skills", "tags", "game_var_slots", 
-                       "classes", "support_constants", "support_ranks", "affinities", "units", 
+                       "weapons", "teams", "factions", "items", "skills", "tags", "game_var_slots",
+                       "classes", "support_constants", "support_ranks", "affinities", "units",
                        "support_pairs", "ai", "parties", "difficulty_modes",
                        "translations", "lore", "levels", "events", "overworlds", "raw_data", 'game_flags')
     save_as_chunks = ("events", 'items', 'skills', 'units', 'classes', 'levels')
@@ -70,7 +74,7 @@ class Database(object):
         self.game_flags = GameFlags()
 
     @property
-    def music_keys(self):
+    def music_keys(self) -> List[str]:
         keys = []
         for team in self.teams:
             keys.append("%s_phase" % team.nid)
@@ -80,12 +84,6 @@ class Database(object):
         return keys
 
     # Disk Interaction Functions
-    def json_save(self, save_loc: str, value: Any):
-        temp_save_loc = save_loc + ".tmp"
-        with open(temp_save_loc, 'w') as serialize_file:
-            json.dump(value, serialize_file, indent=4)
-        os.replace(temp_save_loc, save_loc)
-
     def load_categories(self, data_dir: str, key: str) -> Dict[NID, List[str]]:
         full_data_dir = os.path.join(data_dir, key)
         single_data_file_loc = os.path.join(data_dir, '.%s_categories' % key)
@@ -104,43 +102,34 @@ class Database(object):
         return categories
 
     def json_load(self, data_dir: str, key: str) -> Dict | List:
-        if os.path.exists(os.path.join(data_dir, key)): # data type is a directory, browse within
-            data_fnames = os.listdir(os.path.join(data_dir, key))
-            save_data = []
+        data_path = Path(data_dir, key)
+        if data_path.exists(): # data type is a directory, browse within
+            data_fnames = os.listdir(data_path)
+            ordering = []
+            if '.orderkeys' in data_fnames:
+                ordering = parse_order_keys_file(Path(data_dir, key, '.orderkeys'))
+            data_fnames: List[Path] = [Path(data_dir, key, fname) for fname in data_fnames if fname.endswith('.json')]
+            data_fnames = sorted(data_fnames, key=lambda fname: ordering.index(fname.stem) if fname.stem in ordering else 99999)
+            full_data = []
             for fname in data_fnames:
-                if not fname.endswith('.json'): # ignore other files
-                    continue
-                save_loc = os.path.join(data_dir, key, fname)
-                # logging.info("Deserializing %s from %s" % (key, save_loc))
-                with open(save_loc) as load_file:
-                    for data in json.load(load_file):
-                        data['fname'] = os.path.basename(fname)
-                        save_data.append(data)
-            if '.orderkeys' in data_fnames: # using order key file
-                with open(os.path.join(data_dir, key, '.orderkeys')) as load_file:
-                    orderkeys = json.load(load_file)
-                    return sorted(save_data, key=lambda data: orderkeys.get(data['fname'], 999999))
-            else: # using order keys per object, or no order keys at all
-                return save_data
-        else:
-            save_loc = os.path.join(data_dir, key + '.json')
-            if os.path.exists(save_loc):
-                # logging.info("Deserializing %s from %s" % (key, save_loc))
-                with open(save_loc) as load_file:
-                    try:
-                        return json.load(load_file)
-                    except Exception as e:
-                        logging.error("failed file load at %s" % load_file)
-                        raise e
-            else:
-                logging.warning("%s does not exist!" % save_loc)
-                return []
+                full_data += load_json(fname)
+            return full_data
+        else:   # data type is a singular file
+            save_loc = Path(data_dir, key + '.json')
+            if not save_loc.exists():
+                logging.warning("%s does not exist!", save_loc)
+                return None
+            return load_json(save_loc)
 
     # === Saving and loading important data functions ===
     def restore(self, save_obj):
         for data_type in self.save_data_types:
             logging.info("Database: Restoring %s..." % (data_type))
-            getattr(self, data_type).restore(save_obj[data_type])
+            data = getattr(self, data_type)
+            data.restore(save_obj[data_type])
+            # Also restore the categories if it has any
+            if isinstance(data, CategorizedCatalog):
+                data.categories = Categories.load(save_obj.get(data_type + CATEGORY_SUFFIX, {}))
 
     def save(self):
         # import time
@@ -148,7 +137,11 @@ class Database(object):
         for data_type in self.save_data_types:
             # logging.info("Saving %s..." % data_type)
             # time1 = time.time_ns()/1e6
-            to_save[data_type] = getattr(self, data_type).save()
+            data = getattr(self, data_type)
+            to_save[data_type] = data.save()
+            # also save the categories if it has any
+            if isinstance(data, CategorizedCatalog):
+                to_save[data_type + CATEGORY_SUFFIX] = data.categories.save()
             # time2 = time.time_ns()/1e6 - time1
             # logging.info("Time taken: %s ms" % time2)
         return to_save
@@ -176,7 +169,7 @@ class Database(object):
                     if os.path.exists(save_dir):
                         shutil.rmtree(save_dir)
                     os.mkdir(save_dir)
-                    orderkeys: Dict[str, int] = {}
+                    orderkeys: List[str] = []
                     for idx, subvalue in enumerate(value):
                         # ordering
                         if 'nid' in subvalue:
@@ -190,28 +183,19 @@ class Database(object):
                             name = str(idx).zfill(6)
                         name = re.sub(r'[\\/*?:"<>|]', "", name)
                         name = name.replace(' ', '_')
-                        fname = name + '.json'
-                        orderkeys[fname] = idx
-                        save_loc = os.path.join(save_dir, name + '.json')
+                        orderkeys.append(name)
+                        save_loc = Path(save_dir, name + '.json')
                         # logging.info("Serializing %s to %s" % ('%s/%s.json' % (key, name), save_loc))
-                        self.json_save(save_loc, [subvalue])
-                    self.json_save(os.path.join(save_dir, '.orderkeys'), orderkeys)
+                        save_json(save_loc, [subvalue])
+                    save_json(Path(save_dir, '.orderkeys'), orderkeys)
                 else:  # Save as a single file
                     # Which means deleting the old directory
-                    save_dir = os.path.join(data_dir, key)
+                    save_dir = Path(data_dir, key)
                     if os.path.exists(save_dir):
                         shutil.rmtree(save_dir)
-                    save_loc = os.path.join(data_dir, key + '.json')
+                    save_loc = Path(data_dir, key + '.json')
                     # logging.info("Serializing %s to %s" % (key, save_loc))
-                    self.json_save(save_loc, value)
-
-            for key in self.save_data_types:
-                catalog = getattr(self, key)
-                if isinstance(catalog, CategorizedCatalog):
-                    if key in self.save_as_chunks and main_settings.get_should_save_as_chunks():
-                        self.json_save(os.path.join(data_dir, key, '.categories'), catalog.categories.save())
-                    else:
-                        self.json_save(os.path.join(data_dir, '.%s_categories' % key), catalog.categories.save())
+                    save_json(save_loc, value)
 
         except OSError as e:  # In case we ran out of memory
             logging.error("Editor was unable to save your project. Free up memory in your hard drive or try saving somewhere else, otherwise progress will be lost when the editor is closed.")
@@ -225,7 +209,7 @@ class Database(object):
 
     def load(self, proj_dir):
         self.current_proj_dir = proj_dir
-        data_dir = os.path.join(proj_dir, 'game_data')
+        data_dir = Path(proj_dir, 'game_data')
         logging.info("Deserializing data from %s..." % data_dir)
 
         import time
@@ -234,15 +218,20 @@ class Database(object):
         save_obj = {}
         for key in self.save_data_types:
             save_obj[key] = self.json_load(data_dir, key)
+            # Load any of the categories we need
+            if Path(data_dir, key + CATEGORY_SUFFIX + '.json').exists():
+                save_obj[key + CATEGORY_SUFFIX] = self.json_load(data_dir, key + CATEGORY_SUFFIX)
 
         self.restore(save_obj)
 
         # load categories
+        # @TODO(rainlash) Remove this old method of restoring/loading categories at 2024/1/1
         for key in self.save_data_types:
-            key_categories = self.load_categories(data_dir, key)
-            catalog = getattr(self, key)
-            if hasattr(catalog, 'categories'):
-                getattr(self, key).categories = key_categories
+            if key + CATEGORY_SUFFIX not in save_obj:  # Because we already restored it
+                key_categories = self.load_categories(data_dir, key)
+                catalog = getattr(self, key)
+                if hasattr(catalog, 'categories'):
+                    getattr(self, key).categories = key_categories
 
         # TODO -- This is a shitty fix that should be superseded
         from app.engine import equations

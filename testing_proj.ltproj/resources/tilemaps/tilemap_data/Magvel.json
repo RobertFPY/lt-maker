@@ -10,6 +10,7 @@
             {
                 "nid": "base",
                 "visible": true,
+                "foreground": false,
                 "terrain_grid": {},
                 "sprite_grid": {
                     "5,1": [

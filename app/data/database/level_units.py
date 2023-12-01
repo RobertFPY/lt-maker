@@ -22,7 +22,7 @@ class GenericUnit(Prefab):
     roam_ai: Optional[NID] = None
     ai_group: Optional[NID] = None
 
-    starting_position: Optional[Tuple[int, int]] = None 
+    starting_position: Optional[Tuple[int, int]] = None
     starting_traveler: Optional[NID] = None  # unit nid
 
     generic: bool = True
@@ -42,6 +42,11 @@ class GenericUnit(Prefab):
             if item[0] == old_nid:
                 item[0] = new_nid
 
+    def replace_skill_nid(self, old_nid, new_nid):
+        for i, skill in enumerate(self.starting_skills):
+            if skill == old_nid:
+                self.starting_skills[i] = new_nid
+
     def restore_attr(self, name, value):
         if name == 'starting_items':
             # Need to convert to item nid + droppable
@@ -52,6 +57,9 @@ class GenericUnit(Prefab):
 
     def get_items(self):
         return [i[0] for i in self.starting_items]
+
+    def get_skills(self):
+        return self.starting_skills
 
     @property
     def learned_skills(self):

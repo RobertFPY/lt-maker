@@ -5,12 +5,13 @@ from app.utilities import str_utils
 from app.utilities.data import Data
 from app.data.database.database import DB
 
-from app.extensions.custom_gui import ComboBox, PropertyBox, DeletionDialog
+from app.extensions.custom_gui import ComboBox, PropertyBox, DeletionTab, DeletionDialog
 from app.extensions.list_dialogs import MultiAttrListDialog
 from app.extensions.list_models import MultiAttrListModel, DefaultMultiAttrListModel
+from app.data.database.components import ComponentType, swap_values
 
 from app.data.database.weapons import WeaponRank
-from app.data.database import item_components
+from app.data.database import item_components, skill_components
 
 class WeaponRankMultiModel(MultiAttrListModel):
     def delete(self, idx):
@@ -20,28 +21,40 @@ class WeaponRankMultiModel(MultiAttrListModel):
                             any(adv.weapon_rank == element.rank for adv in weapon.rank_bonus) or
                             any(adv.weapon_rank == element.rank for adv in weapon.advantage) or
                             any(adv.weapon_rank == element.rank for adv in weapon.disadvantage)]
-        affected_items = item_components.get_items_using(item_components.ComponentType.WeaponRank, element.rank, DB)
-        if affected_weapons or affected_items:
-            if affected_weapons:
-                affected = Data(affected_weapons)
-                from app.editor.weapon_editor.weapon_model import WeaponModel
-                model = WeaponModel
-            elif affected_items:
-                affected = Data(affected_items)
-                from app.editor.item_editor.item_model import ItemModel
-                model = ItemModel
-            msg = "Deleting WeaponRank <b>%s</b> would affect these objects." % element.rank
+        affected_items = item_components.get_items_using(ComponentType.WeaponRank, element.rank, DB)
+        affected_skills = skill_components.get_skills_using(ComponentType.WeaponRank, element.rank, DB)
+
+        deletion_tabs = []
+        if affected_weapons:
+            from app.editor.weapon_editor.weapon_model import WeaponModel
+            model = WeaponModel
+            msg = "Deleting WeaponRank <b>%s</b> would affect these weapons." % element.rank
+            deletion_tabs.append(DeletionTab(affected_weapons, model, msg, "Weapons"))
+        if affected_items:
+            from app.editor.item_editor.item_model import ItemModel
+            model = ItemModel
+            msg = "Deleting WeaponRank <b>%s</b> would affect these items." % element.rank
+            deletion_tabs.append(DeletionTab(affected_items, model, msg, "Items"))
+        if affected_items:
+            from app.editor.skill_editor.skill_model import SkillModel
+            model = SkillModel
+            msg = "Deleting WeaponRank <b>%s</b> would affect these skills." % element.rank
+            deletion_tabs.append(DeletionTab(affected_skills, model, msg, "Skills"))
+        
+        if deletion_tabs:
             combo_box = PropertyBox("Rank", ComboBox, self.window)
             objs = [rank for rank in DB.weapon_ranks if rank.rank != element.rank]
             combo_box.edit.addItems([rank.rank for rank in objs])
-            obj_idx, ok = DeletionDialog.get_simple_swap(affected, model, msg, combo_box)
+            obj_idx, ok = DeletionDialog.get_simple_swap(deletion_tabs, combo_box)
+            
             if ok:
                 swap = objs[obj_idx]
-                item_components.swap_values(affected_items, item_components.ComponentType.WeaponRank, element.rank, swap.rank)
                 for weapon in affected_weapons:
                     weapon.rank_bonus.swap_rank(element.rank, swap.rank)
                     weapon.advantage.swap_rank(element.rank, swap.rank)
                     weapon.disadvantage.swap_rank(element.rank, swap.rank)
+                swap_values(DB.items.values(), ComponentType.WeaponRank, element.rank, swap.rank)
+                swap_values(DB.skills.values(), ComponentType.WeaponRank, element.rank, swap.rank)
             else:
                 return
         super().delete(idx)
@@ -60,8 +73,8 @@ class WeaponRankMultiModel(MultiAttrListModel):
                 weapon.rank_bonus.swap_rank(old_value, new_value)
                 weapon.advantage.swap_rank(old_value, new_value)
                 weapon.disadvantage.swap_rank(old_value, new_value)
-            affected_items = item_components.get_items_using(item_components.ComponentType.WeaponRank, old_value, DB)
-            item_components.swap_values(affected_items, item_components.ComponentType.WeaponRank, old_value, new_value)
+            swap_values(DB.items.values(), ComponentType.WeaponRank, old_value, new_value)
+            swap_values(DB.skills.values(), ComponentType.WeaponRank, old_value, new_value)
 
 class RankDialog(MultiAttrListDialog):
     @classmethod

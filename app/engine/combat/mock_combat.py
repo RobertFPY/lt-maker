@@ -41,6 +41,7 @@ class MockCombat():
         self.setup_ui()
         self.bar_offset = 1
         self.name_offset = 1
+        self.platform_offset = 1
 
         # For pan
         self.focus_right: bool = True
@@ -74,6 +75,7 @@ class MockCombat():
     def setup_ui(self):
         self.bar_offset = 0
         self.name_offset = 0
+        self.platform_offset = 0
         self.damage_numbers = []
         self.proc_icons = []
         self.animations = []
@@ -399,7 +401,7 @@ class MockCombat():
         # Platform
         from app.data.database.database import DB
         if not self.battle_background or DB.constants.value('battle_platforms'):
-            top = platform_top + (platform_trans - self.bar_offset * platform_trans) + total_shake_y
+            top = platform_top + (platform_trans - self.platform_offset * platform_trans) + total_shake_y
             if self.at_range:
                 surf.blit(self.left_platform, (WINWIDTH // 2 - self.left_platform.get_width() - 11 - self.pan_max + total_shake_x + self.pan_offset, top))
                 surf.blit(self.right_platform, (WINWIDTH // 2 + 11 + self.pan_max + total_shake_x + self.pan_offset, top))

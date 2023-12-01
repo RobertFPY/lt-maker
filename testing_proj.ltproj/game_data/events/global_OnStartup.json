@@ -26,6 +26,11 @@
             ]
         ],
         "only_once": false,
-        "priority": 20
+        "priority": 20,
+        "_source": [
+            "enable_turnwheel;t",
+            "add_market_item;Steel Sword",
+            "game_var;_convoy;True"
+        ]
     }
 ]

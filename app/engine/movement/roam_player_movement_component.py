@@ -17,7 +17,7 @@ class RoamPlayerMovementComponent(MovementComponent):
     # Used for moving the player's roaming unit according to the player's inputs
     """
     grid_move = False
-    
+
     min_speed = 0.48  # Unit must have a velocity above this to actually move (tiles per second)
     base_max_speed = 6.0  # maximum speed allowed (tiles per second)
     base_accel = 30.0  # normal acceleration to maximum speed (tiles per second^2)
@@ -192,7 +192,7 @@ class RoamPlayerMovementComponent(MovementComponent):
 
         # Move the unit's true position if necessary
         if rounded_pos != self.unit.position:
-            game.leave(self.unit)
+            action.PickUnitUp(self.unit).do()
             self.unit.position = rounded_pos
-            game.arrive(self.unit)
+            action.PutUnitDown(self.unit).do()
             action.UpdateFogOfWar(self.unit).do()

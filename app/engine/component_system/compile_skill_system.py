@@ -30,13 +30,14 @@ SKILL_HOOKS: Dict[str, HookInfo] = {
     'no_trade':                             HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
     # false priority, true if any (set to True if result is True in any component, False if not defined)
     'can_unlock':                           HookInfo(['unit', 'region'], ResolvePolicy.ANY_DEFAULT_FALSE),
+    'has_canto':                            HookInfo(['unit', 'target'], ResolvePolicy.ANY_DEFAULT_FALSE),
+    'has_immune':                           HookInfo(['unit'], ResolvePolicy.ANY_DEFAULT_FALSE),
     # exclusive (returns last component value, returns None if not defined)
     'alternate_splash':                     HookInfo(['unit'], ResolvePolicy.UNIQUE),
     # exclusive (returns last component value, has default value if not defined)
     'can_select':                           HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
     'movement_type':                        HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
     'sight_range':                          HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
-    'empower_splash':                       HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
     'num_items_offset':                     HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
     'num_accessories_offset':               HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
     'change_variant':                       HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
@@ -68,11 +69,11 @@ SKILL_HOOKS: Dict[str, HookInfo] = {
     'enemy_exp_multiplier':                 HookInfo(['unit', 'target'], ResolvePolicy.UNIQUE, has_default_value=True),
     'wexp_multiplier':                      HookInfo(['unit', 'target'], ResolvePolicy.UNIQUE, has_default_value=True),
     'enemy_wexp_multiplier':                HookInfo(['unit', 'target'], ResolvePolicy.UNIQUE, has_default_value=True),
-    'has_canto':                            HookInfo(['unit', 'target'], ResolvePolicy.UNIQUE, has_default_value=True),
-    'empower_heal':                         HookInfo(['unit', 'target'], ResolvePolicy.UNIQUE, has_default_value=True),
-    'empower_heal_received':                HookInfo(['unit', 'target'], ResolvePolicy.UNIQUE, has_default_value=True),
     'canto_movement':                       HookInfo(['unit', 'target'], ResolvePolicy.UNIQUE, has_default_value=True),
     # item numeric modifiers (sums component values, default 0 if not defined)
+    'empower_splash':                       HookInfo(['unit'], ResolvePolicy.NUMERIC_ACCUM),
+    'empower_heal':                         HookInfo(['unit', 'target'], ResolvePolicy.NUMERIC_ACCUM),
+    'empower_heal_received':                HookInfo(['unit', 'target'], ResolvePolicy.NUMERIC_ACCUM),
     'modify_damage':                        HookInfo(['unit', 'item'], ResolvePolicy.NUMERIC_ACCUM),
     'modify_resist':                        HookInfo(['unit', 'item'], ResolvePolicy.NUMERIC_ACCUM),
     'modify_accuracy':                      HookInfo(['unit', 'item'], ResolvePolicy.NUMERIC_ACCUM),
@@ -82,6 +83,8 @@ SKILL_HOOKS: Dict[str, HookInfo] = {
     'modify_attack_speed':                  HookInfo(['unit', 'item'], ResolvePolicy.NUMERIC_ACCUM),
     'modify_defense_speed':                 HookInfo(['unit', 'item'], ResolvePolicy.NUMERIC_ACCUM),
     'modify_maximum_range':                 HookInfo(['unit', 'item'], ResolvePolicy.NUMERIC_ACCUM),
+    'modify_minimum_range':                 HookInfo(['unit', 'item'], ResolvePolicy.NUMERIC_ACCUM),
+
     # dynamic numeric modifiers (as item numberic modifiers)
     'dynamic_damage':                       HookInfo(['unit', 'item', 'target', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
     'dynamic_resist':                       HookInfo(['unit', 'item', 'target', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),

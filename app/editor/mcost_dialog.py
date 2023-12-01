@@ -10,7 +10,7 @@ from app.utilities.data import Data
 from app.data.database.database import DB
 from app.utilities import str_utils
 
-from app.extensions.custom_gui import SimpleDialog, DeletionDialog
+from app.extensions.custom_gui import SimpleDialog, DeletionTab, DeletionDialog
 from app.editor.custom_widgets import MovementCostBox, MovementClassBox
 from app.editor.base_database_gui import CollectionModel
 
@@ -35,8 +35,8 @@ class McostDialog(SimpleDialog):
         row_header_view = RowHeaderView()
         self.view.setHorizontalHeader(column_header_view)
         self.view.setVerticalHeader(row_header_view)
-        self.view.horizontalHeader().sectionDoubleClicked.connect(self.model.change_col_header)
-        self.view.verticalHeader().sectionDoubleClicked.connect(self.model.change_row_header)
+        self.view.horizontalHeader().sectionDoubleClicked.connect(column_header_view.rename)
+        self.view.verticalHeader().sectionDoubleClicked.connect(row_header_view.rename)
 
         self.view.resizeColumnsToContents()
 
@@ -80,8 +80,8 @@ class VerticalTextHeaderStyle(QProxyStyle):
 
 class McostDeletionDialog(DeletionDialog):
     @staticmethod
-    def get_swap(affected_items, model, msg, box, parent=None):
-        dialog = DeletionDialog(affected_items, model, msg, box, parent)
+    def get_swap(tabs, swap_box, parent=None):
+        dialog = DeletionDialog(tabs, swap_box, parent)
         result = dialog.exec_()
         if result == QDialog.Accepted:
             text = dialog.box.edit.currentText()
@@ -123,14 +123,15 @@ class ColumnHeaderView(QHeaderView):
     def delete(self, idx):
         if self.parent().model().columnCount() > 1:
             column_name = DB.mcost.column_headers[idx]
-            affected = [klass for klass in DB.classes if klass.movement_group == column_name]
-            if affected:
-                affected_classes = Data(affected)
+            affected_classes = [klass for klass in DB.classes if klass.movement_group == column_name]
+            if affected_classes:
                 from app.editor.class_editor.class_model import ClassModel
                 model = ClassModel
-                msg = "Deleting column <b>%s</b> would remove these references." % column_name
-                swap, ok = McostDeletionDialog.get_swap(affected_classes, model, msg, MovementClassBox(self))
+                msg = "Deleting column <b>%s</b> would modify these classes." % column_name
+                deletion_tab = DeletionTab(affected_classes, model, msg, "Classes")
+                swap, ok = McostDeletionDialog.get_swap([deletion_tab], MovementClassBox(self))
                 if ok:
+                    # Actually make the change
                     for klass in affected_classes:
                         klass.movement_group = swap
                 else:
@@ -143,8 +144,8 @@ class ColumnHeaderView(QHeaderView):
         old_column_name = DB.mcost.column_headers[idx]
         self.parent().model().change_col_header(idx)
         new_column_name = DB.mcost.column_headers[idx]
-        affected = [klass for klass in DB.classes if klass.movement_group == old_column_name]
-        for klass in affected:
+        affected_classes = [klass for klass in DB.classes if klass.movement_group == old_column_name]
+        for klass in affected_classes:
             klass.movement_group = new_column_name
 
     def cut(self, idx):
@@ -199,13 +200,13 @@ class RowHeaderView(QHeaderView):
     def delete(self, idx):
         if self.parent().model().rowCount() > 1:
             row_name = DB.mcost.row_headers[idx]
-            affected = [terrain for terrain in DB.terrain if terrain.mtype == row_name]
-            if affected:
-                affected_terrain = Data(affected)
+            affected_terrain = [terrain for terrain in DB.terrain if terrain.mtype == row_name]
+            if affected_terrain:
                 from app.editor.terrain_editor.terrain_model import TerrainModel
                 model = TerrainModel
-                msg = "Deleting row <b>%s</b> would remove these references." % row_name
-                swap, ok = McostDeletionDialog.get_swap(affected_terrain, model, msg, MovementCostBox(self))
+                msg = "Deleting row <b>%s</b> would modify these terrains." % row_name
+                deletion_tab = DeletionTab(affected_terrain, model, msg, "Terrain")
+                swap, ok = McostDeletionDialog.get_swap([deletion_tab], MovementCostBox(self))
                 if ok:
                     for terrain in affected_terrain:
                         terrain.mtype = swap
@@ -219,8 +220,8 @@ class RowHeaderView(QHeaderView):
         old_row_name = DB.mcost.row_headers[idx]
         self.parent().model().change_row_header(idx)
         new_row_name = DB.mcost.row_headers[idx]
-        affected = [terrain for terrain in DB.terrain if terrain.mtype == old_row_name]
-        for terrain in affected:
+        affected_terrain = [terrain for terrain in DB.terrain if terrain.mtype == old_row_name]
+        for terrain in affected_terrain:
             terrain.mtype = new_row_name
 
     def cut(self, idx):

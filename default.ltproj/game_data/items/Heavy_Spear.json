@@ -1,6 +1,6 @@
 [
     {
-        "nid": "Heavy Spear",
+        "nid": "Heavy_Spear",
         "name": "Heavy Spear",
         "desc": "Effective against armored units",
         "icon_nid": "Lance",

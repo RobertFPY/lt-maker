@@ -14,6 +14,7 @@ from app.engine.game_counters import ANIMATION_COUNTERS
 from app.engine.game_state import game
 from app.engine.sprites import SPRITES
 from app.utilities import utils
+from app.utilities.enums import HAlignment
 
 from typing import List
 
@@ -101,11 +102,11 @@ class UIView():
         # Objective info handling
         if game.state.current() in self.legal_states and cf.SETTINGS['show_objective']:
             self.obj_info_disp = self.create_obj_info()
-            self.obj_info_offset -= 20
+            self.obj_info_offset -= 10
             self.obj_info_offset = max(0, self.obj_info_offset)
         elif self.obj_info_disp:
-            self.obj_info_offset += 20
-            if self.obj_info_offset >= 200:
+            self.obj_info_offset += 10
+            if self.obj_info_offset >= 100:
                 self.obj_info_disp = None
 
         if (game.state.current() in self.legal_states or game.state.current() in self.initiative_states) \
@@ -171,16 +172,17 @@ class UIView():
                 # Gotta place in bottomright, because cursor is in topright
                 if self.obj_top:
                     self.obj_top = False
-                    self.obj_info_offset = self.obj_info_disp.get_width()
-                pos = (WINWIDTH - 4 + self.obj_info_offset - self.obj_info_disp.get_width(),
-                       WINHEIGHT - 4 - self.obj_info_disp.get_height())
+                    self.obj_info_offset = self.obj_info_disp.get_height()
+                pos = (WINWIDTH - 4 - self.obj_info_disp.get_width(),
+                       WINHEIGHT - 4 + self.obj_info_offset - self.obj_info_disp.get_height())
                 surf.blit(self.obj_info_disp, pos) # Should be bottom right
             else:
                 # Place in topright
                 if not self.obj_top:
                     self.obj_top = True
-                    self.obj_info_offset = self.obj_info_disp.get_width()
-                surf.blit(self.obj_info_disp, (WINWIDTH - 4 + self.obj_info_offset - self.obj_info_disp.get_width(), 1))
+                    self.obj_info_offset = self.obj_info_disp.get_height()
+                pos = (WINWIDTH - 4 - self.obj_info_disp.get_width(), 1 - self.obj_info_offset)
+                surf.blit(self.obj_info_disp, pos)
 
         if self.initiative_info_disp:
             surf.blit(self.initiative_info_disp, (0, 0))
@@ -272,7 +274,7 @@ class UIView():
             at_icon = SPRITES.get('icon_attackable_terrain')
             bg_surf.blit(at_icon, (7, bg_surf.get_height() - 7 - at_icon.get_height()))
             cur = str(current_hp)
-            FONT['small'].blit_right(cur, bg_surf, (bg_surf.get_width() - 9, 24))
+            render_text(bg_surf, ['small'], [cur], [None], (bg_surf.get_width() - 9, 24), HAlignment.RIGHT)
         else:
             bg_surf = SPRITES.get('tile_info_quick_opaque').copy()
             bg_surf = image_mods.make_translucent(bg_surf, .1)
@@ -287,13 +289,14 @@ class UIView():
                             tile_avoid += component.tile_avoid()
                 else:
                     logging.error("Could not find status %s for terrain %s", terrain.status, terrain.nid)
-            FONT['small'].blit_right(str(tile_def), bg_surf, (bg_surf.get_width() - 4, 17))
-            FONT['small'].blit_right(str(tile_avoid), bg_surf, (bg_surf.get_width() - 4, 25))
+            render_text(bg_surf, ['small'], [str(tile_def)], [None], (bg_surf.get_width() - 4, 17), HAlignment.RIGHT)
+            render_text(bg_surf, ['small'], [str(tile_avoid)], [None], (bg_surf.get_width() - 4, 25), HAlignment.RIGHT)
 
         name = terrain.name
-        width, height = FONT['text'].size(name)
+        width = text_width('text', name)
+        height = FONT['text'].height
         pos = (bg_surf.get_width()//2 - width//2, 22 - height)
-        FONT['text'].blit(name, bg_surf, pos)
+        render_text(bg_surf, ['text'], [name], [None], pos)
         return bg_surf
 
     def create_obj_info(self):

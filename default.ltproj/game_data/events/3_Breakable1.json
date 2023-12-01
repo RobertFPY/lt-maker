@@ -4,23 +4,12 @@
         "trigger": "unit_death",
         "level_nid": "3",
         "condition": "unit.nid == 'Wall1'",
-        "commands": [
-            [
-                "map_anim",
-                [
-                    "Snag",
-                    "{position}"
-                ]
-            ],
-            [
-                "show_layer",
-                [
-                    "Breakable1"
-                ]
-            ]
-        ],
+        "commands": [],
         "only_once": false,
         "priority": 20,
-        "source": ""
+        "_source": [
+            "map_anim;Snag;{position}",
+            "show_layer;Breakable1"
+        ]
     }
 ]

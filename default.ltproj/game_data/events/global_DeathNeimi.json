@@ -4,37 +4,14 @@
         "trigger": "unit_death",
         "level_nid": null,
         "condition": "unit.nid == 'Neimi'",
-        "commands": [
-            [
-                "add_portrait",
-                [
-                    "Neimi",
-                    "FarRight"
-                ]
-            ],
-            [
-                "speak",
-                [
-                    "Neimi",
-                    "You were right, Colm...|I am a klutz. Sorry..."
-                ]
-            ],
-            [
-                "expression",
-                [
-                    "Neimi",
-                    "CloseEyes"
-                ]
-            ],
-            [
-                "remove_portrait",
-                [
-                    "Neimi"
-                ]
-            ]
-        ],
+        "commands": [],
         "only_once": false,
         "priority": 20,
-        "source": ""
+        "_source": [
+            "add_portrait;Neimi;FarRight",
+            "speak;Neimi;You were right, Colm...|I am a klutz. Sorry...",
+            "expression;Neimi;CloseEyes",
+            "remove_portrait;Neimi"
+        ]
     }
 ]

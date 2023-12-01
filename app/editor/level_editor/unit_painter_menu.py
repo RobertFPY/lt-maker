@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import QPushButton, QLineEdit, QComboBox, \
     QVBoxLayout, QHBoxLayout, QMessageBox, QApplication, QCheckBox
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QIcon, QBrush, QColor, QFontMetrics
+from app.events.event_prefab import EventInspectorEngine
 
 from app.utilities import str_utils
 from app.utilities.data import Data
@@ -19,11 +20,10 @@ from app.editor.custom_widgets import CustomQtRoles, UnitBox, ClassBox, \
     TeamBox, FactionBox, AIBox, ObjBox, RoamAIBox
 from app.editor.class_editor import class_model
 from app.editor.item_editor import item_model
-from app.editor.unit_editor import unit_tab
+from app.editor.unit_editor import new_unit_tab
 from app.editor.faction_editor import faction_model
 from app.editor.stat_widget import StatAverageDialog, GenericStatAveragesModel
 from app.editor.item_list_widget import ItemListWidget
-from app.editor.event_editor.event_inspector import EventInspectorEngine
 from app.editor.lib.components.validated_line_edit import NidLineEdit
 from app.events.event_commands import ChangeRoaming
 
@@ -357,7 +357,7 @@ class LoadUnitDialog(Dialog):
         self.window = parent
         self.view = None
 
-        self.event_inspector = EventInspectorEngine(DB.events)
+        self.event_inspector: EventInspectorEngine = DB.events.inspector
 
         layout = QVBoxLayout()
         self.setLayout(layout)
@@ -483,9 +483,9 @@ class LoadUnitDialog(Dialog):
         self.current.roam_ai = self.roam_ai_box.edit.currentText()
 
     def access_units(self):
-        unit, ok = unit_tab.get(self.current.nid)
+        unit, ok = new_unit_tab.get(self.current.nid)
         if ok:
-            self.nid_changed(unit.nid)
+            self.unit_box.edit.setValue(unit.nid)
 
     def nid_changed(self, nid):
         old_nid = self.current.nid

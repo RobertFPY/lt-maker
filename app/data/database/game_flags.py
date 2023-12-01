@@ -13,7 +13,9 @@ class GameFlags():
 
     def save(self):
         return asdict(self)
-    
+
     def restore(self, d):
+        if not d:
+            return
         restored = dataclass_from_dict(self.__class__, d)
         self.__dict__ = restored.__dict__

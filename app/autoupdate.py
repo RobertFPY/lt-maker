@@ -32,7 +32,7 @@ def check_for_update() -> bool:
 
     if os.path.exists(metadata):
         with open(metadata) as fp:
-            lines = [l.strip() for l in fp.readlines()]
+            lines = [line.strip() for line in fp.readlines()]
             cur_version = lines[0]
 
         print(new_version)

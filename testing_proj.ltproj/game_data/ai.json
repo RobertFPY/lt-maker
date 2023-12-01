@@ -9,7 +9,8 @@
                 "view_range": 0,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             },
             {
                 "action": "None",
@@ -18,7 +19,8 @@
                 "view_range": 0,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             },
             {
                 "action": "None",
@@ -27,7 +29,8 @@
                 "view_range": 0,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             }
         ],
         "priority": 20,
@@ -44,7 +47,8 @@
                 "view_range": -3,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             },
             {
                 "action": "None",
@@ -53,7 +57,8 @@
                 "view_range": 0,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             },
             {
                 "action": "None",
@@ -62,7 +67,8 @@
                 "view_range": 0,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             }
         ],
         "priority": 20,
@@ -79,7 +85,8 @@
                 "view_range": -4,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             },
             {
                 "action": "None",
@@ -88,7 +95,8 @@
                 "view_range": 0,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             },
             {
                 "action": "None",
@@ -97,7 +105,8 @@
                 "view_range": 0,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             }
         ],
         "priority": 20,
@@ -114,7 +123,8 @@
                 "view_range": -4,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             },
             {
                 "action": "Support",
@@ -123,7 +133,8 @@
                 "view_range": -4,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             },
             {
                 "action": "None",
@@ -132,7 +143,8 @@
                 "view_range": 0,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             }
         ],
         "priority": 20,
@@ -149,7 +161,8 @@
                 "view_range": -2,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             },
             {
                 "action": "Move_to",
@@ -158,7 +171,8 @@
                 "view_range": -4,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             },
             {
                 "action": "None",
@@ -167,7 +181,8 @@
                 "view_range": 0,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             }
         ],
         "priority": 20,
@@ -184,7 +199,8 @@
                 "view_range": -1,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             },
             {
                 "action": "None",
@@ -193,7 +209,8 @@
                 "view_range": 0,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             },
             {
                 "action": "None",
@@ -202,7 +219,8 @@
                 "view_range": 0,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             }
         ],
         "priority": 20,
@@ -219,7 +237,8 @@
                 "view_range": -2,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             },
             {
                 "action": "Attack",
@@ -231,7 +250,8 @@
                 "view_range": -4,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             },
             {
                 "action": "None",
@@ -240,7 +260,8 @@
                 "view_range": 0,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             }
         ],
         "priority": 20,
@@ -257,7 +278,8 @@
                 "view_range": -2,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             },
             {
                 "action": "Interact",
@@ -266,7 +288,8 @@
                 "view_range": -4,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             },
             {
                 "action": "None",
@@ -275,7 +298,8 @@
                 "view_range": 0,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             }
         ],
         "priority": 20,
@@ -292,7 +316,8 @@
                 "view_range": -4,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             },
             {
                 "action": "None",
@@ -301,7 +326,8 @@
                 "view_range": -4,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             },
             {
                 "action": "None",
@@ -310,7 +336,8 @@
                 "view_range": 0,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             }
         ],
         "priority": 20,
@@ -327,7 +354,8 @@
                 "view_range": -2,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             },
             {
                 "action": "Move_to",
@@ -339,7 +367,8 @@
                 "view_range": -4,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             },
             {
                 "action": "None",
@@ -348,7 +377,8 @@
                 "view_range": 0,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             }
         ],
         "priority": 15,
@@ -365,7 +395,8 @@
                 "view_range": -2,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             },
             {
                 "action": "Move_to",
@@ -377,7 +408,8 @@
                 "view_range": -4,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             },
             {
                 "action": "None",
@@ -386,7 +418,8 @@
                 "view_range": 0,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             }
         ],
         "priority": 15,
@@ -403,7 +436,8 @@
                 "view_range": -4,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             },
             {
                 "action": "None",
@@ -412,7 +446,8 @@
                 "view_range": 0,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             },
             {
                 "action": "None",
@@ -421,7 +456,8 @@
                 "view_range": 0,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             }
         ],
         "priority": 10,
@@ -438,7 +474,8 @@
                 "view_range": -3,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             },
             {
                 "action": "Move_away_from",
@@ -447,7 +484,8 @@
                 "view_range": -3,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             },
             {
                 "action": "None",
@@ -456,7 +494,8 @@
                 "view_range": 0,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             }
         ],
         "priority": 15,
@@ -473,7 +512,8 @@
                 "view_range": -2,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             },
             {
                 "action": "Interact",
@@ -482,7 +522,8 @@
                 "view_range": -4,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             },
             {
                 "action": "Interact",
@@ -491,7 +532,8 @@
                 "view_range": -4,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             }
         ],
         "priority": 12,
@@ -508,7 +550,8 @@
                 "view_range": -2,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             },
             {
                 "action": "Attack",
@@ -517,7 +560,8 @@
                 "view_range": -2,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             },
             {
                 "action": "None",
@@ -526,7 +570,8 @@
                 "view_range": -4,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             }
         ],
         "priority": 12,
@@ -543,7 +588,8 @@
                 "view_range": -2,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             },
             {
                 "action": "Attack",
@@ -552,7 +598,8 @@
                 "view_range": -2,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             },
             {
                 "action": "Interact",
@@ -561,7 +608,8 @@
                 "view_range": -4,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             }
         ],
         "priority": 20,
@@ -581,7 +629,8 @@
                 "view_range": -2,
                 "invert_targeting": true,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             },
             {
                 "action": "Move_to",
@@ -590,7 +639,8 @@
                 "view_range": -4,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             },
             {
                 "action": "None",
@@ -599,7 +649,8 @@
                 "view_range": 0,
                 "invert_targeting": false,
                 "roam_speed": 100,
-                "desired_proximity": 0
+                "desired_proximity": 0,
+                "condition": ""
             }
         ],
         "priority": 20,

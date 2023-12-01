@@ -31,6 +31,7 @@
             "MOV": 0,
             "RES": 20
         },
+        "stat_cap_modifiers": {},
         "starting_items": [
             [
                 "Iron Lance",
@@ -42,39 +43,48 @@
         "wexp_gain": {
             "Sword": [
                 false,
-                0
+                0,
+                251
             ],
             "Lance": [
                 true,
-                71
+                71,
+                251
             ],
             "Axe": [
                 false,
-                0
+                0,
+                251
             ],
             "Bow": [
                 false,
-                0
+                0,
+                251
             ],
             "Staff": [
                 false,
-                0
+                0,
+                251
             ],
             "Light": [
                 false,
-                0
+                0,
+                251
             ],
             "Anima": [
                 false,
-                0
+                0,
+                251
             ],
             "Dark": [
                 false,
-                0
+                0,
+                251
             ],
             "Default": [
                 false,
-                0
+                0,
+                251
             ]
         },
         "alternate_classes": [],

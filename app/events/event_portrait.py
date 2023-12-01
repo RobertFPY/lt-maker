@@ -1,6 +1,8 @@
+import math
+import random
+
 from app.utilities.typing import Point
 from app.data.resources.portraits import Portrait
-import random
 
 from app import counters
 from app.utilities import utils
@@ -110,19 +112,19 @@ class EventPortrait():
         self.moving = True
         self.travel_speed_mult = max(0.001, speed_mult)
 
-        self.travel_time = self.determine_travel_time(abs(self.next_position[0] - self.orig_position[0]))
+        self.travel_time = self.determine_travel_time(utils.distance(self.next_position, self.orig_position))
         self.travel_time = int(self.travel_time / speed_mult)
 
     def quick_move(self, position):
         self.position = position
 
-    def determine_travel_time(self, diff_x):
+    def determine_travel_time(self, distance):
         counter = 0
-        while diff_x > 0:
+        while distance > 0:
             counter += 1
-            change = int(round(diff_x / 8))
+            change = int(round(distance / 8))
             change = utils.clamp(change, 1, 8)
-            diff_x -= change
+            distance -= change
         return utils.frames2ms(counter)
 
     def talk(self):
@@ -241,8 +243,8 @@ class EventPortrait():
                     return True
 
         if self.moving:
-            diff_x = self.next_position[0] - self.position[0]
-            if diff_x == 0:
+            distance = utils.distance(self.next_position, self.position)
+            if distance == 0:
                 self.position = self.next_position
                 self.moving = False
                 self.bop_state = False
@@ -253,18 +255,19 @@ class EventPortrait():
                 # 15 frames (250 ms) to lerp 24 pixels
                 # 30 frames (500 ms) to lerp 120 pixels
                 # 45 frames? (750 ms) to lerp 264 pixels
-                direction = 1 if diff_x >= 0 else -1
-                travel_mag = int(round(abs(diff_x) / 8))
+                travel_mag = int(round(distance / 8))
                 travel_mag = utils.clamp(travel_mag, 1, 8)
                 if travel_mag in (1, 4, 5, 6, 7):
                     self.bop_state = True
                     self.bop_height = 1
                 # Multiply by travel speed
-                travel_mag = min(self.travel_speed_mult * travel_mag, abs(diff_x))
-                # angle = math.atan2(self.travel[1], self.travel[0])
-                # updated_position = (self.orig_position[0] + abs(self.travel[0]) * travel_mag * math.cos(angle),
-                #                     self.orig_position[1] + abs(self.travel[1]) * travel_mag * math.sin(angle))
-                updated_position = (self.position[0] + (travel_mag * direction), self.position[1])
+                travel_mag = min(self.travel_speed_mult * travel_mag, distance)
+                diff_x = self.next_position[0] - self.position[0]
+                diff_y = self.next_position[1] - self.position[1]
+                angle = math.atan2(diff_y, diff_x)
+                updated_position = (self.position[0] + (travel_mag * math.cos(angle)),
+                                    self.position[1] + (travel_mag * math.sin(angle)))
+                # updated_position = (self.position[0] + (travel_mag * direction), self.position[1])
                 self.position = updated_position
 
         if self.bops_remaining:

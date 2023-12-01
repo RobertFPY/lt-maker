@@ -27,11 +27,23 @@ class SpeakStyle(Prefab):
         self.message_tail: str = message_tail
         self.transparency: float = transparency
         self.name_tag_bg: str = name_tag_bg
-        self.flags: Set[str] = flags
+        self.flags: Set[str] = flags or set()
+
+    def copy(self) -> SpeakStyle:
+        return self.restore(self.as_dict())
 
     def as_dict(self) -> Dict:
         ser = self.save()
         return {param: val for param, val in ser.items() if (param != 'nid' and val is not None)}
+
+    def update(self, other: SpeakStyle) -> SpeakStyle:
+        as_dict = self.as_dict()
+        other_dict = other.as_dict()
+        as_dict.update(other_dict)
+        flags = self.flags.union(other.flags)
+        new = self.restore(as_dict)
+        new.flags = flags
+        return new
 
     @classmethod
     def default(cls):
@@ -42,9 +54,9 @@ class SpeakStyleLibrary(Dict[NID, SpeakStyle]):
         # Built in speak styles for backwards compatibility
         self.update(
             {'__default': SpeakStyle('__default', speed=1, font_type='convo', background='message_bg_base', num_lines=2, draw_cursor=True,
-                                     message_tail='message_bg_tail', name_tag_bg='name_tag'),
-             '__default_text': SpeakStyle('__default_text', speed=0.5, font_type='text', background='menu_bg_base', num_lines=0, name_tag_bg='menu_bg_base'),
-             '__default_help': SpeakStyle('__default_help', speed=0.5, font_type='convo', background='None', draw_cursor=False, num_lines=8, name_tag_bg='name_tag'),
+                                     message_tail='message_bg_tail', name_tag_bg='name_tag', transparency=0.05),
+             '__default_text': SpeakStyle('__default_text', speed=0.5, font_type='text', background='menu_bg_base', num_lines=0, name_tag_bg='menu_bg_base', transparency=0.05),
+             '__default_help': SpeakStyle('__default_help', speed=0.5, font_type='convo', background='None', draw_cursor=False, num_lines=8, name_tag_bg='name_tag', transparency=0.05),
              'noir': SpeakStyle('noir', background='menu_bg_dark', font_color='white', message_tail='None'),
              'hint': SpeakStyle('hint', background='menu_bg_parchment', position=Alignments.CENTER, width=WINWIDTH//2 + 8, num_lines=4, message_tail='None'),
              'cinematic': SpeakStyle('cinematic', background='None', position=Alignments.CENTER, font_color='grey', num_lines=5,
@@ -55,6 +67,10 @@ class SpeakStyleLibrary(Dict[NID, SpeakStyle]):
                                          font_color='white', message_tail='None'),
              'clear': SpeakStyle('clear', background='None', font_color='white', draw_cursor=False, message_tail='None'),
              'thought_bubble': SpeakStyle('thought_bubble', message_tail='message_bg_thought_tail', flags={'no_talk'}),
+             'boss_convo_left': SpeakStyle('boss_convo_left', speed=1, font_type='convo', background='message_bg_base', num_lines=2, draw_cursor=True,
+                                           message_tail='message_bg_tail', transparency=0.0, position=(72, 112), width=WINWIDTH - 80),
+             'boss_convo_right': SpeakStyle('boss_convo_right', speed=1, font_type='convo', background='message_bg_base', num_lines=2, draw_cursor=True,
+                                            message_tail='message_bg_tail', transparency=0.0, position=(8, 112), width=WINWIDTH - 80),
              }
         )
 

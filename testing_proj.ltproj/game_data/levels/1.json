@@ -23,6 +23,7 @@
         "roam": false,
         "roam_unit": null,
         "go_to_overworld": false,
+        "should_record": true,
         "units": [
             {
                 "nid": "Eirika",
@@ -113,6 +114,7 @@
                 ],
                 "sub_nid": "Destructible",
                 "condition": "True",
+                "time_left": null,
                 "only_once": true,
                 "interrupt_move": false
             },
@@ -129,10 +131,12 @@
                 ],
                 "sub_nid": "Switch",
                 "condition": "True",
+                "time_left": null,
                 "only_once": true,
                 "interrupt_move": false
             }
         ],
-        "unit_groups": []
+        "unit_groups": [],
+        "ai_groups": []
     }
 ]

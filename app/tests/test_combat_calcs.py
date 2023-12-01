@@ -59,7 +59,6 @@ class CombatCalcTests(unittest.TestCase):
             patch('app.engine.skill_system.distant_counter', _distant_counter),
             patch('app.engine.skill_system.close_counter', _close_counter),
             patch('app.engine.line_of_sight.line_of_sight', self.does_defender_have_los_on_attacker),
-            patch('app.engine.target_system.targets_in_range', self.is_attacker_in_range),
         ]
         for patcher in self.patchers:
             patcher.start()
@@ -86,6 +85,9 @@ class CombatCalcTests(unittest.TestCase):
             patcher.stop()
 
     def check_counter(self, should_counter, msg):
+        from app.engine.game_state import game
+        game.target_system = MagicMock()
+        game.target_system.targets_in_range = self.is_attacker_in_range
         self.assertEqual(can_counterattack(self.attacker, self.aweapon, self.defender, self.dweapon), should_counter, msg)
     
     """

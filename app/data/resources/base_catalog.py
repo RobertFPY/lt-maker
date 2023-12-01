@@ -61,7 +61,7 @@ class ManifestCatalog(Data[M]):
             else:
                 shutil.copy(old_full_path, new_full_path)
         else:
-            print("%s does not exist" % old_full_path)
+            logging.warning("%s does not exist" % old_full_path)
 
     def valid_files(self) -> set:
         return {datum.nid + self.filetype for datum in self}

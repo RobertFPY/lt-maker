@@ -34,11 +34,11 @@
         "stat_cap_modifiers": {},
         "starting_items": [
             [
-                "Iron Sword",
+                "Iron_Sword",
                 false
             ],
             [
-                "Steel Lance",
+                "Steel_Lance",
                 false
             ],
             [

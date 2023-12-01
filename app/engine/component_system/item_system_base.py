@@ -192,19 +192,31 @@ def on_broken(unit, item):
             if component.defines('on_broken'):
                 component.on_broken(unit, item.parent_item)
 
-def broken_alert(unit, item) -> bool:
-    alert = False
+def is_unusable(unit, item) -> bool:
+    """
+    If any hook reports true, then it is true
+    """
     all_components = get_all_components(unit, item)
     for component in all_components:
-        if component.defines('broken_alert'):
-            if component.broken_alert(unit, item):
-                alert = True
+        if component.defines('is_unusable'):
+            if component.is_unusable(unit, item):
+                return True
     if item.parent_item:
         for component in item.parent_item.components:
-            if component.defines('broken_alert'):
-                if component.broken_alert(unit, item.parent_item):
-                    alert = True
-    return alert
+            if component.defines('is_unusable'):
+                if component.is_unusable(unit, item.parent_item):
+                    return True
+    return False
+
+def on_unusable(unit, item):
+    all_components = get_all_components(unit, item)
+    for component in all_components:
+        if component.defines('on_unusable'):
+            component.on_unusable(unit, item)
+    if item.parent_item:
+        for component in item.parent_item.components:
+            if component.defines('on_unusable'):
+                component.on_unusable(unit, item.parent_item)
 
 def valid_targets(unit, item) -> set:
     targets = set()

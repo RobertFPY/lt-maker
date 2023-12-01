@@ -6,7 +6,7 @@ from app.utilities.typing import NID
 
 from app.data.database.database import DB
 from app.engine.game_state import game
-from app.engine import action, ai_controller, engine, equations, evaluate, target_system
+from app.engine import action, ai_controller, engine, equations, evaluate, item_funcs
 from app.engine.roam import roam_ai_action
 from app.engine.movement.roam_ai_movement_component import RoamAIMovementComponent
 from app.engine.objects.region import RegionObject
@@ -22,7 +22,7 @@ RECALCULATE_TIME = 333  # ms
 class FreeRoamAIHandler:
     def __init__(self):
         self.active: bool = True
-        self.roam_ais: List[RoamAI] = []
+        self.roam_ais: Dict[NID, RoamAI] = {}
         # Keep a reference to the movement components
         # we added to the main movement system
         # to be able to stop them later
@@ -34,7 +34,7 @@ class FreeRoamAIHandler:
 
     def _add_movement_component(self, unit: UnitObject) -> Optional[RoamAIMovementComponent]:
         if unit.get_roam_ai() and DB.ai.get(unit.get_roam_ai()).roam_ai:
-            self.roam_ais.append(RoamAI(unit))
+            self.roam_ais[unit.nid] = RoamAI(unit)
             mc = RoamAIMovementComponent(unit)
             self.components[unit.nid] = mc
             return mc
@@ -57,7 +57,10 @@ class FreeRoamAIHandler:
     def update(self):
         if not self.active:
             return
-        for roam_ai in self.roam_ais:
+        for unit in game.get_all_units():
+            roam_ai = self.get_roam_ai(unit)
+            if not roam_ai or not unit.position:
+                continue
             if not roam_ai.state:
                 roam_ai.think()
             roam_ai.act()
@@ -79,9 +82,11 @@ class FreeRoamAIHandler:
     def reset_all_units(self):
         for mc in self.components.values():
             mc.reset_position()
-        for roam_ai in self.roam_ais:
+        for roam_ai in self.roam_ais.values():
             roam_ai.reset_path()
 
+    def get_roam_ai(self, unit):
+        return self.roam_ais.get(unit.nid)
 
 class RoamAI:
     def __init__(self, unit):
@@ -131,7 +136,7 @@ class RoamAI:
             next_behaviour = None
 
     def get_path(self, pos) -> List[Tuple[int, int]]:
-        return target_system.get_path(self.unit, pos, free_movement=True)
+        return game.path_system.get_path(self.unit, pos, free_movement=True)
 
     def _calc_state(self) -> bool:
         # Returns whether we should try again
@@ -179,7 +184,7 @@ class RoamAI:
     def get_filtered_target_positions(self) -> List[Tuple[Tuple[int, int], float]]:
         target_positions = ai_controller.get_targets(self.unit, self.behaviour)
 
-        zero_move = max(target_system.find_potential_range(self.unit, True, True), default=0)
+        zero_move = item_funcs.get_max_range(self.unit)
         single_move = zero_move + equations.parser.movement(self.unit)
         double_move = single_move + equations.parser.movement(self.unit)
 
@@ -214,7 +219,7 @@ class RoamAI:
         """
         # Returns best position furthest away from the target
         """
-        valid_positions = target_system.get_valid_moves(self.unit)
+        valid_positions = game.path_system.get_valid_moves(self.unit)
         target_positions = self.get_filtered_target_positions()
 
         if target_positions:

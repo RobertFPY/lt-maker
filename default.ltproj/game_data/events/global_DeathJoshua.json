@@ -4,37 +4,14 @@
         "trigger": "unit_death",
         "level_nid": null,
         "condition": "unit.nid == 'Joshua'",
-        "commands": [
-            [
-                "add_portrait",
-                [
-                    "Joshua",
-                    "FarRight"
-                ]
-            ],
-            [
-                "speak",
-                [
-                    "Joshua",
-                    "I... I guess my luck finally ran out...|Heh."
-                ]
-            ],
-            [
-                "expression",
-                [
-                    "Joshua",
-                    "CloseEyes"
-                ]
-            ],
-            [
-                "remove_portrait",
-                [
-                    "Joshua"
-                ]
-            ]
-        ],
+        "commands": [],
         "only_once": false,
         "priority": 20,
-        "source": ""
+        "_source": [
+            "add_portrait;Joshua;FarRight",
+            "speak;Joshua;I... I guess my luck finally ran out...|Heh.",
+            "expression;Joshua;CloseEyes",
+            "remove_portrait;Joshua"
+        ]
     }
 ]

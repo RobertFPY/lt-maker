@@ -33,6 +33,7 @@
             "MOV": 0,
             "RES": 0
         },
+        "stat_cap_modifiers": {},
         "starting_items": [
             [
                 "Javelin",
@@ -44,39 +45,48 @@
         "wexp_gain": {
             "Sword": [
                 false,
-                0
+                0,
+                251
             ],
             "Lance": [
                 false,
-                71
+                71,
+                251
             ],
             "Axe": [
                 true,
-                710
+                710,
+                251
             ],
             "Bow": [
                 false,
-                0
+                0,
+                251
             ],
             "Staff": [
                 false,
-                0
+                0,
+                251
             ],
             "Light": [
                 false,
-                0
+                0,
+                251
             ],
             "Anima": [
                 false,
-                0
+                0,
+                251
             ],
             "Dark": [
                 false,
-                0
+                0,
+                251
             ],
             "Default": [
                 false,
-                0
+                0,
+                251
             ]
         },
         "alternate_classes": [],

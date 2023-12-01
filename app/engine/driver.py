@@ -1,6 +1,8 @@
+import logging
 import os
 import collections
 from datetime import datetime
+from app import lt_log
 
 from app.constants import WINWIDTH, WINHEIGHT, VERSION, FPS
 from app.engine import engine
@@ -29,8 +31,8 @@ def start(title, from_editor=False):
     engine.DISPLAYSURF = engine.build_display(engine.SCREENSIZE)
     engine.set_title(title + ' - v' + VERSION)
     print("Version: %s" % VERSION)
-    if DB.game_flags.has_fatal_errors:
-        raise Exception("Fatal errors detected in game. If you are the developer, please validate your game data. Aborting launch.")
+    if DB.game_flags.has_fatal_errors and not from_editor:
+        raise Exception("Fatal errors detected in game. If you are the developer, please validate and then save your game data before proceeding. Aborting launch.")
 
 screenshot = False
 def save_screenshot(raw_events: list, surf):
@@ -62,6 +64,11 @@ def draw_fps(surf, fps_records):
     FONT['small-white'].blit(str(fps), surf, (surf.get_width() - 20, 0))
     FONT['small-white'].blit(str(min_fps), surf, (surf.get_width() - 20, 12))
 
+def check_soft_reset(game, inp) -> bool:
+    return game.state.current() != 'title_start' and \
+        inp.is_pressed('SELECT') and inp.is_pressed('BACK') and \
+        inp.is_pressed('START')
+
 def run(game):
     from app.engine.sound import get_sound_thread
     from app.engine.game_counters import ANIMATION_COUNTERS
@@ -78,6 +85,9 @@ def run(game):
     clock = engine.Clock()
     fps_records = collections.deque(maxlen=FPS)
     inp = get_input_manager()
+
+    _error_mode = False
+    _error_msg = ''
     while True:
         # start = time.time_ns()
         engine.update_time()
@@ -92,21 +102,37 @@ def run(game):
         event = inp.process_input(raw_events)
 
         # Handle soft reset
-        if game.state.current() != 'title_start' and \
-                inp.is_pressed('SELECT') and inp.is_pressed('BACK') and \
-                inp.is_pressed('START'):
+        if check_soft_reset(game, inp):
+            _error_mode = False
             game.state.change('title_start')
             game.state.update([], surf)
             continue
 
-        surf, repeat = game.state.update(event, surf)
-        while repeat:  # Let's the game traverse through state chains
-            # print("Repeating States:\t", game.state.state)
-            surf, repeat = game.state.update([], surf)
-        # print("States:\t\t\t", game.state.state)
+        # game loop. catch and log any errors in this loop.
+        if _error_mode:
+            surf = engine.write_system_msg(surf, _error_msg)
+            if inp.is_pressed('SELECT') or inp.is_pressed('BACK'):
+                log_file = lt_log.get_log_fname()
+                if log_file:
+                    os.startfile(log_file)
+        else:
+            try:
+                surf, repeat = game.state.update(event, surf)
+                while repeat:  # Let's the game traverse through state chains
+                    # print("Repeating States:\t", game.state.state)
+                    surf, repeat = game.state.update([], surf)
+                # print("States:\t\t\t", game.state.state)
 
-        if cf.SETTINGS['display_fps']:
-            draw_fps(surf, fps_records)
+                if cf.SETTINGS['display_fps']:
+                    draw_fps(surf, fps_records)
+            except Exception as e:
+                logging.exception("Game crashed with exception.")
+                log_file_loc = lt_log.get_log_dir() or ''
+                _error_msg = "Game crashed with exception:\n%s\nPlease press either the **SELECT** or **BACK** keys to open the log file. Please send the contents of the log file to the game developer to resolve this issue.\nLogs can be found in **%s**" % (str(e).strip(), str(log_file_loc))
+                _error_mode = True
+                # If we're in editor/debug mode, just throw the error normally
+                if cf.SETTINGS['debug']:
+                    raise e
 
         get_sound_thread().update(raw_events)
 

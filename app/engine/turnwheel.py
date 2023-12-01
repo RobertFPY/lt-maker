@@ -1,14 +1,19 @@
+import math
 import logging
 from dataclasses import dataclass
 
+from app.data.resources.resources import RESOURCES
+
 import app.engine.action as Action
-from app.constants import WINHEIGHT, WINWIDTH
+from app.constants import WINHEIGHT, WINWIDTH, TILEWIDTH, TILEHEIGHT
 from app.engine import base_surf, engine, gui, image_mods
 from app.engine.background import SpriteBackground
+from app.engine.battle_animation import BattleAnimation
 from app.engine.fonts import FONT
 from app.engine.graphics.text.text_renderer import render_text
 from app.engine.game_state import game
 from app.engine.input_manager import get_input_manager
+from app.engine import particles
 from app.engine.sound import get_sound_thread
 from app.engine.sprites import SPRITES
 from app.engine.state import MapState
@@ -471,8 +476,11 @@ class TurnwheelState(MapState):
                 game.death.force_death(unit)
 
         game.action_log.stop_recording()
+        get_sound_thread().play_sfx('TurnwheelIn2')
 
         # Lower volume
+        self.normal_volume = get_sound_thread().get_music_volume()
+        get_sound_thread().set_music_volume(self.normal_volume/2)
 
         self.bg = SpriteBackground(SPRITES.get('focus_fade'), fade=True)
         turnwheel_desc = game.action_log.set_up()
@@ -485,7 +493,7 @@ class TurnwheelState(MapState):
         self.darken_background = 0
         self.target_dark = 0
         self.end_effect = None
-        self.particles = []
+        self.warp_particles = None
 
         self.last_direction = 'FORWARD'
 
@@ -531,6 +539,7 @@ class TurnwheelState(MapState):
             if self.check_mouse_position():
                 pass
             elif game.action_log.can_use():
+                get_sound_thread().play_sfx('TurnwheelOut')
                 game.action_log.finalize()
                 self.transition_out = 60
                 self.display.fade_out()
@@ -575,8 +584,29 @@ class TurnwheelState(MapState):
         self.bg.fade_out()
 
     def turnwheel_effect(self):
-        pass
         # Add effect and warp flowers
+        effect = RESOURCES.combat_effects.get('TurnwheelFlash')
+        if effect and effect.palettes:
+            # Determine effect's palette
+            palette_name, palette_nid = effect.palettes[0]
+            palette = RESOURCES.combat_palettes.get(palette_nid)
+            if palette:
+                self.end_effect = \
+                    BattleAnimation.get_effect_anim(effect, palette_name, palette, None, None)
+                self.end_effect.pair(self, None, True, False)
+                self.end_effect.start_anim('Attack')
+        self.initiate_warp_flowers()
+
+    def initiate_warp_flowers(self):
+        pos = (WINWIDTH // 2, WINHEIGHT // 2)
+        self.warp_particles = \
+            particles.SimpleParticleSystem('warp_flower', particles.WarpFlower, pos, (-1, -1, -1, -1), 0)
+        angle_frac = math.pi / 8
+        for idx, speed in enumerate((0.5, 1.0, 2.0, 2.5, 3.5, 4.0)):
+            for num in range(0, 16):
+                angle = num * angle_frac + (angle_frac / 2 if idx == 0 else 0)
+                new_particle = particles.WarpFlower().reset(pos, speed, angle)
+                self.warp_particles.particles.append(new_particle)
 
     def update(self):
         super().update()
@@ -600,8 +630,10 @@ class TurnwheelState(MapState):
                     game.events.trigger(triggers.OnTurnwheel())
 
         # Update animations
-        # if self.end_effect:
-        #     self.end_effect.update()
+        if self.warp_particles:
+            self.warp_particles.update()
+        if self.end_effect:
+            self.end_effect.update()
 
     def darken(self):
         self.target_dark += 4
@@ -627,10 +659,16 @@ class TurnwheelState(MapState):
 
         self.mouse_indicator.draw(surf)
 
+        if self.warp_particles:
+            self.warp_particles.draw(surf)
+        if self.end_effect:
+            self.end_effect.draw(surf)
+
         # Draw animation
         return surf
 
     def end(self):
         game.boundary.reset()
+        get_sound_thread().set_music_volume(self.normal_volume)
         # Set recording back
         game.action_log.start_recording()

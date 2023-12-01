@@ -7,7 +7,6 @@ import re
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type
 
 from app.data.database.database import Database
-from app.editor.event_editor.event_inspector import EventInspectorEngine
 from app.engine.fonts import FONT
 from app.utilities.enums import HAlignment, VAlignment
 from app.events import event_commands
@@ -22,7 +21,7 @@ from app.events.regions import RegionType as RegionTypeEnum
 class Validator():
     desc = ""
 
-    def __init__(self, db: Optional[Database]=None, resources: Optional[Resources]=None):
+    def __init__(self, db: Optional[Database] = None, resources: Optional[Resources] = None):
         self._db = db or Database()
         self._resources = resources or Resources()
 
@@ -157,7 +156,7 @@ class VarValidator(EvalValidator):
 
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
         vars_in_level = set(self._db.game_var_slots.keys())
-        vars_in_level = vars_in_level | EventInspectorEngine(self._db.events).find_all_variables_in_level(level)
+        vars_in_level = vars_in_level | self._db.events.inspector.find_all_variables_in_level(level)
         return [(None, var_name) for var_name in vars_in_level]
 
 class SkillAttrValidator(EvalValidator):
@@ -242,7 +241,7 @@ class Achievement(Validator):
         return text
 
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
-        achs = EventInspectorEngine(self._db.events).find_all_calls_of_command(event_commands.CreateAchievement())
+        achs = self._db.events.inspector.find_all_calls_of_command(event_commands.CreateAchievement())
         slots = [(None, command.parameters['Nid']) for command in achs.values()]
         return slots
 
@@ -254,7 +253,7 @@ class GeneralVar(Validator):
 
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
         vars_in_level = set(self._db.game_var_slots.keys())
-        vars_in_level = vars_in_level | EventInspectorEngine(self._db.events).find_all_variables_in_level(level)
+        vars_in_level = vars_in_level | self._db.events.inspector.find_all_variables_in_level(level)
         return [(None, var_name) for var_name in vars_in_level]
 
 class EventFunction(Validator):
@@ -562,11 +561,11 @@ class IllegalCharacterList(Validator):
         return valids
 
 class DialogVariant(Validator):
-    built_in = ["thought_bubble", "noir", "hint", "narration", "narration_top", "cinematic", "clear"]
+    built_in = ["thought_bubble", "noir", "hint", "narration", "narration_top", "cinematic", "clear", "boss_convo_left", "boss_convo_right"]
 
     def validate(self, text, level):
         slots = self.built_in.copy()
-        predefined_variants = EventInspectorEngine(self._db.events).find_all_calls_of_command(event_commands.SpeakStyle())
+        predefined_variants = self._db.events.inspector.find_all_calls_of_command(event_commands.SpeakStyle())
         slots += list(set([variant.parameters['Style'] for variant in predefined_variants.values()]))
         if text in slots:
             return text
@@ -574,9 +573,8 @@ class DialogVariant(Validator):
 
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
         slots = [(None, style) for style in self.built_in]
-        text = text.split(',')
-        predefined_variants = EventInspectorEngine(self._db.events).find_all_calls_of_command(event_commands.SpeakStyle())
-        slots += [(None, style) for style in list(set([variant.parameters['Style'] for variant in predefined_variants.values()]))]
+        predefined_variants = self._db.events.inspector.find_all_calls_of_command(event_commands.SpeakStyle())
+        slots += [(None, style) for style in set([variant.parameters['Style'] for variant in predefined_variants.values()])]
         return slots
 
 class StringList(Validator):
@@ -625,7 +623,10 @@ class PointList(Validator):
             return text
 
 class Speaker(Validator):
-    pass  # Any text will do
+    def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
+        predefined_variants = self._db.events.inspector.find_all_calls_of_command(event_commands.SpeakStyle())
+        slots = [(None, style) for style in set([variant.parameters['Style'] for variant in predefined_variants.values()])]
+        return []
 
 class Panorama(Validator):
     def validate(self, text, level):
@@ -711,8 +712,6 @@ class Position(Validator):
                 return text
             elif text in ('{unit}', '{unit1}', '{unit2}', '{position}'):
                 return text
-            elif text in self.valid_overworld_nids().values():
-                return text
             if level and level.regions:
                 if text in level.regions.keys():
                     return text
@@ -740,26 +739,10 @@ class Position(Validator):
             valids.append((None, "{unit1}"))
             valids.append((None, "{unit2}"))
             valids.append((None, "{position}"))
-            for pair in self.valid_overworld_nids().items():
-                valids.append(pair)
             for region in level_prefab.regions.values():
                 valids.append((None, region.nid))
             return valids
-        else:
-            valids = []
-            for pair in self.valid_overworld_nids().items():
-                valids.append(pair)
-            return valids
-
-    def valid_overworld_nids(self) -> Dict[str, NID]:
-        # list of all valid nids in overworld
-        nids = {}
-        for overworld in self._db.overworlds.values():
-            node_nids = {node.name: node.nid for node in overworld.overworld_nodes.values()}
-            nids.update(node_nids)
-        party_nids = {party.name: party.nid for party in self._db.parties.values()}
-        nids.update(party_nids)
-        return nids
+        return []
 
 class FloatPosition(Position, Validator):
     desc = """accepts a valid `(x, y)` position, but also allows fractional positions,
@@ -773,8 +756,6 @@ class FloatPosition(Position, Validator):
             if level and text in level.units.keys():
                 return text
             elif text in ('{unit}', '{unit1}', '{unit2}', '{position}'):
-                return text
-            elif text in self.valid_overworld_nids().values():
                 return text
             return None
         if len(text) > 2:
@@ -948,8 +929,10 @@ class Region(Validator):
         if level_obj:
             valids = [(None, region.nid) for region in level_obj.regions]
         return valids
+
 class AnimationType(OptionValidator):
     valid = ['north', 'east', 'west', 'south', 'fade']
+
 class CardinalDirection(OptionValidator):
     valid = ['north', 'east', 'west', 'south']
 
@@ -1105,7 +1088,7 @@ class KlassList(Validator):
         return text
 
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
-        valids = [(None, klass.nid) for klass in self._db.classes.values()]
+        valids = [(klass.name, klass.nid) for klass in self._db.classes.values()]
         return valids
 
 class ArgList(Validator):
@@ -1381,6 +1364,21 @@ class DifficultyMode(Validator):
 
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
         valids = [(difficulty.name, difficulty.nid) for difficulty in self._db.difficulty_modes.values()]
+        return valids
+
+class SaveSlot(Validator):
+    desc = 'accepts an integer for the save slot, or "suspend" for the suspend slot'
+
+    def validate(self, text, level: NID):
+        if text.lower() == 'suspend':
+            return text
+        if str_utils.is_int(text) and int(text) < self._db.constants.value('num_save_slots'):
+            return text
+        return None
+
+    def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
+        valids = [(None, str(i)) for i in range(self._db.constants.value('num_save_slots'))]
+        valids.append((None, "suspend"))
         return valids
 
 validators: Dict[str, Type[Validator]]= {validator.__name__: validator for validator in Validator.__subclasses__()}

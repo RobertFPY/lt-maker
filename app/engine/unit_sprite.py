@@ -654,4 +654,9 @@ class UnitSprite():
             topleft = (left - 8, top - 8)
             surf.blit(rescue_icon, topleft)
 
+        if any((i.droppable for i in self.unit.items)):
+            droppable_icon = SPRITES.get('droppable_icon')
+            topleft = (left - 8, top - 8)
+            surf.blit(droppable_icon, topleft)
+
         return surf

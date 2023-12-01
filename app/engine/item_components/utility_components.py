@@ -113,7 +113,7 @@ class Restore(ItemComponent):
         return False
 
     def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
-        for skill in target.skills:
+        for skill in target.all_skills[:]:
             if self._can_be_restored(skill):
                 actions.append(action.RemoveSkill(target, skill))
                 playback.append(pb.RestoreHit(unit, item, target))
@@ -134,6 +134,7 @@ class UnlockStaff(ItemComponent):
     tag = ItemTags.UTILITY
 
     _did_hit = False
+    _target_position = None
 
     def _valid_region(self, region) -> bool:
         return region.region_type == RegionType.EVENT and 'can_unlock' in region.condition
@@ -150,7 +151,9 @@ class UnlockStaff(ItemComponent):
         return position, []
 
     def target_restrict(self, unit, item, def_pos, splash) -> bool:
-        for pos in [def_pos] + splash:
+        positions = [def_pos] if def_pos else []
+        positions += splash
+        for pos in positions:
             for region in game.level.regions:
                 if self._valid_region(region) and region.contains(def_pos):
                     return True
@@ -158,10 +161,11 @@ class UnlockStaff(ItemComponent):
 
     def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
         self._did_hit = True
+        self._target_position = target_pos
 
     def end_combat(self, playback, unit, item, target, mode):
         if self._did_hit:
-            pos = game.cursor.position
+            pos = self._target_position
             region = None
             for reg in game.level.regions:
                 if self._valid_region(reg) and reg.contains(pos):
@@ -172,6 +176,7 @@ class UnlockStaff(ItemComponent):
                 if did_trigger and region.only_once:
                     action.do(action.RemoveRegion(region))
         self._did_hit = False
+        self._target_position = None
 
 class CanUnlock(ItemComponent):
     nid = 'can_unlock'

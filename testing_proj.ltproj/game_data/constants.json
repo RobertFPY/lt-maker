@@ -76,6 +76,14 @@
         true
     ],
     [
+        "reset_uses",
+        true
+    ],
+    [
+        "allow_negative_as",
+        false
+    ],
+    [
         "trade",
         true
     ],
@@ -140,6 +148,14 @@
         false
     ],
     [
+        "learn_skills_on_reclass",
+        true
+    ],
+    [
+        "learn_skills_on_promote",
+        true
+    ],
+    [
         "negative_growths",
         true
     ],
@@ -170,6 +186,14 @@
     [
         "autogenerate_grey_map_sprites",
         true
+    ],
+    [
+        "translucent_unit_sprite",
+        false
+    ],
+    [
+        "talk_display",
+        false
     ],
     [
         "convoy_on_death",
@@ -232,6 +256,10 @@
         true
     ],
     [
+        "title_sound",
+        true
+    ],
+    [
         "music_main",
         "Main Theme"
     ],
@@ -242,6 +270,10 @@
     [
         "music_class_change",
         null
+    ],
+    [
+        "music_game_over",
+        "Game Over"
     ],
     [
         "restart_phase_music",
@@ -326,9 +358,5 @@
     [
         "heal_min",
         5
-    ],
-    [
-        "dark_sprites",
-        false
     ]
 ]

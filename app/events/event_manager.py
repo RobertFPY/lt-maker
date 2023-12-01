@@ -42,7 +42,10 @@ class EventManager():
         triggered_events = self.get_triggered_events(trigger, level_nid)
         return len(triggered_events) > 0
 
-    def trigger(self, trigger: EventTrigger, level_nid=None):
+    def trigger(self, trigger: EventTrigger, level_nid=None) -> bool:
+        """
+        Returns whether an event was triggered!
+        """
         triggered_events = self.get_triggered_events(trigger, level_nid)
         new_event = False
         sorted_events = sorted(triggered_events, key=lambda x: x.priority)
@@ -65,10 +68,10 @@ class EventManager():
         if event_prefab.only_once:
             action.do(action.OnlyOnceEvent(event_prefab.nid))
         return True
-    
-    def _add_event_from_commands(self, nid, commands: List[EventCommand], trigger: EventTrigger):
+
+    def _add_event_from_script(self, nid, script: str, trigger: EventTrigger):
         dummy_prefab = EventPrefab(nid)
-        dummy_prefab.commands = commands
+        dummy_prefab.source = script
         self._add_event(dummy_prefab, trigger)
 
     def _add_event(self, event_prefab, trigger: EventTrigger):

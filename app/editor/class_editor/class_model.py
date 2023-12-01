@@ -6,7 +6,7 @@ from app.data.resources.resources import RESOURCES
 from app.utilities.data import Data
 from app.data.database.database import DB
 
-from app.extensions.custom_gui import DeletionDialog
+from app.extensions.custom_gui import DeletionTab, DeletionDialog
 
 from app.editor import timer
 
@@ -68,24 +68,29 @@ class ClassModel(DragDropCollectionModel):
         affected_classes = [k for k in DB.classes if k.promotes_from == nid or nid in k.turns_into]
         affected_ais = [ai for ai in DB.ai if ai.has_unit_spec("Class", nid)]
         affected_levels = [level for level in DB.levels if any(unit.klass == nid for unit in level.units)]
-        if affected_units or affected_classes or affected_ais or affected_levels:
-            if affected_units:
-                affected = Data(affected_units)
-                from app.editor.unit_editor.unit_model import UnitModel
-                model = UnitModel
-            elif affected_classes:
-                affected = Data(affected_classes)
-                model = ClassModel
-            elif affected_ais:
-                affected = Data(affected_ais)
-                from app.editor.ai_editor.ai_model import AIModel
-                model = AIModel
-            elif affected_levels:
-                affected = Data(affected_levels)
-                from app.editor.global_editor.level_menu import LevelModel
-                model = LevelModel
-            msg = "Deleting Class <b>%s</b> would affect these objects" % nid
-            swap, ok = DeletionDialog.get_swap(affected, model, msg, ClassBox(self.window, exclude=klass), self.window)
+        deletion_tabs = []
+        if affected_units:
+            from app.editor.unit_editor.unit_model import UnitModel
+            model = UnitModel
+            msg = "Deleting Class <b>%s</b> would affect these units" % nid
+            deletion_tabs.append(DeletionTab(affected_units, model, msg, "Units"))
+        if affected_classes:
+            model = ClassModel
+            msg = "Deleting Class <b>%s</b> would affect these classes" % nid
+            deletion_tabs.append(DeletionTab(affected_classes, model, msg, "Classes"))
+        if affected_ais:
+            from app.editor.ai_editor.ai_model import AIModel
+            model = AIModel
+            msg = "Deleting Class <b>%s</b> would affect these AIs" % nid
+            deletion_tabs.append(DeletionTab(affected_ais, model, msg, "AIs"))
+        if affected_levels:
+            from app.editor.global_editor.level_menu import LevelModel
+            model = LevelModel
+            msg = "Deleting Class <b>%s</b> would affect units in these levels" % nid
+            deletion_tabs.append(DeletionTab(affected_levels, model, msg, "Levels"))
+
+        if deletion_tabs:
+            swap, ok = DeletionDialog.get_swap(deletion_tabs, ClassBox(self.window, exclude=klass), self.window)
             if ok:
                 self.on_nid_changed(nid, swap.nid)
             else:

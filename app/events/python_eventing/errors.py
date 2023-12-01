@@ -1,7 +1,7 @@
-
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import List
+import traceback
+from typing import List, Optional
 
 ERROR_TEMPLATE = \
 """
@@ -15,11 +15,12 @@ STACK_ERROR_TEMPLATE = \
         {line}"""
 
 @dataclass
-class PreprocessorError(Exception):
+class EventError(Exception):
     event_name: str | List[str]
     line_num: int | List[int]
     line: str | List[str]
-    what = "generic preprocessor error"
+    what = "generic event error"
+    original_exception: Optional[Exception] = None
 
     def __str__(self) -> str:
         if isinstance(self.event_name, list):
@@ -29,26 +30,27 @@ class PreprocessorError(Exception):
                 msg += STACK_ERROR_TEMPLATE.format(event_name=self.event_name[i], lnum=self.line_num[i], line=self.line[i].strip())
             msg += ERROR_TEMPLATE.format(event_name=self.event_name[-1], lnum=self.line_num[-1], line=self.line[-1].strip(),
                                          error_name=self.__class__.__name__, what=self.what)
-            return msg
         else:
             msg = ERROR_TEMPLATE.format(event_name=self.event_name, lnum=self.line_num, line=self.line.strip(),
                                         error_name=self.__class__.__name__, what=self.what)
-            return msg
+        if self.original_exception:
+            msg += '\n\n' + ''.join(traceback.format_exception(None, self.original_exception, self.original_exception.__traceback__))
+        return msg
 
-class NestedEventError(PreprocessorError):
+class NestedEventError(EventError):
     what = "all event function calls must be alone and outside function def"
 
-class InvalidCommandError(PreprocessorError):
+class InvalidCommandError(EventError):
     what = "unknown event command"
 
-class NoSaveInLoopError(PreprocessorError):
+class NoSaveInLoopError(EventError):
     what = "cannot use save event commands in for loops"
 
-class MalformedTriggerScriptCall(PreprocessorError):
+class MalformedTriggerScriptCall(EventError):
     what = 'trigger script must have non-variable valid event target'
 
-class CannotUseYieldError(PreprocessorError):
+class CannotUseYieldError(EventError):
     what = 'cannot use yield in python event scripting'
 
-class InvalidPythonError(PreprocessorError):
+class InvalidPythonError(EventError):
     what = None

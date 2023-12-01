@@ -1,5 +1,6 @@
 from app.data.database.skill_components import SkillComponent, SkillTags
 from app.data.database.components import ComponentType
+from app.engine import skill_system
 
 class Hidden(SkillComponent):
     nid = 'hidden'
@@ -51,7 +52,7 @@ class Negative(SkillComponent):
     tag = SkillTags.ATTRIBUTE
 
     def condition(self, unit, item):
-        return 'Immune' not in unit.tags
+        return not skill_system.has_immune(unit)
 
 class Global(SkillComponent):
     nid = 'global'

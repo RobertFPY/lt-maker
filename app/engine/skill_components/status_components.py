@@ -180,8 +180,8 @@ class ImmuneStatus(SkillComponent):
     desc = "Unit does not receive negative statuses and is not affected by existing negative statuses"
     tag = SkillTags.STATUS
 
-    def additional_tags(self, unit, skill):
-        return ['Immune']
+    def has_immune(self, unit) -> bool:
+        return True
 
     def after_gain_skill(self, unit, other_skill):
         if other_skill.negative and skill_system.condition(self.skill, unit):

@@ -588,7 +588,7 @@ class MainEditor(QMainWindow):
 
     def check_for_updates(self):
         # Only check for updates in frozen version
-        if hasattr(sys, 'frozen') or True:
+        if hasattr(sys, 'frozen'):
             if autoupdate.check_for_update():
                 link = r"https://gitlab.com/rainlash/lt-maker/-/releases/permalink/latest/downloads/lex_talionis_maker"
                 QMessageBox.information(self, "Update Available", "A new update to LT-maker is available!\n"

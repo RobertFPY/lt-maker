@@ -8,7 +8,7 @@ FRAMERATE = 1000//FPS
 
 AUTOTILE_FRAMES = 16
 
-VERSION = "2023.07.24a"
+VERSION = "2023.11.30a"
 
 if __name__ == '__main__':
     print(VERSION)

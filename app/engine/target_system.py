@@ -191,7 +191,7 @@ class TargetSystem():
                                       items: List[ItemObject]) -> Set[Pos]:
         """Returns all positions that the unit can attack at given a list of valid moves and a list of items available.
         
-        Takes into account the item's range, any positional restrictions, and game board bounds. 
+        Takes into account the item's range, any positional restrictions, game board bounds, and line of sight. 
         Does not attempt to determine if an enemy is actually in the location or 
         if the item would actually target that position, (ie. can't heal a full health unit, can't damage an empty tile).
 
@@ -217,14 +217,20 @@ class TargetSystem():
                 continue
             max_range = max(item_range)
 
+            if no_attack_after_move:
+                moves = {unit.position}
+            else:
+                moves = valid_moves
+
             if max_range >= 99:
                 item_attacks = self.game.board.get_all_positions_in_bounds()
             else:
                 manhattan_restriction = item_system.range_restrict(unit, item)
-                if no_attack_after_move:
-                    item_attacks = self.get_shell({unit.position}, item_range, self.game.board.bounds, manhattan_restriction)
-                else:
-                    item_attacks = self.get_shell(valid_moves, item_range, self.game.board.bounds, manhattan_restriction)
+                item_attacks = self.get_shell(moves, item_range, self.game.board.bounds, manhattan_restriction)
+
+            if DB.constants.value('line_of_sight') and not item_system.ignore_line_of_sight(unit, item):
+                item_attacks = set(line_of_sight.line_of_sight(moves, item_attacks, max_range))
+
             attacks |= item_attacks
 
         return attacks

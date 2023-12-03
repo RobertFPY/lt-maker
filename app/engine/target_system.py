@@ -23,7 +23,7 @@ class TargetSystem():
             self.game = game
 
     # Consider making these sections faster
-    def get_shell(self, valid_moves: Set[Pos], potential_range: Set[int], 
+    def get_shell(self, valid_moves: Set[Pos], potential_range: Set[int],
                   bounds: Tuple[int, int, int, int], manhattan_restriction: Optional[Set[Pos]] = None) -> Set[Pos]:
         """Finds positions in a shell of radius {potential_range} from each of the positions in {valid_moves}.
 
@@ -134,7 +134,7 @@ class TargetSystem():
         """Returns whether fog of war applies to this unit and item combination"""
         return (unit.team == 'player' or DB.constants.value('ai_fog_of_war')) and not item_system.ignore_fog_of_war(unit, item)
 
-    def _filter_splash_through_fog_of_war(self, unit, main_target_pos: Optional[Pos], 
+    def _filter_splash_through_fog_of_war(self, unit, main_target_pos: Optional[Pos],
                                           splash_positions: List[Pos]
                                           ) -> Tuple[Optional[Pos], List[Pos]]:
         """Returns only the main target pos and the splash positions that can be seen in fog of war."""
@@ -148,8 +148,8 @@ class TargetSystem():
         """Returns all positions the unit could attack given the item's range.
 
         Takes into account the unit's current position, whether the unit has attacked already, the item's range,
-        line of sight, any positional restrictions, and game board bounds. Does not attempt to determine if an 
-        enemy is actually in the location or if the item would actually target that position, 
+        line of sight, any positional restrictions, and game board bounds. Does not attempt to determine if an
+        enemy is actually in the location or if the item would actually target that position,
         (ie. can't heal a full health unit, can't damage an empty tile).
 
         Args:
@@ -186,19 +186,20 @@ class TargetSystem():
             attacks = set(line_of_sight.line_of_sight({unit.position}, attacks, max_range))
 
         return attacks
-        
+
     def _get_all_attackable_positions(self, unit: UnitObject, valid_moves: List[Pos],
-                                      items: List[ItemObject]) -> Set[Pos]:
+                                      items: List[ItemObject], force=False) -> Set[Pos]:
         """Returns all positions that the unit can attack at given a list of valid moves and a list of items available.
-        
-        Takes into account the item's range, any positional restrictions, game board bounds, and line of sight. 
-        Does not attempt to determine if an enemy is actually in the location or 
+
+        Takes into account the item's range, any positional restrictions, game board bounds, and line of sight.
+        Does not attempt to determine if an enemy is actually in the location or
         if the item would actually target that position, (ie. can't heal a full health unit, can't damage an empty tile).
 
         Args:
             unit (UnitObject): The unit to get all attackable positions for.
             valid_moves (List[Pos]): All possible moves the unit could use this turn.
             items (List[ItemObject]): Items to check.
+            force (bool): Ignore whether the unit has already attacked. Defaults to False.
 
         Returns:
             All attackable positions
@@ -206,11 +207,12 @@ class TargetSystem():
         attacks: Set[Pos] = set()
 
         for item in items:
-            if unit.has_attacked:
-                continue
             no_attack_after_move = item_system.no_attack_after_move(unit, item) or skill_system.no_attack_after_move(unit)
-            if no_attack_after_move and unit.has_moved_any_distance:
-                continue
+            if not force:
+                if unit.has_attacked:
+                    continue
+                if no_attack_after_move and unit.has_moved_any_distance:
+                    continue
 
             item_range = item_funcs.get_range(unit, item)
             if not item_range:  # Possible if you have a weapon with say range 2-3 but your maximum range is limited to 1
@@ -235,43 +237,45 @@ class TargetSystem():
 
         return attacks
 
-    def get_all_attackable_positions_weapons(self, unit: UnitObject, valid_moves: List[Pos]) -> Set[Pos]:
+    def get_all_attackable_positions_weapons(self, unit: UnitObject, valid_moves: List[Pos], force=False) -> Set[Pos]:
         """Returns all positions that the unit can attack with their WEAPONS given a list of valid moves to attack from
-        
-        Takes into account the item's range, any positional restrictions, and game board bounds. 
-        Does not attempt to determine if an enemy is actually in the location or 
+
+        Takes into account the item's range, any positional restrictions, and game board bounds.
+        Does not attempt to determine if an enemy is actually in the location or
         if the item would actually target that position, (ie. can't heal a full health unit, can't damage an empty tile).
 
         Args:
             unit (UnitObject): The unit to get all attackable positions for.
             valid_moves (List[Pos]): All possible moves the unit could use this turn.
+            force (bool): Ignore whether the unit has already attacked. Defaults to False.
 
         Returns:
             All attackable positions
         """
-        return self._get_all_attackable_positions(unit, valid_moves, self._get_all_weapons(unit))
+        return self._get_all_attackable_positions(unit, valid_moves, self._get_all_weapons(unit), force)
 
-    def get_all_attackable_positions_spells(self, unit: UnitObject, valid_moves: List[Pos]) -> Set[Pos]:
+    def get_all_attackable_positions_spells(self, unit: UnitObject, valid_moves: List[Pos], force=False) -> Set[Pos]:
         """Returns all positions that the unit can attack with their SPELLS given a list of valid moves to attack from
-        
-        Takes into account the item's range, any positional restrictions, and game board bounds. 
-        Does not attempt to determine if an enemy is actually in the location or 
+
+        Takes into account the item's range, any positional restrictions, and game board bounds.
+        Does not attempt to determine if an enemy is actually in the location or
         if the item would actually target that position, (ie. can't heal a full health unit, can't damage an empty tile).
 
         Args:
             unit (UnitObject): The unit to get all attackable positions for.
             valid_moves (List[Pos]): All possible moves the unit could use this turn.
+            force (bool): Ignore whether the unit has already attacked. Defaults to False.
 
         Returns:
             All attackable positions
         """
-        return self._get_all_attackable_positions(unit, valid_moves, self._get_all_spells(unit))
+        return self._get_all_attackable_positions(unit, valid_moves, self._get_all_spells(unit), force)
 
     def get_possible_attack_positions(self, unit: UnitObject, target: Pos, moves: Set[Pos],
                                       item: ItemObject) -> List[Pos]:
         """
         Given a unit, a target, an item, and the set of the unit's possible moves,
-        determines where the unit is able to move so that the unit can strike the 
+        determines where the unit is able to move so that the unit can strike the
         target with the item.
 
         Args:
@@ -296,7 +300,7 @@ class TargetSystem():
         if DB.constants.value('line_of_sight') and not item_system.ignore_line_of_sight(unit, item):
             valid_moves = line_of_sight.line_of_sight({target}, valid_moves, max(item_range, default=0))
         return list(valid_moves)
-    
+
     # === Finding valid targets ===
     def targets_in_range(self, unit: UnitObject, item: ItemObject) -> Set[Pos]:
         """Given a unit and an item, finds a set of positions that are within range of the item
@@ -308,10 +312,10 @@ class TargetSystem():
 
     def get_valid_targets(self, unit: UnitObject, item: Optional[ItemObject] = None) -> Set[Pos]:
         """Returns valid targets the unit could attack from their current position using the item.
-        
-        Considers fog of war as well as targeting restrictions in addition to the usual 
+
+        Considers fog of war as well as targeting restrictions in addition to the usual
         item's range, line of sight, any positional restrictions, and game board bounds.
-        
+
         Args:
             unit (UnitObject): The unit to get valid targets for.
             item (Optional[ItemObject]): What item to check. If not supplied, use the unit's currently equipped weapon.
@@ -357,9 +361,9 @@ class TargetSystem():
         return valid_targets
 
     def get_valid_targets_recursive_with_availability_check(self, unit: UnitObject, item: ItemObject) -> Set[Pos]:
-        """Returns valid targets the unit could attack given the item. Checks subitems of the item 
+        """Returns valid targets the unit could attack given the item. Checks subitems of the item
         if it's a multi-item as well.
-        
+
         Args:
             unit (UnitObject): The unit to get valid targets for.
             item (Optional[ItemObject]): What item to check.
@@ -381,18 +385,18 @@ class TargetSystem():
         """Returns all valid targets of a unit from any of their valid moves with any of their items.
 
         Only used by ai_controller.py
-        
-        Considers fog of war as well as targeting restrictions in addition to the usual 
+
+        Considers fog of war as well as targeting restrictions in addition to the usual
         item's range, any positional restrictions, and game board bounds.
 
-        Does NOT consider line of sight in any way. Handle line of sight checks later on in 
+        Does NOT consider line of sight in any way. Handle line of sight checks later on in
         processing if so desired.
         For instance, the AI controller does so while iterating over (move, item, target) triples
         Reason: Figuring out line of sight here would be:
             1. Not efficient: we would have to iterate over every pair of (move, target) to find the good ones.
             2. Not useful: You are going to have to do this check again later since just because
                 a target is valid, doesn't mean that every (move, target) pair is valid.
-        
+
         Args:
             unit (UnitObject): The unit to get all attackable positions for.
             valid_moves (List[Pos]): All possible moves the unit could use this turn.

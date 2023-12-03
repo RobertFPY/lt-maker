@@ -1,3 +1,4 @@
+import copy
 from dataclasses import dataclass
 from typing import Dict
 
@@ -56,7 +57,7 @@ class Klass(Prefab):
 
     def save_attr(self, name, value):
         if name in ('bases', 'growths', 'growth_bonus', 'promotion', 'max_stats', 'fields', 'tags'):
-            return value.copy()  # So we don't make a copy
+            return copy.deepcopy(value)  # So we don't make a copy
         elif name == 'learned_skills':
             return [val.copy() for val in value]  # So we don't make a copy
         elif name == 'wexp_gain':

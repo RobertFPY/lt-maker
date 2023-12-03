@@ -1,3 +1,4 @@
+import copy
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 from app.data.category import CategorizedCatalog
@@ -59,12 +60,8 @@ class UnitPrefab(Prefab):
     def save_attr(self, name, value):
         if name in ('bases', 'growths', 'stat_cap_modifiers'):
             return value.copy()  # So we don't make a copy
-        elif name == 'learned_skills':
-            return [val.copy() for val in value]  # So we don't make a copy
-        elif name == 'unit_notes':
-            return [val.copy() for val in value]
-        elif name == 'fields':
-            return [val.copy() for val in value]
+        elif name in ('unit_notes', 'learned_skills', 'fields'):
+            return copy.deepcopy(value)
         elif name == 'wexp_gain':
             return {k: v.save() for (k, v) in self.wexp_gain.items()}
         else:

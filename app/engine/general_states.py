@@ -1193,7 +1193,7 @@ class SubItemChildState(MapState):
         if not options:
             options = ["Nothing"]
         self.menu = menus.Choice(self.parent_item, options, parent_menu)
-        self.menu.set_limit(8)
+        self.menu.set_limit(4)
 
     def begin(self):
         game.cursor.hide()

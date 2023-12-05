@@ -266,7 +266,7 @@ class EventFunction(Validator):
         return None
 
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
-        valids = [(None, command.nid) for command in event_commands.get_commands()]
+        valids = [(None, command.nid) for command in event_commands.get_commands() if command.tag not in (event_commands.Tags.HIDDEN,)]
         return valids
 
 class Expression(Validator):

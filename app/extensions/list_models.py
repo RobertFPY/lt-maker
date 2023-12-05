@@ -9,6 +9,8 @@ from app.utilities.data import Prefab
 
 from app.data.database.database import DB
 
+import logging
+
 class VirtualListModel(QAbstractItemModel):
     def set_new_data(self, data):
         self._data = data
@@ -276,8 +278,8 @@ class MultiAttrListModel(VirtualListModel):
             new_nid = str_utils.get_next_name(obj.nid, self._data.keys())
             if isinstance(obj, Prefab):
                 serialized_obj = obj.save()
-                print("Duplication!")
-                print(serialized_obj, flush=True)
+                logging.debug("Duplication!")
+                logging.debug(serialized_obj, flush=True)
                 new_obj = self._data.datatype.restore(serialized_obj)
             else:
                 new_obj = copy.copy(obj)

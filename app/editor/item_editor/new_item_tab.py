@@ -83,7 +83,7 @@ class NewItemDatabase(NewEditorTab):
             deletion_tabs.append(DeletionTab(affected_skills, model, msg, "Skills"))
 
         if deletion_tabs:
-            swap, ok = DeletionDialog.get_swap(deletion_tabs, ItemBox(self.window, exclude=item), self.window)
+            swap, ok = DeletionDialog.get_swap(deletion_tabs, ItemBox(self, exclude=item), self)
             if ok:
                 self._on_nid_changed(nid, swap.nid)
             else:

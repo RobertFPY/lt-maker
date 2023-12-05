@@ -8,6 +8,7 @@ from app.engine.fonts import FONT
 from app.engine.input_manager import get_input_manager
 
 from app.engine import engine, image_mods, icons
+from app.engine.graphics.text.text_renderer import render_text
 
 class DamageNumber():
     time_bounce = 400
@@ -83,7 +84,7 @@ class SkillIcon():
         self.right = right
         self.center = center
         self.small = small
-        self.font = FONT['text']
+        self.font = 'text'
         self.text = self.skill.name
         self.text_width = self.font.width(self.text)
         icon = icons.get_icon(self.skill)
@@ -93,22 +94,22 @@ class SkillIcon():
             else:
                 self.surf = engine.create_surface((self.text_width + 22, 32), transparent=True)
                 if self.center:
-                    self.font.blit(self.text, self.surf, (10, 0))
+                    render_text(self.surf, [self.font], [self.text], topleft=(10, 0))
                     self.surf.blit(icon, (self.text_width//2 + 4, 16))
                 elif self.right:
-                    self.font.blit(self.text, self.surf, (20, 0))
+                    render_text(self.surf, [self.font], [self.text], topleft=(20, 0))
                     self.surf.blit(icon, (0, 0))
                 else:
-                    self.font.blit(self.text, self.surf, (0, 0))
+                    render_text(self.surf, [self.font], [self.text], topleft=(0, 0))
                     self.surf.blit(icon, (self.text_width + 4, 0))
         else:
             self.surf = engine.create_surface((self.text_width + 22, 16), transparent=True)
             if self.center:
-                self.font.blit(self.text, self.surf, (10, 0))
+                render_text(self.surf, [self.font], [self.text], topleft=(10, 0))
             elif self.right:
-                self.font.blit(self.text, self.surf, (20, 0))
+                render_text(self.surf, [self.font], [self.text], topleft=(20, 0))
             else:
-                self.font.blit(self.text, self.surf, (0, 0))
+                render_text(self.surf, [self.font], [self.text], topleft=(0, 0))
 
         self.image = self.surf
 

@@ -8,7 +8,7 @@ from app.engine.fonts import FONT
 from app.engine.input_manager import get_input_manager
 
 from app.engine import engine, image_mods, icons
-from app.engine.graphics.text.text_renderer import render_text
+from app.engine.graphics.text.text_renderer import render_text, text_width
 
 class DamageNumber():
     time_bounce = 400
@@ -86,7 +86,7 @@ class SkillIcon():
         self.small = small
         self.font = 'text'
         self.text = self.skill.name
-        self.text_width = self.font.width(self.text)
+        self.text_width = text_width(self.font, self.text)
         icon = icons.get_icon(self.skill)
         if icon:
             if self.small:

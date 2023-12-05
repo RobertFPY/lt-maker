@@ -502,8 +502,12 @@ class Event():
                 return position
             elif placement == 'push':
                 new_pos = self.game.target_system.get_nearest_open_tile(current_occupant, position)
-                action.do(action.ForcedMovement(current_occupant, new_pos))
-                return position
+                if new_pos:
+                    action.do(action.ForcedMovement(current_occupant, new_pos))
+                    return position
+                else:
+                    self.logger.error("%s: No open tile found nearby", 'check_placement', position)
+                    return None
         else:
             return position
 

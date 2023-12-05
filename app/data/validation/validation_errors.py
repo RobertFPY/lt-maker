@@ -10,13 +10,16 @@ class Error():
     tmplt: Error.Templates
 
     def __init__(self, dtype: Optional[LTType | str]=None, value: Optional[str]=None) -> None:
-        if dtype and value:
+        if dtype is not None and value is not None:
             self._origin = (dtype, value)
         self._props = []
         self.tmplt = Error.Templates(self)
 
     def copy(self) -> Error:
-        copy = Error(*self._origin)
+        if self._origin:
+            copy = Error(*self._origin)
+        else:
+            copy = Error()
         copy._props = self._props.copy()
         copy._msg = self._msg
         copy._type = self._type

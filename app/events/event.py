@@ -506,7 +506,7 @@ class Event():
                     action.do(action.ForcedMovement(current_occupant, new_pos))
                     return position
                 else:
-                    self.logger.error("%s: No open tile found nearby", 'check_placement', position)
+                    self.logger.error("%s: No open tile found nearby for %s", 'check_placement', position)
                     return None
         else:
             return position

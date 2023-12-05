@@ -176,15 +176,10 @@ class HPCost(ItemComponent):
         return unit.get_hp() > self.value
 
     def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
-        self._did_something = True
+        action.do(action.ChangeHP(unit, -self.value))
 
     def on_miss(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
-        self._did_something = True
-
-    def end_combat(self, playback, unit, item, target, mode):
-        if self._did_something:
-            action.do(action.ChangeHP(unit, -self.value))
-        self._did_something = False
+        action.do(action.ChangeHP(unit, -self.value))
 
     def reverse_use(self, unit, item):
         action.do(action.ChangeHP(unit, self.value))

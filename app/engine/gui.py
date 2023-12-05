@@ -94,22 +94,22 @@ class SkillIcon():
             else:
                 self.surf = engine.create_surface((self.text_width + 22, 32), transparent=True)
                 if self.center:
-                    render_text(self.surf, [self.font], [self.text], topleft=(10, 0))
+                    render_text(self.surf, [self.font], [self.text], None, topleft=(10, 0))
                     self.surf.blit(icon, (self.text_width//2 + 4, 16))
                 elif self.right:
-                    render_text(self.surf, [self.font], [self.text], topleft=(20, 0))
+                    render_text(self.surf, [self.font], [self.text], None, topleft=(20, 0))
                     self.surf.blit(icon, (0, 0))
                 else:
-                    render_text(self.surf, [self.font], [self.text], topleft=(0, 0))
+                    render_text(self.surf, [self.font], [self.text], None, topleft=(0, 0))
                     self.surf.blit(icon, (self.text_width + 4, 0))
         else:
             self.surf = engine.create_surface((self.text_width + 22, 16), transparent=True)
             if self.center:
-                render_text(self.surf, [self.font], [self.text], topleft=(10, 0))
+                render_text(self.surf, [self.font], [self.text], None, topleft=(10, 0))
             elif self.right:
-                render_text(self.surf, [self.font], [self.text], topleft=(20, 0))
+                render_text(self.surf, [self.font], [self.text], None, topleft=(20, 0))
             else:
-                render_text(self.surf, [self.font], [self.text], topleft=(0, 0))
+                render_text(self.surf, [self.font], [self.text], None, topleft=(0, 0))
 
         self.image = self.surf
 

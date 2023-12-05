@@ -22,6 +22,9 @@ from app.engine import menus, base_surf, background, text_funcs, \
     image_mods, gui, icons, prep, record_book, unit_sprite, action, \
     engine
 from app.engine.fluid_scroll import FluidScroll
+from app.engine.graphics.text.text_renderer import render_text
+
+from app.utilities.enums import HAlignment
 import app.engine.config as cf
 from app.events import triggers
 
@@ -473,7 +476,7 @@ class SupportDisplay():
 
                 map_sprites.append(image)
                 # Blit name
-                FONT['text'].blit(name, bg_surf, (25, idx * 16 + 20))
+                render_text(bg_surf, ['text'], name, None, (25, idx * 16 + 20))
                 # Blit affinity
                 if affinity:
                     icons.draw_item(bg_surf, affinity, (72, idx * 16 + 19))
@@ -487,12 +490,12 @@ class SupportDisplay():
                     for ridx, bonus in enumerate(prefab.requirements):
                         rank = bonus.support_rank
                         if rank in pair.locked_ranks:
-                            fnt = FONT['text-green']
+                            font_color = 'green'
                         elif rank in pair.unlocked_ranks:
-                            fnt = FONT['text']
+                            font_color = None
                         else:
-                            fnt = FONT['text-grey']
-                        fnt.blit(rank, bg_surf, (90 + ridx * 10, idx * 16 + 20))
+                            font_color = 'grey'
+                        render_text(bg_surf, ['text'], [rank], [font_color], (90 + ridx * 10, idx * 16 + 20))
 
             for idx, map_sprite in enumerate(map_sprites):
                 if map_sprite:
@@ -822,11 +825,11 @@ class LoreDisplay():
                 portrait, offset = icons.get_portrait_from_nid(DB.units.get(self.lore.nid).portrait_nid)
                 image.blit(portrait, (self.width - 96, WINHEIGHT - 12 - 80))
 
-            FONT['text-blue'].blit_center(self.lore.title, image, (self.width // 2, 4))
+            render_text(image, ['text'], [self.lore.title], ['blue'], (self.width // 2, 4), HAlignment.CENTER)
 
             if self.num_pages > 1:
                 text = '%d / %d' % (self.page_num + 1, self.num_pages)
-                FONT['text-yellow'].blit_right(text, image, (self.width - 8, WINHEIGHT - 12 - 16))
+                render_text(image, ['text'], [text], ['yellow'], (self.width - 8, WINHEIGHT - 12 - 16), HAlignment.RIGHT)
 
             surf.blit(image, self.topleft)
 
@@ -1403,7 +1406,7 @@ class BaseAchievementState(State):
 
     def draw_top_section(self, surf, topleft, title):
         surf.blit(SPRITES.get('chapter_select_green'), (topleft[0], topleft[1]))
-        FONT['text-yellow'].blit_center(title, surf, (topleft[0] + 98, topleft[1] + 8))
+        render_text(surf, ['text'], [title], ['yellow'], (topleft[0] + 98, topleft[1] + 8), HAlignment.CENTER)
         return surf
 
 class BaseSoundRoomState(State):
@@ -1500,7 +1503,7 @@ class BaseSoundRoomState(State):
 
     def draw_sound_room_title(self, surf, topleft, music_name):
         surf.blit(SPRITES.get('chapter_select_green'), (topleft[0], topleft[1]))
-        FONT['convo-white'].blit_center(music_name, surf, (topleft[0] + 98, topleft[1] + 8))
+        render_text(surf, ['convo'], [music_name], ['white'], (topleft[0] + 98, topleft[1] + 8), HAlignment.CENTER)
         return surf
 
     def draw_volume(self, surf):

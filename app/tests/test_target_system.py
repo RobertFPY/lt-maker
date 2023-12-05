@@ -122,7 +122,7 @@ class TargetSystemUnitTests(unittest.TestCase):
 
         valid_positions = self.target_system.get_attackable_positions(self.player_unit, weapon)
 
-        num_positions = (self.game.board.bounds[2] - self.game.board.bounds[0]) * (self.game.board.bounds[3] - self.game.board.bounds[1])
+        num_positions = (self.game.board.bounds[2] - self.game.board.bounds[0] + 1) * (self.game.board.bounds[3] - self.game.board.bounds[1] + 1)
         self.assertEqual(len(valid_positions), num_positions)
 
     def test_targets_in_range_adjacent(self):

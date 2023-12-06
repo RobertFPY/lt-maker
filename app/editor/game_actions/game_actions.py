@@ -73,6 +73,9 @@ def test_combat(left_combat_anim, left_weapon_anim, left_palette_name, left_pale
         driver.start("Combat Test", from_editor=True)
         from app.engine import battle_animation
         from app.engine.combat.mock_combat import MockCombat
+        # Clear out old battle animations that we might have tested with earlier,
+        # because they could have changed.
+        battle_animation.battle_anim_registry.clear()
         right = battle_animation.BattleAnimation.get_anim(right_combat_anim, right_weapon_anim, right_palette_name, right_palette, None, right_item_nid)
         left = battle_animation.BattleAnimation.get_anim(right_weapon_anim, left_weapon_anim, left_palette_name, left_palette, None, left_item_nid)
         at_range = 1 if 'Ranged' in right_weapon_anim.nid else 0

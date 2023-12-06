@@ -14,6 +14,8 @@ from app.data.resources import combat_commands
 from app.editor import combat_command_widgets
 from app.extensions.widget_list import WidgetList
 
+import logging
+
 class TimelineList(WidgetList):
     def __init__(self, parent):
         super().__init__(parent)
@@ -171,6 +173,7 @@ class TimelineMenu(QWidget):
         if start == end:
             return
         obj = self.current_pose.timeline.pop(start)
+        logging.debug("Command %s moved from %s to %s", obj, start, end)
         if start > end:
             self.current_pose.timeline.insert(end, obj)
         else:

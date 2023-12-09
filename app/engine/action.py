@@ -3345,6 +3345,7 @@ class AddSkill(Action):
         self.subactions.clear()
         if not self.skill_obj:
             return
+        logging.debug("AddSkill.do: Adding Skill %s to %s", self.skill_obj, self.unit)
             
         popped_skill_obj = self.unit.add_skill(self.skill_obj, self.source, self.source_type, test=True)
         # Skill failed to add due to not displacing another skill and itself being displaceable
@@ -3383,6 +3384,8 @@ class AddSkill(Action):
         self.reset_action.reverse()
         if not self.skill_obj:
             return
+
+        logging.debug("AddSkill.reverse: Removing Skill %s from %s", self.skill_obj, self.unit)
         if self.skill_obj in self.unit.all_skills:
             # Actually remove skill
             skill_system.before_remove(self.unit, self.skill_obj)

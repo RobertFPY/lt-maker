@@ -76,25 +76,36 @@ class PaletteMenu(QListWidget):
 
         menu.popup(self.viewport().mapToGlobal(pos))
 
+    def add_palette_widget(self, idx: int):
+        item = QListWidgetItem(self)
+        pf = PaletteWidget(idx, self.combat_anim, self)
+        pf.palette_name_changed.connect(self.change_palette_name)
+        pf.palette_nid_changed.connect(self.change_palette_nid)
+        self.palette_widgets.append(pf)
+        item.setSizeHint(pf.minimumSizeHint())
+        self.addItem(item)
+        self.setItemWidget(item, pf)
+        self.setMinimumWidth(self.sizeHintForColumn(0))
+
     def set_current(self, combat_anim):
         self.clear()
         self.combat_anim = combat_anim
 
         for idx, palette in enumerate(combat_anim.palettes):
-            palette_name, palette_nid = palette
-
-            item = QListWidgetItem(self)
-            pf = PaletteWidget(idx, combat_anim, self)
-            pf.palette_name_changed.connect(self.change_palette_name)
-            pf.palette_nid_changed.connect(self.change_palette_nid)
-            self.palette_widgets.append(pf)
-            item.setSizeHint(pf.minimumSizeHint())
-            self.addItem(item)
-            self.setItemWidget(item, pf)
-            self.setMinimumWidth(self.sizeHintForColumn(0))
+            self.add_palette_widget(idx)
 
         if self.combat_anim.palettes:
             self.set_palette(0)
+
+    def update_palettes(self):
+        previous_idx = self.current_idx
+        self.clear()
+
+        for idx, palette in enumerate(self.combat_anim.palettes):
+            self.add_palette_widget(idx)
+
+        if self.combat_anim.palettes:
+            self.set_palette(previous_idx)
 
     def set_palette(self, idx):
         self.current_idx = idx

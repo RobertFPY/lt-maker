@@ -279,7 +279,7 @@ class MultiAttrListModel(VirtualListModel):
             if isinstance(obj, Prefab):
                 serialized_obj = obj.save()
                 logging.debug("Duplication!")
-                logging.debug(serialized_obj, flush=True)
+                logging.debug(serialized_obj)
                 new_obj = self._data.datatype.restore(serialized_obj)
             else:
                 new_obj = copy.copy(obj)

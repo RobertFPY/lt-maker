@@ -1,4 +1,5 @@
 from __future__ import annotations
+from enum import Enum
 from app.data.database.items import ItemPrefab
 from app.data.database.levels import LevelPrefab
 from app.data.database.skills import SkillPrefab
@@ -8,6 +9,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type
 
 from app.data.database.database import Database
 from app.engine.fonts import FONT
+from app.utilities.class_utils import recursive_subclasses
 from app.utilities.enums import HAlignment, VAlignment
 from app.events import event_commands
 from app.events.screen_positions import horizontal_screen_positions, vertical_screen_positions
@@ -40,6 +42,39 @@ class Validator():
     def convert(self, text: str):
         return text
 
+class SequenceValidator(Validator):
+    delim = ','
+    as_type = list
+
+    def convert_element(self, element: str):
+        return element
+
+    def convert(self, text: str):
+        return self.as_type([self.convert_element(t.strip()) for t in text.split(self.delim)])
+
+class DictValidator(Validator):
+    delim = ','
+
+    def validate(self, text, level):
+        s_l = text.split(',')
+        if len(s_l) % 2 != 0:  # Must be divisible by 2
+            return None
+        return text
+
+    def convert_key(self, key: str):
+        return key
+
+    def convert_val(self, val: str):
+        return val
+
+    def convert(self, text: str):
+        spl = [t.strip() for t in text.split(self.delim)]
+        keys = spl[::2]
+        vals = spl[1::2]
+        if len(keys) != len(vals):
+            return {}
+        return {self.convert_key(k): self.convert_val(v) for k, v in zip(keys, vals)}
+
 class OptionValidator(Validator):
     valid: List[str] = []
 
@@ -54,6 +89,17 @@ class OptionValidator(Validator):
 
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
         return [(None, option) for option in self.valid]
+
+class EnumValidator(OptionValidator):
+    enum_type: Type[Enum]
+
+    @property
+    def valid(self) -> List[str]:
+        return [e.value for e in self.enum_type]
+
+    def convert(self, text: str):
+        if text:
+            return self.enum_type(text)
 
 class EvalValidator(Validator):
     """exists as a special subclass of validators"""
@@ -70,9 +116,6 @@ class EvalValidator(Validator):
 class RawDataValidator(EvalValidator):
     desc = "must be a correct reference to raw data"
     tags = ['d', 'data']
-
-    def validate(self, text, level):
-        return text
 
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
         if not text:
@@ -115,9 +158,6 @@ class UnitFieldValidator(EvalValidator):
     desc = "must be a correct reference to fields on units"
     tags = ['f', 'field']
 
-    def validate(self, text, level):
-        return text
-
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
         text = self.process_arg_text(text)
         nlevel = text.count('.')
@@ -150,9 +190,6 @@ class UnitFieldValidator(EvalValidator):
 class VarValidator(EvalValidator):
     desc = "must be a correct reference to an existing game_var or level_var"
     tags = ['v', 'var']
-
-    def validate(self, text, level):
-        return text
 
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
         vars_in_level = set(self._db.game_var_slots.keys())
@@ -225,9 +262,6 @@ class ItemAttrValidator(EvalValidator):
 class UnitField(Validator):
     desc = "can be nid of any unit field, including new ones"
 
-    def validate(self, text, level):
-        return text
-
     def valid_entries(self, level: NID, text: str) -> List[Tuple[Optional[str], NID]]:
         all_keys = set()
         for unit in self._db.units:
@@ -237,9 +271,6 @@ class UnitField(Validator):
 class Achievement(Validator):
     desc = "can be any nid of an achievement"
 
-    def validate(self, text, level):
-        return text
-
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
         achs = self._db.events.inspector.find_all_calls_of_command(event_commands.CreateAchievement())
         slots = [(None, command.parameters['Nid']) for command in achs.values()]
@@ -247,9 +278,6 @@ class Achievement(Validator):
 
 class GeneralVar(Validator):
     desc = "can be any nid"
-
-    def validate(self, text, level):
-        return text
 
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
         vars_in_level = set(self._db.game_var_slots.keys())
@@ -285,6 +313,9 @@ class Integer(Validator):
             return int(text)
         return None
 
+    def convert(self, text: str):
+        return int(text)
+
 class Float(Validator):
     desc = "Any number with a decimal"
 
@@ -296,7 +327,7 @@ class Float(Validator):
     def convert(self, text: str):
         return float(text)
 
-class PositiveInteger(Validator):
+class PositiveInteger(Integer):
     desc = "must be a positive whole number"
 
     def validate(self, text, level):
@@ -304,7 +335,7 @@ class PositiveInteger(Validator):
             return int(text)
         return None
 
-class IntegerList(Validator):
+class IntegerList(SequenceValidator):
     desc = "must be a comma-delimited list of integers (ie, `5,7,12`)"
 
     def validate(self, text, level):
@@ -314,7 +345,20 @@ class IntegerList(Validator):
                 return None
         return text
 
-class WholeNumber(Validator):
+    def convert_element(self, element: str):
+        return int(element)
+
+class BoolList(SequenceValidator):
+    desc = "a list of truthy or falsy values delimited by commas. E.g. `True, False, True`"
+
+    def validate(self, text, level):
+        as_list = text.split(',')
+        return all([t in Bool.valid for t in as_list])
+
+    def convert_element(self, element: str):
+        return Bool().convert(element)
+
+class WholeNumber(Integer):
     desc = "must be a whole number"
 
     def validate(self, text, level):
@@ -322,20 +366,16 @@ class WholeNumber(Validator):
             return int(text)
         return None
 
+class Time(Integer):
+    desc = "indicates a duration"
+class Volume(Float):
+    desc = "A number between greater than 0 (0 is muted, 1 is current volume)"
+
 class String(Validator):
     """
     Any string will do
     """
     pass
-
-class Time(Validator):
-    def validate(self, text, level):
-        if str_utils.is_int(text):
-            return int(text)
-        return None
-
-    def convert(self, text: str) -> int:
-        return int(text)
 
 class Music(Validator):
     def validate(self, text, level):
@@ -365,17 +405,6 @@ class PhaseMusic(OptionValidator):
 
 class SpecialMusicType(OptionValidator):
     valid = ['title_screen', 'promotion', 'class_change', 'game_over']
-
-class Volume(Validator):
-    desc = "A number between greater than 0 (0 is muted, 1 is current volume)"
-
-    def validate(self, text, level):
-        if str_utils.is_float(text) and float(text) >= 0:
-            return float(text)
-        return None
-
-    def convert(self, text: str) -> float:
-        return float(text)
 
 class PortraitNid(Validator):
     def validate(self, text, level):
@@ -447,40 +476,7 @@ class Tag(Validator):
         valids = [(None, tag.nid) for tag in self._db.tags.values()]
         return valids
 
-class TagList(Validator):
-    desc = "must be a comma-delimited list of tags (ie, `Armor,Dragon,Boss`)"
-
-    def validate(self, text, level):
-        tex = text.split(',')
-        for t in tex:
-            if t not in self._db.tags.keys():
-                return None
-        return text
-
-    def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
-        valids = [(None, tag.nid) for tag in self._db.tags.values()]
-        return valids
-
-class TextPosition(Validator):
-    valid_positions = ['center']
-
-    desc = """
-Determines position to place text. Supports either pixels (`x,y`) or the `center` position.
-"""
-
-    def validate(self, text, level):
-        if text in self.valid_positions:
-            return text
-        elif text and ',' in text and len(text.split(',')) == 2 and all(str_utils.is_int(t) for t in text.split(',')):
-            return text
-        return None
-
-    def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
-        valids = [(None, option) for option in self.valid_positions]
-        return valids
-
-
-class ScreenPosition(Validator):
+class ScreenPosition(SequenceValidator):
     desc = """
 Determines where to add the portrait to the screen.
 Available options are (`OffscreenLeft`,
@@ -492,6 +488,7 @@ Can combine horizontal and vertical positions like so: `Left,Bottom`.
 If the portrait is placed on the left side of the screen to start,
 it will be facing right, and vice versa.
 """
+    as_type = tuple
 
     def validate(self, text: str, level: Optional[NID]):
         if text in horizontal_screen_positions:
@@ -518,6 +515,12 @@ it will be facing right, and vice versa.
         valids += [(None, option) for option in vertical_screen_positions]
         return valids
 
+    def convert_element(self, element: str):
+        element = element.replace('(', '').replace(')', '')
+        if str_utils.is_int(element):
+            return int(element)
+        return element
+
 class Slide(OptionValidator):
     valid = ["normal", "left", "right"]
 
@@ -527,10 +530,16 @@ class Font(OptionValidator):
 class Direction(OptionValidator):
     valid = ["open", "close"]
 
+from app.utilities.enums import Orientation as o
 class Orientation(OptionValidator):
     valid = ["h", "horiz", "horizontal", "v", "vert", "vertical"]
 
-class ExpressionList(Validator):
+    def convert(self, text: str):
+        if text in self.valid[:3]:
+            return o.HORIZONTAL
+        return o.VERTICAL
+
+class ExpressionList(SequenceValidator):
     valid_expressions = ["NoSmile", "Smile", "NormalBlink", "CloseEyes", "HalfCloseEyes", "OpenEyes", "OpenMouth"]
     desc = "expects a comma-delimited list of expressions. Valid expressions are: (`NoSmile`, `Smile`, `NormalBlink`, `CloseEyes`, `HalfCloseEyes`, `OpenEyes`, `OpenMouth`). Example: `Smile,CloseEyes`"
 
@@ -545,7 +554,7 @@ class ExpressionList(Validator):
         valids = [(None, option) for option in self.valid_expressions]
         return valids
 
-class IllegalCharacterList(Validator):
+class IllegalCharacterList(SequenceValidator):
     valid_sets = ["uppercase", "lowercase", "uppercase_UTF8", "lowercase_UTF8", "numbers_and_punctuation"]
     desc = "expects a comma-delimited list of character sets to ban. Valid options are: ('uppercase', 'lowercase', 'uppercase_UTF8', 'lowercase_UTF8', 'numbers_and_punctuation'). Example: `uppercase,lowercase`"
 
@@ -577,30 +586,12 @@ class DialogVariant(Validator):
         slots += [(None, style) for style in set([variant.parameters['Style'] for variant in predefined_variants.values()])]
         return slots
 
-class StringList(Validator):
+class StringList(SequenceValidator):
     desc = "must be delimited by commas. For example: `Water,Earth,Fire,Air`"
 
-    def validate(self, text, level):
-        text = text.split(',')
-        return text
-
-class DashList(Validator):
-    desc = "similar to a StringList, but delimited by dashes. For example: `Water-Earth-Fire-Air`"
-
-    def validate(self, text, level):
-        try:
-            self.convert(text)
-            return text
-        except:
-            pass
-        return None
-
-    def convert(self, text: str) -> List:
-        return text.split('-')
-
-class PointList(Validator):
+class PointList(SequenceValidator):
     desc = "A list of points separated by dashes. E.g. (1, 1)-(3.5, 3)-(24,-6)"
-    decimal_converter = re.compile(r'[^\d.]+')
+    delim = '-'
 
     def validate(self, value, level):
         if isinstance(value, list):
@@ -608,19 +599,10 @@ class PointList(Validator):
                 return value
         return None
 
-    def convert(self, text: str) -> List[Point]:
-        try:
-            text.replace(' ', '')
-            tlist = text.split(')-(')
-            parsed_list = []
-            for pstring in tlist:
-                coords = pstring.split(',')
-                x = float(self.decimal_converter.sub('', coords[0]))
-                y = float(self.decimal_converter.sub('', coords[1]))
-                parsed_list.append((x, y))
-            return parsed_list
-        except:
-            return text
+    def convert_element(self, element: str):
+        element = element.replace('(', '').replace(')', '')
+        x, y = element.split(',')
+        return float(x), float(y)
 
 class Speaker(Validator):
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
@@ -638,37 +620,28 @@ class Panorama(Validator):
         valids = [(None, pan.nid) for pan in self._resources.panoramas.values()]
         return valids
 
-class Width(Validator):
+class Width(Integer):
     desc = "is measured in pixels"
-
-    def validate(self, text, level):
-        if str_utils.is_int(text):
-            return 8 * round(int(text) / 8)
-        return None
-
-class Speed(Validator):
+class Speed(Integer):
     desc = "is measured in milliseconds"
 
-    def validate(self, text, level):
-        if str_utils.is_int(text) and int(text) > 0:
-            return text
-        return None
-
-class Color3(Validator):
+class Color3(IntegerList):
     desc = "uses 0-255 for color channels. Example: `128,160,136`"
 
     def validate(self, text, level):
-        if ',' not in text:
+        as_list = self.convert(text)
+        if len(as_list) != 3:
             return None
-        text = text.split(',')
-        if len(text) != 3:
-            return None
-        if all(str_utils.is_int(t) and 0 <= int(t) <= 255 for t in text):
+        if all(str_utils.is_int(t) and 0 <= int(t) <= 255 for t in as_list):
             return text
         return None
 
 class Bool(OptionValidator):
     valid = ['t', 'true', '1', 'y', 'yes', 'f', 'false', '0', 'n', 'no']
+
+    def convert(self, text: str):
+        true_values = self.valid[:5]
+        return text.lower() in true_values
 
 class ShopFlavor(Validator):
     # Any string will do
@@ -744,7 +717,13 @@ class Position(Validator):
             return valids
         return []
 
-class FloatPosition(Position, Validator):
+    def convert(self, text: str):
+        if ',' in text:
+            return tuple([int(i) for i in text.split(',')])
+        else:
+            return text
+
+class FloatPosition(Validator):
     desc = """accepts a valid `(x, y)` position, but also allows fractional positions,
     such as (1.5, 2.6). You use a unit's nid to use their position.
     Alternatively, you can use one of (`{unit}`, `{unit1}`, `{unit2}`, `{position}`)"""
@@ -773,25 +752,33 @@ class FloatPosition(Position, Validator):
         else:
             return text
 
-class PositionOffset(Validator):
+    def convert(self, text: str):
+        if ',' in text:
+            x = tuple([float(i.replace('(', '').replace(')', '')) for i in text.split(',')])
+            return x
+        else:
+            return text
+
+class PositionOffset(IntegerList):
     desc = "accepts a valid `(x, y)` position offset."
 
     def validate(self, text, level):
-        text = text.split(',')
-        if len(text) != 2:
+        as_list = self.convert(text)
+        if len(as_list) != 2:
             return None
-        if not all(str_utils.is_int(t) for t in text):
+        if not all(str_utils.is_int(t) for t in as_list):
             return None
         return text
 
-class Size(Validator):
+class Size(IntegerList):
     desc = "must be in the format `x,y`. Example: `64,32`"
+    as_type = tuple
 
     def validate(self, text, level):
-        text = text.split(',')
-        if len(text) > 2:
+        as_list = self.convert(text)
+        if len(as_list) != 2:
             return None
-        if not all(str_utils.is_int(t) and int(t) > 0 for t in text):
+        if not all(str_utils.is_int(t) for t in as_list):
             return None
         return text
 
@@ -920,9 +907,6 @@ class GlobalUnitOrConvoy(Validator):
 class Region(Validator):
     desc = "accepts a region nid."
 
-    def validate(self, text, level):
-        return text
-
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
         valids = []
         level_obj = self._db.levels.get(level)
@@ -954,8 +938,14 @@ class RegionType(OptionValidator):
 class Weather(OptionValidator):
     valid = ["rain", "sand", "snow", "fire", "light", "purple", "dark", "smoke", "night", "sunset", "event_tile", "switch_tile"]
 
-class Align(OptionValidator):
-    valid = [align.value for align in Alignments]
+class Align(EnumValidator):
+    enum_type = Alignments
+
+class HAlign(EnumValidator):
+    enum_type = HAlignment
+
+class VAlign(EnumValidator):
+    enum_type = VAlignment
 
 class AlignOrPosition(OptionValidator):
     valid = [align.value for align in Alignments]
@@ -967,21 +957,21 @@ class AlignOrPosition(OptionValidator):
             return text
         return None
 
-class HAlign(OptionValidator):
-    valid = [align.value for align in HAlignment]
-
-class VAlign(OptionValidator):
-    valid = [align.value for align in VAlignment]
+    def convert(self, text: str):
+        if ',' in text:
+            x, y = text.split(',')
+            return int(x), int(y)
+        return Alignments(text)
 
 class GrowthMethod(OptionValidator):
     valid = ["random", "fixed", "dynamic"]
 
-class CombatScript(Validator):
+class CombatScript(SequenceValidator):
     valid_commands = ['hit1', 'hit2', 'crit1', 'crit2', 'miss1', 'miss2', '--', 'end']
     desc = "specifies the order and type of actions in combat. Valid actions: (`hit1`, `hit2`, `crit1`, `crit2`, `miss1`, `miss2`, `--`, `end`)."
 
     def validate(self, text, level):
-        commands = text.split(',')
+        commands = self.convert(text)
         if all(command.lower() in self.valid_commands for command in commands):
             return text
         return None
@@ -1015,11 +1005,11 @@ class Item(Validator):
         valids = [(item.name, item.nid) for item in self._db.items.values()]
         return valids
 
-class ItemList(Validator):
+class ItemList(SequenceValidator):
     desc = "accepts a comma-delimited list of item nids. Example: `Iron Sword,Iron Lance,Iron Bow`"
 
     def validate(self, text, level):
-        items = text.split(',')
+        items = self.convert(text)
         if all(item in self._db.items.keys() for item in items):
             return text
         return None
@@ -1056,7 +1046,7 @@ class SkillComponent(Validator):
         valids = [(None, component.nid) for component in SCA.get_skill_components()]
         return valids
 
-class StatList(Validator):
+class StatList(DictValidator):
     desc = "accepts a comma-delimited list of pairs of stat nids and stat changes. For example, `STR,2,SPD,-3`."
 
     def validate(self, text, level):
@@ -1072,16 +1062,18 @@ class StatList(Validator):
                 return None
         return text
 
+    def convert_val(self, val: str):
+        return int(val)
+
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
         valids = [(None, stat.nid) for stat in self._db.stats.values()]
         return valids
 
-class KlassList(Validator):
+class KlassList(SequenceValidator):
     desc = "accepts a comma-delimited list of klass nids."
 
     def validate(self, text, level):
-        s_l = text.split(',')
-
+        s_l = self.convert(text)
         for entry in s_l:
             if entry not in self._db.classes.keys():
                 return None
@@ -1091,14 +1083,8 @@ class KlassList(Validator):
         valids = [(klass.name, klass.nid) for klass in self._db.classes.values()]
         return valids
 
-class ArgList(Validator):
+class ArgList(DictValidator):
     desc = "accepts a comma-delimited list of pairs of keywords and values. For example, `Color,Purple,Animal,Dog`."
-
-    def validate(self, text, level):
-        s_l = text.split(',')
-        if len(s_l)%2 != 0:  # Must be divisible by 2
-            return None
-        return text
 
 class Skill(Validator):
     def validate(self, text, level):
@@ -1320,9 +1306,6 @@ class OverworldNodeMenuOption(Validator):
 class OverworldEntity(Validator):
     desc = "accepts the nid of an overworld entity. By default, all parties have associated overworld entities."
 
-    def validate(self, text, level):
-        return text
-
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
         valids = [(party.name, party.nid) for party in self._db.parties.values()]
         return valids
@@ -1381,24 +1364,13 @@ class SaveSlot(Validator):
         valids.append((None, "suspend"))
         return valids
 
-validators: Dict[str, Type[Validator]]= {validator.__name__: validator for validator in Validator.__subclasses__()}
-option_validators: Dict[str, Type[OptionValidator]] = {validator.__name__: validator for validator in OptionValidator.__subclasses__()}
-eval_validators: Dict[str, Type[EvalValidator]] = {}
+validators: Dict[str, Type[Validator]]=  {validator.__name__: validator for validator in recursive_subclasses(Validator)}
 for validator in EvalValidator.__subclasses__():
     for tag in validator.tags:
-        eval_validators[tag] = validator
+        validators[tag] = validator
 
 def validate(var_type, text, level, db: Database = None, resources: Resources = None):
-    if text and text[0] == '{' and text[-1] == '}': # eval validator
-        validator = eval_validators.get(var_type)
-        if validator:
-            v = validator(db, resources)
-            return v.validate(text, level)
     validator = validators.get(var_type)
-    if validator:
-        v = validator(db, resources)
-        return v.validate(text, level)
-    validator = option_validators.get(var_type)
     if validator:
         v = validator(db, resources)
         return v.validate(text, level)
@@ -1413,10 +1385,6 @@ def convert(var_type, text):
         if validator:
             v = validator()
             return v.convert(text)
-        validator = option_validators.get(var_type)
-        if validator:
-            v = validator()
-            return v.convert(text)
         else:
             return text
     except:
@@ -1425,8 +1393,4 @@ def convert(var_type, text):
 def get(keyword) -> Type[Validator]:
     if keyword in validators:
         return validators[keyword]
-    elif keyword in option_validators:
-        return option_validators[keyword]
-    elif keyword in eval_validators:
-        return eval_validators[keyword]
     return None

@@ -779,7 +779,7 @@ class BattleAnimation():
             self.screen_dodge_counter -= 1
             image = self.screen_dodge_image
             # done
-            if self.screen_dodge_color <= 0:
+            if self.screen_dodge_counter <= 0:
                 self.screen_dodge_color = None
                 self.screen_dodge_counter = 0
                 self.screen_dodge_image = None

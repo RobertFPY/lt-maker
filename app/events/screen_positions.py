@@ -1,4 +1,7 @@
+from __future__ import annotations
+from typing import Tuple
 from app.constants import WINHEIGHT, WINWIDTH
+from app.utilities.typing import Point
 
 horizontal_screen_positions = {'OffscreenLeft': -96,
                                'FarLeft': -24,
@@ -18,38 +21,28 @@ vertical_screen_positions = {'Top': 0,
                              'Middle': (WINHEIGHT - 80) // 2,
                              'Bottom': WINHEIGHT - 80}
 
-def parse_screen_position(pos) -> tuple:
-    x, y = 0, 0
-    mirror = False
-    pos = pos.replace(')', '').replace('(', '')
-    if pos and ',' in pos:
-        split_pos = pos.split(',')
-        # Handle first part of tuple
-        if split_pos[0] in horizontal_screen_positions:
-            x = horizontal_screen_positions[split_pos[0]]
-            mirror = 'Left' in split_pos[0]
-        elif split_pos[0] in vertical_screen_positions:
-            y = vertical_screen_positions[split_pos[0]]
+def parse_screen_position(pos: Tuple) -> Tuple[Point, bool]:
+    """Returns a tuple of Point (on screen) and bool (indicating if the portrait should be mirrored)"""
+    def resolve_pos(p: int | str, horiz=True) -> int:
+        if isinstance(p, int):
+            return p
         else:
-            x = int(split_pos[0])
-        # Handle second part of tuple
-        if split_pos[1] in horizontal_screen_positions:
-            x = horizontal_screen_positions[split_pos[1]]
-            mirror = 'Left' in split_pos[1]
-        elif split_pos[1] in vertical_screen_positions:
-            y = vertical_screen_positions[split_pos[1]]
-        else:
-            y = int(split_pos[1])
-    elif pos in horizontal_screen_positions:
-        x = horizontal_screen_positions[pos]
-        y = vertical_screen_positions['Bottom']
-        mirror = 'Left' in pos
-    elif pos in vertical_screen_positions:
-        x = horizontal_screen_positions['Left']
-        y = vertical_screen_positions[pos]
-        mirror = True
+            if horiz:
+                return horizontal_screen_positions.get(p, 0)
+            else:
+                return vertical_screen_positions.get(p, 0)
+    position = (0, 0)
 
-    return (x, y), mirror
+    if len(pos) == 2:
+        position = resolve_pos(pos[0]), resolve_pos(pos[1], False)
+    else:
+        pos = pos[0]
+        if isinstance(pos, int) or pos in horizontal_screen_positions:
+            position = resolve_pos(pos), vertical_screen_positions['Bottom']
+        else:
+            position = horizontal_screen_positions['Left'], resolve_pos(pos, False)
+    return position, position[0] <= horizontal_screen_positions['CenterLeft']
+
 
 def get_desired_center(x: int) -> int:
     if x < 48:  # FarLeft

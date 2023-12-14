@@ -27,14 +27,12 @@ from app.events.python_eventing.python_event_processor import PythonEventProcess
 from app.events.python_eventing.utils import SAVE_COMMAND_NIDS
 from app.events.speak_style import SpeakStyle
 from app.utilities import str_utils, utils, static_random
-from app.utilities.typing import NID, Color3
+from app.utilities.typing import NID, Color3, Point
 
 class EvaluateException(EventError):
     what = "Could not evaluate expression."
 
 class Event():
-    true_vals = ('t', 'true', 'True', '1', 'y', 'yes')
-
     skippable = {"wait", "bop_portrait", "sound",
                  "location_card", "credits", "ending"}
 
@@ -596,28 +594,30 @@ class Event():
     def _apply_growth_changes(self, unit, growth_changes):
         action.do(action.ApplyGrowthChanges(unit, growth_changes))
 
-    def _parse_pos(self, text: str, is_float=False):
+    def _parse_pos(self, pos: str | Point, is_float=False):
+        if isinstance(pos, tuple):
+            return pos
         position = None
-        if ',' in text:
-            text = text.replace(')', '').replace('(', '').replace('[', '').replace(']', '')
+        if ',' in pos:
+            pos = pos.replace(')', '').replace('(', '').replace('[', '').replace(']', '')
             if is_float:
-                position = tuple(float(_) for _ in text.split(','))
+                position = tuple(float(_) for _ in pos.split(','))
             else:
-                position = tuple(int(_) for _ in text.split(','))
-        elif not self.game.is_displaying_overworld() and self._get_unit(text):
-            unit = self._get_unit(text)
+                position = tuple(int(_) for _ in pos.split(','))
+        elif not self.game.is_displaying_overworld() and self._get_unit(pos):
+            unit = self._get_unit(pos)
             if unit.position:
                 position = unit.position
             else:
                 position = self.game.get_rescuers_position(unit)
-        elif self.game.is_displaying_overworld() and self._get_overworld_location_of_object(text):
-            position = self._get_overworld_location_of_object(text).position
-        elif text in self.game.level.regions.keys():
-            return self.game.level.regions.get(text).position
+        elif self.game.is_displaying_overworld() and self._get_overworld_location_of_object(pos):
+            position = self._get_overworld_location_of_object(pos).position
+        elif pos in self.game.level.regions.keys():
+            return self.game.level.regions.get(pos).position
         else:
             valid_regions = \
                 [tuple(region.position) for region in self.game.level.regions
-                 if text == region.sub_nid and region.position and
+                 if pos == region.sub_nid and region.position and
                  not self.game.board.get_unit(region.position)]
             if valid_regions:
                 position = static_random.shuffle(valid_regions)[0]

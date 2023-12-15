@@ -8,7 +8,7 @@ fi
 name=$1
 
 cp ./utilities/build_tools/engine.spec .
-pyinstaller -y engine.spec "$name"
+pyinstaller -y engine.spec -- "$name"
 rm -f engine.spec
 
 rm -rf "../$name"

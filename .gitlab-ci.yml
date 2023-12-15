@@ -12,7 +12,7 @@ stages:
 
 run_tests:
     stage: test
-    image: "python:3.7.9"
+    image: "python:3.11.7"
     only:
         refs:
             - merge_requests
@@ -26,7 +26,7 @@ run_tests:
 
 build_engine:
     stage: generate_engine
-    image: "python:3.7.9"
+    image: "python:3.11.7"
     extends:
     - .shared_windows_runners
     except: # If this double builds consider changing to only: pushes
@@ -35,18 +35,18 @@ build_engine:
     only:
         - release
     before_script:
-        - choco install -y python --version=3.7.9
-        - "C:\\Python37\\python.exe -m pip install -r requirements_engine.txt"
-        - "C:\\Python37\\python.exe -m pip install pywin32"
-        - "C:\\Python37\\python.exe -m pip install setuptools --upgrade"
+        - choco install -y python --version=3.11.7
+        - "C:\\Python311\\python.exe -m pip install -r requirements_engine.txt"
+        - "C:\\Python311\\python.exe -m pip install pywin32"
+        - "C:\\Python311\\python.exe -m pip install setuptools --upgrade"
         - echo "Prereqs successfully installed"
     script:
         - echo "Generating component files"
-        - "C:\\Python37\\python.exe -m app.engine.codegen.source_generator"
+        - "C:\\Python311\\python.exe -m app.engine.codegen.source_generator"
         - start powershell
         - echo "Building generic engine..."
         - cp ./utilities/build_tools/generic_engine.spec .
-        - "C:\\Python37\\Scripts\\pyinstaller.exe -y generic_engine.spec"
+        - "C:\\Python311\\Scripts\\pyinstaller.exe -y generic_engine.spec"
         - rm generic_engine.spec -fo
         - mkdir lt_engine
         - mv dist/lt_engine ./lt_engine/lt_engine
@@ -63,7 +63,7 @@ build_engine:
 
 build_editor:
     stage: generate_editor
-    image: "python:3.7.9"
+    image: "python:3.11.7"
     extends:
     - .shared_windows_runners
     except: # If this double builds consider changing to only: pushes
@@ -72,18 +72,18 @@ build_editor:
     only:
         - release
     before_script:
-        - choco install -y python --version=3.7.9
-        - "C:\\Python37\\python.exe -m pip install -r requirements_editor.txt"
-        - "C:\\Python37\\python.exe -m pip install pywin32"
-        - "C:\\Python37\\python.exe -m pip install setuptools --upgrade"
+        - choco install -y python --version=3.11.7
+        - "C:\\Python311\\python.exe -m pip install -r requirements_editor.txt"
+        - "C:\\Python311\\python.exe -m pip install pywin32"
+        - "C:\\Python311\\python.exe -m pip install setuptools --upgrade"
         - echo "Prereqs successfully installed"
     script:
         - echo "Generating component files"
-        - "C:\\Python37\\python.exe -m app.engine.codegen.source_generator"
+        - "C:\\Python311\\python.exe -m app.engine.codegen.source_generator"
         - start powershell
         - echo "Now building main editor..."
         - cp ./utilities/build_tools/editor.spec .
-        - "C:\\Python37\\Scripts\\pyinstaller.exe -y editor.spec"
+        - "C:\\Python311\\Scripts\\pyinstaller.exe -y editor.spec"
         - rm editor.spec -fo
         - mkdir lt_editor
         - mv dist/lt_editor ./lt_editor/lt_editor

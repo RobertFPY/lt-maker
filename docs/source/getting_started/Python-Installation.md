@@ -52,15 +52,13 @@ This will clone the repository to your machine, where you'll have access to it.
 
 ## Installing Python
 
-https://www.python.org/downloads/release/python-379/
+https://www.python.org/downloads/release/python-3117/
 
-> Installing Python 3.7 specifically is recommended over newer versions of Python for compatibility with other libraries and frameworks, including pygame and pyinstaller.
-
-Navigate down to "Files" on that webpage and click "Windows x86-64 executable installer" (assuming you have a 64-bit Windows machine).
+Navigate down to "Files" on that webpage and click "Windows installer (64-bit)" (assuming you have a 64-bit Windows machine).
 
 The download should start automatically, then run the installer executable.
 
-I highly highly **HIGHLY** recommend adding Python 3.7 to PATH. This makes so many of the errors that new users of Python run into just disappear. Make sure to click that check box. Then, click "Install Now". the default installation options should be fine.
+I highly highly **HIGHLY** recommend adding Python 3.11 to PATH. This makes so many of the errors that new users of Python run into just disappear. Make sure to click that check box. Then, click "Install Now". the default installation options should be fine.
 
 ![PythonConfig1](images/InstallationPython1.png)
 
@@ -82,7 +80,7 @@ This means that in order to run python scripts in the lt-maker directory, you sh
 
 If the python command is not found, and you didn't add Python to your PATH during installation, you will need to update your PATH so that Windows knows where Python lives.
 
-Newer versions of Python like the one you installed generally live in `C:\Users\{Your User}\AppData\Local\Programs\Python\Python37`
+Newer versions of Python like the one you installed generally live in `C:\Users\{Your User}\AppData\Local\Programs\Python\Python311`
 
 If you navigate to there, you should see a python.exe executable. This is the actual python you would be running if the PATH was set up correctly.
 
@@ -98,7 +96,7 @@ Under User Variables (the top table), click on the "Path" row, then click "Edit.
 
 ![PythonPath3](images/PythonPath3.png)
 
-Click "New" on the right. Type the location of your Python executable, in this case: `C:\Users\{Your User}\AppData\Local\Programs\Python\Python37`. Hit Enter. Click New again and type in the path to the associated Scripts directory. `C:\Users\{Your User}\AppData\Local\Programs\Python\Python37\Scripts`.
+Click "New" on the right. Type the location of your Python executable, in this case: `C:\Users\{Your User}\AppData\Local\Programs\Python\Python31`. Hit Enter. Click New again and type in the path to the associated Scripts directory. `C:\Users\{Your User}\AppData\Local\Programs\Python\Python31\Scripts`.
 
 ![PythonPath4](images/PythonPath4.png)
 

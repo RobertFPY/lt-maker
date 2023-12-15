@@ -45,7 +45,8 @@ exe = EXE(pyz,
           strip=False,
           upx=True,
           console=True,
-          icon='favicon.ico' )
+          icon='favicon.ico',
+          contents_directory='.' )
 coll = COLLECT(exe,
                a.binaries,
                a.zipfiles,

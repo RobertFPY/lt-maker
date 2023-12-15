@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import shutil
-import os
+import os, sys
 import traceback
 
 from app import sprites
@@ -97,7 +97,8 @@ class Resources():
             getattr(self, data_type).load(os.path.join(self.main_folder, data_type))
 
         # load custom components
-        self.load_components()
+        if not hasattr(sys, 'frozen'):
+            self.load_components()
 
     def load_components(self):
         # For getting custom project components at runtime

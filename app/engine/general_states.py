@@ -749,6 +749,7 @@ class MovementState(State):
     transparent = True
 
     def begin(self):
+        game.boundary.frozen = True
         game.cursor.hide()
 
     def update(self):

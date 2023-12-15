@@ -171,7 +171,6 @@ class Move(Action):
     def do(self):
         if self.path is None:
             self.path = game.cursor.path[:]
-        game.boundary.frozen = True
         game.movement.begin_move(self.unit, self.path, self.event, self.follow, speed=self.speed)
 
     def execute(self):
@@ -3337,7 +3336,7 @@ class AddSkill(Action):
         self.source_type = source_type
         self.subactions = []
         self.reset_action = ResetUnitVars(self.unit)
-        
+
         self.did_something = False
 
     @recalculate_unit
@@ -3346,7 +3345,7 @@ class AddSkill(Action):
         if not self.skill_obj:
             return
         logging.debug("AddSkill.do: Adding Skill %s to %s", self.skill_obj, self.unit)
-            
+
         popped_skill_obj = self.unit.add_skill(self.skill_obj, self.source, self.source_type, test=True)
         # Skill failed to add due to not displacing another skill and itself being displaceable
         if popped_skill_obj and popped_skill_obj == self.skill_obj:
@@ -3368,10 +3367,10 @@ class AddSkill(Action):
             game.boundary.register_unit_auras(self.unit)
 
         skill_system.after_add(self.unit, self.skill_obj)
-        
+
         for action in self.subactions:
             action.execute()
-        
+
         self.did_something = True
 
         # Handle affects movement
@@ -3436,7 +3435,7 @@ class RemoveSkill(Action):
         skill_system.after_remove(self.unit, skill)
         if true_remove:
             skill_system.after_true_remove(self.unit, skill)
-            
+
         return True
 
     def _remove(self, true_remove=True):

@@ -248,7 +248,7 @@ class GlobalModeLevelMapView(SimpleMapView):
         coord = position
         pixmap = icon.get_pixmap()
         # to support 16x16, 32x32, and 48x48 map icons, we offset them differently
-        offset_x = (pixmap.width() / 16 - 1) * 8
+        offset_x = int((pixmap.width() / 16 - 1) * 8)
         offset_y = (pixmap.height() - 16)
         if pixmap:
             if opacity:

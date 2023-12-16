@@ -479,7 +479,8 @@ class MainEditor(QMainWindow):
 
     def auto_open(self, project_path: Optional[str]):
         if not self.project_save_load_handler.auto_open(project_path):
-            exit(0)
+            # exit(0)
+            self.project_save_load_handler.auto_open(DEFAULT_PROJECT)
         self._open()
 
     def _save(self):

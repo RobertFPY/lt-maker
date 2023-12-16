@@ -1559,6 +1559,7 @@ class WeaponChoiceState(MapState):
                         [subitem for subitem in selection.subitems if
                          item_funcs.is_weapon_recursive(self.cur_unit, subitem) and
                          game.target_system.get_valid_targets_recursive_with_availability_check(self.cur_unit, subitem)]
+                get_sound_thread().play_sfx('Select 1')
                 game.state.change('weapon_choice')
                 return
 
@@ -1663,6 +1664,7 @@ class SpellChoiceState(WeaponChoiceState):
                         [subitem for subitem in selection.subitems if
                          item_funcs.is_spell_recursive(self.cur_unit, subitem) and
                          game.target_system.get_valid_targets_recursive_with_availability_check(self.cur_unit, subitem)]
+                get_sound_thread().play_sfx('Select 1')
                 game.state.change('spell_choice')
                 return
 

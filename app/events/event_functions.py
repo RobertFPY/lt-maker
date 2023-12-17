@@ -1663,14 +1663,11 @@ def add_item_to_multiitem(self: Event, global_unit_or_convoy, multi_item, child_
             self.logger.info("add_item_to_multiitem: Item %s already exists on multi-item %s on unit %s" % (child_item, item.nid, unit.nid))
             return
     # Create subitem
-    subitem = ItemObject.from_prefab(subitem_prefab)
-    for component in subitem.components:
-        component.item = item
-    item_system.init(subitem)
-    self.game.register_item(subitem)
     owner_nid = None
     if unit:
         owner_nid = unit.nid
+    subitem = item_funcs.create_item(unit, subitem_prefab.nid, assign_ownership=False)
+    self.game.register_item(subitem)
     action.do(action.AddItemToMultiItem(owner_nid, item, subitem))
     if 'equip' in flags and owner_nid:
         if unit.can_equip(subitem):

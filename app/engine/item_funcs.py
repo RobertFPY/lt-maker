@@ -77,21 +77,27 @@ def repair_price(unit, item):
         repair_cost = math.ceil(charges_used * cost_per_charge)
     return int(repair_cost)
 
-def create_item(unit, item_nid, droppable=False, parent: ItemObject = None) -> ItemObject:
+def create_item(unit, item_nid, droppable: bool = False, parent: ItemObject = None, 
+                assign_ownership: bool = True) -> ItemObject:
+    """Creates an item and all of it's subitems give the item's nid
+    If assign_ownership is True, informs the item which unit and which parent_item
+    owns it. Sometimes set to False so that you can use an action like 
+    AddItemToMultiItem to set these properties instead."""
     item_prefab = DB.items.get(item_nid)
     if not item_prefab:
         logging.error("Couldn't find %s" % item_nid)
         return
     item = ItemObject.from_prefab(item_prefab)
-    if unit:
+    if unit and assign_ownership:
         item.owner_nid = unit.nid
     item_system.init(item)
     if parent: # sub item specific operations
         for component in item.components:
             component.item = parent
-        parent.subitem_uids.append(item.uid)
-        parent.subitems.append(item)
-        item.parent_item = parent
+        if assign_ownership:
+            parent.subitem_uids.append(item.uid)
+            parent.subitems.append(item)
+            item.parent_item = parent
     else: # main item specific operations
         item.droppable = droppable
 

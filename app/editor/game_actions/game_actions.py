@@ -6,6 +6,7 @@ from app.editor.data_editor import DB
 from app.editor.settings import MainSettingsController
 from app.engine import driver, engine, game_state
 from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtGui import QFont
 
 from app.events.python_eventing.errors import EventError
 
@@ -20,6 +21,8 @@ def handle_exception(e: Exception):
     settings = MainSettingsController()
     if settings.get_should_display_crash_logs():
         error_msg = QMessageBox()
+        error_msg.setFont(QFont("consolas"))
+        error_msg.setFixedWidth(1200)
         error_msg.setIcon(QMessageBox.Critical)
         error_msg.setText(msg)
         error_msg.setWindowTitle("Engine Fatal Error")

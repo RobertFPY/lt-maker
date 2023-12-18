@@ -39,13 +39,10 @@
             ],
             [
                 "uses_options",
-                [
-                    [
-                        "LoseUsesOnMiss (T/F)",
-                        "F",
-                        "Lose uses even on miss"
-                    ]
-                ]
+                {
+                    "lose_uses_on_miss": false,
+                    "one_loss_per_combat": false
+                }
             ],
             [
                 "weight",
@@ -72,21 +69,22 @@
                 1
             ],
             [
-                "effective",
-                20
-            ],
-            [
-                "effective_tag",
-                [
-                    "Horse",
-                    "Armor"
-                ]
-            ],
-            [
                 "prf_unit",
                 [
                     "Eirika"
                 ]
+            ],
+            [
+                "effective_damage",
+                {
+                    "effective_tags": [
+                        "Horse",
+                        "Armor"
+                    ],
+                    "effective_multiplier": 1.0,
+                    "effective_bonus_damage": 20,
+                    "show_effectiveness_flash": true
+                }
             ]
         ]
     }

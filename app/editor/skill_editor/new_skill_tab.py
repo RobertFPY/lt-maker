@@ -55,7 +55,7 @@ class NewSkillDatabase(NewEditorTab):
         Returns whether the user wants to proceed with deletion
         """
         skill = self.data.get(nid)
-        affected_units = [unit for unit in self._db.units if nid in unit.get_items()]
+        affected_units = [unit for unit in self._db.units if nid in unit.get_skills()]
         affected_classes = [k for k in self._db.classes if nid in k.get_skills()]
         affected_levels = [level for level in self._db.levels if any(nid in unit.get_skills() for unit in level.units)]
         affected_items = item_components.get_items_using(ComponentType.Skill, nid, self._db)

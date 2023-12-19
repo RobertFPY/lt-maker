@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import QFileDialog, QMessageBox, QDialog
 from PyQt5.QtCore import Qt
 
 from app.utilities import str_utils
-from app.data.resources.sounds import SFX, Song
+from app.data.resources.sounds import SFXPrefab, SongPrefab
 from app.data.resources.resources import RESOURCES
 from app.editor.settings import MainSettingsController
 from app.editor.table_model import TableModel
@@ -71,7 +71,7 @@ class SFXModel(SoundModel):
                 if fn.endswith('.ogg'):
                     nid = os.path.split(fn)[-1][:-4]
                     nid = str_utils.get_next_name(nid, [d.nid for d in RESOURCES.sfx])
-                    new_sfx = SFX(nid, fn)
+                    new_sfx = SFXPrefab(nid, fn)
                     RESOURCES.sfx.append(new_sfx)
                     created = True
                 elif not ogg_msg:
@@ -115,7 +115,7 @@ class MusicModel(SoundModel):
                 if fn.endswith('.ogg'):
                     nid = os.path.split(fn)[-1][:-4]
                     nid = str_utils.get_next_name(nid, [d.nid for d in RESOURCES.music])
-                    new_music = Song(nid, fn)
+                    new_music = SongPrefab(nid, fn)
                     RESOURCES.music.append(new_music)
                     created = True
                 elif not ogg_msg:

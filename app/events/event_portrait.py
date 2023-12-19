@@ -2,7 +2,7 @@ import math
 import random
 
 from app.utilities.typing import Point
-from app.data.resources.portraits import Portrait
+from app.data.resources.portraits import PortraitPrefab
 
 from app import counters
 from app.utilities import utils
@@ -32,7 +32,7 @@ class EventPortrait():
     saturation_time = utils.frames2ms(10)
     travel_speed_mult = 1
 
-    def __init__(self, portrait: Portrait, position: Point, priority, 
+    def __init__(self, portrait: PortraitPrefab, position: Point, priority,
                  transition=False, slide=None, mirror=False, name='', expressions=None,
                  speed_mult=1):
         self.portrait = portrait

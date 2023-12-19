@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ast
+from app.events.python_eventing.postcomp.engine_header import HEADER_IMPORT
 from app.events.python_eventing.swscomp.comp_utils import (COMMAND_SENTINEL,
                                                    ScriptWithSentinel)
 from app.events.python_eventing.utils import EVENT_GEN_NAME, EVENT_INSTANCE, to_py_event_command
@@ -82,10 +83,6 @@ class PostComp():
     @staticmethod
     def _insert_header(script: str):
         """Insert necessary imports for the environment"""
-        HEADER_IMPORT = f"""
-import app.events.python_eventing.python_event_command_wrappers as {EVENT_INSTANCE}
-from app.events.python_eventing.utils import DO_NOT_EXECUTE_SENTINEL, ResumeCheck
-"""
         script = HEADER_IMPORT + '\n' + script
         return script
 

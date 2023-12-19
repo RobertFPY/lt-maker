@@ -17,7 +17,7 @@ from PyQt5.QtWidgets import (QAbstractItemView, QAction, QApplication,
                              QPlainTextEdit, QPushButton, QSizePolicy,
                              QSpinBox, QSplitter, QStyle, QStyledItemDelegate,
                              QTextEdit, QToolBar, QVBoxLayout, QWidget)
-from app.editor.event_editor.event_function_hinter import EventScriptFunctionHinter
+from app.editor.event_editor.event_function_hinter import EventScriptFunctionHinter, PythonFunctionHinter
 from app.editor.event_editor.event_text_editor import EventTextEditor
 
 import app.editor.game_actions.game_actions as GAME_ACTIONS
@@ -36,7 +36,8 @@ from app.editor.lib.components.validated_line_edit import \
 from app.editor.map_view import SimpleMapView
 from app.editor.settings import MainSettingsController
 from app.events import event_commands, event_validators
-from app.events.event_prefab import EventPrefab, EventVersion
+from app.events.event_prefab import EventPrefab
+from app.events.event_version import EventVersion
 from app.events.mock_event import IfStatementStrategy
 from app.events.regions import RegionType
 from app.events.triggers import ALL_TRIGGERS
@@ -560,7 +561,7 @@ class EventProperties(QWidget):
         self.text_box.set_completer_version(self.version)
         if version != EventVersion.EVENT:
             self.highlighter = PythonHighlighter(self.text_box.document())
-            self.text_box.set_function_hinter(None)
+            self.text_box.set_function_hinter(PythonFunctionHinter)
         else:
             self.highlighter = EventHighlighter(self.text_box.document(), self)
             self.text_box.set_function_hinter(EventScriptFunctionHinter)

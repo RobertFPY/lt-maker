@@ -110,7 +110,7 @@ def change_special_music(self: Event, special_music_type: str, music: SongPrefab
     elif special_music_type == 'game_over':
         action.do(action.SetGameVar('_music_game_over', music_nid))
 
-def add_portrait(self: Event, portrait, screen_position: Tuple, slide=None, expression_list: Optional[List[str]] = None, speed_mult: float = 1.0, flags=None):
+def add_portrait(self: Event, portrait, screen_position: Tuple | str, slide=None, expression_list: Optional[List[str]]=None, speed_mult: float=1.0, flags=None):
     flags = flags or set()
 
     portrait_prefab, name = self._get_portrait(portrait)
@@ -231,7 +231,7 @@ def mirror_portrait(self: Event, portrait, speed_mult: float = 1.0, flags=None):
             event_portrait.portrait,
             event_portrait.position,
             event_portrait.priority,
-            False, None, not event_portrait.mirror, 
+            False, None, not event_portrait.mirror,
             name, speed_mult=speed_mult_calc)
     if self.text_boxes and self.text_boxes[-1].portrait == event_portrait:
         self.text_boxes[-1].portrait = flipped_portrait
@@ -292,7 +292,14 @@ def speak_style(self: Event, style: NID, speaker: NID=None, position: Alignments
         style_obj = self.game.speak_styles[style].update(style_obj)
     self.game.speak_styles[style] = style_obj
 
-def speak(self: Event, speaker_or_style: str | UnitObject | SpeakStyle, text, text_position: Point | Alignments=None, width=None, style_nid=None, text_speed=None,
+def say(self: Event, speaker_or_style: str, text: List[str], text_position: Point | Alignments=None, width=None, style_nid=None, text_speed=None,
+          font_color=None, font_type=None, dialog_box=None, num_lines=None, draw_cursor=None,
+          message_tail=None, transparency=None, name_tag_bg=None, flags=None):
+    joined_text = '{sub_break}'.join(text)
+    speak(self, speaker_or_style, joined_text, text_position, width, style_nid, text_speed, font_color, font_type, dialog_box, num_lines, draw_cursor,
+          message_tail, transparency, name_tag_bg, flags)
+
+def speak(self: Event, speaker_or_style: str, text, text_position: Point | Alignments=None, width=None, style_nid=None, text_speed=None,
           font_color=None, font_type=None, dialog_box=None, num_lines=None, draw_cursor=None,
           message_tail=None, transparency=None, name_tag_bg=None, flags=None):
     flags = flags or set()
@@ -1186,7 +1193,7 @@ def set_unit_note(self: Event, unit, key: str, value: str, flags=None):
         self.logger.error("set_unit_note: Couldn't find unit %s" % unit)
         return
 
-    action.do(action.SetUnitNote(actor, key, value))    
+    action.do(action.SetUnitNote(actor, key, value))
 
 def remove_unit_note(self: Event, unit, key: str, flags=None):
     actor = self._get_unit(unit)

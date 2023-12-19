@@ -138,6 +138,13 @@ class PythonHighlighter(QtGui.QSyntaxHighlighter):
             if command == 'speak':
                 if i == 2:
                     self.setFormat(idx, len(tok), format(self.event_style.text_color))
+            # special formatting for say, same as speak
+            elif command == 'say':
+                arg = tok.strip()
+                if i > 1 and arg:
+                    quote = arg[0]
+                    if quote in ('"', "'") and arg.endswith(quote):
+                        self.setFormat(idx, len(tok), format(self.event_style.text_color))
 
     def highlightBlock(self, text):
         """Apply syntax highlighting to the given block of text.

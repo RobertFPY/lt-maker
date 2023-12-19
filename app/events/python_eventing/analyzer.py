@@ -5,11 +5,12 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional, Set, Tuple, Type
 
 from app.events.event_prefab import EventCatalog, get_event_version
+from app.events.event_version import EventVersion
 from app.events.python_eventing.compiler import VERSION_MAP, Compiler
 from app.events.python_eventing.errors import CannotUseYieldError, InvalidCommandError, InvalidPythonError, MalformedTriggerScriptCall, NestedEventError, NoSaveInLoopError, EventError
 from app.events.python_eventing.postcomp.analyzer_postcomp import AnalyzerPostComp
 from app.events.python_eventing.swscomp.comp_utils import COMMAND_SENTINEL
-from app.events.python_eventing.utils import EVENT_CALL_COMMAND_NIDS, EVENT_INSTANCE, FORBIDDEN_PYTHON_COMMAND_NIDS, SAVE_COMMAND_NIDS
+from app.events.python_eventing.utils import EVENT_CALL_COMMAND_NIDS, EVENT_INSTANCE, SAVE_COMMAND_NIDS
 from app.utilities.typing import NID
 
 from .. import event_commands
@@ -18,9 +19,7 @@ def check_valid_event_function_call(node: ast.stmt):
     if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and \
         isinstance(node.func.value, ast.Name) and node.func.value.id == EVENT_INSTANCE:
         event_command_nid = node.func.attr
-        if not event_command_nid in event_commands.ALL_EVENT_COMMANDS:
-            return False
-        if event_command_nid in FORBIDDEN_PYTHON_COMMAND_NIDS:
+        if not event_command_nid in event_commands.get_all_event_commands(EventVersion.PYEV1):
             return False
     return True
 

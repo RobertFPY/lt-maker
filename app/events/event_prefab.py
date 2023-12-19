@@ -4,14 +4,11 @@ import re
 from typing import Dict, List, Optional, Set, Tuple
 
 from app.events import event_commands
+from app.events.event_version import EventVersion
 from app.utilities.data import Data, Prefab
 from app.utilities.typing import NID
 from app.events.event_commands import EventCommand, GameVar, LevelVar
 from app.utilities import str_utils
-
-class EventVersion(Enum):
-    EVENT = 0
-    PYEV1 = 1
 
 def get_event_version(script: str) -> EventVersion.EVENT:
     if not script.startswith('#pyev'):

@@ -1,5 +1,6 @@
 from typing import Dict, Type
-from app.events.event_prefab import EventVersion, get_event_version
+from app.events.event_prefab import get_event_version
+from app.events.event_version import EventVersion
 from app.events.python_eventing.postcomp.compiled_event import CompiledEvent
 from app.events.python_eventing.postcomp.engine_postcomp import PostComp
 from app.events.python_eventing.postcomp.analyzer_postcomp import AnalyzerPostComp

@@ -16,7 +16,7 @@ from app.data.resources.resources import Resources
 from app.data.resources.tiles import TileMapPrefab
 from app.data.validation.utils import LTType
 import app.data.validation.validation_errors as ltdb
-from app.events.event_prefab import EventVersion
+from app.events.event_version import EventVersion
 from app.events.python_eventing.analyzer import PyEventAnalyzer
 from app.events import event_commands
 from app.events.regions import Region

@@ -271,7 +271,8 @@ class EventCommandUnitTests(unittest.TestCase):
 
             for idx, keyword in enumerate(all_keywords):
                 traceback_str = '%s: %s' % (command.nid, keyword)
-                snake_case = str_utils.camel_to_snake(keyword)
+                # remove * for array args
+                snake_case = str_utils.camel_to_snake(keyword.removeprefix('*'))
                 self.assertTrue(snake_case in sig.parameters, traceback_str)
                 # +1 because of self in the function signature
                 self.assertEqual(idx + 1, list(sig.parameters.keys()).index(snake_case), traceback_str)

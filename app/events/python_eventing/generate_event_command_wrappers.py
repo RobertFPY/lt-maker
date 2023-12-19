@@ -1,8 +1,8 @@
 from typing import Type
 
 from app.engine.codegen.codegen_utils import get_codegen_header
-from app.events.event_commands import ALL_EVENT_COMMANDS, EventCommand, Tags
-from app.events.python_eventing.utils import FORBIDDEN_PYTHON_COMMAND_NIDS
+from app.events.event_commands import EventCommand, get_all_event_commands
+from app.events.event_version import EventVersion
 
 
 def create_wrapper_func(command_name: str, command_t: Type[EventCommand]):
@@ -18,7 +18,7 @@ def create_wrapper_func(command_name: str, command_t: Type[EventCommand]):
     if command_optional_params:
         command_optional_params += ', '
 
-    command_param_dict_str = ', '.join(['"%s": %s' % (param, param) for param in command_param_names + command_optional_param_names])
+    command_param_dict_str = ', '.join(['"%s": %s' % (param.replace('*', ''), param.replace('*', '')) for param in command_param_names + command_optional_param_names])
     command_param_dict_str = '{' + command_param_dict_str + '}'
     func = \
 """
@@ -43,11 +43,8 @@ def generate_event_command_python_wrappers():
         for line in event_commands_base.readlines():
             generated_event_wrappers.write(line)
 
-    for command_name, command_t in ALL_EVENT_COMMANDS.items():
-        if not command_t.tag in [Tags.HIDDEN, Tags.FLOW_CONTROL]:
-            if not command_t.nid in FORBIDDEN_PYTHON_COMMAND_NIDS:
-                func_str = create_wrapper_func(command_name, command_t)
-                generated_event_wrappers.write(func_str)
-
+    for command_name, command_t in get_all_event_commands(EventVersion.PYEV1).items():
+        func_str = create_wrapper_func(command_name, command_t)
+        generated_event_wrappers.write(func_str)
 
     generated_event_wrappers.close()

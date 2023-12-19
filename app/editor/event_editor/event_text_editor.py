@@ -10,9 +10,9 @@ from PyQt5.QtWidgets import QCompleter, QLabel, QPlainTextEdit, QWidget, QAction
 
 from app import dark_theme
 from app.editor.event_editor import event_autocompleter, event_formatter
-from app.editor.event_editor.event_function_hinter import EventScriptFunctionHinter
+from app.editor.event_editor.event_function_hinter import IFunctionHinter
 from app.editor.settings import MainSettingsController
-from app.events.event_prefab import EventVersion
+from app.events.event_version import EventVersion
 from app.utilities import str_utils
 
 if TYPE_CHECKING:
@@ -62,7 +62,7 @@ class EventTextEditor(QPlainTextEdit):
         self.completer.setCaseSensitivity(Qt.CaseInsensitive)
         self.completer.insertText.connect(self.insert_completions)
 
-        self.function_hinter: Optional[Type[EventScriptFunctionHinter]] = None
+        self.function_hinter: Optional[Type[IFunctionHinter]] = None
         # completer
         self.textChanged.connect(self.complete)
         self.prev_keyboard_press = None
@@ -95,7 +95,7 @@ class EventTextEditor(QPlainTextEdit):
     def set_completer_version(self, version: EventVersion):
         self.completer.set_version(version)
 
-    def set_function_hinter(self, function_hinter: Type[EventScriptFunctionHinter]):
+    def set_function_hinter(self, function_hinter: Type[IFunctionHinter]):
         self.function_hinter = function_hinter
 
     def insert_completions(self, completions: List[event_autocompleter.CompletionToInsert]):
@@ -105,6 +105,8 @@ class EventTextEditor(QPlainTextEdit):
             tc.movePosition(QTextCursor.MoveOperation.Right, QTextCursor.MoveMode.KeepAnchor, completion.replace)
             tc.removeSelectedText()
             tc.insertText(completion.text)
+        if completions[-1].text.endswith('='):
+            self.complete()
 
     def display_function_hint(self):
         if not self.should_show_function_hint():
@@ -149,7 +151,7 @@ class EventTextEditor(QPlainTextEdit):
         if not self.should_show_completion_box():
             self.hide_completion_box()
             return
-        line = self.get_command_text_under_cursor()
+        line = self.get_command_text_before_cursor()
         if not self.completer.setTextToComplete(line, self.textCursor().position(), self.event_properties.current.level_nid, self.document().toPlainText()):
             return
         cr = self.cursorRect()
@@ -224,7 +226,9 @@ class EventTextEditor(QPlainTextEdit):
             return False
         if not self.document().toPlainText():
             return False
-        if self.prev_keyboard_press in (Qt.Key_Backspace, Qt.Key_Return, Qt.Key_Tab): # don't do autocomplete on backspace
+        if self.prev_keyboard_press in (Qt.Key_Backspace, Qt.Key_Return): # don't do autocomplete on backspace
+            return False
+        if self.prev_keyboard_press in (Qt.Key_Tab,) and not self.document().characterAt(self.textCursor().position() - 1) == '=':
             return False
         tc = self.textCursor()
         line = tc.block().text()

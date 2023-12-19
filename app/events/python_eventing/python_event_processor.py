@@ -28,7 +28,7 @@ class PythonEventProcessor():
         return as_lines[line]
 
     def get_current_line(self) -> int:
-        return self.curr_cmd_idx
+        return self._executable.gi_frame.f_lineno - self._executable.gi_code.co_firstlineno - 1
 
     def fetch_next_command(self) -> Optional[event_commands.EventCommand]:
         try:

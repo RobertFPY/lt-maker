@@ -36,7 +36,6 @@ def parse_screen_position(pos: Tuple) -> Tuple[Point, bool]:
     if len(pos) == 2:
         position = resolve_pos(pos[0]), resolve_pos(pos[1], False)
     else:
-        pos = pos[0]
         if isinstance(pos, int) or pos in horizontal_screen_positions:
             position = resolve_pos(pos), vertical_screen_positions['Bottom']
         else:

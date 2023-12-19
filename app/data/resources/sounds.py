@@ -2,8 +2,9 @@ import os
 import shutil
 
 from app.data.resources.base_catalog import ManifestCatalog
+from app.utilities.data import HasNid
 
-class Song():
+class SongPrefab(HasNid):
     def __init__(self, nid, full_path=None):
         self.nid = nid
         self.full_path = full_path
@@ -37,16 +38,16 @@ class Song():
         #     self.length = s_tuple[3]
         return self
 
-class MusicCatalog(ManifestCatalog[Song]):
+class MusicCatalog(ManifestCatalog[SongPrefab]):
     filetype = '.ogg'
     manifest = 'music.json'
     title = 'music'
-    datatype = Song
+    datatype = SongPrefab
 
     def load(self, loc):
         music_dict = self.read_manifest(os.path.join(loc, self.manifest))
         for s_dict in music_dict:
-            new_song = Song.restore(s_dict)
+            new_song = SongPrefab.restore(s_dict)
             new_song.set_full_path(os.path.join(loc, new_song.nid + '.ogg'))
             if new_song.battle_full_path:
                 new_song.set_battle_full_path(os.path.join(loc, new_song.nid + '-battle.ogg'))
@@ -79,7 +80,7 @@ class MusicCatalog(ManifestCatalog[Song]):
         valid_filenames |= {song.nid + '-intro.ogg' for song in self}
         return valid_filenames
 
-class SFX():
+class SFXPrefab(HasNid):
     def __init__(self, nid, full_path=None, tag=None):
         self.nid = nid
         self.tag = tag
@@ -99,8 +100,8 @@ class SFX():
         #     self.length = s_tuple[2]
         return self
 
-class SFXCatalog(ManifestCatalog[SFX]):
+class SFXCatalog(ManifestCatalog[SFXPrefab]):
     manifest = 'sfx.json'
     title = 'sfx'
     filetype = '.ogg'
-    datatype = SFX
+    datatype = SFXPrefab

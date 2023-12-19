@@ -865,7 +865,7 @@ class InfoMenuState(State):
                 skill_counter[skill.nid] += 1
         for idx, skill in enumerate(unique_skills[:6]):
             left_pos = idx * 24
-            icons.draw_skill(surf, skill, (left_pos + 8, 4), compact=False, grey=skill_system.is_grey(skill, self.unit))
+            icons.draw_skill(surf, skill, (left_pos + 8, 8), compact=False, grey=skill_system.is_grey(skill, self.unit))
             if skill_counter[skill.nid] > 1:
                 text = str(skill_counter[skill.nid])
                 render_text(surf, ['small'], [text], ['white'], (left_pos + 20 - 4 * len(text), 6))

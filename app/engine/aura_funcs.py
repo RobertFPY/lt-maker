@@ -53,7 +53,8 @@ def apply_aura(owner, unit, child_skill, target, test=False):
             unit.add_skill(child_skill, source=child_skill.parent_skill.uid, source_type=SourceType.AURA)
         else:
             act = action.AddSkill(unit, child_skill, source=child_skill.parent_skill.uid, source_type=SourceType.AURA)
-            action.do(act)
+            # action.do(act)
+            act.do()
 
 def remove_aura(unit, child_skill, test=False):
     if child_skill in unit.all_skills:
@@ -62,7 +63,8 @@ def remove_aura(unit, child_skill, test=False):
             unit.remove_skill(child_skill, source=child_skill.parent_skill.uid, source_type=SourceType.AURA)
         else:
             act = action.RemoveSkill(unit, child_skill, source=child_skill.parent_skill.uid, source_type=SourceType.AURA)
-            action.do(act)
+            # action.do(act)
+            act.do()
 
 def propagate_aura(unit, skill, game):
     game.board.reset_aura(skill.subskill)

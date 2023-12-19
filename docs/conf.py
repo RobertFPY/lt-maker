@@ -18,7 +18,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'lt-maker'
-copyright = '2022, rainlash'
+copyright = '2023, rainlash'
 author = 'rainlash'
 
 
@@ -54,4 +54,4 @@ html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
 
 def setup(app):
-   app.add_css_file("theme_overrides.css")
+    app.add_css_file("theme_overrides.css")

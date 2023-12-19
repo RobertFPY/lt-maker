@@ -128,7 +128,7 @@ class EventUnitTests(unittest.TestCase):
         mock_portrait = MagicMock()
         event = self.create_event_from_script([])
         event.portraits['Eirika'] = mock_portrait
-        event_functions.speak(event, 'Eirika', 'SPEAK_TEXT', text_position='1,2', width='3', text_speed='5.0')
+        event_functions.speak(event, 'Eirika', 'SPEAK_TEXT', text_position=(1, 2), width=3, text_speed=5.0)
         mock_dialog.assert_called_with('SPEAK_TEXT', mock_portrait, 'message_bg_base',
                                        (1, 2), 3, speaker='Eirika', style_nid=None,
                                        autosize=False, speed=5.0, font_color=None,
@@ -187,7 +187,7 @@ class EventUnitTests(unittest.TestCase):
 
 
         # test #4: special center text position
-        event_functions.speak(event, None, 'SPEAK_TEXT', text_position='center')
+        event_functions.speak(event, None, 'SPEAK_TEXT', text_position=Alignments.CENTER)
         mock_dialog.assert_called_with('SPEAK_TEXT', None, 'message_bg_base',
                                        Alignments.CENTER, None, speaker='', style_nid=None,
                                        autosize=False, speed=1, font_color=None,
@@ -206,8 +206,8 @@ class EventUnitTests(unittest.TestCase):
         ]
         event = self.create_event_from_script(test_commands)
 
-        event.run_command(event.processor.commands[0])
-        event.run_command(event.processor.commands[1])
+        event.run_command(event.processor.fetch_next_command())
+        event.run_command(event.processor.fetch_next_command())
 
         self.game.overworld_controller.toggle_menu_option_enabled.assert_called_with('1', 'Battle', True)
         self.game.overworld_controller.toggle_menu_option_visible.assert_called_with('1', 'Battle', True)

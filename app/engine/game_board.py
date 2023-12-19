@@ -51,7 +51,7 @@ class GameBoard(object):
         return self.bounds[0] <= pos[0] <= self.bounds[2] and self.bounds[1] <= pos[1] <= self.bounds[3]
 
     def get_all_positions_in_bounds(self) -> Set[Pos]:
-        return {(x, y) for x in range(self.bounds[0], self.bounds[2]) for y in range(self.bounds[1], self.bounds[3])}
+        return {(x, y) for x in range(self.bounds[0], self.bounds[2] + 1) for y in range(self.bounds[1], self.bounds[3] + 1)}
 
     def reset_tile_grids(self, tilemap):
         # For each movement type

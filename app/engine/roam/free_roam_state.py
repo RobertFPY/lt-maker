@@ -117,8 +117,8 @@ class FreeRoamState(MapState):
         """
         if not self.roam_unit:
             return None
-        region = game.get_region_under_pos(self.roam_unit.position)
-        if region and region.region_type == RegionType.EVENT:
+        region = game.get_region_under_pos(self.roam_unit.position, RegionType.EVENT)
+        if region:
             try:
                 truth = evaluate.evaluate(region.condition, self.roam_unit,
                                           position=self.roam_unit.position,

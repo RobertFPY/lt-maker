@@ -175,7 +175,7 @@ class PreferencesDialog(Dialog):
     def autosave_time_changed(self, val):
         t = timer.get_timer()
         t.autosave_timer.stop()
-        t.autosave_timer.setInterval(val * 60 * 1000)
+        t.autosave_timer.setInterval(int(val * 60 * 1000))
         t.autosave_timer.start()
 
     def accept(self):

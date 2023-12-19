@@ -17,6 +17,12 @@ class GameVarSlotMultiModel(MultiAttrListModel):
         new_slot.occurrences = '[]'
         return new_slot
 
+    def duplicate(self, idx):
+        idx = super().duplicate(idx)
+        copy = self._data[idx.row()]
+        copy.occurrences = '[]'
+        return idx
+
     def on_attr_changed(self, data, attr, old_value, new_value):
         if attr == 'nid':
             original = DB.game_var_slots.get(data.nid)

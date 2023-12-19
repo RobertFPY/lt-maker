@@ -24,6 +24,7 @@ from app.editor.combat_animation_editor.palette_menu import PaletteMenu
 from app.editor.combat_animation_editor.timeline_menu import TimelineMenu
 from app.editor.combat_animation_editor.frame_selector import FrameSelector
 from app.editor.combat_animation_editor.combat_animation_model import palette_swap
+from app.editor.file_manager.project_file_backend import DEFAULT_PROJECT
 import app.editor.combat_animation_editor.combat_animation_imports as combat_animation_imports
 from app.extensions.custom_gui import ComboBox
 
@@ -601,6 +602,7 @@ class CombatAnimProperties(QWidget):
         if weapon_anim:
             dlg = FrameSelector(self.current, weapon_anim, self)
             dlg.exec_()
+        self.palette_menu.update_palettes()
 
     def set_current(self, current):
         self.stop()
@@ -940,6 +942,15 @@ class CombatAnimProperties(QWidget):
             else:
                 QMessageBox.critical(self, "Missing Pose", "Missing Stand or Attack pose!")
                 return
+
+            proj_dir = self.settings.get_current_project()
+            if not proj_dir or os.path.basename(proj_dir) == DEFAULT_PROJECT:
+                pass
+            else:
+                # Make sure to save beforehand so that we use the modified effect when testing
+                resource_dir = os.path.join(proj_dir, 'resources')
+                data_dir = os.path.join(resource_dir, 'combat_anims')
+                RESOURCES.combat_anims.save(data_dir)
 
             left_palette_name, left_palette, right_palette_name, right_palette = self.get_test_palettes(self.current)
 

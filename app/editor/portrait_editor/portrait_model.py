@@ -7,7 +7,7 @@ from PyQt5.QtGui import QPixmap, QIcon, QImage, QColor
 
 from app.constants import PORTRAIT_WIDTH, PORTRAIT_HEIGHT
 
-from app.data.resources.portraits import Portrait
+from app.data.resources.portraits import PortraitPrefab
 from app.data.resources.resources import RESOURCES
 
 from app.utilities.data import Data
@@ -19,7 +19,7 @@ from app.editor.settings import MainSettingsController
 from app.utilities import str_utils
 import app.editor.utilities as editor_utilities
 
-def auto_frame_portrait(portrait: Portrait):
+def auto_frame_portrait(portrait: PortraitPrefab):
     width, height = 32, 16
 
     def test_similarity(im1: QImage, im2: QImage) -> int:
@@ -55,7 +55,7 @@ def auto_frame_portrait(portrait: Portrait):
     portrait.blinking_offset = best_blink_pos
     portrait.smiling_offset = best_mouth_pos
 
-def auto_colorkey(portrait: Portrait):
+def auto_colorkey(portrait: PortraitPrefab):
     if not portrait.pixmap:
         portrait.pixmap = QPixmap(portrait.full_path)
     im = portrait.pixmap.toImage()
@@ -111,7 +111,7 @@ class PortraitModel(ResourceCollectionModel):
                     nid = str_utils.get_next_name(nid, [d.nid for d in RESOURCES.portraits])
                     if pix.width() == PORTRAIT_WIDTH and pix.height() == PORTRAIT_HEIGHT:
                         # Swap to use colorkey color if it's not
-                        new_portrait = Portrait(nid, fn, pix)
+                        new_portrait = PortraitPrefab(nid, fn, pix)
                         auto_colorkey(new_portrait)
                         auto_frame_portrait(new_portrait)
                         RESOURCES.portraits.append(new_portrait)

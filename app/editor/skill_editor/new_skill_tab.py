@@ -55,12 +55,12 @@ class NewSkillDatabase(NewEditorTab):
         Returns whether the user wants to proceed with deletion
         """
         skill = self.data.get(nid)
-        affected_units = [unit for unit in self._db.units if nid in unit.get_items()]
+        affected_units = [unit for unit in self._db.units if nid in unit.get_skills()]
         affected_classes = [k for k in self._db.classes if nid in k.get_skills()]
         affected_levels = [level for level in self._db.levels if any(nid in unit.get_skills() for unit in level.units)]
         affected_items = item_components.get_items_using(ComponentType.Skill, nid, self._db)
         affected_skills = skill_components.get_skills_using(ComponentType.Skill, nid, self._db)
-        
+
         deletion_tabs = []
         if affected_units:
             from app.editor.unit_editor.unit_model import UnitModel
@@ -89,7 +89,7 @@ class NewSkillDatabase(NewEditorTab):
             deletion_tabs.append(DeletionTab(affected_skills, model, msg, "Skills"))
 
         if deletion_tabs:
-            swap, ok = DeletionDialog.get_swap(deletion_tabs, SkillBox(self.window, exclude=skill), self.window)
+            swap, ok = DeletionDialog.get_swap(deletion_tabs, SkillBox(self, exclude=skill), self)
             if ok:
                 self._on_nid_changed(nid, swap.nid)
             else:

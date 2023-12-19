@@ -18,6 +18,7 @@ from app.editor import timer
 
 from app.editor.combat_animation_editor.frame_selector import FrameSelector
 from app.editor.combat_animation_editor.combat_animation_display import CombatAnimProperties
+from app.editor.file_manager.project_file_backend import DEFAULT_PROJECT
 import app.editor.combat_animation_editor.combat_animation_imports as combat_animation_imports
 
 import app.editor.utilities as editor_utilities
@@ -191,14 +192,12 @@ class CombatEffectProperties(CombatAnimProperties):
         self.window.update_list()
 
     def select_frame(self):
-        # if not self.current.frames:
-        #     QMessageBox.critical(self, "Frame Error", "%s has no associated frames!" % self.current.nid)
-        #     return
         if not self.current.palettes:
             QMessageBox.critical(self, "Palette Error", "%s has no associated palettes!" % self.current.nid)
             return
         dlg = FrameSelector(self.current, self.current, self)
         dlg.exec_()
+        self.palette_menu.update_palettes()
 
     def set_current(self, current):
         self.stop()
@@ -384,17 +383,21 @@ class CombatEffectProperties(CombatAnimProperties):
     def test_combat(self):
         if self.current:
             current_pose_nid = self.pose_box.currentText()
-            if 'Attack' in self.current.poses.keys():
-                pass
-            else:
-                print("Missing Attack pose!")
-                return
 
             # Find a combat animation with this pose and "spell empty" in it's pose
             combat_anim, weapon_anim = self.find_appropriate_combat_anim(current_pose_nid)
             if not weapon_anim:
                 print("Couldn't find a usable weapon anim")
                 return None
+    
+            proj_dir = self.settings.get_current_project()
+            if not proj_dir or os.path.basename(proj_dir) == DEFAULT_PROJECT:
+                pass
+            else:
+                # Make sure to save beforehand so that we use the modified effect when testing
+                resource_dir = os.path.join(proj_dir, 'resources')
+                data_dir = os.path.join(resource_dir, 'combat_effects')
+                RESOURCES.combat_effects.save(data_dir)
 
             left_palette_name, left_palette, right_palette_name, right_palette = self.get_test_palettes(combat_anim)
 

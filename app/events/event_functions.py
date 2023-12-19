@@ -84,11 +84,11 @@ def music_clear(self: Event, fade_out=0, flags=None):
         get_sound_thread().clear()
 
 def sound(self: Event, sound: SFXPrefab | NID, volume: float=1.0, flags=None):
-    sound_nid = self._resolve_nid(sound_nid)
+    sound_nid = self._resolve_nid(sound)
     get_sound_thread().play_sfx(sound_nid, volume=volume)
 
 def stop_sound(self: Event, sound: SFXPrefab | NID, flags=None):
-    sound_nid = self._resolve_nid(sound_nid)
+    sound_nid = self._resolve_nid(sound)
     get_sound_thread().stop_sfx(sound_nid)
 
 def change_music(self: Event, phase, music: SongPrefab | SongObject | NID, flags=None):

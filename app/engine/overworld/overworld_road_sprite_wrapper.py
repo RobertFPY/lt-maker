@@ -50,7 +50,7 @@ class OverworldRoadSpriteWrapper():
         return self.road_sprite is not None
 
     def rotate(self, sprite: Surface, angle: float) -> Surface:
-        return engine.transform_rotate(sprite, 90)
+        return engine.transform_rotate(sprite, angle)
 
     def draw(self, pos: Point, sprite: Surface, draw_engine: Surface):
         surf: Surface = draw_engine
@@ -148,8 +148,8 @@ class OverworldRoadSpriteWrapper():
                 self.draw((x - off_x, y), self.rotate(self.diag_corner, 180), draw_engine)
         else:
             if quadrant in [q1, q3]:
-                self.draw((x, y - off_y), self.rotate(self.diag_corner, 270), draw_engine)
-                self.draw((x, y + off_y), self.rotate(self.diag_corner, 90), draw_engine)
+                self.draw((x, y - off_y), self.rotate(self.diag_corner, 90), draw_engine)
+                self.draw((x, y + off_y), self.rotate(self.diag_corner, 270), draw_engine)
             else:
                 self.draw((x, y - off_y), self.rotate(self.diag_corner, 0), draw_engine)
                 self.draw((x, y + off_y), self.rotate(self.diag_corner, 180), draw_engine)
@@ -166,7 +166,7 @@ class OverworldRoadSpriteWrapper():
 
         if Direction.UP in directions:
             if Direction.LEFT in directions: # up left
-                self.draw(q2, self.rotate(self.right_angle, 90), draw_engine)
+                self.draw(q2, self.rotate(self.right_angle, 270), draw_engine)
                 self.draw(q3, self.hbot, draw_engine)
                 self.draw(q1, self.vright, draw_engine)
             else: # up right

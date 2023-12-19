@@ -1,5 +1,5 @@
 from __future__ import annotations
-from app.data.resources.sounds import Song
+from app.data.resources.sounds import SongPrefab
 from app.engine.camera import Camera
 import logging
 
@@ -61,7 +61,7 @@ class OverworldManager(OverworldManagerInterface):
         self._initialize_graphs()
 
     @property
-    def music(self) -> Song:
+    def music(self) -> SongPrefab:
         return self._overworld.music
 
     @property

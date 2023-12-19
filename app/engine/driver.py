@@ -29,6 +29,7 @@ def start(title, from_editor=False):
         print("Maybe not Windows? (but that's OK)")
 
     engine.DISPLAYSURF = engine.build_display(engine.SCREENSIZE)
+    engine.update_time()
     engine.set_title(title + ' - v' + VERSION)
     print("Version: %s" % VERSION)
     if DB.game_flags.has_fatal_errors and not from_editor:

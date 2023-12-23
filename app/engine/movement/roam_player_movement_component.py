@@ -1,4 +1,5 @@
 from __future__ import annotations
+import math
 
 from typing import List, Tuple
 
@@ -6,6 +7,7 @@ from app.data.database.database import DB
 
 from app.engine.game_state import game
 from app.engine import action
+from app.engine.input_manager import get_input_manager
 from app.engine.movement.movement_component import MovementComponent
 from app.engine.movement import movement_funcs
 from app.utilities import utils
@@ -161,6 +163,72 @@ class RoamPlayerMovementComponent(MovementComponent):
             if not self._can_move(pos_h) and not self._can_move(pos_v):
                 return False
         return True
+    
+    def correct_horizontal_movement(self, rounded_current_pos: Tuple[int, int], next_position: Tuple[float, float]) -> bool:
+        """Prevents our sprite from moving into an impassable tile to the left or right of us by preventing our movement too far east or west in our current tile
+
+        Args:
+            rounded_current_pos (Tuple[int, int]): Our current tile
+            next_position (Tuple[float, float]): Our calculated next position
+        
+        Returns:
+            Whether our next position is valid
+
+        If we are moving east or west into an impassable terrain, we can normally move so that up to half of our sprite is still within
+        our current tile. This function fixes that so that only a small portion of our sprite (assuming our sprite fits within our tile) will
+        intersect the impassable tile to our right or left
+        """
+        intersection_threshold = 0.15  # How far we are allowed to visually move into the impassable horizontal tiles
+        half_of_tile = 0.5
+        east_pos = (rounded_current_pos[0] + 1, rounded_current_pos[1])
+        west_pos = (rounded_current_pos[0] - 1, rounded_current_pos[1])
+        southeast_pos = (rounded_current_pos[0] + 1, rounded_current_pos[1] + 1)
+        southwest_pos = (rounded_current_pos[0] - 1, rounded_current_pos[1] + 1)
+        # If we are moving right/east and we would appear to move into the next tile past the intersection threshold
+        if self.x_vel > 0 and not self._can_move(east_pos) and intersection_threshold < utils.diff_to_floor(next_position[0]) < half_of_tile:
+            # Reset velocity to just above our min speed
+            self.x_vel = self.min_speed + 0.001
+            return False
+        # If we are moving right/east and we would appear to move directly above an impassable tile, we want to make sure that we at least 0.5 tiles above it before being able to move through
+        elif self.x_vel > 0 and not self._can_move(southeast_pos) and intersection_threshold < utils.diff_to_floor(next_position[0]) < half_of_tile and 0 < utils.diff_to_floor(next_position[1]) < half_of_tile:
+            self.x_vel = self.min_speed + 0.001
+            return False
+        # If we are moving left/west and we would appear to move into the next tile past the intersection threshold
+        elif self.x_vel < 0 and not self._can_move(west_pos) and intersection_threshold < utils.diff_to_ceil(next_position[0]) < half_of_tile:
+            # Reset velocity to just above our min speed
+            self.x_vel = (self.min_speed + 0.001) * -1
+            return False
+        # If we are moving left/west and we would appear to move directly above an impassable tile, we want to make sure that we at least 0.5 tiles above it before being able to move through
+        elif self.x_vel < 0 and not self._can_move(southwest_pos) and intersection_threshold < utils.diff_to_ceil(next_position[0]) < half_of_tile and 0 < utils.diff_to_floor(next_position[1]) < half_of_tile:
+            self.x_vel = (self.min_speed + 0.001) * -1
+            return False
+        return True
+        
+    def correct_vertical_movement(self, rounded_current_pos: Tuple[int, int], next_position: Tuple[float, float]) -> bool:
+        """Prevents our sprite from moving into the impassable tile below us by preventing our movement too far south in our current tile
+
+        Args:
+            rounded_current_pos (Tuple[int, int]): Our current tile
+            next_position (Tuple[float, float]): Our calculated next position
+        
+        Returns:
+            Returns whether our next position is valid
+
+        If we are moving south into an impassable terrain, we can normally move so that up to half of our sprite is still within
+        our current tile. This function fixes that so that no part of our sprite (assuming our sprite fits within our tile) will
+        intersect the impassable tile below us.
+        
+        This function does not prevent moving into an impassable tile above us since that looks correct to the viewer.
+        """
+        half_of_tile = 0.5
+        south_pos = rounded_current_pos[0], rounded_current_pos[1] + 1
+        # We are moving vertically south and our sprite would appear to enter the impassable south tile
+        if self.y_vel > 0 and not self._can_move(south_pos) and 0 < utils.diff_to_floor(next_position[1]) < half_of_tile:
+            # Reset velocity to just above our min speed
+            # Why do we reset to just above our min speed instead of 0?
+            self.y_vel = self.min_speed + 0.001
+            return False
+        return True
 
     def move(self, delta_time):
         x, y = self.position
@@ -173,15 +241,19 @@ class RoamPlayerMovementComponent(MovementComponent):
         rounded_pos = utils.round_pos(next_position)
         rounded_pos_h = utils.round_pos(alt_position_h)
         rounded_pos_v = utils.round_pos(alt_position_v)
+
+        horizontal_clear = self.correct_horizontal_movement(rounded_pos, next_position)
+        vertical_clear = self.correct_vertical_movement(rounded_pos, next_position)
+
         # Can always move within current position
-        if rounded_pos == self.unit.position or self._can_move(rounded_pos):
+        if (rounded_pos == self.unit.position or self._can_move(rounded_pos)) and horizontal_clear and vertical_clear:
             self.position = next_position
         # Try to move to a valid position just horizontally
-        elif self._can_move(rounded_pos_h):
+        elif self._can_move(rounded_pos_h) and horizontal_clear:
             self.position = alt_position_h
             rounded_pos = rounded_pos_h
         # Try to move to a valid position just vertically
-        elif self._can_move(rounded_pos_v):
+        elif self._can_move(rounded_pos_v) and vertical_clear:
             self.position = alt_position_v
             rounded_pos = rounded_pos_v
         else:

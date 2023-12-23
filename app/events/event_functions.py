@@ -2795,7 +2795,7 @@ def choice(self: Event, nid: NID, title: str, choices: str, row_width: int = 0, 
             ast.parse(choices)
             def tryexcept(callback_expr):
                 try:
-                    val = self._eval_expr(callback_expr, 'from_python' in flags)
+                    val = self._eval_expr(self.text_evaluator._evaluate_all(callback_expr), 'from_python' in flags)
                     if isinstance(val, list):
                         return val or ['']
                     else:
@@ -2929,7 +2929,7 @@ def textbox(self: Event, nid: str, text: str, box_position: Point | Alignments=N
             ast.parse(text)
             def tryexcept(callback_expr) -> str:
                 try:
-                    val = self._eval_expr(callback_expr, 'from_python' in flags)
+                    val = self._eval_expr(self.text_evaluator._evaluate_all(callback_expr), 'from_python' in flags)
                     return str(val)
                 except:
                     self.logger.error("textbox: failed to eval %s", callback_expr)
@@ -2976,7 +2976,7 @@ def table(self: Event, nid: NID, table_data: str, title: str = None,
             ast.parse(table_data)
             def tryexcept(callback_expr):
                 try:
-                    val = self._eval_expr(callback_expr, 'from_python' in flags)
+                    val = self._eval_expr(self.text_evaluator._evaluate_all(callback_expr), 'from_python' in flags)
                     if isinstance(val, list):
                         return val or ['']
                     else:

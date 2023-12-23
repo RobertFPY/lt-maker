@@ -54,6 +54,10 @@ class InputManager():
 
     def just_pressed(self, button):
         return button in self.key_down_events
+    
+    def directional_input_pressed(self):
+        directional_inputs = ('UP', 'DOWN', 'LEFT', 'RIGHT')
+        return any([input_pressed for input_pressed in directional_inputs if self.is_pressed(input_pressed)])
 
     def screen_denominator(self) -> Tuple[float, float]:
         if cf.SETTINGS['fullscreen']:  # Fullscreen

@@ -84,7 +84,7 @@ class McostDeletionDialog(DeletionDialog):
         dialog = DeletionDialog(tabs, swap_box, parent)
         result = dialog.exec_()
         if result == QDialog.Accepted:
-            text = dialog.box.edit.currentText()
+            text = dialog.swap_box.edit.currentText()
             return text, True
         else:
             return None, False

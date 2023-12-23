@@ -120,7 +120,7 @@ constants = ConstantCatalog([
     Constant('bonus_method', 'How are support bonuses calculated?', ["No Bonus", "Use Personal Affinity Bonus", "Use Partner's Affinity Bonus", "Use Average of Affinity Bonuses", "Use Sum of Affinity Bonuses"], "Use Average of Affinity Bonuses"),
     Constant('bonus_range', "How far do a support's effects reach (0 - can both attack same enemy, 99 - entire map)", ConstantType.INT, 3),
     Constant('growth_range', "How close to partner for support growth (0 - can both attack same enemy, 99 - entire map)", ConstantType.INT, 1),
-    Constant('chapter_points', "Points gained on ending chapter with both alive", ConstantType.INT, 0, 'growth'),
+    Constant('chapter_points', "Points gained on ending chapter with both on the map", ConstantType.INT, 0, 'growth'),
     Constant('end_turn_points', "Points gained on ending turn in growth range", ConstantType.INT, 1, 'growth'),
     Constant('combat_points', "Points gained on combat in growth range", ConstantType.INT, 0, 'growth'),
     Constant('interact_points', "Points gained on interacting with partner", ConstantType.INT, 0, 'growth'),

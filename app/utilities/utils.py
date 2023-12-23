@@ -138,6 +138,12 @@ def round_pos(pos: Tuple[float, float]) -> Tuple[int, int]:
     """
     return (int(round(pos[0])), int(round(pos[1])))
 
+def diff_to_floor(d: float):
+    return d - math.floor(d)
+
+def diff_to_ceil(d: float):
+    return abs(d - math.ceil(d))
+
 def average_pos(pos_list: list, as_int=False) -> tuple:
     avg_x, avg_y = 0, 0
     for x, y in pos_list:

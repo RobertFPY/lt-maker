@@ -4,6 +4,8 @@ from app.data.resources.base_catalog import ManifestCatalog
 from app.data.resources import combat_commands
 from app.utilities.data import Data
 
+import logging
+
 required_poses = ('Stand', 'Attack', 'Miss', 'Dodge')
 other_poses = ('RangedStand', 'RangedDodge', 'Critical')
 
@@ -154,6 +156,8 @@ class CombatCatalog(ManifestCatalog):
             elif not weapon_anim.full_path and weapon_anim.pixmap:
                 weapon_anim.pixmap.save(new_full_path, "PNG")
                 weapon_anim.set_full_path(new_full_path)
+            elif not weapon_anim.full_path:  # You don't have a pixmap, so there is nothing to save
+                logging.warning("Could not find pixmap to save for weapon_anim %s in combat_anim %s", weapon_anim.nid, combat_anim.nid)
             elif os.path.abspath(weapon_anim.full_path) != os.path.abspath(new_full_path):
                 self.make_copy(weapon_anim.full_path, new_full_path)
                 weapon_anim.set_full_path(new_full_path)
@@ -186,11 +190,14 @@ class CombatEffectCatalog(ManifestCatalog):
 
     def save_image(self, loc, effect_anim, temp=False):
         new_full_path = os.path.join(loc, '%s.png' % effect_anim.nid)
-        if temp:
+        if temp and effect_anim.pixmap:
             effect_anim.pixmap.save(new_full_path, "PNG")
-        elif not effect_anim.full_path:
+        elif not effect_anim.full_path and effect_anim.pixmap:
             effect_anim.pixmap.save(new_full_path, "PNG")
             effect_anim.set_full_path(new_full_path)
+        elif not effect_anim.full_path:
+            # Not actually possible because this is checked earlier in the call stack
+            logging.warning("Could not find pixmap to save for effect_anim %s", effect_anim.nid)
         elif os.path.abspath(effect_anim.full_path) != os.path.abspath(new_full_path):
             self.make_copy(effect_anim.full_path, new_full_path)
             effect_anim.set_full_path(new_full_path)

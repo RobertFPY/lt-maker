@@ -74,12 +74,12 @@ class CombatEffectProperties(CombatAnimProperties):
                 for pose in weapon_anim.poses:
                     for command in pose.timeline:
                         if command.has_effect() and command.value[0] == old_nid:
-                            command.value = (new_nid,)
+                            command.value = (new_nid,) + tuple(command.value[1:])
         for effect_anim in RESOURCES.combat_effects:
             for pose in effect_anim.poses:
                 for command in pose.timeline:
                     if command.has_effect() and command.value[0] == old_nid:
-                        command.value = (new_nid,)
+                        command.value = (new_nid,) + tuple(command.value[1:])
 
     def build_frames(self):
         self.frame_group_box = QGroupBox()

@@ -655,6 +655,8 @@ class Event():
         unit = self._get_unit(nid)
         if unit:
             name = unit.nid
+        else:
+            name = nid
         if unit and unit.portrait_nid:
             portrait = RESOURCES.portraits.get(unit.portrait_nid)
         elif name in DB.units.keys():

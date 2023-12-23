@@ -285,13 +285,9 @@ class Clock():
 
 # === System Messages
 
-_SYSTEM_FONT = None
 SYSTEM_FONT_SIZE = 14
 def get_system_font():
-    global _SYSTEM_FONT
-    if not _SYSTEM_FONT:
-        _SYSTEM_FONT = pygame.font.Font(None, SYSTEM_FONT_SIZE)
-    return _SYSTEM_FONT
+    return pygame.font.Font(None, SYSTEM_FONT_SIZE)
 
 def write_system_msg(surf, msg: str):
     """Writes a message to the screen.

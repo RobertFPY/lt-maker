@@ -54,7 +54,7 @@ def rendered_text_width(fonts: List[NID], texts: List[str]) -> int:
     base_font = fonts[-1]
     font_history_stack = []
     total_width = 0
-    while(text_stack):
+    while text_stack:
         curr_text = text_stack.pop()
         curr_font = font_stack.pop()
         # process text for tags and push them onto stack for later processing
@@ -184,7 +184,7 @@ def render_text(surf: engine.Surface, fonts: List[NID], texts: List[str],
 
     base_font = fonts[-1]
     font_history_stack = []
-    while(text_stack):
+    while text_stack:
         curr_text = text_stack.pop()
         curr_font = font_stack.pop()
         curr_color = color_stack.pop() if color_stack else None
@@ -193,7 +193,7 @@ def render_text(surf: engine.Surface, fonts: List[NID], texts: List[str],
         if any_tags:
             tag_start, tag_end = any_tags.span()
             tag_font = any_tags.group().strip("<>")
-            if tag_font == '/':
+            if '/' in tag_font:
                 tag_font, tag_color = font_history_stack.pop() if font_history_stack else (base_font, None)
             else:
                 if tag_font in FONT or tag_font == 'icon':

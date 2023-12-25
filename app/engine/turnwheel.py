@@ -466,7 +466,9 @@ class TurnwheelState(MapState):
         game.level_vars['_resurrect'] = set()
         # Whether the player MUST move the turnwheel back
         self.force = game.memory.get('force_turnwheel', False)
+        self.activated_by_player = not game.memory.get('event_turnwheel', False)
         game.memory['force_turnwheel'] = False
+        game.memory['event_turnwheel'] = False
         game.game_vars['turnwheel_starting_turn'] = game.turncount
 
         self.mouse_indicator = gui.MouseIndicator()
@@ -614,7 +616,7 @@ class TurnwheelState(MapState):
         if self.transition_out > 0:
             self.transition_out -= 1
             if self.transition_out <= 0:
-                if game.phase.get_current() == 'player':
+                if self.activated_by_player:
                     game.state.back()
                     game.state.back()
                 else:

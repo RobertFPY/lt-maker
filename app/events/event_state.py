@@ -154,6 +154,7 @@ class EventState(State):
                 game.memory['force_turnwheel'] = True
             else:
                 game.memory['force_turnwheel'] = False
+            game.memory['event_turnwheel'] = True
             self.event.turnwheel_flag = False
 
         else:

@@ -274,7 +274,7 @@ def get_mouse_focus():
 
 # === loop functions ===
 DISPLAYSURF = None
-SCREENSIZE = (WINWIDTH * cf.SETTINGS['screen_size'], WINHEIGHT * cf.SETTINGS['screen_size'])
+SCREENSIZE = (WINWIDTH * min(cf.SETTINGS['screen_size'], 5), WINHEIGHT * min(cf.SETTINGS['screen_size'], 5))
 
 class Clock():
     def __init__(self) -> None:

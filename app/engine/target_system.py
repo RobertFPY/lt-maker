@@ -141,7 +141,7 @@ class TargetSystem():
         # Handle main target position first
         if main_target_pos:
             main_target_pos = main_target_pos if self.game.board.check_fog_of_war(unit, main_target_pos) else None
-        splash_positions = [splash_pos for splash_pos in splash_positions if self.game.board.check_fog_of_war(unit, splash_pos)]
+        splash_positions = [splash_pos for splash_pos in splash_positions if splash_pos and self.game.board.check_fog_of_war(unit, splash_pos)]
         return main_target_pos, splash_positions
 
     def get_attackable_positions(self, unit: UnitObject, item: Optional[ItemObject] = None, force: bool = False) -> Set[Pos]:

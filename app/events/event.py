@@ -636,8 +636,9 @@ class Event():
         if self.game.overworld_controller:
             if not node_only and text in self.game.overworld_controller.entities:
                 entity_at_nid = self.game.overworld_controller.entities[text]
-                if entity_at_nid:
-                    return entity_at_nid.node
+                if entity_at_nid.on_node:
+                    entity_node = self.game.overworld_controller.nodes[entity_at_nid.on_node]
+                    return entity_node
 
             if not entity_only and text in self.game.overworld_controller.nodes:
                 node_at_nid = self.game.overworld_controller.nodes[text]

@@ -154,7 +154,7 @@ class EffectiveIcon(ItemComponent):
             sprite = image_mods.make_white(sprite.convert_alpha(), abs(250 - engine.get_time()%500)/250)
         return sprite
 
-    def target_icon(self, target, item, unit) -> bool:
+    def target_icon(self, unit, item, target) -> bool:
         if not skill_system.check_enemy(target, unit):
             return None
         if self._check_negate(target):

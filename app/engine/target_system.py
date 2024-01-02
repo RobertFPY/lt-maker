@@ -144,6 +144,18 @@ class TargetSystem():
         splash_positions = [splash_pos for splash_pos in splash_positions if splash_pos and self.game.board.check_fog_of_war(unit, splash_pos)]
         return main_target_pos, splash_positions
 
+    def get_target_from_position(self, unit: UnitObject, item: ItemObject, target_pos: Pos) -> Tuple[Optional[Pos], List[Pos]]:
+        """Returns the targeting tuple for the target_pos from its current position with the item"""
+        main_target_pos, splash_positions = item_system.splash(unit, item, target_pos)
+        if self.apply_fog_of_war(unit, item):
+            main_target_pos, splash_positions = self._filter_splash_through_fog_of_war(unit, main_target_pos, splash_positions)
+        return main_target_pos, splash_positions
+
+    def check_target_from_position(self, unit: UnitObject, item: ItemObject, target_pos: Pos) -> bool:
+        """Returns whether the unit can target the target_pos from its current position with the item"""
+        main_target_pos, splash_positions = self.get_target_from_position(unit, item, target_pos)
+        return item_system.target_restrict(unit, item, main_target_pos, splash_positions)
+
     def get_attackable_positions(self, unit: UnitObject, item: Optional[ItemObject] = None, force: bool = False) -> Set[Pos]:
         """Returns all positions the unit could attack given the item's range.
 
@@ -347,10 +359,7 @@ class TargetSystem():
 
         valid_targets = set()
         for position in all_targets:
-            main_target_pos, splash_positions = item_system.splash(unit, item, position)
-            if self.apply_fog_of_war(unit, item):
-                main_target_pos, splash_positions = \
-                    self._filter_splash_through_fog_of_war(unit, main_target_pos, splash_positions)
+            main_target_pos, splash_positions = self.get_target_from_position(unit, item, position)
             # If there are no valid targets at all, then this cannot be a valid position to target
             if not main_target_pos and not splash_positions:
                 continue
@@ -384,16 +393,17 @@ class TargetSystem():
             valid_targets |= self.get_valid_targets(unit, subitem)
         return valid_targets
 
-    def get_all_valid_targets(self, unit: UnitObject, valid_moves: List[Pos],
-                              items: List[ItemObject]) -> Set[Pos]:
-        """Returns all valid targets of a unit from any of their valid moves with any of their items.
+    def get_ai_targets(self, unit: UnitObject, valid_moves: List[Pos],
+                       items: List[ItemObject]) -> Set[Pos]:
+        """Returns all valid targets of the ai from any of their valid moves with the input items.
 
         Only used by ai_controller.py
 
-        Considers fog of war as well as targeting restrictions in addition to the usual
-        item's range, any positional restrictions, and game board bounds.
+        Considers item's range, any positional restrictions, and game board bounds.
 
-        Does NOT consider line of sight in any way. Handle line of sight checks later on in
+        Does NOT consider fog of war or targeting restrictions. Handled later during the AI utility determination
+
+        Does NOT fully consider line of sight. Handle line of sight checks later on in
         processing if so desired.
         For instance, the AI controller does so while iterating over (move, item, target) triples
         Reason: Figuring out line of sight here would be:
@@ -411,37 +421,15 @@ class TargetSystem():
         """
         all_valid_targets: Set[Pos] = set()
         for item in items:
-            # Handle sequence items
+            # AI does not handle sequence or multi-target items
             if item.sequence_item and item.subitems:
-                for subitem in item.subitems:
-                    valid_targets = self._check_targets_from_position(unit, subitem)
-                    if not valid_targets:
-                        break  # Sequence item has no good target, give up
-                else:
-                    # Give the player access to the target of the first subitem
-                    all_valid_targets |= self._check_targets_from_position(unit, item.subitems[0])
+                pass  # 
             else:
-                all_valid_targets |= self._check_targets_from_position(unit, item)
+                possible_targets = item_system.valid_targets(unit, item)
+                attackable_positions = self._get_all_attackable_positions(unit, valid_moves, [item])
+                all_valid_targets |= (possible_targets & attackable_positions)
 
         return all_valid_targets
-
-    def _check_targets_from_position(self, unit: UnitObject, item: ItemObject) -> Set[Pos]:
-        positions: Set[Pos] = set()
-        possible_targets = item_system.valid_targets(unit, item)
-        for pos in possible_targets:
-            splash = item_system.splash(unit, item, pos)
-            if self.apply_fog_of_war(unit, item):
-                splash = self._filter_splash_through_fog_of_war(unit, *splash)
-            if item_system.target_restrict(unit, item, *splash):
-                positions.add(pos)
-
-        # Make sure we have enough targets to satisfy the item
-        if not item_system.allow_same_target(unit, item) and \
-                not item_system.allow_less_than_max_targets(unit, item) and \
-                len(positions) < item_system.num_targets(unit, item):
-            return set()
-
-        return positions
 
     # === Item Filtering ===
     def get_weapons(self, unit: UnitObject) -> List[ItemObject]:

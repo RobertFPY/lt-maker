@@ -189,6 +189,7 @@ class Resources():
         start = time.time_ns()/1e6
 
         # Make the directory to save this resource pack in
+        # Make the directory to save this resource pack in
         if not os.path.exists(autosave_dir):
             os.mkdir(autosave_dir)
         autosave_resource_dir = os.path.join(autosave_dir, 'resources')

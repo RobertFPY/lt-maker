@@ -148,8 +148,8 @@ class BasicItemOption(BaseOption[Optional[ItemObject]]):
 
     @classmethod
     def empty_option(cls, idx, display_value: str | None = "None", width: int = 0,
-                  height: int = 0, ignore: bool = False, font: NID = 'text', text_color: Optional[NID] = None,
-                  align: HAlignment = HAlignment.LEFT, mode: ItemOptionModes = ItemOptionModes.NO_USES):
+                     height: int = 0, ignore: bool = False, font: NID = 'text', text_color: Optional[NID] = None,
+                     align: HAlignment = HAlignment.LEFT, mode: ItemOptionModes = ItemOptionModes.NO_USES):
         return cls(idx, None, display_value, width, height, ignore, font, text_color, align, mode)
 
     def width(self):

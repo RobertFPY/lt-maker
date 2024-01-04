@@ -132,9 +132,7 @@ class ProjectFileBackend():
 
         # Returns whether we successfully saved
         # check if we're editing default, if so, prompt to save as
-        if self.current_proj and os.path.basename(self.current_proj) == DEFAULT_PROJECT:
-            self.current_proj = None
-        if new or not self.current_proj:
+        if new or not self.current_proj or os.path.basename(self.current_proj) == DEFAULT_PROJECT:
             starting_path = self.current_proj or QDir.currentPath()
             fn, ok = QFileDialog.getSaveFileName(self.parent, "Save Project", starting_path,
                                                  "All Files (*)")

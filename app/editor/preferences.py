@@ -23,6 +23,7 @@ class PreferencesDialog(Dialog):
         self.window = parent
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
+        self.setWindowTitle("Preferences")
 
         self.awaiting_button_bind = False
 

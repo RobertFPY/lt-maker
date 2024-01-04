@@ -1905,19 +1905,15 @@ def remove_skill(self: Event, global_unit, skill, count=-1, flags=None):
     flags = flags or set()
 
     unit = self._get_unit(global_unit)
-    if not unit:
-        self.logger.error("remove_skill: Couldn't find unit with nid %s" % global_unit)
-        return
-    skill_nid = skill
-    if skill_nid not in [skill.nid for skill in unit.skills]:
-        self.logger.error("remove_skill: Couldn't find skill with nid %s" % skill)
+    unit, found_skill = self._get_skill(global_unit, skill)
+    if not unit or not found_skill:
+        self.logger.error("add_skill_component: Either unit or skill was invalid, see above")
         return
     banner_flag = 'no_banner' not in flags
 
-    action.do(action.RemoveSkill(unit, skill_nid, count))
+    action.do(action.RemoveSkill(unit, found_skill, count))
     if banner_flag:
-        skill = DB.skills.get(skill_nid)
-        b = banner.TakeSkill(unit, skill)
+        b = banner.TakeSkill(unit, found_skill)
         self.game.alerts.append(b)
         self.game.state.change('alert')
         self.state = 'paused'
@@ -1925,13 +1921,9 @@ def remove_skill(self: Event, global_unit, skill, count=-1, flags=None):
 def set_skill_data(self: Event, global_unit, skill, nid, expression, flags=None):
     flags = flags or set()
 
-    unit = self._get_unit(global_unit)
-    if not unit:
-        self.logger.error("set_skill_data: Couldn't find unit with nid %s" % global_unit)
-        return
-    found_skill = unit.get_skill(skill)
-    if not found_skill:
-        self.logger.error("set_skill_data: Couldn't find skill with nid %s on unit selected" % skill)
+    unit, found_skill = self._get_skill(global_unit, skill)
+    if not unit or not found_skill:
+        self.logger.error("add_skill_component: Either unit or skill was invalid, see above")
         return
     data_value = self._eval_expr(expression, 'from_python' in flags)
 

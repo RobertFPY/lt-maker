@@ -357,7 +357,10 @@ class GridChoiceMenu():
         tw, th = self._get_pixel_size()
         if self._should_draw_scrollbar:
             tw += 16
-        bg_surf = create_base_surf(tw, th, self._bg_name)
+        if self._bg_name:
+            bg_surf = create_base_surf(tw, th, self._bg_name)
+        else:  # No bg
+            bg_surf = engine.create_surface((tw, th), transparent=True)
         return bg_surf
 
     def _build_data(self, data: List[Any], display_values: Optional[List[Any]], data_type: str, row_width: int) -> List[IMenuOption]:

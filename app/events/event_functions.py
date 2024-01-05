@@ -3389,11 +3389,17 @@ def pair_up(self: Event, unit1, unit2, flags=None):
         self.logger.error("pair_up: Couldn't find unit with nid %s" % unit1)
         return
     follower = new_unit1
+    if self.game.get_rescuers_position(follower) or follower.traveler:
+        self.logger.error("pair_up: Rescuee is already traveling with somebody else")
+        return
     new_unit2 = self._get_unit(unit2)
     if not new_unit2:
         self.logger.error("pair_up: Couldn't find unit with nid %s" % unit2)
         return
     leader = new_unit2
+    if self.game.get_rescuers_position(leader) or leader.traveler:
+        self.logger.error("pair_up: Rescuer is already traveling with somebody else")
+        return
     if unit_funcs.can_pairup(leader, follower):
         action.do(action.PairUp(follower, leader))
     else:
@@ -3405,6 +3411,9 @@ def separate(self: Event, unit, flags=None):
         self.logger.error("separate: Couldn't find unit with nid %s" % unit)
         return
     unit = new_unit
+    if not unit.traveler:
+        self.logger.error("separate: Unit is not traveling with anybody")
+        return
     action.do(action.RemovePartner(unit))
 
 def create_achievement(self: Event, nid: str, name: str, description: str, flags=None):

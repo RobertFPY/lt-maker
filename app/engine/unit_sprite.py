@@ -546,10 +546,10 @@ class UnitSprite():
             partner = game.get_unit(self.unit.traveler)
             partner_image = partner.sprite.create_image(self.image_state)
             partner_image = partner_image.convert_alpha()
-            surf.blit(partner_image, (topleft[0] + 3, topleft[1] - 3))
             # This make gray is probably slow...
             gray_version = image_mods.make_gray(partner_image)
             translucent_gray = image_mods.make_translucent(gray_version, 0.25)
+            surf.blit(partner_image, (topleft[0] + 3, topleft[1] - 3))
             surf.blit(translucent_gray, (topleft[0] + 3, topleft[1] - 3))
             surf.blit(image, (topleft[0] - 3, topleft[1] + 3))
         else:

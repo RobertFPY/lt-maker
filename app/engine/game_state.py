@@ -855,6 +855,12 @@ class GameState():
     def get_player_units_and_travelers(self) -> List[UnitObject]:
         return self.get_player_units() + [unit for unit in self.get_travelers() if unit.team == 'player']
 
+    def get_rescuer(self, unit):
+        for rescuer in self.units:
+            if rescuer.traveler == unit.nid:
+                return rescuer
+        return None
+
     def get_rescuers_position(self, unit):
         for rescuer in self.units:
             if rescuer.traveler == unit.nid:

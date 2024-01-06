@@ -1040,6 +1040,11 @@ def kill_unit(self: Event, unit, flags=None):
     if DB.constants.value('initiative'):
         action.do(action.RemoveInitiative(unit))
 
+    # Separate from their rescuer if currently rescued
+    if self.game.get_rescuer(unit):
+        rescuer = self.game.get_rescuer(unit)
+        action.execute(action.Separate(rescuer, unit, rescuer.position))
+
     if not unit.position:
         unit.dead = True
     elif 'immediate' in flags:

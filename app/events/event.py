@@ -629,7 +629,7 @@ class Event():
                 position = static_random.shuffle(valid_regions)[0]
         return position
 
-    def _get_unit(self, unit: UnitPrefab| UnitObject | NID) -> UnitObject:
+    def _get_unit(self, unit: UnitPrefab | UnitObject | NID) -> UnitObject:
         return self.game.get_unit(self._resolve_nid(unit))
 
     def _get_overworld_location_of_object(self, text, entity_only=False, node_only=False) -> OverworldNodeObject:

@@ -3027,7 +3027,7 @@ def draw_overlay_sprite(self: Event, nid, sprite_id, position=None, z_level=0, a
     sprite_nid = sprite_id
     pos = (0, 0)
     if position:
-        pos = tuple(str_utils.intify(position))
+        pos = tuple(position)
     anim_dir = animation
 
     anim_dur = speed

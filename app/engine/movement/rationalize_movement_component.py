@@ -51,8 +51,8 @@ class RationalizeMovementComponent(MovementComponent):
 
     def start(self):
         # What the unit's velocity is
-        x_vector = self.unit.position[0] - self.unit.sprite.get_roam_position()[0]
-        y_vector = self.unit.position[1] - self.unit.sprite.get_roam_position()[1]
+        x_vector = self.goal[0] - self.unit.sprite.get_roam_position()[0]
+        y_vector = self.goal[1] - self.unit.sprite.get_roam_position()[1]
         x_vector, y_vector = utils.normalize((x_vector, y_vector))
         self.x_vel = self.speed * x_vector
         self.y_vel = self.speed * y_vector

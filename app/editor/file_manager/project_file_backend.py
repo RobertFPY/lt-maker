@@ -130,11 +130,12 @@ class ProjectFileBackend():
                 self.is_saving = True
 
                 # ... Then, actually save. 
-                func(self, *args, *kwargs)
+                result = func(self, *args, *kwargs)
                 self.is_saving = False
 
                 # ... Then start it again! Problem solved! (except this resets the timer, but close enough)
                 timer.get_timer().autosave_timer.start()
+                return result
         return wrapper
 
     @save_mutex

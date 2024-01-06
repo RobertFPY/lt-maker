@@ -3419,7 +3419,10 @@ def separate(self: Event, unit, flags=None):
     if not unit.traveler:
         self.logger.error("separate: Unit is not traveling with anybody")
         return
-    action.do(action.RemovePartner(unit))
+    if DB.constants.value('pairup'):
+        action.do(action.Separate(unit, unit.traveler, None))
+    else:
+        action.do(action.RemovePartner(unit))
 
 def create_achievement(self: Event, nid: str, name: str, description: str, flags=None):
     flags = flags or set()

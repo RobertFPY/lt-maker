@@ -245,6 +245,8 @@ class GameState():
         # Build registries
         self.map_sprite_registry = {}
 
+        self.get_region_under_pos.cache_clear()
+
     def level_setup(self):
         from app.engine.initiative import InitiativeTracker
         from app.engine import action
@@ -799,6 +801,7 @@ class GameState():
         region = self.region_registry.get(region_nid)
         return region
 
+    @lru_cache(128)
     def get_region_under_pos(self, pos: Tuple[int, int], region_type: RegionType = None) -> Optional[RegionObject]:
         """
         if region_type arguments is None, all region types are accepted and available to be returned

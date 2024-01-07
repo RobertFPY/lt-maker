@@ -402,11 +402,17 @@ class SimpleCombat():
                     self.defender.team == 'player' and not self.defender.is_dying:
                 game.alerts.append(banner.BrokenItem(self.defender, self.def_item))
                 game.state.change('alert')
-        # No alert - just break the item
+        # Partners
         if attack_partner and item_system.is_broken(attack_partner, attack_partner.get_weapon()):
             item_system.on_broken(attack_partner, attack_partner.get_weapon())
+            if self.alerts and should_alert and self.attacker.team == 'player':
+                game.alerts.append(banner.BrokenItem(attack_partner, attack_partner.get_weapon()))
+                game.state.change('alert')
         if defense_partner and item_system.is_broken(defense_partner, defense_partner.get_weapon()):
             item_system.on_broken(defense_partner, defense_partner.get_weapon())
+            if self.alerts and should_alert and self.defender.team == 'player':
+                game.alerts.append(banner.BrokenItem(defense_partner, defense_partner.get_weapon()))
+                game.state.change('alert')
 
     def handle_unusable_items(self, attack_partner: Optional[UnitObject], defense_partner: Optional[UnitObject]):
         """

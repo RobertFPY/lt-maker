@@ -552,10 +552,10 @@ class SimpleCombat():
         marks = [mark for mark in marks if mark.guard_hit]
         total_exp = 0
         for mark in marks:
-            exp = 10
+            exp = DB.constants.value('exp_magnitude')
             total_exp += exp
 
-        return total_exp
+        return utils.clamp(int(total_exp), DB.constants.value('min_exp'), 100)
 
     def handle_supports(self, all_units) -> list:
         """

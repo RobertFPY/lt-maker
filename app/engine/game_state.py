@@ -245,8 +245,6 @@ class GameState():
         # Build registries
         self.map_sprite_registry = {}
 
-        self.get_region_under_pos.cache_clear()
-
     def level_setup(self):
         from app.engine.initiative import InitiativeTracker
         from app.engine import action

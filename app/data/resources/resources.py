@@ -97,8 +97,7 @@ class Resources():
             getattr(self, data_type).load(os.path.join(self.main_folder, data_type))
 
         # load custom components
-        if not hasattr(sys, 'frozen'):
-            self.load_components()
+        self.load_components()
 
     def load_components(self):
         # For getting custom project components at runtime

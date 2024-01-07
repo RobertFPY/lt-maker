@@ -65,7 +65,7 @@ class EventScriptCompleter(QCompleter):
         if event.key() == self.settings.get_autocomplete_button(Qt.Key_Tab):
             if self.popup().isVisible() and len(self.popup().selectedIndexes()) > 0:
                 self.do_complete(self.popup().selectedIndexes()[0])
-                return True # should not enter a tab
+                return True  # should not enter a tab
         elif event.key() == Qt.Key_Backspace:
             self.popup().hide()
         elif event.key() == Qt.Key_Escape:
@@ -97,7 +97,7 @@ class EventScriptCompleter(QCompleter):
 
         def sizeHint(self, option: QStyleOptionViewItem, index: QModelIndex) -> QSize:
             completion: CompletionEntry = index.data(COMPLETION_DATA_ROLE)
-            return QSize(len(completion.name) * 8, 20)
+            return QSize(len(completion.name) * 8 + 8, 20)
 
         def initStyleOption(self, option: QStyleOptionViewItem, index: QModelIndex) -> None:
             super().initStyleOption(option, index)

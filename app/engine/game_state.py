@@ -801,7 +801,6 @@ class GameState():
         region = self.region_registry.get(region_nid)
         return region
 
-    @lru_cache(128)
     def get_region_under_pos(self, pos: Tuple[int, int], region_type: RegionType = None) -> Optional[RegionObject]:
         """
         if region_type arguments is None, all region types are accepted and available to be returned

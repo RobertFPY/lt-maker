@@ -1731,6 +1731,29 @@ class SetObjData(Action):
         if self.keyword in self.obj.data:
             self.obj.data[self.keyword] = self.old_value
 
+class SetItemOwner(Action):
+    def __init__(self, obj: ItemObject, nid: NID):
+        self.obj = obj
+        self.new_nid = nid
+        self.old_nid = self.obj.owner_nid
+
+    def do(self):
+        self.obj.change_owner(self.new_nid)
+
+    def reverse(self):
+        self.obj.change_owner(self.old_nid)
+
+class SetSkillOwner(Action):
+    def __init__(self, obj: SkillObject, nid: NID):
+        self.obj = obj
+        self.new_nid = nid
+        self.old_nid = self.obj.owner_nid
+
+    def do(self):
+        self.obj.owner_nid = self.new_nid
+
+    def reverse(self):
+        self.obj.owner_nid = self.old_nid
 
 class GainMoney(Action):
     def __init__(self, party_nid, money):

@@ -521,7 +521,7 @@ class GameState():
         a chapter in preparation for the next.
         A non-full cleanup does not
             - Remove any units from the field
-            - Remove all generic units from memory
+            - Remove all non-persistent units from memory
             - Remove all now unused items and skills from memory
             - Remove any regions or terrain statuses
             - Reset level vars
@@ -580,7 +580,7 @@ class GameState():
             self.terrain_status_registry.clear()
             self.region_registry.clear()
 
-            # Remove all generics
+            # Remove all non-persistent units
             self.unit_registry = {k: v for (k, v) in self.unit_registry.items() if v.persistent}
 
             # Remove any skill that's not on a unit and does not have a parent_skill

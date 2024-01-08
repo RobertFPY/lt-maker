@@ -1124,6 +1124,10 @@ def recruit_generic(self: Event, unit, nid, name, flags=None):
     action.do(action.SetPersistent(unit))
     action.do(action.SetNid(unit, nid))
     action.do(action.SetName(unit, name))
+    for item in unit.items:
+        action.do(action.SetItemOwner(item, nid))
+    for skill in unit.all_skills:
+        action.do(action.SetSkillOwner(skill, nid))
 
 def set_name(self: Event, unit, string, flags=None):
     actor = self._get_unit(unit)

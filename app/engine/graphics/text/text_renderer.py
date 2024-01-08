@@ -20,7 +20,7 @@ def anchor_align(x: int, width: int, align: HAlignment, padding: Tuple[int, int]
     given a specific box. For example, supposing the text box is
     this wide:
 
-    A -------- B -------- C
+    padding[0] - A -------- B -------- C - padding[1]
 
     This will return A for left align, B for center align, and C for right align.
     Padding allows this to be offset.

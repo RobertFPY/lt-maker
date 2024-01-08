@@ -25,23 +25,35 @@ class ItemOptionUtils():
     @staticmethod
     def draw_without_uses(surf, x, y, item: ItemObject, font: NID, color: NID, width: int,
                           align: HAlignment = HAlignment.LEFT, disp_text: Optional[str] = None):
-        ItemOptionUtils.draw_icon(surf, x, y, item)
         display_text = disp_text or item.name
         if text_width(font, display_text) > width - 20:
             font = 'narrow'
         blit_loc = anchor_align(x, width, align, (20, 5)), y
+        if align == HAlignment.RIGHT:
+            ItemOptionUtils.draw_icon(surf, blit_loc[0] - 20 - text_width(font, display_text), y, item)
+        elif align == HAlignment.CENTER:
+            blit_loc = (blit_loc[0] + 10, blit_loc[1])
+            ItemOptionUtils.draw_icon(surf, blit_loc[0] - 20 - text_width(font, display_text) // 2, y, item)
+        else:
+            ItemOptionUtils.draw_icon(surf, x, y, item)
         render_text(surf, [font], [display_text], [color], blit_loc, align)
 
     @staticmethod
     def draw_with_uses(surf, x, y, item: ItemObject, font: NID, color: NID, uses_color: NID,
                        width: int, align: HAlignment = HAlignment.LEFT,
                        disp_text: Optional[str] = None):
-        ItemOptionUtils.draw_icon(surf, x, y, item)
         display_text = disp_text or item.name
         uses_font = font
         if text_width(font, display_text) > width - 36:
             font = 'narrow'
         blit_loc = anchor_align(x, width, align, (20, 16)), y
+        if align == HAlignment.RIGHT:
+            ItemOptionUtils.draw_icon(surf, blit_loc[0] - 20 - text_width(font, display_text), y, item)
+        elif align == HAlignment.CENTER:
+            blit_loc = (blit_loc[0] + 10, blit_loc[1])
+            ItemOptionUtils.draw_icon(surf, blit_loc[0] - 20 - text_width(font, display_text) // 2, y, item)
+        else:
+            ItemOptionUtils.draw_icon(surf, x, y, item)
         render_text(surf, [font], [display_text], [color], blit_loc, align)
         uses_string = '--'
         if item.uses:
@@ -62,13 +74,19 @@ class ItemOptionUtils():
     def draw_with_full_uses(surf, x, y, item: ItemObject, font: NID, color: NID, uses_color: NID,
                             width: int, align: HAlignment = HAlignment.LEFT,
                             disp_text: Optional[str] = None):
-        ItemOptionUtils.draw_icon(surf, x, y, item)
         main_font = font
         display_text = disp_text or item.name
         if text_width(main_font, display_text) > width - 56:
             main_font = 'narrow'
         uses_font = font
         blit_loc = anchor_align(x, width, align, (20, 36)), y
+        if align == HAlignment.RIGHT:
+            ItemOptionUtils.draw_icon(surf, blit_loc[0] - 20 - text_width(font, display_text), y, item)
+        elif align == HAlignment.CENTER:
+            blit_loc = (blit_loc[0] + 10, blit_loc[1])
+            ItemOptionUtils.draw_icon(surf, blit_loc[0] - 20 - text_width(font, display_text) // 2, y, item)
+        else:
+            ItemOptionUtils.draw_icon(surf, x, y, item)
         render_text(surf, [main_font], [display_text],
                     [color], blit_loc, align)
 
@@ -262,15 +280,21 @@ class BasicSkillOption(BaseOption[SkillObject]):
 
     def draw(self, surf, x, y):
         icon = icons.get_icon(self._value)
-        if icon:
-            surf.blit(icon, (x + 2, y))
         display_text = self._disp_value or self._value.name
         font = self._font
         if text_width(font, display_text) > self.width() - 20:
             font = 'narrow'
         blit_loc = anchor_align(x, self.width(), self._align, (20, 5)), y
+        if icon:
+            if self._align == HAlignment.RIGHT:
+                surf.blit(icon, (blit_loc[0] - 20 - text_width(font, display_text) // 2, y))
+            elif self._align == HAlignment.CENTER:
+                blit_loc = (blit_loc[0] + 10, blit_loc[1])
+                surf.blit(icon, (blit_loc[0] - 20 - text_width(font, display_text) // 2 + 2, y))
+            else:
+                surf.blit(icon, (x + 2, y))
         color = self.get_color()
-        render_text(surf, [font], [display_text], [color], blit_loc)
+        render_text(surf, [font], [display_text], [color], blit_loc, self._align)
 
 
 class BasicIconOption(BaseOption[str]):
@@ -299,12 +323,18 @@ class BasicIconOption(BaseOption[str]):
 
     def draw(self, surf, x, y):
         icon = icons.get_icon_by_name(self._icon_name)
-        if icon:
-            surf.blit(icon, (x + 2, y))
         display_text = self._value
         font = self._font
         if text_width(font, display_text) > self.width() - 20:
             font = 'narrow'
         blit_loc = anchor_align(x, self.width(), self._align, (20, 5)), y
+        if icon:
+            if self._align == HAlignment.RIGHT:
+                surf.blit(icon, (blit_loc[0] - 20 - text_width(font, display_text) // 2, y))
+            elif self._align == HAlignment.CENTER:
+                blit_loc = (blit_loc[0] + 10, blit_loc[1])
+                surf.blit(icon, (blit_loc[0] - 20 - text_width(font, display_text) // 2 + 2, y))
+            else:
+                surf.blit(icon, (x + 2, y))
         color = self.get_color()
-        render_text(surf, [font], [display_text], [color], blit_loc)
+        render_text(surf, [font], [display_text], [color], blit_loc, self._align)

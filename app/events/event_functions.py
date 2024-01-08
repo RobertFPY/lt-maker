@@ -2836,9 +2836,9 @@ def choice(self: Event, nid: NID, title: str, choices: str, row_width: int = 0, 
         'local_args': self.local_args
     }
     self.game.memory['player_choice'] = (nid, header, data, row_width,
-                                    orientation, entry_type, should_persist,
-                                    alignment, bg, event_nid, size, no_cursor,
-                                    arrows, scroll_bar, text_align, backable, event_context)
+                                         orientation, entry_type, should_persist,
+                                         alignment, bg, event_nid, size, no_cursor,
+                                         arrows, scroll_bar, text_align, backable, event_context)
     self.game.state.change('player_choice')
     self.state = 'paused'
 

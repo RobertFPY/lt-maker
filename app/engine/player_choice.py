@@ -160,6 +160,8 @@ class PlayerChoiceState(MapState):
             return 'repeat'
 
     def draw(self, surf):
+        if not self.started:
+            return
         draw_mode = CursorDrawMode.NO_DRAW
         if not self.no_cursor:
             draw_mode = CursorDrawMode.DRAW if game.state.current_state(

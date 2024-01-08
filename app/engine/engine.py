@@ -140,8 +140,8 @@ def save_surface(surf, fn):
 
 def subsurface(surf, rect) -> pygame.Surface:
     x, y, width, height = rect
-    twidth = min(surf.get_width() - x, width)
-    theight = min(surf.get_height() - y, height)
+    twidth = max(0, min(surf.get_width() - x, width))
+    theight = max(0, min(surf.get_height() - y, height))
     tx = max(0, x)
     ty = max(0, y)
     return surf.subsurface(tx, ty, twidth, theight)
@@ -274,7 +274,7 @@ def get_mouse_focus():
 
 # === loop functions ===
 DISPLAYSURF = None
-SCREENSIZE = (WINWIDTH * cf.SETTINGS['screen_size'], WINHEIGHT * cf.SETTINGS['screen_size'])
+SCREENSIZE = (WINWIDTH * min(cf.SETTINGS['screen_size'], 5), WINHEIGHT * min(cf.SETTINGS['screen_size'], 5))
 
 class Clock():
     def __init__(self) -> None:

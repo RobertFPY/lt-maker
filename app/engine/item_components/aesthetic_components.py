@@ -134,7 +134,7 @@ class Warning(ItemComponent):
     desc = "A yellow exclamation mark appears above the wielder's head. Often used for killing weapons."
     tag = ItemTags.AESTHETIC
 
-    def target_icon(self, target, item, unit) -> str:
+    def target_icon(self, unit, item, target) -> str:
         return 'warning' if item_funcs.available(unit, item) and skill_system.check_enemy(target, unit) else None
 
 class EvalWarning(ItemComponent):
@@ -145,7 +145,7 @@ class EvalWarning(ItemComponent):
     expose = ComponentType.String
     value = 'True'
 
-    def target_icon(self, target, item, unit) -> bool:
+    def target_icon(self, unit, item, target) -> bool:
         from app.engine import evaluate
         if not skill_system.check_enemy(target, unit):
             return None

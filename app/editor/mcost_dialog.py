@@ -135,7 +135,7 @@ class ColumnHeaderView(QHeaderView):
                     for klass in affected_classes:
                         klass.movement_group = swap
                 else:
-                    return # User cancelled swap
+                    return  # User cancelled swap
             self.parent().model().delete_col(idx)
         else:
             QMessageBox.critical(self.parent(), 'Error', 'Cannot delete when only one column left!')

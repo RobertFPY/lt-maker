@@ -71,7 +71,7 @@ class EffectiveDamage(ItemComponent):
                 sprite = image_mods.make_white(sprite.convert_alpha(), abs(250 - engine.get_time()%500)/250)
         return sprite
 
-    def target_icon(self, target, item, unit) -> Optional[str]:
+    def target_icon(self, unit, item, target) -> Optional[str]:
         if item_funcs.available(unit, item) and skill_system.check_enemy(target, unit):
             if self._check_effective(target):
                 return 'danger'

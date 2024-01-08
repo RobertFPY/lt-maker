@@ -16,7 +16,7 @@ class UnitPrefab(Prefab):
     variant: Optional[str] = None
 
     level: int = 1
-    klass: str = None
+    klass: NID = None
 
     tags: List[NID] = field(default_factory=list)
     bases: Dict[NID, int] = field(default_factory=dict)

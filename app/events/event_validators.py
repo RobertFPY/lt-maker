@@ -366,6 +366,9 @@ class WholeNumber(Integer):
             return int(text)
         return None
 
+    def convert(self, text: str):
+        return int(text)
+
 class Time(Integer):
     desc = "indicates a duration"
 class Volume(Float):

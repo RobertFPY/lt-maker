@@ -111,7 +111,9 @@ class AIController():
             else:
                 path = game.path_system.get_path(self.unit, self.goal_position)
                 game.state.change('movement')
-                action.do(action.Move(self.unit, self.goal_position, path))
+                # If we pass in speed=0 to Move it'll use your unit_speed setting
+                speedup = 10 if self.do_skip else 0
+                action.do(action.Move(self.unit, self.goal_position, path, speed=speedup))
             return True
         else:
             return False
@@ -397,7 +399,7 @@ class PrimaryAI():
     def get_all_valid_targets(self):
         item = self.items[self.item_index]
         logging.info("Determining targets for item: %s", item)
-        self.valid_targets = list(game.target_system.get_all_valid_targets(self.unit, self.valid_moves, [item]))
+        self.valid_targets = list(game.target_system.get_ai_targets(self.unit, self.valid_moves, [item]))
         # Only if we already have some legal targets (ie, ourself)
         if self.valid_targets and 0 in item_funcs.get_range(self.unit, item):
             self.valid_targets += self.valid_moves  # Hack to target self in all valid positions
@@ -476,8 +478,9 @@ class PrimaryAI():
 
     def determine_utility(self, move, target_pos, item):
         tp = 0
-        main_target_pos, splash = item_system.splash(self.unit, item, target_pos)
-        if item_system.target_restrict(self.unit, item, main_target_pos, splash):
+        assert self.unit.position == move
+        if game.target_system.check_target_from_position(self.unit, item, target_pos):
+            main_target_pos, splash = game.target_system.get_target_from_position(self.unit, item, target_pos)
             tp = self.compute_priority(main_target_pos, splash, move, item)
 
         target = game.board.get_unit(target_pos)

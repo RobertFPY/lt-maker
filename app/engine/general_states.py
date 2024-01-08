@@ -106,7 +106,7 @@ class TurnChangeState(MapState):
                 # Apply pair up bonuses to units starting with a traveler on the first turn
                 if game.turncount - 1 <= 0:
                     skill_system.on_pairup(game.get_unit(unit.traveler), unit)
-            if unit.built_guard: # Switch built_guard to false for all units
+            if unit.built_guard:  # Switch built_guard to false for all units
                 action.do(action.BuiltGuard(unit))
 
     def end(self):
@@ -359,11 +359,11 @@ class FreeState(MapState):
     def _select_next_available_unit(self):
         avail_units = [
             u for u in game.units
-            if u.team == 'player' and
-            u.position and
-            not u.finished and
-            skill_system.can_select(u) and
-            'Tile' not in u.tags]
+            if u.team == 'player' 
+            and u.position 
+            and not u.finished 
+            and skill_system.can_select(u)
+            and 'Tile' not in u.tags]
 
         if avail_units:
             cur_unit = game.cursor.get_hover()
@@ -875,7 +875,7 @@ class MenuState(MapState):
                     # No duplicates
                     if truth and region.sub_nid not in options:
                         options.append(region.sub_nid)
-                        info_descs.append(None) # Could add actual descriptions later, somehow
+                        info_descs.append(None)  # Could add actual descriptions later, somehow
                         self.valid_regions.append(region)
                 except:
                     logging.error("Region condition {%s} could not be evaluated" % region.condition)
@@ -886,7 +886,7 @@ class MenuState(MapState):
             self.target_dict[ability.name] = ability
             if t:
                 options.append(ability.name)
-                info_descs.append(ability.name + '_desc') # Could add actual descriptions later
+                info_descs.append(ability.name + '_desc')  # Could add actual descriptions later
 
         options.append("Wait")
         info_descs.append("Wait_desc")
@@ -1026,7 +1026,7 @@ class MenuState(MapState):
                 for region in self.valid_regions:
                     if region.sub_nid == selection:
                         did_trigger = game.events.trigger(triggers.RegionTrigger(selection, self.cur_unit, self.cur_unit.position, region))
-                        if not did_trigger: # maybe this uses the more dynamic region trigger
+                        if not did_trigger:  # maybe this uses the more dynamic region trigger
                             did_trigger = game.events.trigger(triggers.OnRegionInteract(self.cur_unit, self.cur_unit.position, region))
                         if did_trigger:
                             self.menu = None  # Remove menu for a little (Don't worry, it will come back)
@@ -1051,7 +1051,7 @@ class MenuState(MapState):
                         else:
                             game.memory['valid_weapons'] = all_weapons
                         game.state.change('weapon_choice')
-                    else: # multi item of spells?
+                    else:  # multi item of spells?
                         all_spells = [subitem for subitem in item.subitems if item_funcs.is_spell_recursive(self.cur_unit, subitem) and
                                       game.target_system.get_valid_targets_recursive_with_availability_check(self.cur_unit, subitem)]
                         if item.multi_item_hides_unavailable:

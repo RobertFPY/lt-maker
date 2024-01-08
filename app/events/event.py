@@ -629,15 +629,16 @@ class Event():
                 position = static_random.shuffle(valid_regions)[0]
         return position
 
-    def _get_unit(self, unit: UnitPrefab| UnitObject | NID) -> UnitObject:
+    def _get_unit(self, unit: UnitPrefab | UnitObject | NID) -> UnitObject:
         return self.game.get_unit(self._resolve_nid(unit))
 
     def _get_overworld_location_of_object(self, text, entity_only=False, node_only=False) -> OverworldNodeObject:
         if self.game.overworld_controller:
             if not node_only and text in self.game.overworld_controller.entities:
                 entity_at_nid = self.game.overworld_controller.entities[text]
-                if entity_at_nid:
-                    return entity_at_nid.node
+                if entity_at_nid.on_node:
+                    entity_node = self.game.overworld_controller.nodes[entity_at_nid.on_node]
+                    return entity_node
 
             if not entity_only and text in self.game.overworld_controller.nodes:
                 node_at_nid = self.game.overworld_controller.nodes[text]

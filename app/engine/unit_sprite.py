@@ -546,10 +546,10 @@ class UnitSprite():
             partner = game.get_unit(self.unit.traveler)
             partner_image = partner.sprite.create_image(self.image_state)
             partner_image = partner_image.convert_alpha()
-            surf.blit(partner_image, (topleft[0] + 3, topleft[1] - 3))
             # This make gray is probably slow...
             gray_version = image_mods.make_gray(partner_image)
             translucent_gray = image_mods.make_translucent(gray_version, 0.25)
+            surf.blit(partner_image, (topleft[0] + 3, topleft[1] - 3))
             surf.blit(translucent_gray, (topleft[0] + 3, topleft[1] - 3))
             surf.blit(image, (topleft[0] - 3, topleft[1] + 3))
         else:
@@ -604,8 +604,8 @@ class UnitSprite():
             markers.append('interact')
         if cur_unit.team == 'player':
             for item in item_funcs.get_all_items(self.unit):
-                markers += item_system.target_icon(cur_unit, item, self.unit)
-            markers += skill_system.target_icon(cur_unit, self.unit)
+                markers += item_system.target_icon(self.unit, item, cur_unit)
+            markers += skill_system.target_icon(self.unit, cur_unit)
         markers = [SPRITES.get('marker_%s' % marker) for marker in markers if marker]
         markers = [_ for _ in markers if _]  # Only include non-None
         if markers:

@@ -5,7 +5,7 @@ import os
 from typing import Optional
 
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QApplication, QFileDialog
+from PyQt5.QtWidgets import QApplication, QFileDialog, QMessageBox
 
 from app.data.database.database import DB
 from app.data.database.units import UnitCatalog
@@ -33,6 +33,15 @@ class NewUnitDatabase(NewEditorTab):
         if pix:
             return QIcon(pix.scaled(32, 32))
         return None
+
+    def create_new(self, nid):
+        if self.data.get(nid):
+            QMessageBox.warning(self, 'Warning', 'ID %s already in use' % nid)
+            return False
+        new_unit = self.catalog_type.datatype(nid, nid, '')
+        new_unit.klass = self._db.classes[0].nid
+        self.data.append(new_unit)
+        return True
 
     def import_xml(self):
         settings = MainSettingsController()

@@ -23,6 +23,7 @@ class MockGame():
     def __init__(self):
         self.speak_styles = speak_style.SpeakStyleLibrary()
         self.movement = None
+        self.action_log = None
 
 class MockEvent(Event):
     # These are the only commands that will be processed by this event

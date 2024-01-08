@@ -190,12 +190,13 @@ class ScreenSizeOption(SliderOption):
     def update_screen_size(self):
         n = self.get_value()
         true_n = min(n, 5)
-        engine.SCREENSIZE = (WINWIDTH * true_n, WINHEIGHT * true_n)
+        requested_screensize = (WINWIDTH * true_n, WINHEIGHT * true_n)
         if n == self.values[-1]:
             cf.SETTINGS['fullscreen'] = 1
         else:
             cf.SETTINGS['fullscreen'] = 0
-        engine.DISPLAYSURF = engine.build_display(engine.SCREENSIZE)
+        engine.DISPLAYSURF = engine.build_display(requested_screensize)
+        engine.SCREENSIZE = (engine.DISPLAYSURF.get_width(), engine.DISPLAYSURF.get_height())
 
     def move_left(self):
         super().move_left()

@@ -35,6 +35,11 @@ class CursorHand():
 
     def draw(self, surf, topleft) -> engine.Surface:
         x, y = topleft
-        engine.blit(surf, self.cursor_sprite, (x + self.get_offset(), y + self.y_offset))
+        if self.mode == CursorDrawMode.DRAW:
+            engine.blit(surf, self.cursor_sprite, (x + self.get_offset(), y + self.y_offset))
+        elif self.mode == CursorDrawMode.DRAW_STATIC:
+            engine.blit(surf, self.cursor_sprite, (x, y + self.y_offset))
+        else:
+            pass  # Don't draw
         self.update_y_offset()
         return surf

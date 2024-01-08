@@ -35,7 +35,7 @@ class TargetsEnemies(ItemComponent):
 
     def valid_targets(self, unit, item) -> set:
         return {other.position for other in game.units if other.position and
-                   skill_system.check_enemy(unit, other)}
+                skill_system.check_enemy(unit, other)}
 
 class TargetsAllies(ItemComponent):
     nid = 'target_ally'

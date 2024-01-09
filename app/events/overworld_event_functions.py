@@ -89,6 +89,9 @@ def overworld_move_unit(self: Event, overworld_entity: NID, overworld_location: 
 
     # function
     entity = game.overworld_controller.entities.get(entity_nid, None)
+    if not entity:
+        self.logger.error("%s: Could not find an entity with nid %s", 'overworld_move_unit', entity_nid)
+        return
     if not entity.display_position:
         self.logger.error("%s: Attempting to move entity %s with no position - is it on the overworld?", 'overworld_move_unit', entity_nid)
         return

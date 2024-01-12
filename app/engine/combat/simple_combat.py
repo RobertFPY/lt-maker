@@ -403,12 +403,12 @@ class SimpleCombat():
                 game.alerts.append(banner.BrokenItem(self.defender, self.def_item))
                 game.state.change('alert')
         # Partners
-        if attack_partner and item_system.is_broken(attack_partner, attack_partner.get_weapon()):
+        if attack_partner and attack_partner.get_weapon() and item_system.is_broken(attack_partner, attack_partner.get_weapon()):
             item_system.on_broken(attack_partner, attack_partner.get_weapon())
             if self.alerts and should_alert and self.attacker.team == 'player':
                 game.alerts.append(banner.BrokenItem(attack_partner, attack_partner.get_weapon()))
                 game.state.change('alert')
-        if defense_partner and item_system.is_broken(defense_partner, defense_partner.get_weapon()):
+        if defense_partner and defense_partner.get_weapon() and item_system.is_broken(defense_partner, defense_partner.get_weapon()):
             item_system.on_broken(defense_partner, defense_partner.get_weapon())
             if self.alerts and should_alert and self.defender.team == 'player':
                 game.alerts.append(banner.BrokenItem(defense_partner, defense_partner.get_weapon()))

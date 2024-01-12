@@ -1921,7 +1921,11 @@ def remove_skill(self: Event, global_unit, skill, count=-1, flags=None):
         return
     banner_flag = 'no_banner' not in flags
 
-    action.do(action.RemoveSkill(unit, found_skill, count))
+    if count == 1 or str_utils.is_int(skill):
+        # use the object if we specifically requested it as a uid OR we only remove 1
+        action.do(action.RemoveSkill(unit, found_skill, count))
+    else:
+        action.do(action.RemoveSkill(unit, skill, count))
     if banner_flag:
         b = banner.TakeSkill(unit, found_skill)
         self.game.alerts.append(b)

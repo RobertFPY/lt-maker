@@ -242,11 +242,12 @@ def mirror_portrait(self: Event, portrait, flags=None):
             commands = []
             commands.append(event_commands.RemovePortrait({'Portrait': name}, {'no_block'}))
             command_flags = set()
-            if not self.portraits[name].mirror:
+
+            if (not event_portrait.mirror) ^ (event_portrait.position[0] < WINWIDTH // 2):
                 command_flags.add("mirror")
             if 'no_block' in flags:
                 command_flags.add("no_block")
-            commands.append(event_commands.AddPortrait({'Portrait': name, 'ScreenPosition': str(self.portraits[name].position)}, command_flags))
+            commands.append(event_commands.AddPortrait({'Portrait': name, 'ScreenPosition': event_portrait.position}, command_flags))
             self.command_queue += commands
         else:
             # Immediate removal followed by a transition in

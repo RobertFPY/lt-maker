@@ -3228,6 +3228,30 @@ def ending(self: Event, portrait, title, text, flags=None):
     self.text_boxes.append(new_ending)
     self.state = 'dialog'
 
+def paired_ending(self: Event, left_portrait, right_portrait, left_title, right_title, text, flags=None):
+    left_unit = self._get_unit(left_portrait)
+    if left_unit and left_unit.portrait_nid:
+        left_portrait, _ = icons.get_portrait(left_unit)
+        left_portrait = engine.flip_horiz(left_portrait)
+        left_portrait = left_portrait.convert_alpha()
+        left_portrait = image_mods.make_translucent(left_portrait, 0.5)
+    else:
+        self.logger.error("ending: Couldn't find unit or portrait %s" % left_portrait)
+        return False
+
+    right_unit = self._get_unit(right_portrait)
+    if right_unit and right_unit.portrait_nid:
+        right_portrait, _ = icons.get_portrait(right_unit)
+        right_portrait = right_portrait.convert_alpha()
+        right_portrait = image_mods.make_translucent(right_portrait, 0.5)
+    else:
+        self.logger.error("ending: Couldn't find unit or portrait %s" % right_portrait)
+        return False
+
+    new_ending = dialog.PairedEnding(left_portrait, right_portrait, left_title, right_title, text, left_unit, right_unit)
+    self.text_boxes.append(new_ending)
+    self.state = 'dialog'
+
 def pop_dialog(self: Event, flags=None):
     if self.text_boxes:
         self.text_boxes.pop()

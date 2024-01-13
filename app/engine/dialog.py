@@ -4,7 +4,7 @@ from typing import Callable, List
 
 from app.constants import WINHEIGHT, WINWIDTH
 from app.engine import config as cf
-from app.events import event_portrait, screen_positions, event_commands
+from app.events import event_portrait, screen_positions
 from app.engine import engine, image_mods, text_funcs
 from app.engine.base_surf import create_base_surf
 from app.engine.fonts import FONT
@@ -17,7 +17,7 @@ from app.engine.sound import get_sound_thread
 from app.engine.sprites import SPRITES
 from app.events.speak_style import SpeakStyle
 from app.utilities import utils
-from app.utilities.enums import Alignments
+from app.utilities.enums import Alignments, HAlignment
 
 import logging
 
@@ -814,19 +814,21 @@ class Ending():
         self.font = FONT['text']
         self.font_name = 'text'
 
-        # Build dialog
-        self.dialog = Dialog(text, num_lines=6, draw_cursor=False)
+        self.build_dialog()
+
+        self.make_background()
+        self.x_position = WINWIDTH
+
+        self.wait_update = 0
+
+    def build_dialog(self):
+        self.dialog = Dialog(self.plain_text, num_lines=6, draw_cursor=False)
         self.dialog.position = (8, 40)
         self.dialog.text_width = WINWIDTH - 32
         self.dialog.width = self.dialog.text_width + 16
         self.dialog.font = FONT['text']
         self.dialog.font_type = 'text'
         self.dialog.font_color = 'white'
-
-        self.make_background()
-        self.x_position = WINWIDTH
-
-        self.wait_update = 0
 
     def make_background(self):
         size = WINWIDTH, WINHEIGHT
@@ -899,3 +901,76 @@ class Ending():
         bg = self.bg.copy()
         self.dialog.draw(bg)
         surf.blit(bg, (self.x_position, 0))
+
+class PairedEnding(Ending):
+    """
+    Contains a dialog
+    """
+    background = SPRITES.get('paired_endings_display')
+
+    def __init__(self, left_portrait, right_portrait, left_title, right_title, text, left_unit, right_unit):
+        self.left_portrait = left_portrait
+        self.right_portrait = right_portrait
+        self.left_title = left_title
+        self.right_title = right_title
+        self.plain_text = text
+        self.speaker = None  # Unused attribute to match Dialog
+        self.left_unit = left_unit  # Used in stats
+        self.right_unit = right_unit
+        self.font_name = 'text'
+
+        self.build_dialog()
+
+        self.make_background()
+        self.x_position = WINWIDTH
+
+        self.wait_update = 0
+
+    def make_background(self):
+        size = WINWIDTH, WINHEIGHT
+        self.bg = engine.create_surface(size, transparent=True)
+        self.bg.blit(self.background, (0, 0))
+        self.bg.blit(self.left_portrait, (8, 49))
+        self.bg.blit(self.right_portrait, (136, 49))
+
+        render_text(self.bg, [self.font_name], [self.left_title], [None], (68, 24), align=HAlignment.CENTER)
+        render_text(self.bg, [self.font_name], [self.right_title], [None], (WINWIDTH - 68, WINHEIGHT - 24), align=HAlignment.CENTER)
+
+        # Stats
+        if self.left_unit:
+            kills = game.records.get_kills(self.left_unit.nid)
+            damage = game.records.get_damage(self.left_unit.nid)
+            healing = game.records.get_heal(self.left_unit.nid)
+
+            FONT['text-yellow'].blit(text_funcs.translate('K'), self.bg, (136, 8))
+            FONT['text-yellow'].blit(text_funcs.translate('D'), self.bg, (168, 8))
+            FONT['text-yellow'].blit(text_funcs.translate('H'), self.bg, (200, 8))
+            FONT['text-blue'].blit(str(kills), self.bg, (144, 8))
+            dam = str(damage)
+            if damage >= 1000:
+                dam = dam[:-3] + '.' + dam[-3] + 'k'
+            heal = str(healing)
+            if healing >= 1000:
+                heal = heal[:-3] + '.' + heal[-3] + 'k'
+            FONT['text-blue'].blit(dam, self.bg, (176, 8))
+            FONT['text-blue'].blit(heal, self.bg, (208, 8))
+
+        if self.right_unit:
+            kills = game.records.get_kills(self.right_unit.nid)
+            damage = game.records.get_damage(self.right_unit.nid)
+            healing = game.records.get_heal(self.right_unit.nid)
+
+            FONT['text-yellow'].blit(text_funcs.translate('K'), self.bg, (8, WINHEIGHT - 23))
+            FONT['text-yellow'].blit(text_funcs.translate('D'), self.bg, (40, WINHEIGHT - 23))
+            FONT['text-yellow'].blit(text_funcs.translate('H'), self.bg, (72, WINHEIGHT - 23))
+            FONT['text-blue'].blit(str(kills), self.bg, (16, WINHEIGHT - 23))
+            dam = str(damage)
+            if damage >= 1000:
+                dam = dam[:-3] + '.' + dam[-3] + 'k'
+            heal = str(healing)
+            if healing >= 1000:
+                heal = heal[:-3] + '.' + heal[-3] + 'k'
+            FONT['text-blue'].blit(dam, self.bg, (48, WINHEIGHT - 23))
+            FONT['text-blue'].blit(heal, self.bg, (80, WINHEIGHT - 23))
+
+        return self.bg

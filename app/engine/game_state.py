@@ -559,6 +559,7 @@ class GameState():
             if full:
                 unit.position = None
             unit.sprite.change_state('normal')
+            unit.sprite.reset()
             unit.reset()
 
         for item in list(self.item_registry.values()):

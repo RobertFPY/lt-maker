@@ -1,7 +1,7 @@
 from __future__ import annotations
 import logging
 import math
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Dict
 
 from app.data.database.database import DB
 from app.engine import item_system, skill_system, text_funcs
@@ -150,6 +150,15 @@ def get_all_items_with_multiitems(item_list) -> list:
             items += subitems
         items.append(item)
     return items
+
+def get_all_items_and_abilities(unit) -> List[ItemObject]:
+    """
+    Use this to get all items if you want to be able to handle multi_items 
+    AND you want any extra abilities the unit has access to
+    """
+    items = get_all_items(unit)
+    extra_abilities: Dict[str, ItemObject] = skill_system.get_extra_abilities(unit)
+    return items + [ability for name, ability in extra_abilities.items()]
 
 def is_weapon_recursive(unit, item) -> bool:
     if item_system.is_weapon(unit, item):

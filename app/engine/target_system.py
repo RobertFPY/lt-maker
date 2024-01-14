@@ -250,7 +250,7 @@ class TargetSystem():
         return attacks
 
     def get_all_attackable_positions_weapons(self, unit: UnitObject, valid_moves: List[Pos], force=False) -> Set[Pos]:
-        """Returns all positions that the unit can attack with their WEAPONS given a list of valid moves to attack from
+        """Returns all positions that the unit can attack with their WEAPONS and weapon-like abilities given a list of valid moves to attack from
 
         Takes into account the item's range, any positional restrictions, and game board bounds.
         Does not attempt to determine if an enemy is actually in the location or
@@ -264,10 +264,10 @@ class TargetSystem():
         Returns:
             All attackable positions
         """
-        return self._get_all_attackable_positions(unit, valid_moves, self._get_all_weapons(unit), force)
+        return self._get_all_attackable_positions(unit, valid_moves, self._get_all_weapons(unit, show_abilities=True), force)
 
     def get_all_attackable_positions_spells(self, unit: UnitObject, valid_moves: List[Pos], force=False) -> Set[Pos]:
-        """Returns all positions that the unit can attack with their SPELLS given a list of valid moves to attack from
+        """Returns all positions that the unit can attack with their SPELLS and spell-like abilities given a list of valid moves to attack from
 
         Takes into account the item's range, any positional restrictions, and game board bounds.
         Does not attempt to determine if an enemy is actually in the location or
@@ -281,7 +281,7 @@ class TargetSystem():
         Returns:
             All attackable positions
         """
-        return self._get_all_attackable_positions(unit, valid_moves, self._get_all_spells(unit), force)
+        return self._get_all_attackable_positions(unit, valid_moves, self._get_all_spells(unit, show_abilities=True), force)
 
     def get_possible_attack_positions(self, unit: UnitObject, target: Pos, moves: Set[Pos],
                                       item: ItemObject) -> List[Pos]:
@@ -433,10 +433,15 @@ class TargetSystem():
 
     # === Item Filtering ===
     def get_weapons(self, unit: UnitObject) -> List[ItemObject]:
+        # Explicitly does not consider extra abilities since it's used within the Attack menu
         return [item for item in unit.items if item_funcs.is_weapon_recursive(unit, item) and item_funcs.available(unit, item)]
 
-    def _get_all_weapons(self, unit: UnitObject) -> List[ItemObject]:
-        return [item for item in item_funcs.get_all_items(unit) if item_system.is_weapon(unit, item) and item_funcs.available(unit, item)]
+    def _get_all_weapons(self, unit: UnitObject, show_abilities: bool = False) -> List[ItemObject]:
+        if DB.constants.value("show_abilities") and show_abilities:
+            items = item_funcs.get_all_items_and_abilities(unit)
+        else:
+            items = item_funcs.get_all_items(unit)
+        return [item for item in items if item_system.is_weapon(unit, item) and item_funcs.available(unit, item)]
 
     def get_all_weapon_targets(self, unit: UnitObject) -> Set[Pos]:
         weapons: List[ItemObject] = self._get_all_weapons(unit)
@@ -446,10 +451,15 @@ class TargetSystem():
         return targets
 
     def get_spells(self, unit: UnitObject) -> List[ItemObject]:
+        # Explicitly does not consider extra abilities since it's used within the Spell menu
         return [item for item in unit.items if item_funcs.is_spell_recursive(unit, item) and item_funcs.available(unit, item)]
 
-    def _get_all_spells(self, unit: UnitObject) -> List[ItemObject]:
-        return [item for item in item_funcs.get_all_items(unit) if item_system.is_spell(unit, item) and item_funcs.available(unit, item)]
+    def _get_all_spells(self, unit: UnitObject, show_abilities: bool = False) -> List[ItemObject]:
+        if DB.constants.value("show_abilities") and show_abilities:
+            items = item_funcs.get_all_items_and_abilities(unit)
+        else:
+            items = item_funcs.get_all_items(unit)
+        return [item for item in items if item_system.is_spell(unit, item) and item_funcs.available(unit, item)]
 
     def get_all_spell_targets(self, unit: UnitObject) -> Set[Pos]:
         spells: List[ItemObject] = self._get_all_spells(unit)
@@ -467,13 +477,13 @@ class TargetSystem():
             return None, None
         if not attacker or not defender:
             return None, None
-        if skill_system.check_ally(attacker, defender): # If targeting an ally
+        if skill_system.check_ally(attacker, defender):  # If targeting an ally
             return None, None
-        if attacker.traveler or defender.traveler: # Dual guard cancels
+        if attacker.traveler or defender.traveler:  # Dual guard cancels
             return None, None
-        if not item_system.is_weapon(attacker, item): # If you're healing someone else
+        if not item_system.is_weapon(attacker, item):  # If you're healing someone else
             return None, None
-        if attacker.team == defender.team: # If you are the same team. Catches components who define their own check_ally function
+        if attacker.team == defender.team:  # If you are the same team. Catches components who define their own check_ally function
             return None, None
 
         attacker_partner = None

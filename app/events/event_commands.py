@@ -2911,6 +2911,18 @@ The (*Scroll*) flag determines whether the background image will move.
     keyword_types = ['Panorama']
     _flags = ["scroll", "immediate"]
 
+class OpenTrade(EventCommand):
+    nid = 'open_trade'
+    tag = Tags.MISCELLANEOUS
+
+    desc = \
+        """
+Opens the trade screen for the two given units, allowing the player to trade items between them as desired.
+        """
+
+    keywords = ['Unit1', 'Unit2']
+    keyword_types = ['Unit', 'Unit']
+
 class LocationCard(EventCommand):
     nid = 'location_card'
     tag = Tags.DIALOGUE_TEXT

@@ -3193,6 +3193,27 @@ def open_unit_management(self: Event, panorama=None, flags=None):
         self.game.memory['next_state'] = 'base_manage'
         self.game.state.change('transition_to')
 
+def open_trade(self: Event, unit1, unit2, flags=None):
+    flags = flags or set()
+
+    unit1_obj = self._get_unit(unit1)
+    if not unit1_obj:
+        self.logger.error("open_trade: Could not find unit %s" % unit1)
+        return
+
+    unit2_obj = self._get_unit(unit2)
+    if not unit2_obj:
+        self.logger.error("open_trade: Could not find unit %s" % unit2)
+        return
+
+    # Make sure the trade state knows who's trading
+    self.game.cursor.cur_unit = unit1_obj
+    self.game.memory['trade_partner'] = unit2_obj
+
+    self.state = "paused"
+    self.game.memory['next_state'] = 'trade'
+    self.game.state.change('transition_to')
+
 def location_card(self: Event, string, flags=None):
     new_location_card = dialog.LocationCard(string)
     self.other_boxes.append((None, new_location_card))

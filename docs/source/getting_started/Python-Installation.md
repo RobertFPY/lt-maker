@@ -131,8 +131,7 @@ pip install -r requirements_editor.txt
 python -m pip install -r requirements_editor.txt
 ```
 
-Wow, that was easy. It should've installed, along with all other dependencies, pygame version 1.9.6, which is the version I use.
-Do not use Pygame 2.0+. Pygame 2.0+ is a newer version of Pygame, but as of May 1, 2021 it still has several outstanding bugs.
+Wow, that was easy. It should've installed, along with all other dependencies.
 
 Test if it works
 

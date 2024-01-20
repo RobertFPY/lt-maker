@@ -172,7 +172,7 @@ class AutotileMaker():
 
             assert all(len(series) == AUTOTILE_FRAMES for series in minitiles)
             self.books.append(minitiles)
-            self.progress_dialog.setValue(20 * idx / len(self.autotile_templates))
+            self.progress_dialog.setValue(20 * int(idx / len(self.autotile_templates)))
         return True
 
     def palettize_tileset(self):

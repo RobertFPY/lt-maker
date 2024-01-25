@@ -139,11 +139,6 @@ class UnitStatisticsTable(uif.UIComponent):
 
         self.width = self.max_width * self.MAX_PAGES
 
-        # initial cull
-        for idx, col in enumerate(self.children):
-            if idx + 1 not in self.col_indices_for_page(0):
-                col.disable()
-
     @property
     def cursor_pos(self):
         return self.parent.cursor_pos
@@ -212,9 +207,6 @@ class UnitStatisticsTable(uif.UIComponent):
             scroll_right_anim = component_scroll_anim(self.scroll, (min(self.scroll[0] + self.width, self.twidth - self.width), self.scroll[1]), 250)
             self.queue_animation(animations=[scroll_right_anim])
             self.page += 1
-        for idx, col in enumerate(self.children):
-            if idx in self.col_indices_for_page(self.page):
-                col.enable()
 
     def scroll_left(self):
         if self.page > 0:

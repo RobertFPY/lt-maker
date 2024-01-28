@@ -586,6 +586,9 @@ def set_next_chapter(self: Event, chapter, flags=None):
         return
     action.do(action.SetGameVar("_goto_level", chapter))
 
+def enable_convoy(self: Event, activated: bool, flags=None):
+    action.do(action.SetGameVar("_convoy", activated))
+
 def enable_supports(self: Event, activated: bool, flags=None):
     action.do(action.SetGameVar("_supports", activated))
 
@@ -1173,6 +1176,26 @@ def set_unit_field(self: Event, unit, key, value, flags=None):
     if 'increment_mode' in flags:
         should_increment = True
     action.do(action.ChangeField(actor, key, value, should_increment))
+
+def set_unit_note(self: Event, unit, key: str, value: str, flags=None):
+    actor = self._get_unit(unit)
+    if not actor:
+        self.logger.error("set_unit_note: Couldn't find unit %s" % unit)
+        return
+
+    action.do(action.SetUnitNote(actor, key, value))    
+
+def remove_unit_note(self: Event, unit, key: str, flags=None):
+    actor = self._get_unit(unit)
+    if not actor:
+        self.logger.error("remove_unit_note: Couldn't find unit %s" % unit)
+        return
+
+    if key not in (cat for cat, note in actor.notes):
+        self.logger.warning("remove_unit_note: Couldn't find note with category of %s" % key)
+        return
+
+    action.do(action.RemoveUnitNote(actor, key))
 
 def resurrect(self: Event, global_unit, flags=None):
     unit = self._get_unit(global_unit)
@@ -3211,6 +3234,28 @@ def open_trade(self: Event, unit1, unit2, flags=None):
 
     self.state = "paused"
     self.game.memory['next_state'] = 'trade'
+    self.game.state.change('transition_to')
+
+def show_minimap(self: Event, flags=None):
+    cursor_was_hidden = False
+    if self.game.cursor.is_hidden():
+        cursor_was_hidden = True
+        self.game.cursor.show()
+
+    self.state = "paused"
+    self.game.state.change('minimap')
+
+    if cursor_was_hidden:
+        hide_cursor_command = event_commands.DispCursor({'ShowCursor': False})
+        self.command_queue.append(hide_cursor_command)
+
+def open_achievements(self: Event, background: str, flags=None):
+    # Set up the base background
+    self.game.memory['base_bg'] = None
+    action.do(action.SetGameVar('_base_bg_name', background))
+
+    self.state = "paused"
+    self.game.memory['next_state'] = 'base_achievement'
     self.game.state.change('transition_to')
 
 def location_card(self: Event, string, flags=None):

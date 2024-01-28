@@ -1,4 +1,4 @@
-import os, math
+import os
 
 from app import autoupdate
 

@@ -826,26 +826,13 @@ Sets the next chapter the player will go to
 
     keywords = ["Chapter"]
 
-class SetFogOfWar(EventCommand):
-    nid = 'set_fog_of_war'
-    tag = Tags.LEVEL_VARS
+class EnableConvoy(EventCommand):
+    nid = 'enable_convoy'
+    tag = Tags.GAME_VARS
 
     desc = \
         """
-Sets the fog of war state for the current level.
-        """
-
-    keywords = ["FogOfWarType", "Radius"]
-    optional_keywords = ["AIRadius", "OtherRadius"]
-    keyword_types = ["FogOfWarType", "PositiveInteger", "PositiveInteger", "PositiveInteger"]
-
-class EnableFogOfWar(EventCommand):
-    nid = 'enable_fog_of_war'
-    tag = Tags.LEVEL_VARS
-
-    desc = \
-        """
-Activates or deactivates base level of fog of war. Does not affect presence of fog or vision regions
+Activates or deactivates convoy access.
         """
 
     keywords = ["Activated"]
@@ -875,6 +862,31 @@ checked to see the turnwheel option in your menu.
 
     keywords = ["Activated"]
     keyword_types = ['Bool']
+
+class EnableFogOfWar(EventCommand):
+    nid = 'enable_fog_of_war'
+    tag = Tags.LEVEL_VARS
+
+    desc = \
+        """
+Activates or deactivates base level of fog of war. Does not affect presence of fog or vision regions
+        """
+
+    keywords = ["Activated"]
+    keyword_types = ['Bool']
+
+class SetFogOfWar(EventCommand):
+    nid = 'set_fog_of_war'
+    tag = Tags.LEVEL_VARS
+
+    desc = \
+        """
+Sets the fog of war state for the current level.
+        """
+
+    keywords = ["FogOfWarType", "Radius"]
+    optional_keywords = ["AIRadius", "OtherRadius"]
+    keyword_types = ["FogOfWarType", "PositiveInteger", "PositiveInteger", "PositiveInteger"]
 
 class EndTurn(EventCommand):
     nid = 'end_turn'
@@ -1313,17 +1325,39 @@ class SetUnitField(EventCommand):
     tag = Tags.MODIFY_UNIT_PROPERTIES
 
     desc = \
-    """
+        """
 Set arbitrary property on _Unit_. **Note**: This cannot be used to set unit stats; if you try, you will simply set
 a property called, for example, "STR", that has nothing to do with the unit's stats. This is for enabling unit-level
 vars that are persisted across events.
 
 If the flag `increment_mode` is supplied, this will add the value to the existing value instead instead of setting it.
 Please try to avoid using `increment_mode` with non-numerical fields. That would erase your field and then nobody will be happy.
-    """
+        """
     keywords = ["Unit", "Key", "Value"]
     keyword_types = ['Unit', 'UnitField', 'String']
     _flags = ['increment_mode']
+
+class SetUnitNote(EventCommand):
+    nid = 'set_unit_note'
+    tag = Tags.MODIFY_UNIT_PROPERTIES
+
+    desc = \
+        """
+Add or modify a note on _Unit_. These notes appear in the info menu when enabled in the Constants editor.
+        """
+    keywords = ["Unit", "Key", "Value"]
+    keyword_types = ['Unit', 'String', 'String']
+
+class RemoveUnitNote(EventCommand):
+    nid = 'remove_unit_note'
+    tag = Tags.MODIFY_UNIT_PROPERTIES
+
+    desc = \
+        """
+Remove a note from _Unit_. These notes appear in the info menu when enabled in the Constants editor.
+        """
+    keywords = ["Unit", "Key"]
+    keyword_types = ['Unit', 'String']
 
 class Resurrect(EventCommand):
     nid = 'resurrect'
@@ -2922,6 +2956,27 @@ Opens the trade screen for the two given units, allowing the player to trade ite
 
     keywords = ['Unit1', 'Unit2']
     keyword_types = ['Unit', 'Unit']
+
+class ShowMinimap(EventCommand):
+    nid = 'show_minimap'
+    tag = Tags.MISCELLANEOUS
+
+    desc = \
+        """
+Opens the minimap and gives the player control over the screen until they close the minimap.
+        """
+
+class OpenAcheivements(EventCommand):
+    nid = 'open_achievements'
+    tag = Tags.MISCELLANEOUS
+
+    desc = \
+        """
+Opens the achivements screen with the given background.
+        """
+
+    keywords = ["Background"]
+    keyword_types = ['Panorama']
 
 class LocationCard(EventCommand):
     nid = 'location_card'

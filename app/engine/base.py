@@ -1351,7 +1351,10 @@ class BaseAchievementState(State):
 
     def start(self):
         self.fluid = FluidScroll()
-        self.bg = game.memory.get('base_bg')
+        if 'base_bg' in game.memory:
+            self.bg = game.memory['base_bg']
+        else:
+            self.bg = base_background()
 
         topleft = (10, 34)
         layout = (3, 1)

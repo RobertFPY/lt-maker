@@ -77,7 +77,7 @@ class UnitPrefab(Prefab):
                 value = {}
         elif name == 'wexp_gain':
             if isinstance(value, list):  # DEPRECATED
-                value = {nid: WexpGain(usable, wexp_gain, 251) for (usable, nid, wexp_gain) in value}
+                value = {nid: WexpGain(usable, wexp_gain) for (usable, nid, wexp_gain) in value}
             else:
                 value = {k: WexpGain.restore(v) for (k, v) in value.items()}
         elif name == 'starting_items':

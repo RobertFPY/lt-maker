@@ -158,6 +158,8 @@ class FreeRoamState(MapState):
         elif region:
             get_sound_thread().play_sfx('Select 2')
             did_trigger = game.events.trigger(triggers.RegionTrigger(region.sub_nid, self.roam_unit, self.roam_unit.position, region))
+            if not did_trigger:  # maybe this uses the more dynamic region trigger
+                did_trigger = game.events.trigger(triggers.OnRegionInteract(self.roam_unit, self.roam_unit.position, region))
             if did_trigger:
                 if region.only_once:
                     action.do(action.RemoveRegion(region))

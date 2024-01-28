@@ -1367,7 +1367,7 @@ class SaveSlot(Validator):
         valids.append((None, "suspend"))
         return valids
 
-validators: Dict[str, Type[Validator]]=  {validator.__name__: validator for validator in recursive_subclasses(Validator)}
+validators: Dict[str, Type[Validator]] = {validator.__name__: validator for validator in recursive_subclasses(Validator)}
 for validator in EvalValidator.__subclasses__():
     for tag in validator.tags:
         validators[tag] = validator

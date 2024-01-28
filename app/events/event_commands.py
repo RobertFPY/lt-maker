@@ -2284,7 +2284,7 @@ Adds *Item* to the list of purchaseable goods in the base's market. If the optio
 
     keywords = ["Item"]
     optional_keywords = ["Stock"]
-    keywords_types = ["Item", "Integer"]
+    keyword_types = ["Item", "Integer"]
 
 class RemoveMarketItem(EventCommand):
     nid = 'remove_market_item'
@@ -2297,7 +2297,7 @@ Removes *Item* from the list of purchaseable goods in the base's market. If the 
 
     keywords = ["Item"]
     optional_keywords = ["Stock"]
-    keywords_types = ["Item", "WholeNumber"]
+    keyword_types = ["Item", "WholeNumber"]
 
 class ClearMarketItems(EventCommand):
     nid = 'clear_market_items'

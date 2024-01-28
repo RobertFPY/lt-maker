@@ -137,7 +137,6 @@ def add_portrait(self: Event, portrait, screen_position: Tuple, slide=None, expr
                                  slide, mirror, name, speed_mult=speed_mult)
     self.portraits[name] = new_portrait
 
-
     new_portrait.set_expression(expression_list or set())
 
     if 'immediate' in flags or 'no_block' in flags or self.do_skip:

@@ -184,7 +184,7 @@ def avoid(unit, item, item_to_avoid=None):
 
 def crit_accuracy(unit, item=None):
     if not item:
-        item = item.get_weapon()
+        item = unit.get_weapon()
     if not item:
         return None
 

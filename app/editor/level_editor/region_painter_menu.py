@@ -33,9 +33,6 @@ class RegionMenu(QWidget):
         grid = QVBoxLayout()
         self.setLayout(grid)
 
-        def duplicate_func(model, index):
-            return False
-
         self.view = RightClickListView(
             (None, None, None), parent=self)
         self.view.currentChanged = self.on_item_changed
@@ -52,8 +49,7 @@ class RegionMenu(QWidget):
         self.modify_region_widget = ModifyRegionWidget(self._data, self)
         grid.addWidget(self.modify_region_widget)
 
-        if not len(self._data):
-            self.modify_region_widget.setEnabled(False)
+        self.check_whether_enabled()
 
         self.last_touched_region = None
         self.display = self.modify_region_widget
@@ -75,6 +71,10 @@ class RegionMenu(QWidget):
 
     def update_list(self):
         self.state_manager.change_and_broadcast('ui_refresh_signal', None)
+
+    def check_whether_enabled(self):
+        if not len(self._data):
+            self.modify_region_widget.setEnabled(False)
 
     def set_current_level(self, level_nid):
         level = DB.levels.get(level_nid)
@@ -128,6 +128,8 @@ class RegionMenu(QWidget):
 
 
 class RegionModel(DragDropCollectionModel):
+    allow_delete_last_obj = True
+
     def data(self, index, role):
         if not index.isValid():
             return None
@@ -169,6 +171,10 @@ class RegionModel(DragDropCollectionModel):
         new_index = self.index(idx + 1)
         view.setCurrentIndex(new_index)
         return new_index
+
+    def delete(self, idx):
+        super().delete(idx)
+        self.window.check_whether_enabled()
 
 class ModifyRegionWidget(QWidget):
     def __init__(self, data, parent=None, current=None):

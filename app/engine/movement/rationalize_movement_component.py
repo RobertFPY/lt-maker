@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Tuple
 
+from app.engine import action
 from app.engine.game_state import game
 from app.engine.movement.movement_component import MovementComponent
 from app.utilities import utils
@@ -58,12 +59,14 @@ class RationalizeMovementComponent(MovementComponent):
         self.y_vel = self.speed * y_vector
         self.unit.sprite.change_state('moving')
         self.unit.sprite.handle_net_position((self.x_vel, self.y_vel))
+        action.PickUnitUp(self.unit).do()
 
     def finish(self, surprise=False):
         self.unit.sprite.change_state('normal')
         self.unit.sprite.set_roam_position(None)
         self.unit.sprite.reset()
         self.unit.position = self.goal
+        action.PutUnitDown(self.unit).do()
         self.active = False
 
     def update(self, current_time: int):

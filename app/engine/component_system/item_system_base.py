@@ -327,25 +327,25 @@ def find_hp(actions, target):
             starting_hp += subaction.num
     return starting_hp
 
-def after_strike(actions, playback, unit, item, target, mode, attack_info, strike):
+def after_strike(actions, playback, unit, item, target, item2, mode, attack_info, strike):
     all_components = get_all_components(unit, item)
     for component in all_components:
         if component.defines('after_strike'):
-            component.after_strike(actions, playback, unit, item, target, mode, attack_info, strike)
+            component.after_strike(actions, playback, unit, item, target, item2, mode, attack_info, strike)
     if item.parent_item:
         for component in item.parent_item.components:
             if component.defines('after_strike'):
                 component.after_strike(actions, playback, unit, item.parent_item, target, mode, attack_info, strike)
 
-def on_hit(actions, playback, unit, item, target, target_pos, mode, attack_info, first_item):
+def on_hit(actions, playback, unit, item, target, item2, target_pos, mode, attack_info, first_item):
     all_components = get_all_components(unit, item)
     for component in all_components:
         if component.defines('on_hit'):
-            component.on_hit(actions, playback, unit, item, target, target_pos, mode, attack_info)
+            component.on_hit(actions, playback, unit, item, target, item2, target_pos, mode, attack_info)
     if item.parent_item and first_item:
         for component in item.parent_item.components:
             if component.defines('on_hit'):
-                component.on_hit(actions, playback, unit, item.parent_item, target, target_pos, mode, attack_info)
+                component.on_hit(actions, playback, unit, item.parent_item, target, item2, target_pos, mode, attack_info)
 
     # Default playback
     import app.engine.combat.playback as pb
@@ -360,13 +360,13 @@ def on_hit(actions, playback, unit, item, target, target_pos, mode, attack_info,
     if target and not any(brush.nid in ('unit_tint_add', 'unit_tint_sub') for brush in playback):
         playback.append(pb.UnitTintAdd(target, (255, 255, 255)))
 
-def on_crit(actions, playback, unit, item, target, target_pos, mode, attack_info, first_item):
+def on_crit(actions, playback, unit, item, target, item2, target_pos, mode, attack_info, first_item):
     all_components = get_all_components(unit, item)
     for component in all_components:
         if component.defines('on_crit'):
-            component.on_crit(actions, playback, unit, item, target, target_pos, mode, attack_info)
+            component.on_crit(actions, playback, unit, item, target, item2, target_pos, mode, attack_info)
         elif component.defines('on_hit'):
-            component.on_hit(actions, playback, unit, item, target, target_pos, mode, attack_info)
+            component.on_hit(actions, playback, unit, item, target, item2, target_pos, mode, attack_info)
     if item.parent_item and first_item:
         for component in item.parent_item.components:
             if component.defines('on_crit'):
@@ -386,13 +386,13 @@ def on_crit(actions, playback, unit, item, target, target_pos, mode, attack_info
         if not any(brush.nid == 'crit_tint' for brush in playback):
             playback.append(pb.CritTint(target, (255, 255, 255)))
 
-def on_glancing_hit(actions, playback, unit, item, target, target_pos, mode, attack_info, first_item):
+def on_glancing_hit(actions, playback, unit, item, target, item2, target_pos, mode, attack_info, first_item):
     all_components = get_all_components(unit, item)
     for component in all_components:
         if component.defines('on_glancing_hit'):
-            component.on_glancing_hit(actions, playback, unit, item, target, target_pos, mode, attack_info)
+            component.on_glancing_hit(actions, playback, unit, item, target, item2, target_pos, mode, attack_info)
         elif component.defines('on_hit'):
-            component.on_hit(actions, playback, unit, item, target, target_pos, mode, attack_info)
+            component.on_hit(actions, playback, unit, item, target, item2, target_pos, mode, attack_info)
     if item.parent_item and first_item:
         for component in item.parent_item.components:
             if component.defines('on_glancing_hit'):
@@ -413,11 +413,11 @@ def on_glancing_hit(actions, playback, unit, item, target, target_pos, mode, att
     if target and not any(brush.nid in ('unit_tint_add', 'unit_tint_sub') for brush in playback):
         playback.append(pb.UnitTintAdd(target, (255, 255, 255)))
 
-def on_miss(actions, playback, unit, item, target, target_pos, mode, attack_info, first_item):
+def on_miss(actions, playback, unit, item, target, item2, target_pos, mode, attack_info, first_item):
     all_components = get_all_components(unit, item)
     for component in all_components:
         if component.defines('on_miss'):
-            component.on_miss(actions, playback, unit, item, target, target_pos, mode, attack_info)
+            component.on_miss(actions, playback, unit, item, target, item2, target_pos, mode, attack_info)
     if item.parent_item and first_item:
         for component in item.parent_item.components:
             if component.defines('on_miss'):

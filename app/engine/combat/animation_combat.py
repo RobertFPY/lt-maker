@@ -31,6 +31,7 @@ from app.data.resources.resources import RESOURCES
 from app.utilities import utils
 from app.utilities.typing import NID
 from app.utilities.enums import HAlignment
+from app.engine.combat.utils import resolve_weapon
 
 
 class AnimationCombat(BaseCombat, MockCombat):
@@ -369,7 +370,7 @@ class AnimationCombat(BaseCombat, MockCombat):
             any_effect: bool = False
             if not any(brush.attacker_nid == attacker.nid for brush in self.get_from_full_playback('combat_effect')):
                 if item:
-                    effect_nid = item_system.combat_effect(attacker, item, defender, 'attack')
+                    effect_nid = item_system.combat_effect(attacker, item, defender, d_item, 'attack')
                     if effect_nid:
                         effect = self.current_battle_anim.get_effect(effect_nid, pose='Attack')
                         any_effect = True
@@ -725,17 +726,17 @@ class AnimationCombat(BaseCombat, MockCombat):
         self.viewbox = (vb_x, vb_y, vb_width, vb_height)
 
     def start_battle_music(self):
-        attacker_battle = item_system.battle_music(self.attacker, self.main_item, self.defender, 'attack') \
-            or skill_system.battle_music(self.playback, self.attacker, self.main_item, self.defender, 'attack')
+        attacker_battle = item_system.battle_music(self.attacker, self.main_item, self.defender, resolve_weapon(self.defender), 'attack') \
+            or skill_system.battle_music(self.playback, self.attacker, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
         if not attacker_battle and 'Boss' in self.attacker.tags:
             attacker_battle = game.level.music.get('boss_battle', None)
         defender_battle = None
         if self.defender:
             if self.def_item:
-                defender_battle = item_system.battle_music(self.defender, self.def_item, self.attacker, 'defense') \
-                or skill_system.battle_music(self.playback, self.defender, self.def_item, self.attacker, 'defense')
+                defender_battle = item_system.battle_music(self.defender, self.def_item, self.attacker, self.main_item, 'defense') \
+                or skill_system.battle_music(self.playback, self.defender, self.def_item, self.attacker, self.main_item, 'defense')
             else:
-                defender_battle = skill_system.battle_music(self.playback, self.defender, self.def_item, self.attacker, 'defense')
+                defender_battle = skill_system.battle_music(self.playback, self.defender, self.def_item, self.attacker, self.main_item, 'defense')
             if not defender_battle and 'Boss' in self.defender.tags:
                 defender_battle = game.level.music.get('boss_battle', None)
         battle_music = game.level.music.get('%s_battle' % self.attacker.team, None)
@@ -788,10 +789,10 @@ class AnimationCombat(BaseCombat, MockCombat):
 
             if self.defender.strike_partner:
                 defender = self.defender.strike_partner
-                dp_hit = combat_calcs.compute_hit(defender, self.attacker, defender.get_weapon(), self.main_item, 'defense', self.state_machine.get_defense_info())
-                dp_mt = combat_calcs.compute_damage(defender, self.attacker, defender.get_weapon(), self.main_item, 'defense', self.state_machine.get_defense_info(), assist=True)
+                dp_hit = combat_calcs.compute_hit(defender, self.attacker, resolve_weapon(defender), self.main_item, 'defense', self.state_machine.get_defense_info())
+                dp_mt = combat_calcs.compute_damage(defender, self.attacker, resolve_weapon(defender), self.main_item, 'defense', self.state_machine.get_defense_info(), assist=True)
                 if DB.constants.value('crit'):
-                    dp_crit = combat_calcs.compute_crit(defender, self.attacker, defender.get_weapon(), self.main_item, 'defense', self.state_machine.get_defense_info())
+                    dp_crit = combat_calcs.compute_crit(defender, self.attacker, resolve_weapon(defender), self.main_item, 'defense', self.state_machine.get_defense_info())
                 else:
                     dp_crit = 0
                 dp_stats = dp_hit, dp_mt, dp_crit

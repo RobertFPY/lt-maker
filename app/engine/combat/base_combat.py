@@ -7,6 +7,7 @@ from app.engine.objects.unit import UnitObject
 from app.engine.objects.item import ItemObject
 
 from app.utilities import static_random
+from app.engine.combat.utils import resolve_weapon
 
 class BaseCombat(SimpleCombat):
     alerts: bool = True
@@ -23,7 +24,7 @@ class BaseCombat(SimpleCombat):
         self.main_item = main_item
         self.def_item = None
         if self.defender:
-            self.def_item = self.defender.get_weapon()
+            self.def_item = resolve_weapon(self.defender)
 
         self.state_machine = CombatPhaseSolver(
             self.attacker, self.main_item, [self.main_item],
@@ -40,44 +41,44 @@ class BaseCombat(SimpleCombat):
     def start_combat(self):
         self.initial_random_state = static_random.get_combat_random_state()
 
-        skill_system.pre_combat(self.full_playback, self.attacker, self.main_item, self.defender, 'attack')
+        skill_system.pre_combat(self.full_playback, self.attacker, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
         if self.attacker is not self.defender:
-            skill_system.pre_combat(self.full_playback, self.defender, self.def_item, self.attacker, 'defense')
+            skill_system.pre_combat(self.full_playback, self.defender, self.def_item, self.attacker, self.main_item, 'defense')
 
-        skill_system.start_combat(self.full_playback, self.attacker, self.main_item, self.defender, 'attack')
-        item_system.start_combat(self.full_playback, self.attacker, self.main_item, self.defender, 'attack')
+        skill_system.start_combat(self.full_playback, self.attacker, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
+        item_system.start_combat(self.full_playback, self.attacker, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
 
         if self.attacker is not self.defender:
-            skill_system.start_combat(self.full_playback, self.defender, self.def_item, self.attacker, 'defense')
+            skill_system.start_combat(self.full_playback, self.defender, self.def_item, self.attacker, self.main_item, 'defense')
             if self.def_item:
-                item_system.start_combat(self.full_playback, self.defender, self.def_item, self.attacker, 'defense')
+                item_system.start_combat(self.full_playback, self.defender, self.def_item, self.attacker, self.main_item, 'defense')
 
     def cleanup_combat(self):
-        skill_system.cleanup_combat(self.full_playback, self.attacker, self.main_item, self.defender, 'attack')
+        skill_system.cleanup_combat(self.full_playback, self.attacker, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
         if self.attacker is not self.defender:
-            skill_system.cleanup_combat(self.full_playback, self.defender, self.def_item, self.attacker, 'defense')
+            skill_system.cleanup_combat(self.full_playback, self.defender, self.def_item, self.attacker, self.main_item, 'defense')
 
     def end_combat(self):
-        skill_system.end_combat(self.full_playback, self.attacker, self.main_item, self.defender, 'attack')
-        item_system.end_combat(self.full_playback, self.attacker, self.main_item, self.defender, 'attack')
+        skill_system.end_combat(self.full_playback, self.attacker, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
+        item_system.end_combat(self.full_playback, self.attacker, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
         if self.attacker.strike_partner:
-            skill_system.end_combat(self.full_playback, self.attacker.strike_partner, self.main_item, self.defender, 'attack')
-            item_system.end_combat(self.full_playback, self.attacker.strike_partner, self.main_item, self.defender, 'attack')
+            skill_system.end_combat(self.full_playback, self.attacker.strike_partner, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
+            item_system.end_combat(self.full_playback, self.attacker.strike_partner, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
             self.attacker.strike_partner = None
         if self.defender.strike_partner:
-            skill_system.end_combat(self.full_playback, self.defender.strike_partner, self.main_item, self.defender, 'attack')
-            item_system.end_combat(self.full_playback, self.defender.strike_partner, self.main_item, self.defender, 'attack')
+            skill_system.end_combat(self.full_playback, self.defender.strike_partner, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
+            item_system.end_combat(self.full_playback, self.defender.strike_partner, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
             self.attacker.strike_partner = None
         if self.attacker is not self.defender:
-            skill_system.end_combat(self.full_playback, self.defender, self.def_item, self.attacker, 'defense')
+            skill_system.end_combat(self.full_playback, self.defender, self.def_item, self.attacker, self.main_item, 'defense')
             if self.def_item:
-                item_system.end_combat(self.full_playback, self.defender, self.def_item, self.attacker, 'defense')
+                item_system.end_combat(self.full_playback, self.defender, self.def_item, self.attacker, self.main_item, 'defense')
 
         skill_system.deactivate_all_combat_arts(self.attacker)
 
-        skill_system.post_combat(self.full_playback, self.attacker, self.main_item, self.defender, 'attack')
+        skill_system.post_combat(self.full_playback, self.attacker, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
         if self.attacker is not self.defender:
-            skill_system.post_combat(self.full_playback, self.defender, self.def_item, self.attacker, 'defense')
+            skill_system.post_combat(self.full_playback, self.defender, self.def_item, self.attacker, self.main_item, 'defense')
 
         self.final_random_state = static_random.get_combat_random_state()
         action.do(action.RecordRandomState(self.initial_random_state, self.final_random_state))

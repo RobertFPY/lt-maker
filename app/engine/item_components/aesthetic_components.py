@@ -23,7 +23,7 @@ class MapHitAddBlend(ItemComponent):
     expose = ComponentType.Color3
     value = (255, 255, 255)
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         playback.append(pb.UnitTintAdd(target, self.value))
 
 class MapHitSubBlend(ItemComponent):
@@ -34,7 +34,7 @@ class MapHitSubBlend(ItemComponent):
     expose = ComponentType.Color3
     value = (0, 0, 0)
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         playback.append(pb.UnitTintSub(target, self.value))
 
 class MapHitSFX(ItemComponent):
@@ -45,7 +45,7 @@ class MapHitSFX(ItemComponent):
     expose = ComponentType.Sound
     value = 'Attack Hit 1'
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         playback.append(pb.HitSound(self.value))
 
 class MapCastSFX(ItemComponent):
@@ -56,10 +56,10 @@ class MapCastSFX(ItemComponent):
     expose = ComponentType.Sound
     value = 'Attack Hit 1'
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         playback.append(pb.CastSound(self.value))
 
-    def on_miss(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_miss(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         playback.append(pb.CastSound(self.value))
 
 class MapCastAnim(ItemComponent):
@@ -69,10 +69,10 @@ class MapCastAnim(ItemComponent):
 
     expose = ComponentType.MapAnimation
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         playback.append(pb.CastAnim(self.value))
 
-    def on_miss(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_miss(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         playback.append(pb.CastAnim(self.value))
 
 class MapTargetCastAnim(ItemComponent):
@@ -82,11 +82,11 @@ class MapTargetCastAnim(ItemComponent):
 
     expose = ComponentType.MapAnimation
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         if target:
             playback.append(pb.TargetCastAnim(self.value, target.position))
 
-    def on_miss(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_miss(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         if target:
             playback.append(pb.TargetCastAnim(self.value, target.position))
 
@@ -108,7 +108,7 @@ class BattleAnimationMusic(ItemComponent):
     expose = ComponentType.Music
     value = None
 
-    def battle_music(self, unit, item, target, mode):
+    def battle_music(self, unit, item, target, item2, mode):
         return self.value
 
 class NoMapHPDisplay(ItemComponent):
@@ -126,7 +126,7 @@ class PreCombatEffect(ItemComponent):
 
     expose = ComponentType.EffectAnimation
 
-    def combat_effect(self, unit, item, target, mode):
+    def combat_effect(self, unit, item, target, item2, mode):
         return self.value
 
 class Warning(ItemComponent):

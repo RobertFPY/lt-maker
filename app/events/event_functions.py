@@ -3377,7 +3377,7 @@ def spend_unlock(self: Event, unit, flags=None):
     item_system.on_hit(actions, playback, unit, chosen_item, unit, self.position, None, (0, 0), True)
     for act in actions:
         action.do(act)
-    item_system.end_combat(playback, unit, chosen_item, unit, None)
+    item_system.end_combat(playback, unit, chosen_item, unit, chosen_item, None)
 
     if unit.get_hp() <= 0:
         # Force can't die unlocking stuff, because I don't want to deal with that nonsense

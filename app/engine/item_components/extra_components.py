@@ -77,7 +77,7 @@ class EffectiveDamage(ItemComponent):
                 return 'danger'
         return None
 
-    def dynamic_damage(self, unit, item, target, mode, attack_info, base_value) -> int:
+    def dynamic_damage(self, unit, item, target, item2, mode, attack_info, base_value) -> int:
         if self._check_effective(target):
             might = item_system.damage(unit, item) or 0
             return int((self.multiplier - 1.0) * might + self.bonus_damage)
@@ -88,7 +88,7 @@ class Brave(ItemComponent):
     desc = "Weapon has the brave property, doubling its attacks."
     tag = ItemTags.EXTRA
 
-    def dynamic_multiattacks(self, unit, item, target, mode, attack_info, base_value):
+    def dynamic_multiattacks(self, unit, item, target, item2, mode, attack_info, base_value):
         return 1
 
 class BraveOnAttack(ItemComponent):
@@ -96,7 +96,7 @@ class BraveOnAttack(ItemComponent):
     desc = "The weapon is only brave when making an attack, and acts as a normal weapon when being attacked."
     tag = ItemTags.EXTRA
 
-    def dynamic_multiattacks(self, unit, item, target, mode, attack_info, base_value):
+    def dynamic_multiattacks(self, unit, item, target, item2, mode, attack_info, base_value):
         return 1 if mode == 'attack' else 0
 
 class Lifelink(ItemComponent):
@@ -108,7 +108,7 @@ class Lifelink(ItemComponent):
     expose = ComponentType.Float
     value = 0.5
 
-    def after_strike(self, actions, playback, unit, item, target, mode, attack_info, strike):
+    def after_strike(self, actions, playback, unit, item, target, item2, mode, attack_info, strike):
         total_damage_dealt = 0
         playbacks = [p for p in playback if p.nid in ('damage_hit', 'damage_crit') and p.attacker == unit]
         for p in playbacks:
@@ -128,7 +128,7 @@ class DamageOnMiss(ItemComponent):
     expose = ComponentType.Float
     value = 0.5
 
-    def on_miss(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_miss(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         damage = combat_calcs.compute_damage(unit, target, item, target.get_weapon(), mode, attack_info)
         damage = int(damage * self.value)
 
@@ -146,7 +146,7 @@ class Eclipse(ItemComponent):
     desc = "Target loses half current HP on hit"
     tag = ItemTags.EXTRA
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         true_damage = damage = target.get_hp()//2
         actions.append(action.ChangeHP(target, -damage))
 
@@ -282,7 +282,7 @@ class GainManaAfterCombat(ItemComponent):
 
     expose = ComponentType.String
 
-    def end_combat(self, playback, unit, item, target, mode):
+    def end_combat(self, playback, unit, item, target, item2, mode):
         from app.engine import evaluate
         try:
             mana_gain = int(evaluate.evaluate(self.value, unit, target, position=unit.position))

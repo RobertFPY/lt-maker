@@ -9,6 +9,8 @@ from app.engine.movement import movement_funcs
 from app.engine.game_state import GameState
 from app.utilities import utils
 from app.utilities.typing import Pos
+from app.engine.combat.utils import resolve_weapon
+
 
 if TYPE_CHECKING:
     from app.engine.objects.unit import UnitObject
@@ -514,8 +516,8 @@ class TargetSystem():
         """This is the formula for the best choice to make when autoselecting strike partners"""
         if not allies:
             return None
-        damage = [combat_calcs.compute_assist_damage(ally, defender, ally.get_weapon(), defender.get_weapon(), mode, attack_info) for ally in allies]
-        accuracy = [utils.clamp(combat_calcs.compute_hit(ally, defender, ally.get_weapon(), defender.get_weapon(), mode, attack_info)/100., 0, 1) for ally in allies]
+        damage = [combat_calcs.compute_assist_damage(ally, defender, ally.get_weapon(), resolve_weapon(defender), mode, attack_info) for ally in allies]
+        accuracy = [utils.clamp(combat_calcs.compute_hit(ally, defender, ally.get_weapon(), resolve_weapon(defender), mode, attack_info)/100., 0, 1) for ally in allies]
         score = [dam * acc for dam, acc in zip(damage, accuracy)]
         max_score = max(score)
         max_index = score.index(max_score)

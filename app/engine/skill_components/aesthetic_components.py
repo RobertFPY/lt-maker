@@ -120,7 +120,7 @@ class AlternateBattleAnim(SkillComponent):
     expose = ComponentType.String
     value = 'Critical'
 
-    def after_strike(self, actions, playback, unit, item, target, mode, attack_info, strike):
+    def after_strike(self, actions, playback, unit, item, target, item2, mode, attack_info, strike):
         if strike != Strike.MISS:
             playback.append(pb.AlternateBattlePose(self.value))
 
@@ -162,7 +162,7 @@ class MapCastAnim(SkillComponent):
 
     expose = ComponentType.MapAnimation
 
-    def start_combat(self, playback, unit, item, target, mode):
+    def start_combat(self, playback, unit, item, target, item2, mode):
         playback.append(pb.CastAnim(self.value))
 
 class BattleAnimMusic(SkillComponent):
@@ -173,5 +173,5 @@ class BattleAnimMusic(SkillComponent):
     expose = ComponentType.Music
     value = None
 
-    def battle_music(self, playback, unit, item, target, mode):
+    def battle_music(self, playback, unit, item, target, item2, mode):
         return self.value

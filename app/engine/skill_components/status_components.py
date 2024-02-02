@@ -130,7 +130,7 @@ class UpkeepDamage(SkillComponent):
         actions.append(action.ChangeHP(unit, hp_change))
         actions.append(action.TriggerCharge(unit, self.skill))
         self._playback_processing(playback, unit, hp_change)
-        skill_system.after_take_strike(actions, playback, unit, None, None, 'defense', (0, 0), Strike.HIT)
+        skill_system.after_take_strike(actions, playback, unit, None, None, None, 'defense', (0, 0), Strike.HIT)
 
 class EndstepDamage(UpkeepDamage):
     nid = 'endstep_damage'
@@ -148,7 +148,7 @@ class EndstepDamage(UpkeepDamage):
         actions.append(action.ChangeHP(unit, hp_change))
         actions.append(action.TriggerCharge(unit, self.skill))
         self._playback_processing(playback, unit, hp_change)
-        skill_system.after_take_strike(actions, playback, unit, None, None, 'defense', (0, 0), Strike.HIT)
+        skill_system.after_take_strike(actions, playback, unit, None, None, None, 'defense', (0, 0), Strike.HIT)
 
 class GBAPoison(SkillComponent):
     nid = 'gba_poison'

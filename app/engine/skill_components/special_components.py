@@ -116,6 +116,6 @@ class EventAfterInitiatedCombat(SkillComponent):
     expose = ComponentType.Event
     value = ''
 
-    def end_combat(self, playback, unit: UnitObject, item, target: UnitObject, mode):
+    def end_combat(self, playback, unit: UnitObject, item, target: UnitObject, item2, mode):
         if mode == 'attack':
-            game.events.trigger_specific_event(self.value, unit, target, unit.position, {'item': item, 'mode': mode})
+            game.events.trigger_specific_event(self.value, unit, target, unit.position, {'item': item, 'item2': item2, 'mode': mode})

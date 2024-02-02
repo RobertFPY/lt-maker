@@ -26,7 +26,7 @@ class LostOnEndCombat(SkillComponent):
     def values(self) -> Dict[str, str]:
         return {value[0]: value[1] for value in self.value}
 
-    def post_combat_unconditional(self, playback, unit, item, target, mode):
+    def post_combat_unconditional(self, playback, unit, item, target, item2, mode):
         from app.engine import skill_system
         remove_skill = False
         if self.values.get('LostOnSelf (T/F)', 'T') == 'T':

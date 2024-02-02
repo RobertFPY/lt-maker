@@ -62,7 +62,7 @@ class MagicAtRange(ItemComponent):
     desc = 'Makes Item use magic damage formula at range'
     tag = ItemTags.WEAPON
 
-    def dynamic_damage(self, unit, item, target, mode, attack_info, base_value) -> int:
+    def dynamic_damage(self, unit, item, target, item2, mode, attack_info, base_value) -> int:
         running_damage = 0
         if unit.position and target and target.position:
             dist = utils.calculate_distance(unit.position, target.position)
@@ -110,7 +110,7 @@ class Damage(ItemComponent):
                 return True
         return False
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         playback_nids = [brush.nid for brush in playback]
         if 'attacker_partner_phase' in playback_nids or 'defender_partner_phase' in playback_nids:
             damage = combat_calcs.compute_assist_damage(unit, target, item, target.get_weapon(), mode, attack_info)
@@ -131,7 +131,7 @@ class Damage(ItemComponent):
             playback.append(pb.HitSound('No Damage'))
             playback.append(pb.HitAnim('MapNoDamage', target))
 
-    def on_glancing_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_glancing_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         playback_nids = [brush.nid for brush in playback]
         if 'attacker_partner_phase' in playback_nids or 'defender_partner_phase' in playback_nids:
             damage = combat_calcs.compute_assist_damage(unit, target, item, target.get_weapon(), mode, attack_info)
@@ -155,7 +155,7 @@ class Damage(ItemComponent):
         else:
             playback.append(pb.HitAnim('MapGlancingHit', target))
 
-    def on_crit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_crit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         playback_nids = [brush.nid for brush in playback]
         if 'attacker_partner_phase' in playback_nids or 'defender_partner_phase' in playback_nids:
             damage = combat_calcs.compute_assist_damage(unit, target, item, target.get_weapon(), mode, attack_info, crit=True)

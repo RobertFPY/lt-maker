@@ -10,6 +10,7 @@ from app.engine.objects.item import ItemObject
 from app.engine.objects.unit import UnitObject
 from app.events import triggers, event_commands
 from app.utilities import utils, static_random
+from app.engine.combat.utils import resolve_weapon
 
 
 class SimpleCombat():
@@ -51,10 +52,10 @@ class SimpleCombat():
         self.all_splash = list(set([s for s in all_splash if s]))
 
         self.items = items
-        self.def_items = [defender.get_weapon() if defender else None for defender in self.defenders]
+        self.def_items = [resolve_weapon(defender) for defender in self.defenders]
         self.def_item = None
         if self.defender:
-            self.def_item = self.defender.get_weapon()
+            self.def_item = resolve_weapon(self.defender)
 
     def __init__(self, attacker, main_item, items, positions, main_target_positions, splash_positions, script, total_rounds=1):
         self._full_setup(attacker, main_item, items, positions, main_target_positions, splash_positions)
@@ -183,7 +184,7 @@ class SimpleCombat():
     def start_combat(self):
         self.initial_random_state = static_random.get_combat_random_state()
 
-        skill_system.pre_combat(self.full_playback, self.attacker, self.main_item, self.defender, 'attack')
+        skill_system.pre_combat(self.full_playback, self.attacker, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
 
         already_pre = [self.attacker]
         for idx, defender in enumerate(self.defenders):
@@ -191,69 +192,69 @@ class SimpleCombat():
             if defender and defender not in already_pre:
                 already_pre.append(defender)
                 def_item = self.def_items[idx]
-                skill_system.pre_combat(self.full_playback, defender, def_item, self.attacker, 'defense')
+                skill_system.pre_combat(self.full_playback, defender, def_item, self.attacker, self.main_item, 'defense')
         for unit in self.all_splash:
-            skill_system.pre_combat(self.full_playback, unit, None, self.attacker, 'defense')
+            skill_system.pre_combat(self.full_playback, unit, None, self.attacker, self.main_item, 'defense')
 
-        skill_system.start_combat(self.full_playback, self.attacker, self.main_item, self.defender, 'attack')
-        item_system.start_combat(self.full_playback, self.attacker, self.main_item, self.defender, 'attack')
+        skill_system.start_combat(self.full_playback, self.attacker, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
+        item_system.start_combat(self.full_playback, self.attacker, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
 
         already_pre = [self.attacker]
         for idx, defender in enumerate(self.defenders):
             if defender and defender not in already_pre:
                 already_pre.append(defender)
                 def_item = self.def_items[idx]
-                skill_system.start_combat(self.full_playback, defender, def_item, self.attacker, 'defense')
+                skill_system.start_combat(self.full_playback, defender, def_item, self.attacker, self.main_item, 'defense')
                 if def_item:
-                    item_system.start_combat(self.full_playback, defender, def_item, self.attacker, 'defense')
+                    item_system.start_combat(self.full_playback, defender, def_item, self.attacker, self.main_item, 'defense')
         for unit in self.all_splash:
-            skill_system.start_combat(self.full_playback, unit, None, self.attacker, 'defense')
+            skill_system.start_combat(self.full_playback, unit, None, self.attacker, self.main_item, 'defense')
 
     def cleanup_combat(self):
-        skill_system.cleanup_combat(self.full_playback, self.attacker, self.main_item, self.defender, 'attack')
+        skill_system.cleanup_combat(self.full_playback, self.attacker, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
         already_pre = [self.attacker]
         for idx, defender in enumerate(self.defenders):
             if defender and defender not in already_pre:
                 already_pre.append(defender)
                 def_item = self.def_items[idx]
-                skill_system.cleanup_combat(self.full_playback, defender, def_item, self.attacker, 'defense')
+                skill_system.cleanup_combat(self.full_playback, defender, def_item, self.attacker, self.main_item, 'defense')
         for unit in self.all_splash:
-            skill_system.cleanup_combat(self.full_playback, unit, None, self.attacker, 'defense')
+            skill_system.cleanup_combat(self.full_playback, unit, None, self.attacker, self.main_item, 'defense')
 
     def end_combat(self):
-        skill_system.end_combat(self.full_playback, self.attacker, self.main_item, self.defender, 'attack')
-        item_system.end_combat(self.full_playback, self.attacker, self.main_item, self.defender, 'attack')
+        skill_system.end_combat(self.full_playback, self.attacker, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
+        item_system.end_combat(self.full_playback, self.attacker, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
         if self.attacker.strike_partner:
-            skill_system.end_combat(self.full_playback, self.attacker.strike_partner, self.attacker.strike_partner.get_weapon(), self.defender, 'attack')
-            item_system.end_combat(self.full_playback, self.attacker.strike_partner, self.attacker.strike_partner.get_weapon(), self.defender, 'attack')
+            skill_system.end_combat(self.full_playback, self.attacker.strike_partner, self.attacker.strike_partner.get_weapon(), self.defender, self.defender.get_weapon(), 'attack')
+            item_system.end_combat(self.full_playback, self.attacker.strike_partner, self.attacker.strike_partner.get_weapon(), self.defender, self.defender.get_weapon(), 'attack')
             self.attacker.strike_partner = None
         if self.defender:
             if self.defender.strike_partner:
-                skill_system.end_combat(self.full_playback, self.defender.strike_partner, self.defender.strike_partner.get_weapon(), self.attacker, 'defense')
-                item_system.end_combat(self.full_playback, self.defender.strike_partner, self.defender.strike_partner.get_weapon(), self.attacker, 'defense')
+                skill_system.end_combat(self.full_playback, self.defender.strike_partner, self.defender.strike_partner.get_weapon(), self.attacker, self.main_item, 'defense')
+                item_system.end_combat(self.full_playback, self.defender.strike_partner, self.defender.strike_partner.get_weapon(), self.attacker, self.main_item, 'defense')
                 self.defender.strike_partner = None
         already_pre = [self.attacker]
         for idx, defender in enumerate(self.defenders):
             if defender and defender not in already_pre:
                 already_pre.append(defender)
                 def_item = self.def_items[idx]
-                skill_system.end_combat(self.full_playback, defender, def_item, self.attacker, 'defense')
+                skill_system.end_combat(self.full_playback, defender, def_item, self.attacker, self.main_item, 'defense')
                 if def_item:
-                    item_system.end_combat(self.full_playback, defender, def_item, self.attacker, 'defense')
+                    item_system.end_combat(self.full_playback, defender, def_item, self.attacker, self.main_item, 'defense')
         for unit in self.all_splash:
-            skill_system.end_combat(self.full_playback, unit, None, self.attacker, 'defense')
+            skill_system.end_combat(self.full_playback, unit, None, self.attacker, self.main_item, 'defense')
 
         skill_system.deactivate_all_combat_arts(self.attacker)
 
-        skill_system.post_combat(self.full_playback, self.attacker, self.main_item, self.defender, 'attack')
+        skill_system.post_combat(self.full_playback, self.attacker, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
         already_pre = [self.attacker]
         for idx, defender in enumerate(self.defenders):
             if defender and defender not in already_pre:
                 already_pre.append(defender)
                 def_item = self.def_items[idx]
-                skill_system.post_combat(self.full_playback, defender, def_item, self.attacker, 'defense')
+                skill_system.post_combat(self.full_playback, defender, def_item, self.attacker, self.main_item, 'defense')
         for unit in self.all_splash:
-            skill_system.post_combat(self.full_playback, unit, None, self.attacker, 'defense')
+            skill_system.post_combat(self.full_playback, unit, None, self.attacker, self.main_item, 'defense')
 
         self.final_random_state = static_random.get_combat_random_state()
         action.do(action.RecordRandomState(self.initial_random_state, self.final_random_state))

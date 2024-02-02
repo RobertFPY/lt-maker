@@ -178,7 +178,7 @@ class Galeforce(SkillComponent):
     desc = "After killing an enemy on player phase, unit can move again."
     tag = SkillTags.MOVEMENT
 
-    def end_combat(self, playback, unit, item, target, mode):
+    def end_combat(self, playback, unit, item, target, item2, mode):
         mark_playbacks = [p for p in playback if p.nid in ('mark_miss', 'mark_hit', 'mark_crit')]
         if target and target.get_hp() <= 0 and \
                 any(p.main_attacker is unit for p in mark_playbacks):  # Unit is overall attacker

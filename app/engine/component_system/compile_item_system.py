@@ -70,14 +70,14 @@ ITEM_HOOKS: Dict[str, HookInfo] = {
     'modify_attack_speed':                             HookInfo(['unit', 'item'], ResolvePolicy.NUMERIC_ACCUM),
     'modify_defense_speed':                            HookInfo(['unit', 'item'], ResolvePolicy.NUMERIC_ACCUM),
     'modify_weapon_triangle':                          HookInfo(['unit', 'item'], ResolvePolicy.NUMERIC_MULTIPLY, has_default_value=True),
-    'dynamic_damage':                                  HookInfo(['unit', 'item', 'target', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
-    'dynamic_accuracy':                                HookInfo(['unit', 'item', 'target', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
-    'dynamic_crit_accuracy':                           HookInfo(['unit', 'item', 'target', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
-    'dynamic_attack_speed':                            HookInfo(['unit', 'item', 'target', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
-    'dynamic_multiattacks':                            HookInfo(['unit', 'item', 'target', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
+    'dynamic_damage':                                  HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
+    'dynamic_accuracy':                                HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
+    'dynamic_crit_accuracy':                           HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
+    'dynamic_attack_speed':                            HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
+    'dynamic_multiattacks':                            HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
     # aesthetic components that return a value
-    'battle_music':                                    HookInfo(['unit', 'item', 'target', 'mode'], ResolvePolicy.UNIQUE),
-    'combat_effect':                                   HookInfo(['unit', 'item', 'target', 'mode'], ResolvePolicy.UNIQUE),
+    'battle_music':                                    HookInfo(['unit', 'item', 'target', 'item2', 'mode'], ResolvePolicy.UNIQUE),
+    'combat_effect':                                   HookInfo(['unit', 'item', 'target', 'item2', 'mode'], ResolvePolicy.UNIQUE),
     # events do not return, but are the only item components currently inherited from parents
     'on_end_chapter':                                  HookInfo(['unit', 'item'], ResolvePolicy.NO_RETURN, inherits_parent=True),
     'reverse_use':                                     HookInfo(['unit', 'item'], ResolvePolicy.NO_RETURN, inherits_parent=True),
@@ -87,8 +87,8 @@ ITEM_HOOKS: Dict[str, HookInfo] = {
     'on_remove_item':                                  HookInfo(['unit', 'item'], ResolvePolicy.NO_RETURN, inherits_parent=True),
     'on_upkeep':                                       HookInfo(['actions', 'playback', 'unit', 'item'], ResolvePolicy.NO_RETURN, inherits_parent=True),
     'on_endstep':                                      HookInfo(['actions', 'playback', 'unit', 'item'], ResolvePolicy.NO_RETURN, inherits_parent=True),
-    'start_combat':                                    HookInfo(['playback', 'unit', 'item', 'target', 'mode'], ResolvePolicy.NO_RETURN, inherits_parent=True),
-    'end_combat':                                      HookInfo(['playback', 'unit', 'item', 'target', 'mode'], ResolvePolicy.NO_RETURN, inherits_parent=True),
+    'start_combat':                                    HookInfo(['playback', 'unit', 'item', 'target', 'item2', 'mode'], ResolvePolicy.NO_RETURN, inherits_parent=True),
+    'end_combat':                                      HookInfo(['playback', 'unit', 'item', 'target', 'item2', 'mode'], ResolvePolicy.NO_RETURN, inherits_parent=True),
 }
 
 def generate_item_hook_str(hook_name: str, hook_info: HookInfo):

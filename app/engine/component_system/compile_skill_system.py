@@ -86,23 +86,23 @@ SKILL_HOOKS: Dict[str, HookInfo] = {
     'modify_minimum_range':                 HookInfo(['unit', 'item'], ResolvePolicy.NUMERIC_ACCUM),
 
     # dynamic numeric modifiers (as item numberic modifiers)
-    'dynamic_damage':                       HookInfo(['unit', 'item', 'target', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
-    'dynamic_resist':                       HookInfo(['unit', 'item', 'target', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
-    'dynamic_accuracy':                     HookInfo(['unit', 'item', 'target', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
-    'dynamic_avoid':                        HookInfo(['unit', 'item', 'target', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
-    'dynamic_crit_accuracy':                HookInfo(['unit', 'item', 'target', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
-    'dynamic_crit_avoid':                   HookInfo(['unit', 'item', 'target', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
-    'dynamic_attack_speed':                 HookInfo(['unit', 'item', 'target', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
-    'dynamic_defense_speed':                HookInfo(['unit', 'item', 'target', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
-    'dynamic_multiattacks':                 HookInfo(['unit', 'item', 'target', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
+    'dynamic_damage':                       HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
+    'dynamic_resist':                       HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
+    'dynamic_accuracy':                     HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
+    'dynamic_avoid':                        HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
+    'dynamic_crit_accuracy':                HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
+    'dynamic_crit_avoid':                   HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
+    'dynamic_attack_speed':                 HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
+    'dynamic_defense_speed':                HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
+    'dynamic_multiattacks':                 HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
     # mana (as item numeric modifiers)
     'mana':                                 HookInfo(['playback', 'unit', 'item', 'target'], ResolvePolicy.NUMERIC_ACCUM),
     # multipliers (takes product of component values, default 1 if not defined)
-    'damage_multiplier':                    HookInfo(['unit', 'item', 'target', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_MULTIPLY),
-    'resist_multiplier':                    HookInfo(['unit', 'item', 'target', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_MULTIPLY),
-    'crit_multiplier':                      HookInfo(['unit', 'item', 'target', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_MULTIPLY),
+    'damage_multiplier':                    HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_MULTIPLY),
+    'resist_multiplier':                    HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_MULTIPLY),
+    'crit_multiplier':                      HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_MULTIPLY),
     # aesthetic combat (returns last component value, None if not defined)
-    'battle_music':                         HookInfo(['playback', 'unit', 'item', 'target', 'mode'], ResolvePolicy.UNIQUE),
+    'battle_music':                         HookInfo(['playback', 'unit', 'item', 'target', 'item2', 'mode'], ResolvePolicy.UNIQUE),
     # events (runs all components, does not return anything)
     'on_death':                             HookInfo(['unit'], ResolvePolicy.NO_RETURN),
     # item events
@@ -111,22 +111,22 @@ SKILL_HOOKS: Dict[str, HookInfo] = {
     'on_equip_item':                        HookInfo(['unit', 'item'], ResolvePolicy.NO_RETURN),
     'on_unequip_item':                      HookInfo(['unit', 'item'], ResolvePolicy.NO_RETURN),
     # sub-combat events
-    'start_sub_combat':                     HookInfo(['actions', 'playback', 'unit', 'item', 'target', 'mode', 'attack_info'], ResolvePolicy.NO_RETURN),
-    'end_sub_combat':                       HookInfo(['actions', 'playback', 'unit', 'item', 'target', 'mode', 'attack_info'], ResolvePolicy.NO_RETURN),
+    'start_sub_combat':                     HookInfo(['actions', 'playback', 'unit', 'item', 'target', 'item2', 'mode', 'attack_info'], ResolvePolicy.NO_RETURN),
+    'end_sub_combat':                       HookInfo(['actions', 'playback', 'unit', 'item', 'target', 'item2', 'mode', 'attack_info'], ResolvePolicy.NO_RETURN),
     # after strike events
-    'after_strike':                         HookInfo(['actions', 'playback', 'unit', 'item', 'target', 'mode', 'attack_info', 'strike'], ResolvePolicy.NO_RETURN),
-    'after_take_strike':                    HookInfo(['actions', 'playback', 'unit', 'item', 'target', 'mode', 'attack_info', 'strike'], ResolvePolicy.NO_RETURN),
+    'after_strike':                         HookInfo(['actions', 'playback', 'unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'strike'], ResolvePolicy.NO_RETURN),
+    'after_take_strike':                    HookInfo(['actions', 'playback', 'unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'strike'], ResolvePolicy.NO_RETURN),
     # phase events
     'on_upkeep':                            HookInfo(['actions', 'playback', 'unit'], ResolvePolicy.NO_RETURN, has_unconditional=True),
     'on_endstep':                           HookInfo(['actions', 'playback', 'unit'], ResolvePolicy.NO_RETURN, has_unconditional=True),
     # combat events (as events but has unconditional variants)
-    'start_combat':                         HookInfo(['playback', 'unit', 'item', 'target', 'mode'], ResolvePolicy.NO_RETURN, has_unconditional=True),
-    'cleanup_combat':                       HookInfo(['playback', 'unit', 'item', 'target', 'mode'], ResolvePolicy.NO_RETURN, has_unconditional=True),
-    'end_combat':                           HookInfo(['playback', 'unit', 'item', 'target', 'mode'], ResolvePolicy.NO_RETURN, has_unconditional=True),
-    'pre_combat':                           HookInfo(['playback', 'unit', 'item', 'target', 'mode'], ResolvePolicy.NO_RETURN, has_unconditional=True),
-    'post_combat':                          HookInfo(['playback', 'unit', 'item', 'target', 'mode'], ResolvePolicy.NO_RETURN, has_unconditional=True),
-    'test_on':                              HookInfo(['playback', 'unit', 'item', 'target', 'mode'], ResolvePolicy.NO_RETURN, has_unconditional=True),
-    'test_off':                             HookInfo(['playback', 'unit', 'item', 'target', 'mode'], ResolvePolicy.NO_RETURN, has_unconditional=True),
+    'start_combat':                         HookInfo(['playback', 'unit', 'item', 'target', 'item2', 'mode'], ResolvePolicy.NO_RETURN, has_unconditional=True),
+    'cleanup_combat':                       HookInfo(['playback', 'unit', 'item', 'target', 'item2', 'mode'], ResolvePolicy.NO_RETURN, has_unconditional=True),
+    'end_combat':                           HookInfo(['playback', 'unit', 'item', 'target', 'item2', 'mode'], ResolvePolicy.NO_RETURN, has_unconditional=True),
+    'pre_combat':                           HookInfo(['playback', 'unit', 'item', 'target', 'item2', 'mode'], ResolvePolicy.NO_RETURN, has_unconditional=True),
+    'post_combat':                          HookInfo(['playback', 'unit', 'item', 'target', 'item2', 'mode'], ResolvePolicy.NO_RETURN, has_unconditional=True),
+    'test_on':                              HookInfo(['playback', 'unit', 'item', 'target', 'item2', 'mode'], ResolvePolicy.NO_RETURN, has_unconditional=True),
+    'test_off':                             HookInfo(['playback', 'unit', 'item', 'target', 'item2', 'mode'], ResolvePolicy.NO_RETURN, has_unconditional=True),
     # list hooks (returns a list of all hook return values)
     # union hooks (returns a set containing every unique hook return)
     'usable_wtypes':                        HookInfo(['unit'], ResolvePolicy.UNION),

@@ -2966,7 +2966,7 @@ class ShowMinimap(EventCommand):
 Opens the minimap and gives the player control over the screen until they close the minimap.
         """
 
-class OpenAcheivements(EventCommand):
+class OpenAchievements(EventCommand):
     nid = 'open_achievements'
     tag = Tags.MISCELLANEOUS
 

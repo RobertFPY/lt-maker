@@ -8,7 +8,7 @@ import re
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type
 
 from app.data.database.database import Database
-from app.engine.fonts import FONT
+from app.engine.fonts import FONT, convo
 from app.utilities.class_utils import recursive_subclasses
 from app.utilities.enums import HAlignment, VAlignment
 from app.events import event_commands
@@ -536,6 +536,9 @@ class Slide(OptionValidator):
 
 class Font(OptionValidator):
     valid = list(FONT.keys())
+
+class FontColor(OptionValidator):
+    valid = list(convo.colors.keys())
 
 class Direction(OptionValidator):
     valid = ["open", "close"]
@@ -1401,6 +1404,4 @@ def convert(var_type, text):
         return text
 
 def get(keyword) -> Type[Validator]:
-    if keyword in validators:
-        return validators[keyword]
-    return None
+    return validators[keyword]

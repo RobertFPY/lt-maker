@@ -22,6 +22,10 @@ from app.events.regions import RegionType as RegionTypeEnum
 
 class Validator():
     desc = ""
+    # whether or not this type supports `{eval:}` and `{var:}`, etc.
+    # generally True, but false in case of commands such as change_objective
+    # that set a string that supports being evaluated elsewhere (and therefore must not be pre-emptively evaluated here)
+    can_preprocess = True
 
     def __init__(self, db: Optional[Database] = None, resources: Optional[Resources] = None):
         self._db = db or Database()
@@ -379,6 +383,9 @@ class String(Validator):
     Any string will do
     """
     pass
+
+class EvaluableString(Validator):
+    can_preprocess = False
 
 class Music(Validator):
     def validate(self, text, level):

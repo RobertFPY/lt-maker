@@ -24,7 +24,7 @@ class PyEventAnalyzerUnitTests(unittest.TestCase):
         self.assertEqual(errors[0].__class__, InvalidPythonError)
 
     def test_analyzer_catches_forbidden_symbols(self):
-        script_path = Path(__file__).parent / 'data' / 'python_events' / 'analyzer_forbidden_symbols.pyevent'
+        script_path = Path(__file__).parent / 'data' / 'analyzer_forbidden_symbols.pyevent'
         script_source = script_path.read_text()
         ppsr = PyEventAnalyzer()
 
@@ -40,7 +40,7 @@ class PyEventAnalyzerUnitTests(unittest.TestCase):
         self.assertEqual(errors[2].__class__, InvalidPythonError)
 
     def test_analyzer_catches_errors(self):
-        script_path = Path(__file__).parent / 'data' / 'python_events' / 'analyzer.pyevent'
+        script_path = Path(__file__).parent / 'data' / 'analyzer.pyevent'
         script_source = script_path.read_text()
         ppsr = PyEventAnalyzer()
 
@@ -53,12 +53,12 @@ class PyEventAnalyzerUnitTests(unittest.TestCase):
         self.assertEqual(errors[1].__class__, InvalidCommandError)
 
     def test_analyzer_catches_bad_saves(self):
-        script_path = Path(__file__).parent / 'data' / 'python_events' / 'analyzer_save_in_for_loop.pyevent'
+        script_path = Path(__file__).parent / 'data' / 'analyzer_save_in_for_loop.pyevent'
         script_source = script_path.read_text()
         script_prefab = EventPrefab('analyzer_save_in_for_loop')
         script_prefab.source = script_source
 
-        nested_script_path = Path(__file__).parent / 'data' / 'python_events' / 'save_in_trigger_script_in_for_loop.pyevent'
+        nested_script_path = Path(__file__).parent / 'data' / 'save_in_trigger_script_in_for_loop.pyevent'
         nested_script_source = nested_script_path.read_text()
         nested_prefab = EventPrefab('save_in_trigger_script_in_for_loop')
         nested_prefab.source = nested_script_source
@@ -73,7 +73,7 @@ class PyEventAnalyzerUnitTests(unittest.TestCase):
         self.assertEqual(errors[3].__class__, MalformedTriggerScriptCall)
 
     def test_analyzer_forbids_yields(self):
-        script_path = Path(__file__).parent / 'data' / 'python_events' / 'analyzer_yields.pyevent'
+        script_path = Path(__file__).parent / 'data' / 'analyzer_yields.pyevent'
         script_source = script_path.read_text()
         ppsr = PyEventAnalyzer()
 

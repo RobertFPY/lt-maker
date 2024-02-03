@@ -280,12 +280,15 @@ def get_arg_info(line: str, end_idx: int, version: EventVersion) -> CompletionLo
         return CompletionLocation(arg_to_replace, arg_to_match, end_idx - len(arg_to_replace))
     elif version == EventVersion.PYEV1:
         as_tokens = SWSCompilerV1.parse_line(line)
+        if not as_tokens: # normal line, not a python eventing line
+            arg_to_replace = trim_arg_match(line)
+            return CompletionLocation(arg_to_replace, arg_to_replace, end_idx - len(arg_to_replace))
         full_arg = as_tokens.tokens[-1]
         arg_to_match = trim_arg_match(full_arg)
         arg_to_replace = trim_arg_text_python(full_arg)
         return CompletionLocation(arg_to_replace, arg_to_match, end_idx - len(arg_to_replace))
-    if not as_tokens:
-        return
+    else:
+        raise Exception("Unknown event version")
 
 def get_arg_name(command_t: Type[event_commands.EventCommand], arg_text: str, arg_idx: int) -> Optional[str]:
     # is this a keyword arg?

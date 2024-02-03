@@ -23,7 +23,7 @@ class PythonEventProcessorUnitTests(unittest.TestCase):
         logging.disable(logging.NOTSET)
 
     def test_event_processor(self):
-        script_path = Path(__file__).parent / 'data' / 'python_events' / 'test_event.pyevent'
+        script_path = Path(__file__).parent / 'data' / 'test_event.pyevent'
         script_source = script_path.read_text()
         processor = PythonEventProcessor('test', script_source, self.mock_game)
 
@@ -85,7 +85,7 @@ class PythonEventProcessorUnitTests(unittest.TestCase):
         self.assertTrue(processor.is_finished)
 
     def test_save_restore_processor_state(self):
-        script_path = Path(__file__).parent / 'data' / 'python_events' / 'test_save_event_state.pyevent'
+        script_path = Path(__file__).parent / 'data' / 'test_save_event_state.pyevent'
         script_source = script_path.read_text()
         processor = PythonEventProcessor('test_save_event_state', script_source, self.mock_game)
 

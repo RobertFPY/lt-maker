@@ -2521,14 +2521,14 @@ def remove_weather(self: Event, weather, position=None, flags=None):
     pos = self._parse_pos(position) if position else None
     action.do(action.RemoveWeather(nid, pos))
 
-def change_objective_simple(self: Event, string, flags=None):
-    action.do(action.ChangeObjective('simple', string))
+def change_objective_simple(self: Event, evaluable_string, flags=None):
+    action.do(action.ChangeObjective('simple', evaluable_string))
 
-def change_objective_win(self: Event, string, flags=None):
-    action.do(action.ChangeObjective('win', string))
+def change_objective_win(self: Event, evaluable_string, flags=None):
+    action.do(action.ChangeObjective('win', evaluable_string))
 
-def change_objective_loss(self: Event, string, flags=None):
-    action.do(action.ChangeObjective('loss', string))
+def change_objective_loss(self: Event, evaluable_string, flags=None):
+    action.do(action.ChangeObjective('loss', evaluable_string))
 
 def set_position(self: Event, position, flags=None):
     pos = self._parse_pos(position)

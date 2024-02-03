@@ -25,6 +25,17 @@ class EventCommandUnitTests(unittest.TestCase):
         catalog = function_catalog.get_catalog()
         self.assertTrue(len(catalog) > 0)
 
+    def test_validators(self):
+        from app.events import event_validators
+        commands = event_commands.get_commands()
+        invalid_keywords = set()
+        for command in commands:
+            keywords = command.get_keyword_types()
+            for keyword in keywords:
+                if(event_validators.get(keyword) is None):
+                    invalid_keywords.add((keyword, command.nid))
+        self.assertEqual(0, len(invalid_keywords), "Invalid keywords found: " + ', '.join(map(str, invalid_keywords)))
+
     def test_determine_command_type(self):
         command1 = event_commands.determine_command_type("speak")
         self.assertTrue(command1 == event_commands.Speak)

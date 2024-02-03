@@ -566,7 +566,7 @@ Extra flags:
 
     keywords = ['SpeakerOrStyle', 'Text']
     optional_keywords = ['TextPosition', 'Width', 'StyleNid', 'TextSpeed', 'FontColor', 'FontType', 'DialogBox', 'NumLines', 'DrawCursor', 'MessageTail', 'Transparency', 'NameTagBg']
-    keyword_types = ['Speaker', 'Text', 'AlignOrPosition', 'Width', 'DialogVariant', 'Float', 'FontColor', 'Font', 'MaybeSprite', 'WholeNumber', 'Bool', 'MaybeSprite', 'Float', 'MaybeSprite']
+    keyword_types = ['Speaker', 'String', 'AlignOrPosition', 'Width', 'DialogVariant', 'Float', 'FontColor', 'Font', 'MaybeSprite', 'WholeNumber', 'Bool', 'MaybeSprite', 'Float', 'MaybeSprite']
     _flags = ['low_priority', 'hold', 'no_popup', 'fit', 'no_block', 'no_talk', 'no_sound']
 
 class Unhold(EventCommand):
@@ -2284,7 +2284,7 @@ Adds *Item* to the list of purchaseable goods in the base's market. If the optio
 
     keywords = ["Item"]
     optional_keywords = ["Stock"]
-    keywords_types = ["Item", "Integer"]
+    keyword_types = ["Item", "Integer"]
 
 class RemoveMarketItem(EventCommand):
     nid = 'remove_market_item'
@@ -2297,7 +2297,7 @@ Removes *Item* from the list of purchaseable goods in the base's market. If the 
 
     keywords = ["Item"]
     optional_keywords = ["Stock"]
-    keywords_types = ["Item", "WholeNumber"]
+    keyword_types = ["Item", "WholeNumber"]
 
 class ClearMarketItems(EventCommand):
     nid = 'clear_market_items'
@@ -3155,7 +3155,7 @@ class RevealOverworldRoad(EventCommand):
             'By default, fades in via animation; use the *immediate* flag to skip this anim.')
 
     keywords = ['Node1', 'Node2']
-    keyword_types = ['OverworldNodeNid', 'OverworldNodeNid']
+    keyword_types = ['OverworldNodeNID', 'OverworldNodeNID']
     _flags = ["immediate"]
 
 class CreateOverworldEntity(EventCommand):
@@ -3201,7 +3201,7 @@ class SetOverworldMenuOptionEnabled(EventCommand):
     desc = ('Toggle whether the specified node menu option can be accessed by the player. Note that even if enabled, it must also be visible for the player to access it.')
 
     keywords = ['OverworldNodeNid', 'OverworldNodeMenuOption', 'Setting']
-    keyword_types = ['OverworldNodeNid', 'OverworldNodeMenuOption', 'Bool']
+    keyword_types = ['OverworldNodeNID', 'OverworldNodeMenuOption', 'Bool']
 
 class SetOverworldMenuOptionVisible(EventCommand):
     nid = 'set_overworld_menu_option_visible'

@@ -370,9 +370,9 @@ def on_crit(actions, playback, unit, item, target, item2, target_pos, mode, atta
     if item.parent_item and first_item:
         for component in item.parent_item.components:
             if component.defines('on_crit'):
-                component.on_crit(actions, playback, unit, item.parent_item, target, target_pos, mode, attack_info)
+                component.on_crit(actions, playback, unit, item.parent_item, target, item2, target_pos, mode, attack_info)
             elif component.defines('on_hit'):
-                component.on_hit(actions, playback, unit, item.parent_item, target, target_pos, mode, attack_info)
+                component.on_hit(actions, playback, unit, item.parent_item, target, item2, target_pos, mode, attack_info)
 
     # Default playback
     import app.engine.combat.playback as pb
@@ -396,9 +396,9 @@ def on_glancing_hit(actions, playback, unit, item, target, item2, target_pos, mo
     if item.parent_item and first_item:
         for component in item.parent_item.components:
             if component.defines('on_glancing_hit'):
-                component.on_glancing_hit(actions, playback, unit, item.parent_item, target, target_pos, mode, attack_info)
+                component.on_glancing_hit(actions, playback, unit, item.parent_item, target, item2, target_pos, mode, attack_info)
             elif component.defines('on_hit'):
-                component.on_hit(actions, playback, unit, item.parent_item, target, target_pos, mode, attack_info)
+                component.on_hit(actions, playback, unit, item.parent_item, target, item2, target_pos, mode, attack_info)
 
     # Default playback
     import app.engine.combat.playback as pb

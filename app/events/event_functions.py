@@ -110,7 +110,7 @@ def change_special_music(self: Event, special_music_type: str, music: SongPrefab
     elif special_music_type == 'game_over':
         action.do(action.SetGameVar('_music_game_over', music_nid))
 
-def add_portrait(self: Event, portrait, screen_position: Tuple, slide=None, expression_list: Optional[List[str]]=None, speed_mult: float=1.0, flags=None):
+def add_portrait(self: Event, portrait, screen_position: Tuple, slide=None, expression_list: Optional[List[str]] = None, speed_mult: float = 1.0, flags=None):
     flags = flags or set()
 
     portrait_prefab, name = self._get_portrait(portrait)
@@ -216,7 +216,7 @@ def move_portrait(self: Event, portrait, screen_position: Tuple, speed_mult: flo
         self.wait_time = engine.get_time() + event_portrait.travel_time + 66
         self.state = 'waiting'
 
-def mirror_portrait(self: Event, portrait, flags=None):
+def mirror_portrait(self: Event, portrait, speed_mult: float = 1.0, flags=None):
     flags = flags or set()
 
     _, name = self._get_portrait(portrait)
@@ -224,12 +224,15 @@ def mirror_portrait(self: Event, portrait, flags=None):
     if not event_portrait:
         return False
 
+    speed_mult_calc = 1 / max(speed_mult, 0.001)
+
     flipped_portrait = \
         EventPortrait(
             event_portrait.portrait,
             event_portrait.position,
             event_portrait.priority,
-            False, None, not event_portrait.mirror, name)
+            False, None, not event_portrait.mirror, 
+            name, speed_mult=speed_mult_calc)
     if self.text_boxes and self.text_boxes[-1].portrait == event_portrait:
         self.text_boxes[-1].portrait = flipped_portrait
 
@@ -239,14 +242,14 @@ def mirror_portrait(self: Event, portrait, flags=None):
         if 'fade' in flags:
             # Removal of portrait also happens
             commands = []
-            commands.append(event_commands.RemovePortrait({'Portrait': name}, {'no_block'}))
-            command_flags = set()
+            commands.append(event_commands.RemovePortrait({'Portrait': name, 'SpeedMult': speed_mult}, {'no_block'}))
 
+            command_flags = set()
             if (not event_portrait.mirror) ^ (event_portrait.position[0] < WINWIDTH // 2):
                 command_flags.add("mirror")
             if 'no_block' in flags:
                 command_flags.add("no_block")
-            commands.append(event_commands.AddPortrait({'Portrait': name, 'ScreenPosition': event_portrait.position}, command_flags))
+            commands.append(event_commands.AddPortrait({'Portrait': name, 'ScreenPosition': event_portrait.position, 'SpeedMult': speed_mult}, command_flags))
             self.command_queue += commands
         else:
             # Immediate removal followed by a transition in

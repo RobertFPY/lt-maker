@@ -3444,14 +3444,6 @@ def parse_text_to_command(text: str, strict: bool = False) -> Tuple[EventCommand
         EventCommand: parsed command
         int: Index of the character the command failed to parse at (only if strict)
     """
-    def _process_arg(cmd_keyword: str, arg: str) -> str:
-        # if parentheses exists, then they contain the "true" arg, with everything outside parens essentially as comments
-        # we do NOT want to use this with evals, hence the '{' and '}' stoppage
-        if '(' in arg and ')' in arg and '{' not in arg and '}' not in arg and \
-                ('FLAG' in arg or (cmd_keyword and cmd_keyword not in evaluables and 'list' not in cmd_keyword.lower())):
-            return arg[arg.find("(") + 1 : arg.rfind(")")]
-        return arg
-
     def _parse_command(command: EventCommand, arguments: List[str]) -> Tuple[Optional[EventCommand], Optional[int]]:
         # Start parsing
         keyword_argument_mode: bool = False
@@ -3467,10 +3459,9 @@ def parse_text_to_command(text: str, strict: bool = False) -> Tuple[EventCommand
             all_keywords = command_info.keywords + command_info.optional_keywords
 
             # Check for flag first
-            if _process_arg(None, arg) in command_info.flags:
-                flags.add(_process_arg(None, arg))
-                cmd_args[idx] = _process_arg(None, arg)
-
+            if arg in command_info.flags:
+                flags.add(arg)
+                cmd_args[idx] = arg
             # Handle Python style keyword arguments
             # For example `s;Speaker=Eirika;Text=Hi!;Nid=normal`
             elif '=' in arg and arg.split('=', 1)[0] in all_keywords:
@@ -3478,7 +3469,6 @@ def parse_text_to_command(text: str, strict: bool = False) -> Tuple[EventCommand
                 cmd_keyword, arg = arg.split('=', 1)
                 cmd_validator = command_info.get_validator_from_keyword(cmd_keyword)
                 if cmd_validator:
-                    arg = _process_arg(cmd_validator, arg)
                     parameters[cmd_keyword] = arg
                     cmd_args[idx] = '%s=%s' % (cmd_keyword, arg)
                 else:
@@ -3493,13 +3483,11 @@ def parse_text_to_command(text: str, strict: bool = False) -> Tuple[EventCommand
                 if idx < len(command_info.keywords):
                     cmd_keyword = command_info.keywords[idx]
                     cmd_validator = command_info.get_keyword_types()[idx]
-                    arg = _process_arg(cmd_validator, arg)
                     parameters[cmd_keyword] = arg
                     cmd_args[idx] = arg
                 elif idx - len(command_info.keywords) < len(command_info.optional_keywords):
                     cmd_keyword = command_info.optional_keywords[idx - len(command_info.keywords)]
                     cmd_validator = command_info.get_keyword_types()[idx]
-                    arg = _process_arg(cmd_validator, arg)
                     parameters[cmd_keyword] = arg
                     cmd_args[idx] = arg
                 else:

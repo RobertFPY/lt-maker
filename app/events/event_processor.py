@@ -213,6 +213,16 @@ class EventProcessor():
         self.command_pointer += 1
         # evaluate and process command
         parameters, flags = event_commands.convert_parse(command, self._evaluate_all)
+        # Handle the weird cases where we don't want to handle evaluation
+        if command.nid == 'choice':
+            unevaled_parameters, _ = event_commands.convert_parse(command, None)
+            parameters['Choices'] = unevaled_parameters['Choices']
+        elif command.nid == 'table':
+            unevaled_parameters, _ = event_commands.convert_parse(command, None)
+            parameters['TableData'] = unevaled_parameters['TableData']
+        elif command.nid == 'textbox':
+            unevaled_parameters, _ = event_commands.convert_parse(command, None)
+            parameters['Text'] = unevaled_parameters['Text']
         processed_command = command.__class__(parameters, flags, command.display_values)
         return processed_command
 

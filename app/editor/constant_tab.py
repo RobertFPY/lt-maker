@@ -567,7 +567,11 @@ class ConstantDatabase(DatabaseTab):
                 if constant.value:
                     box.edit.setText(constant.value)
                 box.button.clicked.connect(partial(self.access_music_resources, constant, box))
-            else: # Choice tuple
+                box.delete_button = QPushButton('X')
+                box.bottom_section.addWidget(box.delete_button)
+                box.delete_button.setMaximumWidth(30)
+                box.delete_button.clicked.connect(partial(self.delete_music_resource, constant, box))
+            else:  # Choice tuple
                 box = PropertyBox(constant.name, ComboBox, self)
                 box.edit.addItems(constant.attr)
                 box.edit.setValue(constant.value)
@@ -591,6 +595,10 @@ class ConstantDatabase(DatabaseTab):
             nid = res[0].nid
             constant.set_value(nid)
             box.edit.setText(nid)
+
+    def delete_music_resource(self, constant, box):
+        constant.set_value(None)
+        box.edit.setText('')
 
 # Testing
 # Run "python -m app.editor.constant_tab" from main directory

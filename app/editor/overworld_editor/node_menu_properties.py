@@ -1,13 +1,13 @@
 from app.editor.lib.components.validated_line_edit import NidLineEdit
 from PyQt5.QtWidgets import QVBoxLayout, QLineEdit, \
-    QWidget, QPushButton, QMessageBox, QLabel, QComboBox, QHBoxLayout, QDialog, QCheckBox
-from PyQt5.QtCore import Qt, QEvent
+    QWidget, QPushButton, QMessageBox, QCheckBox
+from PyQt5.QtCore import Qt
 from app.events import node_events
 from app.editor.base_database_gui import DragDropCollectionModel
 from app.editor.custom_widgets import EventBox
 from app.utilities.data import Data
 from app.utilities import str_utils
-from app.extensions.custom_gui import ComboBox, SimpleDialog, PropertyBox, PropertyCheckBox, QHLine, RightClickListView
+from app.extensions.custom_gui import PropertyBox, PropertyCheckBox, RightClickListView
 from app.data.database.database import DB
 
 class NodeEventPropertiesMenu(QWidget):
@@ -118,7 +118,7 @@ class OptionModel(DragDropCollectionModel):
         obj = self._data[idx]
         new_nid = str_utils.get_next_name(obj.nid, self._data.keys())
         serialized_obj = obj.save()
-        new_obj = node_events.NodeEvent.restore(serialized_obj)
+        new_obj = node_events.NodeMenuEvent.restore(serialized_obj)
         new_obj.nid = new_nid
         self._data.insert(idx + 1, new_obj)
         self.layoutChanged.emit()

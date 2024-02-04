@@ -3373,8 +3373,8 @@ def spend_unlock(self: Event, unit, flags=None):
 
     actions, playback = [], []
     # In order to proc uses, c_uses etc.
-    item_system.start_combat(playback, unit, chosen_item, unit, None)
-    item_system.on_hit(actions, playback, unit, chosen_item, unit, self.position, None, (0, 0), True)
+    item_system.start_combat(playback, unit, chosen_item, unit, chosen_item, None)
+    item_system.on_hit(actions, playback, unit, chosen_item, unit, chosen_item, self.position, None, (0, 0), True)
     for act in actions:
         action.do(act)
     item_system.end_combat(playback, unit, chosen_item, unit, chosen_item, None)

@@ -114,7 +114,7 @@ class FeatChoiceState(MapState):
             get_sound_thread().play_sfx('Select 1')
             selection = self.menu.get_current()
             game.state.back()
-            act = action.AddSkill(self.unit, selection.nid, source=unit.nid, source_type=SourceType.PERSONAL)
+            act = action.AddSkill(self.unit, selection.nid, source=self.unit.nid, source_type=SourceType.PERSONAL)
             action.do(act)
             if act.skill_obj:
                 game.alerts.append(banner.GiveSkill(self.unit, act.skill_obj))

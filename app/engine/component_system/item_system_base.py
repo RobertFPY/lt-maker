@@ -421,7 +421,7 @@ def on_miss(actions, playback, unit, item, target, item2, target_pos, mode, atta
     if item.parent_item and first_item:
         for component in item.parent_item.components:
             if component.defines('on_miss'):
-                component.on_miss(actions, playback, unit, item.parent_item, target, target_pos, mode, attack_info)
+                component.on_miss(actions, playback, unit, item.parent_item, target, item2, target_pos, mode, attack_info)
 
     # Default playback
     import app.engine.combat.playback as pb

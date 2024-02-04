@@ -9,14 +9,14 @@
                 "give_item",
                 [
                     "101",
-                    "Hand Axe (Hand Axe)"
+                    "Hand Axe"
                 ]
             ]
         ],
         "only_once": false,
         "priority": 20,
         "_source": [
-            "give_item;101;Hand Axe (Hand Axe)"
+            "give_item;101;Hand Axe"
         ]
     }
 ]

@@ -162,7 +162,7 @@ def multi_add_portrait(self: Event, portrait1, screen_position1, portrait2, scre
         commands.append(event_commands.AddPortrait({'Portrait': portrait4, 'ScreenPosition': screen_position4}, set()))
     self.command_queue += commands
 
-def remove_portrait(self: Event, portrait, speed_mult: float=1.0, flags=None):
+def remove_portrait(self: Event, portrait, speed_mult: float = 1.0, slide=None, flags=None):
     flags = flags or set()
 
     _, name = self._get_portrait(portrait)
@@ -175,7 +175,7 @@ def remove_portrait(self: Event, portrait, speed_mult: float=1.0, flags=None):
         event_portrait = self.portraits.pop(name)
     else:
         event_portrait = self.portraits[name]
-        event_portrait.end(speed_mult)
+        event_portrait.end(speed_mult, slide)
 
     if 'immediate' in flags or 'no_block' in flags or self.do_skip:
         pass

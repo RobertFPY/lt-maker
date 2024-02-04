@@ -432,8 +432,8 @@ Extra flags:
         """
 
     keywords = ['Portrait']
-    optional_keywords = ['SpeedMult']
-    keyword_types = ['Portrait', 'Float']
+    optional_keywords = ['SpeedMult', 'Slide']
+    keyword_types = ['Portrait', 'Float', 'Slide']
     _flags = ["immediate", "no_block"]
 
 class MultiRemovePortrait(EventCommand):

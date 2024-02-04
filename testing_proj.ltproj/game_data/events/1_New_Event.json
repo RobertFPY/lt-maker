@@ -92,7 +92,7 @@
                 "alert",
                 [
                     "<blue>Eirika</> got <blue>Iron Sword</>.",
-                    "Iron Sword (Iron Sword)"
+                    "Iron Sword"
                 ]
             ],
             [
@@ -157,7 +157,7 @@
             "wait;2000",
             "complete_achievement;Sample3;t;banner",
             "base;Arena",
-            "alert;<blue>Eirika</> got <blue>Iron Sword</>.;Iron Sword (Iron Sword)",
+            "alert;<blue>Eirika</> got <blue>Iron Sword</>.;Iron Sword",
             "add_portrait;Eirika;Left",
             "speak;Eirika;<red>.</red><green>.</green><red>.</red><green>.</green><red>.</red><green>.</green><red>.</red><green>.</green><red>.</red><green>.</green><red>.</red><green>.</green><red>.</red><green>.</green><red>.</red><green>.</green><red>.</red><green>.</green><red>.</red><green>.</green><red>.</red><green>.</green><red>.</red><green>.</green><red>.</red><green>.</green><red>.</red><green>.</green>\u2028<red>.</red><green>.</green><red>.</red><green>.</green><red>.</red><green>.</green><red>.</red><green>.</green><red>.</red><green>.</green><red>.</red><green>.</green><red>.</red><green>.</green><red>.</red><green>.</green><red>.</red><green>.</green><red>.</red><green>.</green><red>.</red><green>.</green><red>.</red><green>.</green><red>.</red><green>.</green><red>.</red><green>.</green>",
             "speak;Eirika;Test red testing red <red>okay red lines,\u2028is this a problematic issue let's check.</>;NumLines=3",

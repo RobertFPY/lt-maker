@@ -189,24 +189,6 @@ class DBChecker():
         for event in self.db.events:
             if event.version() != EventVersion.EVENT:
                 all_errors += ppsr.verify_event(event.nid, event.source)
-            else:
-                # TODO(mag): delete this on 1/1/2024, temporary measure to correctly format projects, deleting parens
-                new_source = []
-                for line in event._source:
-                    as_command, _ = event_commands.parse_text_to_command(line)
-                    if as_command:
-                        nid_or_nickname = event_commands.get_command_arguments(line)[0].string
-                        text = as_command.to_plain_text()
-                        s = text.split(';', 1)
-                        if len(s) == 1: # only command
-                            reconstituted = nid_or_nickname
-                        else:
-                            reconstituted = nid_or_nickname + ';' + s[1]
-                        new_source.append(reconstituted)
-                    else:
-                        new_source.append(line)
-                event.source = '\n'.join(new_source)
-                # END
         return ValidationResult(all_errors)
 
     def _val_or_err(self, nids: List[NID] | NID, dtype: LTType, parent_error: ltdb.Error, optional=True) -> List[ltdb.Error]:

@@ -8,7 +8,7 @@ import re
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type
 
 from app.data.database.database import Database
-from app.engine.fonts import FONT
+from app.engine.fonts import FONT, convo
 from app.utilities.class_utils import recursive_subclasses
 from app.utilities.enums import HAlignment, VAlignment
 from app.events import event_commands
@@ -22,6 +22,10 @@ from app.events.regions import RegionType as RegionTypeEnum
 
 class Validator():
     desc = ""
+    # whether or not this type supports `{eval:}` and `{var:}`, etc.
+    # generally True, but false in case of commands such as change_objective
+    # that set a string that supports being evaluated elsewhere (and therefore must not be pre-emptively evaluated here)
+    can_preprocess = True
 
     def __init__(self, db: Optional[Database] = None, resources: Optional[Resources] = None):
         self._db = db or Database()
@@ -380,6 +384,9 @@ class String(Validator):
     """
     pass
 
+class EvaluableString(Validator):
+    can_preprocess = False
+
 class Music(Validator):
     def validate(self, text, level):
         if text in self._resources.music.keys():
@@ -529,6 +536,9 @@ class Slide(OptionValidator):
 
 class Font(OptionValidator):
     valid = list(FONT.keys())
+
+class FontColor(OptionValidator):
+    valid = list(convo.colors.keys())
 
 class Direction(OptionValidator):
     valid = ["open", "close"]
@@ -1394,6 +1404,4 @@ def convert(var_type, text):
         return text
 
 def get(keyword) -> Type[Validator]:
-    if keyword in validators:
-        return validators[keyword]
-    return None
+    return validators[keyword]

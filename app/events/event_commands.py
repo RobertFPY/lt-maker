@@ -568,7 +568,7 @@ Extra flags:
 
     keywords = ['SpeakerOrStyle', 'Text']
     optional_keywords = ['TextPosition', 'Width', 'StyleNid', 'TextSpeed', 'FontColor', 'FontType', 'DialogBox', 'NumLines', 'DrawCursor', 'MessageTail', 'Transparency', 'NameTagBg']
-    keyword_types = ['Speaker', 'Text', 'AlignOrPosition', 'Width', 'DialogVariant', 'Float', 'FontColor', 'Font', 'MaybeSprite', 'WholeNumber', 'Bool', 'MaybeSprite', 'Float', 'MaybeSprite']
+    keyword_types = ['Speaker', 'String', 'AlignOrPosition', 'Width', 'DialogVariant', 'Float', 'FontColor', 'Font', 'MaybeSprite', 'WholeNumber', 'Bool', 'MaybeSprite', 'Float', 'MaybeSprite']
     _flags = ['low_priority', 'hold', 'no_popup', 'fit', 'no_block', 'no_talk', 'no_sound']
 
 class Unhold(EventCommand):
@@ -2449,10 +2449,10 @@ class ChangeObjectiveSimple(EventCommand):
 
     desc = \
         """
-Changes the simple version of the chapter's objective text to *String*.
+Changes the simple version of the chapter's objective text to *EvaluableString*.
         """
 
-    keywords = ["String"]
+    keywords = ["EvaluableString"]
 
 class ChangeObjectiveWin(EventCommand):
     nid = 'change_objective_win'
@@ -2460,10 +2460,10 @@ class ChangeObjectiveWin(EventCommand):
 
     desc = \
         """
-Changes the victory condition of the chapter's objective text to *String*.
+Changes the victory condition of the chapter's objective text to *EvaluableString*.
         """
 
-    keywords = ["String"]
+    keywords = ["EvaluableString"]
 
 class ChangeObjectiveLoss(EventCommand):
     nid = 'change_objective_loss'
@@ -2471,10 +2471,10 @@ class ChangeObjectiveLoss(EventCommand):
 
     desc = \
         """
-Changes the defeat condition of the chapter's objective text to *String*.
+Changes the defeat condition of the chapter's objective text to *EvaluableString*.
         """
 
-    keywords = ["String"]
+    keywords = ["EvaluableString"]
 
 class SetPosition(EventCommand):
     nid = 'set_position'
@@ -2702,7 +2702,7 @@ via hitting the back button, and the event will go on as normal.
 
     keywords = ['Nid', 'Title', 'Choices']
     optional_keywords = ['RowWidth', 'Orientation', 'Alignment', 'BG', 'EventNid', 'EntryType', 'Dimensions', 'TextAlign']
-    keyword_types = ['GeneralVar', 'String', 'String', 'Width', 'Orientation', 'Align', 'Sprite', 'Event', 'TableEntryType', 'Size', 'HAlign']
+    keyword_types = ['GeneralVar', 'String', 'EvaluableString', 'Width', 'Orientation', 'Align', 'Sprite', 'Event', 'TableEntryType', 'Size', 'HAlign']
     _flags = ['persist', 'expression', 'no_bg', 'no_cursor', 'arrows', 'no_arrows', 'scroll_bar', 'no_scroll_bar', 'backable']
 
 class Unchoice(EventCommand):
@@ -2739,7 +2739,7 @@ and predictably, those args will function the same way as in `speak`.
 
     keywords = ['NID', 'Text']
     optional_keywords = ['BoxPosition', 'Width', 'NumLines', 'StyleNid', 'TextSpeed', 'FontColor', 'FontType', 'BG']
-    keyword_types = ['Nid', 'String', 'AlignOrPosition', 'Width', 'PositiveInteger', 'Nid', 'Float', 'FontColor', 'Font', 'Sprite']
+    keyword_types = ['Nid', 'EvaluableString', 'AlignOrPosition', 'Width', 'PositiveInteger', 'Nid', 'Float', 'FontColor', 'Font', 'Sprite']
     _flags = ['expression']
 
 class Table(EventCommand):
@@ -2780,7 +2780,7 @@ expression would automatically update the gold.
 
     keywords = ['Nid', 'TableData']
     optional_keywords = ['Title', 'Dimensions', 'RowWidth', 'Alignment', 'BG', 'EntryType', 'TextAlign']
-    keyword_types = ['Nid', 'String', 'String', 'Size', 'Width', 'Align', 'Sprite', 'TableEntryType', 'HAlign']
+    keyword_types = ['Nid', 'EvaluableString', 'String', 'Size', 'Width', 'Align', 'Sprite', 'TableEntryType', 'HAlign']
     _flags = ['expression', 'no_bg']
 
 class RemoveTable(EventCommand):
@@ -3224,7 +3224,7 @@ class RevealOverworldRoad(EventCommand):
             'By default, fades in via animation; use the *immediate* flag to skip this anim.')
 
     keywords = ['Node1', 'Node2']
-    keyword_types = ['OverworldNodeNid', 'OverworldNodeNid']
+    keyword_types = ['OverworldNodeNID', 'OverworldNodeNID']
     _flags = ["immediate"]
 
 class CreateOverworldEntity(EventCommand):
@@ -3270,7 +3270,7 @@ class SetOverworldMenuOptionEnabled(EventCommand):
     desc = ('Toggle whether the specified node menu option can be accessed by the player. Note that even if enabled, it must also be visible for the player to access it.')
 
     keywords = ['OverworldNodeNid', 'OverworldNodeMenuOption', 'Setting']
-    keyword_types = ['OverworldNodeNid', 'OverworldNodeMenuOption', 'Bool']
+    keyword_types = ['OverworldNodeNID', 'OverworldNodeMenuOption', 'Bool']
 
 class SetOverworldMenuOptionVisible(EventCommand):
     nid = 'set_overworld_menu_option_visible'
@@ -3444,14 +3444,6 @@ def parse_text_to_command(text: str, strict: bool = False) -> Tuple[EventCommand
         EventCommand: parsed command
         int: Index of the character the command failed to parse at (only if strict)
     """
-    def _process_arg(cmd_keyword: str, arg: str) -> str:
-        # if parentheses exists, then they contain the "true" arg, with everything outside parens essentially as comments
-        # we do NOT want to use this with evals, hence the '{' and '}' stoppage
-        if '(' in arg and ')' in arg and '{' not in arg and '}' not in arg and \
-                ('FLAG' in arg or (cmd_keyword and cmd_keyword not in evaluables and 'list' not in cmd_keyword.lower())):
-            return arg[arg.find("(") + 1 : arg.rfind(")")]
-        return arg
-
     def _parse_command(command: EventCommand, arguments: List[str]) -> Tuple[Optional[EventCommand], Optional[int]]:
         # Start parsing
         keyword_argument_mode: bool = False
@@ -3467,10 +3459,9 @@ def parse_text_to_command(text: str, strict: bool = False) -> Tuple[EventCommand
             all_keywords = command_info.keywords + command_info.optional_keywords
 
             # Check for flag first
-            if _process_arg(None, arg) in command_info.flags:
-                flags.add(_process_arg(None, arg))
-                cmd_args[idx] = _process_arg(None, arg)
-
+            if arg in command_info.flags:
+                flags.add(arg)
+                cmd_args[idx] = arg
             # Handle Python style keyword arguments
             # For example `s;Speaker=Eirika;Text=Hi!;Nid=normal`
             elif '=' in arg and arg.split('=', 1)[0] in all_keywords:
@@ -3478,7 +3469,6 @@ def parse_text_to_command(text: str, strict: bool = False) -> Tuple[EventCommand
                 cmd_keyword, arg = arg.split('=', 1)
                 cmd_validator = command_info.get_validator_from_keyword(cmd_keyword)
                 if cmd_validator:
-                    arg = _process_arg(cmd_validator, arg)
                     parameters[cmd_keyword] = arg
                     cmd_args[idx] = '%s=%s' % (cmd_keyword, arg)
                 else:
@@ -3493,13 +3483,11 @@ def parse_text_to_command(text: str, strict: bool = False) -> Tuple[EventCommand
                 if idx < len(command_info.keywords):
                     cmd_keyword = command_info.keywords[idx]
                     cmd_validator = command_info.get_keyword_types()[idx]
-                    arg = _process_arg(cmd_validator, arg)
                     parameters[cmd_keyword] = arg
                     cmd_args[idx] = arg
                 elif idx - len(command_info.keywords) < len(command_info.optional_keywords):
                     cmd_keyword = command_info.optional_keywords[idx - len(command_info.keywords)]
                     cmd_validator = command_info.get_keyword_types()[idx]
-                    arg = _process_arg(cmd_validator, arg)
                     parameters[cmd_keyword] = arg
                     cmd_args[idx] = arg
                 else:
@@ -3554,11 +3542,15 @@ def parse(command: EventCommand, _eval_evals: Callable[[str], str] = None):
     return parameters, command.chosen_flags
 
 def convert_parse(command: EventCommand, _eval_evals: Callable[[str], str] = None):
-    from app.events.event_validators import convert
+    from app.events.event_validators import convert, get
 
     parameters = command.parameters
     if _eval_evals:
-        parameters = {k: _eval_evals(v) if isinstance(v, str) else v for k, v in parameters.items()}
+        new_parameters = {}
+        for k, v in parameters.items():
+            should_preprocess: bool = get(command.get_validator_from_keyword(k)).can_preprocess
+            new_parameters[k] = _eval_evals(v) if isinstance(v, str) and should_preprocess else v
+        parameters = new_parameters
     for keyword, value in parameters.items():
         if keyword in command.keywords:
             idx = command.keywords.index(keyword)

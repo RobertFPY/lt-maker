@@ -25,6 +25,17 @@ class EventCommandUnitTests(unittest.TestCase):
         catalog = function_catalog.get_catalog()
         self.assertTrue(len(catalog) > 0)
 
+    def test_validators(self):
+        from app.events import event_validators
+        commands = event_commands.get_commands()
+        invalid_keywords = set()
+        for command in commands:
+            keywords = command.get_keyword_types()
+            for keyword in keywords:
+                if(event_validators.get(keyword) is None):
+                    invalid_keywords.add((keyword, command.nid))
+        self.assertEqual(0, len(invalid_keywords), "Invalid keywords found: " + ', '.join(map(str, invalid_keywords)))
+
     def test_determine_command_type(self):
         command1 = event_commands.determine_command_type("speak")
         self.assertTrue(command1 == event_commands.Speak)
@@ -85,7 +96,7 @@ class EventCommandUnitTests(unittest.TestCase):
         command3, bad_idx = event_commands.parse_text_to_command("set_current_hp;Seth;13;no_warn", strict=True)
         self.assertEqual(command3.chosen_flags, {"no_warn"})
         # Test with display values (use of parentheses)
-        command4, bad_idx = event_commands.parse_text_to_command("set_current_hp;Seth (Seth);13", strict=True)
+        command4, bad_idx = event_commands.parse_text_to_command("set_current_hp;Seth;13", strict=True)
         self.assertEqual(command4.parameters.get('Unit'), "Seth")
         self.assertEqual(command4.parameters.get('HP'), "13")
         # Test with evaluables
@@ -157,7 +168,7 @@ class EventCommandUnitTests(unittest.TestCase):
         self.assertEqual(parameters, {"Speaker": "Seth", "Speed": 5.5})
         self.assertTrue(len(flags) == 0)
         # Test with flags and exising function
-        command3, _ = event_commands.parse_text_to_command("give_item;Eirika;Rapier;FLAG(no_banner)", strict=True)
+        command3, _ = event_commands.parse_text_to_command("give_item;Eirika;Rapier;no_banner", strict=True)
         self.assertTrue(isinstance(command3, event_commands.GiveItem))
         self.assertEqual(len(command3.chosen_flags), 1)
         self.assertEqual(command3.chosen_flags, {"no_banner"})

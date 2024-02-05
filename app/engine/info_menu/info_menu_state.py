@@ -1,10 +1,12 @@
+
+import logging
 from typing import List, Tuple
 
 from app.constants import WINHEIGHT, WINWIDTH
 from app.data.database.database import DB
 from app.data.resources.resources import RESOURCES
 from app.engine import (background, combat_calcs, engine, equations, gui,
-                        help_menu, icons, image_mods, item_funcs, item_system, 
+                        help_menu, icons, image_mods, item_funcs, item_system,
                         skill_system, text_funcs, unit_funcs)
 from app.engine.fluid_scroll import FluidScroll
 from app.engine.game_menus import menu_options
@@ -18,6 +20,7 @@ from app.engine.objects.unit import UnitObject
 from app.engine.sound import get_sound_thread
 from app.engine.sprites import SPRITES
 from app.engine.state import State
+from app.engine.text_evaluator import TextEvaluator
 from app.utilities import utils
 from app.utilities.enums import HAlignment
 
@@ -227,7 +230,7 @@ class InfoMenuState(State):
             self.rescuer = None
         elif len(self.scroll_units) > 1:
             index = self.scroll_units.index(self.unit)
-            new_index = (index + 1) % len(self.scroll_units)    
+            new_index = (index + 1) % len(self.scroll_units)
         else:
             return
         self.next_unit = self.scroll_units[new_index]
@@ -245,7 +248,7 @@ class InfoMenuState(State):
             index = self.scroll_units.index(self.unit)
             new_index = (index - 1) % len(self.scroll_units)
         else:
-            return        
+            return
         self.next_unit = self.scroll_units[new_index]
         if self.state == 'notes' and not (DB.constants.value('unit_notes') and self.next_unit.notes):
             self.state = 'personal_data'
@@ -653,7 +656,7 @@ class InfoMenuState(State):
                 render_text(surf, ['text'], [gge], ['blue'], (111, 16 * true_idx + 24), HAlignment.RIGHT)
                 render_text(surf, ['text'], [text_funcs.translate('GAUGE')], ['yellow'], (72, 16 * true_idx + 24))
                 self.info_graph.register((96 + 72, 16 * true_idx + 24, 64, 16), 'GAUGE_desc', state)
-                
+
             elif stat == 'TALK':
                 if (len([talk for talk in game.talk_options if talk[0] == self.unit.nid]) != 0):
                     talkee = [talk for talk in game.talk_options if talk[0] == self.unit.nid][0][1]
@@ -944,6 +947,7 @@ class InfoMenuState(State):
         # Menu background
         menu_surf = engine.create_surface((WINWIDTH - 96, WINHEIGHT), transparent=True)
 
+        text_parser = TextEvaluator(logging.getLogger(), game)
         my_notes = self.unit.notes
 
         if my_notes:
@@ -956,7 +960,7 @@ class InfoMenuState(State):
                 for entry in entries:
                     category_length = text_width('text', category)
                     left_pos = 64 if category_length <= 64 else (category_length + 8)
-                    render_text(menu_surf, ['text'], [entry], [], (left_pos, total_height))
+                    render_text(menu_surf, ['text'], [text_parser._evaluate_all(entry)], [], (left_pos, total_height))
                     total_height += 16
                 self.info_graph.register((96, 16 * help_offset + 24, 64, 16), '%s_desc' % category, 'notes', first=(idx == 0))
                 help_offset += len(entries)

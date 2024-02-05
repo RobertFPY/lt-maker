@@ -1404,4 +1404,6 @@ def convert(var_type, text):
         return text
 
 def get(keyword) -> Type[Validator]:
-    return validators[keyword]
+    if keyword in validators:
+        return validators[keyword]
+    return None

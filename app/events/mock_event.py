@@ -54,7 +54,7 @@ class MockEvent(Event):
         if event_prefab.version() != EventVersion.EVENT:
             self.processor = MockPythonEventProcessor('Mock', event_prefab.source)
         else:
-            self.processor = MockEventProcessor('Mock', event_prefab.source, self.text_evaluator, if_statement_strategy)
+            self.processor = MockEventProcessor('Mock', event_prefab.source, self.text_evaluator, if_statement_strategy, command_idx)
 
     def update(self):
         # update all internal updates, remove the ones that are finished
@@ -79,10 +79,12 @@ class MockEvent(Event):
         return None
 
 class MockEventProcessor(EventProcessor):
-    def __init__(self, nid: NID, script: str,
-                 text_evaluator: TextEvaluator, if_statement_strategy=IfStatementStrategy.ALWAYS_TRUE):
-        self.if_statement_strategy = if_statement_strategy
+    def __init__(self, nid: NID, script: str, text_evaluator: TextEvaluator, 
+                 if_statement_strategy=IfStatementStrategy.ALWAYS_TRUE,
+                 command_pointer: int = 0):
         super().__init__(nid, script, text_evaluator)
+        self.if_statement_strategy = if_statement_strategy
+        self.command_pointer = command_pointer
 
     def _get_truth(self, command: event_commands.EventCommand) -> bool:
         if self.if_statement_strategy == IfStatementStrategy.ALWAYS_TRUE:
@@ -93,5 +95,5 @@ class MockEventProcessor(EventProcessor):
         return truth
 
 class MockPythonEventProcessor(PythonEventProcessor):
-    def __init__(self, nid: NID, source: str):
+    def __init__(self, nid: NID, source: str, command_pointer: int = 0):
         super().__init__(nid, source, None)

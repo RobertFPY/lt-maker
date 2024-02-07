@@ -14,11 +14,13 @@ from app.events.python_eventing.utils import DO_NOT_EXECUTE_SENTINEL
 from app.utilities.typing import NID
 
 class PythonEventProcessor():
-    def __init__(self, nid: NID, source: str, game: GameState):
+    def __init__(self, nid: NID, source: str, game: GameState, curr_cmd_idx: int = 0):
         self.nid = nid
         self.source = source
-        self.curr_cmd_idx = 0
+        self.curr_cmd_idx = curr_cmd_idx
         self.is_finished = False
+        # TODO Test whether this works or if we need to use 0 here anyway
+        # self._script = Compiler.compile(nid, source, game, self.curr_cmd_idx)
         self._script = Compiler.compile(nid, source, game, 0)
 
     @lru_cache()

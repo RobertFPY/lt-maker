@@ -21,6 +21,8 @@ from app.utilities.enums import Alignments, HAlignment
 
 import logging
 
+from app.utilities.str_utils import SHIFT_NEWLINE
+
 MATCH_DIALOG_COMMAND_RE = re.compile('(\{[^\{]*?\})')
 def process_dialog_shorthand(text: str) -> str:
     if not text:
@@ -28,9 +30,9 @@ def process_dialog_shorthand(text: str) -> str:
     # special char: this is a unicode single-line break.
     # basically equivalent to {br}
     # the first char shouldn't be one of these
-    if text[0] == '\u2028':
+    if text[0] == SHIFT_NEWLINE:
         text = text[1:]
-    text = text.replace('\u2028', '{sub_break}')  # sub break to distinguish it
+    text = text.replace(SHIFT_NEWLINE, '{sub_break}')  # sub break to distinguish it
     text = text.replace('\n', '{br}')
     text = text.replace('|', '{w}{br}')
     text = text.replace('{semicolon}', ';')

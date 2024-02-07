@@ -8,7 +8,7 @@ from typing import Optional
 from app.engine.game_state import GameState
 
 from app.events import event_commands
-from app.events.python_eventing.compilation import Compiler
+from app.events.python_eventing.compiler import Compiler
 from app.events.python_eventing.errors import InvalidPythonError
 from app.events.python_eventing.utils import DO_NOT_EXECUTE_SENTINEL
 from app.utilities.typing import NID
@@ -19,9 +19,8 @@ class PythonEventProcessor():
         self.source = source
         self.curr_cmd_idx = curr_cmd_idx
         self.is_finished = False
-        # TODO Test whether this works or if we need to use 0 here anyway
-        # self._script = Compiler.compile(nid, source, game, self.curr_cmd_idx)
-        self._script = Compiler.compile(nid, source, game, 0)
+        self._compiled_script = Compiler.compile(nid, source, 0)
+        self._executable = self._compiled_script.get_runnable(game)
 
     @lru_cache()
     def get_source_line(self, line: int) -> str:
@@ -29,13 +28,13 @@ class PythonEventProcessor():
         return as_lines[line]
 
     def get_current_line(self) -> int:
-        return self.curr_cmd_idx
+        return self._executable.gi_frame.f_lineno - self._executable.gi_code.co_firstlineno - 1
 
     def fetch_next_command(self) -> Optional[event_commands.EventCommand]:
         try:
-            command_idx, next_command = next(self._script)
+            command_idx, next_command = next(self._executable)
             while command_idx is DO_NOT_EXECUTE_SENTINEL:
-                command_idx, next_command = next(self._script)
+                command_idx, next_command = next(self._executable)
             self.curr_cmd_idx = command_idx
             return next_command
         except StopIteration:
@@ -51,14 +50,13 @@ class PythonEventProcessor():
                 if exception_fname == "<string>":
                     # This means that we failed in the python script itself and
                     # can therefore figure out exactly what line in the python script is wrong
-                    diff_lines = Compiler.num_diff_lines()
+                    diff_lines = self._compiled_script._num_diff_lines()
                     true_lineno = exception_lineno - diff_lines
                     failing_line = self.get_source_line(true_lineno - 1)
                     exc = InvalidPythonError(self.nid, true_lineno, failing_line)
                     exc.what = str(e)
                     exc.original_exception = e
                     raise exc from e
-                    break
             else:
                 # Unable to handle the error correctly, so just raise it up
                 raise e
@@ -80,5 +78,6 @@ class PythonEventProcessor():
         nid = s_dict['nid']
         self = cls(nid, source, game)
         self.curr_cmd_idx = s_dict['curr_cmd_idx']
-        self._script = Compiler.compile(nid, source, game, self.curr_cmd_idx)
+        self._compiled_script = Compiler.compile(nid, source, self.curr_cmd_idx)
+        self._executable = self._compiled_script.get_runnable(game)
         return self

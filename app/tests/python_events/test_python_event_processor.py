@@ -23,7 +23,7 @@ class PythonEventProcessorUnitTests(unittest.TestCase):
         logging.disable(logging.NOTSET)
 
     def test_event_processor(self):
-        script_path = Path(__file__).parent / 'data' / 'python_events' / 'test_event.pyevent'
+        script_path = Path(__file__).parent / 'data' / 'test_event.pyevent'
         script_source = script_path.read_text()
         processor = PythonEventProcessor('test', script_source, self.mock_game)
 
@@ -49,7 +49,7 @@ class PythonEventProcessorUnitTests(unittest.TestCase):
         iftrue_speak = processor.fetch_next_command()
         self.assertTrue(isinstance(iftrue_speak, event_commands.Speak))
         self.assertEqual(iftrue_speak.parameters['SpeakerOrStyle'], 'MU')
-        self.assertEqual(iftrue_speak.parameters['Text'], "A bit ridiculous, isn't it?")
+        self.assertEqual(iftrue_speak.parameters['Text'], "A bit ridiculous isn't it?")
 
         # for
         eirika_for = processor.fetch_next_command()
@@ -85,7 +85,7 @@ class PythonEventProcessorUnitTests(unittest.TestCase):
         self.assertTrue(processor.is_finished)
 
     def test_save_restore_processor_state(self):
-        script_path = Path(__file__).parent / 'data' / 'python_events' / 'test_save_event_state.pyevent'
+        script_path = Path(__file__).parent / 'data' / 'test_save_event_state.pyevent'
         script_source = script_path.read_text()
         processor = PythonEventProcessor('test_save_event_state', script_source, self.mock_game)
 

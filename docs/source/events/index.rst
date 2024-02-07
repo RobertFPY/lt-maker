@@ -11,3 +11,4 @@ These pages will contain eventing tutorials.
     Event-Overview
     Miscellaneous-Events
     Region-Events
+    Python-Eventing

@@ -7,7 +7,8 @@ from app.events.event import Event
 from app.engine.sprites import SPRITES
 from app.engine.text_evaluator import TextEvaluator
 from app.events.event_processor import EventProcessor
-from app.events.event_prefab import EventPrefab, EventVersion
+from app.events.event_prefab import EventPrefab
+from app.events.event_version import EventVersion
 from app.events.python_eventing.python_event_processor import PythonEventProcessor
 
 from app.utilities.typing import NID

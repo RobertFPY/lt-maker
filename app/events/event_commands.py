@@ -4,12 +4,12 @@ from dataclasses import dataclass
 import logging
 from enum import Enum
 from typing import Callable, List, Dict, Optional, Set, Tuple, Type
-from app.events.event_structs import EOL, EventCommandTokens, ParseMode
+from app.events.event_version import EventVersion
+from app.events.event_structs import EOL, EventCommandTokens
 
 from app.utilities.data import Prefab
-from app.utilities.str_utils import mirror_bracket
+from app.utilities.str_utils import SHIFT_NEWLINE, mirror_bracket
 from app.utilities.typing import NID
-
 
 class Tags(Enum):
     FLOW_CONTROL = 'Flow Control'
@@ -43,7 +43,7 @@ class EventCommand(Prefab):
     desc: str = ''
 
     # static, shared among all instances of an EventCommand
-    keywords: list = []
+    keywords: List[str] = []
     optional_keywords: list = []
     keyword_types: list = []  # always same size as keywords + optional keywords
     _flags: list = []
@@ -63,7 +63,7 @@ class EventCommand(Prefab):
             else:
                 self.display_values = []
 
-    def FLAGS(self, *args) -> EventCommand:
+    def set_flags(self, *args) -> EventCommand:
         self.chosen_flags |= set(args)
         return self
 
@@ -71,7 +71,8 @@ class EventCommand(Prefab):
         return self.nid, self.display_values
 
     def to_plain_text(self) -> str:
-        return ';'.join([self.nid] + self.display_values)
+        as_string = [str(self.parameters.get(kwd) or "") for kwd in (self.keywords + self.optional_keywords)]
+        return ';'.join([self.nid] + as_string).rstrip(';')
 
     def __repr__(self):
         return self.to_plain_text()
@@ -86,6 +87,17 @@ class EventCommand(Prefab):
             return cls.keyword_types
         else:
             return cls.keywords + cls.optional_keywords
+
+    @classmethod
+    def get_keyword_from_index(cls, idx: str) -> Optional[str]:
+        """Respects *list args"""
+        curr_arg = ''
+        kwds = cls.get_keywords()
+        for i in range(idx + 1):
+            curr_arg = kwds[i]
+            if '*' in curr_arg:
+                return curr_arg
+        return curr_arg
 
     @classmethod
     def get_validator_from_keyword(cls, keyword: str) -> Optional[str]:
@@ -569,6 +581,45 @@ Extra flags:
     keywords = ['SpeakerOrStyle', 'Text']
     optional_keywords = ['TextPosition', 'Width', 'StyleNid', 'TextSpeed', 'FontColor', 'FontType', 'DialogBox', 'NumLines', 'DrawCursor', 'MessageTail', 'Transparency', 'NameTagBg']
     keyword_types = ['Speaker', 'String', 'AlignOrPosition', 'Width', 'DialogVariant', 'Float', 'FontColor', 'Font', 'MaybeSprite', 'WholeNumber', 'Bool', 'MaybeSprite', 'Float', 'MaybeSprite']
+    _flags = ['low_priority', 'hold', 'no_popup', 'fit', 'no_block', 'no_talk', 'no_sound']
+
+class Say(EventCommand):
+    nid = "say"
+    tag = Tags.DIALOGUE_TEXT
+
+    desc = \
+        """
+Causes the *Speaker* to speak some *Text*. If *Speaker* is a portrait nid that is currently displayed on screen,
+*Text* will appear in a speech bubble from that portrait. If *Speaker* is left blank,
+*Text* will appear in a box with no name label. For all other values of *Speaker*,
+*Text* will appear in a box with the *Speaker* as the name label.
+
+*TextSpeed* indicates the speed of the text - higher numbers are slower.
+
+The pipe | symbol can be used within the *Text* body to insert a line break.
+
+The *Nid* optional keyword changes how the text is displayed graphically, by accessing built-in speak styles.
+
+1. *thought_bubble*: causes the text to be in a cloud-like thought bubble instead of a speech bubble.
+2. *noir*: causes the speech bubble to be dark grey with white text.
+3. *hint*: causes the text to be displayed in a hint box similar to tutorial information.
+4. *narration*: causes the text to be displayed in a blue narration box at the bottom of the screen. No name label will be displayed.
+5. *narration_top*: same as *narration* but causes the text box to be displayed at the top of the screen.
+
+Extra flags:
+
+1. *low_priority*: The speaker's portrait will not be moved in front of other overlapping portraits.
+2. *hold*: The dialog box will remain even after the player has pressed A (useful for narration).
+3. *no_popup*: The dialog box will not transition in, but rather will appear immediately.
+4. *fit*: The dialog box will shrink to fit the text. (not needed if there is an associated portrait).
+5. *no_block*: the speak command will not block event execution.
+6. *no_talk*: The speaker's portrait will not "talk".
+7. *no_sound*: The normal boop sound of dialog will be turned off
+        """
+
+    keywords = ['SpeakerOrStyle', '*Text']
+    optional_keywords = ['TextPosition', 'Width', 'StyleNid', 'TextSpeed', 'FontColor', 'FontType', 'DialogBox', 'NumLines', 'DrawCursor', 'MessageTail', 'Transparency', 'NameTagBg']
+    keyword_types = ['Speaker', '*String', 'AlignOrPosition', 'Width', 'DialogVariant', 'Float', 'FontColor', 'Font', 'MaybeSprite', 'WholeNumber', 'Bool', 'MaybeSprite', 'Float', 'MaybeSprite']
     _flags = ['low_priority', 'hold', 'no_popup', 'fit', 'no_block', 'no_talk', 'no_sound']
 
 class Unhold(EventCommand):
@@ -3385,6 +3436,21 @@ ALL_EVENT_COMMANDS.update({
     command.nickname: command for command in EventCommand.__subclasses__() if command.nickname
 })
 
+
+FORBIDDEN_PYTHON_COMMANDS: List[EventCommand] = [Comment, If, Elif, Else,
+                                                 End, For, Endf, LoopUnits]
+FORBIDDEN_PYTHON_COMMAND_NIDS: List[str] = [cmd.nid for cmd in FORBIDDEN_PYTHON_COMMANDS] + [cmd.nickname for cmd in FORBIDDEN_PYTHON_COMMANDS]
+def get_all_event_commands(version: EventVersion) -> Dict[NID, Type[EventCommand]]:
+    if version == EventVersion.EVENT:
+        return {nid: command_t for nid, command_t in ALL_EVENT_COMMANDS.items() if nid not in ['say']}
+    elif version == EventVersion.PYEV1:
+        commands = {}
+        for nid, command_t in ALL_EVENT_COMMANDS.items():
+            if not command_t.tag in [Tags.HIDDEN, Tags.FLOW_CONTROL]:
+                if not command_t.nid in FORBIDDEN_PYTHON_COMMAND_NIDS:
+                    commands[nid] = command_t
+        return commands
+
 @dataclass
 class ArgToken():
     string: str
@@ -3444,7 +3510,7 @@ def parse_text_to_command(text: str, strict: bool = False) -> Tuple[EventCommand
         EventCommand: parsed command
         int: Index of the character the command failed to parse at (only if strict)
     """
-    def _parse_command(command: EventCommand, arguments: List[str]) -> Tuple[Optional[EventCommand], Optional[int]]:
+    def _parse_command(command: Type[EventCommand], arguments: List[str]) -> Tuple[Optional[EventCommand], Optional[int]]:
         # Start parsing
         keyword_argument_mode: bool = False
         cmd_args = arguments[1:]
@@ -3454,7 +3520,7 @@ def parse_text_to_command(text: str, strict: bool = False) -> Tuple[EventCommand
         for idx, arg in enumerate(cmd_args):
             # remove line break chars. speak has its own handling, so keep them
             if command_info.nid not in ('speak', 'textbox'):
-                arg = arg.replace('\u2028', '')
+                arg = arg.replace(SHIFT_NEWLINE, '')
 
             all_keywords = command_info.keywords + command_info.optional_keywords
 
@@ -3522,8 +3588,8 @@ def parse_text_to_command(text: str, strict: bool = False) -> Tuple[EventCommand
 
     command_nid = arguments[0]
     bad_idx = None
-    if command_nid in ALL_EVENT_COMMANDS:
-        command_type = ALL_EVENT_COMMANDS[command_nid]
+    if command_nid in get_all_event_commands(EventVersion.EVENT):
+        command_type = get_all_event_commands(EventVersion.EVENT)[command_nid]
         output, bad_idx = _parse_command(command_type, arguments)
         if output:
             return output, None
@@ -3605,7 +3671,7 @@ def parse_event_line(line: str) -> EventCommandTokens:
     ectoks = EventCommandTokens(tokens, line, token_idxs)
 
     # sort out flags vs args
-    command_t = ALL_EVENT_COMMANDS.get(ectoks.command())
+    command_t = get_all_event_commands(EventVersion.EVENT).get(ectoks.command())
     if not command_t:
         # nonexistent command, just return as if all args
         return ectoks

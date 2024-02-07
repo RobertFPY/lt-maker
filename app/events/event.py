@@ -23,7 +23,8 @@ from app.engine.sound import get_sound_thread
 from app.events import event_commands, triggers
 from app.events.event_processor import EventProcessor
 from app.events.event_portrait import EventPortrait
-from app.events.event_prefab import EventPrefab, EventVersion
+from app.events.event_prefab import EventPrefab
+from app.events.event_version import EventVersion
 from app.events.python_eventing.errors import EventError
 from app.events.python_eventing.python_event_processor import PythonEventProcessor
 from app.events.python_eventing.utils import SAVE_COMMAND_NIDS
@@ -333,7 +334,7 @@ class Event():
             except EventError as e:
                 raise e
             except Exception as e:
-                raise Exception("Event execution failed with error in command %s" % command) from e
+                raise Exception("Event execution failed with error in command %s" % self.processor.get_source_line(self.processor.get_current_line())) from e
 
     def skip(self, super_skip: bool = False):
         self.do_skip = True
@@ -570,18 +571,18 @@ class Event():
         if isinstance(speaker_or_style, SpeakStyle):
             o_style = speaker_or_style
         else:
+            if not isinstance(speaker_or_style, str):
+                speaker_or_style = self._resolve_nid(speaker_or_style)
             o_style = self.game.speak_styles.get(speaker_or_style)
         if o_style:
             styles.append(o_style)
+        else:
+            curr_style.speaker = speaker_or_style
         for style in styles:
             if isinstance(style, str):
                 style = self.game.speak_styles.get(style)
             if style:
                 curr_style = curr_style.update(style)
-        if speaker_or_style and not o_style:
-            curr_style.speaker = speaker_or_style
-        elif o_style and o_style.speaker:
-            curr_style.speaker = self.game.speak_styles.get(speaker_or_style).speaker
         return curr_style
 
     def _apply_stat_changes(self, unit, stat_changes, flags):
@@ -651,8 +652,11 @@ class Event():
             port.desaturate()
         portrait.saturate()
 
-    def _get_portrait(self, obj: UnitObject | UnitPrefab | PortraitPrefab | NID) -> Tuple[Optional[PortraitPrefab], str]:
-        nid = self._resolve_nid(obj)
+    def _get_portrait(self, obj: UnitObject | UnitPrefab | PortraitPrefab | NID | SpeakStyle) -> Tuple[Optional[PortraitPrefab], str]:
+        if isinstance(obj, SpeakStyle):
+            nid = obj.speaker
+        else:
+            nid = self._resolve_nid(obj)
         unit = self._get_unit(nid)
         if unit:
             name = unit.nid

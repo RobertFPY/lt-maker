@@ -20,7 +20,7 @@ class ErrorViewer(QWidget):
         super().__init__(parent)
 
         self.setWindowTitle("Error report")
-        self.resize(800,800)
+        self.resize(800, 800)
 
         self.settings = MainSettingsController()
         self.textEdit = QTextEdit()

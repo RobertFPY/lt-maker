@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import shutil
-import os, sys
+import os
 import traceback
+
+from typing import Dict, List
 
 from app import sprites
 from app.utilities import exceptions
@@ -219,26 +221,38 @@ class Resources():
         logging.info("Total Time Taken for Resources: %s ms" % (end - start))
         logging.info('Done Resource Serializing!')
 
-    def clean(self, proj_dir) -> bool:
+    def get_unused_files(self, proj_dir: str) -> Dict[str, List[str]]:
         """
-        Returns bool -> whether cleaning was successful
+        Returns map of resource type to list of files of that resource type
+        that are to be removed
         """
-        logging.info("Starting Resource Cleaning...")
-        import time
-        start = time.time_ns()/1e6
-
+        unused_files = {}
         if not os.path.exists(proj_dir):
-            return False
+            return unused_files
         resource_dir = os.path.join(proj_dir, 'resources')
         if not os.path.exists(resource_dir):
-            return False
+            return unused_files
 
         for idx, data_type in enumerate(self.save_data_types):
             data_dir = os.path.join(resource_dir, data_type)
             if not os.path.exists(data_dir):
                 continue
+            fns = getattr(self, data_type).get_unused_files(data_dir)
+            unused_files[data_type] = fns
+
+        return unused_files
+
+    def clean(self, unused_files: Dict[str, List[str]]) -> bool:
+        """
+        Returns bool -> whether cleaning was successful
+        """
+        logging.info("Starting Resource Cleaning...")
+        import time
+        start = time.time_ns() / 1e6
+
+        for idx, data_type in enumerate(self.save_data_types):
             try:
-                getattr(self, data_type).clean(data_dir)
+                getattr(self, data_type).clean(unused_files[data_type])
             except Exception as e:
                 logging.exception(e)
                 logging.error("Could not successfully clean %s" % data_type)

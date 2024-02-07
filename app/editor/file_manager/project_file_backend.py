@@ -7,7 +7,7 @@ import os
 import shutil
 from datetime import datetime
 import traceback
-from typing import TYPE_CHECKING, Optional
+from typing import Dict, List, Optional, TYPE_CHECKING
 
 from PyQt5.QtCore import QDir, Qt
 from PyQt5.QtWidgets import QFileDialog, QMessageBox, QProgressDialog, QVBoxLayout, QLabel, QDialogButtonBox, QCheckBox
@@ -366,8 +366,11 @@ class ProjectFileBackend():
         with open(metadata_loc, 'w') as serialize_file:
             json.dump(metadata, serialize_file, indent=4)
 
-    def clean(self):
-        RESOURCES.clean(self.current_proj)
+    def get_unused_files(self) -> Dict[str, List[str]]:
+        return RESOURCES.get_unused_files(self.current_proj)
+
+    def clean(self, unused_files: Dict[str, List[str]]):
+        RESOURCES.clean(unused_files)
 
     def dump_csv(self, db: Database):
         starting_path = self.current_proj or QDir.currentPath()

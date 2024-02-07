@@ -23,6 +23,7 @@ from app.editor.lib.components.menubar import MenuBar
 from app.editor.lib.components.toolbar import Toolbar
 from app.editor.preferences import PreferencesDialog
 from app.editor.save_viewer import SaveViewer
+from app.editor.file_manager.unused_resources_dialog import UnusedResourcesDialog
 
 # Application State
 from app.editor.lib.state_editor.editor_state_manager import EditorStateManager
@@ -502,7 +503,17 @@ class MainEditor(QMainWindow):
     def remove_unused_resources(self):
         # Need to save first before cleaning
         if self.project_save_load_handler.save():
-            self.project_save_load_handler.clean()
+            unused_resources = self.project_save_load_handler.get_unused_files()
+            # Don't bother if we have no unused resources
+            if not any(fns for fns in unused_resources.values()):
+                QMessageBox.information(
+                    self, "Unused Resources", "No unused resources found!")
+                return
+            # Let the user confirm they want to remove these resources
+            ok = UnusedResourcesDialog.get(unused_resources, self)
+            if not ok:
+                return
+            self.project_save_load_handler.clean(unused_resources)
             current_proj = self.settings.get_current_project()
             self.status_bar.showMessage(
                 'All unused resources removed from %s' % current_proj)

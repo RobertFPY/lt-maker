@@ -5,7 +5,7 @@ import os
 from typing import TYPE_CHECKING, List, Optional, Tuple, Type
 
 from PyQt5.QtCore import QRect, QSize, Qt, pyqtSignal, QMimeData
-from PyQt5.QtGui import QFontMetrics, QPainter, QPalette, QTextCursor, QKeyEvent
+from PyQt5.QtGui import QFontMetrics, QMouseEvent, QPainter, QPalette, QTextCursor, QKeyEvent
 from PyQt5.QtWidgets import QCompleter, QLabel, QPlainTextEdit, QWidget, QAction
 
 from app import dark_theme
@@ -28,6 +28,10 @@ class LineNumberArea(QWidget):
 
     def paintEvent(self, event):
         self.editor.lineNumberAreaPaintEvent(event)
+
+    def mouseDoubleClickEvent(self, a0: QMouseEvent | None) -> None:
+        self.editor.onLineNumberDoubleClick(a0)
+        return super().mouseDoubleClickEvent(a0)
 
 class EventTextEditor(QPlainTextEdit):
     clicked = pyqtSignal()
@@ -182,6 +186,20 @@ class EventTextEditor(QPlainTextEdit):
             top = bottom
             bottom = top + round(self.blockBoundingRect(block).height())
             block_number += 1
+
+    def onLineNumberDoubleClick(self, event: QMouseEvent):
+        first_line = self.firstVisibleBlock()
+        first_line_num = first_line.blockNumber()
+        click_y = event.localPos().y()
+        relative_line_num = 0
+        curr_block = first_line
+        while click_y > 0 and curr_block:
+            relative_line_num += 1
+            click_y -= self.blockBoundingRect(curr_block).height()
+            curr_block = curr_block.next()
+        real_line_num = relative_line_num + first_line_num
+
+        print(real_line_num)
 
     def lineNumberAreaWidth(self) -> int:
         num_blocks = max(1, self.blockCount())

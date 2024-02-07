@@ -9,12 +9,12 @@ from app.engine import (background, combat_calcs, engine, equations, gui,
                         help_menu, icons, image_mods, item_funcs, item_system,
                         skill_system, text_funcs, unit_funcs)
 from app.engine.fluid_scroll import FluidScroll
-from app.engine.game_menus import menu_options
 from app.engine.game_menus.icon_options import BasicItemOption, ItemOptionModes
 from app.engine.game_state import game
 from app.engine.graphics.ingame_ui.build_groove import build_groove
 from app.engine.graphics.text.text_renderer import render_text, text_width
 from app.engine.info_menu.info_graph import InfoGraph, info_states
+from app.engine.info_menu.info_menu_portrait import InfoMenuPortrait
 from app.engine.input_manager import get_input_manager
 from app.engine.objects.unit import UnitObject
 from app.engine.sound import get_sound_thread
@@ -86,6 +86,7 @@ class InfoMenuState(State):
     def reset_surfs(self):
         self.info_graph.clear()
         self.portrait_surf = None
+        self.current_portrait = None
 
         self.personal_data_surf: engine.Surface = None
         self.growths_surf: engine.Surface = None
@@ -370,14 +371,33 @@ class InfoMenuState(State):
     def draw_portrait(self, surf):
         # Only create if we don't have one in memory
         if not self.portrait_surf:
-            self.portrait_surf = self.create_portrait()
+            self.portrait_surf = self.create_portrait_section()
+        portrait_surf = self.portrait_surf.copy()
+
+        # If no portrait for this unit, either create one or default to class card using icons.get_portrait
+        if not self.current_portrait:
+            portrait = RESOURCES.portraits.get(self.unit.portrait_nid)
+            if portrait:
+                self.current_portrait = InfoMenuPortrait(portrait, DB.constants.value('info_menu_blink'))
+            else:
+                im, offset = icons.get_portrait(self.unit)
+        # We do have a portrait, so update...
+        if self.current_portrait:
+            self.current_portrait.update()
+            im = self.current_portrait.create_image()
+            offset = self.current_portrait.portrait.info_offset
+        # Draw portrait onto the portrait surf
+        if im:
+            x_pos = (im.get_width() - 80)//2
+            im_surf = engine.subsurface(im, (x_pos, offset, 80, 72))
+            portrait_surf.blit(im_surf, (8, 8))
 
         # Stick it on the surface
         if self.transparency:
-            im = image_mods.make_translucent(self.portrait_surf, self.transparency)
+            im = image_mods.make_translucent(portrait_surf, self.transparency)
             surf.blit(im, (0, self.scroll_offset_y))
         else:
-            surf.blit(self.portrait_surf, (0, self.scroll_offset_y))
+            surf.blit(portrait_surf, (0, self.scroll_offset_y))
 
         # Blit the unit's active/focus map sprite
         if not self.transparency:
@@ -408,15 +428,9 @@ class InfoMenuState(State):
             color = 'yellow-green'
         return color
 
-    def create_portrait(self):
+    def create_portrait_section(self):
         surf = engine.create_surface((96, WINHEIGHT), transparent=True)
         surf.blit(SPRITES.get('info_unit'), (8, 122))
-
-        im, offset = icons.get_portrait(self.unit)
-        if im:
-            x_pos = (im.get_width() - 80)//2
-            portrait_surf = engine.subsurface(im, (x_pos, offset, 80, 72))
-            surf.blit(portrait_surf, (8, 8))
 
         render_text(surf, ['text'], [self.unit.name], ['white'], (48, 80), HAlignment.CENTER)
         self.info_graph.register((24, 80, 52, 24), self.unit.desc, 'all')

@@ -5,7 +5,7 @@ import os
 from typing import TYPE_CHECKING, List, Optional, Tuple, Type
 
 from PyQt5.QtCore import QRect, QSize, Qt, pyqtSignal, QMimeData
-from PyQt5.QtGui import QFontMetrics, QMouseEvent, QPainter, QPalette, QTextCursor, QKeyEvent
+from PyQt5.QtGui import QFontMetrics, QMouseEvent, QPainter, QPalette, QTextCursor, QKeyEvent, QColor
 from PyQt5.QtWidgets import QCompleter, QLabel, QPlainTextEdit, QWidget, QAction
 
 from app import dark_theme
@@ -50,6 +50,8 @@ class EventTextEditor(QPlainTextEdit):
         self.settings = MainSettingsController()
         theme = dark_theme.get_theme()
         self.line_number_color = theme.event_syntax_highlighting().line_number_color
+
+        self.debug_point_line_number: Optional[int] = None  # None means no debug point
 
         self.blockCountChanged.connect(self.updateLineNumberAreaWidth)
         self.updateRequest.connect(self.updateLineNumberArea)
@@ -179,6 +181,11 @@ class EventTextEditor(QPlainTextEdit):
                 if self.textCursor().blockNumber() == block_number:
                     color = self.palette().color(QPalette.Window)
                     painter.fillRect(0, top, self.line_number_area.width(), self.fontMetrics().height(), color)
+                # Draw red circle for debug point
+                if self.debug_point_line_number and self.debug_point_line_number - 1 == block_number:
+                    painter.setBrush(Qt.red)  # Fill
+                    painter.setPen(Qt.red)  # Stroke
+                    painter.drawEllipse(3, top + 3, self.fontMetrics().height() - 6, self.fontMetrics().height() - 6)
                 painter.setPen(self.line_number_color)
                 painter.drawText(0, top, self.line_number_area.width() - 2, self.fontMetrics().height(), Qt.AlignRight, number)
 
@@ -199,12 +206,17 @@ class EventTextEditor(QPlainTextEdit):
             curr_block = curr_block.next()
         real_line_num = relative_line_num + first_line_num
 
-        print(real_line_num)
+        # If we are clicking on the same line again, toggle it off
+        if real_line_num == self.debug_point_line_number:
+            self.debug_point_line_number = None
+        else:
+            self.debug_point_line_number = real_line_num
+        self.update()  # Necessary for debug marker to show up immediately
 
     def lineNumberAreaWidth(self) -> int:
         num_blocks = max(1, self.blockCount())
         digits = int(math.log10(num_blocks)) + 1
-        space = 3 + self.fontMetrics().horizontalAdvance("9") * digits
+        space = 19 + self.fontMetrics().horizontalAdvance("9") * digits
 
         return space
 

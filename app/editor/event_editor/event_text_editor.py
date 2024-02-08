@@ -167,6 +167,7 @@ class EventTextEditor(QPlainTextEdit):
 
     def lineNumberAreaPaintEvent(self, event):
         painter = QPainter(self.line_number_area)
+        painter.setRenderHint(QPainter.Antialiasing)
         bg_color = self.palette().color(QPalette.Base)
         painter.fillRect(event.rect(), bg_color)
 

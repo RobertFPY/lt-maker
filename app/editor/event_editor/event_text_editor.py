@@ -183,8 +183,9 @@ class EventTextEditor(QPlainTextEdit):
                     painter.fillRect(0, top, self.line_number_area.width(), self.fontMetrics().height(), color)
                 # Draw red circle for debug point
                 if self.debug_point_line_number and self.debug_point_line_number - 1 == block_number:
-                    painter.setBrush(Qt.red)  # Fill
-                    painter.setPen(Qt.red)  # Stroke
+                    color = dark_theme.get_theme().event_syntax_highlighting().error_underline_color
+                    painter.setBrush(color)  # Fill
+                    painter.setPen(color)  # Stroke
                     painter.drawEllipse(3, top + 3, self.fontMetrics().height() - 6, self.fontMetrics().height() - 6)
                 painter.setPen(self.line_number_color)
                 painter.drawText(0, top, self.line_number_area.width() - 2, self.fontMetrics().height(), Qt.AlignRight, number)

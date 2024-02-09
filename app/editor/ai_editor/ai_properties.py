@@ -126,11 +126,11 @@ class UnitSpecification(QWidget):
 
     def set_current(self, target_spec):
         self.except_check_box.setChecked(bool(self.window.current.invert_targeting))
-        if target_spec:
+        try:
             self.box1.setValue(str(target_spec[0]))
             self.unit_spec_changed(recurse=False)
             self.box2.currentWidget().setValue(target_spec[1])
-        else:
+        except Exception:  # Target spec is not compatible
             self.box1.setValue("All")
             self.unit_spec_changed(recurse=False)
             self.except_check_box.setEnabled(False)

@@ -5,7 +5,7 @@ import os
 from typing import TYPE_CHECKING, List, Optional, Tuple, Type
 
 from PyQt5.QtCore import QRect, QSize, Qt, pyqtSignal, QMimeData
-from PyQt5.QtGui import QFontMetrics, QPainter, QPalette, QTextCursor, QKeyEvent
+from PyQt5.QtGui import QFontMetrics, QMouseEvent, QPainter, QPalette, QTextCursor, QKeyEvent, QColor
 from PyQt5.QtWidgets import QCompleter, QLabel, QPlainTextEdit, QWidget, QAction
 
 from app import dark_theme
@@ -29,6 +29,10 @@ class LineNumberArea(QWidget):
     def paintEvent(self, event):
         self.editor.lineNumberAreaPaintEvent(event)
 
+    def mouseDoubleClickEvent(self, a0: QMouseEvent | None) -> None:
+        self.editor.onLineNumberDoubleClick(a0)
+        return super().mouseDoubleClickEvent(a0)
+
 class EventTextEditor(QPlainTextEdit):
     clicked = pyqtSignal()
 
@@ -46,6 +50,8 @@ class EventTextEditor(QPlainTextEdit):
         self.settings = MainSettingsController()
         theme = dark_theme.get_theme()
         self.line_number_color = theme.event_syntax_highlighting().line_number_color
+
+        self.debug_point_line_number: Optional[int] = None  # None means no debug point
 
         self.blockCountChanged.connect(self.updateLineNumberAreaWidth)
         self.updateRequest.connect(self.updateLineNumberArea)
@@ -161,6 +167,7 @@ class EventTextEditor(QPlainTextEdit):
 
     def lineNumberAreaPaintEvent(self, event):
         painter = QPainter(self.line_number_area)
+        painter.setRenderHint(QPainter.Antialiasing)
         bg_color = self.palette().color(QPalette.Base)
         painter.fillRect(event.rect(), bg_color)
 
@@ -175,6 +182,12 @@ class EventTextEditor(QPlainTextEdit):
                 if self.textCursor().blockNumber() == block_number:
                     color = self.palette().color(QPalette.Window)
                     painter.fillRect(0, top, self.line_number_area.width(), self.fontMetrics().height(), color)
+                # Draw red circle for debug point
+                if self.debug_point_line_number and self.debug_point_line_number - 1 == block_number:
+                    color = dark_theme.get_theme().event_syntax_highlighting().error_underline_color
+                    painter.setBrush(color)  # Fill
+                    painter.setPen(color)  # Stroke
+                    painter.drawEllipse(3, top + 3, self.fontMetrics().height() - 6, self.fontMetrics().height() - 6)
                 painter.setPen(self.line_number_color)
                 painter.drawText(0, top, self.line_number_area.width() - 2, self.fontMetrics().height(), Qt.AlignRight, number)
 
@@ -183,10 +196,29 @@ class EventTextEditor(QPlainTextEdit):
             bottom = top + round(self.blockBoundingRect(block).height())
             block_number += 1
 
+    def onLineNumberDoubleClick(self, event: QMouseEvent):
+        first_line = self.firstVisibleBlock()
+        first_line_num = first_line.blockNumber()
+        click_y = event.localPos().y()
+        relative_line_num = 0
+        curr_block = first_line
+        while click_y > 0 and curr_block:
+            relative_line_num += 1
+            click_y -= self.blockBoundingRect(curr_block).height()
+            curr_block = curr_block.next()
+        real_line_num = relative_line_num + first_line_num
+
+        # If we are clicking on the same line again, toggle it off
+        if real_line_num == self.debug_point_line_number:
+            self.debug_point_line_number = None
+        else:
+            self.debug_point_line_number = real_line_num
+        self.update()  # Necessary for debug marker to show up immediately
+
     def lineNumberAreaWidth(self) -> int:
         num_blocks = max(1, self.blockCount())
         digits = int(math.log10(num_blocks)) + 1
-        space = 3 + self.fontMetrics().horizontalAdvance("9") * digits
+        space = 19 + self.fontMetrics().horizontalAdvance("9") * digits
 
         return space
 

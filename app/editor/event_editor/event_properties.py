@@ -381,7 +381,7 @@ class EventProperties(QWidget):
         self.show_commands_button.clicked.connect(self.show_commands)
         bottom_section.addWidget(self.show_commands_button)
 
-        self.test_event_button = QPushButton("Test Event (starting at cursor)")
+        self.test_event_button = QPushButton("Test Event")
         test_menu = QMenu("Test", self)
         test_menu.addAction(QAction("with If Statements always True", self, triggered=functools.partial(self.test_event, IfStatementStrategy.ALWAYS_TRUE)))
         test_menu.addAction(QAction("with If Statements always False", self, triggered=functools.partial(self.test_event, IfStatementStrategy.ALWAYS_FALSE)))
@@ -466,16 +466,17 @@ class EventProperties(QWidget):
 
     def test_event(self, strategy):
         if self.current:
-            cursor_line_number = self.text_box.textCursor().blockNumber()
+            # If not debug_point_line_number default to 0 (the start)
+            command_pointer = (self.text_box.debug_point_line_number or 1) - 1
             timer.get_timer().stop()
-            GAME_ACTIONS.test_event(self.current, cursor_line_number, strategy)
+            GAME_ACTIONS.test_event(self.current, command_pointer, strategy)
             timer.get_timer().start()
 
     def test_python_event(self):
         if self.current:
-            cursor_line_number = 0
+            command_pointer = 0
             timer.get_timer().stop()
-            GAME_ACTIONS.test_event(self.current, cursor_line_number)
+            GAME_ACTIONS.test_event(self.current, command_pointer)
             timer.get_timer().start()
 
     def name_changed(self, text):

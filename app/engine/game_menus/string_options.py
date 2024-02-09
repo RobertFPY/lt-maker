@@ -39,10 +39,10 @@ class IMenuOption(Generic[T]):
 
 
 class BaseOption(IMenuOption[T]):
-    def __init__(self, idx: int, value: T, display_value: Optional[str] = None, width: int = 0,
+    def __init__(self, idx: int, value: Optional[T], display_value: Optional[str] = None, width: int = 0,
                  height: int = 0, ignore: bool = False):
         self.idx: int = idx
-        self._value: T = value
+        self._value: Optional[T] = value
         self._disp_value: str = display_value or ""
         self._width: int = width
         self._height: int = height

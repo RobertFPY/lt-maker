@@ -26,12 +26,12 @@ class MapSpriteOptionUtils():
 
 
 class BasicUnitOption(BaseOption[UnitObject]):
-    def __init__(self, idx: int, unit: UnitObject, display_value: str | None = None,  width: int = 0,
+    def __init__(self, idx: int, unit: Optional[UnitObject], display_value: str | None = None,  width: int = 0,
                  height: int = 0, ignore: bool = False, font: NID = 'text', text_color: NID = 'white',
                  align: HAlignment = HAlignment.LEFT):
         super().__init__(idx, unit, display_value, width, height, ignore)
         self._disp_value = text_funcs.translate(
-            display_value or self._value.name)
+            display_value or self.get_name())
         self._align = align
         self._color = text_color
         self._font = font
@@ -43,9 +43,8 @@ class BasicUnitOption(BaseOption[UnitObject]):
         unit_object = game.unit_registry.get(unit_nid)
         if not unit_object: # unit is unloaded/in DB?
             unit_prefab = DB.units.get(unit_nid, None)
-            if not unit_prefab:
-                raise ValueError("%s is not a unit" % unit_nid)
-            unit_object = UnitObject.from_prefab(unit_prefab)
+            if unit_prefab:
+                unit_object = UnitObject.from_prefab(unit_prefab)
         return cls(idx, unit_object, display_value, width, height, ignore, font, text_color, align)
 
     @classmethod
@@ -57,9 +56,14 @@ class BasicUnitOption(BaseOption[UnitObject]):
     def width(self):
         return self._width or 104
 
-    def set(self, val: UnitObject, disp_val: Optional[str] = None):
+    def set(self, val: Optional[UnitObject], disp_val: Optional[str] = None):
         self._value = val
-        self._disp_value = text_funcs.translate(disp_val or self._value.name)
+        self._disp_value = text_funcs.translate(disp_val or self.get_name())
+
+    def get_name(self):
+        if self._value:
+            return self._value.name
+        return 'None'
 
     def get_color(self):
         if self.get_ignore():
@@ -71,20 +75,21 @@ class BasicUnitOption(BaseOption[UnitObject]):
         return True
 
     def get_help_box(self):
-        if not self._help_box:
+        if not self._help_box and self._value:
             self._help_box = help_menu.HelpDialog(
                 self._value.desc, name=self._value.name)
         return self._help_box
 
     def draw_option(self, surf, x, y, active=False):
-        display_text = self._disp_value or self._value.name
+        display_text = self._disp_value or self.get_name()
         font = self._font
         if text_width(font, display_text) > self.width() - 20:
             font = 'narrow'
         blit_loc = anchor_align(x, self.width(), self._align, (20, 5)), y
         color = self.get_color()
-        MapSpriteOptionUtils.draw_map_sprite(
-            surf, self._value.sprite, x, y, active)
+        if self._value:
+            MapSpriteOptionUtils.draw_map_sprite(
+                surf, self._value.sprite, x, y, active)
         render_text(surf, [font], [display_text], [color], blit_loc)
 
     def draw(self, surf, x, y):

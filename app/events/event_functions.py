@@ -1313,11 +1313,11 @@ def spawn_group(self: Event, group, cardinal_direction, starting_group, movement
         position = self._get_position(next_pos, unit, group, unit_nid)
         if not position:
             continue
-
         if self._add_unit_from_direction(unit, position, cardinal_direction, placement):
             if DB.constants.value('initiative'):
                 action.do(action.InsertInitiative(unit))
-            self._move_unit(movement_type, placement, follow, unit, position)
+            if unit.position != tuple(position):  # Only move unit if we aren't already there
+                self._move_unit(movement_type, placement, follow, unit, position)
         else:
             self.logger.error("spawn_group: Couldn't add unit %s to position %s" % (unit.nid, position))
 

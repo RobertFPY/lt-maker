@@ -1664,6 +1664,30 @@ in the unit's inventory, and then if no matching item is found, check the sub-it
 
     _flags = ["additive", "recursive"]
 
+class SetItemData(EventCommand):
+    nid = 'set_item_data'
+    tag = Tags.MODIFY_ITEM_PROPERTIES
+
+    desc = \
+        """
+Finds the *Item* in the inventory of *GlobalUnitOrConvoy*.
+Then, it sets the data field *Nid* of the *Item* to *Expression*.
+        """
+
+    keywords = ["GlobalUnitOrConvoy", "Item", "Nid", "Expression"]
+
+class SetItemDroppable(EventCommand):
+    nid = 'set_item_droppable'
+    tag = Tags.MODIFY_ITEM_PROPERTIES
+
+    desc = \
+        """
+Set the "droppable" field of the *Item* in the inventory of *GlobalUnit* to *Bool*.
+        """
+
+    keywords = ["GlobalUnit", "Item", "Droppable"]
+    keyword_types = ["GlobalUnit", "Item", "Bool"]
+
 class BreakItem(EventCommand):
     nid = 'break_item'
     tag = Tags.MODIFY_ITEM_PROPERTIES
@@ -1678,19 +1702,6 @@ If the *no_banner* flag is set, there will not be a banner announcing that the i
 
     keywords = ["GlobalUnitOrConvoy", "Item"]
     _flags = ['no_banner']
-
-
-class SetItemData(EventCommand):
-    nid = 'set_item_data'
-    tag = Tags.MODIFY_ITEM_PROPERTIES
-
-    desc = \
-        """
-Finds the *Item* in the inventory of *GlobalUnitOrConvoy*.
-Then, it sets the data field *Nid* of the *Item* to *Expression*.
-        """
-
-    keywords = ["GlobalUnitOrConvoy", "Item", "Nid", "Expression"]
 
 class ChangeItemName(EventCommand):
     nid = 'change_item_name'

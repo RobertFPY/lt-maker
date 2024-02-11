@@ -542,7 +542,8 @@ def screen_shake(self: Event, duration: int, shake_type=None, flags=None):
         self.logger.error("shake mode %s not recognized by screen shake command.", shake_type)
         return
 
-    self.game.camera.set_shake(shake_offset, duration)
+    if self.game.camera:
+        self.game.camera.set_shake(shake_offset, duration)
     if self.background:
         self.background.set_shake(shake_offset, duration)
     if 'no_block' in flags:
@@ -552,7 +553,8 @@ def screen_shake(self: Event, duration: int, shake_type=None, flags=None):
         self.state = 'waiting'
 
 def screen_shake_end(self: Event, flags=None):
-    self.game.camera.reset_shake()
+    if self.game.camera:
+        self.game.camera.reset_shake()
     if self.background:
         self.background.reset_shake()
 
@@ -1598,6 +1600,16 @@ def set_item_data(self: Event, global_unit_or_convoy, item, nid, expression, fla
     data_value = self._eval_expr(expression, 'from_python' in flags)
     action.do(action.SetObjData(item, nid, data_value))
 
+def set_item_droppable(self: Event, global_unit, item, droppable, flags=None):
+    flags = flags or set()
+
+    unit, item = self._get_item_in_inventory(global_unit, item)
+    if not unit or not item:
+        self.logger.error("set_item_droppable: Either unit or item was invalid, see above")
+        return
+
+    action.do(action.SetDroppable(item, droppable))
+
 def break_item(self: Event, global_unit_or_convoy, item, flags=None):
     flags = flags or set()
     global_unit = global_unit_or_convoy
@@ -1623,7 +1635,6 @@ def break_item(self: Event, global_unit_or_convoy, item, flags=None):
         self.game.alerts.append(banner.BrokenItem(unit, item))
         self.game.state.change('alert')
         self.state = 'paused'
-
 
 def change_item_name(self: Event, global_unit_or_convoy, item, string, flags=None):
     unit, item = self._get_item_in_inventory(global_unit_or_convoy, item)

@@ -1,6 +1,8 @@
 import random
 from functools import lru_cache
 
+from typing import Tuple
+
 import app.utilities as utils
 from app.constants import (TILEHEIGHT, TILEWIDTH, TILEX, TILEY, WINHEIGHT,
                            WINWIDTH)
@@ -223,6 +225,8 @@ class MapCombatInfo():
         if stats:
             self.hit = stats[0]
             self.mt = stats[1]
+            self.crt = stats[2]
+            self.grd = stats[3]
 
         self.skill_icons.clear()
 
@@ -231,7 +235,8 @@ class MapCombatInfo():
 
         self.stats_surf = None
         self.bg_surf = SPRITES.get('health_' + team.combat_color).convert_alpha()
-        self.c_surf = SPRITES.get('combat_stats_' + team.combat_color).convert_alpha()
+        self.hit_and_mt_surf = SPRITES.get('combat_stats_' + team.combat_color).convert_alpha()
+        self.guard_surf = SPRITES.get('combat_stats_guard_' + team.combat_color).convert_alpha()
         self.gem = SPRITES.get('combat_gem_' + team.combat_color).convert_alpha()
 
     def reset(self):
@@ -242,15 +247,19 @@ class MapCombatInfo():
         self.unit = None
         self.item = None
         self.target = None
+
         self.hit = None
         self.mt = None
+        self.crt = None
+        self.grd = None
 
         self.blinds = 1
         self.reset_shake()
 
         self.stats_surf = None
         self.bg_surf = None
-        self.c_surf = None
+        self.hit_and_mt_surf = None
+        self.guard_surf = None
         self.gem = None
 
         self.skill_icons.clear()
@@ -287,22 +296,49 @@ class MapCombatInfo():
     def add_skill_icon(self, skill_icon):
         self.skill_icons.append(skill_icon)
 
-    def build_stat_surf(self):
-        stat_surf = self.c_surf.copy()
+    def _blit_hit_and_mt(self, surf):
         # Blit hit
         if self.hit is not None:
             hit = str(utils.clamp(self.hit, 0, 100))
         else:
             hit = '--'
-        position = stat_surf.get_width() // 2 - FONT['number-small2'].size(hit)[0] - 1, -2
-        FONT['number-small2'].blit(hit, stat_surf, position)
+        position = surf.get_width() // 2 - FONT['number-small2'].size(hit)[0] - 1, -2
+        FONT['number-small2'].blit(hit, surf, position)
         # Blit damage
         if self.mt is not None:
             damage = str(max(0, self.mt))
         else:
             damage = '--'
-        position = stat_surf.get_width() - FONT['number-small2'].size(damage)[0] - 2, -2
-        FONT['number-small2'].blit(damage, stat_surf, position)
+        position = surf.get_width() - FONT['number-small2'].size(damage)[0] - 2, -2
+        FONT['number-small2'].blit(damage, surf, position)
+        return surf
+
+    def _blit_crt_and_grd(self, surf):
+        # Blit crit
+        if self.crit is not None:
+            crit = str(utils.clamp(self.crit, 0, 100))
+        else:
+            crit = '--'
+        position = surf.get_width() // 2 - FONT['number-small2'].size(crit)[0] - 1, 8
+        FONT['number-small2'].blit(crit, surf, position)
+        # Blit damage
+        if self.grd is not None:
+            guard = self.grd
+        else:
+            guard = '--'
+        position = surf.get_width() - FONT['number-small2'].size(guard)[0] - 2, 8
+        FONT['number-small2'].blit(guard, surf, position)
+        return surf
+
+    def build_hit_and_mt_surf(self):
+        stat_surf = self.hit_and_mt_surf.copy()
+        stat_surf = self._blit_hit_and_mt(stat_surf)
+        return stat_surf
+
+    def build_guard_surf(self):
+        stat_surf = self.guard_surf.copy()
+        stat_surf = self._blit_hit_and_mt(stat_surf)
+        stat_surf = self._blit_crt_and_grd(stat_surf)
         return stat_surf
 
     def get_time_for_change(self):
@@ -368,8 +404,8 @@ class MapCombatInfo():
                 self.true_position = (x_pos, y_pos)
             self.ordering = 'middle'
 
-    def update_stats(self, stats):
-        self.hit, self.mt = stats
+    def update_stats(self, stats: Tuple[int, int, int, int]):
+        self.hit, self.mt, self.crt, self.grd = stats
         self.stats_surf = None
 
     def update(self):
@@ -383,11 +419,14 @@ class MapCombatInfo():
     def draw(self, surf):
         # Create background surface
         width, height = self.bg_surf.get_width(), self.bg_surf.get_height()
-        true_height = height + self.c_surf.get_height()
-        if self.hit or self.mt:
-            bg_surf = engine.create_surface((width, true_height))
+        
+        if self.grd is not None:
+            stat_height = height + self.guard_surf.get_height()
+        elif self.hit or self.mt:
+            stat_height = height + self.hit_and_mt_surf.get_height()
         else:
-            bg_surf = engine.create_surface((width, height))
+            stat_height = height
+        bg_surf = engine.create_surface((width, stat_height))
         bg_surf.blit(self.bg_surf, (0, 0))
 
         # Name
@@ -424,20 +463,20 @@ class MapCombatInfo():
         bg_surf = self.hp_bar.draw(bg_surf)
 
         # Blit stat surf
-        if self.hit is not None or self.mt is not None:
+        if self.grd is not None:
             if not self.stats_surf:
-                self.stats_surf = self.build_stat_surf()
+                self.stats_surf = self.build_guard_surf()
+            bg_surf.blit(self.stats_surf, (0, height))
+        elif self.hit is not None or self.mt is not None:
+            if not self.stats_surf:
+                self.stats_surf = self.build_hit_and_mt_surf()
             bg_surf.blit(self.stats_surf, (0, height))
 
         if not self.true_position or self.draw_method == 'splash':
             self.determine_position(width, height)
 
-        if self.hit is not None or self.mt is not None:
-            blit_surf = engine.subsurface(bg_surf, (0, true_height//2 - int(true_height * self.blinds // 2), width, int(true_height * self.blinds)))
-            y_pos = self.true_position[1] + true_height//2 - int(true_height * self.blinds // 2)
-        else:
-            blit_surf = engine.subsurface(bg_surf, (0, height//2 - int(height * self.blinds // 2), width, int(height * self.blinds)))
-            y_pos = self.true_position[1] + height//2 - int(height * self.blinds // 2)
+        blit_surf = engine.subsurface(bg_surf, (0, height//2 - int(height * self.blinds // 2), width, int(height * self.blinds)))
+        y_pos = self.true_position[1] + height//2 - int(height * self.blinds // 2)
         x, y = (self.true_position[0] + self.shake_offset[0], y_pos + self.shake_offset[1])
         surf.blit(blit_surf, (x, y))
 

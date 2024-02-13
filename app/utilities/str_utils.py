@@ -178,6 +178,11 @@ def matched_block_expr(s: str, opener: str, closer: str):
             curr += character
     return all_strs
 
+def remove_prefix(text: str, prefix: str):
+    if text.startswith(prefix):
+        return text[len(prefix):]
+    return text
+
 def remove_all_matched(s: str, opener: str, closer: str):
     """
     usage: `{d:{eval:f}.{eval:y}.` becomes `{d:..` - useful for determining which level of a nested eval we're in

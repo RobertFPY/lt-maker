@@ -535,10 +535,13 @@ class Slide(OptionValidator):
     valid = ["normal", "left", "right"]
 
 class Font(OptionValidator):
-    valid = list(FONT.keys())
+    def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
+        return [(None, option) for option in FONT.keys()]
 
 class FontColor(OptionValidator):
-    valid = list(RESOURCES.fonts.get('convo').palettes.keys())
+    # Must be done this way to delay grabbing what is valid until we've loaded in our resources
+    def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
+        return [(None, option) for option in RESOURCES.fonts.get('convo').palettes.keys()]
 
 class Direction(OptionValidator):
     valid = ["open", "close"]

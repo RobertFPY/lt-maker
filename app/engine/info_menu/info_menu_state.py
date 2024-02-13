@@ -424,7 +424,7 @@ class InfoMenuState(State):
             color = 'olive-green'
         elif value > 80 and value <= 90:
             color = 'soft-green'
-        else: # > 90
+        else:  # > 90
             color = 'yellow-green'
         return color
 

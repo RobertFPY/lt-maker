@@ -74,7 +74,7 @@ class FontCatalog(ManifestCatalog[Font]):
             new_image_path = os.path.join(loc, datum.nid + '.png')
             if os.path.abspath(datum.image_path()) != os.path.abspath(new_image_path):
                 self.make_copy(datum.image_path(), new_image_path)
-            if(datum.ttf_path()):
+            if datum.ttf_path():
                 new_ttf_path = os.path.join(loc, datum.fallback_ttf)
                 if os.path.abspath(datum.ttf_path()) != os.path.abspath(new_ttf_path):
                     self.make_copy(datum.ttf_path(), new_ttf_path)

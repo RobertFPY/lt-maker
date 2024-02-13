@@ -22,6 +22,9 @@ def start(title, from_editor=False):
     from app.engine import sprites
     sprites.load_images()
 
+    from app.engine import fonts
+    fonts.load_fonts()
+
     # Hack to get icon to show up in windows
     try:
         import ctypes

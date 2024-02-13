@@ -6,6 +6,10 @@ from app.events.speak_style import SpeakStyle, SpeakStyleLibrary
 
 class CsvExporterTests(unittest.TestCase):
     def setUp(self):
+        from app.data.resources.resources import RESOURCES
+        from app.engine import fonts
+        RESOURCES.load('testing_proj.ltproj')
+        fonts.load_fonts()
         self.db = SpeakStyleLibrary()
 
     def tearDown(self) -> None:

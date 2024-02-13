@@ -2,7 +2,7 @@ import os
 import shutil
 import filecmp
 import json
-from typing import List, TypeVar
+from typing import List, Type, TypeVar
 
 from app.utilities.data import Data
 
@@ -24,7 +24,7 @@ class ManifestCatalog(Data[M]):
     filetype = '.png'
     manifest = None  # To be implemented
     title = ''  # To be implemented
-    datatype = None  # To be implemented
+    datatype: Type[M] = None  # To be implemented
     multi_loc = None  # Can be implemented for distributed saving
 
     def load(self, loc):
@@ -80,5 +80,5 @@ class ManifestCatalog(Data[M]):
 
     def clean(self, bad_files: List[str]):
         for fn in bad_files:
-            logging.warning("Removing %s..." % fn) 
+            logging.warning("Removing %s..." % fn)
             os.remove(fn)

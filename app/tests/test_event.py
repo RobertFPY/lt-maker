@@ -14,8 +14,10 @@ from app.utilities.str_utils import SHIFT_NEWLINE
 class EventUnitTests(unittest.TestCase):
     def setUp(self):
         from app.data.database.database import DB
+        from app.data.resources.resources import RESOURCES
         source_generator.event_command_codegen()
         DB.load('testing_proj.ltproj')
+        RESOURCES.load('testing_proj.ltproj')
         self.patchers = self.initialize_patchers()
         for patcher in self.patchers:
             patcher.start()

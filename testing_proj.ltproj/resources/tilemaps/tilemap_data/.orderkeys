@@ -1,5 +1,5 @@
-{
-    "Prologue.json": 0,
-    "Magvel.json": 1,
-    "Test.json": 2
-}
+[
+    "Prologue.json",
+    "Magvel.json",
+    "Test.json"
+]

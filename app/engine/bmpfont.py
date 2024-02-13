@@ -1,8 +1,34 @@
 from dataclasses import dataclass
 from typing import Dict, Optional, Tuple
 from functools import lru_cache
+from app.data.resources.fonts import Font
 
 from app.engine import engine
+import pygame
+
+from app.utilities.typing import Color4
+
+OUTLINE_WIDTH = 1
+
+@lru_cache()
+def default_render_with_outline(font: pygame.font.Font, char: str, height: int, internal_color: Color4, outline_color: Color4) -> Tuple[engine.Surface, int]:
+    text_width, _ = font.size(char)
+    surf = engine.create_surface((text_width + 2 * OUTLINE_WIDTH, height), True)
+    internal = font.render(char, False, internal_color)
+    outline = font.render(char, False, outline_color)
+    for i in -OUTLINE_WIDTH, OUTLINE_WIDTH:
+        surf.blit(outline, (i + OUTLINE_WIDTH, OUTLINE_WIDTH))
+        surf.blit(outline, (OUTLINE_WIDTH, i + OUTLINE_WIDTH))
+    surf.blit(internal, (OUTLINE_WIDTH, OUTLINE_WIDTH))
+    return surf, text_width
+
+@lru_cache()
+def default_render(font: pygame.font.Font, char: str, height: int, color: Color4) -> Tuple[engine.Surface, int]:
+    text_width, _ = font.size(char)
+    surf = engine.create_surface((text_width, height), True)
+    black = font.render(char, False, color)
+    surf.blit(black, (0, 0))
+    return surf, text_width
 
 @dataclass
 class CharGlyph():
@@ -12,7 +38,7 @@ class CharGlyph():
     char_width: int
 
 class BmpFont():
-    def __init__(self, png_path: str, idx_path: str, default_color: str = 'default'):
+    def __init__(self, font_info: Font, png_path: str, idx_path: str):
         self.all_uppercase = False
         self.all_lowercase = False
         self.stacked = False
@@ -23,6 +49,11 @@ class BmpFont():
         self._width = 8
         self.height = 16
         self.memory: Dict[str, Dict[str, Tuple[engine.Surface, int]]] = {}
+
+        self.font_info = font_info
+        self.fallback_font = None
+        if self.font_info.ttf_path():
+            self.fallback_font = pygame.font.Font(self.font_info.ttf_path(), font_info.fallback_size)
 
         with open(self.idx_path, 'r', encoding='utf-8') as fp:
             for x in fp.readlines():
@@ -50,10 +81,13 @@ class BmpFont():
                                                          int(words[2]) * self.height,
                                                          int(words[3]))
 
-        self.default_color = default_color
+        self.default_color = font_info.default_color or 'default'
         self.surfaces: Dict[str, engine.Surface] = {}
-        self.surfaces[default_color] = engine.image_load(self.png_path)
+        self.surfaces[font_info.default_color or 'default'] = engine.image_load(self.png_path)
         # engine.set_colorkey(self.surface, (0, 0, 0), rleaccel=True)
+
+    def get_base_surf(self) -> engine.Surface:
+        return self.surfaces[self.default_color]
 
     def modify_string(self, string: str) -> str:
         if self.all_uppercase:
@@ -64,7 +98,38 @@ class BmpFont():
         return string
 
     @lru_cache()
+    def _get_char_width(self, c: str) -> int:
+        if c in self.chartable:
+            return self.chartable[c].char_width
+        if self.fallback_font:
+            if self.font_info.outline_font:
+                return default_render_with_outline(self.fallback_font, c, self.height, (0, 0, 0), (0, 0, 0))[1]
+            else:
+                return default_render(self.fallback_font, c, self.height, (0, 0, 0))[1]
+        return 8
+
+    @lru_cache()
     def _get_char_from_surf(self, c: str, color: str = None) -> Tuple[engine.Surface, int]:
+        if not color:
+            color = self.default_color
+        if c not in self.chartable:
+            if self.fallback_font:
+                if self.font_info.outline_font:
+                    return default_render_with_outline(self.fallback_font, c, self.height, tuple(self.font_info.primary_color(color)), tuple(self.font_info.secondary_color(color)))
+                else:
+                    return default_render(self.fallback_font, c, self.height, tuple(self.font_info.primary_color(color)))
+            else:
+                cx, cy, cwidth = 0, 0, 8
+                print("unknown char: %s" % c)
+        else:
+            c_info = self.chartable[c]
+            cx, cy, cwidth = c_info.x, c_info.y, c_info.char_width
+        base_surf = self.surfaces.get(color, self.surfaces[self.default_color])
+        char_surf = engine.subsurface(base_surf, (cx, cy, self._width, self.height))
+        return (char_surf, cwidth)
+
+    @lru_cache()
+    def _get_stacked_char_from_surf(self, c: str, color: str = None) -> Tuple[engine.Surface, engine.Surface, int]:
         if not color:
             color = self.default_color
         if c not in self.chartable:
@@ -73,21 +138,7 @@ class BmpFont():
         else:
             c_info = self.chartable[c]
             cx, cy, cwidth = c_info.x, c_info.y, c_info.char_width
-        base_surf = self.surfaces.get(color, self.surfaces['default'])
-        char_surf = engine.subsurface(base_surf, (cx, cy, self._width, self.height))
-        return (char_surf, cwidth)
-
-    @lru_cache()
-    def _get_stacked_char_from_surf(self, c: str, color: str = None) -> Tuple[engine.Surface, engine.Surface, int]:
-        if not color:
-            color = 'default'
-        if c not in self.chartable:
-            cx, cy, cwidth = 0, 0, 8
-            print("unknown char: %s" % c)
-        else:
-            c_info = self.chartable[c]
-            cx, cy, cwidth = c_info.x, c_info.y, c_info.char_width
-        base_surf = self.surfaces.get(color, self.surfaces['default'])
+        base_surf = self.surfaces.get(color)
         high_surf = engine.subsurface(base_surf, (cx, cy, self._width, self.height))
         lowsurf = engine.subsurface(base_surf, (cx, cy + self.height, self._width, self.height))
         return (high_surf, lowsurf, cwidth)
@@ -95,7 +146,6 @@ class BmpFont():
     def blit(self, string, surf, pos=(0, 0), color: Optional[str] = None, no_process=False):
         if not color:
             color = self.default_color
-
         def normal_render(left, top, string: str, bcolor):
             for c in string:
                 c_surf, char_width = self._get_char_from_surf(c, bcolor)
@@ -139,12 +189,5 @@ class BmpFont():
         length = 0
         string = self.modify_string(string)
         for c in string:
-            try:
-                char_width = self.chartable[c].char_width
-            except KeyError as e:
-                # print(e)
-                # print("%s is not chartable" % c)
-                # print("string: ", string)
-                char_width = 8
-            length += char_width
+            length += self._get_char_width(c)
         return length

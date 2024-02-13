@@ -89,7 +89,7 @@ class ObjectiveMenuState(State):
 
         seed = str(game.game_vars['_random_seed'])
         seed_surf = engine.create_surface((28, 16), transparent=True)
-        FONT['text-numbers'].blit_center(seed, seed_surf, (14, 0))
+        FONT['text_numbers'].blit_center(seed, seed_surf, (14, 0))
         surfaces.append((seed_surf, (WINWIDTH - 28, 4)))
 
         # Functions for Unit Count per Party

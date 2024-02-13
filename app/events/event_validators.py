@@ -8,12 +8,12 @@ import re
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type
 
 from app.data.database.database import Database
-from app.engine.fonts import FONT, convo
+from app.engine.fonts import FONT
 from app.utilities.class_utils import recursive_subclasses
 from app.utilities.enums import HAlignment, VAlignment
 from app.events import event_commands
 from app.events.screen_positions import horizontal_screen_positions, vertical_screen_positions
-from app.data.resources.resources import Resources
+from app.data.resources.resources import RESOURCES, Resources
 from app.sprites import SPRITES
 from app.utilities import str_utils
 from app.utilities.enums import Alignments
@@ -538,7 +538,7 @@ class Font(OptionValidator):
     valid = list(FONT.keys())
 
 class FontColor(OptionValidator):
-    valid = list(convo.colors.keys())
+    valid = list(RESOURCES.fonts.get('convo').palettes.keys())
 
 class Direction(OptionValidator):
     valid = ["open", "close"]

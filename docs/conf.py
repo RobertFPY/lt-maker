@@ -18,7 +18,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'lt-maker'
-copyright = '2023, rainlash'
+copyright = '2024, rainlash'
 author = 'rainlash'
 
 

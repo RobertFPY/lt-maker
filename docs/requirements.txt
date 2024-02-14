@@ -3,3 +3,4 @@
 attrs==21.4.0
 sphinx_rtd_theme==1.0.0
 myst-parser==0.16.1
+sphinxcontrib-applehelp==1.0.4

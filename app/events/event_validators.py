@@ -1388,7 +1388,7 @@ for validator in EvalValidator.__subclasses__():
 def validate(var_type: str, text: str, level: NID, db: Database = None, resources: Resources = None):
     if not var_type:
         return text
-    var_type = var_type.removeprefix('*')
+    var_type = str_utils.remove_prefix(var_type, '*')
     validator = validators.get(var_type)
     if validator:
         v = validator(db, resources)
@@ -1399,7 +1399,7 @@ def validate(var_type: str, text: str, level: NID, db: Database = None, resource
 def convert(var_type: str, text: str):
     if not var_type or not text:
         return None
-    var_type = var_type.removeprefix('*')
+    var_type = str_utils.remove_prefix(var_type, '*')
     try:
         validator = validators.get(var_type)
         if validator:
@@ -1413,5 +1413,5 @@ def convert(var_type: str, text: str):
 def get(keyword: str) -> Type[Validator]:
     if not keyword:
         return None
-    keyword = keyword.removeprefix('*')
+    keyword = str_utils.remove_prefix(keyword, '*')
     return validators.get(keyword, None)

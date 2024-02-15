@@ -7,6 +7,7 @@ from collections import Counter
 from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Tuple
 
 from app.engine.query_engine import GameQueryEngine
+from app.utilities.primitive_counter import PrimitiveCounter
 
 if TYPE_CHECKING:
     from app.engine import (ai_controller, death,
@@ -90,8 +91,8 @@ class GameState():
         self.current_mode: DifficultyModeObject = None
 
         # global variable stores
-        self.game_vars: Counter = None
-        self.level_vars: Counter = None
+        self.game_vars: PrimitiveCounter = None
+        self.level_vars: PrimitiveCounter = None
         self.playtime: int = 0
         self.current_save_slot: int = None
 

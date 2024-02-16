@@ -78,7 +78,7 @@ def no_return(_):
     return None
 
 def maximum(vals: List[int | float]):
-    return max(vals)
+    return max(vals, default=0)
 
 def minimum(vals: List[int | float]):
-    return min(vals)
+    return min(vals, default=0)

@@ -2,7 +2,6 @@ from PyQt5.QtWidgets import QItemDelegate
 from PyQt5.QtCore import Qt
 
 from app.utilities import str_utils
-from app.utilities.data import Data
 from app.data.database.database import DB
 
 from app.extensions.custom_gui import ComboBox, PropertyBox, DeletionTab, DeletionDialog
@@ -23,6 +22,8 @@ class WeaponRankMultiModel(MultiAttrListModel):
                             any(adv.weapon_rank == element.rank for adv in weapon.disadvantage)]
         affected_items = item_components.get_items_using(ComponentType.WeaponRank, element.rank, DB)
         affected_skills = skill_components.get_skills_using(ComponentType.WeaponRank, element.rank, DB)
+        affected_classes = [klass for klass in DB.classes if 
+                            any([wexp_gain.cap == element.requirement for wexp_gain in klass.wexp_gain.values()])]
 
         deletion_tabs = []
         if affected_weapons:
@@ -40,6 +41,11 @@ class WeaponRankMultiModel(MultiAttrListModel):
             model = SkillModel
             msg = "Deleting WeaponRank <b>%s</b> would affect these skills." % element.rank
             deletion_tabs.append(DeletionTab(affected_skills, model, msg, "Skills"))
+        if affected_classes:
+            from app.editor.class_editor.class_model import ClassModel
+            model = ClassModel
+            msg = "Deleting WeaponRank <b>%s</b> would modify these classes." % element.rank
+            deletion_tabs.append(DeletionTab(affected_classes, model, msg, "Classes"))
         
         if deletion_tabs:
             combo_box = PropertyBox("Rank", ComboBox, self.window)
@@ -55,6 +61,10 @@ class WeaponRankMultiModel(MultiAttrListModel):
                     weapon.disadvantage.swap_rank(element.rank, swap.rank)
                 swap_values(DB.items.values(), ComponentType.WeaponRank, element.rank, swap.rank)
                 swap_values(DB.skills.values(), ComponentType.WeaponRank, element.rank, swap.rank)
+                for klass in affected_classes:
+                    for weapon_type, wexp_gain in klass.wexp_gain.items():
+                        if wexp_gain.cap == element.requirement:
+                            wexp_gain.cap = swap.requirement
             else:
                 return
         super().delete(idx)
@@ -75,6 +85,11 @@ class WeaponRankMultiModel(MultiAttrListModel):
                 weapon.disadvantage.swap_rank(old_value, new_value)
             swap_values(DB.items.values(), ComponentType.WeaponRank, old_value, new_value)
             swap_values(DB.skills.values(), ComponentType.WeaponRank, old_value, new_value)
+        elif attr == 'requirement':
+            for klass in DB.classes.values():
+                for weapon_type, wexp_gain in klass.wexp_gain.items():
+                    if wexp_gain.cap == old_value:
+                        wexp_gain.cap = new_value
 
 class RankDialog(MultiAttrListDialog):
     @classmethod
@@ -124,6 +139,11 @@ class WexpGainMultiAttrModel(DefaultMultiAttrListModel):
             attr = self._headers[index.column()]
             if attr == 'nid':
                 return weapon_key
+            elif attr == 'cap':
+                cap = getattr(data, attr)
+                if cap is None:
+                    return DB.weapon_ranks.get_highest_rank().requirement
+                return cap
             else:
                 return getattr(data, attr)
         return None

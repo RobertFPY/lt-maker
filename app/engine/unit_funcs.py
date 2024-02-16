@@ -365,4 +365,7 @@ def get_weapon_cap(unit, weapon_type: NID) -> int:
     klass = DB.classes.get(unit.klass)
     wexp_gain = klass.wexp_gain.get(weapon_type, DB.weapons.default(DB))
     cap = wexp_gain.cap
-    return cap
+    if cap:
+        return cap
+    else:
+        return DB.weapon_ranks.get_highest_rank().requirement

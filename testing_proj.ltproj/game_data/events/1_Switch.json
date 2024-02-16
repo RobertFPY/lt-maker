@@ -4,20 +4,7 @@
         "trigger": "Switch",
         "level_nid": "1",
         "condition": "True",
-        "commands": [
-            [
-                "alert",
-                [
-                    "Switch Pulled!"
-                ]
-            ],
-            [
-                "has_attacked",
-                [
-                    "{unit}"
-                ]
-            ]
-        ],
+        "commands": [],
         "only_once": false,
         "priority": 20,
         "_source": [

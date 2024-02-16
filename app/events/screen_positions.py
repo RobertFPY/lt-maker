@@ -21,8 +21,10 @@ vertical_screen_positions = {'Top': 0,
                              'Middle': (WINHEIGHT - 80) // 2,
                              'Bottom': WINHEIGHT - 80}
 
-def parse_screen_position(pos: Tuple) -> Tuple[Point, bool]:
+def parse_screen_position(pos: Tuple | str) -> Tuple[Point, bool]:
     """Returns a tuple of Point (on screen) and bool (indicating if the portrait should be mirrored)"""
+    if not isinstance(pos, tuple):
+        pos = (pos,)
     def resolve_pos(p: int | str, horiz=True) -> int:
         if isinstance(p, int):
             return p

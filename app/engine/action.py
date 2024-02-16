@@ -2301,6 +2301,53 @@ class ChangeField(Action):
     def reverse(self):
         self.unit.set_field(self.key, self.old_value)
 
+class SetUnitNote(Action):
+    def __init__(self, unit: UnitObject, key: str, value: str):
+        self.unit = unit
+        self.key = key
+        self.value = value
+        categories = [cat for cat, note in self.unit.notes]
+        if key in categories:
+            self.idx = categories.index(key)
+            self.old_note = self.unit.notes[self.idx]
+        else:
+            self.idx = None
+            self.old_note = None
+
+    def do(self):
+        if self.idx is not None:
+            self.unit.notes.pop(self.idx)
+            self.unit.notes.insert((self.key, self.value))
+        else:
+            self.unit.notes.append((self.key, self.value))
+
+    def reverse(self):
+        if self.old_note:
+            self.unit.notes.pop(self.idx)
+            self.unit.notes.insert(self.old_note)
+        else:
+            self.unit.notes.pop()
+
+class RemoveUnitNote(Action):
+    def __init__(self, unit: UnitObject, key: str):
+        self.unit = unit
+        self.key = key
+        categories = [cat for cat, note in self.unit.notes]
+        if key in categories:
+            self.deletion_idx = categories.index(key)
+            self.old_note = self.unit.notes[self.deletion_idx]
+        else:
+            self.deletion_idx = None
+            self.old_note = None        
+
+    def do(self):
+        if self.deletion_idx is not None:
+            self.unit.notes.pop(self.deletion_idx)
+
+    def reverse(self):
+        if self.old_note:
+            self.unit.notes.insert(self.deletion_idx, self.old_note)
+
 class Die(Action):
     def __init__(self, unit):
         self.unit = unit

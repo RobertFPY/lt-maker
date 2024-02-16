@@ -17,6 +17,8 @@ from app.utilities import utils
 from app.utilities.enums import HAlignment
 
 from typing import List
+from app.engine.combat.utils import resolve_weapon
+
 
 class UIView():
     legal_states = ('free', 'prep_formation', 'prep_formation_select')
@@ -379,17 +381,17 @@ class UIView():
                 fallback_final = prefix + infix + ('_' if infix else '') + 'red'
                 surf.blit(SPRITES.get(final, fallback_final).copy(), (92, 35))
 
-                mt = combat_calcs.compute_assist_damage(a_assist, defender, a_assist.get_weapon(), defender.get_weapon(), 'attack', (0, 0))
+                mt = combat_calcs.compute_assist_damage(a_assist, defender, a_assist.get_weapon(), resolve_weapon(defender), 'attack', (0, 0))
                 if grandmaster:
-                    hit = utils.clamp(combat_calcs.compute_hit(a_assist, defender, a_assist.get_weapon(), defender.get_weapon(), 'attack', (0, 0)), 0, 100)
+                    hit = utils.clamp(combat_calcs.compute_hit(a_assist, defender, a_assist.get_weapon(), resolve_weapon(defender), 'attack', (0, 0)), 0, 100)
                     blit_num(surf, int(mt * float(hit) / 100), 112, 35)
                 else:
                     blit_num(surf, mt, 112, 35)
-                    hit = combat_calcs.compute_hit(a_assist, defender, a_assist.get_weapon(), defender.get_weapon(), 'attack', (0, 0))
+                    hit = combat_calcs.compute_hit(a_assist, defender, a_assist.get_weapon(), resolve_weapon(defender), 'attack', (0, 0))
                     blit_num(surf, hit, 112, 51)
                     # Blit crit if applicable
                     if crit_flag:
-                        c = combat_calcs.compute_crit(a_assist, defender, a_assist.get_weapon(), defender.get_weapon(), 'attack', (0, 0))
+                        c = combat_calcs.compute_crit(a_assist, defender, a_assist.get_weapon(), resolve_weapon(defender), 'attack', (0, 0))
                         blit_num(surf, c, 112, 67)
 
             if d_assist and defender.get_weapon() and \
@@ -448,25 +450,25 @@ class UIView():
         # Enemy HP
         blit_num(surf, defender.get_hp(), 44, 19)
         # Self MT
-        mt = combat_calcs.compute_damage(attacker, defender, weapon, defender.get_weapon(), 'attack', (0, 0))
+        mt = combat_calcs.compute_damage(attacker, defender, weapon, resolve_weapon(defender), 'attack', (0, 0))
         if grandmaster:
-            hit = utils.clamp(combat_calcs.compute_hit(attacker, defender, weapon, defender.get_weapon(), 'attack', (0, 0)), 0, 100)
+            hit = utils.clamp(combat_calcs.compute_hit(attacker, defender, weapon, resolve_weapon(defender), 'attack', (0, 0)), 0, 100)
             blit_num(surf, int(mt * float(hit) / 100), 88, 35)
         else:
             blit_num(surf, mt, 88, 35)
-            hit = combat_calcs.compute_hit(attacker, defender, weapon, defender.get_weapon(), 'attack', (0, 0))
+            hit = combat_calcs.compute_hit(attacker, defender, weapon, resolve_weapon(defender), 'attack', (0, 0))
             blit_num(surf, hit, 88, 51)
             # Blit crit if applicable
             if crit_flag:
-                c = combat_calcs.compute_crit(attacker, defender, weapon, defender.get_weapon(), 'attack', (0, 0))
+                c = combat_calcs.compute_crit(attacker, defender, weapon, resolve_weapon(defender), 'attack', (0, 0))
                 blit_num(surf, c, 88, 67)
         # Enemy Hit and Mt
         if defender.get_weapon() and \
                 combat_calcs.can_counterattack(attacker, weapon, defender, defender.get_weapon()):
-            e_mt = combat_calcs.compute_damage(defender, attacker, defender.get_weapon(), weapon, 'defense', (0, 0))
-            e_hit = combat_calcs.compute_hit(defender, attacker, defender.get_weapon(), weapon, 'defense', (0, 0))
+            e_mt = combat_calcs.compute_damage(defender, attacker, resolve_weapon(defender), weapon, 'defense', (0, 0))
+            e_hit = combat_calcs.compute_hit(defender, attacker, resolve_weapon(defender), weapon, 'defense', (0, 0))
             if crit_flag:
-                e_crit = combat_calcs.compute_crit(defender, attacker, defender.get_weapon(), weapon, 'defense', (0, 0))
+                e_crit = combat_calcs.compute_crit(defender, attacker, resolve_weapon(defender), weapon, 'defense', (0, 0))
             else:
                 e_crit = 0
         else:
@@ -505,8 +507,8 @@ class UIView():
 
     def draw_attack_info(self, surf, attacker, weapon, defender, a_assist=None, d_assist=None):
         # Turns on appropriate combat conditionals to get an accurate read
-        skill_system.test_on([], attacker, weapon, defender, 'attack')
-        skill_system.test_on([], defender, defender.get_weapon(), attacker, 'defense')
+        skill_system.test_on([], attacker, weapon, defender, resolve_weapon(defender), 'attack')
+        skill_system.test_on([], defender, resolve_weapon(defender), attacker, weapon, 'defense')
 
         def has_attacker_strike_partner() -> bool:
             return DB.constants.value('pairup') and \
@@ -562,7 +564,7 @@ class UIView():
 
         # Advantage arrows
         if skill_system.check_enemy(attacker, defender):
-            self.draw_adv_arrows(surf, attacker, defender, weapon, defender.get_weapon(), (topleft[0] + 37, topleft[1] + 8))
+            self.draw_adv_arrows(surf, attacker, defender, weapon, resolve_weapon(defender), (topleft[0] + 37, topleft[1] + 8))
 
             y_pos = topleft[1] + 89
             if not crit_flag:
@@ -570,7 +572,7 @@ class UIView():
             if grandmaster:
                 y_pos -= 16
 
-            self.draw_adv_arrows(surf, defender, attacker, defender.get_weapon(), weapon, (topleft[0] + 85, y_pos))
+            self.draw_adv_arrows(surf, defender, attacker, resolve_weapon(defender), weapon, (topleft[0] + 85, y_pos))
 
         # Doubling
         count = ANIMATION_COUNTERS.x2_counter.count
@@ -579,7 +581,7 @@ class UIView():
         x2_pos_player_partner = (topleft[0] + 107 + self.x_positions[count], topleft[1] + 38 + self.y_positions[count])
         x2_pos_enemy_partner = (topleft[0] + 20 + self.x_positions[count], topleft[1] + 38 + self.y_positions[count])
 
-        my_num = combat_calcs.outspeed(attacker, defender, weapon, defender.get_weapon(), "attack", (0, 0))
+        my_num = combat_calcs.outspeed(attacker, defender, weapon, resolve_weapon(defender), "attack", (0, 0))
         my_num *= combat_calcs.compute_multiattacks(attacker, defender, weapon, "attack", (0, 0))
         if weapon.uses_options and weapon.uses_options.one_loss_per_combat():
             pass  # If you can only lose one use at a time, no need to min this
@@ -611,21 +613,21 @@ class UIView():
                     surf.blit(SPRITES.get("x%d" % (e_num)), x2_pos_enemy_partner)
 
         # Turns off combat conditionals
-        skill_system.test_off([], defender, defender.get_weapon(), attacker, 'defense')
-        skill_system.test_off([], attacker, weapon, defender, 'attack')
+        skill_system.test_off([], defender, resolve_weapon(defender), attacker, weapon, 'defense')
+        skill_system.test_off([], attacker, weapon, defender, resolve_weapon(defender), 'attack')
 
         return surf
 
     def create_spell_info(self, attacker, spell, defender):
         if defender:
             height = 2
-            mt = combat_calcs.compute_damage(attacker, defender, spell, defender.get_weapon(), 'attack', (0, 0))
+            mt = combat_calcs.compute_damage(attacker, defender, spell, resolve_weapon(defender), 'attack', (0, 0))
             if mt is not None:
                 height += 1
-            hit = combat_calcs.compute_hit(attacker, defender, spell, defender.get_weapon(), 'attack', (0, 0))
+            hit = combat_calcs.compute_hit(attacker, defender, spell, resolve_weapon(defender), 'attack', (0, 0))
             if hit is not None:
                 height += 1
-            crit = combat_calcs.compute_crit(attacker, defender, spell, defender.get_weapon(), 'attack', (0, 0))
+            crit = combat_calcs.compute_crit(attacker, defender, spell, resolve_weapon(defender), 'attack', (0, 0))
             if DB.constants.value('crit') and crit is not None:
                 height += 1
 
@@ -719,7 +721,7 @@ class UIView():
 
     def draw_spell_info(self, surf, attacker, spell, defender):
         # Turns on appropriate combat conditionals to get accurate stats
-        skill_system.test_on([], attacker, spell, defender, 'attack')
+        skill_system.test_on([], attacker, spell, defender, resolve_weapon(defender), 'attack')
 
         if not self.spell_info_disp:
             self.spell_info_disp = self.create_spell_info(attacker, spell, defender)
@@ -749,7 +751,7 @@ class UIView():
             surf.blit(icon, (topleft[0] + 8, topleft[1] + self.spell_info_disp.get_height() - 20))
 
         # Turns off combat conditionals
-        skill_system.test_off([], attacker, spell, defender, 'attack')
+        skill_system.test_off([], attacker, spell, defender, resolve_weapon(defender), 'attack')
 
         return surf
 

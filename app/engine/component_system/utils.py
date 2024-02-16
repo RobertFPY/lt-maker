@@ -9,7 +9,8 @@ import operator
 ARG_TYPE_MAP: Dict[str, str] = {
     'unit': "UnitObject",
     'item': "ItemObject",
-    'target': "UnitObject"
+    'target': "UnitObject",
+    'item2': "ItemObject"
 }
 
 class ResolvePolicy(Enum):

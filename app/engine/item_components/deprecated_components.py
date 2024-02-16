@@ -54,7 +54,7 @@ class EventOnUse(ItemComponent):
 
     expose = ComponentType.Event
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         event_prefab = DB.events.get_from_nid(self.value)
         if event_prefab:
             local_args = {'target_pos': target_pos, 'mode': mode, 'attack_info': attack_info, 'item': item}
@@ -69,13 +69,13 @@ class EventAfterUse(ItemComponent):
 
     _target_pos = None
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         self._target_pos = target_pos
 
-    def end_combat(self, playback, unit, item, target, mode):
+    def end_combat(self, playback, unit, item, target, item2, mode):
         event_prefab = DB.events.get_from_nid(self.value)
         if event_prefab:
-            local_args = {'target_pos': self._target_pos, 'item': item, 'mode': mode}
+            local_args = {'target_pos': self._target_pos, 'item': item, 'item2': item2, 'mode': mode}
             game.events.trigger_specific_event(event_prefab.nid, unit, target, unit.position, local_args)
         self._target_pos = None
 
@@ -88,15 +88,15 @@ class EventAfterCombat(ItemComponent):
 
     _did_hit = False
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         self._did_hit = True
         self.target_pos = target_pos
 
-    def end_combat(self, playback, unit, item, target, mode):
+    def end_combat(self, playback, unit, item, target, item2, mode):
         if self._did_hit and target:
             event_prefab = DB.events.get_from_nid(self.value)
             if event_prefab:
-                local_args = {'target_pos': self.target_pos, 'item': item, 'mode': mode}
+                local_args = {'target_pos': self.target_pos, 'item': item, 'item2': item2, 'mode': mode}
                 game.events.trigger_specific_event(event_prefab.nid, unit, target, unit.position, local_args)
         self._did_hit = False
 
@@ -172,7 +172,7 @@ class EffectiveTag(EffectiveIcon):
     expose = (ComponentType.List, ComponentType.Tag)
     value = []
 
-    def dynamic_damage(self, unit, item, target, mode, attack_info, base_value) -> int:
+    def dynamic_damage(self, unit, item, target, item2, mode, attack_info, base_value) -> int:
         if any(tag in target.tags for tag in self.value):
             if self._check_negate(target):
                 return 0

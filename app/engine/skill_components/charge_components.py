@@ -113,7 +113,7 @@ class CombatChargeIncrease(SkillComponent):
 
     ignore_conditional = True
 
-    def end_combat(self, playback, unit, item, target, mode):
+    def end_combat(self, playback, unit, item, target, item2, mode):
         marks = get_marks(playback, unit, item)
         if not self.skill.data.get('active') and marks:
             new_value = self.skill.data['charge'] + self.value
@@ -130,7 +130,7 @@ class CombatChargeIncreaseByStat(SkillComponent):
 
     ignore_conditional = True
 
-    def end_combat(self, playback, unit, item, target, mode):
+    def end_combat(self, playback, unit, item, target, item2, mode):
         marks = get_marks(playback, unit, item)
         if not self.skill.data.get('active') and marks:
             new_value = self.skill.data['charge'] + unit.stats[self.value] + unit.stat_bonus(self.value)
@@ -145,7 +145,7 @@ class GainMana(SkillComponent):
 
     expose = ComponentType.String
 
-    def start_combat(self, playback, unit, item, target, mode):
+    def start_combat(self, playback, unit, item, target, item2, mode):
         from app.engine import evaluate
         try:
             if target:
@@ -169,7 +169,7 @@ class CostMana(SkillComponent):
     def condition(self, unit, item):
         return unit.current_mana >= self.value
 
-    def start_combat(self, playback, unit, item, target, mode):
+    def start_combat(self, playback, unit, item, target, item2, mode):
         if self.skill.data.get('active'):
             action.do(action.ChangeMana(unit, -self.value))
 

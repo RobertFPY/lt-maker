@@ -4,12 +4,12 @@ from dataclasses import dataclass
 import logging
 from enum import Enum
 from typing import Callable, List, Dict, Optional, Set, Tuple, Type
-from app.events.event_structs import EOL, EventCommandTokens, ParseMode
+from app.events.event_version import EventVersion
+from app.events.event_structs import EOL, EventCommandTokens
 
 from app.utilities.data import Prefab
-from app.utilities.str_utils import mirror_bracket
+from app.utilities.str_utils import SHIFT_NEWLINE, mirror_bracket
 from app.utilities.typing import NID
-
 
 class Tags(Enum):
     FLOW_CONTROL = 'Flow Control'
@@ -43,7 +43,7 @@ class EventCommand(Prefab):
     desc: str = ''
 
     # static, shared among all instances of an EventCommand
-    keywords: list = []
+    keywords: List[str] = []
     optional_keywords: list = []
     keyword_types: list = []  # always same size as keywords + optional keywords
     _flags: list = []
@@ -63,7 +63,7 @@ class EventCommand(Prefab):
             else:
                 self.display_values = []
 
-    def FLAGS(self, *args) -> EventCommand:
+    def set_flags(self, *args) -> EventCommand:
         self.chosen_flags |= set(args)
         return self
 
@@ -71,7 +71,8 @@ class EventCommand(Prefab):
         return self.nid, self.display_values
 
     def to_plain_text(self) -> str:
-        return ';'.join([self.nid] + self.display_values)
+        as_string = [str(self.parameters.get(kwd) or "") for kwd in (self.keywords + self.optional_keywords)]
+        return ';'.join([self.nid] + as_string).rstrip(';')
 
     def __repr__(self):
         return self.to_plain_text()
@@ -86,6 +87,17 @@ class EventCommand(Prefab):
             return cls.keyword_types
         else:
             return cls.keywords + cls.optional_keywords
+
+    @classmethod
+    def get_keyword_from_index(cls, idx: str) -> Optional[str]:
+        """Respects *list args"""
+        curr_arg = ''
+        kwds = cls.get_keywords()
+        for i in range(idx + 1):
+            curr_arg = kwds[i]
+            if '*' in curr_arg:
+                return curr_arg
+        return curr_arg
 
     @classmethod
     def get_validator_from_keyword(cls, keyword: str) -> Optional[str]:
@@ -432,8 +444,8 @@ Extra flags:
         """
 
     keywords = ['Portrait']
-    optional_keywords = ['SpeedMult']
-    keyword_types = ['Portrait', 'Float']
+    optional_keywords = ['SpeedMult', 'Slide']
+    keyword_types = ['Portrait', 'Float', 'Slide']
     _flags = ["immediate", "no_block"]
 
 class MultiRemovePortrait(EventCommand):
@@ -494,6 +506,8 @@ The direction of the portrait is flipped across the Y axis.
         """
 
     keywords = ['Portrait']
+    optional_keywords = ['SpeedMult']
+    keyword_types = ['Portrait', 'Float']
     _flags = ["no_block", "fade"]
 
 class Expression(EventCommand):
@@ -566,7 +580,46 @@ Extra flags:
 
     keywords = ['SpeakerOrStyle', 'Text']
     optional_keywords = ['TextPosition', 'Width', 'StyleNid', 'TextSpeed', 'FontColor', 'FontType', 'DialogBox', 'NumLines', 'DrawCursor', 'MessageTail', 'Transparency', 'NameTagBg']
-    keyword_types = ['Speaker', 'Text', 'AlignOrPosition', 'Width', 'DialogVariant', 'Float', 'FontColor', 'Font', 'MaybeSprite', 'WholeNumber', 'Bool', 'MaybeSprite', 'Float', 'MaybeSprite']
+    keyword_types = ['Speaker', 'String', 'AlignOrPosition', 'Width', 'DialogVariant', 'Float', 'FontColor', 'Font', 'MaybeSprite', 'WholeNumber', 'Bool', 'MaybeSprite', 'Float', 'MaybeSprite']
+    _flags = ['low_priority', 'hold', 'no_popup', 'fit', 'no_block', 'no_talk', 'no_sound']
+
+class Say(EventCommand):
+    nid = "say"
+    tag = Tags.DIALOGUE_TEXT
+
+    desc = \
+        """
+Causes the *Speaker* to speak some *Text*. If *Speaker* is a portrait nid that is currently displayed on screen,
+*Text* will appear in a speech bubble from that portrait. If *Speaker* is left blank,
+*Text* will appear in a box with no name label. For all other values of *Speaker*,
+*Text* will appear in a box with the *Speaker* as the name label.
+
+*TextSpeed* indicates the speed of the text - higher numbers are slower.
+
+The pipe | symbol can be used within the *Text* body to insert a line break.
+
+The *Nid* optional keyword changes how the text is displayed graphically, by accessing built-in speak styles.
+
+1. *thought_bubble*: causes the text to be in a cloud-like thought bubble instead of a speech bubble.
+2. *noir*: causes the speech bubble to be dark grey with white text.
+3. *hint*: causes the text to be displayed in a hint box similar to tutorial information.
+4. *narration*: causes the text to be displayed in a blue narration box at the bottom of the screen. No name label will be displayed.
+5. *narration_top*: same as *narration* but causes the text box to be displayed at the top of the screen.
+
+Extra flags:
+
+1. *low_priority*: The speaker's portrait will not be moved in front of other overlapping portraits.
+2. *hold*: The dialog box will remain even after the player has pressed A (useful for narration).
+3. *no_popup*: The dialog box will not transition in, but rather will appear immediately.
+4. *fit*: The dialog box will shrink to fit the text. (not needed if there is an associated portrait).
+5. *no_block*: the speak command will not block event execution.
+6. *no_talk*: The speaker's portrait will not "talk".
+7. *no_sound*: The normal boop sound of dialog will be turned off
+        """
+
+    keywords = ['SpeakerOrStyle', '*Text']
+    optional_keywords = ['TextPosition', 'Width', 'StyleNid', 'TextSpeed', 'FontColor', 'FontType', 'DialogBox', 'NumLines', 'DrawCursor', 'MessageTail', 'Transparency', 'NameTagBg']
+    keyword_types = ['Speaker', '*String', 'AlignOrPosition', 'Width', 'DialogVariant', 'Float', 'FontColor', 'Font', 'MaybeSprite', 'WholeNumber', 'Bool', 'MaybeSprite', 'Float', 'MaybeSprite']
     _flags = ['low_priority', 'hold', 'no_popup', 'fit', 'no_block', 'no_talk', 'no_sound']
 
 class Unhold(EventCommand):
@@ -826,26 +879,13 @@ Sets the next chapter the player will go to
 
     keywords = ["Chapter"]
 
-class SetFogOfWar(EventCommand):
-    nid = 'set_fog_of_war'
-    tag = Tags.LEVEL_VARS
+class EnableConvoy(EventCommand):
+    nid = 'enable_convoy'
+    tag = Tags.GAME_VARS
 
     desc = \
         """
-Sets the fog of war state for the current level.
-        """
-
-    keywords = ["FogOfWarType", "Radius"]
-    optional_keywords = ["AIRadius", "OtherRadius"]
-    keyword_types = ["FogOfWarType", "PositiveInteger", "PositiveInteger", "PositiveInteger"]
-
-class EnableFogOfWar(EventCommand):
-    nid = 'enable_fog_of_war'
-    tag = Tags.LEVEL_VARS
-
-    desc = \
-        """
-Activates or deactivates base level of fog of war. Does not affect presence of fog or vision regions
+Activates or deactivates convoy access.
         """
 
     keywords = ["Activated"]
@@ -875,6 +915,31 @@ checked to see the turnwheel option in your menu.
 
     keywords = ["Activated"]
     keyword_types = ['Bool']
+
+class EnableFogOfWar(EventCommand):
+    nid = 'enable_fog_of_war'
+    tag = Tags.LEVEL_VARS
+
+    desc = \
+        """
+Activates or deactivates base level of fog of war. Does not affect presence of fog or vision regions
+        """
+
+    keywords = ["Activated"]
+    keyword_types = ['Bool']
+
+class SetFogOfWar(EventCommand):
+    nid = 'set_fog_of_war'
+    tag = Tags.LEVEL_VARS
+
+    desc = \
+        """
+Sets the fog of war state for the current level.
+        """
+
+    keywords = ["FogOfWarType", "Radius"]
+    optional_keywords = ["AIRadius", "OtherRadius"]
+    keyword_types = ["FogOfWarType", "PositiveInteger", "PositiveInteger", "PositiveInteger"]
 
 class EndTurn(EventCommand):
     nid = 'end_turn'
@@ -1058,7 +1123,7 @@ they cannot turn time back past the point when this command was executed.
 
 class ChangeBgTilemap(EventCommand):
     nid = 'change_bg_tilemap'
-    tags = Tags.TILEMAP
+    tag = Tags.TILEMAP
 
     desc = "Changes the bg tilemap for this level. Call without arguments to remove the bg tilemap. Can be turnwheeled, unlike `change_tilemap`."
 
@@ -1313,17 +1378,39 @@ class SetUnitField(EventCommand):
     tag = Tags.MODIFY_UNIT_PROPERTIES
 
     desc = \
-    """
+        """
 Set arbitrary property on _Unit_. **Note**: This cannot be used to set unit stats; if you try, you will simply set
 a property called, for example, "STR", that has nothing to do with the unit's stats. This is for enabling unit-level
 vars that are persisted across events.
 
 If the flag `increment_mode` is supplied, this will add the value to the existing value instead instead of setting it.
 Please try to avoid using `increment_mode` with non-numerical fields. That would erase your field and then nobody will be happy.
-    """
+        """
     keywords = ["Unit", "Key", "Value"]
     keyword_types = ['Unit', 'UnitField', 'String']
     _flags = ['increment_mode']
+
+class SetUnitNote(EventCommand):
+    nid = 'set_unit_note'
+    tag = Tags.MODIFY_UNIT_PROPERTIES
+
+    desc = \
+        """
+Add or modify a note on _Unit_. These notes appear in the info menu when enabled in the Constants editor.
+        """
+    keywords = ["Unit", "Key", "Value"]
+    keyword_types = ['Unit', 'String', 'String']
+
+class RemoveUnitNote(EventCommand):
+    nid = 'remove_unit_note'
+    tag = Tags.MODIFY_UNIT_PROPERTIES
+
+    desc = \
+        """
+Remove a note from _Unit_. These notes appear in the info menu when enabled in the Constants editor.
+        """
+    keywords = ["Unit", "Key"]
+    keyword_types = ['Unit', 'String']
 
 class Resurrect(EventCommand):
     nid = 'resurrect'
@@ -1577,6 +1664,30 @@ in the unit's inventory, and then if no matching item is found, check the sub-it
 
     _flags = ["additive", "recursive"]
 
+class SetItemData(EventCommand):
+    nid = 'set_item_data'
+    tag = Tags.MODIFY_ITEM_PROPERTIES
+
+    desc = \
+        """
+Finds the *Item* in the inventory of *GlobalUnitOrConvoy*.
+Then, it sets the data field *Nid* of the *Item* to *Expression*.
+        """
+
+    keywords = ["GlobalUnitOrConvoy", "Item", "Nid", "Expression"]
+
+class SetItemDroppable(EventCommand):
+    nid = 'set_item_droppable'
+    tag = Tags.MODIFY_ITEM_PROPERTIES
+
+    desc = \
+        """
+Set the "droppable" field of the *Item* in the inventory of *GlobalUnit* to *Bool*.
+        """
+
+    keywords = ["GlobalUnit", "Item", "Droppable"]
+    keyword_types = ["GlobalUnit", "Item", "Bool"]
+
 class BreakItem(EventCommand):
     nid = 'break_item'
     tag = Tags.MODIFY_ITEM_PROPERTIES
@@ -1591,19 +1702,6 @@ If the *no_banner* flag is set, there will not be a banner announcing that the i
 
     keywords = ["GlobalUnitOrConvoy", "Item"]
     _flags = ['no_banner']
-
-
-class SetItemData(EventCommand):
-    nid = 'set_item_data'
-    tag = Tags.MODIFY_ITEM_PROPERTIES
-
-    desc = \
-        """
-Finds the *Item* in the inventory of *GlobalUnitOrConvoy*.
-Then, it sets the data field *Nid* of the *Item* to *Expression*.
-        """
-
-    keywords = ["GlobalUnitOrConvoy", "Item", "Nid", "Expression"]
 
 class ChangeItemName(EventCommand):
     nid = 'change_item_name'
@@ -2284,7 +2382,7 @@ Adds *Item* to the list of purchaseable goods in the base's market. If the optio
 
     keywords = ["Item"]
     optional_keywords = ["Stock"]
-    keywords_types = ["Item", "Integer"]
+    keyword_types = ["Item", "Integer"]
 
 class RemoveMarketItem(EventCommand):
     nid = 'remove_market_item'
@@ -2297,7 +2395,7 @@ Removes *Item* from the list of purchaseable goods in the base's market. If the 
 
     keywords = ["Item"]
     optional_keywords = ["Stock"]
-    keywords_types = ["Item", "WholeNumber"]
+    keyword_types = ["Item", "WholeNumber"]
 
 class ClearMarketItems(EventCommand):
     nid = 'clear_market_items'
@@ -2413,10 +2511,10 @@ class ChangeObjectiveSimple(EventCommand):
 
     desc = \
         """
-Changes the simple version of the chapter's objective text to *String*.
+Changes the simple version of the chapter's objective text to *EvaluableString*.
         """
 
-    keywords = ["String"]
+    keywords = ["EvaluableString"]
 
 class ChangeObjectiveWin(EventCommand):
     nid = 'change_objective_win'
@@ -2424,10 +2522,10 @@ class ChangeObjectiveWin(EventCommand):
 
     desc = \
         """
-Changes the victory condition of the chapter's objective text to *String*.
+Changes the victory condition of the chapter's objective text to *EvaluableString*.
         """
 
-    keywords = ["String"]
+    keywords = ["EvaluableString"]
 
 class ChangeObjectiveLoss(EventCommand):
     nid = 'change_objective_loss'
@@ -2435,10 +2533,10 @@ class ChangeObjectiveLoss(EventCommand):
 
     desc = \
         """
-Changes the defeat condition of the chapter's objective text to *String*.
+Changes the defeat condition of the chapter's objective text to *EvaluableString*.
         """
 
-    keywords = ["String"]
+    keywords = ["EvaluableString"]
 
 class SetPosition(EventCommand):
     nid = 'set_position'
@@ -2666,7 +2764,7 @@ via hitting the back button, and the event will go on as normal.
 
     keywords = ['Nid', 'Title', 'Choices']
     optional_keywords = ['RowWidth', 'Orientation', 'Alignment', 'BG', 'EventNid', 'EntryType', 'Dimensions', 'TextAlign']
-    keyword_types = ['GeneralVar', 'String', 'String', 'Width', 'Orientation', 'Align', 'Sprite', 'Event', 'TableEntryType', 'Size', 'HAlign']
+    keyword_types = ['GeneralVar', 'String', 'EvaluableString', 'Width', 'Orientation', 'Align', 'Sprite', 'Event', 'TableEntryType', 'Size', 'HAlign']
     _flags = ['persist', 'expression', 'no_bg', 'no_cursor', 'arrows', 'no_arrows', 'scroll_bar', 'no_scroll_bar', 'backable']
 
 class Unchoice(EventCommand):
@@ -2703,7 +2801,7 @@ and predictably, those args will function the same way as in `speak`.
 
     keywords = ['NID', 'Text']
     optional_keywords = ['BoxPosition', 'Width', 'NumLines', 'StyleNid', 'TextSpeed', 'FontColor', 'FontType', 'BG']
-    keyword_types = ['Nid', 'String', 'AlignOrPosition', 'Width', 'PositiveInteger', 'Nid', 'Float', 'FontColor', 'Font', 'Sprite']
+    keyword_types = ['Nid', 'EvaluableString', 'AlignOrPosition', 'Width', 'PositiveInteger', 'Nid', 'Float', 'FontColor', 'Font', 'Sprite']
     _flags = ['expression']
 
 class Table(EventCommand):
@@ -2744,7 +2842,7 @@ expression would automatically update the gold.
 
     keywords = ['Nid', 'TableData']
     optional_keywords = ['Title', 'Dimensions', 'RowWidth', 'Alignment', 'BG', 'EntryType', 'TextAlign']
-    keyword_types = ['Nid', 'String', 'String', 'Size', 'Width', 'Align', 'Sprite', 'TableEntryType', 'HAlign']
+    keyword_types = ['Nid', 'EvaluableString', 'String', 'Size', 'Width', 'Align', 'Sprite', 'TableEntryType', 'HAlign']
     _flags = ['expression', 'no_bg']
 
 class RemoveTable(EventCommand):
@@ -2911,6 +3009,39 @@ The (*Scroll*) flag determines whether the background image will move.
     keyword_types = ['Panorama']
     _flags = ["scroll", "immediate"]
 
+class OpenTrade(EventCommand):
+    nid = 'open_trade'
+    tag = Tags.MISCELLANEOUS
+
+    desc = \
+        """
+Opens the trade screen for the two given units, allowing the player to trade items between them as desired.
+        """
+
+    keywords = ['Unit1', 'Unit2']
+    keyword_types = ['Unit', 'Unit']
+
+class ShowMinimap(EventCommand):
+    nid = 'show_minimap'
+    tag = Tags.MISCELLANEOUS
+
+    desc = \
+        """
+Opens the minimap and gives the player control over the screen until they close the minimap.
+        """
+
+class OpenAchievements(EventCommand):
+    nid = 'open_achievements'
+    tag = Tags.MISCELLANEOUS
+
+    desc = \
+        """
+Opens the achivements screen with the given background.
+        """
+
+    keywords = ["Background"]
+    keyword_types = ['Panorama']
+
 class LocationCard(EventCommand):
     nid = 'location_card'
     tag = Tags.DIALOGUE_TEXT
@@ -2946,6 +3077,18 @@ Displays the epilogue text for a character. *Portrait* is the portrait to be dis
 
     keywords = ["Portrait", "Title", "Text"]
     keyword_types = ["Portrait", "String", "String"]
+
+class PairedEnding(EventCommand):
+    nid = 'paired_ending'
+    tag = Tags.DIALOGUE_TEXT
+
+    desc = \
+        """
+Displays paired epilogue text for two characters. *LeftPortrait* and *RightPortrait* are the portraits to be displayed, *LeftTitle* and *RightTitle* are the names displayed (ex: "Marcus, Badass Paladin"), the *Text* is the block of text describing what happened to the characters.
+        """
+
+    keywords = ["LeftPortrait", "RightPortrait", "LeftTitle", "RightTitle", "Text"]
+    keyword_types = ["Portrait", "Portrait", "String", "String", "String"]
 
 class PopDialog(EventCommand):
     nid = 'pop_dialog'
@@ -3143,7 +3286,7 @@ class RevealOverworldRoad(EventCommand):
             'By default, fades in via animation; use the *immediate* flag to skip this anim.')
 
     keywords = ['Node1', 'Node2']
-    keyword_types = ['OverworldNodeNid', 'OverworldNodeNid']
+    keyword_types = ['OverworldNodeNID', 'OverworldNodeNID']
     _flags = ["immediate"]
 
 class CreateOverworldEntity(EventCommand):
@@ -3189,7 +3332,7 @@ class SetOverworldMenuOptionEnabled(EventCommand):
     desc = ('Toggle whether the specified node menu option can be accessed by the player. Note that even if enabled, it must also be visible for the player to access it.')
 
     keywords = ['OverworldNodeNid', 'OverworldNodeMenuOption', 'Setting']
-    keyword_types = ['OverworldNodeNid', 'OverworldNodeMenuOption', 'Bool']
+    keyword_types = ['OverworldNodeNID', 'OverworldNodeMenuOption', 'Bool']
 
 class SetOverworldMenuOptionVisible(EventCommand):
     nid = 'set_overworld_menu_option_visible'
@@ -3304,6 +3447,21 @@ ALL_EVENT_COMMANDS.update({
     command.nickname: command for command in EventCommand.__subclasses__() if command.nickname
 })
 
+
+FORBIDDEN_PYTHON_COMMANDS: List[EventCommand] = [Comment, If, Elif, Else,
+                                                 End, For, Endf, LoopUnits]
+FORBIDDEN_PYTHON_COMMAND_NIDS: List[str] = [cmd.nid for cmd in FORBIDDEN_PYTHON_COMMANDS] + [cmd.nickname for cmd in FORBIDDEN_PYTHON_COMMANDS]
+def get_all_event_commands(version: EventVersion) -> Dict[NID, Type[EventCommand]]:
+    if version == EventVersion.EVENT:
+        return {nid: command_t for nid, command_t in ALL_EVENT_COMMANDS.items() if nid not in ['say']}
+    elif version == EventVersion.PYEV1:
+        commands = {}
+        for nid, command_t in ALL_EVENT_COMMANDS.items():
+            if not command_t.tag in [Tags.HIDDEN, Tags.FLOW_CONTROL]:
+                if not command_t.nid in FORBIDDEN_PYTHON_COMMAND_NIDS:
+                    commands[nid] = command_t
+        return commands
+
 @dataclass
 class ArgToken():
     string: str
@@ -3363,15 +3521,7 @@ def parse_text_to_command(text: str, strict: bool = False) -> Tuple[EventCommand
         EventCommand: parsed command
         int: Index of the character the command failed to parse at (only if strict)
     """
-    def _process_arg(cmd_keyword: str, arg: str) -> str:
-        # if parentheses exists, then they contain the "true" arg, with everything outside parens essentially as comments
-        # we do NOT want to use this with evals, hence the '{' and '}' stoppage
-        if '(' in arg and ')' in arg and '{' not in arg and '}' not in arg and \
-                ('FLAG' in arg or (cmd_keyword and cmd_keyword not in evaluables and 'list' not in cmd_keyword.lower())):
-            return arg[arg.find("(") + 1 : arg.rfind(")")]
-        return arg
-
-    def _parse_command(command: EventCommand, arguments: List[str]) -> Tuple[Optional[EventCommand], Optional[int]]:
+    def _parse_command(command: Type[EventCommand], arguments: List[str]) -> Tuple[Optional[EventCommand], Optional[int]]:
         # Start parsing
         keyword_argument_mode: bool = False
         cmd_args = arguments[1:]
@@ -3381,15 +3531,14 @@ def parse_text_to_command(text: str, strict: bool = False) -> Tuple[EventCommand
         for idx, arg in enumerate(cmd_args):
             # remove line break chars. speak has its own handling, so keep them
             if command_info.nid not in ('speak', 'textbox'):
-                arg = arg.replace('\u2028', '')
+                arg = arg.replace(SHIFT_NEWLINE, '')
 
             all_keywords = command_info.keywords + command_info.optional_keywords
 
             # Check for flag first
-            if _process_arg(None, arg) in command_info.flags:
-                flags.add(_process_arg(None, arg))
-                cmd_args[idx] = _process_arg(None, arg)
-
+            if arg in command_info.flags:
+                flags.add(arg)
+                cmd_args[idx] = arg
             # Handle Python style keyword arguments
             # For example `s;Speaker=Eirika;Text=Hi!;Nid=normal`
             elif '=' in arg and arg.split('=', 1)[0] in all_keywords:
@@ -3397,7 +3546,6 @@ def parse_text_to_command(text: str, strict: bool = False) -> Tuple[EventCommand
                 cmd_keyword, arg = arg.split('=', 1)
                 cmd_validator = command_info.get_validator_from_keyword(cmd_keyword)
                 if cmd_validator:
-                    arg = _process_arg(cmd_validator, arg)
                     parameters[cmd_keyword] = arg
                     cmd_args[idx] = '%s=%s' % (cmd_keyword, arg)
                 else:
@@ -3412,13 +3560,11 @@ def parse_text_to_command(text: str, strict: bool = False) -> Tuple[EventCommand
                 if idx < len(command_info.keywords):
                     cmd_keyword = command_info.keywords[idx]
                     cmd_validator = command_info.get_keyword_types()[idx]
-                    arg = _process_arg(cmd_validator, arg)
                     parameters[cmd_keyword] = arg
                     cmd_args[idx] = arg
                 elif idx - len(command_info.keywords) < len(command_info.optional_keywords):
                     cmd_keyword = command_info.optional_keywords[idx - len(command_info.keywords)]
                     cmd_validator = command_info.get_keyword_types()[idx]
-                    arg = _process_arg(cmd_validator, arg)
                     parameters[cmd_keyword] = arg
                     cmd_args[idx] = arg
                 else:
@@ -3453,8 +3599,8 @@ def parse_text_to_command(text: str, strict: bool = False) -> Tuple[EventCommand
 
     command_nid = arguments[0]
     bad_idx = None
-    if command_nid in ALL_EVENT_COMMANDS:
-        command_type = ALL_EVENT_COMMANDS[command_nid]
+    if command_nid in get_all_event_commands(EventVersion.EVENT):
+        command_type = get_all_event_commands(EventVersion.EVENT)[command_nid]
         output, bad_idx = _parse_command(command_type, arguments)
         if output:
             return output, None
@@ -3473,11 +3619,15 @@ def parse(command: EventCommand, _eval_evals: Callable[[str], str] = None):
     return parameters, command.chosen_flags
 
 def convert_parse(command: EventCommand, _eval_evals: Callable[[str], str] = None):
-    from app.events.event_validators import convert
+    from app.events.event_validators import convert, get
 
     parameters = command.parameters
     if _eval_evals:
-        parameters = {k: _eval_evals(v) if isinstance(v, str) else v for k, v in parameters.items()}
+        new_parameters = {}
+        for k, v in parameters.items():
+            should_preprocess: bool = get(command.get_validator_from_keyword(k)).can_preprocess
+            new_parameters[k] = _eval_evals(v) if isinstance(v, str) and should_preprocess else v
+        parameters = new_parameters
     for keyword, value in parameters.items():
         if keyword in command.keywords:
             idx = command.keywords.index(keyword)
@@ -3532,7 +3682,7 @@ def parse_event_line(line: str) -> EventCommandTokens:
     ectoks = EventCommandTokens(tokens, line, token_idxs)
 
     # sort out flags vs args
-    command_t = ALL_EVENT_COMMANDS.get(ectoks.command())
+    command_t = get_all_event_commands(EventVersion.EVENT).get(ectoks.command())
     if not command_t:
         # nonexistent command, just return as if all args
         return ectoks

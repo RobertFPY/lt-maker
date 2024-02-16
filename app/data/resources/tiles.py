@@ -278,11 +278,12 @@ class TileSetCatalog(ManifestCatalog[TileSet]):
 class TileMapCatalog(ManifestCatalog[TileMapPrefab]):
     manifest = 'tilemap.json'
     title = 'tilemaps'
+    multi_loc = 'tilemap_data'
 
     def load(self, loc):
         single_loc = os.path.join(loc, self.manifest)
-        multi_loc = os.path.join(loc, 'tilemap_data')
-        if not os.path.exists(multi_loc): # old tilemap.json
+        multi_loc = os.path.join(loc, self.multi_loc)
+        if not os.path.exists(multi_loc):  # old tilemap.json
             if not os.path.exists(single_loc):
                 return
             tilemap_dict = self.read_manifest(single_loc)
@@ -296,15 +297,14 @@ class TileMapCatalog(ManifestCatalog[TileMapPrefab]):
                 if not fname.endswith('.json'):
                     continue
                 save_loc = os.path.join(multi_loc, fname)
-                # logging.info("Deserializing %s from %s" % ('tilemap data', save_loc))
                 with open(save_loc) as load_file:
                     for data in json.load(load_file):
                         data['fname'] = os.path.basename(fname)
                         save_data.append(data)
-            if '.orderkeys' in data_fnames: # using order key file
+            if '.orderkeys' in data_fnames:  # using order key file
                 ordering = parse_order_keys_file(Path(multi_loc, '.orderkeys'))
                 save_data = sorted(save_data, key=lambda data: ordering.index(rchop(data['fname'], '.json')) if rchop(data['fname'], '.json') in ordering else 99999)
-            else: # using order keys per object
+            else:  # using order keys per object
                 save_data = sorted(save_data, key=lambda obj: obj['_orderkey'])
             for s_dict in save_data:
                 new_tilemap = TileMapPrefab.restore(s_dict)
@@ -312,7 +312,7 @@ class TileMapCatalog(ManifestCatalog[TileMapPrefab]):
 
     def dump(self, loc):
         saves = [datum.save() for datum in self]
-        save_dir = os.path.join(loc, 'tilemap_data')
+        save_dir = os.path.join(loc, self.multi_loc)
         if os.path.exists(save_dir):
             shutil.rmtree(save_dir)
         os.mkdir(save_dir)
@@ -320,7 +320,7 @@ class TileMapCatalog(ManifestCatalog[TileMapPrefab]):
         for idx, save in enumerate(saves):
             # ordering
             nid = save['nid']
-            nid = re.sub(r'[\\/*?:"<>|]',"", nid)
+            nid = re.sub(r'[\\/*?:"<>|]', "", nid)
             nid = nid.replace(' ', '_')
             fname = nid + '.json'
             orderkeys.append(fname)

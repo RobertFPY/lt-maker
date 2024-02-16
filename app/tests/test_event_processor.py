@@ -13,6 +13,8 @@ from app.tests.mocks.mock_game import get_mock_game
 
 class EventProcessorUnitTests(unittest.TestCase):
     def setUp(self):
+        from app.data.resources.resources import RESOURCES
+        RESOURCES.load('testing_proj.ltproj')
         self.mock_game = get_mock_game()
         mock_unit = MagicMock()
         mock_unit.name = "Erika" # deliberate spelling

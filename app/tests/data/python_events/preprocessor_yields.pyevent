@@ -1,4 +1,0 @@
-#python
-
-# cannot use yields otherwise everything goes sideways
-yield 1

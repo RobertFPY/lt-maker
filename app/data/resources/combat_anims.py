@@ -23,8 +23,11 @@ class Pose():
         for command_save in s_tuple[1]:
             nid, value = command_save
             command = combat_commands.get_command(nid)
-            command.value = value
-            self.timeline.append(command)
+            if command:
+                command.value = value
+                self.timeline.append(command)
+            else:
+                logging.error("Unable to restore command with nid %s.", nid)
         return self
 
 class Frame():

@@ -1776,8 +1776,8 @@ class TargetingState(MapState):
         self.pennant = banner.Pennant(self.ability.name + '_desc')
 
         # Only used for Trade ability, to enable trading
-        # with rescued units
-        self.traveler_mode = False  # Should we be targeting the traveler?
+        # with rescued units of other units
+        self.traveler_mode = False  # Should we be targeting the travelers?
 
     def begin(self):
         game.cursor.combat_show()
@@ -1790,13 +1790,10 @@ class TargetingState(MapState):
         def _handle_direction(next_func: Callable):
             if self.ability.name == 'Trade':
                 current_target = game.cursor.get_hover()
-                traveler = current_target.traveler
-                if traveler and game.get_unit(traveler).team == self.cur_unit.team:
-                    self.traveler_mode = not self.traveler_mode
-                else:
-                    new_position = next_func(game.cursor.position)
-                    game.cursor.set_pos(new_position)
-                    return
+                if current_target and current_target is not self.cur_unit:
+                    traveler = current_target.traveler
+                    if traveler and game.get_unit(traveler).team == self.cur_unit.team:
+                        self.traveler_mode = not self.traveler_mode
             if not self.traveler_mode:
                 new_position = next_func(game.cursor.position)
                 game.cursor.set_pos(new_position)
@@ -1824,7 +1821,7 @@ class TargetingState(MapState):
 
         elif event == 'SELECT':
             get_sound_thread().play_sfx('Select 1')
-            unit = game.cursor.get_hover()
+            unit = game.cursor.get_hover() or self.cur_unit
             if self.traveler_mode:
                 if unit.traveler:
                     game.memory['trade_partner'] = game.get_unit(unit.traveler)
@@ -1904,14 +1901,15 @@ class TargetingState(MapState):
                 if give_to and traveler:
                     self.draw_give_preview(traveler, give_to, surf)
         elif self.ability.name == 'Trade':
-            unit = game.cursor.get_hover()
-            if self.traveler_mode:
-                if unit.traveler:
+            unit = game.cursor.get_hover() or self.cur_unit
+            if unit != self.cur_unit:
+                if self.traveler_mode:
                     game.ui_view.draw_trade_preview(game.get_unit(unit.traveler), surf)
-            elif unit != self.cur_unit:
-                game.ui_view.draw_trade_preview(unit, surf)
-            else:
+                else:
+                    game.ui_view.draw_trade_preview(unit, surf)
+            elif unit and unit.traveler:
                 game.ui_view.draw_trade_preview(game.get_unit(unit.traveler), surf)
+
         elif self.ability.name == 'Steal':
             unit = game.cursor.get_hover()
             game.ui_view.draw_trade_preview(unit, surf)

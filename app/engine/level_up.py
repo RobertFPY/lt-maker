@@ -113,7 +113,7 @@ class ExpState(State):
         if ExpState.has_autopromote(unit):
             return True
         return False
-        
+
     def begin(self):
         game.cursor.hide()
 
@@ -424,7 +424,7 @@ class ExpState(State):
     def give_new_personal_skills(unit: UnitObject):
         def compare(unit, level_needed):
             return unit.get_internal_level() == level_needed
-        
+
         unit_prefab = DB.units.get(unit.nid)
         if not unit_prefab:
             return
@@ -437,7 +437,7 @@ class ExpState(State):
 
         unit_klass = DB.classes.get(unit.klass)
         ExpState._give_skills(unit, unit_klass.learned_skills, compare, source_type=SourceType.KLASS)
-        
+
 class LevelUpScreen():
     bg = SPRITES.get('level_screen')
     bg = bg.convert_alpha()
@@ -717,7 +717,7 @@ class ExpBar():
         new_surf.blit(self.end, (10 + idx, 9))
 
         # Blit current amount of exp
-        FONT['number-small3'].blit_right(str(int(self.num)), new_surf, (self.width - 4, 4))
+        FONT['number_small3'].blit_right(str(int(self.num)), new_surf, (self.width - 4, 4))
 
         # Transition
         new_surf = engine.subsurface(new_surf, (0, self.offset, self.width, self.height - self.offset * 2))

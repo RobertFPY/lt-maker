@@ -245,7 +245,7 @@ class DamageMultiplier(SkillComponent):
     expose = ComponentType.Float
     value = 0.5
 
-    def damage_multiplier(self, unit, item, target, mode, attack_info, base_value):
+    def damage_multiplier(self, unit, item, target, item2, mode, attack_info, base_value):
         return self.value
 
 class DynamicDamageMultiplier(SkillComponent):
@@ -255,10 +255,10 @@ class DynamicDamageMultiplier(SkillComponent):
 
     expose = ComponentType.String
 
-    def damage_multiplier(self, unit, item, target, mode, attack_info, base_value):
+    def damage_multiplier(self, unit, item, target, item2, mode, attack_info, base_value):
         from app.engine import evaluate
         try:
-            local_args = {'item': item, 'mode': mode, 'skill': self.skill, 'attack_info': attack_info, 'base_value': base_value}
+            local_args = {'item': item, 'item2': item2, 'mode': mode, 'skill': self.skill, 'attack_info': attack_info, 'base_value': base_value}
             return float(evaluate.evaluate(self.value, unit, target, unit.position, local_args))
         except Exception:
             print("Couldn't evaluate %s conditional" % self.value)
@@ -272,7 +272,7 @@ class ResistMultiplier(SkillComponent):
     expose = ComponentType.Float
     value = 0.5
 
-    def resist_multiplier(self, unit, item, target, mode, attack_info, base_value):
+    def resist_multiplier(self, unit, item, target, item2, mode, attack_info, base_value):
         return self.value
 
 class PCC(SkillComponent):
@@ -282,7 +282,7 @@ class PCC(SkillComponent):
 
     expose = ComponentType.Stat
 
-    def crit_multiplier(self, unit, item, target, mode, attack_info, base_value):
+    def crit_multiplier(self, unit, item, target, item2, mode, attack_info, base_value):
         return unit.get_stat(self.value) if attack_info[0] > 0 else 1
 
 
@@ -295,7 +295,7 @@ class PCCStatic(SkillComponent):
     expose = ComponentType.Float
     value = 1
 
-    def crit_multiplier(self, unit, item, target, mode, attack_info, base_value):
+    def crit_multiplier(self, unit, item, target, item2, mode, attack_info, base_value):
         return self.value if attack_info[0] > 0 else 1
 
 class ResistFollowUp(SkillComponent):
@@ -306,5 +306,5 @@ class ResistFollowUp(SkillComponent):
     expose = ComponentType.Float
     value = 0.5
 
-    def resist_multiplier(self, unit, item, target, mode, attack_info, base_value):
+    def resist_multiplier(self, unit, item, target, item2, mode, attack_info, base_value):
         return self.value if attack_info[0] > 0 else 1

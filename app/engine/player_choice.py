@@ -135,12 +135,23 @@ class PlayerChoiceState(MapState):
             return 'repeat'
 
         elif event == 'INFO':
-            if self.info_flag:
-                get_sound_thread().play_sfx('Info Out')
-                self.info_flag = False
-            elif self.help_boxes:
-                get_sound_thread().play_sfx('Info In')
-                self.info_flag = True
+            if self.data_type == 'type_unit':
+                unit = game.get_unit(self.menu.get_selected())
+                if not unit:
+                    get_sound_thread().play_sfx('Error')
+                else:
+                    all_units = [game.get_unit(unid) for unid in self._resolved_data if game.get_unit(unid)]
+                    game.memory['scroll_units'] = all_units
+                    game.memory['current_unit'] = unit
+                    game.memory['next_state'] = 'info_menu'
+                    game.state.change('transition_to')
+            else:
+                if self.info_flag:
+                    get_sound_thread().play_sfx('Info Out')
+                    self.info_flag = False
+                elif self.help_boxes:
+                    get_sound_thread().play_sfx('Info In')
+                    self.info_flag = True
 
         selection = self.menu.get_selected()
         game.game_vars[self.nid + '_choice_hover'] = selection

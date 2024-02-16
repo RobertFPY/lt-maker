@@ -17,6 +17,7 @@ class EventCommandTokens():
     tokens: List[str]       # parsed tokens
     source: str             # source string
     token_idx: List[int]    # position of token in source string
+    start_idx: int = 0      # position of entire command in source string. may differ from above due to prefixes
 
     _command_idx: int = field(default=0, init=False)   # idx of token indicating command
     _arg_idx: int = field(default=1, init=False)       # idx of first arg
@@ -27,7 +28,7 @@ class EventCommandTokens():
             return self.tokens[0]
 
     def args(self) -> List[str]:
-        return self.tokens[self._arg_idx, self._flag_idx]
+        return self.tokens[self._arg_idx:self._flag_idx]
 
     def flags(self) -> List[str]:
         return self.tokens[self._flag_idx:]

@@ -4,6 +4,7 @@ from typing import Any, Dict
 
 from app.utilities import utils, static_random
 from app.data.database.database import DB
+from app.data.resources.resources import RESOURCES
 
 import app.engine.config as cf
 from app.engine.persistent_records import RECORDS

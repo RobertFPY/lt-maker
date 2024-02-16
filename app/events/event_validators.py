@@ -13,7 +13,7 @@ from app.utilities.class_utils import recursive_subclasses
 from app.utilities.enums import HAlignment, VAlignment
 from app.events import event_commands
 from app.events.screen_positions import horizontal_screen_positions, vertical_screen_positions
-from app.data.resources.resources import Resources
+from app.data.resources.resources import RESOURCES, Resources
 from app.sprites import SPRITES
 from app.utilities import str_utils
 from app.utilities.enums import Alignments
@@ -22,6 +22,10 @@ from app.events.regions import RegionType as RegionTypeEnum
 
 class Validator():
     desc = ""
+    # whether or not this type supports `{eval:}` and `{var:}`, etc.
+    # generally True, but false in case of commands such as change_objective
+    # that set a string that supports being evaluated elsewhere (and therefore must not be pre-emptively evaluated here)
+    can_preprocess = True
 
     def __init__(self, db: Optional[Database] = None, resources: Optional[Resources] = None):
         self._db = db or Database()
@@ -380,6 +384,9 @@ class String(Validator):
     """
     pass
 
+class EvaluableString(Validator):
+    can_preprocess = False
+
 class Music(Validator):
     def validate(self, text, level):
         if text in self._resources.music.keys():
@@ -528,7 +535,13 @@ class Slide(OptionValidator):
     valid = ["normal", "left", "right"]
 
 class Font(OptionValidator):
-    valid = list(FONT.keys())
+    def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
+        return [(None, option) for option in FONT.keys()]
+
+class FontColor(OptionValidator):
+    # Must be done this way to delay grabbing what is valid until we've loaded in our resources
+    def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
+        return [(None, option) for option in RESOURCES.fonts.get('convo').palettes.keys()]
 
 class Direction(OptionValidator):
     valid = ["open", "close"]
@@ -1367,12 +1380,15 @@ class SaveSlot(Validator):
         valids.append((None, "suspend"))
         return valids
 
-validators: Dict[str, Type[Validator]]=  {validator.__name__: validator for validator in recursive_subclasses(Validator)}
+validators: Dict[str, Type[Validator]] = {validator.__name__: validator for validator in recursive_subclasses(Validator)}
 for validator in EvalValidator.__subclasses__():
     for tag in validator.tags:
         validators[tag] = validator
 
-def validate(var_type, text, level, db: Database = None, resources: Resources = None):
+def validate(var_type: str, text: str, level: NID, db: Database = None, resources: Resources = None):
+    if not var_type:
+        return text
+    var_type = str_utils.remove_prefix(var_type, '*')
     validator = validators.get(var_type)
     if validator:
         v = validator(db, resources)
@@ -1380,9 +1396,10 @@ def validate(var_type, text, level, db: Database = None, resources: Resources = 
     else:
         return text
 
-def convert(var_type, text):
-    if not text:
+def convert(var_type: str, text: str):
+    if not var_type or not text:
         return None
+    var_type = str_utils.remove_prefix(var_type, '*')
     try:
         validator = validators.get(var_type)
         if validator:
@@ -1393,7 +1410,8 @@ def convert(var_type, text):
     except:
         return text
 
-def get(keyword) -> Type[Validator]:
-    if keyword in validators:
-        return validators[keyword]
-    return None
+def get(keyword: str) -> Type[Validator]:
+    if not keyword:
+        return None
+    keyword = str_utils.remove_prefix(keyword, '*')
+    return validators.get(keyword, None)

@@ -155,6 +155,7 @@ class UnitSprite():
     def reset(self):
         self.offset = [0, 0]
         ANIMATION_COUNTERS.attack_movement_counter.reset()
+        self._roam_position = None
 
     def get_round_fake_pos(self):
         if self._fake_position:

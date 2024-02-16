@@ -16,9 +16,9 @@ from app.data.resources.resources import Resources
 from app.data.resources.tiles import TileMapPrefab
 from app.data.validation.utils import LTType
 import app.data.validation.validation_errors as ltdb
-from app.events.event_prefab import EventVersion
+from app.events.event_version import EventVersion
+from app.events.python_eventing.analyzer import PyEventAnalyzer
 from app.events import event_commands
-from app.events.python_eventing.preprocessor import Preprocessor
 from app.events.regions import Region
 from app.utilities.typing import NID
 
@@ -184,29 +184,11 @@ class DBChecker():
         return res
 
     def validate_events(self) -> ValidationResult:
-        ppsr = Preprocessor(self.db.events)
+        alz = PyEventAnalyzer(self.db.events)
         all_errors = []
         for event in self.db.events:
             if event.version() != EventVersion.EVENT:
-                all_errors += ppsr.verify_event(event.nid, event.source)
-            else:
-                # TODO(mag): delete this on 1/1/2024, temporary measure to correctly format projects, deleting parens
-                new_source = []
-                for line in event._source:
-                    as_command, _ = event_commands.parse_text_to_command(line)
-                    if as_command:
-                        nid_or_nickname = event_commands.get_command_arguments(line)[0].string
-                        text = as_command.to_plain_text()
-                        s = text.split(';', 1)
-                        if len(s) == 1: # only command
-                            reconstituted = nid_or_nickname
-                        else:
-                            reconstituted = nid_or_nickname + ';' + s[1]
-                        new_source.append(reconstituted)
-                    else:
-                        new_source.append(line)
-                event.source = '\n'.join(new_source)
-                # END
+                all_errors += alz.verify_event(event.nid, event.source)
         return ValidationResult(all_errors)
 
     def _val_or_err(self, nids: List[NID] | NID, dtype: LTType, parent_error: ltdb.Error, optional=True) -> List[ltdb.Error]:

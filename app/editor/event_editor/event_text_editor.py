@@ -5,13 +5,14 @@ import os
 from typing import TYPE_CHECKING, List, Optional, Tuple, Type
 
 from PyQt5.QtCore import QRect, QSize, Qt, pyqtSignal, QMimeData
-from PyQt5.QtGui import QFontMetrics, QPainter, QPalette, QTextCursor
+from PyQt5.QtGui import QFontMetrics, QMouseEvent, QPainter, QPalette, QTextCursor, QKeyEvent, QColor
 from PyQt5.QtWidgets import QCompleter, QLabel, QPlainTextEdit, QWidget, QAction
 
 from app import dark_theme
 from app.editor.event_editor import event_autocompleter, event_formatter
+from app.editor.event_editor.event_function_hinter import IFunctionHinter
 from app.editor.settings import MainSettingsController
-from app.events.event_prefab import EventVersion
+from app.events.event_version import EventVersion
 from app.utilities import str_utils
 
 if TYPE_CHECKING:
@@ -27,6 +28,10 @@ class LineNumberArea(QWidget):
 
     def paintEvent(self, event):
         self.editor.lineNumberAreaPaintEvent(event)
+
+    def mouseDoubleClickEvent(self, a0: QMouseEvent | None) -> None:
+        self.editor.onLineNumberDoubleClick(a0)
+        return super().mouseDoubleClickEvent(a0)
 
 class EventTextEditor(QPlainTextEdit):
     clicked = pyqtSignal()
@@ -46,6 +51,8 @@ class EventTextEditor(QPlainTextEdit):
         theme = dark_theme.get_theme()
         self.line_number_color = theme.event_syntax_highlighting().line_number_color
 
+        self.debug_point_line_number: Optional[int] = None  # None means no debug point
+
         self.blockCountChanged.connect(self.updateLineNumberAreaWidth)
         self.updateRequest.connect(self.updateLineNumberArea)
         self.cursorPositionChanged.connect(self.line_number_area.update)
@@ -55,8 +62,13 @@ class EventTextEditor(QPlainTextEdit):
         fm = QFontMetrics(self.font())
         self.setTabStopWidth(4 * fm.width(' '))
 
-        self.completer: Optional[QCompleter] = None
-        self.function_hinter: Optional[Type[event_autocompleter.EventScriptFunctionHinter]] = None
+        self.completer: event_autocompleter.EventScriptCompleter = event_autocompleter.EventScriptCompleter(self)
+        self.completer.setWidget(self)
+        self.completer.setCompletionMode(QCompleter.PopupCompletion)
+        self.completer.setCaseSensitivity(Qt.CaseInsensitive)
+        self.completer.insertText.connect(self.insert_completions)
+
+        self.function_hinter: Optional[Type[IFunctionHinter]] = None
         # completer
         self.textChanged.connect(self.complete)
         self.prev_keyboard_press = None
@@ -86,17 +98,10 @@ class EventTextEditor(QPlainTextEdit):
         else:
             pass
 
-    def set_completer(self, completer_t: Type[QCompleter]):
-        if not completer_t:
-            self.completer = None
-            return
-        self.completer = completer_t(self)
-        self.completer.setWidget(self)
-        self.completer.setCompletionMode(QCompleter.PopupCompletion)
-        self.completer.setCaseSensitivity(Qt.CaseInsensitive)
-        self.completer.insertText.connect(self.insert_completions)
+    def set_completer_version(self, version: EventVersion):
+        self.completer.set_version(version)
 
-    def set_function_hinter(self, function_hinter: Type[event_autocompleter.EventScriptFunctionHinter]):
+    def set_function_hinter(self, function_hinter: Type[IFunctionHinter]):
         self.function_hinter = function_hinter
 
     def insert_completions(self, completions: List[event_autocompleter.CompletionToInsert]):
@@ -106,6 +111,8 @@ class EventTextEditor(QPlainTextEdit):
             tc.movePosition(QTextCursor.MoveOperation.Right, QTextCursor.MoveMode.KeepAnchor, completion.replace)
             tc.removeSelectedText()
             tc.insertText(completion.text)
+        if completions[-1].text.endswith('='):
+            self.complete()
 
     def display_function_hint(self):
         if not self.should_show_function_hint():
@@ -140,13 +147,9 @@ class EventTextEditor(QPlainTextEdit):
 
     def get_command_text_before_cursor(self) -> str:
         if self.event_properties.version == EventVersion.EVENT:
-            return self.textCursor().block().text()[:self.textCursor().positionInBlock()]
+            return self.get_line_before_cursor()
         elif self.event_properties.version == EventVersion.PYEV1:
-            curr_pos = self.textCursor().position()
-            terminal_pos = curr_pos
-            while terminal_pos > 0 and self.document().characterAt(terminal_pos) not in '$\n':
-                terminal_pos -= 1
-            return self.document().toRawText()[terminal_pos:curr_pos]
+            return self.get_line_before_cursor("$" + str_utils.RAW_NEWLINE)
         else:
             return None
 
@@ -155,7 +158,7 @@ class EventTextEditor(QPlainTextEdit):
             self.hide_completion_box()
             return
         line = self.get_command_text_before_cursor()
-        if not self.completer.setTextToComplete(line, self.textCursor().position(), self.event_properties.current.level_nid):
+        if not self.completer.setTextToComplete(line, self.textCursor().position(), self.event_properties.current.level_nid, self.document().toPlainText()):
             return
         cr = self.cursorRect()
         cr.setWidth(
@@ -164,6 +167,7 @@ class EventTextEditor(QPlainTextEdit):
 
     def lineNumberAreaPaintEvent(self, event):
         painter = QPainter(self.line_number_area)
+        painter.setRenderHint(QPainter.Antialiasing)
         bg_color = self.palette().color(QPalette.Base)
         painter.fillRect(event.rect(), bg_color)
 
@@ -178,6 +182,12 @@ class EventTextEditor(QPlainTextEdit):
                 if self.textCursor().blockNumber() == block_number:
                     color = self.palette().color(QPalette.Window)
                     painter.fillRect(0, top, self.line_number_area.width(), self.fontMetrics().height(), color)
+                # Draw red circle for debug point
+                if self.debug_point_line_number and self.debug_point_line_number - 1 == block_number:
+                    color = dark_theme.get_theme().event_syntax_highlighting().error_underline_color
+                    painter.setBrush(color)  # Fill
+                    painter.setPen(color)  # Stroke
+                    painter.drawEllipse(3, top + 3, self.fontMetrics().height() - 6, self.fontMetrics().height() - 6)
                 painter.setPen(self.line_number_color)
                 painter.drawText(0, top, self.line_number_area.width() - 2, self.fontMetrics().height(), Qt.AlignRight, number)
 
@@ -186,10 +196,29 @@ class EventTextEditor(QPlainTextEdit):
             bottom = top + round(self.blockBoundingRect(block).height())
             block_number += 1
 
+    def onLineNumberDoubleClick(self, event: QMouseEvent):
+        first_line = self.firstVisibleBlock()
+        first_line_num = first_line.blockNumber()
+        click_y = event.localPos().y()
+        relative_line_num = 0
+        curr_block = first_line
+        while click_y > 0 and curr_block:
+            relative_line_num += 1
+            click_y -= self.blockBoundingRect(curr_block).height()
+            curr_block = curr_block.next()
+        real_line_num = relative_line_num + first_line_num
+
+        # If we are clicking on the same line again, toggle it off
+        if real_line_num == self.debug_point_line_number:
+            self.debug_point_line_number = None
+        else:
+            self.debug_point_line_number = real_line_num
+        self.update()  # Necessary for debug marker to show up immediately
+
     def lineNumberAreaWidth(self) -> int:
         num_blocks = max(1, self.blockCount())
         digits = int(math.log10(num_blocks)) + 1
-        space = 3 + self.fontMetrics().horizontalAdvance("9") * digits
+        space = 19 + self.fontMetrics().horizontalAdvance("9") * digits
 
         return space
 
@@ -229,7 +258,9 @@ class EventTextEditor(QPlainTextEdit):
             return False
         if not self.document().toPlainText():
             return False
-        if self.prev_keyboard_press in (Qt.Key_Backspace, Qt.Key_Return, Qt.Key_Tab): # don't do autocomplete on backspace
+        if self.prev_keyboard_press in (Qt.Key_Backspace, Qt.Key_Return): # don't do autocomplete on backspace
+            return False
+        if self.prev_keyboard_press in (Qt.Key_Tab,) and not self.document().characterAt(self.textCursor().position() - 1) == '=':
             return False
         tc = self.textCursor()
         line = tc.block().text()
@@ -273,7 +304,14 @@ class EventTextEditor(QPlainTextEdit):
         self.hide_completion_box()
         self.disable_hinter = True
 
-    def keyPressEvent(self, event):
+    def get_line_before_cursor(self, delim: str=str_utils.RAW_NEWLINE):
+        curr_pos = self.textCursor().position()
+        terminal_pos = curr_pos - 1
+        while terminal_pos > 0 and self.document().characterAt(terminal_pos) not in delim:
+            terminal_pos -= 1
+        return self.document().toRawText()[terminal_pos:curr_pos]
+
+    def keyPressEvent(self, event: QKeyEvent):
         self.prev_keyboard_press = event.key()
         # Shift + Tab is not the same as catching a shift modifier + tab key
         # Shift + Tab is a Backtab
@@ -288,7 +326,20 @@ class EventTextEditor(QPlainTextEdit):
             return super().keyPressEvent(event)
         elif event.key() == Qt.Key_Tab:
             cur = self.textCursor()
-            cur.insertText("    ")
+            pos = cur.positionInBlock()
+            fill = 4 - pos % 4
+            cur.insertText(" " * fill)
+        elif event.key() == Qt.Key.Key_Return:
+            # enter - let's intelligently indent
+            newline = str_utils.RAW_NEWLINE
+            if event.modifiers() & Qt.KeyboardModifier.ShiftModifier:
+                newline = str_utils.SHIFT_NEWLINE
+            cursor = self.textCursor()
+            line = self.get_line_before_cursor(str_utils.RAW_NEWLINE + str_utils.SHIFT_NEWLINE)
+            indent = len(line) - len(line.lstrip()) - 1
+            nl = newline + ' ' * indent
+            cursor.insertText(nl)
+            return
         elif event.key() == Qt.Key_Backspace:
             # autofill functionality, hides autofill windows
             self.disable_helpers()

@@ -31,6 +31,7 @@ from app.data.resources.resources import RESOURCES
 from app.utilities import utils
 from app.utilities.typing import NID
 from app.utilities.enums import HAlignment
+from app.engine.combat.utils import resolve_weapon
 
 
 class AnimationCombat(BaseCombat, MockCombat):
@@ -369,7 +370,7 @@ class AnimationCombat(BaseCombat, MockCombat):
             any_effect: bool = False
             if not any(brush.attacker_nid == attacker.nid for brush in self.get_from_full_playback('combat_effect')):
                 if item:
-                    effect_nid = item_system.combat_effect(attacker, item, defender, 'attack')
+                    effect_nid = item_system.combat_effect(attacker, item, defender, d_item, 'attack')
                     if effect_nid:
                         effect = self.current_battle_anim.get_effect(effect_nid, pose='Attack')
                         any_effect = True
@@ -725,17 +726,17 @@ class AnimationCombat(BaseCombat, MockCombat):
         self.viewbox = (vb_x, vb_y, vb_width, vb_height)
 
     def start_battle_music(self):
-        attacker_battle = item_system.battle_music(self.attacker, self.main_item, self.defender, 'attack') \
-            or skill_system.battle_music(self.playback, self.attacker, self.main_item, self.defender, 'attack')
+        attacker_battle = item_system.battle_music(self.attacker, self.main_item, self.defender, resolve_weapon(self.defender), 'attack') \
+            or skill_system.battle_music(self.playback, self.attacker, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
         if not attacker_battle and 'Boss' in self.attacker.tags:
             attacker_battle = game.level.music.get('boss_battle', None)
         defender_battle = None
         if self.defender:
             if self.def_item:
-                defender_battle = item_system.battle_music(self.defender, self.def_item, self.attacker, 'defense') \
-                or skill_system.battle_music(self.playback, self.defender, self.def_item, self.attacker, 'defense')
+                defender_battle = item_system.battle_music(self.defender, self.def_item, self.attacker, self.main_item, 'defense') \
+                or skill_system.battle_music(self.playback, self.defender, self.def_item, self.attacker, self.main_item, 'defense')
             else:
-                defender_battle = skill_system.battle_music(self.playback, self.defender, self.def_item, self.attacker, 'defense')
+                defender_battle = skill_system.battle_music(self.playback, self.defender, self.def_item, self.attacker, self.main_item, 'defense')
             if not defender_battle and 'Boss' in self.defender.tags:
                 defender_battle = game.level.music.get('boss_battle', None)
         battle_music = game.level.music.get('%s_battle' % self.attacker.team, None)
@@ -788,10 +789,10 @@ class AnimationCombat(BaseCombat, MockCombat):
 
             if self.defender.strike_partner:
                 defender = self.defender.strike_partner
-                dp_hit = combat_calcs.compute_hit(defender, self.attacker, defender.get_weapon(), self.main_item, 'defense', self.state_machine.get_defense_info())
-                dp_mt = combat_calcs.compute_damage(defender, self.attacker, defender.get_weapon(), self.main_item, 'defense', self.state_machine.get_defense_info(), assist=True)
+                dp_hit = combat_calcs.compute_hit(defender, self.attacker, resolve_weapon(defender), self.main_item, 'defense', self.state_machine.get_defense_info())
+                dp_mt = combat_calcs.compute_damage(defender, self.attacker, resolve_weapon(defender), self.main_item, 'defense', self.state_machine.get_defense_info(), assist=True)
                 if DB.constants.value('crit'):
-                    dp_crit = combat_calcs.compute_crit(defender, self.attacker, defender.get_weapon(), self.main_item, 'defense', self.state_machine.get_defense_info())
+                    dp_crit = combat_calcs.compute_crit(defender, self.attacker, resolve_weapon(defender), self.main_item, 'defense', self.state_machine.get_defense_info())
                 else:
                     dp_crit = 0
                 dp_stats = dp_hit, dp_mt, dp_crit
@@ -1072,7 +1073,7 @@ class AnimationCombat(BaseCombat, MockCombat):
         self.draw_damage_numbers(surf, (left_range_offset, right_range_offset, total_shake_x, total_shake_y))
 
         # make the combat ui (nametags & bars) fade out when appropriate
-        ui_fade_states = ['name_tags_out', 'all_out', 'entrance', 
+        ui_fade_states = ['name_tags_out', 'all_out', 'entrance',
                           'fade_in', 'red_cursor', 'init', 'arena_out',
                           'fade_out']
         if self.ui_should_be_hidden() and self.bar_offset > 0:
@@ -1116,11 +1117,11 @@ class AnimationCombat(BaseCombat, MockCombat):
             right_gauge = None
             left_gauge = None
             left_gauge = SPRITES.get('guard_' + left_color).copy()
-            font = FONT['number-small2']
+            font = FONT['number_small2']
             text = str(self.left.get_guard_gauge()) + '-' + str(self.left.get_max_guard_gauge())
             font.blit_center(text, left_gauge, (18, -1))
             right_gauge = SPRITES.get('guard_' + right_color).copy()
-            font = FONT['number-small2']
+            font = FONT['number_small2']
             text = str(self.right.get_guard_gauge()) + '-' + str(self.right.get_max_guard_gauge())
             font.blit_center(text, right_gauge, (18, -1))
             # Pair up info
@@ -1170,10 +1171,10 @@ class AnimationCombat(BaseCombat, MockCombat):
                 damage = str(stats[1])
             if DB.constants.value('crit') and stats[2] is not None:
                 crit = str(utils.clamp(stats[2], 0, 100))
-        FONT['number-small2'].blit_right(hit, surf, (right, top))
-        FONT['number-small2'].blit_right(damage, surf, (right, top + 8))
+        FONT['number_small2'].blit_right(hit, surf, (right, top))
+        FONT['number_small2'].blit_right(damage, surf, (right, top + 8))
         if DB.constants.value('crit'):
-            FONT['number-small2'].blit_right(crit, surf, (right, top + 16))
+            FONT['number_small2'].blit_right(crit, surf, (right, top + 16))
 
     def clean_up1(self):
         """

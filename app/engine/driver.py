@@ -1,7 +1,9 @@
 import logging
+import math
 import os
 import collections
 from datetime import datetime
+import time
 from app import lt_log
 
 from app.constants import WINWIDTH, WINHEIGHT, VERSION, FPS
@@ -19,6 +21,9 @@ def start(title, from_editor=False):
 
     from app.engine import sprites
     sprites.load_images()
+
+    from app.engine import fonts
+    fonts.load_fonts()
 
     # Hack to get icon to show up in windows
     try:
@@ -66,6 +71,10 @@ def draw_fps(surf, fps_records):
     FONT['small-white'].blit(str(fps), surf, (surf.get_width() - 20, 0))
     FONT['small-white'].blit(str(min_fps), surf, (surf.get_width() - 20, 12))
 
+def draw_soft_reset(surf, remaining_time: int):
+    from app.engine.fonts import FONT
+    FONT['chapter-yellow'].blit(str(remaining_time), surf, (surf.get_width()//2 - 4, surf.get_height()//2 - 4))
+
 def check_soft_reset(game, inp) -> bool:
     return game.state.current() != 'title_start' and \
         inp.is_pressed('SELECT') and inp.is_pressed('BACK') and \
@@ -90,6 +99,8 @@ def run(game):
 
     _error_mode = False
     _error_msg = ''
+    _soft_reset_start_time: int = None  # UTC time.time()
+    SOFT_RESET_TIME = 3  # seconds
     while True:
         # start = time.time_ns()
         engine.update_time()
@@ -105,10 +116,17 @@ def run(game):
 
         # Handle soft reset
         if check_soft_reset(game, inp):
-            _error_mode = False
-            game.state.change('title_start')
-            game.state.update([], surf)
-            continue
+            # Set the start time if not already set
+            if not _soft_reset_start_time:
+                _soft_reset_start_time = time.time()
+            if time.time() - SOFT_RESET_TIME >= _soft_reset_start_time:
+                _soft_reset_start_time = None
+                _error_mode = False
+                game.state.change('title_start')
+                game.state.update([], surf)
+                continue
+        else:
+            _soft_reset_start_time = None
 
         # game loop. catch and log any errors in this loop.
         if _error_mode:
@@ -127,6 +145,8 @@ def run(game):
 
                 if cf.SETTINGS['display_fps']:
                     draw_fps(surf, fps_records)
+                if _soft_reset_start_time:
+                    draw_soft_reset(surf, math.ceil(SOFT_RESET_TIME - (time.time() - _soft_reset_start_time)))
             except Exception as e:
                 logging.exception("Game crashed with exception.")
                 log_file_loc = lt_log.get_log_dir() or ''

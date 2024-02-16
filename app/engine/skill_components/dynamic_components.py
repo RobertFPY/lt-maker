@@ -10,10 +10,10 @@ class DynamicDamage(SkillComponent):
 
     expose = ComponentType.String
 
-    def dynamic_damage(self, unit, item, target, mode, attack_info, base_value) -> int:
+    def dynamic_damage(self, unit, item, target, item2, mode, attack_info, base_value) -> int:
         from app.engine import evaluate
         try:
-            local_args = {'item': item, 'mode': mode, 'skill': self.skill, 'attack_info': attack_info, 'base_value': base_value}
+            local_args = {'item': item, 'item2': item2, 'mode': mode, 'skill': self.skill, 'attack_info': attack_info, 'base_value': base_value}
             return int(evaluate.evaluate(self.value, unit, target, unit.position, local_args))
         except Exception as e:
             logging.error("Couldn't evaluate %s conditional (%s)", self.value, e)
@@ -26,10 +26,10 @@ class DynamicResist(SkillComponent):
 
     expose = ComponentType.String
 
-    def dynamic_resist(self, unit, item, target, mode, attack_info, base_value) -> int:
+    def dynamic_resist(self, unit, item, target, item2, mode, attack_info, base_value) -> int:
         from app.engine import evaluate
         try:
-            local_args = {'item': item, 'mode': mode, 'skill': self.skill, 'attack_info': attack_info, 'base_value': base_value}
+            local_args = {'item': item, 'item2': item2, 'mode': mode, 'skill': self.skill, 'attack_info': attack_info, 'base_value': base_value}
             return int(evaluate.evaluate(self.value, unit, target, unit.position, local_args))
         except Exception as e:
             logging.error("Couldn't evaluate %s conditional (%s)", self.value, e)
@@ -42,10 +42,10 @@ class DynamicAccuracy(SkillComponent):
 
     expose = ComponentType.String
 
-    def dynamic_accuracy(self, unit, item, target, mode, attack_info, base_value) -> int:
+    def dynamic_accuracy(self, unit, item, target, item2, mode, attack_info, base_value) -> int:
         from app.engine import evaluate
         try:
-            local_args = {'item': item, 'mode': mode, 'skill': self.skill, 'attack_info': attack_info, 'base_value': base_value}
+            local_args = {'item': item, 'item2': item2, 'mode': mode, 'skill': self.skill, 'attack_info': attack_info, 'base_value': base_value}
             return int(evaluate.evaluate(self.value, unit, target, unit.position, local_args))
         except Exception as e:
             logging.error("Couldn't evaluate %s conditional (%s)", self.value, e)
@@ -58,10 +58,10 @@ class DynamicAvoid(SkillComponent):
 
     expose = ComponentType.String
 
-    def dynamic_avoid(self, unit, item, target, mode, attack_info, base_value) -> int:
+    def dynamic_avoid(self, unit, item, target, item2, mode, attack_info, base_value) -> int:
         from app.engine import evaluate
         try:
-            local_args = {'item': item, 'mode': mode, 'skill': self.skill, 'attack_info': attack_info, 'base_value': base_value}
+            local_args = {'item': item, 'item2': item2, 'mode': mode, 'skill': self.skill, 'attack_info': attack_info, 'base_value': base_value}
             return int(evaluate.evaluate(self.value, unit, target, unit.position, local_args))
         except Exception as e:
             logging.error("Couldn't evaluate %s conditional (%s)", self.value, e)
@@ -74,10 +74,10 @@ class DynamicCritAccuracy(SkillComponent):
 
     expose = ComponentType.String
 
-    def dynamic_crit_accuracy(self, unit, item, target, mode, attack_info, base_value) -> int:
+    def dynamic_crit_accuracy(self, unit, item, target, item2, mode, attack_info, base_value) -> int:
         from app.engine import evaluate
         try:
-            local_args = {'item': item, 'mode': mode, 'skill': self.skill, 'attack_info': attack_info, 'base_value': base_value}
+            local_args = {'item': item, 'item2': item2, 'mode': mode, 'skill': self.skill, 'attack_info': attack_info, 'base_value': base_value}
             return int(evaluate.evaluate(self.value, unit, target, unit.position, local_args))
         except Exception as e:
             logging.error("Couldn't evaluate %s conditional (%s)", self.value, e)
@@ -90,10 +90,10 @@ class DynamicCritAvoid(SkillComponent):
 
     expose = ComponentType.String
 
-    def dynamic_crit_avoid(self, unit, item, target, mode, attack_info, base_value) -> int:
+    def dynamic_crit_avoid(self, unit, item, target, item2, mode, attack_info, base_value) -> int:
         from app.engine import evaluate
         try:
-            local_args = {'item': item, 'mode': mode, 'skill': self.skill, 'attack_info': attack_info, 'base_value': base_value}
+            local_args = {'item': item, 'item2': item2, 'mode': mode, 'skill': self.skill, 'attack_info': attack_info, 'base_value': base_value}
             return int(evaluate.evaluate(self.value, unit, target, unit.position, local_args))
         except Exception as e:
             logging.error("Couldn't evaluate %s conditional (%s)", self.value, e)
@@ -106,10 +106,10 @@ class DynamicAttackSpeed(SkillComponent):
 
     expose = ComponentType.String
 
-    def dynamic_attack_speed(self, unit, item, target, mode, attack_info, base_value) -> int:
+    def dynamic_attack_speed(self, unit, item, target, item2, mode, attack_info, base_value) -> int:
         from app.engine import evaluate
         try:
-            local_args = {'item': item, 'mode': mode, 'skill': self.skill, 'attack_info': attack_info, 'base_value': base_value}
+            local_args = {'item': item, 'item2': item2, 'mode': mode, 'skill': self.skill, 'attack_info': attack_info, 'base_value': base_value}
             return int(evaluate.evaluate(self.value, unit, target, unit.position, local_args))
         except Exception as e:
             logging.error("Couldn't evaluate %s conditional (%s)", self.value, e)
@@ -122,10 +122,10 @@ class DynamicDefenseSpeed(SkillComponent):
 
     expose = ComponentType.String
 
-    def dynamic_defense_speed(self, unit, item, target, mode, attack_info, base_value) -> int:
+    def dynamic_defense_speed(self, unit, item, target, item2, mode, attack_info, base_value) -> int:
         from app.engine import evaluate
         try:
-            local_args = {'item': item, 'mode': mode, 'skill': self.skill, 'attack_info': attack_info, 'base_value': base_value}
+            local_args = {'item': item, 'item2': item2, 'mode': mode, 'skill': self.skill, 'attack_info': attack_info, 'base_value': base_value}
             return int(evaluate.evaluate(self.value, unit, target, unit.position, local_args))
         except Exception as e:
             logging.error("Couldn't evaluate %s conditional (%s)", self.value, e)
@@ -138,10 +138,10 @@ class DynamicMultiattacks(SkillComponent):
 
     expose = ComponentType.String
 
-    def dynamic_multiattacks(self, unit, item, target, mode, attack_info, base_value) -> int:
+    def dynamic_multiattacks(self, unit, item, target, item2, mode, attack_info, base_value) -> int:
         from app.engine import evaluate
         try:
-            local_args = {'item': item, 'mode': mode, 'skill': self.skill, 'attack_info': attack_info, 'base_value': base_value}
+            local_args = {'item': item, 'item2': item2, 'mode': mode, 'skill': self.skill, 'attack_info': attack_info, 'base_value': base_value}
             return int(evaluate.evaluate(self.value, unit, target, unit.position, local_args))
         except Exception as e:
             logging.error("Couldn't evaluate %s conditional (%s)", self.value, e)

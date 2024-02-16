@@ -267,11 +267,11 @@ def additional_tags(unit) -> set:
                     new_tags = new_tags | set(component.additional_tags(unit, skill))
     return new_tags
 
-def before_crit(actions, playback, attacker, item, defender, mode, attack_info) -> bool:
+def before_crit(actions, playback, attacker, item, defender, item2, mode, attack_info) -> bool:
     for skill in attacker.skills:
         for component in skill.components:
             if component.defines('before_crit'):
-                component.before_crit(actions, playback, attacker, item, defender, mode, attack_info)
+                component.before_crit(actions, playback, attacker, item, defender, item2, mode, attack_info)
 
 def on_end_chapter(unit, skill):
     for component in skill.components:

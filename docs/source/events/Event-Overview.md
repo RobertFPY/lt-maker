@@ -3,7 +3,7 @@
 
 _last updated v0.1_
 
-Events are a powerful tool for any game designer, allowing you to implement unique dialogue, cutscenes, and action in your game. 
+Events are a powerful tool for any game designer, allowing you to implement unique dialogue, cutscenes, and action in your game.
 
 An event consists of four things:
 
@@ -18,7 +18,7 @@ Once a trigger has been fired by the engine, all events that subscribe to that t
 
 ## Triggers
 
-There are several default triggers that will fire when a certain state is reached in the engine. The events you create can catch these triggers and activate when appropriate. 
+There are several default triggers that will fire when a certain state is reached in the engine. The events you create can catch these triggers and activate when appropriate.
 
 Event Regions can create their own triggers which can also be caught by the event system. See [Region Events](Region-Events) for more information.
 
@@ -66,7 +66,7 @@ Event Regions can create their own triggers which can also be caught by the even
 
 ## Conditions
 
-Imagine you want an event to trigger when a specific unit dies. As stated above, the `on_unit_death` trigger will fire whenever **any** unit dies. So, if you create an event that triggers on unit death, by default it will trigger on all deaths, including enemy generics. 
+Imagine you want an event to trigger when a specific unit dies. As stated above, the `on_unit_death` trigger will fire whenever **any** unit dies. So, if you create an event that triggers on unit death, by default it will trigger on all deaths, including enemy generics.
 
 Setting a Condition allows you to limit the event to activate to only when the Condition is true.
 
@@ -76,6 +76,7 @@ The `on_unit_death` trigger supplys the unit that died under the name `unit`. So
 
 More information on what can be checked within a condition can be found here: [Conditionals](Conditionals)
 
+(EventCommands)=
 ## Event Commands
 
 Event commands are written by you, the game designer, in order to accomplish your goal for an event. For instance, if you want Eirika to appear and say `Oh no!` when she dies, you could setup a `on_unit_death` event with the condition `unit.nid == 'Eirika'` and the text:

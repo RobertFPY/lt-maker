@@ -95,10 +95,6 @@ class Defaults():
         return 0
 
     @staticmethod
-    def canto_movement(unit, unit2) -> int:
-        return unit.movement_left
-
-    @staticmethod
     def limit_maximum_range(unit, item) -> int:
         return 1000
 

@@ -69,7 +69,7 @@ SKILL_HOOKS: Dict[str, HookInfo] = {
     'enemy_exp_multiplier':                 HookInfo(['unit', 'target'], ResolvePolicy.UNIQUE, has_default_value=True),
     'wexp_multiplier':                      HookInfo(['unit', 'target'], ResolvePolicy.UNIQUE, has_default_value=True),
     'enemy_wexp_multiplier':                HookInfo(['unit', 'target'], ResolvePolicy.UNIQUE, has_default_value=True),
-    'canto_movement':                       HookInfo(['unit', 'target'], ResolvePolicy.UNIQUE, has_default_value=True),
+    'canto_movement':                       HookInfo(['unit', 'target'], ResolvePolicy.MAXIMUM, has_default_value=False),
     # item numeric modifiers (sums component values, default 0 if not defined)
     'empower_splash':                       HookInfo(['unit'], ResolvePolicy.NUMERIC_ACCUM),
     'empower_heal':                         HookInfo(['unit', 'target'], ResolvePolicy.NUMERIC_ACCUM),

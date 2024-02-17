@@ -110,7 +110,7 @@ class UnitGroup(Prefab):
 
     @classmethod
     def restore(cls, value):
-        self = cls(value['nid'], value['units'], value['positions'])
+        self = cls(value['nid'], value['units'], value['positions'].copy())
         self.units = [u for u in self.units if u]
         return self
 

@@ -175,16 +175,3 @@ class ItemIconFlash(ItemComponent):
         if val:
             sprite = image_mods.make_white(sprite.convert_alpha(), abs(250 - engine.get_time()%500)/250)
         return sprite
-
-class TextColor(ItemComponent):
-    nid = 'text_color'
-    desc = 'Special color for item text.'
-    tag = ItemTags.AESTHETIC
-
-    expose = (ComponentType.MultipleChoice, NORMAL_FONT_COLORS)
-    value = 'white'
-
-    def text_color(self, unit, item):
-        if self.value not in NORMAL_FONT_COLORS:
-            return 'white'
-        return self.value

@@ -193,3 +193,16 @@ class MagicHeal(Heal):
         empower_heal = skill_system.empower_heal(unit, target)
         empower_heal_received = skill_system.empower_heal_received(target, unit)
         return self.value + equations.parser.heal(unit) + empower_heal + empower_heal_received
+
+class TextColor(ItemComponent):
+    nid = 'text_color'
+    desc = 'Special color for item text.'
+    tag = ItemTags.DEPRECATED
+
+    expose = (ComponentType.MultipleChoice, ['white'])
+    value = 'white'
+
+    def text_color(self, unit, item):
+        if self.value not in ['white']:
+            return 'white'
+        return self.value

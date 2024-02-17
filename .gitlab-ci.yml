@@ -12,7 +12,7 @@ stages:
 
 run_tests:
     stage: test
-    image: "python:3.11.7"
+    image: "python:3.11.8"
     only:
         refs:
             - merge_requests
@@ -26,7 +26,7 @@ run_tests:
 
 build_engine:
     stage: generate_engine
-    image: "python:3.11.7"
+    image: "python:3.11.8"
     extends:
     - .shared_windows_runners
     except: # If this double builds consider changing to only: pushes
@@ -35,7 +35,7 @@ build_engine:
     only:
         - release
     before_script:
-        - choco install -y python --version=3.11
+        - choco install -y python --version=3.11.8
         - "C:\\Python311\\python.exe -m pip install -r requirements_engine.txt"
         - "C:\\Python311\\python.exe -m pip install pywin32"
         - "C:\\Python311\\python.exe -m pip install setuptools --upgrade"
@@ -63,7 +63,7 @@ build_engine:
 
 build_editor:
     stage: generate_editor
-    image: "python:3.11.7"
+    image: "python:3.11.8"
     extends:
     - .shared_windows_runners
     except: # If this double builds consider changing to only: pushes
@@ -72,7 +72,7 @@ build_editor:
     only:
         - release
     before_script:
-        - choco install -y python --version=3.11
+        - choco install -y python --version=3.11.8
         - "C:\\Python311\\python.exe -m pip install -r requirements_editor.txt"
         - "C:\\Python311\\python.exe -m pip install pywin32"
         - "C:\\Python311\\python.exe -m pip install setuptools --upgrade"

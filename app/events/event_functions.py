@@ -26,6 +26,7 @@ from app.engine.graphics.ui_framework.premade_components.plain_text_component im
 from app.engine.graphics.ui_framework.ui_framework import UIComponent
 from app.engine.graphics.ui_framework.ui_framework_animation import \
     InterpolationType
+from app.engine.level_up import ExpState
 from app.engine.objects.item import ItemObject
 from app.engine.objects.region import RegionObject
 from app.engine.objects.tilemap import TileMapObject
@@ -1863,10 +1864,13 @@ def give_exp(self: Event, global_unit, experience: int, flags=None):
         self.logger.error("give_exp: Couldn't find unit with nid %s" % global_unit)
         return
     exp = utils.clamp(experience, -100, 100)
+    klass = DB.classes.get(unit.klass)
+    max_exp = 100 * (klass.max_level - unit.level) - unit.exp
+    exp = min(exp, max_exp)
     if 'silent' in flags:
         old_exp = unit.exp
         if old_exp + exp >= 100:
-            if unit.level < DB.classes.get(unit.klass).max_level:
+            if ExpState.can_give_exp(unit, exp):
                 action.do(action.GainExp(unit, exp))
                 # Since autolevel also fills current hp and current mana to max
                 # We keep track of HP to reset back
@@ -1875,14 +1879,19 @@ def give_exp(self: Event, global_unit, experience: int, flags=None):
                 action.do(action.SetHP(unit, old_hp))
                 action.do(action.SetMana(unit, old_mana))
             else:
-                action.do(action.SetExp(unit, 99))
+                self.logger.info("give_exp: Cannot raise exp of unit %s" % unit.nid)
         elif old_exp + exp < 0:
             if unit.level > 1:
                 action.do(action.SetExp(unit, 100 + old_exp + exp))
                 autolevel_to(self, global_unit, unit.level - 1)
             else:
                 action.do(action.SetExp(unit, 0))
-        else:
+        elif exp > 0:
+            if ExpState.can_give_exp(unit, exp):
+                action.do(action.SetExp(unit, old_exp + exp))
+            else:
+                self.logger.info("give_exp: Cannot raise exp of unit %s" % unit.nid)
+        else:  # Negative
             action.do(action.SetExp(unit, old_exp + exp))
     else:
         self.game.exp_instance.append((unit, exp, None, 'init'))

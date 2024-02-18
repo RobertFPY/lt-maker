@@ -8,7 +8,8 @@ from app.data.resources.resources import RESOURCES
 from app.data.database.database import DB
 
 from app.utilities import utils
-from app.engine import engine, image_mods, icons, unit_funcs, action, banner, skill_system
+from app.engine import engine, image_mods, icons, unit_funcs, \
+    action, banner, skill_system, exp_funcs
 from app.engine.sprites import SPRITES
 from app.engine.sound import get_sound_thread
 from app.engine.fonts import FONT
@@ -46,7 +47,7 @@ class ExpState(State):
         self.old_exp = self.unit.exp
         self.old_level = self.unit.level
         self.unit_klass = DB.classes.get(self.unit.klass)
-        self.auto_promote = ExpState.has_autopromote(self.unit)
+        self.auto_promote = exp_funcs.has_autopromote(self.unit)
 
         # For mana
         self.old_mana = self.unit.get_mana()
@@ -77,7 +78,7 @@ class ExpState(State):
         self.stat_changes = None
         self.new_wexp = None
 
-        if ExpState.can_give_exp(self.unit, self.exp_gain) or self.mana_to_gain or \
+        if exp_funcs.can_give_exp(self.unit, self.exp_gain) or self.mana_to_gain or \
                 self.starting_state in ('promote', 'class_change', 'stat_booster'):
             pass
         else:
@@ -96,23 +97,6 @@ class ExpState(State):
             self.source = 'promote'
 
         self.level_up_sound_played = False
-
-    @staticmethod
-    def has_autopromote(unit) -> bool:
-        unit_klass = DB.classes.get(unit.klass)
-        return (DB.constants.value('auto_promote') or 'AutoPromote' in unit.tags) and \
-            unit_klass.turns_into and 'NoAutoPromote' not in unit.tags
-
-    @staticmethod
-    def can_give_exp(unit, exp: int) -> bool:
-        unit_klass = DB.classes.get(unit.klass)
-        if unit.level < unit_klass.max_level:
-            return True
-        if exp < 0:
-            return True
-        if ExpState.has_autopromote(unit):
-            return True
-        return False
 
     def begin(self):
         game.cursor.hide()

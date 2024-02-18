@@ -15,7 +15,6 @@ from app.engine import (action, background, banner, base_surf, dialog, engine,
 from app.engine.achievements import ACHIEVEMENTS
 from app.engine.animations import MapAnimation
 from app.engine.combat import interaction
-from app.engine.fonts import FONT
 from app.engine.game_menus.menu_components.generic_menu.simple_menu_wrapper import \
     SimpleMenuUI
 from app.engine.graphics.text.text_renderer import rendered_text_width, text_width
@@ -26,7 +25,7 @@ from app.engine.graphics.ui_framework.premade_components.plain_text_component im
 from app.engine.graphics.ui_framework.ui_framework import UIComponent
 from app.engine.graphics.ui_framework.ui_framework_animation import \
     InterpolationType
-from app.engine.level_up import ExpState
+from app.engine import exp_funcs
 from app.engine.objects.item import ItemObject
 from app.engine.objects.region import RegionObject
 from app.engine.objects.tilemap import TileMapObject
@@ -1870,7 +1869,7 @@ def give_exp(self: Event, global_unit, experience: int, flags=None):
     if 'silent' in flags:
         old_exp = unit.exp
         if old_exp + exp >= 100:
-            if ExpState.can_give_exp(unit, exp):
+            if exp_funcs.can_give_exp(unit, exp):
                 action.do(action.GainExp(unit, exp))
                 # Since autolevel also fills current hp and current mana to max
                 # We keep track of HP to reset back
@@ -1887,7 +1886,7 @@ def give_exp(self: Event, global_unit, experience: int, flags=None):
             else:
                 action.do(action.SetExp(unit, 0))
         elif exp > 0:
-            if ExpState.can_give_exp(unit, exp):
+            if exp_funcs.can_give_exp(unit, exp):
                 action.do(action.SetExp(unit, old_exp + exp))
             else:
                 self.logger.info("give_exp: Cannot raise exp of unit %s" % unit.nid)

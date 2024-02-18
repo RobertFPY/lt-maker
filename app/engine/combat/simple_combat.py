@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Optional
 
 from app.data.database.database import DB
-from app.engine import (action, banner, item_system, skill_system,
+from app.engine import (action, banner, exp_funcs, item_system, skill_system,
                         supports)
 from app.engine.combat.solver import CombatPhaseSolver
 from app.engine.game_state import game
@@ -487,7 +487,6 @@ class SimpleCombat():
                     action.do(action.ChangeMana(self.defender, mana_gain))
 
     def handle_exp(self, combat_object=None):
-        from app.engine.level_up import ExpState
         # handle exp
         if self.attacker.team == 'player' and not self.attacker.is_dying:
             exp = self.calculate_exp(self.attacker, self.main_item)
@@ -502,7 +501,7 @@ class SimpleCombat():
                 game.exp_instance.append((self.attacker, exp, combat_object, 'init'))
                 game.state.change('exp')
                 game.ai.end_skip()
-            elif not self.alerts and exp != 0 and ExpState.can_give_exp(self.attacker, exp):
+            elif not self.alerts and exp != 0 and exp_funcs.can_give_exp(self.attacker, exp):
                 action.do(action.GainExp(self.attacker, exp))
 
         elif self.defender and self.defender.team == 'player' and not self.defender.is_dying:
@@ -517,7 +516,7 @@ class SimpleCombat():
                 game.exp_instance.append((self.defender, exp, combat_object, 'init'))
                 game.state.change('exp')
                 game.ai.end_skip()
-            elif not self.alerts and exp != 0 and ExpState.can_give_exp(self.defender, exp):
+            elif not self.alerts and exp != 0 and exp_funcs.can_give_exp(self.defender, exp):
                 action.do(action.GainExp(self.defender, exp))
 
     def handle_paired_exp(self, leader_unit, combat_object=None):

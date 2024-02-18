@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Set, Tuple, Type
+from typing import Any, Dict, Generator, List, Optional, Set, Tuple, Type
 
 from app.events.event_structs import EventCommandTokens
 from app.utilities.str_utils import SHIFT_NEWLINE
@@ -33,3 +33,6 @@ def to_py_event_command(tokens: EventCommandTokens) -> Tuple[str, int]:
     # flags are always strings
     flags = ','.join([f'"{flag}"' for flag in tokens.flags()])
     return "%s(%s).set_flags(%s)" % (command, args, flags), tokens.start_idx
+
+def create_null_event() -> Generator:
+    yield DO_NOT_EXECUTE_SENTINEL, None

@@ -25,7 +25,7 @@ class Font():
 
     def ttf_path(self):
         if self.fallback_ttf:
-            return Path(self.file_name).parent / self.fallback_ttf
+            return str(Path(self.file_name).parent / self.fallback_ttf)
 
     def primary_color(self, color):
         palette = self.palettes.get(color)
@@ -65,6 +65,16 @@ class FontCatalog(ManifestCatalog[Font]):
             new_resource = self.datatype.restore(s_dict)
             new_resource.file_name = os.path.join(loc, new_resource.nid)
             self.append(new_resource)
+
+    def valid_files(self) -> set:
+        files = set()
+        for datum in self:
+            files.add(datum.nid + '.idx')
+            files.add(datum.nid + '.png')
+            files.add(datum.fallback_ttf)
+        if None in files:
+            files.remove(None)
+        return files
 
     def save(self, loc):
         for datum in self:

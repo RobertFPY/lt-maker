@@ -113,7 +113,7 @@
     ],
     [
         "fog_los",
-        false
+        true
     ],
     [
         "ai_fog_of_war",

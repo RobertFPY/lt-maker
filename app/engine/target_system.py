@@ -188,11 +188,14 @@ class TargetSystem():
         if not item_range:
             return set()
         max_range = max(item_range)
-
+        
+        manhattan_restriction = item_system.range_restrict(unit, item)
         if max_range >= 99:
             attacks = self.game.board.get_all_positions_in_bounds()
+            if manhattan_restriction:
+                x, y = unit.position
+                attacks = {(a, b) for (a, b) in attacks if (a - x, b - y) in manhattan_restriction}
         else:
-            manhattan_restriction = item_system.range_restrict(unit, item)
             attacks = self.get_shell({unit.position}, item_range, self.game.board.bounds, manhattan_restriction)
 
         # Filter away those that aren't in line of sight
@@ -238,10 +241,16 @@ class TargetSystem():
             else:
                 moves = valid_moves
 
+            manhattan_restriction = item_system.range_restrict(unit, item)
             if max_range >= 99:
                 item_attacks = self.game.board.get_all_positions_in_bounds()
+                if manhattan_restriction:
+                    attacks = set()
+                    for move in moves:
+                        x, y = move
+                        attacks |= {(a, b) for (a, b) in item_attacks if (a - x, b - y) in manhattan_restriction}
+                    item_attacks = attacks
             else:
-                manhattan_restriction = item_system.range_restrict(unit, item)
                 item_attacks = self.get_shell(moves, item_range, self.game.board.bounds, manhattan_restriction)
 
             if DB.constants.value('line_of_sight') and not item_system.ignore_line_of_sight(unit, item):

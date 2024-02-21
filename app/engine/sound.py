@@ -2,7 +2,8 @@ from app.data.resources.sounds import SongPrefab
 from app.utilities.data import HasNid
 from app.utilities.typing import NID
 from enum import Enum
-from typing import Set, List
+from typing import Set, List, Optional
+from abc import ABC, abstractmethod
 import pygame
 
 from app.utilities import utils
@@ -346,7 +347,204 @@ class GlobalMusicState(Enum):
     FADE_OUT_TO_FADE_IN = 'fade_out_to_fade_in'
     PAUSED = 'paused'
 
-class SoundController():
+class SoundController(ABC):
+    # === Volume ===
+    @abstractmethod
+    def mute(self):
+        pass
+
+    @abstractmethod
+    def lower(self):
+        pass
+
+    @abstractmethod
+    def unmute(self):
+        pass
+
+    @abstractmethod
+    def get_music_volume(self) -> float:
+        return 0.0
+
+    @abstractmethod
+    def set_music_volume(self, volume):
+        pass
+
+    @abstractmethod
+    def get_sfx_volume(self) -> float:
+        return 0.0
+
+    @abstractmethod
+    def set_sfx_volume(self, volume):
+        pass
+
+    # === Music state ===
+    @abstractmethod
+    def clear(self):
+        pass
+
+    @abstractmethod
+    def fade_clear(self, fade_out=DEFAULT_FADE_TIME_MS):
+        pass
+
+    @abstractmethod
+    def fade_to_stop(self, fade_out=DEFAULT_FADE_TIME_MS):
+        pass
+
+    @abstractmethod
+    def fade_to_pause(self, fade_out=DEFAULT_FADE_TIME_MS):
+        pass
+
+    @abstractmethod
+    def pause(self):
+        pass
+
+    @abstractmethod
+    def resume(self):
+        pass
+
+    @abstractmethod
+    def is_playing(self) -> bool:
+        return False
+
+    @abstractmethod
+    def battle_fade_in(self, next_song, fade=DEFAULT_FADE_TIME_MS, from_start=True) -> Optional[SongObject]:
+        return None
+
+    @abstractmethod
+    def battle_fade_back(self, song, from_start=True):
+        pass
+
+    @abstractmethod
+    def crossfade(self, fade=DEFAULT_FADE_TIME_MS) -> bool:
+        return True
+
+    @abstractmethod
+    def get_current_song(self) -> Optional[SongObject]:
+        return None
+
+    @abstractmethod
+    def fade_in(self, next_song: NID, num_plays=-1, fade_in=DEFAULT_FADE_TIME_MS, from_start=False) -> Optional[SongObject]:
+        return None
+
+    @abstractmethod
+    def fade_back(self, fade_out=DEFAULT_FADE_TIME_MS):
+        pass
+
+    @abstractmethod
+    def stop(self):
+        pass
+
+    @abstractmethod
+    def update(self, event_list):
+        pass
+
+    # === Other Miscellaneous Funcs ===
+    @abstractmethod
+    def play_sfx(self, sound, loop=False, volume=1) -> Optional[pygame.mixer.Sound]:
+        return None
+
+    @abstractmethod
+    def stop_sfx(self, sound) -> Optional[pygame.mixer.Sound]:
+        pass
+
+    @abstractmethod
+    def load_songs(self, nids: Set[NID]):
+        pass
+
+    @abstractmethod
+    def flush(self, should_interrupt_current_song=True):
+        pass
+
+    @abstractmethod
+    def reset(self):
+        pass
+
+class NullSoundController(ABC):
+    # === Volume ===
+    def mute(self):
+        pass
+
+    def lower(self):
+        pass
+
+    def unmute(self):
+        pass
+
+    def get_music_volume(self) -> float:
+        return 0.0
+
+    def set_music_volume(self, volume):
+        pass
+
+    def get_sfx_volume(self) -> float:
+        return 0.0
+
+    def set_sfx_volume(self, volume):
+        pass
+
+    # === Music state ===
+    def clear(self):
+        pass
+
+    def fade_clear(self, fade_out=DEFAULT_FADE_TIME_MS):
+        pass
+
+    def fade_to_stop(self, fade_out=DEFAULT_FADE_TIME_MS):
+        pass
+
+    def fade_to_pause(self, fade_out=DEFAULT_FADE_TIME_MS):
+        pass
+
+    def pause(self):
+        pass
+
+    def resume(self):
+        pass
+
+    def is_playing(self) -> bool:
+        return False
+
+    def battle_fade_in(self, next_song, fade=DEFAULT_FADE_TIME_MS, from_start=True) -> Optional[SongObject]:
+        return None
+
+    def battle_fade_back(self, song, from_start=True):
+        pass
+
+    def crossfade(self, fade=DEFAULT_FADE_TIME_MS) -> bool:
+        return True
+
+    def get_current_song(self) -> Optional[SongObject]:
+        return None
+
+    def fade_in(self, next_song: NID, num_plays=-1, fade_in=DEFAULT_FADE_TIME_MS, from_start=False) -> Optional[SongObject]:
+        return None
+
+    def fade_back(self, fade_out=DEFAULT_FADE_TIME_MS):
+        pass
+
+    def stop(self):
+        pass
+
+    def update(self, event_list):
+        pass
+
+    # === Other Miscellaneous Funcs ===
+    def play_sfx(self, sound, loop=False, volume=1) -> Optional[pygame.mixer.Sound]:
+        return None
+
+    def stop_sfx(self, sound) -> Optional[pygame.mixer.Sound]:
+        pass
+
+    def load_songs(self, nids: Set[NID]):
+        pass
+
+    def flush(self, should_interrupt_current_song=True):
+        return None
+
+    def reset(self):
+        pass
+
+class DefaultSoundController(SoundController):
     fade_out_states = (
         GlobalMusicState.FADE_OUT_TO_PLAY,
         GlobalMusicState.FADE_OUT_TO_STOP,
@@ -393,7 +591,7 @@ class SoundController():
         for channel in self.channel_stack:
             channel.set_volume(self.global_music_volume)
 
-    def get_music_volume(self):
+    def get_music_volume(self) -> float:
         return self.global_music_volume
 
     def set_music_volume(self, volume):
@@ -401,7 +599,7 @@ class SoundController():
         for channel in self.channel_stack:
             channel.set_volume(self.global_music_volume)
 
-    def get_sfx_volume(self):
+    def get_sfx_volume(self) -> float:
         return self.global_sfx_volume
 
     def set_sfx_volume(self, volume):
@@ -409,7 +607,7 @@ class SoundController():
 
     # === Music state ===
     @property
-    def current_channel(self):
+    def current_channel(self) -> Optional[ChannelPair]:
         return self.channel_stack[-1]
 
     def clear(self):
@@ -461,7 +659,7 @@ class SoundController():
         oldest_channel.set_fade_in_time(fade_in)
         oldest_channel.set_current_song(song, num_plays)
 
-    def battle_fade_in(self, next_song, fade=DEFAULT_FADE_TIME_MS, from_start=True):
+    def battle_fade_in(self, next_song, fade=DEFAULT_FADE_TIME_MS, from_start=True) -> Optional[SongObject]:
         song = MUSIC.get(next_song)
         if not song:
             logging.warning("Song does not exist")
@@ -478,19 +676,19 @@ class SoundController():
         elif from_start:
             self.fade_back()
 
-    def crossfade(self, fade=DEFAULT_FADE_TIME_MS):
+    def crossfade(self, fade=DEFAULT_FADE_TIME_MS) -> bool:
         self.current_channel.set_fade_in_time(fade)
         self.current_channel.set_fade_out_time(fade)
         self.current_channel.crossfade()
         return True
 
-    def get_current_song(self):
+    def get_current_song(self) -> Optional[SongObject]:
         is_playing = self.is_playing()
         if is_playing and self.song_stack:
             return self.song_stack[-1]
         return None
 
-    def fade_in(self, next_song: NID, num_plays=-1, fade_in=DEFAULT_FADE_TIME_MS, from_start=False):
+    def fade_in(self, next_song: NID, num_plays=-1, fade_in=DEFAULT_FADE_TIME_MS, from_start=False) -> Optional[SongObject]:
         logging.info("Fade in %s" % next_song)
         next_song = MUSIC.get(next_song)
         if not next_song:
@@ -619,7 +817,7 @@ class SoundController():
             self.current_channel.fade_in()
 
     # === Other Miscellaneous Funcs ===
-    def play_sfx(self, sound, loop=False, volume=1):
+    def play_sfx(self, sound, loop=False, volume=1) -> Optional[pygame.mixer.Sound]:
         sfx = SFX.get(sound)
         if sfx:
             vol = utils.clamp(self.global_sfx_volume * volume, 0, 1)
@@ -631,7 +829,7 @@ class SoundController():
             return sfx
         return None
 
-    def stop_sfx(self, sound):
+    def stop_sfx(self, sound) -> Optional[pygame.mixer.Sound]:
         sfx = SFX.get(sound)
         if sfx:
             sfx.stop()
@@ -672,8 +870,17 @@ SFX = SoundDict()
 
 _soundthread: SoundController = None
 
-def get_sound_thread():
+def init_sound_thread():
     global _soundthread
+    try:
+        pygame.mixer.init()
+        _soundthread = DefaultSoundController()
+    except Exception as e:
+        logging.warning(e)
+        logging.warning("Audio initialization failed; running game with no audio")
+        _soundthread = NullSoundController()
+
+def get_sound_thread():
     if not _soundthread:
-        _soundthread = SoundController()
+        init_sound_thread()
     return _soundthread

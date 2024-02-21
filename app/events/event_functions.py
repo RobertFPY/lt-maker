@@ -327,10 +327,11 @@ def speak(self: Event, speaker_or_style: str, text, text_position: Point | Align
         speaker = unit.nid
     portrait = self.portraits.get(speaker)
 
-    if portrait and style.num_lines == 0: # should auto choose 1 or 2 lines
+    if style.num_lines == 0: # should auto choose 1 or 2 lines
         style.num_lines = 2
-        if '{br}' not in text and '{clear}' not in text and text_width(style.font_type, text) < WINWIDTH // 2:
-            style.num_lines = 1
+        if portrait:
+            if '{br}' not in text and '{clear}' not in text and text_width(style.font_type, text) < WINWIDTH // 2:
+                style.num_lines = 1
 
     # Process text for commands
     blocks = str_utils.matched_block_expr(text, '{', '}')

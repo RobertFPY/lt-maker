@@ -534,11 +534,19 @@ it will be facing right, and vice versa.
 class Slide(OptionValidator):
     valid = ["normal", "left", "right"]
 
-class Font(OptionValidator):
-    def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
-        return [(None, option) for option in FONT.keys()]
+class Font(Validator):
+    def validate(self, text, level):
+        if text in RESOURCES.fonts.keys():
+            return text
 
-class FontColor(OptionValidator):
+    def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
+        return [(None, option) for option in RESOURCES.fonts.keys()]
+
+class FontColor(Validator):
+    def validate(self, text, level):
+        if text in RESOURCES.fonts.get('convo').palettes.keys():
+            return text
+
     # Must be done this way to delay grabbing what is valid until we've loaded in our resources
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
         return [(None, option) for option in RESOURCES.fonts.get('convo').palettes.keys()]

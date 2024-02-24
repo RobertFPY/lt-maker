@@ -33,7 +33,7 @@ def start(title, from_editor=False):
     except:
         print("Maybe not Windows? (but that's OK)")
 
-    engine.DISPLAYSURF = engine.build_display(engine.get_screensize())
+    engine.DISPLAYSURF = engine.build_display(engine.get_screensize(True))
     engine.update_time()
     engine.set_title(title + ' - v' + VERSION)
     print("Version: %s" % VERSION)

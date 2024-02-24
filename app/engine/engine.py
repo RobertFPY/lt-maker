@@ -273,11 +273,11 @@ def get_mouse_focus():
     return pygame.mouse.get_focused()
 
 # === loop functions ===
-DISPLAYSURF = None
+DISPLAYSURF: Surface = None
 
-def get_screensize():
+def get_screensize(init=False):
     global DISPLAYSURF
-    if not DISPLAYSURF:
+    if not DISPLAYSURF or init:
         return (WINWIDTH * min(cf.SETTINGS['screen_size'], 5), WINHEIGHT * min(cf.SETTINGS['screen_size'], 5))
     return (DISPLAYSURF.get_width(), DISPLAYSURF.get_height())
 

@@ -5,6 +5,7 @@ import collections
 from datetime import datetime
 import time
 from app import lt_log
+from app.utilities import file_utils
 
 from app.constants import WINWIDTH, WINHEIGHT, VERSION, FPS
 from app.engine import engine
@@ -134,7 +135,7 @@ def run(game):
             if inp.is_pressed('SELECT') or inp.is_pressed('BACK'):
                 log_file = lt_log.get_log_fname()
                 if log_file:
-                    os.startfile(log_file)
+                    file_utils.startfile(log_file)
         else:
             try:
                 surf, repeat = game.state.update(event, surf)

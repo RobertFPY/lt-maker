@@ -210,7 +210,7 @@ class Armsthrift(SkillComponent):
 
         if item.parent_item:
             self.after_strike(actions, playback, unit,
-                              item.parent_item, target, mode, attack_info, strike)
+                              item.parent_item, target, item2, mode, attack_info, strike)
         if strike != Strike.MISS or (item.uses_options and item.uses_options.lose_uses_on_miss()):
             self._did_something = True
             self._after_strike(actions, unit, item)
@@ -223,7 +223,7 @@ class Armsthrift(SkillComponent):
         if self._did_something:
             if item.parent_item:
                 self.post_combat(
-                    playback, unit, item.parent_item, target, mode)
+                    playback, unit, item.parent_item, target, item2, mode)
             if (item.uses_options and item.uses_options.one_loss_per_combat()):
                 self._post_combat(unit, item)
 

@@ -71,10 +71,13 @@ class PlayerChoiceState(MapState):
                 display_values.append(spl[1])
         return values, display_values
 
-    def create_help_boxes(self, options_list: List[NID]):
+    def create_help_boxes(self, options_list: List[NID | int]):
         self.help_boxes = []
-        if self.data_type == 'type_base_item':
-            items = item_funcs.create_items(None, options_list)
+        if self.data_type in ('type_base_item', 'type_game_item'):
+            if self.data_type == 'type_base_item':
+                items = item_funcs.create_items(None, options_list)
+            else:
+                items = [game.get_item(int(uid)) for uid in options_list]
             for item in items:
                 if item_system.is_weapon(None, item) or item_system.is_spell(None, item):
                     self.help_boxes.append(help_menu.ItemHelpDialog(item))

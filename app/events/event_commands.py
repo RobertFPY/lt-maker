@@ -3649,7 +3649,7 @@ def parse_event_line(line: str) -> EventCommandTokens:
     token_idxs = [lpad]
 
     bracket_nest = 0
-    bracket = ''
+    bracket_stack = []
 
     idx = 0
     EOF = 'EOF'
@@ -3660,13 +3660,14 @@ def parse_event_line(line: str) -> EventCommandTokens:
 
     while idx < len(sline):
         c = sline[idx]
-        if c == bracket:
+        if bracket_stack and c == bracket_stack[-1]:
             bracket_nest += 1
-        elif c == mirror_bracket(bracket):
+        elif bracket_stack and c == mirror_bracket(bracket_stack[-1]):
             bracket_nest -= 1
+            bracket_stack.pop()
         elif c in '({[':
             bracket_nest += 1
-            bracket = c
+            bracket_stack.append(c)
         elif bracket_nest == 0 and c == ';':
             tokens.append('')
             token_idxs.append(idx + lpad + 1)

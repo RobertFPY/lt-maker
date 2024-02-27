@@ -33,7 +33,7 @@ class SimpleCombat():
         self.defenders = [game.board.get_unit(main_target_pos) if main_target_pos else None for main_target_pos in main_target_positions]
         # List of UnitObject
         self.all_defenders = list(set([_ for _ in self.defenders if _]))
-        self.defender: UnitObject = None
+        self.defender: Optional[UnitObject] = None
         if len(self.all_defenders) == 1:
             self.defender = self.all_defenders[0]
 
@@ -53,7 +53,7 @@ class SimpleCombat():
 
         self.items = items
         self.def_items = [resolve_weapon(defender) for defender in self.defenders]
-        self.def_item = None
+        self.def_item: Optional[ItemObject] = None
         if self.defender:
             self.def_item = resolve_weapon(self.defender)
 
@@ -425,9 +425,9 @@ class SimpleCombat():
             item_system.on_unusable(self.attacker, self.main_item)
         if self.def_item and item_system.is_unusable(self.defender, self.def_item):
             item_system.on_unusable(self.defender, self.def_item)
-        if attack_partner and item_system.is_unusable(attack_partner, attack_partner.get_weapon()):
+        if attack_partner and attack_partner.get_weapon() and item_system.is_unusable(attack_partner, attack_partner.get_weapon()):
             item_system.on_unusable(attack_partner, attack_partner.get_weapon())
-        if defense_partner and item_system.is_unusable(defense_partner, defense_partner.get_weapon()):
+        if defense_partner and defense_partner.get_weapon() and item_system.is_unusable(defense_partner, defense_partner.get_weapon()):
             item_system.on_unusable(defense_partner, defense_partner.get_weapon())
 
     def handle_wexp(self, unit, item, target):

@@ -394,23 +394,31 @@ class AnimationCombat(BaseCombat, MockCombat):
                 elif self.get_from_playback('defense_proc'):
                     self.set_up_proc_animation('defense_proc')
                 else:
+                    self.add_proc_icon.memory.clear()
                     self.set_up_combat_animation()
 
         elif self.state == 'attack_proc':
-            if self.left_battle_anim.done() and self.right_battle_anim.done() and current_time > 400:
-                if self.get_from_playback('defense_proc'):
+            if self.left_battle_anim.done() and self.right_battle_anim.done() and not self.proc_icons:
+                if self.get_from_playback('attack_proc'):
+                    self.set_up_proc_animation('attack_proc')
+                elif self.get_from_playback('defense_proc'):
                     self.set_up_proc_animation('defense_proc')
                 else:
+                    self.add_proc_icon.memory.clear()
                     self.set_up_combat_animation()
 
         elif self.state == 'defense_proc':
-            if self.left_battle_anim.done() and self.right_battle_anim.done() and current_time > 400:
-                self.set_up_combat_animation()
+            if self.left_battle_anim.done() and self.right_battle_anim.done() and not self.proc_icons:
+                if self.get_from_playback('defense_proc'):
+                    self.set_up_proc_animation('defense_proc')
+                else:
+                    self.add_proc_icon.memory.clear()
+                    self.set_up_combat_animation()
 
         elif self.state == 'anim':
             if self.left_battle_anim.done() and self.right_battle_anim.done() and \
-                    (not self.rp_battle_anim or self.rp_battle_anim.done()) and (not \
-                    self.lp_battle_anim or self.lp_battle_anim.done()):
+                    (not self.rp_battle_anim or self.rp_battle_anim.done()) and \
+                    (not self.lp_battle_anim or self.lp_battle_anim.done()):
                 self.state = 'end_phase'
 
         elif self.state == 'hp_change':

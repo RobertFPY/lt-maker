@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import random
-from typing import TYPE_CHECKING, Set, Tuple
+from typing import TYPE_CHECKING, Set, Tuple, Any
 
 from app.engine.component_system import utils
 
@@ -11,106 +11,106 @@ if TYPE_CHECKING:
 
 class Defaults():
     @staticmethod
-    def full_price(unit, item) -> int:
+    def full_price(unit: UnitObject, item: ItemObject) -> int:
         return None
 
     @staticmethod
-    def buy_price(unit, item) -> float:
+    def buy_price(unit: UnitObject, item: ItemObject) -> float:
         return None
 
     @staticmethod
-    def sell_price(unit, item) -> float:
+    def sell_price(unit: UnitObject, item: ItemObject) -> float:
         return None
 
     @staticmethod
-    def special_sort(unit, item):
+    def special_sort(unit: UnitObject, item: ItemObject):
         return None
 
     @staticmethod
-    def num_targets(unit, item) -> int:
+    def num_targets(unit: UnitObject, item: ItemObject) -> int:
         return 1
 
     @staticmethod
-    def minimum_range(unit, item) -> int:
+    def minimum_range(unit: UnitObject, item: ItemObject) -> int:
         return 0
 
     @staticmethod
-    def maximum_range(unit, item) -> int:
+    def maximum_range(unit: UnitObject, item: ItemObject) -> int:
         return 0
 
     @staticmethod
-    def weapon_type(unit, item):
+    def weapon_type(unit: UnitObject, item: ItemObject):
         return None
 
     @staticmethod
-    def weapon_rank(unit, item):
+    def weapon_rank(unit: UnitObject, item: ItemObject):
         return None
 
     @staticmethod
-    def modify_weapon_triangle(unit, item) -> float:
+    def modify_weapon_triangle(unit: UnitObject, item: ItemObject) -> float:
         return 1.0
 
     @staticmethod
-    def effect_animation(unit, item) -> str:
+    def effect_animation(unit: UnitObject, item: ItemObject) -> str:
         return None
 
     @staticmethod
-    def damage(unit, item) -> int:
+    def damage(unit: UnitObject, item: ItemObject) -> int:
         return None
 
     @staticmethod
-    def hit(unit, item) -> int:
+    def hit(unit: UnitObject, item: ItemObject) -> int:
         return None
 
     @staticmethod
-    def crit(unit, item) -> int:
+    def crit(unit: UnitObject, item: ItemObject) -> int:
         return None
 
     @staticmethod
-    def exp(playback, unit, item) -> int:
+    def exp(playback, unit: UnitObject, item: ItemObject) -> int:
         return 0
 
     @staticmethod
-    def wexp(playback, unit, item, target) -> int:
+    def wexp(playback, unit: UnitObject, item: ItemObject, target) -> int:
         return 1
 
     @staticmethod
-    def damage_formula(unit, item) -> str:
+    def damage_formula(unit: UnitObject, item: ItemObject) -> str:
         return 'DAMAGE'
 
     @staticmethod
-    def resist_formula(unit, item) -> str:
+    def resist_formula(unit: UnitObject, item: ItemObject) -> str:
         return 'DEFENSE'
 
     @staticmethod
-    def accuracy_formula(unit, item) -> str:
+    def accuracy_formula(unit: UnitObject, item: ItemObject) -> str:
         return 'HIT'
 
     @staticmethod
-    def avoid_formula(unit, item) -> str:
+    def avoid_formula(unit: UnitObject, item: ItemObject) -> str:
         return 'AVOID'
 
     @staticmethod
-    def crit_accuracy_formula(unit, item) -> str:
+    def crit_accuracy_formula(unit: UnitObject, item: ItemObject) -> str:
         return 'CRIT_HIT'
 
     @staticmethod
-    def crit_avoid_formula(unit, item) -> str:
+    def crit_avoid_formula(unit: UnitObject, item: ItemObject) -> str:
         return 'CRIT_AVOID'
 
     @staticmethod
-    def attack_speed_formula(unit, item) -> str:
+    def attack_speed_formula(unit: UnitObject, item: ItemObject) -> str:
         return 'ATTACK_SPEED'
 
     @staticmethod
-    def defense_speed_formula(unit, item) -> str:
+    def defense_speed_formula(unit: UnitObject, item: ItemObject) -> str:
         return 'DEFENSE_SPEED'
 
     @staticmethod
-    def text_color(unit, item) -> str:
+    def text_color(unit: UnitObject, item: ItemObject) -> str:
         return None
 
-def get_all_components(unit, item) -> list:
+def get_all_components(unit: UnitObject, item: ItemObject) -> list:
     from app.engine import skill_system
     override_components = skill_system.item_override(unit, item)
     override_component_nids = [c.nid for c in override_components]
@@ -119,7 +119,7 @@ def get_all_components(unit, item) -> list:
     all_components = [c for c in item.components] + override_components
     return all_components
 
-def available(unit, item) -> bool:
+def available(unit: UnitObject, item: ItemObject) -> bool:
     """
     If any hook reports false, then it is false
     """
@@ -135,7 +135,7 @@ def available(unit, item) -> bool:
                     return False
     return True
 
-def exp(playback, unit, item):
+def exp(playback, unit: UnitObject, item: ItemObject):
     all_components = get_all_components(unit, item)
     val = 0
     for component in all_components:
@@ -143,7 +143,7 @@ def exp(playback, unit, item):
             val += component.exp(playback, unit, item)
     return val
 
-def stat_change(unit, item, stat_nid) -> int:
+def stat_change(unit: UnitObject, item: ItemObject, stat_nid) -> int:
     bonus = 0
     all_components = get_all_components(unit, item)
     for component in all_components:
@@ -152,7 +152,7 @@ def stat_change(unit, item, stat_nid) -> int:
             bonus += d.get(stat_nid, 0)
     return bonus
 
-def stat_change_contribution(unit, item, stat_nid) -> list:
+def stat_change_contribution(unit: UnitObject, item: ItemObject, stat_nid) -> list:
     contribution = {}
     all_components = get_all_components(unit, item)
     for component in all_components:
@@ -166,7 +166,7 @@ def stat_change_contribution(unit, item, stat_nid) -> list:
                     contribution[item.name] = val
     return contribution
 
-def is_broken(unit, item) -> bool:
+def is_broken(unit: UnitObject, item: ItemObject) -> bool:
     """
     If any hook reports true, then it is true
     """
@@ -182,7 +182,7 @@ def is_broken(unit, item) -> bool:
                     return True
     return False
 
-def on_broken(unit, item):
+def on_broken(unit: UnitObject, item: ItemObject):
     all_components = get_all_components(unit, item)
     for component in all_components:
         if component.defines('on_broken'):
@@ -192,7 +192,7 @@ def on_broken(unit, item):
             if component.defines('on_broken'):
                 component.on_broken(unit, item.parent_item)
 
-def is_unusable(unit, item) -> bool:
+def is_unusable(unit: UnitObject, item: ItemObject) -> bool:
     """
     If any hook reports true, then it is true
     """
@@ -208,7 +208,7 @@ def is_unusable(unit, item) -> bool:
                     return True
     return False
 
-def on_unusable(unit, item):
+def on_unusable(unit: UnitObject, item: ItemObject):
     all_components = get_all_components(unit, item)
     for component in all_components:
         if component.defines('on_unusable'):
@@ -218,7 +218,7 @@ def on_unusable(unit, item):
             if component.defines('on_unusable'):
                 component.on_unusable(unit, item.parent_item)
 
-def valid_targets(unit, item) -> set:
+def valid_targets(unit: UnitObject, item: ItemObject) -> set:
     targets = set()
     all_components = get_all_components(unit, item)
     for component in all_components:
@@ -226,7 +226,7 @@ def valid_targets(unit, item) -> set:
             targets |= component.valid_targets(unit, item)
     return targets
 
-def target_restrict(unit, item, def_pos, splash) -> bool:
+def target_restrict(unit: UnitObject, item: ItemObject, def_pos, splash) -> bool:
     all_components = get_all_components(unit, item)
     for component in all_components:
         if component.defines('target_restrict'):
@@ -234,7 +234,7 @@ def target_restrict(unit, item, def_pos, splash) -> bool:
                 return False
     return True
 
-def range_restrict(unit, item) -> Tuple[Set, bool]:
+def range_restrict(unit: UnitObject, item: ItemObject) -> Tuple[Set, bool]:
     restricted_range = set()
     any_defined = False
     all_components = get_all_components(unit, item)
@@ -247,7 +247,7 @@ def range_restrict(unit, item) -> Tuple[Set, bool]:
     else:
         return None
 
-def item_restrict(unit, item, defender, def_item) -> bool:
+def item_restrict(unit: UnitObject, item: ItemObject, defender, def_item: ItemObject) -> bool:
     all_components = get_all_components(unit, item)
     for component in all_components:
         if component.defines('item_restrict'):
@@ -255,7 +255,7 @@ def item_restrict(unit, item, defender, def_item) -> bool:
                 return False
     return True
 
-def ai_priority(unit, item, target, move) -> float:
+def ai_priority(unit: UnitObject, item: ItemObject, target: UnitObject, move) -> float:
     custom_ai_flag: bool = False
     ai_priority = 0
     all_components = get_all_components(unit, item)
@@ -269,7 +269,7 @@ def ai_priority(unit, item, target, move) -> float:
         # Returns None when no custom ai is available
         return None
 
-def splash(unit, item, position) -> tuple:
+def splash(unit: UnitObject, item: ItemObject, position) -> tuple:
     """
     Returns main target position and splash positions
     """
@@ -302,7 +302,7 @@ def splash(unit, item, position) -> tuple:
         else:
             return position, []
 
-def splash_positions(unit, item, position) -> set:
+def splash_positions(unit: UnitObject, item: ItemObject, position) -> set:
     positions = set()
     all_components = get_all_components(unit, item)
     for component in all_components:
@@ -327,7 +327,7 @@ def find_hp(actions, target):
             starting_hp += subaction.num
     return starting_hp
 
-def after_strike(actions, playback, unit, item, target, item2, mode, attack_info, strike):
+def after_strike(actions, playback, unit: UnitObject, item: ItemObject, target: UnitObject, item2: ItemObject, mode, attack_info, strike):
     all_components = get_all_components(unit, item)
     for component in all_components:
         if component.defines('after_strike'):
@@ -337,7 +337,7 @@ def after_strike(actions, playback, unit, item, target, item2, mode, attack_info
             if component.defines('after_strike'):
                 component.after_strike(actions, playback, unit, item.parent_item, target, mode, attack_info, strike)
 
-def on_hit(actions, playback, unit, item, target, item2, target_pos, mode, attack_info, first_item):
+def on_hit(actions, playback, unit: UnitObject, item: ItemObject, target: UnitObject, item2: ItemObject, target_pos, mode, attack_info, first_item: ItemObject):
     all_components = get_all_components(unit, item)
     for component in all_components:
         if component.defines('on_hit'):
@@ -360,7 +360,7 @@ def on_hit(actions, playback, unit, item, target, item2, target_pos, mode, attac
     if target and not any(brush.nid in ('unit_tint_add', 'unit_tint_sub') for brush in playback):
         playback.append(pb.UnitTintAdd(target, (255, 255, 255)))
 
-def on_crit(actions, playback, unit, item, target, item2, target_pos, mode, attack_info, first_item):
+def on_crit(actions, playback, unit: UnitObject, item: ItemObject, target: UnitObject, item2: ItemObject, target_pos, mode, attack_info, first_item: ItemObject):
     all_components = get_all_components(unit, item)
     for component in all_components:
         if component.defines('on_crit'):
@@ -386,7 +386,7 @@ def on_crit(actions, playback, unit, item, target, item2, target_pos, mode, atta
         if not any(brush.nid == 'crit_tint' for brush in playback):
             playback.append(pb.CritTint(target, (255, 255, 255)))
 
-def on_glancing_hit(actions, playback, unit, item, target, item2, target_pos, mode, attack_info, first_item):
+def on_glancing_hit(actions, playback, unit: UnitObject, item: ItemObject, target: UnitObject, item2: ItemObject, target_pos, mode, attack_info, first_item: ItemObject):
     all_components = get_all_components(unit, item)
     for component in all_components:
         if component.defines('on_glancing_hit'):
@@ -413,7 +413,7 @@ def on_glancing_hit(actions, playback, unit, item, target, item2, target_pos, mo
     if target and not any(brush.nid in ('unit_tint_add', 'unit_tint_sub') for brush in playback):
         playback.append(pb.UnitTintAdd(target, (255, 255, 255)))
 
-def on_miss(actions, playback, unit, item, target, item2, target_pos, mode, attack_info, first_item):
+def on_miss(actions, playback, unit: UnitObject, item: ItemObject, target: UnitObject, item2: ItemObject, target_pos, mode, attack_info, first_item: ItemObject):
     all_components = get_all_components(unit, item)
     for component in all_components:
         if component.defines('on_miss'):
@@ -428,14 +428,14 @@ def on_miss(actions, playback, unit, item, target, item2, target_pos, mode, atta
     playback.append(pb.HitSound('Attack Miss 2'))
     playback.append(pb.HitAnim('MapMiss', target))
 
-def item_icon_mod(unit, item, target, sprite):
+def item_icon_mod(unit: UnitObject, item: ItemObject, target: UnitObject, sprite):
     all_components = get_all_components(unit, item)
     for component in all_components:
         if component.defines('item_icon_mod'):
             sprite = component.item_icon_mod(unit, item, target, sprite)
     return sprite
 
-def can_unlock(unit, item, region) -> bool:
+def can_unlock(unit: UnitObject, item: ItemObject, region) -> bool:
     all_components = get_all_components(unit, item)
     for component in all_components:
         if component.defines('can_unlock'):
@@ -443,7 +443,7 @@ def can_unlock(unit, item, region) -> bool:
                 return True
     return False
 
-def init(item):
+def init(item: ItemObject):
     """
     Initializes any data on the parent item if necessary
     Do not put attribute initialization

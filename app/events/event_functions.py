@@ -117,6 +117,9 @@ def add_portrait(self: Event, portrait, screen_position: Tuple | str, slide=None
     # If already present, don't add
     if name in self.portraits and not self.portraits[name].remove:
         return False
+    if not portrait_prefab:
+        self.logger.error("add_portrait: Couldn't find portrait %s" % name)
+        return False
 
     position, mirror = parse_screen_position(screen_position)
 

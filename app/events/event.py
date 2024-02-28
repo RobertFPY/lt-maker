@@ -669,7 +669,6 @@ class Event():
         else:
             portrait = RESOURCES.portraits.get(name)
         if not portrait:
-            self.logger.error("add_portrait: Couldn't find portrait %s" % name)
             return None, nid
         return portrait, nid
 

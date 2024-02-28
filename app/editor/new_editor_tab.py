@@ -32,6 +32,7 @@ class NewEditorTab(QWidget, Generic[T]):
 
     def __init__(self, parent, database: Database) -> None:
         QWidget.__init__(self, parent)
+        self.setWindowTitle(_('%s Editor') % self.properties_type.title)
         self._db = database
         self.categories = self.data.categories
 

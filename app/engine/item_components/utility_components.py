@@ -34,7 +34,7 @@ class Heal(ItemComponent):
                 return True
         return False
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         heal = self._get_heal_amount(unit, target)
         true_heal = min(heal, target.get_max_hp() - target.get_hp())
         actions.append(action.ChangeHP(target, heal))
@@ -89,7 +89,7 @@ class Refresh(ItemComponent):
             if s.finished:
                 return True
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         actions.append(action.Reset(target))
         playback.append(pb.RefreshHit(unit, item, target))
 
@@ -112,7 +112,7 @@ class Restore(ItemComponent):
                 return True
         return False
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         for skill in target.all_skills[:]:
             if self._can_be_restored(skill):
                 actions.append(action.RemoveSkill(target, skill))
@@ -134,6 +134,7 @@ class UnlockStaff(ItemComponent):
     tag = ItemTags.UTILITY
 
     _did_hit = False
+    _target_position = None
 
     def _valid_region(self, region) -> bool:
         return region.region_type == RegionType.EVENT and 'can_unlock' in region.condition
@@ -150,18 +151,21 @@ class UnlockStaff(ItemComponent):
         return position, []
 
     def target_restrict(self, unit, item, def_pos, splash) -> bool:
-        for pos in [def_pos] + splash:
+        positions = [def_pos] if def_pos else []
+        positions += splash
+        for pos in positions:
             for region in game.level.regions:
                 if self._valid_region(region) and region.contains(def_pos):
                     return True
         return False
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         self._did_hit = True
+        self._target_position = target_pos
 
-    def end_combat(self, playback, unit, item, target, mode):
+    def end_combat(self, playback, unit, item, target, item2, mode):
         if self._did_hit:
-            pos = game.cursor.position
+            pos = self._target_position
             region = None
             for reg in game.level.regions:
                 if self._valid_region(reg) and reg.contains(pos):
@@ -172,6 +176,7 @@ class UnlockStaff(ItemComponent):
                 if did_trigger and region.only_once:
                     action.do(action.RemoveRegion(region))
         self._did_hit = False
+        self._target_position = None
 
 class CanUnlock(ItemComponent):
     nid = 'can_unlock'
@@ -223,12 +228,12 @@ class Repair(ItemComponent):
             return True
         return False
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         target_item = item.data.get('target_item')
         if target_item:
             actions.append(action.RepairItem(target_item))
 
-    def end_combat(self, playback, unit, item, target, mode):
+    def end_combat(self, playback, unit, item, target, item2, mode):
         item.data['target_item'] = None
 
 class Trade(ItemComponent):
@@ -238,10 +243,10 @@ class Trade(ItemComponent):
 
     _did_hit = False
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         self._did_hit = True
 
-    def end_combat(self, playback, unit, item, target, mode):
+    def end_combat(self, playback, unit, item, target, item2, mode):
         if self._did_hit and target:
             game.cursor.cur_unit = unit
             game.cursor.set_pos(target.position)

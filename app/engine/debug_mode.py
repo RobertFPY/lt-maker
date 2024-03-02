@@ -13,18 +13,18 @@ from app.engine.sound import get_sound_thread
 from app.engine.sprites import SPRITES
 from app.engine.state import MapState
 from app.events import event_commands
-from app.events.event import Event
 from app.events.triggers import GenericTrigger
 from app.utilities.enums import HAlignment
 from app.utilities.typing import NID
 
 
 class DebugState(MapState):
-    num_back = 4
-    backspace_time = 80 # ms
+    num_back: int = 4
+    backspace_time: int = 80  # ms
+    current_command: str = ''
     commands = config.get_debug_commands()
     bg = SPRITES.get('debug_bg').convert_alpha()
-    quit_commands = ['q', 'exit', '']
+    quit_commands: List[str] = ['q', 'exit', '']
 
     def begin(self):
         game.cursor.show()

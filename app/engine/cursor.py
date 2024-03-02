@@ -53,6 +53,9 @@ class BaseCursor():
     def show(self):
         self.visible = True
 
+    def is_hidden(self) -> bool:
+        return not self.visible
+
     def get_bounds(self) -> Tuple[int, int, int, int]:
         """Boundaries of the cursor traversal. Useful if you don't want
         the cursor to hover over the edges of the map. Format is

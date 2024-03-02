@@ -160,10 +160,10 @@ class LostOnEndCombat2(SkillComponent):
             self.value.update(value)
         self.marked_for_delete = False
 
-    def cleanup_combat_unconditional(self, playback, unit, item, target, mode):
+    def cleanup_combat_unconditional(self, playback, unit, item, target, item2, mode):
         self.marked_for_delete = True
 
-    def post_combat_unconditional(self, playback, unit, item, target, mode):
+    def post_combat_unconditional(self, playback, unit, item, target, item2, mode):
         if not self.marked_for_delete:
             return
         from app.engine import skill_system
@@ -197,7 +197,7 @@ class LostOnKill(SkillComponent):
     desc = "Remove after getting a kill"
     tag = SkillTags.TIME
 
-    def post_combat_unconditional(self, playback, unit, item, target, mode):
+    def post_combat_unconditional(self, playback, unit, item, target, item2, mode):
         if target and target.get_hp() <= 0:
             action.do(action.RemoveSkill(unit, self.skill))
 

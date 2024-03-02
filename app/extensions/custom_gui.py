@@ -1,12 +1,15 @@
-from typing import Generic, Type, TypeVar
+from __future__ import annotations
+from typing import Any, Generic, List, Optional, Tuple, Type, TypeVar
 
-from PyQt5.QtCore import QItemSelectionModel, QSize, Qt
+from dataclasses import dataclass
+
+from PyQt5.QtCore import QAbstractItemModel, QItemSelectionModel, QSize, Qt
 from PyQt5.QtWidgets import (QAbstractItemView, QAction, QApplication,
                              QComboBox, QDialog, QDialogButtonBox, QFrame,
                              QHBoxLayout, QItemDelegate, QLabel, QLineEdit,
                              QListView, QMenu, QPushButton, QSizePolicy,
                              QSpinBox, QTableView, QTreeView, QVBoxLayout,
-                             QWidget)
+                             QWidget, QTabWidget)
 
 
 class SimpleDialog(QDialog):
@@ -28,54 +31,73 @@ class Dialog(QDialog):
         self.buttonbox.accepted.connect(self.accept)
         self.buttonbox.rejected.connect(self.reject)
 
+@dataclass
+class DeletionTab:
+    """
+    Contains all the information needed to render a single tab in the 
+    DeletionDialog below
+    """
+    affected_items: List[Any]  # What prefabs will be affected by the deletion
+    model: QAbstractItemModel  # How do we display the prefabs to the user
+    msg: str  # Informs the user about what will happen if they proceed
+    label: str  # What kind of things are being deleted?
+
 class DeletionDialog(Dialog):
-    def __init__(self, affected_items, model, msg, box=None, parent=None):
+    def __init__(self, tabs: List[DeletionTab], swap_box: Optional[ComboBox], parent=None):
         super().__init__(parent)
         self.setWindowTitle("Deletion Warning")
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
 
-        self.model = model(affected_items, parent)
-        self.view = QListView(self)
-        self.view.setModel(self.model)
-        self.view.setSelectionMode(0)  # No selection
-        self.view.setIconSize(QSize(32, 32))
+        self.tab_bar = QTabWidget(self)
+        for tab in tabs:
+            model = tab.model(tab.affected_items, parent)
+            view = QListView(self)
+            view.setModel(model)
+            view.setSelectionMode(0)  # No selection
+            view.setIconSize(QSize(32, 32))
 
-        self.text1 = QLabel(msg)
-        if box:
-            self.text2 = QLabel("Swap these references to:")
-            self.box = box
+            layout = QVBoxLayout()
+            layout.addWidget(QLabel(tab.msg))
+            layout.addWidget(view)
 
-        self.layout.addWidget(self.text1)
-        self.layout.addWidget(self.view)
-        if box:
-            self.layout.addWidget(self.text2)
-            self.layout.addWidget(self.box)
+            frame = QFrame(self)
+            frame.setLayout(layout)
+
+            self.tab_bar.addTab(frame, tab.label)
+
+        self.layout.addWidget(self.tab_bar)
+        self.swap_box = swap_box
+        if self.swap_box:
+            self.layout.addWidget(QLabel("Swap these references to:"))
+            self.layout.addWidget(self.swap_box)
         self.layout.addWidget(self.buttonbox)
 
     @staticmethod
-    def get_swap(affected_items, model, msg, box, parent=None):
-        dialog = DeletionDialog(affected_items, model, msg, box, parent)
+    def get_swap(tabs: List[DeletionTab], swap_box: ComboBox, 
+                 parent=None) -> Tuple[Optional[Any], bool]:
+        dialog = DeletionDialog(tabs, swap_box, parent)
         result = dialog.exec_()
         if result == QDialog.Accepted:
-            idx = dialog.box.edit.currentIndex()
-            return dialog.box.model._data[idx], True
+            idx = dialog.swap_box.edit.currentIndex()
+            return dialog.swap_box.model._data[idx], True
         else:
             return None, False
 
     @staticmethod
-    def get_simple_swap(affected_items, model, msg, box, parent=None):
-        dialog = DeletionDialog(affected_items, model, msg, box, parent)
+    def get_simple_swap(tabs: List[DeletionTab], swap_box: ComboBox, 
+                        parent=None) -> Tuple[Optional[int], bool]:
+        dialog = DeletionDialog(tabs, swap_box, parent)
         result = dialog.exec_()
         if result == QDialog.Accepted:
-            idx = dialog.box.edit.currentIndex()
+            idx = dialog.swap_box.edit.currentIndex()
             return idx, True
         else:
             return None, False
 
     @staticmethod
-    def inform(affected_items, model, msg, parent=None):
-        dialog = DeletionDialog(affected_items, model, msg, None, parent)
+    def inform(tabs: List[DeletionTab], parent=None) -> bool:
+        dialog = DeletionDialog(tabs, None, parent)
         result = dialog.exec_()
         if result == QDialog.Accepted:
             return True

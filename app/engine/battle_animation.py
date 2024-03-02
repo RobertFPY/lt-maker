@@ -161,6 +161,8 @@ class BattleAnimation():
         colors = self.current_palette.colors
         conversion_dict = {(0, coord[0], coord[1]): (color[0], color[1], color[2]) for coord, color in colors.items()}
         for frame in self.anim_prefab.frames:
+            if not frame.image:  
+                frame.image = engine.subsurface(self.anim_prefab.image, frame.rect)
             converted_image = image_mods.color_convert(engine.copy_surface(frame.image), conversion_dict)
             self.image_directory[frame.nid] = converted_image
 
@@ -779,7 +781,7 @@ class BattleAnimation():
             self.screen_dodge_counter -= 1
             image = self.screen_dodge_image
             # done
-            if self.screen_dodge_color <= 0:
+            if self.screen_dodge_counter <= 0:
                 self.screen_dodge_color = None
                 self.screen_dodge_counter = 0
                 self.screen_dodge_image = None

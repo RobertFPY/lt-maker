@@ -34,6 +34,6 @@ class TerrainCatalog(Data[Terrain]):
         nid = name = str_utils.get_next_name("New Terrain", nids)
         terrain_mcost = db.mcost.terrain_types[0]
         platform = RESOURCES.get_platform_types()[0][0]
-        new_terrain = Terrain(nid, name, (0, 0, 0), 'Grass', platform, terrain_mcost)
+        new_terrain = Terrain(nid, name, (0, 0, 0), 'Grass', platform, mtype=terrain_mcost)
         self.append(new_terrain)
         return new_terrain

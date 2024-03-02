@@ -36,11 +36,11 @@ class PermanentStatChange(ItemComponent):
     def simple_target_restrict(self, unit, item):
         return self._target_restrict(unit)
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         self._hit_count += 1
         playback.append(pb.StatHit(unit, item, target))
 
-    def end_combat(self, playback, unit, item, target, mode):
+    def end_combat(self, playback, unit, item, target, item2, mode):
         if self._hit_count > 0:
             stat_changes = {k: v*self._hit_count for (k, v) in self.value}
             # clamp stat changes
@@ -59,7 +59,7 @@ class PermanentGrowthChange(ItemComponent):
 
     expose = (ComponentType.Dict, ComponentType.Stat)
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         growth_changes = {k: v for (k, v) in self.value}
         actions.append(action.ApplyGrowthChanges(target, growth_changes))
         playback.append(pb.StatHit(unit, item, target))
@@ -71,7 +71,7 @@ class WexpChange(ItemComponent):
 
     expose = (ComponentType.Dict, ComponentType.WeaponType)
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         wexp_changes = {k: v for (k, v) in self.value}
         for weapon_type, wexp_change in wexp_changes.items():
             actions.append(action.AddWexp(target, weapon_type, wexp_change))
@@ -84,7 +84,7 @@ class FatigueOnHit(ItemComponent):
     expose = ComponentType.Int
     value = 1
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         actions.append(action.ChangeFatigue(target, self.value))
 
 def ai_status_priority(unit, target, item, move, status_nid) -> float:
@@ -107,7 +107,7 @@ class StatusOnHit(ItemComponent):
 
     expose = ComponentType.Skill  # Nid
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         act = action.AddSkill(target, self.value, unit)
         actions.append(act)
         playback.append(pb.StatusHit(unit, item, target, self.value))
@@ -124,7 +124,7 @@ class SelfStatusOnHit(ItemComponent):
 
     expose = ComponentType.Skill  # Nid
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         act = action.AddSkill(unit, self.value, unit)
         actions.append(act)
         playback.append(pb.StatusHit(unit, item, unit, self.value))
@@ -141,7 +141,7 @@ class StatusesOnHit(ItemComponent):
 
     expose = (ComponentType.List, ComponentType.Skill)  # Nid
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         for status_nid in self.value:
             act = action.AddSkill(target, status_nid, unit)
             actions.append(act)
@@ -163,10 +163,10 @@ class StatusAfterCombatOnHit(StatusOnHit):
 
     _did_hit = set()
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         self._did_hit.add(target)
 
-    def end_combat(self, playback, unit, item, target, mode):
+    def end_combat(self, playback, unit, item, target, item2, mode):
         for target in self._did_hit:
             act = action.AddSkill(target, self.value, unit)
             action.do(act)
@@ -197,7 +197,7 @@ class Shove(ItemComponent):
             return new_position
         return False
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         if not skill_system.ignore_forced_movement(target):
             new_position = self._check_shove(target, unit.position, self.value)
             if new_position:
@@ -212,11 +212,14 @@ class ShoveOnEndCombat(Shove):
     expose = ComponentType.Int
     value = 1
 
-    def end_combat(self, playback, unit, item, target, mode):
+    def end_combat(self, playback, unit, item, target, item2, mode):
         if not skill_system.ignore_forced_movement(target) and mode:
             new_position = self._check_shove(target, unit.position, self.value)
             if new_position:
                 action.do(action.ForcedMovement(target, new_position))
+
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
+        pass
 
 class ShoveTargetRestrict(Shove):
     nid = 'shove_target_restrict'
@@ -238,10 +241,10 @@ class ShoveTargetRestrict(Shove):
                 return True
         return False
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         pass
 
-    def end_combat(self, playback, unit, item, target, mode):
+    def end_combat(self, playback, unit, item, target, item2, mode):
         pass
 
 class Swap(ItemComponent):
@@ -249,7 +252,7 @@ class Swap(ItemComponent):
     desc = "Item swaps user with target on hit"
     tag = ItemTags.SPECIAL
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         if not skill_system.ignore_forced_movement(unit) and not skill_system.ignore_forced_movement(target):
             actions.append(action.Swap(unit, target))
             playback.append(pb.SwapHit(unit, item, target))
@@ -259,7 +262,7 @@ class SwapOnEndCombat(ItemComponent):
     desc = "Item swaps user with target after initiated combat"
     tag = ItemTags.SPECIAL
 
-    def end_combat(self, playback, unit, item, target, mode):
+    def end_combat(self, playback, unit, item, target, item2, mode):
         if target and not skill_system.ignore_forced_movement(unit) and \
                 not skill_system.ignore_forced_movement(target) and \
                 mode == 'attack':
@@ -287,7 +290,7 @@ class Pivot(ItemComponent):
             return new_position
         return False
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         if not skill_system.ignore_forced_movement(unit):
             new_position = self._check_pivot(unit, target.position, self.value)
             if new_position:
@@ -316,10 +319,10 @@ class PivotTargetRestrict(Pivot):
                 return True
         return False
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         pass
 
-    def end_combat(self, playback, unit, item, target, mode):
+    def end_combat(self, playback, unit, item, target, item2, mode):
         pass
 
 class DrawBack(ItemComponent):
@@ -348,7 +351,7 @@ class DrawBack(ItemComponent):
             return new_position_user, new_position_target
         return None, None
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         if not skill_system.ignore_forced_movement(target):
             new_position_user, new_position_target = self._check_draw_back(target, unit, self.value)
             if new_position_user and new_position_target:
@@ -382,10 +385,10 @@ class DrawBackTargetRestrict(DrawBack):
                 return True
         return False
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         pass
 
-    def end_combat(self, playback, unit, item, target, mode):
+    def end_combat(self, playback, unit, item, target, item2, mode):
         pass
 
 class Steal(ItemComponent):
@@ -431,7 +434,7 @@ class Steal(ItemComponent):
             return False
         return True
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         target_item = item.data.get('target_item')
         if target_item:
             actions.append(action.RemoveItem(target, target_item))
@@ -441,7 +444,7 @@ class Steal(ItemComponent):
             actions.append(action.UpdateRecords('steal', (unit.nid, target.nid, target_item.nid)))
             self._did_steal = True
 
-    def end_combat(self, playback, unit, item, target, mode):
+    def end_combat(self, playback, unit, item, target, item2, mode):
         if self._did_steal:
             target_item = item.data.get('target_item')
             game.alerts.append(banner.StoleItem(unit, target_item))
@@ -478,7 +481,7 @@ class EventOnHit(ItemComponent):
 
     expose = ComponentType.Event
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         event_prefab = DB.events.get_from_nid(self.value)
         if event_prefab:
             local_args = {'target_pos': target_pos, 'mode': mode, 'attack_info': attack_info, 'item': item}
@@ -493,15 +496,15 @@ class EventAfterCombatOnHit(ItemComponent):
 
     _did_hit = False
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         self._did_hit = True
         self.target_pos = target_pos
 
-    def end_combat(self, playback, unit, item, target, mode):
+    def end_combat(self, playback, unit, item, target, item2, mode):
         if self._did_hit and target:
             event_prefab = DB.events.get_from_nid(self.value)
             if event_prefab:
-                local_args = {'target_pos': self.target_pos, 'item': item, 'mode': mode}
+                local_args = {'target_pos': self.target_pos, 'item': item, 'item2': item2, 'mode': mode}
                 game.events.trigger_specific_event(event_prefab.nid, unit, target, unit.position, local_args)
         self._did_hit = False
 
@@ -512,8 +515,8 @@ class EventAfterCombatEvenMiss(ItemComponent):
 
     expose = ComponentType.Event
 
-    def end_combat(self, playback, unit, item, target, mode):
+    def end_combat(self, playback, unit, item, target, item2, mode):
         event_prefab = DB.events.get_from_nid(self.value)
         if event_prefab:
-            local_args = {'item': item, 'mode': mode}
+            local_args = {'item': item, 'item2': item2, 'mode': mode}
             game.events.trigger_specific_event(event_prefab.nid, unit, target, unit.position, local_args)

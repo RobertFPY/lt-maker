@@ -165,21 +165,20 @@ class MapSpriteProperties(QWidget):
             frame = map_sprite_model.color_shift_team(frame, team_nid)
 
         # Background stuff
-        if self.bg_button.isChecked():
-            image = QImage('resources/map_sprite_bg.png')
-        else:
-            image = QImage(48, 48, QImage.Format_ARGB32)
-            image.fill(QColor(0, 0, 0, 0))
-
+        image = QImage(48, 56, QImage.Format_ARGB32)
+        image.fill(QColor(0, 0, 0, 0))
         painter = QPainter()
         painter.begin(image)
 
+        if self.bg_button.isChecked():
+            painter.drawImage(0, 8, QImage('resources/map_sprite_bg.png'))
+
         if self.grid_button.isChecked():
             grid_image = QImage('resources/map_sprite_grid.png')
-            painter.drawImage(0, 0, grid_image)
+            painter.drawImage(0, 8, grid_image)
 
         x, y = -(frame.width() - 48)//2, -(frame.height() - 48)//2
-        painter.drawImage(x, -8, frame)
+        painter.drawImage(x, 0, frame)
         painter.end()
 
         pix = QPixmap.fromImage(image)

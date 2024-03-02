@@ -3,6 +3,7 @@ import logging
 from typing import List
 from app.data.database.components import ComponentType, convert_type_from_string
 from app.data.database.database import Database
+from app.data.resources.resources import Resources
 from app.data.database.items import ItemCatalog, ItemPrefab
 from app.data.database.klass import ClassCatalog
 from app.data.database.units import UnitCatalog, UnitPrefab
@@ -94,8 +95,8 @@ def klass_db_to_csv(klass_db: ClassCatalog):
         ss += ','.join([str(dat) for dat in data]) + '\n'
     return ss
 
-def dump_as_csv(db: Database):
-    db_validator = DatabaseValidatorEngine(db)
+def dump_as_csv(db: Database, resources: Resources):
+    db_validator = DatabaseValidatorEngine(db, resources)
     db_validator.repair()
     # csv dump functions
     dump = []

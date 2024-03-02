@@ -4,7 +4,7 @@ from typing import Callable, List
 
 from app.constants import WINHEIGHT, WINWIDTH
 from app.engine import config as cf
-from app.events import event_portrait, screen_positions, event_commands
+from app.events import event_portrait, screen_positions
 from app.engine import engine, image_mods, text_funcs
 from app.engine.base_surf import create_base_surf
 from app.engine.fonts import FONT
@@ -17,21 +17,25 @@ from app.engine.sound import get_sound_thread
 from app.engine.sprites import SPRITES
 from app.events.speak_style import SpeakStyle
 from app.utilities import utils
-from app.utilities.enums import Alignments
+from app.utilities.enums import Alignments, HAlignment
 
 import logging
 
+from app.utilities.str_utils import SHIFT_NEWLINE
+
 MATCH_DIALOG_COMMAND_RE = re.compile('(\{[^\{]*?\})')
-def clean_newlines(text: str) -> str:
+def process_dialog_shorthand(text: str) -> str:
     if not text:
         return text
     # special char: this is a unicode single-line break.
     # basically equivalent to {br}
     # the first char shouldn't be one of these
-    if text[0] == '\u2028':
+    if text[0] == SHIFT_NEWLINE:
         text = text[1:]
-    text = text.replace('\u2028', '{sub_break}')  # sub break to distinguish it
+    text = text.replace(SHIFT_NEWLINE, '{sub_break}')  # sub break to distinguish it
     text = text.replace('\n', '{br}')
+    text = text.replace('|', '{w}{br}')
+    text = text.replace('{semicolon}', ';')
     return text
 
 class DialogState(Enum):
@@ -163,14 +167,12 @@ class Dialog():
         self._state = value
 
     def format_text(self, text):
-        # Pipe character replacement
-        text = text.replace('|', '{w}{br}')
+        text = process_dialog_shorthand(text)
         if text.endswith('{no_wait}'):
             text = text[:-len('{no_wait}')]
             self.no_wait = True
         elif not text.endswith('{w}'):
             text += '{w}'
-        text = text.replace('{semicolon}', ';')
         processed_text: List[str] = []
         # obligatory regex explanation: turns "A line.{w} With some <red>text</>."
         # into ["A line.", "{w}", " With some ", "<red>", "text", "</>", "."]
@@ -301,7 +303,7 @@ class Dialog():
             self.speed = self.starting_speed
         elif command == ' ':  # Check to see if we should move to next line
             # Wow this is cursed
-            # Basically, we need to make sure we are using 
+            # Basically, we need to make sure we are using
             # a fixed tags version of what the dialog would look like,
             # if the next word was added to the current line (self.text_lines[-1])
             next_word = self._get_next_word(self.text_index)
@@ -606,7 +608,7 @@ class DynamicDialogWrapper():
                  name_tag_bg='name_tag', flags=None) -> None:
         # eval trick
         self.resolve_text_func: Callable[[], str] = text_func
-        self.resolved_text = clean_newlines(self.resolve_text_func()).replace('{w}', '').replace('|', '{br}')
+        self.resolved_text = process_dialog_shorthand(self.resolve_text_func()).replace('{w}', '')
         # dialog props
         self.portrait = portrait
         self.background = background
@@ -629,7 +631,7 @@ class DynamicDialogWrapper():
                              font_type, num_lines, draw_cursor, message_tail, transparency, name_tag_bg, flags)
 
     def update(self):
-        new_text = clean_newlines(self.resolve_text_func()).replace('{w}', '').replace('|', '{br}')
+        new_text = process_dialog_shorthand(self.resolve_text_func()).replace('{w}', '')
         if new_text != self.resolved_text:
             self.resolved_text = new_text
             self.dialog = Dialog(self.resolved_text, self.portrait, self.background,
@@ -724,10 +726,10 @@ class Credits():
     def __init__(self, title, text, wait_flag=False, center_flag=True):
         self.title = title
         self.text = text
-        self.title_font = FONT['credit_title-white']
-        self.title_font_name = 'credit_title-white'
-        self.font = FONT['credit-white']
-        self.font_name = 'credit-white'
+        self.title_font = FONT['credit_title']
+        self.title_font_name = 'credit_title'
+        self.font = FONT['credit']
+        self.font_name = 'credit'
 
         self.center_flag = center_flag
         self.wait_flag = wait_flag
@@ -814,19 +816,21 @@ class Ending():
         self.font = FONT['text']
         self.font_name = 'text'
 
-        # Build dialog
-        self.dialog = Dialog(text, num_lines=6, draw_cursor=False)
+        self.build_dialog()
+
+        self.make_background()
+        self.x_position = WINWIDTH
+
+        self.wait_update = 0
+
+    def build_dialog(self):
+        self.dialog = Dialog(self.plain_text, num_lines=6, draw_cursor=False)
         self.dialog.position = (8, 40)
         self.dialog.text_width = WINWIDTH - 32
         self.dialog.width = self.dialog.text_width + 16
         self.dialog.font = FONT['text']
         self.dialog.font_type = 'text'
         self.dialog.font_color = 'white'
-
-        self.make_background()
-        self.x_position = WINWIDTH
-
-        self.wait_update = 0
 
     def make_background(self):
         size = WINWIDTH, WINHEIGHT
@@ -899,3 +903,76 @@ class Ending():
         bg = self.bg.copy()
         self.dialog.draw(bg)
         surf.blit(bg, (self.x_position, 0))
+
+class PairedEnding(Ending):
+    """
+    Contains a dialog
+    """
+    background = SPRITES.get('paired_endings_display')
+
+    def __init__(self, left_portrait, right_portrait, left_title, right_title, text, left_unit, right_unit):
+        self.left_portrait = left_portrait
+        self.right_portrait = right_portrait
+        self.left_title = left_title
+        self.right_title = right_title
+        self.plain_text = text
+        self.speaker = None  # Unused attribute to match Dialog
+        self.left_unit = left_unit  # Used in stats
+        self.right_unit = right_unit
+        self.font_name = 'text'
+
+        self.build_dialog()
+
+        self.make_background()
+        self.x_position = WINWIDTH
+
+        self.wait_update = 0
+
+    def make_background(self):
+        size = WINWIDTH, WINHEIGHT
+        self.bg = engine.create_surface(size, transparent=True)
+        self.bg.blit(self.background, (0, 0))
+        self.bg.blit(self.left_portrait, (8, 49))
+        self.bg.blit(self.right_portrait, (136, 49))
+
+        render_text(self.bg, [self.font_name], [self.left_title], [None], (68, 24), align=HAlignment.CENTER)
+        render_text(self.bg, [self.font_name], [self.right_title], [None], (WINWIDTH - 68, WINHEIGHT - 24), align=HAlignment.CENTER)
+
+        # Stats
+        if self.left_unit:
+            kills = game.records.get_kills(self.left_unit.nid)
+            damage = game.records.get_damage(self.left_unit.nid)
+            healing = game.records.get_heal(self.left_unit.nid)
+
+            FONT['text-yellow'].blit(text_funcs.translate('K'), self.bg, (136, 8))
+            FONT['text-yellow'].blit(text_funcs.translate('D'), self.bg, (168, 8))
+            FONT['text-yellow'].blit(text_funcs.translate('H'), self.bg, (200, 8))
+            FONT['text-blue'].blit(str(kills), self.bg, (144, 8))
+            dam = str(damage)
+            if damage >= 1000:
+                dam = dam[:-3] + '.' + dam[-3] + 'k'
+            heal = str(healing)
+            if healing >= 1000:
+                heal = heal[:-3] + '.' + heal[-3] + 'k'
+            FONT['text-blue'].blit(dam, self.bg, (176, 8))
+            FONT['text-blue'].blit(heal, self.bg, (208, 8))
+
+        if self.right_unit:
+            kills = game.records.get_kills(self.right_unit.nid)
+            damage = game.records.get_damage(self.right_unit.nid)
+            healing = game.records.get_heal(self.right_unit.nid)
+
+            FONT['text-yellow'].blit(text_funcs.translate('K'), self.bg, (8, WINHEIGHT - 23))
+            FONT['text-yellow'].blit(text_funcs.translate('D'), self.bg, (40, WINHEIGHT - 23))
+            FONT['text-yellow'].blit(text_funcs.translate('H'), self.bg, (72, WINHEIGHT - 23))
+            FONT['text-blue'].blit(str(kills), self.bg, (16, WINHEIGHT - 23))
+            dam = str(damage)
+            if damage >= 1000:
+                dam = dam[:-3] + '.' + dam[-3] + 'k'
+            heal = str(healing)
+            if healing >= 1000:
+                heal = heal[:-3] + '.' + heal[-3] + 'k'
+            FONT['text-blue'].blit(dam, self.bg, (48, WINHEIGHT - 23))
+            FONT['text-blue'].blit(heal, self.bg, (80, WINHEIGHT - 23))
+
+        return self.bg

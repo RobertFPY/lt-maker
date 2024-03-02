@@ -1,6 +1,6 @@
 [
     {
-        "nid": "Ocean Seal",
+        "nid": "Ocean_Seal",
         "name": "Ocean Seal",
         "desc": "Promotes Thieves and Pirates.",
         "icon_nid": "Boosters",
@@ -23,13 +23,10 @@
             ],
             [
                 "uses_options",
-                [
-                    [
-                        "LoseUsesOnMiss (T/F)",
-                        "F",
-                        "Lose uses even on miss"
-                    ]
-                ]
+                {
+                    "lose_uses_on_miss": false,
+                    "one_loss_per_combat": false
+                }
             ],
             [
                 "usable_in_base",

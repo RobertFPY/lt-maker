@@ -1,7 +1,7 @@
 from __future__ import annotations
 import logging
 import math
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Dict
 
 from app.data.database.database import DB
 from app.engine import item_system, skill_system, text_funcs
@@ -77,21 +77,27 @@ def repair_price(unit, item):
         repair_cost = math.ceil(charges_used * cost_per_charge)
     return int(repair_cost)
 
-def create_item(unit, item_nid, droppable=False, parent: ItemObject = None) -> ItemObject:
+def create_item(unit, item_nid, droppable: bool = False, parent: ItemObject = None, 
+                assign_ownership: bool = True) -> ItemObject:
+    """Creates an item and all of it's subitems give the item's nid
+    If assign_ownership is True, informs the item which unit and which parent_item
+    owns it. Sometimes set to False so that you can use an action like 
+    AddItemToMultiItem to set these properties instead."""
     item_prefab = DB.items.get(item_nid)
     if not item_prefab:
         logging.error("Couldn't find %s" % item_nid)
         return
     item = ItemObject.from_prefab(item_prefab)
-    if unit:
+    if unit and assign_ownership:
         item.owner_nid = unit.nid
     item_system.init(item)
     if parent: # sub item specific operations
         for component in item.components:
             component.item = parent
-        parent.subitem_uids.append(item.uid)
-        parent.subitems.append(item)
-        item.parent_item = parent
+        if assign_ownership:
+            parent.subitem_uids.append(item.uid)
+            parent.subitems.append(item)
+            item.parent_item = parent
     else: # main item specific operations
         item.droppable = droppable
 
@@ -144,6 +150,15 @@ def get_all_items_with_multiitems(item_list) -> list:
             items += subitems
         items.append(item)
     return items
+
+def get_all_items_and_abilities(unit) -> List[ItemObject]:
+    """
+    Use this to get all items if you want to be able to handle multi_items 
+    AND you want any extra abilities the unit has access to
+    """
+    items = get_all_items(unit)
+    extra_abilities: Dict[str, ItemObject] = skill_system.get_extra_abilities(unit)
+    return items + [ability for name, ability in extra_abilities.items()]
 
 def is_weapon_recursive(unit, item) -> bool:
     if item_system.is_weapon(unit, item):
@@ -200,7 +215,9 @@ def get_range(unit, item) -> set:
     max_range = item_system.maximum_range(unit, item)
 
     max_range = max(0, max_range)
+    min_range = max(0, min_range)
     max_range += skill_system.modify_maximum_range(unit, item)
+    min_range += skill_system.modify_minimum_range(unit, item)
     limit_max = skill_system.limit_maximum_range(unit, item)
     max_range = utils.clamp(max_range, 0, limit_max)
 
@@ -223,6 +240,11 @@ def get_range_string(unit, item):
     else:
         rng = '%d' % max_range
     return rng
+
+def get_max_range(unit: UnitObject) -> int:
+    """Returns the maximum range of all available items for the unit"""
+    items = [item for item in get_all_items(unit) if available(unit, item)]
+    return max([max(get_range(unit, item), default=0) for item in items], default=0)
 
 def create_skill(unit, skill_nid):
     skill_prefab = DB.skills.get(skill_nid)
@@ -265,3 +287,9 @@ def create_skills(unit, skill_nid_list: list) -> list:
 
 def num_stacks(unit: UnitObject, skill_nid: NID) -> int:
     return len([skill for skill in unit.skills if skill.nid == skill_nid])
+
+def can_be_used_in_base(unit: UnitObject, item: ItemObject) -> bool:
+    return (item_system.can_use(unit, item) and
+            available(unit, item) and
+            item_system.can_use_in_base(unit, item) and
+            item_system.simple_target_restrict(unit, item))

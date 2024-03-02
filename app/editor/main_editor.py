@@ -23,6 +23,7 @@ from app.editor.lib.components.menubar import MenuBar
 from app.editor.lib.components.toolbar import Toolbar
 from app.editor.preferences import PreferencesDialog
 from app.editor.save_viewer import SaveViewer
+from app.editor.file_manager.unused_resources_dialog import UnusedResourcesDialog
 
 # Application State
 from app.editor.lib.state_editor.editor_state_manager import EditorStateManager
@@ -40,7 +41,7 @@ from app.editor.overworld_editor.overworld_editor import OverworldEditor
 import app.editor.game_actions.game_actions as GAME_ACTIONS
 
 # Databases
-from app.editor.unit_editor.unit_tab import UnitDatabase
+from app.editor.unit_editor.new_unit_tab import NewUnitDatabase
 from app.editor.team_editor.team_tab import TeamDatabase
 from app.editor.faction_editor.faction_tab import FactionDatabase
 from app.editor.party_editor.party_tab import PartyDatabase
@@ -91,7 +92,7 @@ class MainEditor(QMainWindow):
         main_screen_size = desktop.availableGeometry(desktop.primaryScreen())
 
         # Use setFixedSize to make it permanent and unchangeable
-        default_size = main_screen_size.width()*0.7, main_screen_size.height()*0.7
+        default_size = int(main_screen_size.width()*0.7), int(main_screen_size.height()*0.7)
         self.resize(*default_size)
 
         geometry = self.settings.component_controller.get_geometry(
@@ -224,7 +225,7 @@ class MainEditor(QMainWindow):
         #     "Preload Units...", self, triggered=self.edit_preload_units)
 
         # Database actions
-        database_actions = {_("Units"): UnitDatabase.edit,
+        database_actions = {_("Units"): NewUnitDatabase.edit,
                             _("Teams"): TeamDatabase.edit,
                             _("Factions"): FactionDatabase.edit,
                             _("Parties"): PartyDatabase.edit,
@@ -420,7 +421,7 @@ class MainEditor(QMainWindow):
         self.test_full_act.setEnabled(True)
 
     def test_play_load(self):
-        saved_games = GAME_ACTIONS.get_saved_games()
+        saved_games = GAME_ACTIONS.get_preloaded_games()
         if saved_games:
             save_loc = SaveViewer.get(saved_games, self)
             if not save_loc:
@@ -479,7 +480,7 @@ class MainEditor(QMainWindow):
 
     def auto_open(self, project_path: Optional[str]):
         if not self.project_save_load_handler.auto_open(project_path):
-            exit(0)
+            self.project_save_load_handler.auto_open(DEFAULT_PROJECT)
         self._open()
 
     def _save(self):
@@ -502,7 +503,17 @@ class MainEditor(QMainWindow):
     def remove_unused_resources(self):
         # Need to save first before cleaning
         if self.project_save_load_handler.save():
-            self.project_save_load_handler.clean()
+            unused_resources = self.project_save_load_handler.get_unused_files()
+            # Don't bother if we have no unused resources
+            if not any(fns for fns in unused_resources.values()):
+                QMessageBox.information(
+                    self, "Unused Resources", "No unused resources found!")
+                return
+            # Let the user confirm they want to remove these resources
+            ok = UnusedResourcesDialog.get(unused_resources, self)
+            if not ok:
+                return
+            self.project_save_load_handler.clean(unused_resources)
             current_proj = self.settings.get_current_project()
             self.status_bar.showMessage(
                 'All unused resources removed from %s' % current_proj)
@@ -588,7 +599,7 @@ class MainEditor(QMainWindow):
 
     def check_for_updates(self):
         # Only check for updates in frozen version
-        if hasattr(sys, 'frozen') or True:
+        if hasattr(sys, 'frozen'):
             if autoupdate.check_for_update():
                 link = r"https://gitlab.com/rainlash/lt-maker/-/releases/permalink/latest/downloads/lex_talionis_maker"
                 QMessageBox.information(self, "Update Available", "A new update to LT-maker is available!\n"

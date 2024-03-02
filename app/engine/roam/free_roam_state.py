@@ -117,11 +117,11 @@ class FreeRoamState(MapState):
         """
         if not self.roam_unit:
             return None
-        region = game.get_region_under_pos(self.roam_unit.position)
-        if region and region.region_type == RegionType.EVENT:
+        region = game.get_region_under_pos(self.roam_unit.position, RegionType.EVENT)
+        if region:
             try:
-                truth = evaluate.evaluate(region.condition, self.roam_unit, 
-                                          position=self.roam_unit.position, 
+                truth = evaluate.evaluate(region.condition, self.roam_unit,
+                                          position=self.roam_unit.position,
                                           local_args={'region': region})
                 if truth:
                     return region
@@ -158,6 +158,8 @@ class FreeRoamState(MapState):
         elif region:
             get_sound_thread().play_sfx('Select 2')
             did_trigger = game.events.trigger(triggers.RegionTrigger(region.sub_nid, self.roam_unit, self.roam_unit.position, region))
+            if not did_trigger:  # maybe this uses the more dynamic region trigger
+                did_trigger = game.events.trigger(triggers.OnRegionInteract(self.roam_unit, self.roam_unit.position, region))
             if did_trigger:
                 if region.only_once:
                     action.do(action.RemoveRegion(region))
@@ -188,7 +190,7 @@ class FreeRoamState(MapState):
         did_trigger = game.events.trigger(triggers.RoamPressAux(self.roam_unit, other_unit))
         if not did_trigger:
             game.state.change('option_menu')
-    
+
     def check_start(self):
         """
         # Called whenever the player presses START
@@ -198,7 +200,7 @@ class FreeRoamState(MapState):
         did_trigger = game.events.trigger(triggers.RoamPressStart(self.roam_unit, other_unit))
         if not did_trigger:
             game.state.change('option_menu')
-    
+
     def take_input(self, event):
         if not self.roam_unit:
             return

@@ -4,37 +4,14 @@
         "trigger": "unit_death",
         "level_nid": null,
         "condition": "unit.nid == 'Colm'",
-        "commands": [
-            [
-                "add_portrait",
-                [
-                    "Colm",
-                    "FarRight"
-                ]
-            ],
-            [
-                "speak",
-                [
-                    "Colm",
-                    "To think of it... Me... In this place...|Neimi..."
-                ]
-            ],
-            [
-                "expression",
-                [
-                    "Colm",
-                    "CloseEyes"
-                ]
-            ],
-            [
-                "remove_portrait",
-                [
-                    "Colm"
-                ]
-            ]
-        ],
+        "commands": [],
         "only_once": false,
         "priority": 20,
-        "source": ""
+        "_source": [
+            "add_portrait;Colm;FarRight",
+            "speak;Colm;To think of it... Me... In this place...|Neimi...",
+            "expression;Colm;CloseEyes",
+            "remove_portrait;Colm"
+        ]
     }
 ]

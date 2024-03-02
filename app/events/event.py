@@ -1,5 +1,7 @@
 from __future__ import annotations
-from app.engine.movement.unit_path_movement_component import UnitPathMovementComponent
+from app.data.database.units import UnitPrefab
+from app.data.resources.portraits import PortraitPrefab
+from app.data.resources.resources import RESOURCES
 from app.engine.objects.item import ItemObject
 from app.engine.objects.skill import SkillObject
 from app.engine.text_evaluator import TextEvaluator
@@ -19,22 +21,22 @@ from app.engine.objects.overworld import OverworldNodeObject
 from app.engine.objects.unit import UnitObject
 from app.engine.sound import get_sound_thread
 from app.events import event_commands, triggers
-from app.events.event_parser import EventParser
+from app.events.event_processor import EventProcessor
 from app.events.event_portrait import EventPortrait
 from app.events.event_prefab import EventPrefab
+from app.events.event_version import EventVersion
 from app.events.python_eventing.errors import EventError
-from app.events.python_eventing.python_event_parser import PythonEventParser
+from app.events.python_eventing.python_event_processor import PythonEventProcessor
 from app.events.python_eventing.utils import SAVE_COMMAND_NIDS
 from app.events.speak_style import SpeakStyle
 from app.utilities import str_utils, utils, static_random
-from app.utilities.typing import NID, Color3
+from app.utilities.data import HasNid
+from app.utilities.typing import NID, Color3, Point
 
 class EvaluateException(EventError):
     what = "Could not evaluate expression."
 
 class Event():
-    true_vals = ('t', 'true', 'True', '1', 'y', 'yes')
-
     skippable = {"wait", "bop_portrait", "sound",
                  "location_card", "credits", "ending"}
 
@@ -49,6 +51,9 @@ class Event():
 
         self.trigger = trigger
         event_args = trigger.to_args()
+        # alias
+        if 'unit1' in event_args:
+            event_args['unit'] = event_args['unit1']
         self.unit = event_args.get('unit1', None)
         self.unit2 = event_args.get('unit2', None)
         self.created_unit = None
@@ -63,10 +68,10 @@ class Event():
         self._generic_setup()
 
         self.text_evaluator = TextEvaluator(self.logger, self.game, self.unit, self.unit2, self.position, self.local_args)
-        if event_prefab.is_python_event():
-            self.parser = PythonEventParser(self.nid, event_prefab.source, self.game)
+        if event_prefab.version() != EventVersion.EVENT:
+            self.processor = PythonEventProcessor(self.nid, event_prefab.source, self.game)
         else:
-            self.parser = EventParser(self.nid, event_prefab.source, self.text_evaluator)
+            self.processor = EventProcessor(self.nid, event_prefab.source, self.text_evaluator)
 
     def _generic_setup(self):
         self.portraits: Dict[str, EventPortrait] = {}
@@ -128,7 +133,7 @@ class Event():
         ser_dict['unit2'] = self.unit2.nid if self.unit2 else None
         ser_dict['position'] = self.position
         ser_dict['local_args'] = {k: action.Action.save_obj(v) for k, v in self.local_args.items()}
-        ser_dict['parser_state'] = self.parser.save()
+        ser_dict['processor_state'] = self.processor.save()
         return ser_dict
 
     @classmethod
@@ -141,11 +146,11 @@ class Event():
         nid = ser_dict['nid']
         prefab = DB.events.get_by_nid_or_name(nid)[0]
         self = cls(prefab, triggers.GenericTrigger(unit, unit2, position, local_args), game)
-        self.parser = EventParser.restore(ser_dict['parser_state'], self.text_evaluator)
+        self.processor = EventProcessor.restore(ser_dict['processor_state'], self.text_evaluator)
         return self
 
     def finished(self):
-        return self.parser.finished() and not self.command_queue
+        return self.processor.finished() and not self.command_queue
 
     def update(self):
         # update all internal updates, remove the ones that are finished
@@ -306,17 +311,17 @@ class Event():
     def process(self):
         while self.state == 'processing':
             if not self.command_queue:
-                next_command = self.parser.fetch_next_command()
+                next_command = self.processor.fetch_next_command()
                 if not next_command:
                     break
                 self.command_queue.append(next_command)
             command = self.command_queue.pop(0)
-            
+
             # This shunts all SAVE COMMANDS to the back of the command queue, so that we never save the game while there are still commands on the queue.
             # This is unlikely to happen unless you used a macro to put multiple commands on the queue at once (and one of them is a save).
             while command.nid in SAVE_COMMAND_NIDS and self.command_queue: # if we have a save command but there are still more commands in the queue. We cannot save while there are commands on the queue. This should never happen
                 if all([c.nid in SAVE_COMMAND_NIDS for c in self.command_queue]): # avoid infinite loop. This should NEVER happen (will happen if multiple save commands were queued).
-                    raise Exception("Queued multiple save commands in event %s, line %d" % (self.nid, self.parser.get_current_line()))
+                    raise Exception("Queued multiple save commands in event %s, line %d" % (self.nid, self.processor.get_current_line()))
                 self.command_queue.append(command)  # Move the save command to the back of the queue
                 command = self.command_queue.pop(0)
 
@@ -329,7 +334,7 @@ class Event():
             except EventError as e:
                 raise e
             except Exception as e:
-                raise Exception("Event execution failed with error in command %s" % command) from e
+                raise Exception("Event execution failed with error in command %s" % self.processor.get_source_line(self.processor.get_current_line())) from e
 
     def skip(self, super_skip: bool = False):
         self.do_skip = True
@@ -370,18 +375,21 @@ class Event():
         try:
             return self.text_evaluator.direct_eval(expr)
         except Exception as e:
-            line = self.parser.get_current_line()
-            exc = EvaluateException(self.nid, line + 1, self.parser.get_source_line(line))
+            line = self.processor.get_current_line()
+            exc = EvaluateException(self.nid, line + 1, self.processor.get_source_line(line))
             self.logger.error("'%s' Line %d: Could not evaluate %s (%s)" % (self.nid, line + 1, expr, e))
             exc.what = str(e)
             raise exc
 
     def _queue_command(self, event_command_str: str):
         try:
-            event_command, _ = event_commands.parse_text_to_command(event_command_str, strict=True)
-            if not event_command:
+            command, _ = event_commands.parse_text_to_command(event_command_str, strict=True)
+            if not command:
                 raise SyntaxError("Unable to parse command", ("event.py", 0, 0, event_command_str))
-            self.command_queue.append(event_command)
+            # We need to run convert_parse on these commands also!
+            parameters, flags = event_commands.convert_parse(command, None)
+            processed_command = command.__class__(parameters, flags, command.display_values)
+            self.command_queue.append(processed_command)
         except Exception as e:
             logging.error('_queue_command: Unable to parse command "%s". %s', event_command_str, e)
 
@@ -414,7 +422,7 @@ class Event():
             if unit.position == position:
                 # Don't bother if identical
                 return
-            path = self.game.target_system.get_path(unit, position)
+            path = self.game.path_system.get_path(unit, position)
             action.do(action.Move(unit, position, path, event=True, follow=follow))
         return position
 
@@ -496,8 +504,12 @@ class Event():
                 return position
             elif placement == 'push':
                 new_pos = self.game.target_system.get_nearest_open_tile(current_occupant, position)
-                action.do(action.ForcedMovement(current_occupant, new_pos))
-                return position
+                if new_pos:
+                    action.do(action.ForcedMovement(current_occupant, new_pos))
+                    return position
+                else:
+                    self.logger.error("%s: No open tile found nearby for %s", 'check_placement', position)
+                    return None
         else:
             return position
 
@@ -555,11 +567,17 @@ class Event():
 
     def _resolve_speak_style(self, speaker_or_style, *styles) -> SpeakStyle:
         curr_style = self.game.speak_styles['__default'].copy()
-        if not self.game.speak_styles.get(speaker_or_style):
-            curr_style.speaker = speaker_or_style
+        styles = list(styles)
+        if isinstance(speaker_or_style, SpeakStyle):
+            o_style = speaker_or_style
         else:
-            styles = list(styles)
-            styles.append(speaker_or_style)
+            if not isinstance(speaker_or_style, str):
+                speaker_or_style = self._resolve_nid(speaker_or_style)
+            o_style = self.game.speak_styles.get(speaker_or_style)
+        if o_style:
+            styles.append(o_style)
+        else:
+            curr_style.speaker = speaker_or_style
         for style in styles:
             if isinstance(style, str):
                 style = self.game.speak_styles.get(style)
@@ -583,51 +601,45 @@ class Event():
     def _apply_growth_changes(self, unit, growth_changes):
         action.do(action.ApplyGrowthChanges(unit, growth_changes))
 
-    def _parse_pos(self, text: str, is_float=False):
+    def _parse_pos(self, pos: str | Point, is_float=False):
+        if isinstance(pos, tuple):
+            return pos
         position = None
-        if ',' in text:
-            text = text.replace(')', '').replace('(', '').replace('[', '').replace(']', '')
+        if ',' in pos:
+            pos = pos.replace(')', '').replace('(', '').replace('[', '').replace(']', '')
             if is_float:
-                position = tuple(float(_) for _ in text.split(','))
+                position = tuple(float(_) for _ in pos.split(','))
             else:
-                position = tuple(int(_) for _ in text.split(','))
-        elif text == '{position}':
-            position = self.position
-        elif not self.game.is_displaying_overworld() and self._get_unit(text):
-            unit = self._get_unit(text)
+                position = tuple(int(_) for _ in pos.split(','))
+        elif not self.game.is_displaying_overworld() and self._get_unit(pos):
+            unit = self._get_unit(pos)
             if unit.position:
                 position = unit.position
             else:
                 position = self.game.get_rescuers_position(unit)
-        elif self.game.is_displaying_overworld() and self._get_overworld_location_of_object(text):
-            position = self._get_overworld_location_of_object(text).position
-        elif text in self.game.level.regions.keys():
-            return self.game.level.regions.get(text).position
+        elif self.game.is_displaying_overworld() and self._get_overworld_location_of_object(pos):
+            position = self._get_overworld_location_of_object(pos).position
+        elif pos in self.game.level.regions.keys():
+            return self.game.level.regions.get(pos).position
         else:
             valid_regions = \
                 [tuple(region.position) for region in self.game.level.regions
-                 if text == region.sub_nid and region.position and
+                 if pos == region.sub_nid and region.position and
                  not self.game.board.get_unit(region.position)]
             if valid_regions:
                 position = static_random.shuffle(valid_regions)[0]
         return position
 
-    def _get_unit(self, text) -> UnitObject:
-        if text in ('{unit}', '{unit1}'):
-            return self.unit
-        elif text == '{unit2}':
-            return self.unit2
-        elif text == '{created_unit}':
-            return self.created_unit
-        else:
-            return self.game.get_unit(text)
+    def _get_unit(self, unit: UnitPrefab | UnitObject | NID) -> UnitObject:
+        return self.game.get_unit(self._resolve_nid(unit))
 
     def _get_overworld_location_of_object(self, text, entity_only=False, node_only=False) -> OverworldNodeObject:
         if self.game.overworld_controller:
             if not node_only and text in self.game.overworld_controller.entities:
                 entity_at_nid = self.game.overworld_controller.entities[text]
-                if entity_at_nid:
-                    return entity_at_nid.node
+                if entity_at_nid.on_node:
+                    entity_node = self.game.overworld_controller.nodes[entity_at_nid.on_node]
+                    return entity_node
 
             if not entity_only and text in self.game.overworld_controller.nodes:
                 node_at_nid = self.game.overworld_controller.nodes[text]
@@ -639,3 +651,29 @@ class Event():
         for port in self.portraits.values():
             port.desaturate()
         portrait.saturate()
+
+    def _get_portrait(self, obj: UnitObject | UnitPrefab | PortraitPrefab | NID | SpeakStyle) -> Tuple[Optional[PortraitPrefab], str]:
+        if isinstance(obj, SpeakStyle):
+            nid = obj.speaker
+        else:
+            nid = self._resolve_nid(obj)
+        unit = self._get_unit(nid)
+        if unit:
+            name = unit.nid
+        else:
+            name = nid
+        if unit and unit.portrait_nid:
+            portrait = RESOURCES.portraits.get(unit.portrait_nid)
+        elif name in DB.units.keys():
+            portrait = RESOURCES.portraits.get(DB.units.get(name).portrait_nid)
+        else:
+            portrait = RESOURCES.portraits.get(name)
+        if not portrait:
+            return None, nid
+        return portrait, nid
+
+    def _resolve_nid(self, obj: HasNid):
+        try:
+            return obj.nid
+        except:
+            return obj

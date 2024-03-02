@@ -2,7 +2,7 @@ import os
 import shutil
 import filecmp
 import json
-from typing import TypeVar
+from typing import List, Type, TypeVar
 
 from app.utilities.data import Data
 
@@ -24,7 +24,8 @@ class ManifestCatalog(Data[M]):
     filetype = '.png'
     manifest = None  # To be implemented
     title = ''  # To be implemented
-    datatype = None  # To be implemented
+    datatype: Type[M] = None  # To be implemented
+    multi_loc = None  # Can be implemented for distributed saving
 
     def load(self, loc):
         resource_dict = self.read_manifest(os.path.join(loc, self.manifest))
@@ -61,20 +62,23 @@ class ManifestCatalog(Data[M]):
             else:
                 shutil.copy(old_full_path, new_full_path)
         else:
-            print("%s does not exist" % old_full_path)
+            logging.warning("%s does not exist" % old_full_path)
 
     def valid_files(self) -> set:
         return {datum.nid + self.filetype for datum in self}
 
-    def clean(self, loc):
-        bad_files = []
+    def get_unused_files(self, loc: str) -> List[str]:
+        unused_files = []
         valid_filenames = self.valid_files()
         valid_filenames.add(self.manifest)  # also include the manifest file otherwise it would be deleted
+        valid_filenames.add(self.multi_loc)
         for fn in os.listdir(loc):
             if fn not in valid_filenames:
-                full_fn = os.path.join(loc, fn)
-                bad_files.append(full_fn)
-                logging.warning("Unused file: %s" % full_fn)
+                full_fn = os.path.normpath(os.path.join(loc, fn))
+                unused_files.append(full_fn)
+        return unused_files
+
+    def clean(self, bad_files: List[str]):
         for fn in bad_files:
-            logging.warning("Removing %s..." % fn) 
+            logging.warning("Removing %s..." % fn)
             os.remove(fn)

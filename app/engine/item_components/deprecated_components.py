@@ -54,7 +54,7 @@ class EventOnUse(ItemComponent):
 
     expose = ComponentType.Event
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         event_prefab = DB.events.get_from_nid(self.value)
         if event_prefab:
             local_args = {'target_pos': target_pos, 'mode': mode, 'attack_info': attack_info, 'item': item}
@@ -69,13 +69,13 @@ class EventAfterUse(ItemComponent):
 
     _target_pos = None
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         self._target_pos = target_pos
 
-    def end_combat(self, playback, unit, item, target, mode):
+    def end_combat(self, playback, unit, item, target, item2, mode):
         event_prefab = DB.events.get_from_nid(self.value)
         if event_prefab:
-            local_args = {'target_pos': self._target_pos, 'item': item, 'mode': mode}
+            local_args = {'target_pos': self._target_pos, 'item': item, 'item2': item2, 'mode': mode}
             game.events.trigger_specific_event(event_prefab.nid, unit, target, unit.position, local_args)
         self._target_pos = None
 
@@ -88,15 +88,15 @@ class EventAfterCombat(ItemComponent):
 
     _did_hit = False
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         self._did_hit = True
         self.target_pos = target_pos
 
-    def end_combat(self, playback, unit, item, target, mode):
+    def end_combat(self, playback, unit, item, target, item2, mode):
         if self._did_hit and target:
             event_prefab = DB.events.get_from_nid(self.value)
             if event_prefab:
-                local_args = {'target_pos': self.target_pos, 'item': item, 'mode': mode}
+                local_args = {'target_pos': self.target_pos, 'item': item, 'item2': item2, 'mode': mode}
                 game.events.trigger_specific_event(event_prefab.nid, unit, target, unit.position, local_args)
         self._did_hit = False
 
@@ -154,7 +154,7 @@ class EffectiveIcon(ItemComponent):
             sprite = image_mods.make_white(sprite.convert_alpha(), abs(250 - engine.get_time()%500)/250)
         return sprite
 
-    def target_icon(self, target, item, unit) -> bool:
+    def target_icon(self, unit, item, target) -> bool:
         if not skill_system.check_enemy(target, unit):
             return None
         if self._check_negate(target):
@@ -172,7 +172,7 @@ class EffectiveTag(EffectiveIcon):
     expose = (ComponentType.List, ComponentType.Tag)
     value = []
 
-    def dynamic_damage(self, unit, item, target, mode, attack_info, base_value) -> int:
+    def dynamic_damage(self, unit, item, target, item2, mode, attack_info, base_value) -> int:
         if any(tag in target.tags for tag in self.value):
             if self._check_negate(target):
                 return 0
@@ -193,3 +193,16 @@ class MagicHeal(Heal):
         empower_heal = skill_system.empower_heal(unit, target)
         empower_heal_received = skill_system.empower_heal_received(target, unit)
         return self.value + equations.parser.heal(unit) + empower_heal + empower_heal_received
+
+class TextColor(ItemComponent):
+    nid = 'text_color'
+    desc = 'Special color for item text.'
+    tag = ItemTags.DEPRECATED
+
+    expose = (ComponentType.MultipleChoice, ['white'])
+    value = 'white'
+
+    def text_color(self, unit, item):
+        if self.value not in ['white']:
+            return 'white'
+        return self.value

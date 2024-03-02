@@ -92,7 +92,7 @@ class CombatHealthBar(HealthBar):
     def _create_hp_bar_surf(self, full_hp: int, actual_hp: int, overflow: int = 0) -> engine.Surface:
         """Creates a single hp bar row.
         """
-        surf = engine.create_surface((full_hp * 2 + 1, self.full_hp_blip.get_height()))
+        surf = engine.create_surface((full_hp * 2 + 1, self.full_hp_blip.get_height()), transparent=True)
         if overflow > 2:
             hp_blip = engine.subsurface(self.overflowpurple_hp_blip, (self.colors[self.color_tick] * 2, 0, 2, self.overflowpurple_hp_blip.get_height()))
             damage_blip = hp_blip
@@ -134,9 +134,9 @@ class CombatHealthBar(HealthBar):
         return surf
 
     def draw(self, surf, left, top):
-        font = FONT['number-small2']
+        font = FONT['number_small2']
         if self.big_number():
-            font = FONT['number-big2']
+            font = FONT['number_big2']
         if self.displayed_hp <= 240:
             font.blit_right(str(self.displayed_hp), surf, (left, top - 4))
         else:
@@ -185,9 +185,9 @@ class MapCombatHealthBar(HealthBar):
 
         # Blit HP number
         if self.display_numbers:
-            font = FONT['number-small2']
+            font = FONT['number_small2']
             if self.transition_flag:
-                font = FONT['number-big2']
+                font = FONT['number_big2']
             s = str(self.displayed_hp)
             position = 22 - font.size(s)[0], 15
             font.blit(s, surf, position)
@@ -294,15 +294,15 @@ class MapCombatInfo():
             hit = str(utils.clamp(self.hit, 0, 100))
         else:
             hit = '--'
-        position = stat_surf.get_width() // 2 - FONT['number-small2'].size(hit)[0] - 1, -2
-        FONT['number-small2'].blit(hit, stat_surf, position)
+        position = stat_surf.get_width() // 2 - FONT['number_small2'].size(hit)[0] - 1, -2
+        FONT['number_small2'].blit(hit, stat_surf, position)
         # Blit damage
         if self.mt is not None:
             damage = str(max(0, self.mt))
         else:
             damage = '--'
-        position = stat_surf.get_width() - FONT['number-small2'].size(damage)[0] - 2, -2
-        FONT['number-small2'].blit(damage, stat_surf, position)
+        position = stat_surf.get_width() - FONT['number_small2'].size(damage)[0] - 2, -2
+        FONT['number_small2'].blit(damage, stat_surf, position)
         return stat_surf
 
     def get_time_for_change(self):
@@ -354,13 +354,18 @@ class MapCombatInfo():
 
         elif self.draw_method == 'splash':
             pos = self.unit.sprite.position
-            x_pos = pos[0] - game.camera.get_x()
-            x_pos = utils.clamp(x_pos, 3, TILEX - 2)
-            if pos[1] - game.camera.get_y() < TILEY//2:
-                y_pos = pos[1] - game.camera.get_y() + 2
+            if pos:
+                x_pos = pos[0] - game.camera.get_x()
+                x_pos = utils.clamp(x_pos, 3, TILEX - 2)
+                if pos[1] - game.camera.get_y() < TILEY//2:
+                    y_pos = pos[1] - game.camera.get_y() + 2
+                else:
+                    y_pos = pos[1] - game.camera.get_y() - 3
+                self.true_position = (x_pos * TILEWIDTH - width//2, y_pos * TILEHEIGHT - 8)
             else:
-                y_pos = pos[1] - game.camera.get_y() - 3
-            self.true_position = x_pos * TILEWIDTH - width//2, y_pos * TILEHEIGHT - 8
+                x_pos = WINWIDTH//2 - width//2
+                y_pos = WINHEIGHT//2 - height//2
+                self.true_position = (x_pos, y_pos)
             self.ordering = 'middle'
 
     def update_stats(self, stats):
@@ -386,9 +391,9 @@ class MapCombatInfo():
         bg_surf.blit(self.bg_surf, (0, 0))
 
         # Name
-        name_width = FONT['text-numbers'].size(self.unit.name)[0]
+        name_width = FONT['text_numbers'].size(self.unit.name)[0]
         position = width - name_width - 4, 3
-        FONT['text-numbers'].blit(self.unit.name, bg_surf, position)
+        FONT['text_numbers'].blit(self.unit.name, bg_surf, position)
 
         # Item
         if self.item:

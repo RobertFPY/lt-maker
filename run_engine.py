@@ -30,7 +30,7 @@ def test_play(name: str = 'testing_proj'):
     DB.load(name + '.ltproj')
     title = DB.constants.value('title')
     driver.start(title, from_editor=True)
-    if 'DEBUG' in DB.levels:
+    if 'DEBUG' in DB.levels.keys():
         game = game_state.start_level('DEBUG')
     else:
         first_level_nid = DB.levels[0].nid
@@ -67,7 +67,6 @@ if __name__ == '__main__':
     try:
         find_and_run_project()
         # main('lion_throne')
-        # test_play('lion_throne')
         # test_play('sacred_stones')
     except Exception as e:
         logging.exception(e)

@@ -8,7 +8,7 @@ from app.engine.sprites import SPRITES
 from app.engine.fonts import FONT
 from app.engine.sound import get_sound_thread
 from app.engine.state import State
-from app.engine import engine, background, base_surf, text_funcs, evaluate, icons, menus
+from app.engine import engine, background, base_surf, icons, menus
 from app.engine.objects.unit import UnitObject
 from app.engine.game_state import game
 from app.engine.fluid_scroll import FluidScroll
@@ -89,7 +89,7 @@ class ObjectiveMenuState(State):
 
         seed = str(game.game_vars['_random_seed'])
         seed_surf = engine.create_surface((28, 16), transparent=True)
-        FONT['text-numbers'].blit_center(seed, seed_surf, (14, 0))
+        FONT['text_numbers'].blit_center(seed, seed_surf, (14, 0))
         surfaces.append((seed_surf, (WINWIDTH - 28, 4)))
 
         # Functions for Unit Count per Party
@@ -141,7 +141,8 @@ class ObjectiveMenuState(State):
 
         # ChibiPortraitSurf
         chibi = engine.create_surface((96, WINHEIGHT + 24), transparent=True)
-        icons.draw_chibi(chibi, unit.portrait_nid, (7, 8))
+        if unit.portrait_nid:  # Can be None if unit is generic
+            icons.draw_chibi(chibi, unit.portrait_nid, (7, 8))
         surfaces.append((chibi, (WINWIDTH - 44, 111)))
 
         # PartyLeaderSurf stats function

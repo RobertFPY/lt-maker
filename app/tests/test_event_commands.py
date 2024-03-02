@@ -2,6 +2,7 @@ import unittest
 import logging
 
 from app.events import event_commands
+from app.events.event_structs import EOL
 
 class EventCommandUnitTests(unittest.TestCase):
     def setUp(self):
@@ -23,6 +24,17 @@ class EventCommandUnitTests(unittest.TestCase):
         from app.events import function_catalog
         catalog = function_catalog.get_catalog()
         self.assertTrue(len(catalog) > 0)
+
+    def test_validators(self):
+        from app.events import event_validators
+        commands = event_commands.get_commands()
+        invalid_keywords = set()
+        for command in commands:
+            keywords = command.get_keyword_types()
+            for keyword in keywords:
+                if(event_validators.get(keyword) is None):
+                    invalid_keywords.add((keyword, command.nid))
+        self.assertEqual(0, len(invalid_keywords), "Invalid keywords found: " + ', '.join(map(str, invalid_keywords)))
 
     def test_determine_command_type(self):
         command1 = event_commands.determine_command_type("speak")
@@ -84,7 +96,7 @@ class EventCommandUnitTests(unittest.TestCase):
         command3, bad_idx = event_commands.parse_text_to_command("set_current_hp;Seth;13;no_warn", strict=True)
         self.assertEqual(command3.chosen_flags, {"no_warn"})
         # Test with display values (use of parentheses)
-        command4, bad_idx = event_commands.parse_text_to_command("set_current_hp;Seth (Seth);13", strict=True)
+        command4, bad_idx = event_commands.parse_text_to_command("set_current_hp;Seth;13", strict=True)
         self.assertEqual(command4.parameters.get('Unit'), "Seth")
         self.assertEqual(command4.parameters.get('HP'), "13")
         # Test with evaluables
@@ -156,7 +168,7 @@ class EventCommandUnitTests(unittest.TestCase):
         self.assertEqual(parameters, {"Speaker": "Seth", "Speed": 5.5})
         self.assertTrue(len(flags) == 0)
         # Test with flags and exising function
-        command3, _ = event_commands.parse_text_to_command("give_item;Eirika;Rapier;FLAG(no_banner)", strict=True)
+        command3, _ = event_commands.parse_text_to_command("give_item;Eirika;Rapier;no_banner", strict=True)
         self.assertTrue(isinstance(command3, event_commands.GiveItem))
         self.assertEqual(len(command3.chosen_flags), 1)
         self.assertEqual(command3.chosen_flags, {"no_banner"})
@@ -259,7 +271,8 @@ class EventCommandUnitTests(unittest.TestCase):
 
             for idx, keyword in enumerate(all_keywords):
                 traceback_str = '%s: %s' % (command.nid, keyword)
-                snake_case = str_utils.camel_to_snake(keyword)
+                # remove * for array args
+                snake_case = str_utils.camel_to_snake(keyword.removeprefix('*'))
                 self.assertTrue(snake_case in sig.parameters, traceback_str)
                 # +1 because of self in the function signature
                 self.assertEqual(idx + 1, list(sig.parameters.keys()).index(snake_case), traceback_str)
@@ -268,3 +281,35 @@ class EventCommandUnitTests(unittest.TestCase):
                     self.assertTrue(param.default is not param.empty, traceback_str)
                 else:
                     self.assertTrue(param.default is param.empty, traceback_str)
+
+    def test_parse_event_line_to_tokens(self):
+        command = 'speak;Eirika;Hello;no_block'
+        toks = event_commands.parse_event_line(command)
+        self.assertEqual(toks.tokens, ['speak', 'Eirika', 'Hello', 'no_block'])
+        self.assertEqual(toks.source, command)
+        self.assertEqual(toks.token_idx, [0, 6, 13, 19])
+        self.assertEqual(toks._flag_idx, 3)
+
+        command2 = 'speak;Eirika;Hello;no_block;no_warn'
+        toks2 = event_commands.parse_event_line(command2)
+        self.assertEqual(toks2.flags(), ['no_block', 'no_warn'])
+
+        command3 = ' speak;Eirika;Hello'
+        toks3 = event_commands.parse_event_line(command3)
+        self.assertEqual(toks3.token_idx, [1, 7, 14])
+
+        command4 = 'speak;Eirika;;;'
+        toks4 = event_commands.parse_event_line(command4)
+        self.assertEqual(toks4.tokens, ['speak', 'Eirika', '', '', ''])
+
+        command5 = 'speak;Eirika #this is a comment'
+        toks5 = event_commands.parse_event_line(command5)
+        self.assertEqual(toks5.tokens, ['speak', 'Eirika ', EOL])
+
+        command6 = 'speak;eirika;[nested for nested in game.get_nested(even_more_nested)]'
+        toks6 = event_commands.parse_event_line(command6)
+        self.assertEqual(toks6.tokens, ['speak', 'eirika', '[nested for nested in game.get_nested(even_more_nested)]'])
+
+        command7 = 'speak;Eirika;nested {c:wait;500};NumLines=1'
+        toks7 = event_commands.parse_event_line(command7)
+        self.assertEqual(toks7.tokens, ['speak', 'Eirika', 'nested {c:wait;500}', 'NumLines=1'])

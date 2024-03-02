@@ -58,7 +58,7 @@ class EventState(State):
         current_level_nid = game.level.nid
         game.memory['_prev_level_nid'] = current_level_nid
         current_level_index = DB.levels.index(game.level.nid)
-        should_go_to_overworld = DB.levels.get(game.level.nid).go_to_overworld and DB.constants.value('overworld')
+        should_go_to_overworld = DB.levels.get(game.level.nid).go_to_overworld and DB.constants.value('overworld') and game.game_vars.get('_goto_level') is None
         game.memory['_skip_save'] = game.level_vars.get('_skip_save', False)
         game.clean_up()
         if current_level_index < len(DB.levels) - 1 or game.game_vars.get('_goto_level') is not None:
@@ -119,7 +119,7 @@ class EventState(State):
             if game.level_vars.get('_level_end_triggered'):
                 self.level_end()
             else:
-                did_trigger = game.events.trigger(triggers.LevelEnd())
+                did_trigger = game.events.trigger(triggers.LevelEnd(), game.level.nid)
                 if did_trigger:
                     game.level_vars['_level_end_triggered'] = True
                 else:
@@ -154,6 +154,7 @@ class EventState(State):
                 game.memory['force_turnwheel'] = True
             else:
                 game.memory['force_turnwheel'] = False
+            game.memory['event_turnwheel'] = True
             self.event.turnwheel_flag = False
 
         else:

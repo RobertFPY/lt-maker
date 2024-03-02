@@ -20,7 +20,7 @@ from app.editor.custom_widgets import CustomQtRoles, UnitBox, ClassBox, \
     TeamBox, FactionBox, AIBox, ObjBox, RoamAIBox
 from app.editor.class_editor import class_model
 from app.editor.item_editor import item_model
-from app.editor.unit_editor import unit_tab
+from app.editor.unit_editor import new_unit_tab
 from app.editor.faction_editor import faction_model
 from app.editor.stat_widget import StatAverageDialog, GenericStatAveragesModel
 from app.editor.item_list_widget import ItemListWidget
@@ -483,9 +483,9 @@ class LoadUnitDialog(Dialog):
         self.current.roam_ai = self.roam_ai_box.edit.currentText()
 
     def access_units(self):
-        unit, ok = unit_tab.get(self.current.nid)
+        unit, ok = new_unit_tab.get(self.current.nid)
         if ok:
-            self.nid_changed(unit.nid)
+            self.unit_box.edit.setValue(unit.nid)
 
     def nid_changed(self, nid):
         old_nid = self.current.nid

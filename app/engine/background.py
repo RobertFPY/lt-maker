@@ -130,9 +130,15 @@ class PanoramaBackground():
         return False
 
     def _draw(self, surf, image):
-        x = WINWIDTH//2 - image.get_width()//2 + self.shake_offset[self.shake_idx][0]
-        y = WINHEIGHT//2 - image.get_height()//2 + self.shake_offset[self.shake_idx][1]
+        # First draw without screen shake
+        x = WINWIDTH//2 - image.get_width()//2
+        y = WINHEIGHT//2 - image.get_height()//2
         surf.blit(image, (x, y))
+        # Then draw with screen shake so we have it as the background and not the jarring map
+        s_x = x + self.shake_offset[self.shake_idx][0]
+        s_y = y + self.shake_offset[self.shake_idx][1]
+        if s_x != x or s_y != y:
+            surf.blit(image, (s_x, s_y))
 
     def draw(self, surf):
         image = self.panorama.images[self.counter]

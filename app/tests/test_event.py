@@ -9,12 +9,15 @@ from app.tests.mocks.mock_game import get_mock_game
 from app.events.event_commands import EventCommand, parse_text_to_command
 from app.utilities.enums import Alignments
 from app.engine.codegen import source_generator
+from app.utilities.str_utils import SHIFT_NEWLINE
 
 class EventUnitTests(unittest.TestCase):
     def setUp(self):
         from app.data.database.database import DB
+        from app.data.resources.resources import RESOURCES
         source_generator.event_command_codegen()
         DB.load('testing_proj.ltproj')
+        RESOURCES.load('testing_proj.ltproj')
         self.patchers = self.initialize_patchers()
         for patcher in self.patchers:
             patcher.start()
@@ -111,7 +114,7 @@ class EventUnitTests(unittest.TestCase):
         # initialize testing command(s)
         # we test event command parsing in another test, so just use a dummy event
         event = self.create_event_from_script([])
-        event_functions.speak(event, None, '\u2028SPEAK_TEXT\u2028SPEAK_TEXT', flags={'no_block'})
+        event_functions.speak(event, None, f'{SHIFT_NEWLINE}SPEAK_TEXT{SHIFT_NEWLINE}SPEAK_TEXT', flags={'no_block'})
         mock_dialog.assert_called_with('SPEAK_TEXT{sub_break}SPEAK_TEXT{no_wait}', None, 'message_bg_base',
                                        None, None, speaker='', style_nid=None,
                                        autosize=False, speed=1, font_color=None,
@@ -128,7 +131,7 @@ class EventUnitTests(unittest.TestCase):
         mock_portrait = MagicMock()
         event = self.create_event_from_script([])
         event.portraits['Eirika'] = mock_portrait
-        event_functions.speak(event, 'Eirika', 'SPEAK_TEXT', text_position='1,2', width='3', text_speed='5.0')
+        event_functions.speak(event, 'Eirika', 'SPEAK_TEXT', text_position=(1, 2), width=3, text_speed=5.0)
         mock_dialog.assert_called_with('SPEAK_TEXT', mock_portrait, 'message_bg_base',
                                        (1, 2), 3, speaker='Eirika', style_nid=None,
                                        autosize=False, speed=5.0, font_color=None,
@@ -187,7 +190,7 @@ class EventUnitTests(unittest.TestCase):
 
 
         # test #4: special center text position
-        event_functions.speak(event, None, 'SPEAK_TEXT', text_position='center')
+        event_functions.speak(event, None, 'SPEAK_TEXT', text_position=Alignments.CENTER)
         mock_dialog.assert_called_with('SPEAK_TEXT', None, 'message_bg_base',
                                        Alignments.CENTER, None, speaker='', style_nid=None,
                                        autosize=False, speed=1, font_color=None,
@@ -206,8 +209,8 @@ class EventUnitTests(unittest.TestCase):
         ]
         event = self.create_event_from_script(test_commands)
 
-        event.run_command(event.parser.commands[0])
-        event.run_command(event.parser.commands[1])
+        event.run_command(event.processor.fetch_next_command())
+        event.run_command(event.processor.fetch_next_command())
 
         self.game.overworld_controller.toggle_menu_option_enabled.assert_called_with('1', 'Battle', True)
         self.game.overworld_controller.toggle_menu_option_visible.assert_called_with('1', 'Battle', True)
@@ -231,7 +234,7 @@ class EventUnitTests(unittest.TestCase):
         # initialize testing command(s)
         # we test event command parsing in another test, so just use a dummy event
         event = self.create_event_from_script([])
-        event_functions.speak(event, None, '\u2028SPEAK_TEXT\u2028SPEAK_TEXT', flags={'no_block'})
+        event_functions.speak(event, None, f'{SHIFT_NEWLINE}SPEAK_TEXT{SHIFT_NEWLINE}SPEAK_TEXT', flags={'no_block'})
         mock_dialog.assert_called_with('SPEAK_TEXT{sub_break}SPEAK_TEXT{no_wait}', None, 'message_bg_base',
                                        None, None, speaker='', style_nid=None,
                                        autosize=False, speed=1, font_color=None,

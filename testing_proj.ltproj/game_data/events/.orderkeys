@@ -1,6 +1,6 @@
-{
-    "1_TurnChange.json": 0,
-    "1_Switch.json": 1,
-    "1_New_Event.json": 2,
-    "global_OnStartup.json": 3
-}
+[
+    "1_TurnChange",
+    "1_Switch",
+    "1_New_Event",
+    "global_OnStartup"
+]

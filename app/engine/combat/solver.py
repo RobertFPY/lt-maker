@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+import math
 from typing import Callable, List
 
 from app.data.database.database import DB
@@ -10,6 +10,8 @@ from app.engine.combat import playback as pb
 from app.engine.combat.playback import PlaybackBrush
 from app.utilities import static_random
 from app.utilities.enums import Strike
+from app.engine.combat.utils import resolve_weapon
+
 
 import logging
 
@@ -101,7 +103,7 @@ class AttackerState(SolverState):
         playback.append(pb.AttackerPhase())
         attack_info = solver.get_attack_info()
         # Check attack proc
-        skill_system.start_sub_combat(actions, playback, solver.attacker, solver.main_item, solver.defender, 'attack', attack_info)
+        skill_system.start_sub_combat(actions, playback, solver.attacker, solver.main_item, solver.defender, resolve_weapon(solver.defender),  'attack', attack_info)
         for idx, item in enumerate(solver.items):
             defender = solver.defenders[idx]
             if DB.constants.value('double_splash'):
@@ -112,15 +114,15 @@ class AttackerState(SolverState):
                 splash = []
             target_pos = solver.target_positions[idx]
             if defender:
-                skill_system.start_sub_combat(actions, playback, defender, defender.get_weapon(), solver.attacker, 'defense', attack_info)
+                skill_system.start_sub_combat(actions, playback, defender, resolve_weapon(defender), solver.attacker, solver.main_item, 'defense', attack_info)
                 if solver.update_stats:
                     solver.update_stats(playback)
-                solver.process(actions, playback, solver.attacker, defender, target_pos, item, defender.get_weapon(), 'attack', attack_info)
-                skill_system.end_sub_combat(actions, playback, defender, defender.get_weapon(), solver.attacker, 'defense', attack_info)
+                solver.process(actions, playback, solver.attacker, defender, target_pos, item, resolve_weapon(defender), 'attack', attack_info)
+                skill_system.end_sub_combat(actions, playback, defender, resolve_weapon(defender), solver.attacker, solver.main_item, 'defense', attack_info)
             for target in splash:
-                skill_system.start_sub_combat(actions, playback, target, None, solver.attacker, 'defense', attack_info)
+                skill_system.start_sub_combat(actions, playback, target, None, solver.attacker, solver.main_item, 'defense', attack_info)
                 solver.process(actions, playback, solver.attacker, target, target_pos, item, None, 'splash', attack_info)
-                skill_system.end_sub_combat(actions, playback, target, None, solver.attacker, 'defense', attack_info)
+                skill_system.end_sub_combat(actions, playback, target, None, solver.attacker, solver.main_item, 'defense', attack_info)
             # Make sure that we run on_hit even if otherwise unavailable
             if not defender and not splash:
                 solver.simple_process(actions, playback, solver.attacker, solver.attacker, target_pos, item, None, None, None)
@@ -136,7 +138,7 @@ class AttackerState(SolverState):
             solver.num_attacks += 1
 
         # End check attack proc
-        skill_system.end_sub_combat(actions, playback, solver.attacker, solver.main_item, solver.defender, 'attack', attack_info)
+        skill_system.end_sub_combat(actions, playback, solver.attacker, solver.main_item, solver.defender, resolve_weapon(solver.defender),  'attack', attack_info)
 
 class AttackerPartnerState(SolverState):
     name = 'attacker_partner'
@@ -186,28 +188,28 @@ class AttackerPartnerState(SolverState):
         # Check attack proc
         atk_p = solver.attacker.strike_partner
         attack_info = solver.get_attack_info()
-        skill_system.start_sub_combat(actions, playback, atk_p, solver.main_item, solver.defender, 'attack', attack_info)
+        skill_system.start_sub_combat(actions, playback, atk_p, solver.main_item, solver.defender, resolve_weapon(solver.defender), 'attack', attack_info)
         for idx, item in enumerate(solver.items):
             defender = solver.defenders[idx]
             splash = solver.splashes[idx]
             target_pos = solver.target_positions[idx]
             if defender:
-                skill_system.start_sub_combat(actions, playback, defender, defender.get_weapon(), atk_p, 'defense', attack_info)
+                skill_system.start_sub_combat(actions, playback, defender, resolve_weapon(defender), atk_p, solver.main_item, 'defense', attack_info)
                 if solver.update_stats:
                     solver.update_stats(playback)
-                solver.process(actions, playback, atk_p, defender, target_pos, item, defender.get_weapon(), 'attack', attack_info, assist=True)
-                skill_system.end_sub_combat(actions, playback, defender, defender.get_weapon(), atk_p, 'defense', attack_info)
+                solver.process(actions, playback, atk_p, defender, target_pos, item, resolve_weapon(defender), 'attack', attack_info, assist=True)
+                skill_system.end_sub_combat(actions, playback, defender, resolve_weapon(defender), atk_p, solver.main_item, 'defense', attack_info)
             for target in splash:
-                skill_system.start_sub_combat(actions, playback, target, None, atk_p, 'defense', attack_info)
+                skill_system.start_sub_combat(actions, playback, target, None, atk_p, solver.main_item, 'defense', attack_info)
                 solver.process(actions, playback, atk_p, target, target_pos, item, None, 'attack', attack_info, assist=True)
-                skill_system.end_sub_combat(actions, playback, target, None, atk_p, 'defense', attack_info)
+                skill_system.end_sub_combat(actions, playback, target, None, atk_p, solver.main_item, 'defense', attack_info)
             # Make sure that we run on_hit even if otherwise unavailable
             if not defender and not splash:
                 solver.simple_process(actions, playback, atk_p, atk_p, target_pos, item, None, None, None)
 
         solver.num_subattacks += 1
         # End check attack proc
-        skill_system.end_sub_combat(actions, playback, atk_p, solver.main_item, solver.defender, 'attack', attack_info)
+        skill_system.end_sub_combat(actions, playback, atk_p, solver.main_item, solver.defender, resolve_weapon(solver.defender), 'attack', attack_info)
 
 class DefenderState(SolverState):
     name = 'defender'
@@ -258,15 +260,15 @@ class DefenderState(SolverState):
         playback.append(pb.DefenderPhase())
         attack_info = solver.get_defense_info()
         # Check for proc skills
-        skill_system.start_sub_combat(actions, playback, solver.defender, solver.def_item, solver.attacker, 'attack', attack_info)
-        skill_system.start_sub_combat(actions, playback, solver.attacker, solver.main_item, solver.defender, 'defense', attack_info)
+        skill_system.start_sub_combat(actions, playback, solver.defender, solver.def_item, solver.attacker, solver.main_item, 'attack', attack_info)
+        skill_system.start_sub_combat(actions, playback, solver.attacker, solver.main_item, solver.defender, solver.def_item, 'defense', attack_info)
 
         if solver.update_stats:
             solver.update_stats(playback)
         solver.process(actions, playback, solver.defender, solver.attacker, solver.attacker.position, solver.def_item, solver.main_item, 'defense', attack_info)
 
         # Remove defending unit's proc skills (which is solver.attacker)
-        skill_system.end_sub_combat(actions, playback, solver.attacker, solver.main_item, solver.defender, 'defense', attack_info)
+        skill_system.end_sub_combat(actions, playback, solver.attacker, solver.main_item, solver.defender, solver.def_item, 'defense', attack_info)
 
         solver.num_subdefends += 1
         self.num_multiattacks = combat_calcs.compute_multiattacks(solver.defender, solver.attacker, solver.def_item, 'defense', attack_info)
@@ -274,7 +276,7 @@ class DefenderState(SolverState):
             solver.num_defends += 1
 
         # Remove attacking unit's proc skills (which is solver.defender)
-        skill_system.end_sub_combat(actions, playback, solver.defender, solver.def_item, solver.attacker, 'attack', attack_info)
+        skill_system.end_sub_combat(actions, playback, solver.defender, solver.def_item, solver.attacker, solver.main_item, 'attack', attack_info)
 
 class DefenderPartnerState(SolverState):
     name = 'defender_partner'
@@ -320,18 +322,18 @@ class DefenderPartnerState(SolverState):
         def_p = solver.defender.strike_partner
         attack_info = solver.get_defense_info()
         # Check for proc skills
-        skill_system.start_sub_combat(actions, playback, def_p, solver.def_item, solver.attacker, 'attack', attack_info)
-        skill_system.start_sub_combat(actions, playback, solver.attacker, solver.main_item, def_p, 'defense', attack_info)
+        skill_system.start_sub_combat(actions, playback, def_p, solver.def_item, solver.attacker, solver.main_item, 'attack', attack_info)
+        skill_system.start_sub_combat(actions, playback, solver.attacker, solver.main_item, def_p, solver.def_item, 'defense', attack_info)
 
         if solver.update_stats:
             solver.update_stats(playback)
         solver.process(actions, playback, def_p, solver.attacker, solver.attacker.position, solver.def_item, solver.main_item, 'defense', attack_info, assist=True)
 
         # Remove defending unit's proc skills (which is solver.attacker)
-        skill_system.end_sub_combat(actions, playback, solver.attacker, solver.main_item, def_p, 'defense', attack_info)
+        skill_system.end_sub_combat(actions, playback, solver.attacker, solver.main_item, def_p, solver.def_item, 'defense', attack_info)
         solver.num_subdefends += 1
         # Remove attacking unit's proc skills (which is solver.defender)
-        skill_system.end_sub_combat(actions, playback, def_p, solver.def_item, solver.attacker, 'attack', attack_info)
+        skill_system.end_sub_combat(actions, playback, def_p, solver.def_item, solver.attacker, solver.main_item, 'attack', attack_info)
 
 class CombatPhaseSolver():
     states = {'init': InitState,
@@ -421,6 +423,8 @@ class CombatPhaseSolver():
             roll = (static_random.get_combat() + static_random.get_combat()) // 2
         elif rng_mode == RNGOption.TRUE_HIT_PLUS:
             roll = (static_random.get_combat() + static_random.get_combat() + static_random.get_combat()) // 3
+        elif rng_mode == RNGOption.FATES_HIT:
+            roll = static_random.get_combat()
         elif rng_mode == RNGOption.GRANDMASTER:
             roll = 0
         else:  # Default to True Hit
@@ -430,6 +434,15 @@ class CombatPhaseSolver():
 
     def generate_crit_roll(self):
         return static_random.get_combat()
+    
+    def calculate_fates_hit(self, hit):
+        """
+        Modified slightly from the actual Fates formula to instead compare against values from 0 - 100, 
+        rather than from 0 - 10000. This is so we can use the existing functions in the engine that
+        rely on combat rolls being 0-99, rather than 0-9999.
+        The only change is dividing the value by 100 and then rounding it to the nearest integer.
+        """
+        return int(round(hit + (40 / 3) * (hit / 100) * math.sin(math.radians((0.02 * hit - 1) * 180))))
 
     def process(self, actions, playback, attacker, defender, def_pos, item, def_item, mode, attack_info, assist=False):
         # Is the item I am processing the first one?
@@ -438,6 +451,8 @@ class CombatPhaseSolver():
             item = attacker.get_weapon()
 
         to_hit = combat_calcs.compute_hit(attacker, defender, item, def_item, mode, attack_info)
+        if game.mode.rng_choice == RNGOption.FATES_HIT:
+            to_hit = self.calculate_fates_hit(to_hit)
 
         if self.current_command.lower() in ('hit1', 'hit2', 'crit1', 'crit2'):
             roll = -1
@@ -467,12 +482,12 @@ class CombatPhaseSolver():
                         crit = True
 
             if crit and not guard_hit:
-                skill_system.before_crit(actions, playback, attacker, item, defender, mode, attack_info)
-                item_system.on_crit(actions, playback, attacker, item, defender, def_pos, mode, attack_info, first_item)
+                skill_system.before_crit(actions, playback, attacker, item, defender, resolve_weapon(defender), mode, attack_info)
+                item_system.on_crit(actions, playback, attacker, item, defender, resolve_weapon(defender), def_pos, mode, attack_info, first_item)
                 if defender:
                     playback.append(pb.MarkCrit(attacker, defender, self.attacker, item))
             elif roll >= to_hit - DB.constants.value('glancing_hit') and not guard_hit:
-                item_system.on_glancing_hit(actions, playback, attacker, item, defender, def_pos, mode, attack_info, first_item)
+                item_system.on_glancing_hit(actions, playback, attacker, item, defender, resolve_weapon(defender), def_pos, mode, attack_info, first_item)
                 if defender:
                     playback.append(pb.MarkHit(attacker, defender, self.attacker, item, guard_hit))
                     playback.append(pb.MarkGlancingHit(attacker, defender, self.attacker, item))
@@ -482,19 +497,19 @@ class CombatPhaseSolver():
                     playback.append(pb.HitSound('No Damage'))
                     playback.append(pb.HitAnim('MapNoDamage', defender))
                 else:
-                    item_system.on_hit(actions, playback, attacker, item, defender, def_pos, mode, attack_info, first_item)
+                    item_system.on_hit(actions, playback, attacker, item, defender, resolve_weapon(defender), def_pos, mode, attack_info, first_item)
                 if defender:
                     playback.append(pb.MarkHit(attacker, defender, self.attacker, item, guard_hit))
             if not guard_hit:
                 strike = Strike.CRIT if crit else Strike.HIT
-                item_system.after_strike(actions, playback, attacker, item, defender, mode, attack_info, strike)
-                skill_system.after_strike(actions, playback, attacker, item, defender, mode, attack_info, strike)
-                skill_system.after_take_strike(actions, playback, defender, def_item, attacker, mode, attack_info, strike)
+                item_system.after_strike(actions, playback, attacker, item, defender, resolve_weapon(defender), mode, attack_info, strike)
+                skill_system.after_strike(actions, playback, attacker, item, defender, resolve_weapon(defender), mode, attack_info, strike)
+                skill_system.after_take_strike(actions, playback, defender, def_item, attacker, item, mode, attack_info, strike)
         else:
-            item_system.on_miss(actions, playback, attacker, item, defender, def_pos, mode, attack_info, first_item)
-            item_system.after_strike(actions, playback, attacker, item, defender, mode, attack_info, Strike.MISS)
-            skill_system.after_strike(actions, playback, attacker, item, defender, mode, attack_info, Strike.MISS)
-            skill_system.after_take_strike(actions, playback, defender, def_item, attacker, mode, attack_info, Strike.MISS)
+            item_system.on_miss(actions, playback, attacker, item, defender, resolve_weapon(defender), def_pos, mode, attack_info, first_item)
+            item_system.after_strike(actions, playback, attacker, item, defender, resolve_weapon(defender), mode, attack_info, Strike.MISS)
+            skill_system.after_strike(actions, playback, attacker, item, defender, resolve_weapon(defender), mode, attack_info, Strike.MISS)
+            skill_system.after_take_strike(actions, playback, defender, def_item, attacker, item, mode, attack_info, Strike.MISS)
             if defender:
                 playback.append(pb.MarkMiss(attacker, defender, self.attacker, item))
 
@@ -511,7 +526,7 @@ class CombatPhaseSolver():
         # Is the item I am processing the first one?
         first_item = item is self.main_item or item is self.items[0]
 
-        item_system.on_hit(actions, playback, attacker, item, defender, def_pos, mode, (0, 0), first_item)
+        item_system.on_hit(actions, playback, attacker, item, defender, resolve_weapon(defender), def_pos, mode, (0, 0), first_item)
         if defender:
             playback.append(pb.MarkHit(attacker, defender, self.attacker, item, False))
 

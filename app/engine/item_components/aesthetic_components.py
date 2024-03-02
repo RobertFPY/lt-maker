@@ -23,7 +23,7 @@ class MapHitAddBlend(ItemComponent):
     expose = ComponentType.Color3
     value = (255, 255, 255)
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         playback.append(pb.UnitTintAdd(target, self.value))
 
 class MapHitSubBlend(ItemComponent):
@@ -34,7 +34,7 @@ class MapHitSubBlend(ItemComponent):
     expose = ComponentType.Color3
     value = (0, 0, 0)
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         playback.append(pb.UnitTintSub(target, self.value))
 
 class MapHitSFX(ItemComponent):
@@ -45,7 +45,7 @@ class MapHitSFX(ItemComponent):
     expose = ComponentType.Sound
     value = 'Attack Hit 1'
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         playback.append(pb.HitSound(self.value))
 
 class MapCastSFX(ItemComponent):
@@ -56,10 +56,10 @@ class MapCastSFX(ItemComponent):
     expose = ComponentType.Sound
     value = 'Attack Hit 1'
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         playback.append(pb.CastSound(self.value))
 
-    def on_miss(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_miss(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         playback.append(pb.CastSound(self.value))
 
 class MapCastAnim(ItemComponent):
@@ -69,10 +69,10 @@ class MapCastAnim(ItemComponent):
 
     expose = ComponentType.MapAnimation
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         playback.append(pb.CastAnim(self.value))
 
-    def on_miss(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_miss(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         playback.append(pb.CastAnim(self.value))
 
 class MapTargetCastAnim(ItemComponent):
@@ -82,11 +82,11 @@ class MapTargetCastAnim(ItemComponent):
 
     expose = ComponentType.MapAnimation
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         if target:
             playback.append(pb.TargetCastAnim(self.value, target.position))
 
-    def on_miss(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_miss(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         if target:
             playback.append(pb.TargetCastAnim(self.value, target.position))
 
@@ -108,7 +108,7 @@ class BattleAnimationMusic(ItemComponent):
     expose = ComponentType.Music
     value = None
 
-    def battle_music(self, unit, item, target, mode):
+    def battle_music(self, unit, item, target, item2, mode):
         return self.value
 
 class NoMapHPDisplay(ItemComponent):
@@ -126,7 +126,7 @@ class PreCombatEffect(ItemComponent):
 
     expose = ComponentType.EffectAnimation
 
-    def combat_effect(self, unit, item, target, mode):
+    def combat_effect(self, unit, item, target, item2, mode):
         return self.value
 
 class Warning(ItemComponent):
@@ -134,7 +134,7 @@ class Warning(ItemComponent):
     desc = "A yellow exclamation mark appears above the wielder's head. Often used for killing weapons."
     tag = ItemTags.AESTHETIC
 
-    def target_icon(self, target, item, unit) -> str:
+    def target_icon(self, unit, item, target) -> str:
         return 'warning' if item_funcs.available(unit, item) and skill_system.check_enemy(target, unit) else None
 
 class EvalWarning(ItemComponent):
@@ -145,7 +145,7 @@ class EvalWarning(ItemComponent):
     expose = ComponentType.String
     value = 'True'
 
-    def target_icon(self, target, item, unit) -> bool:
+    def target_icon(self, unit, item, target) -> bool:
         from app.engine import evaluate
         if not skill_system.check_enemy(target, unit):
             return None
@@ -175,16 +175,3 @@ class ItemIconFlash(ItemComponent):
         if val:
             sprite = image_mods.make_white(sprite.convert_alpha(), abs(250 - engine.get_time()%500)/250)
         return sprite
-
-class TextColor(ItemComponent):
-    nid = 'text_color'
-    desc = 'Special color for item text.'
-    tag = ItemTags.AESTHETIC
-
-    expose = (ComponentType.MultipleChoice, NORMAL_FONT_COLORS)
-    value = 'white'
-
-    def text_color(self, unit, item):
-        if self.value not in NORMAL_FONT_COLORS:
-            return 'white'
-        return self.value

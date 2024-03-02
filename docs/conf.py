@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.abspath('../'))
 # -- Project information -----------------------------------------------------
 
 project = 'lt-maker'
-copyright = '2022, rainlash'
+copyright = '2024, rainlash'
 author = 'rainlash'
 
 

@@ -31,6 +31,7 @@ from app.data.resources.resources import RESOURCES
 from app.utilities import utils
 from app.utilities.typing import NID
 from app.utilities.enums import HAlignment
+from app.engine.combat.utils import resolve_weapon
 
 
 class AnimationCombat(BaseCombat, MockCombat):
@@ -225,6 +226,9 @@ class AnimationCombat(BaseCombat, MockCombat):
             self.rp_battle_anim.pair(self, self.left_battle_anim, True, self.at_range, 14, right_pos)
             self.rp_battle_anim.entrance_counter = entrance_frames
 
+    def ui_should_be_hidden(self):
+        return game.game_vars.get("_hide_ui")
+
     def update(self) -> bool:
         current_time = engine.get_time() - self.last_update
         current_state = self.state
@@ -257,11 +261,15 @@ class AnimationCombat(BaseCombat, MockCombat):
 
         elif self.state == 'entrance':
             entrance_time = utils.frames2ms(10)
-            self.bar_offset = current_time / entrance_time
-            self.name_offset = current_time / entrance_time
+            if not self.ui_should_be_hidden():
+                self.bar_offset = current_time / entrance_time
+                self.name_offset = current_time / entrance_time
+            self.platform_offset = current_time / entrance_time
             if self._skip or current_time > entrance_time:
-                self.bar_offset = 1
-                self.name_offset = 1
+                if not self.ui_should_be_hidden():
+                    self.bar_offset = 1
+                    self.name_offset = 1
+                self.platform_offset = 1
                 if self.battle_background:
                     self.battle_background.fade_in(utils.frames2ms(25))
                 self.state = 'init_pause'
@@ -270,8 +278,10 @@ class AnimationCombat(BaseCombat, MockCombat):
             self.start_combat()
             self._set_stats(self.playback)
             self.pair_battle_animations(0)
-            self.bar_offset = 1
-            self.name_offset = 1
+            if not self.ui_should_be_hidden():
+                self.bar_offset = 1
+                self.name_offset = 1
+            self.platform_offset = 1
             self.state = 'arena_fade_in'
 
         elif self.state == 'arena_fade_in':
@@ -283,9 +293,9 @@ class AnimationCombat(BaseCombat, MockCombat):
 
         elif self.state == 'init_pause':
             if self._skip or current_time > utils.frames2ms(25):
-                self.start_event(True)
                 if self.battle_background:
                     self.battle_background.set_normal()
+                self.start_event(True)
                 self.state = 'battle_music'
 
         elif self.state == 'battle_music':
@@ -360,7 +370,7 @@ class AnimationCombat(BaseCombat, MockCombat):
             any_effect: bool = False
             if not any(brush.attacker_nid == attacker.nid for brush in self.get_from_full_playback('combat_effect')):
                 if item:
-                    effect_nid = item_system.combat_effect(attacker, item, defender, 'attack')
+                    effect_nid = item_system.combat_effect(attacker, item, defender, d_item, 'attack')
                     if effect_nid:
                         effect = self.current_battle_anim.get_effect(effect_nid, pose='Attack')
                         any_effect = True
@@ -384,23 +394,31 @@ class AnimationCombat(BaseCombat, MockCombat):
                 elif self.get_from_playback('defense_proc'):
                     self.set_up_proc_animation('defense_proc')
                 else:
+                    self.add_proc_icon.memory.clear()
                     self.set_up_combat_animation()
 
         elif self.state == 'attack_proc':
-            if self.left_battle_anim.done() and self.right_battle_anim.done() and current_time > 400:
-                if self.get_from_playback('defense_proc'):
+            if self.left_battle_anim.done() and self.right_battle_anim.done() and not self.proc_icons:
+                if self.get_from_playback('attack_proc'):
+                    self.set_up_proc_animation('attack_proc')
+                elif self.get_from_playback('defense_proc'):
                     self.set_up_proc_animation('defense_proc')
                 else:
+                    self.add_proc_icon.memory.clear()
                     self.set_up_combat_animation()
 
         elif self.state == 'defense_proc':
-            if self.left_battle_anim.done() and self.right_battle_anim.done() and current_time > 400:
-                self.set_up_combat_animation()
+            if self.left_battle_anim.done() and self.right_battle_anim.done() and not self.proc_icons:
+                if self.get_from_playback('defense_proc'):
+                    self.set_up_proc_animation('defense_proc')
+                else:
+                    self.add_proc_icon.memory.clear()
+                    self.set_up_combat_animation()
 
         elif self.state == 'anim':
             if self.left_battle_anim.done() and self.right_battle_anim.done() and \
-                    (not self.rp_battle_anim or self.rp_battle_anim.done()) and (not \
-                    self.lp_battle_anim or self.lp_battle_anim.done()):
+                    (not self.rp_battle_anim or self.rp_battle_anim.done()) and \
+                    (not self.lp_battle_anim or self.lp_battle_anim.done()):
                 self.state = 'end_phase'
 
         elif self.state == 'hp_change':
@@ -483,15 +501,19 @@ class AnimationCombat(BaseCombat, MockCombat):
 
         elif self.state == 'name_tags_out':
             exit_time = utils.frames2ms(2.5 if self._skip else 10)
-            self.name_offset = 1 - current_time / exit_time
+            if not self.ui_should_be_hidden():
+                self.name_offset = 1 - current_time / exit_time
             if current_time > exit_time:
                 self.name_offset = 0
                 self.state = 'all_out'
 
         elif self.state == 'all_out':
             exit_time = utils.frames2ms(2.5 if self._skip else 10)
-            self.bar_offset = 1 - current_time / exit_time
+            if not self.ui_should_be_hidden():
+                self.bar_offset = 1 - current_time / exit_time
+            self.platform_offset = 1 - current_time / exit_time
             if current_time > exit_time:
+                self.platform_offset = 0
                 self.bar_offset = 0
                 self.state = 'fade_out'
 
@@ -712,17 +734,17 @@ class AnimationCombat(BaseCombat, MockCombat):
         self.viewbox = (vb_x, vb_y, vb_width, vb_height)
 
     def start_battle_music(self):
-        attacker_battle = item_system.battle_music(self.attacker, self.main_item, self.defender, 'attack') \
-            or skill_system.battle_music(self.playback, self.attacker, self.main_item, self.defender, 'attack')
+        attacker_battle = item_system.battle_music(self.attacker, self.main_item, self.defender, resolve_weapon(self.defender), 'attack') \
+            or skill_system.battle_music(self.playback, self.attacker, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
         if not attacker_battle and 'Boss' in self.attacker.tags:
             attacker_battle = game.level.music.get('boss_battle', None)
         defender_battle = None
         if self.defender:
             if self.def_item:
-                defender_battle = item_system.battle_music(self.defender, self.def_item, self.attacker, 'defense') \
-                or skill_system.battle_music(self.playback, self.defender, self.def_item, self.attacker, 'defense')
+                defender_battle = item_system.battle_music(self.defender, self.def_item, self.attacker, self.main_item, 'defense') \
+                or skill_system.battle_music(self.playback, self.defender, self.def_item, self.attacker, self.main_item, 'defense')
             else:
-                defender_battle = skill_system.battle_music(self.playback, self.defender, self.def_item, self.attacker, 'defense')
+                defender_battle = skill_system.battle_music(self.playback, self.defender, self.def_item, self.attacker, self.main_item, 'defense')
             if not defender_battle and 'Boss' in self.defender.tags:
                 defender_battle = game.level.music.get('boss_battle', None)
         battle_music = game.level.music.get('%s_battle' % self.attacker.team, None)
@@ -775,10 +797,10 @@ class AnimationCombat(BaseCombat, MockCombat):
 
             if self.defender.strike_partner:
                 defender = self.defender.strike_partner
-                dp_hit = combat_calcs.compute_hit(defender, self.attacker, defender.get_weapon(), self.main_item, 'defense', self.state_machine.get_defense_info())
-                dp_mt = combat_calcs.compute_damage(defender, self.attacker, defender.get_weapon(), self.main_item, 'defense', self.state_machine.get_defense_info(), assist=True)
+                dp_hit = combat_calcs.compute_hit(defender, self.attacker, resolve_weapon(defender), self.main_item, 'defense', self.state_machine.get_defense_info())
+                dp_mt = combat_calcs.compute_damage(defender, self.attacker, resolve_weapon(defender), self.main_item, 'defense', self.state_machine.get_defense_info(), assist=True)
                 if DB.constants.value('crit'):
-                    dp_crit = combat_calcs.compute_crit(defender, self.attacker, defender.get_weapon(), self.main_item, 'defense', self.state_machine.get_defense_info())
+                    dp_crit = combat_calcs.compute_crit(defender, self.attacker, resolve_weapon(defender), self.main_item, 'defense', self.state_machine.get_defense_info())
                 else:
                     dp_crit = 0
                 dp_stats = dp_hit, dp_mt, dp_crit
@@ -1058,6 +1080,18 @@ class AnimationCombat(BaseCombat, MockCombat):
         # Damage Numbers
         self.draw_damage_numbers(surf, (left_range_offset, right_range_offset, total_shake_x, total_shake_y))
 
+        # make the combat ui (nametags & bars) fade out when appropriate
+        ui_fade_states = ['name_tags_out', 'all_out', 'entrance',
+                          'fade_in', 'red_cursor', 'init', 'arena_out',
+                          'fade_out']
+        if self.ui_should_be_hidden() and self.bar_offset > 0:
+            self.name_offset -= 0.1
+            self.bar_offset -= 0.1
+        elif not self.ui_should_be_hidden() and self.state not in ui_fade_states:
+            # Combat UI comes in without a fade
+            self.name_offset = 1
+            self.bar_offset = 1
+
         # Combat surf
         combat_surf = engine.copy_surface(self.combat_surf)
         # bar
@@ -1091,11 +1125,11 @@ class AnimationCombat(BaseCombat, MockCombat):
             right_gauge = None
             left_gauge = None
             left_gauge = SPRITES.get('guard_' + left_color).copy()
-            font = FONT['number-small2']
+            font = FONT['number_small2']
             text = str(self.left.get_guard_gauge()) + '-' + str(self.left.get_max_guard_gauge())
             font.blit_center(text, left_gauge, (18, -1))
             right_gauge = SPRITES.get('guard_' + right_color).copy()
-            font = FONT['number-small2']
+            font = FONT['number_small2']
             text = str(self.right.get_guard_gauge()) + '-' + str(self.right.get_max_guard_gauge())
             font.blit_center(text, right_gauge, (18, -1))
             # Pair up info
@@ -1145,10 +1179,10 @@ class AnimationCombat(BaseCombat, MockCombat):
                 damage = str(stats[1])
             if DB.constants.value('crit') and stats[2] is not None:
                 crit = str(utils.clamp(stats[2], 0, 100))
-        FONT['number-small2'].blit_right(hit, surf, (right, top))
-        FONT['number-small2'].blit_right(damage, surf, (right, top + 8))
+        FONT['number_small2'].blit_right(hit, surf, (right, top))
+        FONT['number_small2'].blit_right(damage, surf, (right, top + 8))
         if DB.constants.value('crit'):
-            FONT['number-small2'].blit_right(crit, surf, (right, top + 16))
+            FONT['number_small2'].blit_right(crit, surf, (right, top + 16))
 
     def clean_up1(self):
         """
@@ -1202,6 +1236,7 @@ class AnimationCombat(BaseCombat, MockCombat):
 
         self.handle_death(all_units)
 
+        self.handle_unusable_items(asp, dsp)
         self.handle_broken_items(asp, dsp)
 
         self.attacker.built_guard = True

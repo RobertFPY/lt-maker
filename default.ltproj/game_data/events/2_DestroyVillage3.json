@@ -4,28 +4,13 @@
         "trigger": "Destructible",
         "level_nid": "2",
         "condition": "region.nid == 'DestroyVillage3'",
-        "commands": [
-            [
-                "flicker_cursor",
-                [
-                    "1,12"
-                ]
-            ],
-            [
-                "show_layer",
-                [
-                    "Ruin3"
-                ]
-            ],
-            [
-                "wait",
-                [
-                    "500"
-                ]
-            ]
-        ],
+        "commands": [],
         "only_once": true,
         "priority": 20,
-        "source": ""
+        "_source": [
+            "flicker_cursor;1,12",
+            "show_layer;Ruin3",
+            "wait;500"
+        ]
     }
 ]

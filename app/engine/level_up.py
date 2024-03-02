@@ -8,7 +8,8 @@ from app.data.resources.resources import RESOURCES
 from app.data.database.database import DB
 
 from app.utilities import utils
-from app.engine import engine, image_mods, icons, unit_funcs, action, banner, skill_system
+from app.engine import engine, image_mods, icons, unit_funcs, \
+    action, banner, skill_system, exp_funcs
 from app.engine.sprites import SPRITES
 from app.engine.sound import get_sound_thread
 from app.engine.fonts import FONT
@@ -21,6 +22,7 @@ from app.engine.graphics.text.text_renderer import render_text
 from app.utilities.enums import HAlignment
 
 from app.engine.objects.unit import UnitObject
+from app.engine.source_type import SourceType
 
 class ExpState(State):
     name = 'exp'
@@ -45,7 +47,7 @@ class ExpState(State):
         self.old_exp = self.unit.exp
         self.old_level = self.unit.level
         self.unit_klass = DB.classes.get(self.unit.klass)
-        self.auto_promote = ExpState.has_autopromote(self.unit)
+        self.auto_promote = exp_funcs.has_autopromote(self.unit)
 
         # For mana
         self.old_mana = self.unit.get_mana()
@@ -76,7 +78,7 @@ class ExpState(State):
         self.stat_changes = None
         self.new_wexp = None
 
-        if ExpState.can_give_exp(self.unit, self.exp_gain) or self.mana_to_gain or \
+        if exp_funcs.can_give_exp(self.unit, self.exp_gain) or self.mana_to_gain or \
                 self.starting_state in ('promote', 'class_change', 'stat_booster'):
             pass
         else:
@@ -96,23 +98,6 @@ class ExpState(State):
 
         self.level_up_sound_played = False
 
-    @staticmethod
-    def has_autopromote(unit) -> bool:
-        unit_klass = DB.classes.get(unit.klass)
-        return (DB.constants.value('auto_promote') or 'AutoPromote' in unit.tags) and \
-            unit_klass.turns_into and 'NoAutoPromote' not in unit.tags
-
-    @staticmethod
-    def can_give_exp(unit, exp: int) -> bool:
-        unit_klass = DB.classes.get(unit.klass)
-        if unit.level < unit_klass.max_level:
-            return True
-        if exp < 0:
-            return True
-        if ExpState.has_autopromote(unit):
-            return True
-        return False
-        
     def begin(self):
         game.cursor.hide()
 
@@ -394,7 +379,7 @@ class ExpState(State):
 
     @staticmethod
     def _give_skills(unit: UnitObject, avail_skills: List[Tuple[int, NID]],
-                     comparison_func: Callable[[UnitObject, int], bool]):
+                     comparison_func: Callable[[UnitObject, int], bool], source_type):
         for level_needed, skill_nid in avail_skills:
             if comparison_func(unit, level_needed):
                 if skill_nid == 'Feat':
@@ -402,7 +387,10 @@ class ExpState(State):
                     game.state.change('feat_choice')
                 else:
                     if skill_nid not in [skill.nid for skill in unit.skills]:
-                        act = action.AddSkill(unit, skill_nid)
+                        if source_type == SourceType.KLASS:
+                            act = action.AddSkill(unit, skill_nid, source=unit.klass, source_type=SourceType.KLASS)
+                        else:
+                            act = action.AddSkill(unit, skill_nid, source=unit.nid, source_type=SourceType.PERSONAL)
                         action.do(act)
                         if act.skill_obj and not skill_system.hidden(act.skill_obj, unit):
                             game.alerts.append(banner.GiveSkill(unit, act.skill_obj))
@@ -414,17 +402,17 @@ class ExpState(State):
             return unit.level == level_needed
 
         unit_klass = DB.classes.get(unit.klass)
-        ExpState._give_skills(unit, unit_klass.learned_skills, compare)
+        ExpState._give_skills(unit, unit_klass.learned_skills, compare, source_type=SourceType.KLASS)
 
     @staticmethod
     def give_new_personal_skills(unit: UnitObject):
         def compare(unit, level_needed):
             return unit.get_internal_level() == level_needed
-        
+
         unit_prefab = DB.units.get(unit.nid)
         if not unit_prefab:
             return
-        ExpState._give_skills(unit, unit_prefab.learned_skills, compare)
+        ExpState._give_skills(unit, unit_prefab.learned_skills, compare, source_type=SourceType.PERSONAL)
 
     @staticmethod
     def give_all_class_skills(unit: UnitObject):
@@ -432,8 +420,8 @@ class ExpState(State):
             return unit.level >= level_needed
 
         unit_klass = DB.classes.get(unit.klass)
-        ExpState._give_skills(unit, unit_klass.learned_skills, compare)
-        
+        ExpState._give_skills(unit, unit_klass.learned_skills, compare, source_type=SourceType.KLASS)
+
 class LevelUpScreen():
     bg = SPRITES.get('level_screen')
     bg = bg.convert_alpha()
@@ -713,7 +701,7 @@ class ExpBar():
         new_surf.blit(self.end, (10 + idx, 9))
 
         # Blit current amount of exp
-        FONT['number-small3'].blit_right(str(int(self.num)), new_surf, (self.width - 4, 4))
+        FONT['number_small3'].blit_right(str(int(self.num)), new_surf, (self.width - 4, 4))
 
         # Transition
         new_surf = engine.subsurface(new_surf, (0, self.offset, self.width, self.height - self.offset * 2))

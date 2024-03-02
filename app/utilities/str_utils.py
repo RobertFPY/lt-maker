@@ -2,6 +2,9 @@ import functools
 import re
 
 
+RAW_NEWLINE = '\u2029'
+SHIFT_NEWLINE = '\u2028'
+
 def convert_raw_text_newlines(s: str) -> str:
     return s.replace('\u2029', '\n')
 
@@ -175,6 +178,11 @@ def matched_block_expr(s: str, opener: str, closer: str):
             curr += character
     return all_strs
 
+def remove_prefix(text: str, prefix: str):
+    if text.startswith(prefix):
+        return text[len(prefix):]
+    return text
+
 def remove_all_matched(s: str, opener: str, closer: str):
     """
     usage: `{d:{eval:f}.{eval:y}.` becomes `{d:..` - useful for determining which level of a nested eval we're in
@@ -188,6 +196,18 @@ def remove_all_matched(s: str, opener: str, closer: str):
     while n:
         s, n = re.subn(rstr, '', s)  # remove non-nested/flat balanced parts
     return s
+
+
+_MIRRORED_BRACKETS = {
+    '[': ']',
+    '{': '}',
+    '(': ')',
+}
+for k, v in _MIRRORED_BRACKETS.copy().items():
+    _MIRRORED_BRACKETS[v] = k
+
+def mirror_bracket(c: str) -> str:
+    return _MIRRORED_BRACKETS.get(c, None)
 
 if __name__ == '__main__':
     # print(camel_to_snake("Direction"))

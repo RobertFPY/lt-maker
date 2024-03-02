@@ -89,6 +89,9 @@ def overworld_move_unit(self: Event, overworld_entity: NID, overworld_location: 
 
     # function
     entity = game.overworld_controller.entities.get(entity_nid, None)
+    if not entity:
+        self.logger.error("%s: Could not find an entity with nid %s", 'overworld_move_unit', entity_nid)
+        return
     if not entity.display_position:
         self.logger.error("%s: Attempting to move entity %s with no position - is it on the overworld?", 'overworld_move_unit', entity_nid)
         return
@@ -293,14 +296,12 @@ def narrate(self: Event, speaker, string, flags=None):
         self.state = 'blocked'
 
 def set_overworld_menu_option_enabled(self: Event, overworld_node_nid: NID, overworld_node_menu_option: NID, setting: bool, flags=None):
-    val = (setting.lower() in self.true_vals)
     overworld = self.game.overworld_controller
-    overworld.toggle_menu_option_enabled(overworld_node_nid, overworld_node_menu_option, val)
+    overworld.toggle_menu_option_enabled(overworld_node_nid, overworld_node_menu_option, setting)
 
 def set_overworld_menu_option_visible(self: Event, overworld_node_nid: NID, overworld_node_menu_option: NID, setting: bool, flags=None):
-    val = (setting.lower() in self.true_vals)
     overworld = self.game.overworld_controller
-    overworld.toggle_menu_option_visible(overworld_node_nid, overworld_node_menu_option, val)
+    overworld.toggle_menu_option_visible(overworld_node_nid, overworld_node_menu_option, setting)
 
 def enter_level_from_overworld(self: Event, level_nid: str, flags=None):
     game.overworld_controller.next_level = level_nid

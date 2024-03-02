@@ -54,6 +54,8 @@ class TeamCatalog(Data[Team]):
         return (vals, list(self.alliance_pairs))
         
     def restore(self, vals):
+        if not vals:
+            vals = []
         if len(vals) == 2:
             vals, alliance_pairs = vals
         else:  # Deprecated support

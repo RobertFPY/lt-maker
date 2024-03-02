@@ -9,9 +9,9 @@ from app.data.resources.resources import RESOURCES
 
 from app.utilities.data import Data
 from app.data.database.database import DB
-from app.data.database import item_components
+from app.data.database import item_components, components
 
-from app.extensions.custom_gui import DeletionDialog
+from app.extensions.custom_gui import DeletionTab, DeletionDialog
 
 from app.editor.settings import MainSettingsController
 from app.editor.base_database_gui import ResourceCollectionModel
@@ -66,11 +66,11 @@ class MapAnimationModel(ResourceCollectionModel):
         nid = res.nid
         affected_items = item_components.get_items_using(item_components.ComponentType.MapAnimation, nid, DB)
         if affected_items:
-            affected = Data(affected_items)
             from app.editor.item_editor.item_model import ItemModel
             model = ItemModel
             msg = "Deleting Map Animation <b>%s</b> would affect these items."
-            ok = DeletionDialog.inform(affected, model, msg, self.window)
+            deletion_tab = DeletionTab(affected_items, model, msg, "Items")
+            ok = DeletionDialog.inform([deletion_tab], self.window)
             if ok:
                 pass
             else:
@@ -80,5 +80,4 @@ class MapAnimationModel(ResourceCollectionModel):
     def on_nid_changed(self, old_nid, new_nid):
         # What uses Animations
         # Certain item components
-        affected_items = item_components.get_items_using(item_components.ComponentType.MapAnimation, old_nid, DB)
-        item_components.swap_values(affected_items, item_components.ComponentType.MapAnimation, old_nid, new_nid)
+        components.swap_values(DB.items.values(), item_components.ComponentType.MapAnimation, old_nid, new_nid)

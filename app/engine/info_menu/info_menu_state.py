@@ -1,23 +1,26 @@
+
+import logging
 from typing import List, Tuple
 
 from app.constants import WINHEIGHT, WINWIDTH
 from app.data.database.database import DB
 from app.data.resources.resources import RESOURCES
 from app.engine import (background, combat_calcs, engine, equations, gui,
-                        help_menu, icons, image_mods, item_funcs, skill_system,
-                        text_funcs, unit_funcs)
+                        help_menu, icons, image_mods, item_funcs, item_system,
+                        skill_system, text_funcs, unit_funcs)
 from app.engine.fluid_scroll import FluidScroll
-from app.engine.game_menus import menu_options
 from app.engine.game_menus.icon_options import BasicItemOption, ItemOptionModes
 from app.engine.game_state import game
 from app.engine.graphics.ingame_ui.build_groove import build_groove
 from app.engine.graphics.text.text_renderer import render_text, text_width
 from app.engine.info_menu.info_graph import InfoGraph, info_states
+from app.engine.info_menu.info_menu_portrait import InfoMenuPortrait
 from app.engine.input_manager import get_input_manager
 from app.engine.objects.unit import UnitObject
 from app.engine.sound import get_sound_thread
 from app.engine.sprites import SPRITES
 from app.engine.state import State
+from app.engine.text_evaluator import TextEvaluator
 from app.utilities import utils
 from app.utilities.enums import HAlignment
 
@@ -83,6 +86,7 @@ class InfoMenuState(State):
     def reset_surfs(self):
         self.info_graph.clear()
         self.portrait_surf = None
+        self.current_portrait = None
 
         self.personal_data_surf: engine.Surface = None
         self.growths_surf: engine.Surface = None
@@ -227,7 +231,7 @@ class InfoMenuState(State):
             self.rescuer = None
         elif len(self.scroll_units) > 1:
             index = self.scroll_units.index(self.unit)
-            new_index = (index + 1) % len(self.scroll_units)    
+            new_index = (index + 1) % len(self.scroll_units)
         else:
             return
         self.next_unit = self.scroll_units[new_index]
@@ -245,7 +249,7 @@ class InfoMenuState(State):
             index = self.scroll_units.index(self.unit)
             new_index = (index - 1) % len(self.scroll_units)
         else:
-            return        
+            return
         self.next_unit = self.scroll_units[new_index]
         if self.state == 'notes' and not (DB.constants.value('unit_notes') and self.next_unit.notes):
             self.state = 'personal_data'
@@ -367,14 +371,33 @@ class InfoMenuState(State):
     def draw_portrait(self, surf):
         # Only create if we don't have one in memory
         if not self.portrait_surf:
-            self.portrait_surf = self.create_portrait()
+            self.portrait_surf = self.create_portrait_section()
+        portrait_surf = self.portrait_surf.copy()
+
+        # If no portrait for this unit, either create one or default to class card using icons.get_portrait
+        if not self.current_portrait:
+            portrait = RESOURCES.portraits.get(self.unit.portrait_nid)
+            if portrait:
+                self.current_portrait = InfoMenuPortrait(portrait, DB.constants.value('info_menu_blink'))
+            else:
+                im, offset = icons.get_portrait(self.unit)
+        # We do have a portrait, so update...
+        if self.current_portrait:
+            self.current_portrait.update()
+            im = self.current_portrait.create_image()
+            offset = self.current_portrait.portrait.info_offset
+        # Draw portrait onto the portrait surf
+        if im:
+            x_pos = (im.get_width() - 80)//2
+            im_surf = engine.subsurface(im, (x_pos, offset, 80, 72))
+            portrait_surf.blit(im_surf, (8, 8))
 
         # Stick it on the surface
         if self.transparency:
-            im = image_mods.make_translucent(self.portrait_surf, self.transparency)
+            im = image_mods.make_translucent(portrait_surf, self.transparency)
             surf.blit(im, (0, self.scroll_offset_y))
         else:
-            surf.blit(self.portrait_surf, (0, self.scroll_offset_y))
+            surf.blit(portrait_surf, (0, self.scroll_offset_y))
 
         # Blit the unit's active/focus map sprite
         if not self.transparency:
@@ -401,19 +424,13 @@ class InfoMenuState(State):
             color = 'olive-green'
         elif value > 80 and value <= 90:
             color = 'soft-green'
-        else: # > 90
+        else:  # > 90
             color = 'yellow-green'
         return color
 
-    def create_portrait(self):
+    def create_portrait_section(self):
         surf = engine.create_surface((96, WINHEIGHT), transparent=True)
         surf.blit(SPRITES.get('info_unit'), (8, 122))
-
-        im, offset = icons.get_portrait(self.unit)
-        if im:
-            x_pos = (im.get_width() - 80)//2
-            portrait_surf = engine.subsurface(im, (x_pos, offset, 80, 72))
-            surf.blit(portrait_surf, (8, 8))
 
         render_text(surf, ['text'], [self.unit.name], ['white'], (48, 80), HAlignment.CENTER)
         self.info_graph.register((24, 80, 52, 24), self.unit.desc, 'all')
@@ -653,7 +670,7 @@ class InfoMenuState(State):
                 render_text(surf, ['text'], [gge], ['blue'], (111, 16 * true_idx + 24), HAlignment.RIGHT)
                 render_text(surf, ['text'], [text_funcs.translate('GAUGE')], ['yellow'], (72, 16 * true_idx + 24))
                 self.info_graph.register((96 + 72, 16 * true_idx + 24, 64, 16), 'GAUGE_desc', state)
-                
+
             elif stat == 'TALK':
                 if (len([talk for talk in game.talk_options if talk[0] == self.unit.nid]) != 0):
                     talkee = [talk for talk in game.talk_options if talk[0] == self.unit.nid][0][1]
@@ -728,7 +745,7 @@ class InfoMenuState(State):
 
     def create_equipment_surf(self):
         def create_item_option(idx, item):
-            return BasicItemOption.from_item(idx, item, width=120, mode=ItemOptionModes.FULL_USES)
+            return BasicItemOption.from_item(idx, item, width=120, mode=ItemOptionModes.FULL_USES, text_color=item_system.text_color(None, item))
 
         surf = engine.create_surface((WINWIDTH - 96, WINHEIGHT), transparent=True)
 
@@ -837,7 +854,8 @@ class InfoMenuState(State):
             left_pos = idx * 24
             icons.draw_skill(surf, skill, (left_pos + 8, 4), compact=False, grey=skill_system.is_grey(skill, self.unit))
             if skill_counter[skill.nid] > 1:
-                render_text(surf, ['small'], [str(skill_counter[skill.nid])], ['white'], (left_pos + 20 - 4 * len(str(skill_counter[skill.nid])), 6))
+                text = str(skill_counter[skill.nid])
+                render_text(surf, ['small'], [text], ['white'], (left_pos + 20 - 4 * len(text), 6))
             if skill.data.get('total_charge'):
                 charge = ' %d / %d' % (skill.data['charge'], skill.data['total_charge'])
             else:
@@ -851,7 +869,7 @@ class InfoMenuState(State):
 
     def create_class_skill_surf(self):
         surf = engine.create_surface((WINWIDTH - 96, 24), transparent=True)
-        class_skills = [skill for skill in self.unit.skills if skill.class_skill and not skill_system.hidden(skill, self.unit)][:6]
+        class_skills = [skill for skill in self.unit.skills if skill.class_skill and not skill_system.hidden(skill, self.unit)]
 
         # stacked skills appear multiple times, but should be drawn only once
         skill_counter = {}
@@ -864,9 +882,10 @@ class InfoMenuState(State):
                 skill_counter[skill.nid] += 1
         for idx, skill in enumerate(unique_skills[:6]):
             left_pos = idx * 24
-            icons.draw_skill(surf, skill, (left_pos + 8, 4), compact=False, grey=skill_system.is_grey(skill, self.unit))
+            icons.draw_skill(surf, skill, (left_pos + 8, 8), compact=False, grey=skill_system.is_grey(skill, self.unit))
             if skill_counter[skill.nid] > 1:
-                render_text(surf, ['small'], [str(skill_counter[skill.nid])], ['white'], (left_pos + 20 - 4 * len(str(skill_counter[skill.nid])), 6))
+                text = str(skill_counter[skill.nid])
+                render_text(surf, ['small'], [text], ['white'], (left_pos + 20 - 4 * len(text), 6))
             if skill.data.get('total_charge'):
                 charge = ' %d / %d' % (skill.data['charge'], skill.data['total_charge'])
             else:
@@ -922,7 +941,7 @@ class InfoMenuState(State):
 
     def create_fatigue_surf(self):
         surf = engine.create_surface((WINWIDTH - 96, WINHEIGHT), transparent=True)
-        max_fatigue = max(1, equations.parser.max_fatigue(self.unit))
+        max_fatigue = max(1, self.unit.get_max_fatigue())
         fatigue = self.unit.get_fatigue()
         build_groove(surf, (27, WINHEIGHT - 9), 88, utils.clamp(fatigue / max_fatigue, 0, 1))
         x_pos = 27 + 88 // 2
@@ -942,6 +961,7 @@ class InfoMenuState(State):
         # Menu background
         menu_surf = engine.create_surface((WINWIDTH - 96, WINHEIGHT), transparent=True)
 
+        text_parser = TextEvaluator(logging.getLogger(), game)
         my_notes = self.unit.notes
 
         if my_notes:
@@ -954,7 +974,7 @@ class InfoMenuState(State):
                 for entry in entries:
                     category_length = text_width('text', category)
                     left_pos = 64 if category_length <= 64 else (category_length + 8)
-                    render_text(menu_surf, ['text'], [entry], [], (left_pos, total_height))
+                    render_text(menu_surf, ['text'], [text_parser._evaluate_all(entry)], [], (left_pos, total_height))
                     total_height += 16
                 self.info_graph.register((96, 16 * help_offset + 24, 64, 16), '%s_desc' % category, 'notes', first=(idx == 0))
                 help_offset += len(entries)

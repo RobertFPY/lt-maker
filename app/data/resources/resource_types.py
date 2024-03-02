@@ -1,6 +1,6 @@
-from enum import IntEnum
+from enum import Enum
 
-class ResourceType(IntEnum):
+class ResourceType(Enum):
   ICONS16 = 1
   ICONS32 = 2
   ICONS80 = 3

@@ -1,5 +1,5 @@
 from enum import Enum
-from app.data.database.components import Component
+from app.data.database.components import Component, ComponentType, get_objs_using
 
 class SkillTags(Enum):
     ATTRIBUTE = 'attribute'
@@ -23,3 +23,6 @@ class SkillTags(Enum):
 class SkillComponent(Component):
     skill = None
     ignore_conditional = False
+
+def get_skills_using(expose: ComponentType, value, db) -> list:
+    return get_objs_using(db.skills.values(), expose, value)

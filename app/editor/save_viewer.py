@@ -1,3 +1,5 @@
+import os
+
 try:
     import cPickle as pickle
 except ImportError:
@@ -18,9 +20,11 @@ class SaveViewer(Dialog):
         layout = QVBoxLayout()
         self.setLayout(layout)
 
+        # Sort saves by last modified time
+        saves = sorted(saves, key=lambda s: os.path.getmtime(s), reverse=True)
         self.save_box = PropertyBox("Save", ComboBox, self)
         self.save_box.edit.addItems(saves)
-        self.save_box.edit.setCurrentIndex(len(saves) - 1)
+        self.save_box.edit.setCurrentIndex(0)
         self.save_box.edit.activated.connect(self.save_changed)
         layout.addWidget(self.save_box)
 

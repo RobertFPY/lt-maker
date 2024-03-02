@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from typing import List, Tuple
 
@@ -71,10 +73,13 @@ class PlayerChoiceState(MapState):
                 display_values.append(spl[1])
         return values, display_values
 
-    def create_help_boxes(self, options_list: List[NID]):
+    def create_help_boxes(self, options_list: List[NID | int]):
         self.help_boxes = []
-        if self.data_type == 'type_base_item':
-            items = item_funcs.create_items(None, options_list)
+        if self.data_type in ('type_base_item', 'type_game_item'):
+            if self.data_type == 'type_base_item':
+                items = item_funcs.create_items(None, options_list)
+            else:
+                items = [game.get_item(int(uid)) for uid in options_list]
             for item in items:
                 if item_system.is_weapon(None, item) or item_system.is_spell(None, item):
                     self.help_boxes.append(help_menu.ItemHelpDialog(item))
@@ -135,12 +140,23 @@ class PlayerChoiceState(MapState):
             return 'repeat'
 
         elif event == 'INFO':
-            if self.info_flag:
-                get_sound_thread().play_sfx('Info Out')
-                self.info_flag = False
-            elif self.help_boxes:
-                get_sound_thread().play_sfx('Info In')
-                self.info_flag = True
+            if self.data_type == 'type_unit':
+                unit = game.get_unit(self.menu.get_selected())
+                if not unit:
+                    get_sound_thread().play_sfx('Error')
+                else:
+                    all_units = [game.get_unit(unid) for unid in self._resolved_data if game.get_unit(unid)]
+                    game.memory['scroll_units'] = all_units
+                    game.memory['current_unit'] = unit
+                    game.memory['next_state'] = 'info_menu'
+                    game.state.change('transition_to')
+            else:
+                if self.info_flag:
+                    get_sound_thread().play_sfx('Info Out')
+                    self.info_flag = False
+                elif self.help_boxes:
+                    get_sound_thread().play_sfx('Info In')
+                    self.info_flag = True
 
         selection = self.menu.get_selected()
         game.game_vars[self.nid + '_choice_hover'] = selection
@@ -160,6 +176,8 @@ class PlayerChoiceState(MapState):
             return 'repeat'
 
     def draw(self, surf):
+        if not self.started:
+            return
         draw_mode = CursorDrawMode.NO_DRAW
         if not self.no_cursor:
             draw_mode = CursorDrawMode.DRAW if game.state.current_state(

@@ -153,8 +153,7 @@ class WeaponCatalog(Data[WeaponType]):
     datatype = WeaponType
 
     def default(self, db):
-        default_cap = db.weapon_ranks.get_highest_rank().requirement
-        return WexpGain(False, 0, default_cap)
+        return WexpGain(False, 0)
 
     def create_new(self, db):
         nids = [d.nid for d in self]
@@ -167,10 +166,10 @@ class WeaponCatalog(Data[WeaponType]):
 
 # === WEAPON EXPERIENCE GAINED ===
 class WexpGain():
-    def __init__(self, usable: bool, wexp_gain: int, cap: int = 251):
+    def __init__(self, usable: bool, wexp_gain: int, cap: int = None):
         self.usable = usable  # Used only by Klass Objects
         self.wexp_gain = wexp_gain
-        self.cap = cap  # Used only by Klass Objects
+        self.cap = cap  # Used only by Klass Objects -- when None, default to highest weapon rank
 
     def save(self):
         return (self.usable, self.wexp_gain, self.cap)

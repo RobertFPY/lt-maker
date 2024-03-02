@@ -9,7 +9,7 @@ from app.data.resources import combat_anims
 from app.editor.base_database_gui import ResourceCollectionModel
 from app.editor.item_editor import item_model
 
-from app.extensions.custom_gui import DeletionDialog
+from app.extensions.custom_gui import DeletionTab, DeletionDialog
 
 from app.utilities import str_utils
 from app.editor import utilities as editor_utilities
@@ -94,11 +94,11 @@ class CombatAnimModel(ResourceCollectionModel):
         affected_classes = [klass for klass in DB.classes if klass.combat_anim_nid == nid]
 
         if affected_classes:
-            affected = Data(affected_classes)
             from app.editor.class_editor.class_model import ClassModel
             model = ClassModel
-            msg = "Deleting Combat Animation <b>%s</b> would affect these classes"
-            ok = DeletionDialog.inform(affected, model, msg, self.window)
+            msg = "Deleting Combat Animation <b>%s</b> would affect these classes" % nid
+            deletion_tab = DeletionTab(affected_classes, model, msg, "Classes")
+            ok = DeletionDialog.inform([deletion_tab], self.window)
             if ok:
                 for klass in affected_classes:
                     klass.combat_anim_nid = None

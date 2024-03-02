@@ -7,7 +7,7 @@ class LCG(object):
 
     def _random(self):
         self.state = (self.state * 1103515245 + 12345) & 0x7FFFFFFF
-        return self.state
+        return self.state >> 16  # Only use the top 30..16 bits, the lower bits have a periodicity on even moduli
 
     def random(self):
         return self._random() / 2147483647.  # 0x7FFFFFFF in decimal

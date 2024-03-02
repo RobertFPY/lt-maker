@@ -59,7 +59,7 @@
                 "faction": "Soldier",
                 "starting_items": [
                     [
-                        "Iron Axe",
+                        "Iron_Axe",
                         false
                     ]
                 ],
@@ -67,7 +67,7 @@
                 "team": "enemy",
                 "ai": "Attack",
                 "roam_ai": null,
-                "ai_group": null,
+                "ai_group": "",
                 "starting_position": [
                     9,
                     6
@@ -83,7 +83,7 @@
                 "faction": "Soldier",
                 "starting_items": [
                     [
-                        "Iron Axe",
+                        "Iron_Axe",
                         false
                     ]
                 ],
@@ -91,7 +91,7 @@
                 "team": "enemy",
                 "ai": "Attack",
                 "roam_ai": null,
-                "ai_group": null,
+                "ai_group": "",
                 "starting_position": [
                     8,
                     6
@@ -133,6 +133,11 @@
                 }
             }
         ],
-        "ai_groups": []
+        "ai_groups": [
+            {
+                "nid": "",
+                "trigger_threshold": 1
+            }
+        ]
     }
 ]

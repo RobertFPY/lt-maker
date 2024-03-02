@@ -157,4 +157,4 @@ class ComponentDelegate(QStyledItemDelegate):
             painter.drawText(left, top + font_height, component)
             font.setPointSize(prev_size)
             painter.setFont(font)
-            painter.drawLine(left, top + 1.25 * font_height, right, top + 1.25 * font_height)
+            painter.drawLine(left, int(top + 1.25 * font_height), right, int(top + 1.25 * font_height))

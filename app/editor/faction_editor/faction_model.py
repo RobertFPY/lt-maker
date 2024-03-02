@@ -6,7 +6,7 @@ from app.data.resources.resources import RESOURCES
 from app.utilities.data import Data
 from app.data.database.database import DB
 
-from app.extensions.custom_gui import DeletionDialog
+from app.extensions.custom_gui import DeletionTab, DeletionDialog
 
 from app.editor.custom_widgets import FactionBox
 from app.editor.base_database_gui import DragDropCollectionModel
@@ -50,16 +50,20 @@ class FactionModel(DragDropCollectionModel):
         nid = faction.nid
         affected_ais = [ai for ai in DB.ai if ai.has_unit_spec("Faction", nid)]
         affected_levels = [level for level in DB.levels if any(unit.faction == nid for unit in level.units)]
+        deletion_tabs = []
         if affected_ais:
-            affected = Data(affected_ais)
             from app.editor.ai_editor.ai_model import AIModel
             model = AIModel
-        elif affected_levels:
-            affected = Data(affected_levels)
+            msg = "Deleting Faction <b>%s</b> would affect these AIs" % nid
+            deletion_tabs.append(DeletionTab(affected_ais, model, msg, "AIs"))
+        if affected_levels:
             from app.editor.global_editor.level_menu import LevelModel
             model = LevelModel
-            msg = "Deleting Faction <b>%s</b> would affect these objects" % nid
-            swap, ok = DeletionDialog.get_swap(affected, model, msg, FactionBox(self.window, exclude=faction), self.window)
+            msg = "Deleting Faction <b>%s</b> would affect units in these levels" % nid
+            deletion_tabs.append(DeletionTab(affected_levels, model, msg, "Levels"))
+
+        if deletion_tabs:
+            swap, ok = DeletionDialog.get_swap(deletion_tabs, FactionBox(self.window, exclude=faction), self.window)
             if ok:
                 self.on_nid_changed(nid, swap.nid)
             else:

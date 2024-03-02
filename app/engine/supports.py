@@ -355,7 +355,7 @@ def increment_end_combat_supports(combatant, target=None) -> list:
                 continue
             assert other_unit.position is not None
             if dist == 0 and target:
-                if target.position in game.target_system.get_attacks(other_unit, force=True):
+                if target.position in game.target_system.get_attackable_positions(other_unit, force=True):
                     action.do(action.IncrementSupportPoints(support_prefab.nid, inc))
                     pairs.append((combatant, other_unit))
             elif dist == 99 or utils.calculate_distance(combatant.position, other_unit.position) <= dist:

@@ -1,19 +1,21 @@
 from __future__ import annotations
+import functools
 
 import json
 import logging
 import os
 import shutil
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+import traceback
+from typing import Dict, List, Optional, TYPE_CHECKING
 
 from PyQt5.QtCore import QDir, Qt
 from PyQt5.QtWidgets import QFileDialog, QMessageBox, QProgressDialog, QVBoxLayout, QLabel, QDialogButtonBox, QCheckBox
 
 from app.constants import VERSION
 from app.data.database.database import DB, Database
-from app.data.resources.resources import RESOURCES
-from app.data.validation.db_validation import validate_all
+from app.data.resources.resources import RESOURCES, Resources
+from app.data.validation.db_validation import DBChecker
 from app.editor import timer
 from app.editor.error_viewer import show_error_report
 from app.editor.file_manager.project_initializer import ProjectInitializer
@@ -59,6 +61,7 @@ class FatalErrorDialog(SimpleDialog):
 
     def open_error_viewer(self):
         self.main_window_ref._error_window_ref = show_error_report()
+        self.close()
 
 class ProjectFileBackend():
     def __init__(self, parent, app_state_manager):
@@ -66,6 +69,7 @@ class ProjectFileBackend():
         self.app_state_manager = app_state_manager
         self.settings = MainSettingsController()
         self.current_proj = self.settings.get_current_project()
+        self.is_saving = False
 
         self.save_progress = QProgressDialog(
             "Saving project to %s" % self.current_proj, None, 0, 100, self.parent)
@@ -116,12 +120,40 @@ class ProjectFileBackend():
                 return False
         return True
 
+    def save_mutex(func):
+        @functools.wraps(func)
+        def wrapper(self, *args, **kwargs):
+            # If we're currently saving, we don't want to save again! So gate operations in the save mutex! 
+            if not self.is_saving:
+                # If we're saving the game, we want to ensure autosave doesn't show up and mess with our stuff! Stop it. 
+                timer.get_timer().autosave_timer.stop()
+                self.is_saving = True
+
+                # ... Then, actually save. 
+                result = func(self, *args, *kwargs)
+                self.is_saving = False
+
+                # ... Then start it again! Problem solved! (except this resets the timer, but close enough)
+                timer.get_timer().autosave_timer.start()
+                return result
+        return wrapper
+
+    @save_mutex
     def save(self, new=False) -> bool:
+        # make sure no errors in DB exist
+        # if we make a mistake in validation,
+        # we should allow the save so
+        # the user can make a game
+        try:
+            any_errors = DBChecker(DB, RESOURCES).validate_for_errors()
+            DB.game_flags.has_fatal_errors = bool(any_errors)
+        except Exception as e:
+            QMessageBox.warning(self.parent, "Validation warning", "Validation failed with error. Please send this message to the devs.\nYour save will continue as normal.\nException:\n" + traceback.format_exc())
+            DB.game_flags.has_fatal_errors = False
+
         # Returns whether we successfully saved
         # check if we're editing default, if so, prompt to save as
-        if self.current_proj and os.path.basename(self.current_proj) == DEFAULT_PROJECT:
-            self.current_proj = None
-        if new or not self.current_proj:
+        if new or not self.current_proj or os.path.basename(self.current_proj) == DEFAULT_PROJECT:
             starting_path = self.current_proj or QDir.currentPath()
             fn, ok = QFileDialog.getSaveFileName(self.parent, "Save Project", starting_path,
                                                  "All Files (*)")
@@ -171,7 +203,7 @@ class ProjectFileBackend():
             self.save_progress.setValue(100)
             error_msg = QMessageBox()
             error_msg.setIcon(QMessageBox.Critical)
-            error_msg.setText("Editor was unable to save your project's %s. \nFree up memory in your hard drive or try saving somewhere else, \notherwise progress will be lost when the editor is closed. \nFor more detailed logs, please read debug.log.1 in the saves/ directory.\n\n" % section)
+            error_msg.setText("Editor was unable to save your project's %s. \nFree up memory in your hard drive or try saving somewhere else, \notherwise progress will be lost when the editor is closed. \nFor more detailed logs, please click View Logs in the Extra menu.\n\n" % section)
             error_msg.setWindowTitle("Serialization Error")
             error_msg.exec_()
 
@@ -180,11 +212,6 @@ class ProjectFileBackend():
             display_error("resources")
             return False
         self.save_progress.setValue(75)
-
-        # make sure no errors in DB exist
-        # any_errors = self.validate(DB)
-        any_errors = validate_all(DB, RESOURCES)
-        DB.game_flags.has_fatal_errors = False if not any_errors else True
 
         success = DB.serialize(self.current_proj)
         if not success:
@@ -294,6 +321,7 @@ class ProjectFileBackend():
             self.settings.append_or_bump_project(
                 DB.constants.value('title') or os.path.basename(self.current_proj), self.current_proj)
 
+    @save_mutex
     def autosave(self):
         project_nid = DB.constants.value('game_nid').replace(' ', '_')
         autosave_path = os.path.abspath('autosave_%s.ltproj' % project_nid)
@@ -338,8 +366,11 @@ class ProjectFileBackend():
         with open(metadata_loc, 'w') as serialize_file:
             json.dump(metadata, serialize_file, indent=4)
 
-    def clean(self):
-        RESOURCES.clean(self.current_proj)
+    def get_unused_files(self) -> Dict[str, List[str]]:
+        return RESOURCES.get_unused_files(self.current_proj)
+
+    def clean(self, unused_files: Dict[str, List[str]]):
+        RESOURCES.clean(unused_files)
 
     def dump_csv(self, db: Database):
         starting_path = self.current_proj or QDir.currentPath()
@@ -347,7 +378,7 @@ class ProjectFileBackend():
             self.parent, "Choose dump location", starting_path)
         if fn:
             csv_direc = fn
-            for ttype, tstr in csv_data_exporter.dump_as_csv(db):
+            for ttype, tstr in csv_data_exporter.dump_as_csv(db, RESOURCES):
                 with open(os.path.join(csv_direc, ttype + '.csv'), 'w') as f:
                     f.write(tstr)
         else:

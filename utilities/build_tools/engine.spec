@@ -3,7 +3,7 @@ import sys
 
 block_cipher = None
 
-name = sys.argv[3]
+name = sys.argv[1]
 project = name + '.ltproj'
 
 a = Analysis(['run_engine.py'],
@@ -49,7 +49,8 @@ exe = EXE(pyz,
           strip=False,
           upx=True,
           console=True,
-          icon='favicon.ico' )
+          icon='favicon.ico',
+          contents_directory='.' )
 coll = COLLECT(exe,
                a.binaries,
                a.zipfiles,

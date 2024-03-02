@@ -4,12 +4,13 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, List
 from functools import reduce
-import operator  
+import operator
 
 ARG_TYPE_MAP: Dict[str, str] = {
     'unit': "UnitObject",
     'item': "ItemObject",
-    'target': "UnitObject"
+    'target': "UnitObject",
+    'item2': "ItemObject"
 }
 
 class ResolvePolicy(Enum):
@@ -23,6 +24,8 @@ class ResolvePolicy(Enum):
 
     NUMERIC_ACCUM = 'numeric_accumulate'
     NUMERIC_MULTIPLY = 'numeric_multiply'
+    MAXIMUM = 'maximum'
+    MINIMUM = 'minimum'
 
     NO_RETURN = 'no_return'
 
@@ -48,17 +51,17 @@ def all_false_priority(vals: List[bool]) -> bool:
     if not vals:
         return False
     return all(vals)
-    
+
 def all_true_priority(vals: List[bool]) -> bool:
     if not vals:
         return True
     return all(vals)
-    
+
 def any_false_priority(vals: List[bool]) -> bool:
     if not vals:
         return False
     return any(vals)
-    
+
 def list(vals: List[Any]):
     return vals or []
 
@@ -67,9 +70,15 @@ def union(vals: List[Any]):
 
 def numeric_accumulate(vals: List[int | float]):
     return sum(vals)
-    
+
 def numeric_multiply(vals: List[int | float]):
     return reduce(operator.mul, vals, 1)
 
 def no_return(_):
     return None
+
+def maximum(vals: List[int | float]):
+    return max(vals, default=0)
+
+def minimum(vals: List[int | float]):
+    return min(vals, default=0)

@@ -30,6 +30,8 @@ These variables are saved for the entirety of a given game.
 
 `_supports` **bool** Set to True to give the player access to support conversations and have characters gain support points.
 
+`_minimap` **bool** Set to True to give the player access to the minimap. Set to False to remove player access of the minimap. Defaults to True.
+
 `_fatigue` **int** Set to 0 to turn off fatigue. Set to 1 to have fatigue prevent unit from participating in a chapter. Set to 2 to have fatigue apply a Fatigued status when fatigue >= max fatigue and Rested when fatigue < max fatigue. Set to 3 to have the engine track fatigue but not do anything with it by default.
 
 `_prep_market` **bool** Set to True to give the player access to the market in the prep screen.

@@ -5,7 +5,8 @@ from app.data.database.database import DB
 from app.data.database.overworld import OverworldPrefab
 from app.editor.map_view import SimpleMapView
 from app.editor.overworld_editor.road_sprite_wrapper import RoadSpriteWrapper
-from app.editor.tile_editor import tile_model
+# from app.editor.tile_editor import tile_model
+from app.editor.tilemap_editor import get_tilemap_pixmap
 from app.data.resources.resources import RESOURCES
 from app.sprites import SPRITES
 from app.utilities.typing import Point
@@ -41,7 +42,7 @@ class WorldMapView(SimpleMapView):
             self.current_map = RESOURCES.tilemaps.get(
                 self.current_level.tilemap)
         if self.current_map:
-            pixmap = tile_model.create_tilemap_pixmap(self.current_map)
+            pixmap = get_tilemap_pixmap(self.current_map)
             self.working_image = pixmap
         else:
             self.clear_scene()
@@ -73,7 +74,7 @@ class WorldMapView(SimpleMapView):
         coord = position
         pixmap = icon.get_pixmap()
         # to support 16x16, 32x32, and 48x48 map icons, we offset them differently
-        offset_x = (pixmap.width() / 16 - 1) * 8
+        offset_x = int((pixmap.width() / 16 - 1) * 8)
         offset_y = (pixmap.height() - 16)
         if pixmap:
             if opacity:
@@ -85,10 +86,10 @@ class WorldMapView(SimpleMapView):
             pass
 
     def draw_road_segment(self, painter, start_position, end_position, selected=False, transparent=False, ghost=False):
-        start_x = start_position[0] * TILEWIDTH + TILEWIDTH / 2
-        start_y = start_position[1] * TILEHEIGHT + TILEHEIGHT / 2
-        end_x = end_position[0] * TILEWIDTH + TILEWIDTH / 2
-        end_y = end_position[1] * TILEHEIGHT + TILEHEIGHT / 2
+        start_x = start_position[0] * TILEWIDTH + TILEWIDTH // 2
+        start_y = start_position[1] * TILEHEIGHT + TILEHEIGHT // 2
+        end_x = end_position[0] * TILEWIDTH + TILEWIDTH // 2
+        end_y = end_position[1] * TILEHEIGHT + TILEHEIGHT // 2
 
         # if this is our current working line, draw an accent to let the user know
         if selected:

@@ -90,6 +90,7 @@ class TradeState(MapState):
     def back(self):
         game.state.back()
         game.state.back()
+        self.initiator.sprite.change_state('normal')
 
     def take_input(self, event):
         first_push = self.fluid.update()

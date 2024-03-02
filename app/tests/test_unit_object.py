@@ -112,7 +112,7 @@ class UnitObjectUnitTests(unittest.TestCase):
                     'persistent': True,
                     'portrait_nid': 'Eirika',
                     'position': None,
-                    'skills': [110, 120],
+                    'skills': [(110, 'bob', ('klass', False, True)), (120, (1,1), ('terrain', False, False))],
                     'starting_position': (4, 5),
                     'stats': {'CON': 5,
                             'DEF': 3,

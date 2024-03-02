@@ -108,6 +108,9 @@ class EventSyntaxRuleHighlighter():
                         return 'all'
                 broken_args = []
                 for keyword, value in parameters.items():
+                    # if empty and optional keyword, don't need to highlight
+                    if not value and keyword in command.optional_keywords:
+                        continue
                     validator = command.get_validator_from_keyword(keyword)
                     level = DB.levels.get(self.window.current.level_nid if self.window.current else None)
                     text = event_validators.validate(validator, value, level, DB, RESOURCES)
@@ -132,4 +135,6 @@ class EventHighlighter(QSyntaxHighlighter):
     def highlightBlock(self, text: str):
         to_format = self.event_syntax_formatter.match_line(text)
         for piece_to_format in to_format:
+            if piece_to_format.length == 0:
+                piece_to_format.length = 1
             self.setFormat(piece_to_format.start, piece_to_format.length, piece_to_format._format)

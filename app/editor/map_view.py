@@ -94,8 +94,8 @@ class SimpleMapView(QGraphicsView):
         if pixmap:
             if opacity:
                 painter.setOpacity(0.33)
-            painter.drawImage(coord[0] * TILEWIDTH - 9,
-                              coord[1] * TILEHEIGHT - 8, pixmap.toImage())
+            painter.drawImage(int(coord[0] * TILEWIDTH - 9),
+                              int(coord[1] * TILEHEIGHT - 8), pixmap.toImage())
             painter.setOpacity(1.0)
         else:
             pass  # TODO: for now  # Need a fallback option... CITIZEN??
@@ -248,7 +248,7 @@ class GlobalModeLevelMapView(SimpleMapView):
         coord = position
         pixmap = icon.get_pixmap()
         # to support 16x16, 32x32, and 48x48 map icons, we offset them differently
-        offset_x = (pixmap.width() / 16 - 1) * 8
+        offset_x = int((pixmap.width() / 16 - 1) * 8)
         offset_y = (pixmap.height() - 16)
         if pixmap:
             if opacity:
@@ -416,7 +416,7 @@ class NewMapView(SimpleMapView):
                 if current_unit and current_unit.nid in current_group.positions:
                     coord = current_group.positions.get(current_unit.nid)
                     cursor_sprite = SPRITES['cursor']
-                    if coord and cursor_sprite:    
+                    if coord and cursor_sprite:
                         if not cursor_sprite.pixmap:
                             cursor_sprite.pixmap = QPixmap(
                                 cursor_sprite.full_path)

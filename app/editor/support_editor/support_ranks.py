@@ -2,7 +2,7 @@ from app.utilities import str_utils
 from app.utilities.data import Data
 from app.data.database.database import DB
 
-from app.extensions.custom_gui import ComboBox, PropertyBox, DeletionDialog
+from app.extensions.custom_gui import ComboBox, PropertyBox, DeletionTab, DeletionDialog
 from app.extensions.list_dialogs import MultiAttrListDialog
 from app.extensions.list_models import MultiAttrListModel
 
@@ -16,20 +16,24 @@ class SupportRankMultiModel(MultiAttrListModel):
                                any(bon.support_rank == element.nid for bon in affinity.bonus)]
         affected_support_pairs = [support_pair for support_pair in DB.support_pairs if
                                   any(req.support_rank == element.nid for req in support_pair.requirements)]
-        if affected_affinities or affected_support_pairs:
-            if affected_affinities:
-                affected = Data(affected_affinities)
-                from app.editor.support_editor.affinity_model import AffinityModel
-                model = AffinityModel
-            elif affected_support_pairs:
-                affected = Data(affected_support_pairs)
-                from app.editor.support_editor.support_pair_model import SupportPairModel
-                model = SupportPairModel
-            msg = "Deleting Support Rank <b>%s</b> would affect these objects." % element.nid
+
+        deletion_tabs = []
+        if affected_affinities:
+            from app.editor.support_editor.affinity_model import AffinityModel
+            model = AffinityModel
+            msg = "Deleting Support Rank <b>%s</b> would affect these affinities." % element.nid
+            deletion_tabs.append(DeletionTab(affected_affinities, model, msg, "Affinities"))
+        if affected_support_pairs:
+            from app.editor.support_editor.support_pair_model import SupportPairModel
+            model = SupportPairModel
+            msg = "Deleting Support Rank <b>%s</b> would affect these support pairs." % element.nid
+            deletion_tabs.append(DeletionTab(affected_support_pairs, model, msg, "Support Pairs"))
+
+        if deletion_tabs:
             combo_box = PropertyBox("Support Rank", ComboBox, self.window)
             objs = [rank for rank in DB.support_ranks if rank.nid != element.nid]
             combo_box.edit.addItems([rank.nid for rank in objs])
-            obj_idx, ok = DeletionDialog.get_simple_swap(affected, model, msg, combo_box)
+            obj_idx, ok = DeletionDialog.get_simple_swap(deletion_tabs, combo_box)
             if ok:
                 swap = objs[obj_idx]
                 for affinity in affected_affinities:

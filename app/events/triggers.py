@@ -180,11 +180,11 @@ class UnitSelect(EventTrigger):
 @dataclass(init=True)
 class UnitLevelUp(EventTrigger):
     """
-    Occurs whenever a unit reaches the level stat screen.
+    Occurs whenever a unit levels up.
 
-        unit1: the unit that gained/lost stats.
+        unit1: the unit that changed their level.
         stat_changes: a dict containing their stat changes.
-        source: One of ('exp_gain', 'stat_change', 'class_change', 'promote') describing how the unit got to this screen.
+        source: One of ('exp_gain', 'stat_change', 'class_change', 'promote', 'event') describing how the unit got to this point.
     """
     nid: ClassVar[NID] = 'unit_level_up'
     unit1: UnitObject
@@ -302,7 +302,7 @@ class OnBaseStart(EventTrigger):
 @dataclass(init=True)
 class OnTurnwheel(EventTrigger):
     """
-    Occurs after the turnwheel is used. Events that happen within are 
+    Occurs after the turnwheel is used. Events that happen within are
     not recorded within the turnwheel and therefore will not be reversed
     upon turnwheel activation.
     """
@@ -420,22 +420,3 @@ class RegionTrigger(EventTrigger):
     item: ItemObject = None
 
 ALL_TRIGGERS = [tclass for tclass in EventTrigger.__subclasses__() if hasattr(tclass, 'nid') and tclass is not GenericTrigger]
-
-# _TRIGGER_NAME_MAP = {trigger.nid: trigger for trigger in ALL_TRIGGERS if hasattr(trigger, 'nid')}
-
-# def get_trigger(trigger_nid: str):
-#   return _TRIGGER_NAME_MAP[trigger_nid]
-
-def assert_triggers_are_documented():
-    documented_triggers = ALL_TRIGGERS.copy()
-    documented_triggers.append(RegionTrigger)
-    for trigger in documented_triggers:
-        doc = trigger.__doc__
-        if doc.startswith(trigger.__name__ + "("):
-            raise NotImplementedError("EventTrigger %s does not have documentation in triggers.py" % trigger.__name__)
-        for field in dataclasses.fields(trigger):
-            name = field.name
-            if name not in doc:
-                raise NotImplementedError("Doc for field %s missing from docstring for EventTrigger %s" % (name, trigger.__name__))
-
-assert_triggers_are_documented()

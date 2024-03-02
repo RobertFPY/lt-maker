@@ -55,7 +55,7 @@ Welcome to lt-maker's documentation!
    source/appendix/FAQ
    source/appendix/Contributing_to_the_LTWiki
    source/appendix/unit-reference
-
+   source/appendix/Adding-Language-Support
 
 Indices and tables
 ==================

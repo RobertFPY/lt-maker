@@ -1,8 +1,9 @@
 import math
 import random
+from typing import Optional
 
 from app.utilities.typing import Point
-from app.data.resources.portraits import Portrait
+from app.data.resources.portraits import PortraitPrefab
 
 from app import counters
 from app.utilities import utils
@@ -32,7 +33,7 @@ class EventPortrait():
     saturation_time = utils.frames2ms(10)
     travel_speed_mult = 1
 
-    def __init__(self, portrait: Portrait, position: Point, priority, 
+    def __init__(self, portrait: PortraitPrefab, position: Point, priority,
                  transition=False, slide=None, mirror=False, name='', expressions=None,
                  speed_mult=1):
         self.portrait = portrait
@@ -307,8 +308,10 @@ class EventPortrait():
 
         surf.blit(image, position)
 
-    def end(self, speed_mult=1):
+    def end(self, speed_mult=1, slide: Optional[str] = None):
         self.transition = True
         self.remove = True
+        if slide:  # Use the existing slide if not specified
+            self.slide = slide
         self.transition_speed = self.base_transition_speed * max(speed_mult, 0.001)
         self.transition_update = engine.get_time()

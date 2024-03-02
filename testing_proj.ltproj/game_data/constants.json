@@ -113,7 +113,7 @@
     ],
     [
         "fog_los",
-        false
+        true
     ],
     [
         "ai_fog_of_war",
@@ -193,6 +193,14 @@
     ],
     [
         "talk_display",
+        false
+    ],
+    [
+        "show_abilities",
+        false
+    ],
+    [
+        "info_menu_blink",
         false
     ],
     [

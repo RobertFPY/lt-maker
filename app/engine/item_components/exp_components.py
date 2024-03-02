@@ -168,7 +168,7 @@ class Fatigue(ItemComponent):
     expose = ComponentType.Int
     value = 1
 
-    def end_combat(self, playback, unit, item, target, mode):
+    def end_combat(self, playback, unit, item, target, item2, mode):
         if mode != 'attack':
             return
         marks = [mark for mark in playback if mark.nid.startswith('mark') and mark.attacker is unit and mark.item is item]

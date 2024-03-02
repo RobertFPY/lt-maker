@@ -1,5 +1,6 @@
 from app.data.database.skill_components import SkillComponent, SkillTags
 from app.data.database.components import ComponentType
+from app.engine import skill_system
 
 class Hidden(SkillComponent):
     nid = 'hidden'
@@ -50,6 +51,9 @@ class Negative(SkillComponent):
     desc = "Skill is considered detrimental"
     tag = SkillTags.ATTRIBUTE
 
+    def condition(self, unit, item):
+        return not skill_system.has_immune(unit)
+
 class Global(SkillComponent):
     nid = 'global'
     desc = "All units will possess this skill"
@@ -73,3 +77,6 @@ class HasTags(SkillComponent):
     tag = SkillTags.ATTRIBUTE
 
     expose = (ComponentType.List, ComponentType.Tag)
+
+    def additional_tags(self, unit, skill):
+        return self.value

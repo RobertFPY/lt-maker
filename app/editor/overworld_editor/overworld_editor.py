@@ -405,7 +405,8 @@ class OverworldEditor(QMainWindow):
         if visible:
             self.edit_mode = OverworldEditorEditMode.NODES
             self.set_message(" L-click to select a node or road."
-                             " R-click to place a road, L-click to cancel current road."
+                             " R-click to move the object."
+                             " Ctrl + R-click to build a road, L-click to cancel current road."
                              " Del to delete current selected object."
                              " Double L-click to create a new node."
                              " Space to toggle road guide."

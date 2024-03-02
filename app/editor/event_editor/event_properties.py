@@ -17,8 +17,8 @@ from PyQt5.QtWidgets import (QAbstractItemView, QAction, QApplication,
                              QPlainTextEdit, QPushButton, QSizePolicy,
                              QSpinBox, QSplitter, QStyle, QStyledItemDelegate,
                              QTextEdit, QToolBar, QVBoxLayout, QWidget)
+from app.editor.event_editor.event_function_hinter import EventScriptFunctionHinter, PythonFunctionHinter
 from app.editor.event_editor.event_text_editor import EventTextEditor
-from app.editor.event_editor.utils import EditorLanguageMode
 
 import app.editor.game_actions.game_actions as GAME_ACTIONS
 from app import dark_theme
@@ -37,6 +37,7 @@ from app.editor.map_view import SimpleMapView
 from app.editor.settings import MainSettingsController
 from app.events import event_commands, event_validators
 from app.events.event_prefab import EventPrefab
+from app.events.event_version import EventVersion
 from app.events.mock_event import IfStatementStrategy
 from app.events.regions import RegionType
 from app.events.triggers import ALL_TRIGGERS
@@ -140,6 +141,7 @@ class EventCollection(QWidget):
         self.toolbar.addAction(self.delete_action)
 
     def delete(self):
+        self.window.right_frame.name_done_editing()  # Necessary for handling deletion right after you change the name if you don't click off
         current_index = self.view.currentIndex()
         model_index = self.name_filtered_model.mapToSource(self.level_filtered_model.mapToSource(current_index))
         row = current_index.row()
@@ -295,15 +297,17 @@ class EventProperties(QWidget):
         self.window = parent
         self._data = self.window._data
 
+        self.settings = MainSettingsController()
         self.current = current
-        self.language_mode = EditorLanguageMode.UNSET
+        self.version = None
 
         self.text_box = EventTextEditor(self)
         self.text_box.textChanged.connect(self.text_changed)
+        self.find_and_replace_window = find_and_replace.Find(self)
 
-        self.find_action = QAction("Find...", self, shortcut="Ctrl+F", triggered=find_and_replace.Find(self).show)
-        self.replace_action = QAction("Replace...", self, shortcut="Ctrl+H", triggered=find_and_replace.Find(self).show)
-        self.replace_all_action = QAction("Replace all...", self, shortcut="Ctrl+Shift+H", triggered=find_and_replace.Find(self).show)
+        self.find_action = QAction("Find...", self, shortcut="Ctrl+F", triggered=self.show_find_and_replace)
+        self.replace_action = QAction("Replace...", self, shortcut="Ctrl+H", triggered=self.show_find_and_replace)
+        self.replace_all_action = QAction("Replace all...", self, shortcut="Ctrl+Shift+H", triggered=self.show_find_and_replace)
         self.addAction(self.find_action)
         self.addAction(self.replace_action)
         self.addAction(self.replace_all_action)
@@ -311,7 +315,7 @@ class EventProperties(QWidget):
         # Text setup
         self.cursor = self.text_box.textCursor()
         self.code_font = QFont()
-        self.code_font.setFamily("Courier")
+        self.code_font.setFamily(self.settings.get_code_font())
         self.code_font.setFixedPitch(True)
         self.code_font.setPointSize(10)
         self.text_box.setFont(self.code_font)
@@ -449,18 +453,30 @@ class EventProperties(QWidget):
             self.show_commands_dialog.done(0)
             self.show_commands_dialog = None
 
+    def show_find_and_replace(self):
+        if not self.find_and_replace_window:
+            self.find_and_replace_window = find_and_replace.Find(self)
+        self.find_and_replace_window.show()
+        self.find_and_replace_window.raise_()
+
+    def close_find_and_replace(self):
+        if self.find_and_replace_window:
+            self.find_and_replace_window.done(0)
+            self.find_and_replace_window = None
+
     def test_event(self, strategy):
         if self.current:
-            cursor_position = 0
+            # If not debug_point_line_number default to 0 (the start)
+            command_pointer = (self.text_box.debug_point_line_number or 1) - 1
             timer.get_timer().stop()
-            GAME_ACTIONS.test_event(self.current, cursor_position, strategy)
+            GAME_ACTIONS.test_event(self.current, command_pointer, strategy)
             timer.get_timer().start()
 
     def test_python_event(self):
         if self.current:
-            cursor_position = 0
+            command_pointer = 0
             timer.get_timer().stop()
-            GAME_ACTIONS.test_event(self.current, cursor_position)
+            GAME_ACTIONS.test_event(self.current, command_pointer)
             timer.get_timer().start()
 
     def name_changed(self, text):
@@ -528,29 +544,28 @@ class EventProperties(QWidget):
         self.current.source = self.text_box.document().toRawText()
         # reset cached event info
         DB.events.inspector.clear_cache(self.current.nid)
-        self.set_editor_language(EditorLanguageMode.PYTHON if self.current.is_python_event() else EditorLanguageMode.EVENT)
+        self.set_editor_language(self.current.version())
         self.set_test_event_button_visible()
 
     def set_test_event_button_visible(self):
-        if self.current and self.current.is_python_event():
+        if self.current and self.current.version() != EventVersion.EVENT:
             self.test_event_button.hide()
             self.test_python_event_button.show()
         else:
             self.test_event_button.show()
             self.test_python_event_button.hide()
 
-    def set_editor_language(self, lang: EditorLanguageMode):
-        if lang == self.language_mode:
+    def set_editor_language(self, version: EventVersion):
+        if version == self.version:
             return
-        self.language_mode = lang
-        if lang == EditorLanguageMode.PYTHON:
+        self.version = version
+        self.text_box.set_completer_version(self.version)
+        if version != EventVersion.EVENT:
             self.highlighter = PythonHighlighter(self.text_box.document())
-            self.text_box.set_completer(event_autocompleter.PythonEventScriptCompleter())
-            self.text_box.set_function_hinter(None)
+            self.text_box.set_function_hinter(PythonFunctionHinter)
         else:
             self.highlighter = EventHighlighter(self.text_box.document(), self)
-            self.text_box.set_completer(event_autocompleter.EventScriptCompleter())
-            self.text_box.set_function_hinter(event_autocompleter.EventScriptFunctionHinter)
+            self.text_box.set_function_hinter(EventScriptFunctionHinter)
 
     def set_current(self, current: EventPrefab):
         self.current = current
@@ -570,19 +585,20 @@ class EventProperties(QWidget):
         self.only_once_box.edit.setChecked(bool(current.only_once))
         self.priority_box.edit.setValue(current.priority)
 
-        if not self.current.is_python_event():
+        if self.current.version() == EventVersion.EVENT:
             if not self.current.source:
                 self.current.source = '\n'.join([str(cmd) for cmd in self.current.commands])
             self.text_box.setPlainText(self.current.source)
-            self.set_editor_language(EditorLanguageMode.EVENT)
+            self.set_editor_language(self.current.version())
         else:
             self.text_box.setPlainText(self.current.source)
-            self.set_editor_language(EditorLanguageMode.PYTHON)
+            self.set_editor_language(self.current.version())
         self.set_test_event_button_visible()
 
     def hideEvent(self, event):
         self.close_map()
         self.close_commands()
+        self.close_find_and_replace()
 
 class ShowMapDialog(QDialog):
     def __init__(self, current_level: LevelPrefab, parent=None):
@@ -839,4 +855,4 @@ class CommandDelegate(QStyledItemDelegate):
             painter.drawText(left, top + font_height, command)
             font.setPointSize(prev_size)
             painter.setFont(font)
-            painter.drawLine(left, top + 1.25 * font_height, right, top + 1.25 * font_height)
+            painter.drawLine(left, int(top + 1.25 * font_height), right, int(top + 1.25 * font_height))

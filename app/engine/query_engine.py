@@ -138,7 +138,7 @@ Example usage:
         Returns:
             bool: True if unit has item, else False
         """
-        all_units = self.game.get_all_units() if not party else self.game.get_all_units_in_party(party)
+        all_units = self.game.get_all_units(False) if not party else self.game.get_all_units_in_party(party)
         convoy: List[ItemObject] = []
         item = self._resolve_to_nid(item)
         if not item:

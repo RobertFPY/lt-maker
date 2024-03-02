@@ -55,13 +55,10 @@
             ],
             [
                 "uses_options",
-                [
-                    [
-                        "LoseUsesOnMiss (T/F)",
-                        "F",
-                        "Lose uses even on miss"
-                    ]
-                ]
+                {
+                    "lose_uses_on_miss": false,
+                    "one_loss_per_combat": false
+                }
             ],
             [
                 "prf_unit",
@@ -70,15 +67,16 @@
                 ]
             ],
             [
-                "effective",
-                14
-            ],
-            [
-                "effective_tag",
-                [
-                    "Horse",
-                    "Armor"
-                ]
+                "effective_damage",
+                {
+                    "effective_tags": [
+                        "Horse",
+                        "Armor"
+                    ],
+                    "effective_multiplier": 1.0,
+                    "effective_bonus_damage": 14,
+                    "show_effectiveness_flash": true
+                }
             ]
         ]
     }

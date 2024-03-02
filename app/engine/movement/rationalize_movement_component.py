@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Tuple
 
+from app.engine import action
 from app.engine.game_state import game
 from app.engine.movement.movement_component import MovementComponent
 from app.utilities import utils
@@ -23,7 +24,8 @@ class RationalizeMovementComponent(MovementComponent):
         # This is the copy we will work with
         self.position = self.unit.sprite.get_roam_position()
         # This is where we shall go
-        if game.board.get_unit(self.unit.position) is self.unit:
+        occupants = game.board.get_units(self.unit.position)
+        if len(occupants) == 1 and occupants[0] is self.unit:
             self.goal = self.unit.position
         else:  # Somebody else is occupying your position
             # Find a new nearby position to call home
@@ -50,16 +52,21 @@ class RationalizeMovementComponent(MovementComponent):
 
     def start(self):
         # What the unit's velocity is
-        x_vector = self.unit.position[0] - self.unit.sprite.get_roam_position()[0]
-        y_vector = self.unit.position[1] - self.unit.sprite.get_roam_position()[1]
+        x_vector = self.goal[0] - self.unit.sprite.get_roam_position()[0]
+        y_vector = self.goal[1] - self.unit.sprite.get_roam_position()[1]
         x_vector, y_vector = utils.normalize((x_vector, y_vector))
         self.x_vel = self.speed * x_vector
         self.y_vel = self.speed * y_vector
+        self.unit.sprite.change_state('moving')
+        self.unit.sprite.handle_net_position((self.x_vel, self.y_vel))
+        action.PickUnitUp(self.unit).do()
 
     def finish(self, surprise=False):
         self.unit.sprite.change_state('normal')
         self.unit.sprite.set_roam_position(None)
         self.unit.sprite.reset()
+        self.unit.position = self.goal
+        action.PutUnitDown(self.unit).do()
         self.active = False
 
     def update(self, current_time: int):
@@ -97,6 +104,6 @@ class RationalizeMovementComponent(MovementComponent):
 
         # If we are really close to our goal position
         # Just finish up
-        if (abs(self.position[0] - self.goal[0]) < self.epsilon) or \
+        if (abs(self.position[0] - self.goal[0]) < self.epsilon) and \
                 (abs(self.position[1] - self.goal[1]) < self.epsilon):
             self.finish()

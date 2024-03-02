@@ -42,7 +42,10 @@ class EventManager():
         triggered_events = self.get_triggered_events(trigger, level_nid)
         return len(triggered_events) > 0
 
-    def trigger(self, trigger: EventTrigger, level_nid=None):
+    def trigger(self, trigger: EventTrigger, level_nid=None) -> bool:
+        """
+        Returns whether an event was triggered!
+        """
         triggered_events = self.get_triggered_events(trigger, level_nid)
         new_event = False
         sorted_events = sorted(triggered_events, key=lambda x: x.priority)

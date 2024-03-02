@@ -4,16 +4,23 @@ import os
 from typing import Optional
 
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import (QFileDialog)
+from PyQt5.QtWidgets import QFileDialog
 
 import app.engine.item_component_access as ICA
+from app.data.database import item_components, skill_components
 from app.data.database.items import ItemCatalog, ItemPrefab
+from app.data.database.components import swap_values, ComponentType
 from app.editor import timer
 from app.editor.data_editor import SingleDatabaseEditor
 from app.editor.item_editor import item_import, item_model
 from app.editor.component_editor_properties import NewComponentProperties
 from app.editor.settings.main_settings_controller import MainSettingsController
-from app.editor.component_object_editor import ComponentObjectEditor
+from app.editor.new_editor_tab import NewEditorTab
+from app.extensions.custom_gui import DeletionTab, DeletionDialog
+from app.editor.custom_widgets import ItemBox
+
+from app.utilities.typing import NID
+
 
 class NewItemProperties(NewComponentProperties[ItemPrefab]):
     title = "Item"
@@ -22,7 +29,7 @@ class NewItemProperties(NewComponentProperties[ItemPrefab]):
     get_tags = staticmethod(ICA.get_item_tags)
 
 
-class NewItemDatabase(ComponentObjectEditor):
+class NewItemDatabase(NewEditorTab):
     catalog_type = ItemCatalog
     properties_type = NewItemProperties
 
@@ -42,6 +49,55 @@ class NewItemDatabase(ComponentObjectEditor):
         if pix:
             return QIcon(pix.scaled(32, 32))
         return None
+
+    def _on_delete(self, nid: NID) -> bool:
+        """
+        Returns whether the user wants to proceed with deletion
+        """
+        item = self.data.get(nid)
+        affected_units = [unit for unit in self._db.units if nid in unit.get_items()]
+        affected_levels = [level for level in self._db.levels if any(nid in unit.get_items() for unit in level.units)]
+        affected_items = item_components.get_items_using(ComponentType.Item, nid, self._db)
+        affected_skills = skill_components.get_skills_using(ComponentType.Item, nid, self._db)
+
+        deletion_tabs = []
+        if affected_units:
+            from app.editor.unit_editor.unit_model import UnitModel
+            model = UnitModel
+            msg = "Deleting Item <b>%s</b> would affect these units." % nid
+            deletion_tabs.append(DeletionTab(affected_units, model, msg, "Units"))
+        if affected_levels:
+            from app.editor.global_editor.level_menu import LevelModel
+            model = LevelModel
+            msg = "Deleting Item <b>%s</b> would affect units in these levels." % nid
+            deletion_tabs.append(DeletionTab(affected_levels, model, msg, "Levels"))
+        if affected_items:
+            from app.editor.item_editor.item_model import ItemModel
+            model = ItemModel
+            msg = "Deleting Item <b>%s</b> would affect these items" % nid
+            deletion_tabs.append(DeletionTab(affected_items, model, msg, "Items"))
+        if affected_skills:
+            from app.editor.skill_editor.skill_model import SkillModel
+            model = SkillModel
+            msg = "Deleting Item <b>%s</b> would affect these skills" % nid
+            deletion_tabs.append(DeletionTab(affected_skills, model, msg, "Skills"))
+
+        if deletion_tabs:
+            swap, ok = DeletionDialog.get_swap(deletion_tabs, ItemBox(self, exclude=item), self)
+            if ok:
+                self._on_nid_changed(nid, swap.nid)
+            else:
+                return False
+        return True
+
+    def _on_nid_changed(self, old_nid: NID, new_nid: NID) -> None:
+        for unit in self._db.units:
+            unit.replace_item_nid(old_nid, new_nid)
+        for level in self._db.levels:
+            for unit in level.units:
+                unit.replace_item_nid(old_nid, new_nid)
+        swap_values(self._db.items.values(), ComponentType.Item, old_nid, new_nid)
+        swap_values(self._db.skills.values(), ComponentType.Item, old_nid, new_nid)
 
     def import_xml(self):
         settings = MainSettingsController()

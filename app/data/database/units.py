@@ -1,6 +1,7 @@
+import copy
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
-
+from app.data.category import CategorizedCatalog
 from app.data.database.weapons import WexpGain
 from app.utilities.data import Data, Prefab
 from app.utilities.typing import NID
@@ -15,7 +16,7 @@ class UnitPrefab(Prefab):
     variant: Optional[str] = None
 
     level: int = 1
-    klass: str = None
+    klass: NID = None
 
     tags: List[NID] = field(default_factory=list)
     bases: Dict[NID, int] = field(default_factory=dict)
@@ -59,10 +60,8 @@ class UnitPrefab(Prefab):
     def save_attr(self, name, value):
         if name in ('bases', 'growths', 'stat_cap_modifiers'):
             return value.copy()  # So we don't make a copy
-        elif name == 'learned_skills':
-            return [val.copy() for val in value]  # So we don't make a copy
-        elif name == 'unit_notes':
-            return [val.copy() for val in value]
+        elif name in ('unit_notes', 'learned_skills', 'fields'):
+            return copy.deepcopy(value)
         elif name == 'wexp_gain':
             return {k: v.save() for (k, v) in self.wexp_gain.items()}
         else:
@@ -78,7 +77,7 @@ class UnitPrefab(Prefab):
                 value = {}
         elif name == 'wexp_gain':
             if isinstance(value, list):  # DEPRECATED
-                value = {nid: WexpGain(usable, wexp_gain, 251) for (usable, nid, wexp_gain) in value}
+                value = {nid: WexpGain(usable, wexp_gain) for (usable, nid, wexp_gain) in value}
             else:
                 value = {k: WexpGain.restore(v) for (k, v) in value.items()}
         elif name == 'starting_items':
@@ -95,7 +94,7 @@ class UnitPrefab(Prefab):
     def default(cls):
         return cls('0')
 
-class UnitCatalog(Data[UnitPrefab]):
+class UnitCatalog(CategorizedCatalog[UnitPrefab]):
     datatype = UnitPrefab
 
     def create_new(self, db):

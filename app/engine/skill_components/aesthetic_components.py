@@ -80,13 +80,14 @@ class StealIcon(SkillComponent):
     tag = SkillTags.AESTHETIC
 
     def target_icon(self, unit, target) -> str:
-        # Unit has item that can be stolen
+        # Unit has item that could be stolen by the target
+        # Unit is the unit with the marker being drawn above them
         if skill_system.check_enemy(unit, target):
-            attack = equations.parser.steal_atk(unit)
-            defense = equations.parser.steal_def(target)
+            attack = equations.parser.steal_atk(target)
+            defense = equations.parser.steal_def(unit)
             if attack >= defense:
-                for def_item in target.items:
-                    if self._item_restrict(unit, target, def_item):
+                for def_item in unit.items:
+                    if self._item_restrict(target, unit, def_item):
                         return 'steal'
         return None
 
@@ -119,7 +120,7 @@ class AlternateBattleAnim(SkillComponent):
     expose = ComponentType.String
     value = 'Critical'
 
-    def after_strike(self, actions, playback, unit, item, target, mode, attack_info, strike):
+    def after_strike(self, actions, playback, unit, item, target, item2, mode, attack_info, strike):
         if strike != Strike.MISS:
             playback.append(pb.AlternateBattlePose(self.value))
 
@@ -161,7 +162,7 @@ class MapCastAnim(SkillComponent):
 
     expose = ComponentType.MapAnimation
 
-    def start_combat(self, playback, unit, item, target, mode):
+    def start_combat(self, playback, unit, item, target, item2, mode):
         playback.append(pb.CastAnim(self.value))
 
 class BattleAnimMusic(SkillComponent):
@@ -172,5 +173,5 @@ class BattleAnimMusic(SkillComponent):
     expose = ComponentType.Music
     value = None
 
-    def battle_music(self, playback, unit, item, target, mode):
+    def battle_music(self, playback, unit, item, target, item2, mode):
         return self.value

@@ -169,6 +169,10 @@ def avoid(unit, item, item_to_avoid=None):
             equation = skill_system.avoid_formula(unit)
     avoid = equations.parser.get(equation, unit)
 
+    weapon_rank_bonus = get_weapon_rank_bonus(unit, item)
+    if weapon_rank_bonus:
+        avoid += int(weapon_rank_bonus.avoid)
+
     support_rank_bonuses, support_allies = get_support_rank_bonus(unit)
     for bonus in support_rank_bonuses:
         avoid += float(bonus.avoid)
@@ -221,6 +225,10 @@ def crit_avoid(unit, item, item_to_avoid=None):
             equation = skill_system.crit_avoid_formula(unit)
     avoid = equations.parser.get(equation, unit)
 
+    weapon_rank_bonus = get_weapon_rank_bonus(unit, item)
+    if weapon_rank_bonus:
+        avoid += int(weapon_rank_bonus.dodge)
+
     support_rank_bonuses, support_allies = get_support_rank_bonus(unit)
     for bonus in support_rank_bonuses:
         avoid += float(bonus.dodge)
@@ -269,6 +277,10 @@ def defense(atk_unit, def_unit, item, item_to_avoid=None):
             equation = skill_system.resist_formula(def_unit)
     res = equations.parser.get(equation, def_unit)
 
+    weapon_rank_bonus = get_weapon_rank_bonus(def_unit, item)
+    if weapon_rank_bonus:
+        res += int(weapon_rank_bonus.resist)
+
     support_rank_bonuses, support_allies = get_support_rank_bonus(def_unit)
     for bonus in support_rank_bonuses:
         res += float(bonus.resist)
@@ -301,9 +313,7 @@ def attack_speed(unit, item=None):
 
     attack_speed += item_system.modify_attack_speed(unit, item)
     attack_speed += skill_system.modify_attack_speed(unit, item)
-    # TODO
-    # Support bonus
-
+    
     if not DB.constants.value('allow_negative_as') and attack_speed < 0:
         attack_speed = 0
 
@@ -317,6 +327,10 @@ def defense_speed(unit, item, item_to_avoid=None):
         if equation == 'DEFENSE_SPEED':
             equation = skill_system.defense_speed_formula(unit)
     speed = equations.parser.get(equation, unit)
+
+    weapon_rank_bonus = get_weapon_rank_bonus(unit, item)
+    if weapon_rank_bonus:
+        speed += int(weapon_rank_bonus.defense_speed)
 
     support_rank_bonuses, support_allies = get_support_rank_bonus(unit)
     for bonus in support_rank_bonuses:

@@ -1,7 +1,7 @@
 from __future__ import annotations
 import logging
 import math
-from typing import TYPE_CHECKING, List, Dict
+from typing import TYPE_CHECKING, Dict, List, Set
 
 from app.data.database.database import DB
 from app.engine import item_system, skill_system, text_funcs
@@ -15,44 +15,135 @@ if TYPE_CHECKING:
     from app.engine.objects.unit import UnitObject
     from app.utilities.typing import NID
 
-def is_magic(unit, item, distance=0) -> bool:
+def is_magic(unit: UnitObject, item: ItemObject, distance: int = 0) -> bool:
+    """
+    Determines if an item is a magic item.
+
+    Args:
+        unit (UnitObject): The unit attempting to use the item.
+        item (ItemObject): The item to check.
+        distance (int, optional): The distance at which the item is used. Defaults to 0.
+
+    Distance matters if the item is a magic_at_range type item, since it will only be magical while used at a range > 1.
+
+    Returns:
+        bool: True if the item is a magic item, False otherwise.
+    """
     if item.magic or (item.magic_at_range and distance > 1):
         return True
     return False
 
-def is_ranged(unit, item) -> bool:
+def is_ranged(unit: UnitObject, item: ItemObject) -> bool:
+    """
+    Determines if the item's max range is greater than 1.
+
+    Args:
+        unit (UnitObject): The unit attempting to use the item.
+        item (ItemObject): The item to check.
+
+    Returns:
+        bool: True if the item is ranged, False otherwise.
+    """
     if max(get_range(unit, item), default=0) > 1:
         return True
     return False
 
-def is_heal(unit, item) -> bool:
+def is_heal(unit: UnitObject, item: ItemObject) -> bool:
+    """
+    Determines if an item is a healing item.
+
+    Args:
+        unit (UnitObject): The unit attempting to use the item.
+        item (ItemObject): The item to check.
+
+    Returns:
+        bool: True if the item is a healing item, False otherwise.
+    """
     if item.heal or item.magic_heal:
         return True
     return False
 
-def available(unit, item) -> bool:
+def available(unit: UnitObject, item: ItemObject) -> bool:
+    """
+    Checks if an item can be used by the unit.
+
+    Args:
+        unit (UnitObject): The unit attempting to use the item.
+        item (ItemObject): The item to check.
+
+    Returns:
+        bool: True if the item can be used, False otherwise.
+    """
     return item_system.available(unit, item) and skill_system.available(unit, item)
 
-def has_magic(unit) -> bool:
+def has_magic(unit: UnitObject) -> bool:
+    """
+    Checks if the unit has any magic items.
+
+    Args:
+        unit (UnitObject): The unit to check.
+
+    Returns:
+        bool: True if the unit has any magic items, False otherwise.
+    """
     return any(is_magic(unit, item) for item in unit.items if available(unit, item))
 
-def can_use(unit, item) -> bool:
+def can_use(unit: UnitObject, item: ItemObject) -> bool:
+    """
+    Checks if the unit can "use" a specific item, i.e., can the unit actually click Use in the item menu. 
+
+    Args:
+        unit (UnitObject): The unit attempting to use the item.
+        item (ItemObject): The item to check.
+
+    Returns:
+        bool: True if the unit can "use" the item, False otherwise.
+    """
     if item_system.can_use(unit, item) and available(unit, item):
         targets = game.target_system.get_valid_targets(unit, item)
         if targets:
             return True
     return False
 
-def can_repair(unit, item) -> bool:
+def can_repair(unit: UnitObject, item: ItemObject) -> bool:
+    """
+    Checks if the item can be repaired
+
+    Args:
+        unit (UnitObject): The unit holding the item.
+        item (ItemObject): The item to repair.
+
+    Returns:
+        bool: True if the item can be repaired, False otherwise.
+    """
     if item.uses and item.data['uses'] < item.data['starting_uses'] and \
             not item_system.unrepairable(unit, item):
         return True
     return False
 
-def has_repair(unit) -> bool:
+def has_repair(unit: UnitObject) -> bool:
+    """
+    Checks if the unit has any items that can be repaired.
+
+    Args:
+        unit (UnitObject): The unit to check.
+
+    Returns:
+        bool: True if the unit has items that can be repaired, False otherwise.
+    """
     return any(can_repair(unit, item) for item in unit.items)
 
-def buy_price(unit, item):
+def buy_price(unit: UnitObject, item: ItemObject) -> int:
+    """
+    Calculates how much an item costs to buy from a shop for the unit.
+
+    Args:
+        unit (UnitObject): The unit attempting to buy the item.
+        item (ItemObject): The item to buy.
+
+    Returns:
+        int: The buy price of the item.
+    """
     value = item_system.buy_price(unit, item)
     if value:
         value *= skill_system.modify_buy_price(unit, item)
@@ -60,7 +151,17 @@ def buy_price(unit, item):
         return 0
     return int(value)
 
-def sell_price(unit, item):
+def sell_price(unit: UnitObject, item: ItemObject) -> int:
+    """
+    Calculates how much an item costs to sell to a shop for the unit.
+
+    Args:
+        unit (UnitObject): The unit attempting to sell the item.
+        item (ItemObject): The item to sell.
+
+    Returns:
+        int: The sell price of the item.
+    """
     value = item_system.sell_price(unit, item)
     if value:
         if unit:
@@ -69,7 +170,17 @@ def sell_price(unit, item):
         return 0
     return int(value)
 
-def repair_price(unit, item):
+def repair_price(unit: UnitObject, item: ItemObject) -> int:
+    """
+    Calculates how much an item costs to repair for the unit.
+
+    Args:
+        unit (UnitObject): The unit holding the item.
+        item (ItemObject): The item to repair.
+
+    Returns:
+        int: The repair price of the item.
+    """
     repair_cost = 0
     if item.uses:
         charges_used = item.data['starting_uses'] - item.data['uses']
@@ -91,14 +202,14 @@ def create_item(unit, item_nid, droppable: bool = False, parent: ItemObject = No
     if unit and assign_ownership:
         item.owner_nid = unit.nid
     item_system.init(item)
-    if parent: # sub item specific operations
+    if parent:  # sub item specific operations
         for component in item.components:
             component.item = parent
         if assign_ownership:
             parent.subitem_uids.append(item.uid)
             parent.subitems.append(item)
             item.parent_item = parent
-    else: # main item specific operations
+    else:  # main item specific operations
         item.droppable = droppable
 
     if item.multi_item:
@@ -126,9 +237,15 @@ def create_items(unit, item_nid_list: list) -> list:
             logging.error("Cannot find item with nid %s" % item_nid)
     return items
 
-def get_all_items(unit) -> List[ItemObject]:
+def get_all_items(unit: UnitObject) -> List[ItemObject]:
     """
-    Use this to get all weapons if you want to be able to handle multi_items
+    Retrieves all items possessed by a unit, including multi-items.
+
+    Args:
+        unit (UnitObject): The unit whose items to retrieve.
+
+    Returns:
+        List[ItemObject]: A list of all items possessed by the unit, including multi-items.
     """
     items = []
     for item in unit.items:
@@ -139,9 +256,15 @@ def get_all_items(unit) -> List[ItemObject]:
             items.append(item)
     return items
 
-def get_all_items_with_multiitems(item_list) -> list:
+def get_all_items_with_multiitems(item_list: List[ItemObject]) -> List[ItemObject]:
     """
-    Get all of the normal items, subitems and the multi items themselves from a list of items
+    Retrieves all items and their subitems, including multi-items, from a list of items.
+
+    Args:
+        item_list (List[ItemObject]): The list of items to process.
+
+    Returns:
+        List[ItemObject]: A list of all items and their subitems, including multi-items.
     """
     items = []
     for item in item_list:
@@ -151,16 +274,31 @@ def get_all_items_with_multiitems(item_list) -> list:
         items.append(item)
     return items
 
-def get_all_items_and_abilities(unit) -> List[ItemObject]:
+def get_all_items_and_abilities(unit: UnitObject) -> List[ItemObject]:
     """
-    Use this to get all items if you want to be able to handle multi_items 
-    AND you want any extra abilities the unit has access to
+    Retrieves all items and extra abilities possessed by a unit, including multi-items.
+
+    Args:
+        unit (UnitObject): The unit whose items and abilities to retrieve.
+
+    Returns:
+        List[ItemObject]: A list of all items and extra abilities possessed by the unit, including multi-items.
     """
     items = get_all_items(unit)
     extra_abilities: Dict[str, ItemObject] = skill_system.get_extra_abilities(unit)
     return items + [ability for name, ability in extra_abilities.items()]
 
-def is_weapon_recursive(unit, item) -> bool:
+def is_weapon_recursive(unit: UnitObject, item: ItemObject) -> bool:
+    """
+    Recursively checks if an item or any of its subitems is a weapon.
+
+    Args:
+        unit (UnitObject): The unit holding the item.
+        item (ItemObject): The item to check.
+
+    Returns:
+        bool: True if the item or any of its subitems is a weapon, False otherwise.
+    """
     if item_system.is_weapon(unit, item):
         return True
     if item.multi_item:
@@ -168,7 +306,17 @@ def is_weapon_recursive(unit, item) -> bool:
             return True
     return False
 
-def is_spell_recursive(unit, item) -> bool:
+def is_spell_recursive(unit: UnitObject, item: ItemObject) -> bool:
+    """
+    Recursively checks if an item or any of its subitems is a spell.
+
+    Args:
+        unit (UnitObject): The unit holding the item.
+        item (ItemObject): The item to check.
+
+    Returns:
+        bool: True if the item or any of its subitems is a spell, False otherwise.
+    """
     if item_system.is_spell(unit, item):
         return True
     if item.multi_item:
@@ -176,7 +324,17 @@ def is_spell_recursive(unit, item) -> bool:
             return True
     return False
 
-def get_all_items_from_multi_item(unit, item) -> List[ItemObject]:
+def get_all_items_from_multi_item(unit: UnitObject, item: ItemObject) -> List[ItemObject]:
+    """
+    Retrieves all items from a multi-item.
+
+    Args:
+        unit (UnitObject): The unit to which the multi-item belongs.
+        item (ItemObject): The multi-item to process.
+
+    Returns:
+        List[ItemObject]: A list of all items contained within the multi-item.
+    """
     all_items = []
     if item.multi_item:
         for subitem in item.subitems:
@@ -187,30 +345,86 @@ def get_all_items_from_multi_item(unit, item) -> List[ItemObject]:
                 all_items.append(subitem)
     return all_items
 
-def get_all_tradeable_items(unit) -> list:
+def get_all_tradeable_items(unit: UnitObject) -> List[ItemObject]:
+    """
+    Retrieves all tradeable items possessed by a unit. Locked items are not tradeable.
+
+    Args:
+        unit (UnitObject): The unit whose tradeable items to retrieve.
+
+    Returns:
+        List[ItemObject]: A list of all tradeable items possessed by the unit.
+    """
     items = []
     for item in unit.items:
         if not item_system.locked(unit, item):
             items.append(item)
     return items
 
-def get_num_items(unit) -> int:
+def get_num_items(unit: UnitObject) -> int:
+    """
+    Retrieves the maximum number of non-accessories a unit can carry.
+
+    Args:
+        unit (UnitObject): The unit to query.
+
+    Returns:
+        int: The maximum number of non-accessories the unit can carry.
+    """
     return DB.constants.value('num_items') + skill_system.num_items_offset(unit)
 
-def get_num_accessories(unit) -> int:
+def get_num_accessories(unit: UnitObject) -> int:
+    """
+    Retrieves the maximum number of accessories a unit can carry.
+
+    Args:
+        unit (UnitObject): The unit to query.
+
+    Returns:
+        int: The maximum number of accessories the unit can carry.
+    """
     return DB.constants.value('num_accessories') + skill_system.num_accessories_offset(unit)
 
-def too_much_in_inventory(unit) -> bool:
+def too_much_in_inventory(unit: UnitObject) -> bool:
+    """
+    Checks if a unit is carrying too many items.
+
+    Args:
+        unit (UnitObject): The unit to check.
+
+    Returns:
+        bool: True if the unit is carrying too many items, False otherwise.
+    """
     return len(unit.accessories) > get_num_accessories(unit) or \
         len(unit.nonaccessories) > get_num_items(unit)
 
-def inventory_full(unit, item) -> bool:
+def inventory_full(unit: UnitObject, item: ItemObject) -> bool:
+    """
+    Checks if a unit's inventory is full.
+
+    Args:
+        unit (UnitObject): The unit to check.
+        item (ItemObject): The item to potentially add to the unit's inventory.
+
+    Returns:
+        bool: True if the unit's inventory is full, False otherwise.
+    """
     if item_system.is_accessory(unit, item):
         return len(unit.accessories) >= get_num_accessories(unit)
     else:
         return len(unit.nonaccessories) >= get_num_items(unit)
 
-def get_range(unit, item) -> set:
+def get_range(unit: UnitObject, item: ItemObject) -> Set[int]:
+    """
+    Retrieves the range of an item for a unit.
+
+    Args:
+        unit (UnitObject): The unit attempting to use the item.
+        item (ItemObject): The item whose range to retrieve.
+
+    Returns:
+        Set[int]: A set containing the valid ranges of the item.
+    """
     min_range = item_system.minimum_range(unit, item)
     max_range = item_system.maximum_range(unit, item)
 
@@ -223,7 +437,17 @@ def get_range(unit, item) -> set:
 
     return set(range(min_range, max_range + 1))
 
-def get_range_string(unit, item):
+def get_range_string(unit: UnitObject, item: ItemObject):
+    """
+    Retrieves the range of an item as a string.
+
+    Args:
+        unit (UnitObject): The unit holding the item.
+        item (ItemObject): The item whose range to retrieve.
+
+    Returns:
+        str: A string representation of the item's range.
+    """
     if unit:
         item_range = get_range(unit, item)
         min_range = min(item_range, default=0)
@@ -242,7 +466,15 @@ def get_range_string(unit, item):
     return rng
 
 def get_max_range(unit: UnitObject) -> int:
-    """Returns the maximum range of all available items for the unit"""
+    """
+    Retrieves the maximum range of all available items for a unit.
+
+    Args:
+        unit (UnitObject): The unit to query.
+
+    Returns:
+        int: The maximum range of all available items for the unit.
+    """
     items = [item for item in get_all_items(unit) if available(unit, item)]
     return max([max(get_range(unit, item), default=0) for item in items], default=0)
 
@@ -286,9 +518,29 @@ def create_skills(unit, skill_nid_list: list) -> list:
     return skills
 
 def num_stacks(unit: UnitObject, skill_nid: NID) -> int:
+    """
+    Calculates the number of stacks of a specific skill possessed by a unit.
+
+    Args:
+        unit (UnitObject): The unit whose skills to count.
+        skill_nid (NID): The NID of the skill to count.
+
+    Returns:
+        int: The number of stacks of the specified skill possessed by the unit.
+    """
     return len([skill for skill in unit.skills if skill.nid == skill_nid])
 
 def can_be_used_in_base(unit: UnitObject, item: ItemObject) -> bool:
+    """
+    Checks if an item can be used by a unit in the base/prep.
+
+    Args:
+        unit (UnitObject): The unit attempting to use the item.
+        item (ItemObject): The item to check.
+
+    Returns:
+        bool: True if the item can be used by the unit in the base, False otherwise.
+    """
     return (item_system.can_use(unit, item) and
             available(unit, item) and
             item_system.can_use_in_base(unit, item) and

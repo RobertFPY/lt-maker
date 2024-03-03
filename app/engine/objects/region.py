@@ -10,7 +10,7 @@ class RegionObject(Region):
     Inherits from the Region Prefab to access Region's helper functions like area and center.
 
     Attributes:
-        nid (str): The unique identifier for the region object.
+        nid (NID): The unique identifier for the region object.
         region_type (RegionType): The type of region (Event, Formation, etc.).
         position (Pos): The position of the region object. Defaults to None.
         size (Tuple[int, int]): The size of the region object in tiles. Defaults to [1, 1].

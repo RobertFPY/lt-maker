@@ -54,8 +54,15 @@ Welcome to lt-maker's documentation!
    source/appendix/misc_reference
    source/appendix/FAQ
    source/appendix/Contributing_to_the_LTWiki
-   source/appendix/unit-reference
    source/appendix/Adding-Language-Support
+   source/appendix/Special-Commands-for-Dialogue-Formatting
+   source/appendix/game-state-reference
+   source/appendix/level-reference
+   source/appendix/unit-reference
+   source/appendix/region-reference
+   source/appendix/party-reference
+   source/appendix/trigger-reference
+   
 
 Indices and tables
 ==================

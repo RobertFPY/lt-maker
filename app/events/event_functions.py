@@ -2870,7 +2870,11 @@ def choice(self: Event, nid: NID, title: str, choices: str, row_width: int = 0, 
             self.logger.error('choice: %s is not a valid python expression' % choices)
     else:  # list of NIDs
         choices = self.text_evaluator._evaluate_all(choices)
-        data = choices.replace('[', '').replace(']', '').split(',')
+        if choices.startswith('['):
+            choices = choices[1:]
+        if choices.endswith(']'):
+            choices = choices[:-1]
+        data = choices.split(',')
         data = [s.strip().replace('{comma}', ',') for s in data]
     data = data or ['']
 

@@ -4,6 +4,7 @@ import functools
 import json
 import logging
 import os
+from pathlib import Path
 import shutil
 from datetime import datetime
 import traceback
@@ -11,6 +12,7 @@ from typing import Dict, List, Optional, TYPE_CHECKING
 
 from PyQt5.QtCore import QDir, Qt
 from PyQt5.QtWidgets import QFileDialog, QMessageBox, QProgressDialog, QVBoxLayout, QLabel, QDialogButtonBox, QCheckBox
+import platformdirs
 
 from app.constants import VERSION
 from app.data.database.database import DB, Database
@@ -123,13 +125,13 @@ class ProjectFileBackend():
     def save_mutex(func):
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
-            # If we're currently saving, we don't want to save again! So gate operations in the save mutex! 
+            # If we're currently saving, we don't want to save again! So gate operations in the save mutex!
             if not self.is_saving:
-                # If we're saving the game, we want to ensure autosave doesn't show up and mess with our stuff! Stop it. 
+                # If we're saving the game, we want to ensure autosave doesn't show up and mess with our stuff! Stop it.
                 timer.get_timer().autosave_timer.stop()
                 self.is_saving = True
 
-                # ... Then, actually save. 
+                # ... Then, actually save.
                 result = func(self, *args, *kwargs)
                 self.is_saving = False
 
@@ -154,8 +156,11 @@ class ProjectFileBackend():
         # Returns whether we successfully saved
         # check if we're editing default, if so, prompt to save as
         if new or not self.current_proj or os.path.basename(self.current_proj) == DEFAULT_PROJECT:
-            starting_path = self.current_proj or QDir.currentPath()
-            fn, ok = QFileDialog.getSaveFileName(self.parent, "Save Project", starting_path,
+            if os.path.basename(self.current_proj) == DEFAULT_PROJECT:
+                starting_path = platformdirs.user_documents_dir()
+            else:
+                starting_path = Path(self.current_proj or QDir.currentPath()).parent
+            fn, ok = QFileDialog.getSaveFileName(self.parent, "Save Project", str(starting_path),
                                                  "All Files (*)")
             if ok:
                 # Make sure you can't save as "autosave" or "default"

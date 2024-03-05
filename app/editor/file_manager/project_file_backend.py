@@ -12,7 +12,6 @@ from typing import Dict, List, Optional, TYPE_CHECKING
 
 from PyQt5.QtCore import QDir, Qt
 from PyQt5.QtWidgets import QFileDialog, QMessageBox, QProgressDialog, QVBoxLayout, QLabel, QDialogButtonBox, QCheckBox
-import platformdirs
 
 from app.constants import VERSION
 from app.data.database.database import DB, Database
@@ -26,6 +25,7 @@ from app.editor.recent_project_dialog import choose_recent_project
 from app.editor.settings import MainSettingsController
 from app.extensions.custom_gui import SimpleDialog
 from app.utilities import exceptions
+import app.utilities.platformdirs as appdirs
 
 if TYPE_CHECKING:
     from app.editor.main_editor import MainEditor
@@ -157,7 +157,7 @@ class ProjectFileBackend():
         # check if we're editing default, if so, prompt to save as
         if new or not self.current_proj or os.path.basename(self.current_proj) == DEFAULT_PROJECT:
             if os.path.basename(self.current_proj) == DEFAULT_PROJECT:
-                starting_path = platformdirs.user_documents_dir()
+                starting_path = appdirs.user_documents_dir()
             else:
                 starting_path = Path(self.current_proj or QDir.currentPath()).parent
             fn, ok = QFileDialog.getSaveFileName(self.parent, "Save Project", str(starting_path),

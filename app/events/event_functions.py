@@ -2868,9 +2868,9 @@ def choice(self: Event, nid: NID, title: str, choices: str, row_width: int = 0, 
             data = lambda: tryexcept(choices)
         except:
             self.logger.error('choice: %s is not a valid python expression' % choices)
-    else: # list of NIDs
+    else:  # list of NIDs
         choices = self.text_evaluator._evaluate_all(choices)
-        data = choices.split(',')
+        data = choices.replace('[', '').replace(']', '').split(',')
         data = [s.strip().replace('{comma}', ',') for s in data]
     data = data or ['']
 

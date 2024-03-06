@@ -1,6 +1,6 @@
 [
     {
-        "nid": "Master Seal",
+        "nid": "Master_Seal",
         "name": "Master Seal",
         "desc": "Promotes all normal classes",
         "icon_nid": "Boosters",
@@ -61,7 +61,7 @@
                 null
             ],
             [
-                "eval_target_restrict",
+                "eval_target_restrict_2",
                 "unit.level >= 10"
             ]
         ]

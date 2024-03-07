@@ -462,6 +462,7 @@ class RemoveFromMap(Action):
     def reverse(self):
         self.update_fow_action.reverse()
         self.unit.position = self.old_pos
+        self.unit.sprite.change_state('normal')
         if self.unit.position:
             self.unit.previous_position = self.unit.position
 

@@ -1937,6 +1937,7 @@ class Promote(Action):
         current_stats = self.unit.stats
         new_klass_maxes = DB.classes.get(self.new_klass).max_stats
         new_klass_bases = DB.classes.get(self.new_klass).bases
+        old_klass_bases = DB.classes.get(self.old_klass).bases
 
         self.stat_changes = {nid: 0 for nid in DB.stats.keys()}
         for stat_nid in DB.stats.keys():
@@ -1945,6 +1946,8 @@ class Promote(Action):
                 self.stat_changes[stat_nid] = new_klass_bases.get(stat_nid, 0) - current_stats[stat_nid]
             elif stat_value == -98:  # Use the new klass base only if it's bigger
                 self.stat_changes[stat_nid] = max(0, new_klass_bases.get(stat_nid, 0) - current_stats[stat_nid])
+            elif stat_value == -97: # Subtract the old klass base from the new klass base
+                self.stat_changes[stat_nid] = new_klass_bases.get(stat_nid, 0) - old_klass_bases[stat_nid]
             else:
                 max_gain_possible = new_klass_maxes.get(stat_nid, 0) + unit.stat_cap_modifiers.get(stat_nid, 0) - current_stats[stat_nid]
                 self.stat_changes[stat_nid] = min(stat_value, max_gain_possible)

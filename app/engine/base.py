@@ -863,7 +863,7 @@ class BaseLibraryState(State):
             self.menu.set_ignore(ignore)
 
     def start(self):
-        if 'base_bg' in game.memory:
+        if game.memory.get('base_bg'):
             self.bg = game.memory['base_bg']
         else:
             self.bg = base_background()
@@ -966,7 +966,7 @@ class BaseGuideState(BaseLibraryState):
     name = 'base_guide'
 
     def start(self):
-        if 'base_bg' in game.memory:
+        if game.memory.get('base_bg'):
             self.bg = game.memory['base_bg']
         else:
             self.bg = base_background()
@@ -1351,7 +1351,7 @@ class BaseAchievementState(State):
 
     def start(self):
         self.fluid = FluidScroll()
-        if 'base_bg' in game.memory:
+        if game.memory.get('base_bg'):
             self.bg = game.memory['base_bg']
         else:
             self.bg = base_background()

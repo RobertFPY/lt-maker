@@ -13,7 +13,7 @@ class SpeakStyle(Prefab):
                  width: int = None, speed: float = None, font_color: str = None,
                  font_type: str = None, background: str = None, num_lines: int = None,
                  draw_cursor: bool = None, message_tail: str = None, transparency: float = None,
-                 name_tag_bg: str = None, flags: Set[str] = None):
+                 name_tag_bg: str = None, boop_sound: str = None, flags: Set[str] = None):
         self.nid: NID = nid
         self.speaker: NID = speaker
         self.position: Alignments | Tuple[int, int] = position
@@ -27,6 +27,7 @@ class SpeakStyle(Prefab):
         self.message_tail: str = message_tail
         self.transparency: float = transparency
         self.name_tag_bg: str = name_tag_bg
+        self.boop_sound: str = boop_sound
         self.flags: Set[str] = flags or set()
 
     def copy(self) -> SpeakStyle:

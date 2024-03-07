@@ -287,24 +287,24 @@ def expression(self: Event, portrait, expression_list: List[str], flags=None):
 def speak_style(self: Event, style: NID, speaker: NID=None, position: Alignments | Point=None,
                 width: int=None, speed: float=None, font_color: NID=None, font_type: NID=None,
                 background: NID=None, num_lines: int=None, draw_cursor: bool=None,
-                message_tail: NID=None, transparency: float=None, name_tag_bg: NID=None, flags=None):
+                message_tail: NID=None, transparency: float=None, name_tag_bg: NID=None, boop_sound: NID=None, flags=None):
     flags = flags or set()
     style_obj = SpeakStyle(style, speaker, position, width, speed, font_color, font_type, background,
-                           num_lines, draw_cursor, message_tail, transparency, name_tag_bg, flags)
+                           num_lines, draw_cursor, message_tail, transparency, name_tag_bg, boop_sound, flags)
     if style in self.game.speak_styles:
         style_obj = self.game.speak_styles[style].update(style_obj)
     self.game.speak_styles[style] = style_obj
 
 def say(self: Event, speaker_or_style: str, text: List[str], text_position: Point | Alignments=None, width=None, style_nid=None, text_speed=None,
           font_color=None, font_type=None, dialog_box=None, num_lines=None, draw_cursor=None,
-          message_tail=None, transparency=None, name_tag_bg=None, flags=None):
+          message_tail=None, transparency=None, name_tag_bg=None, boop_sound=None, flags=None):
     joined_text = '{sub_break}'.join(text)
     speak(self, speaker_or_style, joined_text, text_position, width, style_nid, text_speed, font_color, font_type, dialog_box, num_lines, draw_cursor,
-          message_tail, transparency, name_tag_bg, flags)
+          message_tail, transparency, name_tag_bg, boop_sound, flags)
 
 def speak(self: Event, speaker_or_style: str, text, text_position: Point | Alignments=None, width=None, style_nid=None, text_speed=None,
           font_color=None, font_type=None, dialog_box=None, num_lines=None, draw_cursor=None,
-          message_tail=None, transparency=None, name_tag_bg=None, flags=None):
+          message_tail=None, transparency=None, name_tag_bg=None, boop_sound=None, flags=None):
     flags = flags or set()
     text = dialog.process_dialog_shorthand(text)
 
@@ -317,7 +317,7 @@ def speak(self: Event, speaker_or_style: str, text, text_position: Point | Align
         cursor = None
 
     manual_style = SpeakStyle(None, None, text_position, width, text_speed, font_color,
-                              font_type, dialog_box, num_lines, cursor, message_tail, transparency, name_tag_bg, flags)
+                              font_type, dialog_box, num_lines, cursor, message_tail, transparency, name_tag_bg, boop_sound, flags)
 
     style = self._resolve_speak_style(speaker_or_style, style_nid, manual_style)
     speaker = style.speaker or ''
@@ -365,7 +365,7 @@ def speak(self: Event, speaker_or_style: str, text, text_position: Point | Align
                           style_nid=style_nid, autosize=autosize, speed=style.speed,
                           font_color=style.font_color, font_type=style.font_type, num_lines=style.num_lines,
                           draw_cursor=style.draw_cursor, message_tail=style.message_tail, transparency=style.transparency,
-                          name_tag_bg=style.name_tag_bg, flags=flags)
+                          name_tag_bg=style.name_tag_bg, boop_sound=style.boop_sound, flags=flags)
         self.text_boxes.append(new_dialog)
 
         if self.do_skip:

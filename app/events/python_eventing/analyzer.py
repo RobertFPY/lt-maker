@@ -110,23 +110,23 @@ class PyEventAnalyzer():
         except:
             return None
 
-    def verify_event(self, event_name: str, event_script: str = None) -> List[EventError]:
+    def verify_event(self, event_name: str, source: str = None) -> List[EventError]:
         self._parsed_events.clear() # no reason to load all events simultaneously in memory
         event_info = None
-        if not event_script:
-            event_script = self._catalog.get_from_nid(event_name).source
-        python_version_errors = self._verify_python_version_is_correct(event_name, event_script)
+        if not source:
+            source = self._catalog.get_from_nid(event_name).source
+        python_version_errors = self._verify_python_version_is_correct(event_name, source)
         if python_version_errors:
             return [python_version_errors]
-        forbidden_symbols_errors = self._verify_no_forbidden_symbols(event_name, event_script)
+        forbidden_symbols_errors = self._verify_no_forbidden_symbols(event_name, source)
         if forbidden_symbols_errors:
             return forbidden_symbols_errors
-        event_script = Compiler.compile_analyzer(event_script)
-        is_invalid_python_error = self._verify_valid_python(event_name, event_script)
+        compiled = Compiler.compile_analyzer(source)
+        is_invalid_python_error = self._verify_valid_python(event_name, compiled, source)
         if is_invalid_python_error:
             return [is_invalid_python_error]
 
-        event_info = EventContext.from_event(event_name, event_script)
+        event_info = EventContext.from_event(event_name, compiled)
         self._parsed_events[event_name] = event_info
 
         event_command_call_errors = self._verify_event_calls(event_info)
@@ -134,15 +134,15 @@ class PyEventAnalyzer():
         yield_errors = self._verify_no_yields(event_info)
         return event_command_call_errors + loop_save_errors + yield_errors
 
-    def _verify_python_version_is_correct(self, event_name: str, precompiled_event_script: str) -> Optional[InvalidPythonError]:
-        version = get_event_version(precompiled_event_script)
+    def _verify_python_version_is_correct(self, event_name: str, source: str) -> Optional[InvalidPythonError]:
+        version = get_event_version(source)
         if not version or version not in VERSION_MAP:
-            err = InvalidPythonError(event_name, 1, precompiled_event_script.split('\n')[0])
+            err = InvalidPythonError(event_name, 1, source.split('\n')[0])
             err.what = "In event %s: Unknown python event version: %s" %(event_name, version)
             return err
 
-    def _verify_no_forbidden_symbols(self, event_name: str, precompiled_event_script: str) -> Optional[List[InvalidPythonError]]:
-        as_lines = precompiled_event_script.split('\n')
+    def _verify_no_forbidden_symbols(self, event_name: str, source: str) -> Optional[List[InvalidPythonError]]:
+        as_lines = source.split('\n')
         errors = []
         for idx, line in enumerate(as_lines):
             if COMMAND_SENTINEL in line:
@@ -151,13 +151,15 @@ class PyEventAnalyzer():
                 errors.append(error)
         return errors
 
-    def _verify_valid_python(self, event_name: str, event_script: str) -> Optional[InvalidPythonError]:
+    def _verify_valid_python(self, event_name: str, compiled: str, source: str) -> Optional[InvalidPythonError]:
         try:
-            ast.parse(event_script)
+            ast.parse(compiled)
             return None
         except Exception as e:
-            as_lines = event_script.split('\n')
-            error = InvalidPythonError(event_name, e.lineno, as_lines[e.lineno - 1])
+            as_lines = source.split('\n')
+            source_as_lines = compiled.split('\n')
+            message = "%s => %s" % (as_lines[e.lineno - 1], source_as_lines[e.lineno - 1])
+            error = InvalidPythonError(event_name, e.lineno, message)
             error.what = e.msg
             return error
 

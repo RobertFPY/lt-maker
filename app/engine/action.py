@@ -40,6 +40,8 @@ def wrap_do_exec_reverse(_cls):
     return wrapper
 
 class Action():
+    persist_through_menu_cancel = False
+    
     def __init_subclass__(cls, **kwargs):
         return wrap_do_exec_reverse(_cls=cls)
 
@@ -1324,6 +1326,8 @@ class SetDroppable(Action):
         self.item.droppable = self.was_droppable
 
 class StoreItem(Action):
+    persist_through_menu_cancel = True
+
     def __init__(self, unit, item):
         self.unit = unit
         self.item = item
@@ -1350,6 +1354,8 @@ class RemoveItem(StoreItem):
 
 
 class EquipItem(Action):
+    persist_through_menu_cancel = True
+
     def __init__(self, unit, item):
         self.unit = unit
         self.item = item
@@ -1395,6 +1401,7 @@ class BringToTopItem(Action):
     """
     Assumes item is in inventory
     """
+    persist_through_menu_cancel = True
 
     def __init__(self, unit, item):
         self.unit = unit

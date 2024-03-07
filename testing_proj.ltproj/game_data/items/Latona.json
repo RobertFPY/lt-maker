@@ -49,10 +49,6 @@
                 10
             ],
             [
-                "status_on_hit",
-                "Clear"
-            ],
-            [
                 "restore",
                 null
             ],

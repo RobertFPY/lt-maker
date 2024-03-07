@@ -1,6 +1,6 @@
 [
     {
-        "nid": "Elysian Whip",
+        "nid": "Elysian_Whip",
         "name": "Elysian Whip",
         "desc": "Promotes flying classes.",
         "icon_nid": "Boosters",
@@ -41,15 +41,15 @@
                 null
             ],
             [
-                "eval_target_restrict",
-                "unit.level >= 10"
-            ],
-            [
                 "prf_class",
                 [
                     "Pegasus_Knight",
                     "Wyvern Rider"
                 ]
+            ],
+            [
+                "eval_target_restrict_2",
+                "unit.level >= 10"
             ]
         ]
     }

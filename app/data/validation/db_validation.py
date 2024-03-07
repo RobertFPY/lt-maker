@@ -204,3 +204,10 @@ class DBChecker():
         all_errors += self.validate_levels().errors
         all_errors += self.validate_units().errors
         return all_errors
+
+    def validate_for_warnings(self) -> List:
+        all_warnings = self.validate_events().warnings
+        all_warnings += self.validate_items_and_skills().warnings
+        all_warnings += self.validate_levels().warnings
+        all_warnings += self.validate_units().warnings
+        return all_warnings

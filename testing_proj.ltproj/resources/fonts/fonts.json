@@ -1,8 +1,10 @@
 [
     {
         "nid": "bconvo",
-        "font_type": "image",
+        "fallback_ttf": null,
+        "fallback_size": 16,
         "default_color": "black",
+        "outline_font": false,
         "palettes": {
             "black": [
                 [
@@ -162,8 +164,10 @@
     },
     {
         "nid": "chapter",
-        "font_type": "image",
+        "fallback_ttf": null,
+        "fallback_size": 16,
         "default_color": "yellow",
+        "outline_font": false,
         "palettes": {
             "yellow": [
                 [
@@ -389,14 +393,18 @@
     },
     {
         "nid": "class",
-        "font_type": "image",
+        "fallback_ttf": null,
+        "fallback_size": 16,
         "default_color": null,
+        "outline_font": false,
         "palettes": {}
     },
     {
         "nid": "convo",
-        "font_type": "image",
+        "fallback_ttf": null,
+        "fallback_size": 16,
         "default_color": "black",
+        "outline_font": false,
         "palettes": {
             "black": [
                 [
@@ -556,20 +564,26 @@
     },
     {
         "nid": "credit",
-        "font_type": "image",
+        "fallback_ttf": null,
+        "fallback_size": 16,
         "default_color": null,
+        "outline_font": false,
         "palettes": {}
     },
     {
         "nid": "credit_title",
-        "font_type": "image",
+        "fallback_ttf": null,
+        "fallback_size": 16,
         "default_color": null,
+        "outline_font": false,
         "palettes": {}
     },
     {
         "nid": "iconvo",
-        "font_type": "image",
+        "fallback_ttf": null,
+        "fallback_size": 16,
         "default_color": "black",
+        "outline_font": false,
         "palettes": {
             "black": [
                 [
@@ -729,8 +743,10 @@
     },
     {
         "nid": "info",
-        "font_type": "image",
+        "fallback_ttf": null,
+        "fallback_size": 16,
         "default_color": "black",
+        "outline_font": false,
         "palettes": {
             "black": [
                 [
@@ -778,14 +794,18 @@
     },
     {
         "nid": "label",
-        "font_type": "image",
+        "fallback_ttf": null,
+        "fallback_size": 16,
         "default_color": null,
+        "outline_font": false,
         "palettes": {}
     },
     {
         "nid": "narrow",
-        "font_type": "image",
+        "fallback_ttf": null,
+        "fallback_size": 16,
         "default_color": "white",
+        "outline_font": false,
         "palettes": {
             "white": [
                 [
@@ -1124,8 +1144,10 @@
     },
     {
         "nid": "nconvo",
-        "font_type": "image",
+        "fallback_ttf": null,
+        "fallback_size": 16,
         "default_color": "black",
+        "outline_font": false,
         "palettes": {
             "black": [
                 [
@@ -1285,50 +1307,66 @@
     },
     {
         "nid": "number_big",
-        "font_type": "image",
+        "fallback_ttf": null,
+        "fallback_size": 16,
         "default_color": null,
+        "outline_font": false,
         "palettes": {}
     },
     {
         "nid": "number_big2",
-        "font_type": "image",
+        "fallback_ttf": null,
+        "fallback_size": 16,
         "default_color": null,
+        "outline_font": false,
         "palettes": {}
     },
     {
         "nid": "number_big3",
-        "font_type": "image",
+        "fallback_ttf": null,
+        "fallback_size": 16,
         "default_color": null,
+        "outline_font": false,
         "palettes": {}
     },
     {
         "nid": "number_small",
-        "font_type": "image",
+        "fallback_ttf": null,
+        "fallback_size": 16,
         "default_color": null,
+        "outline_font": false,
         "palettes": {}
     },
     {
         "nid": "number_small2",
-        "font_type": "image",
+        "fallback_ttf": null,
+        "fallback_size": 16,
         "default_color": null,
+        "outline_font": false,
         "palettes": {}
     },
     {
         "nid": "number_small3",
-        "font_type": "image",
+        "fallback_ttf": null,
+        "fallback_size": 16,
         "default_color": null,
+        "outline_font": false,
         "palettes": {}
     },
     {
         "nid": "reel",
-        "font_type": "image",
+        "fallback_ttf": null,
+        "fallback_size": 16,
         "default_color": null,
+        "outline_font": false,
         "palettes": {}
     },
     {
         "nid": "small",
-        "font_type": "image",
+        "fallback_ttf": null,
+        "fallback_size": 16,
         "default_color": "white",
+        "outline_font": false,
         "palettes": {
             "white": [
                 [
@@ -1667,8 +1705,10 @@
     },
     {
         "nid": "stat",
-        "font_type": "image",
+        "fallback_ttf": null,
+        "fallback_size": 16,
         "default_color": "white",
+        "outline_font": false,
         "palettes": {
             "white": [
                 [
@@ -1726,8 +1766,10 @@
     },
     {
         "nid": "text_numbers",
-        "font_type": "image",
+        "fallback_ttf": null,
+        "fallback_size": 16,
         "default_color": "white",
+        "outline_font": false,
         "palettes": {
             "white": [
                 [
@@ -2066,8 +2108,10 @@
     },
     {
         "nid": "text",
-        "font_type": "image",
+        "fallback_ttf": null,
+        "fallback_size": 16,
         "default_color": "white",
+        "outline_font": false,
         "palettes": {
             "white": [
                 [

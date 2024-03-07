@@ -34,11 +34,11 @@
         "stat_cap_modifiers": {},
         "starting_items": [
             [
-                "Killer Lance",
+                "Killer_Lance",
                 false
             ],
             [
-                "Iron Lance",
+                "Iron_Lance",
                 false
             ],
             [

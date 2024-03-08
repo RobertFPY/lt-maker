@@ -1947,11 +1947,10 @@ class Promote(Action):
             elif stat_value == -98:  # Use the new klass base only if it's bigger
                 self.stat_changes[stat_nid] = max(0, new_klass_bases.get(stat_nid, 0) - current_stats[stat_nid])
             elif stat_value == -97: # Subtract the old klass base from the new klass base
-                for stat_nid in self.stat_changes.keys():
-                    change = new_klass_bases.get(stat_nid, 0) - old_klass_bases.get(stat_nid, 0)
-                    current_stat = current_stats.get(stat_nid)
-                    new_value = utils.clamp(change, -current_stat, new_klass_maxes.get(stat_nid, 0) + unit.stat_cap_modifiers.get(stat_nid, 0) - current_stat)
-                    self.stat_changes[stat_nid] = new_value
+                change = new_klass_bases.get(stat_nid, 0) - old_klass_bases.get(stat_nid, 0)
+                current_stat = current_stats.get(stat_nid)
+                new_value = utils.clamp(change, -current_stat, new_klass_maxes.get(stat_nid, 0) + unit.stat_cap_modifiers.get(stat_nid, 0) - current_stat)
+                self.stat_changes[stat_nid] = new_value
             else:
                 max_gain_possible = new_klass_maxes.get(stat_nid, 0) + unit.stat_cap_modifiers.get(stat_nid, 0) - current_stats[stat_nid]
                 self.stat_changes[stat_nid] = min(stat_value, max_gain_possible)

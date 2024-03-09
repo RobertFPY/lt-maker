@@ -386,7 +386,7 @@ def speak(self: Event, speaker_or_style: str, text, text_position: Point | Align
 
 def unhold(self: Event, nid, flags=None):
     for box in self.text_boxes:
-        if box.style_nid == nid:
+        if box.style_nid == nid or box.speaker == nid:
             box.hold = False
 
 def unpause(self: Event, nid=None, flags=None):

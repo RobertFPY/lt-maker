@@ -707,7 +707,7 @@ def change_tilemap(self: Event, tilemap, position_offset=None, load_tilemap=None
         return
 
     if position_offset:
-        position_offset = tuple(str_utils.intify(position_offset))
+        position_offset = tuple(position_offset)
     else:
         position_offset = (0, 0)
     if load_tilemap:
@@ -717,7 +717,7 @@ def change_tilemap(self: Event, tilemap, position_offset=None, load_tilemap=None
 
     reload_map = 'reload' in flags
     # For Overworld
-    if reload_map and self.game.is_displaying_overworld(): # just go back to the level
+    if reload_map and self.game.is_displaying_overworld():  # just go back to the level
         from app.engine import level_cursor, map_view
         from app.engine.movement import movement_system
         self.game.cursor = level_cursor.LevelCursor(self.game)

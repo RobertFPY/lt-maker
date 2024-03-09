@@ -147,11 +147,11 @@ class EffectiveIcon(ItemComponent):
         # No negation, so proceed with effective damage
         return False
 
-    def item_icon_mod(self, unit, item, target, sprite):
+    def item_icon_mod(self, unit, item, target, item2, sprite):
         if any(tag in target.tags for tag in self.value):
             if self._check_negate(target):
                 return sprite
-            sprite = image_mods.make_white(sprite.convert_alpha(), abs(250 - engine.get_time()%500)/250)
+            sprite = image_mods.make_white(sprite.convert_alpha(), abs(250 - engine.get_time() % 500)/250)
         return sprite
 
     def target_icon(self, unit, item, target) -> bool:

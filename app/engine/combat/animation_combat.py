@@ -1160,7 +1160,7 @@ class AnimationCombat(BaseCombat, MockCombat):
     def draw_item(self, surf, item, other_item, unit, other, topleft):
         icon = icons.get_icon(item)
         if icon:
-            icon = item_system.item_icon_mod(unit, item, other, icon)
+            icon = item_system.item_icon_mod(unit, item, other, other_item, icon)
             surf.blit(icon, (topleft[0] + 2, topleft[1] + 4))
 
         if skill_system.check_enemy(unit, other):

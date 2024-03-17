@@ -492,7 +492,7 @@ class CombatPhaseSolver():
                     playback.append(pb.MarkHit(attacker, defender, self.attacker, item, guard_hit))
                     playback.append(pb.MarkGlancingHit(attacker, defender, self.attacker, item))
             else:
-                if guard_hit: # Mocks the playback that would be created in weapon_components
+                if guard_hit:  # Mocks the playback that would be created in weapon_components
                     playback.append(pb.DamageHit(attacker, item, defender, 0, 0))
                     playback.append(pb.HitSound('No Damage'))
                     playback.append(pb.HitAnim('MapNoDamage', defender))

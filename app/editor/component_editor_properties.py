@@ -209,14 +209,14 @@ class NewComponentProperties(QWidget, Generic[T]):
     def add_component(self, component_class):
         if self.current:
             component = component_class(component_class.value)
-            if component.nid in self.current.components.keys():
+            if component.nid in self.current.components:
                 QMessageBox.warning(self, 'Warning', '%s component already present' % component.class_name())
             else:
                 self.current.components.append(component)
                 self.add_component_widget(component)
                 # Add other components that this should be paired with
                 for pair in component.paired_with:
-                    if pair not in self.current.components.keys():
+                    if pair not in self.current.components:
                         self.add_component(self.get_components().get(pair))
 
     def add_component_widget(self, component):
@@ -230,7 +230,7 @@ class NewComponentProperties(QWidget, Generic[T]):
             self.current.components.delete(data)
             # Remove all paired components
             for pair in data.paired_with:
-                if pair in self.current.components.keys():
+                if pair in self.current.components:
                     idx = self.component_list.index_list.index(pair)
                     item = self.component_list.item(idx)
                     component_widget = self.component_list.itemWidget(item)

@@ -66,7 +66,7 @@ class DialogLog():
             name = unit.nid
         if unit and unit.portrait_nid:
             portrait = RESOURCES.portraits.get(unit.portrait_nid)
-        elif name in DB.units.keys():
+        elif name in DB.units:
             portrait = RESOURCES.portraits.get(DB.units.get(name).portrait_nid)
         else:
             portrait = RESOURCES.portraits.get(name)

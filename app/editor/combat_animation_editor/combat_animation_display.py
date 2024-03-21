@@ -937,7 +937,7 @@ class CombatAnimProperties(QWidget):
             if not weapon_anim:
                 return
             current_pose_nid = self.pose_box.currentText()
-            if 'Stand' in weapon_anim.poses.keys() and 'Attack' in weapon_anim.poses.keys():
+            if 'Stand' in weapon_anim.poses and 'Attack' in weapon_anim.poses:
                 pass
             else:
                 QMessageBox.critical(self, "Missing Pose", "Missing Stand or Attack pose!")
@@ -956,7 +956,7 @@ class CombatAnimProperties(QWidget):
 
             item_nid = None
             for item in DB.items:
-                if item.magic and item.nid in RESOURCES.combat_effects.keys():
+                if item.magic and item.nid in RESOURCES.combat_effects:
                     item_nid = item.nid
 
             timer.get_timer().stop()

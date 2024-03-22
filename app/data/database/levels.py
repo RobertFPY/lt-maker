@@ -79,7 +79,7 @@ class LevelPrefab(Prefab):
         # Create any missing ai groups since old versions of the project files
         # don't have reified ai groups
         for ai_group_nid in all_unit_ai_groups:
-            if ai_group_nid not in self.ai_groups.keys():
+            if ai_group_nid not in self.ai_groups:
                 self.ai_groups.append(AIGroup(ai_group_nid, 1))
 
         return self

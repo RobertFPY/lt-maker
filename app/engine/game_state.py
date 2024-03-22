@@ -761,7 +761,7 @@ class GameState():
         self.region_registry[region.nid] = region
 
     def get_data(self, raw_data_nid):
-        if str(raw_data_nid) in DB.raw_data.keys():
+        if str(raw_data_nid) in DB.raw_data:
             return DB.raw_data.get(str(raw_data_nid))
         return None
 

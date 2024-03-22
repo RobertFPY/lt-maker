@@ -87,7 +87,7 @@ class SingleDatabaseEditor(QDialog):
             # does not exist as a valid level
             # Reason currently unknown...
             # Check that it does before broadcasting
-            if current_level_nid in DB.levels.keys():
+            if current_level_nid in DB.levels:
                 state_manager.change_and_broadcast(
                     'selected_level', current_level_nid)
 

@@ -175,7 +175,7 @@ class Database(object):
                         if 'nid' in subvalue:
                             name = subvalue['nid']
                         elif 'name' in subvalue:
-                            if 'level_nid' in subvalue.keys(): # to handle the wonky event nid property
+                            if 'level_nid' in subvalue: # to handle the wonky event nid property
                                 name = (subvalue['level_nid'] if subvalue['level_nid'] else 'global') + "_" + subvalue['name']
                             else:
                                 name = subvalue['name']

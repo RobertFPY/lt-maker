@@ -104,7 +104,7 @@ class PyEventAnalyzer():
 
     def get_event_info(self, event_name: str) -> Optional[EventContext]:
         try:
-            if not event_name in self._parsed_events and self._catalog and event_name in self._catalog.keys():
+            if event_name not in self._parsed_events and self._catalog and event_name in self._catalog:
                 self._parsed_events[event_name] = EventContext.from_event(event_name, self._catalog.get_from_nid(event_name).source)
             return self._parsed_events.get(event_name)
         except:

@@ -67,7 +67,7 @@ class RawDataCatalog(Data[RawDataPrefab]):
     datatype = RawDataPrefab
 
     def get(self, key: NID, fallback=None):
-        if key in self.keys():
+        if key in self:
             return super().get(key).value
         return super().get(key, fallback)
 

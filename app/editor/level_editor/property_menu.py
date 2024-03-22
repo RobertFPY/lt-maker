@@ -165,7 +165,7 @@ class PropertiesMenu(QWidget):
         self.title_box.edit.setText(current.name)
         self.nid_box.edit.setText(current.nid)
         self.record_box.edit.setChecked(bool(current.should_record))
-        if current.party in DB.parties.keys():
+        if current.party in DB.parties:
             idx = DB.parties.index(current.party)
             self.party_box.edit.setCurrentIndex(idx)
             self.party_changed()

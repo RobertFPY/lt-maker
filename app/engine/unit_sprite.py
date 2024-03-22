@@ -171,7 +171,7 @@ class UnitSprite():
                 anim = Animation(anim, (-16, -16), loop=loop, contingent=contingent)
             else:
                 return
-        if anim.nid in self.animations.keys():
+        if anim.nid in self.animations:
             return False
         self.animations[anim.nid] = anim
         return True

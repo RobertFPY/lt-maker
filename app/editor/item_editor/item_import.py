@@ -32,12 +32,12 @@ def get_from_xml(parent_dir: str, xml_fn: str) -> list:
 
 def get_wtype(final_components, item):
     wtype = item.find('weapontype').text
-    if wtype in DB.weapons.keys():
+    if wtype in DB.weapons:
         weapontype_comp = ICA.get_component('weapon_type')
         weapontype_comp.value = wtype
         final_components.append(weapontype_comp)
     wrank = item.find('LVL').text
-    if wrank in DB.weapon_ranks.keys():
+    if wrank in DB.weapon_ranks:
         weaponrank_comp = ICA.get_component('weapon_rank')
         weaponrank_comp.value = wrank
         final_components.append(weaponrank_comp)

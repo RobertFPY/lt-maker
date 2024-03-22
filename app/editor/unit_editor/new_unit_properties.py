@@ -80,7 +80,7 @@ class WexpModel(VirtualListModel):
         if not wexp_gain:
             self._data[weapon.nid] = DB.weapons.default(DB)
             wexp_gain = self._data[weapon.nid]
-        if value in DB.weapon_ranks.keys():
+        if value in DB.weapon_ranks:
             value = DB.weapon_ranks.get(value).requirement
         elif str_utils.is_int(value):
             value = int(value)

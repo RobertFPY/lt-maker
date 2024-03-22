@@ -104,7 +104,7 @@ class CommandChangePaletteSlot():
         self.new_coord = new_coord
 
         self.swap_coord = False
-        if self.new_coord in self.palette.colors.keys():
+        if self.new_coord in self.palette.colors:
             self.swap_coord = True
 
     def redo(self):

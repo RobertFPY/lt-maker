@@ -857,7 +857,7 @@ def get_battle_anim(unit, item, distance=1, klass=None, default_variant=False, a
             weapon_type = "Neutral"
         magic = item_funcs.is_magic(unit, item, distance)
         ranged = item_funcs.is_ranged(unit, item)
-        if item.nid in res.weapon_anims.keys():
+        if item.nid in res.weapon_anims:
             weapon_anim_nid = item.nid
             if magic:
                 weapon_anim_nid = "Magic" + weapon_anim_nid
@@ -872,7 +872,7 @@ def get_battle_anim(unit, item, distance=1, klass=None, default_variant=False, a
                 weapon_anim_nid = "Ranged" + weapon_type
         else:
             weapon_anim_nid = weapon_type
-        if magic and weapon_anim_nid not in res.weapon_anims.keys():
+        if magic and weapon_anim_nid not in res.weapon_anims:
             weapon_anim_nid = 'MagicGeneric'
 
     weapon_anim = res.weapon_anims.get(weapon_anim_nid)
@@ -893,7 +893,7 @@ def get_battle_anim(unit, item, distance=1, klass=None, default_variant=False, a
                     effect = item_system.effect_animation(unit, item)
                 else:
                     effect = item.nid
-                if effect not in RESOURCES.combat_effects.keys():
+                if effect not in RESOURCES.combat_effects:
                     logging.warning("Could not find spell animation for effect %s in weapon anim %s", effect, weapon_anim_nid)
                     return None
 

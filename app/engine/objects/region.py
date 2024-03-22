@@ -5,7 +5,7 @@ from app.events.regions import RegionType, Region
 
 class RegionObject(Region):
     """
-    A region object in the game. Not the same as a Region Prefab, which is the unchanging 
+    A region object in the game. Not the same as a Region Prefab, which is the unchanging Region you created in the level editor. 
 
     Inherits from the Region Prefab to access Region's helper functions like area and center.
 

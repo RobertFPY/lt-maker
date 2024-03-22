@@ -8,8 +8,12 @@ from app.utilities.typing import NID
 class PartyObject(Prefab):
     def __init__(self, nid: NID, name: str, leader_nid: NID, party_prep_manage_sort_order: Optional[List[NID]]=None,
                  money: int = 0, convoy: Optional[List[int]] = None, bexp: int = 0):
-        """Representation of a party of units. Generally only used when making a multi-party
-        game, to distinguish units who belong in a single party from one another.
+        """Representation of a party of units. Unless you have a multi-party game, game.party will generally return
+        the information you need for your party of units.
+
+        `my_money_value = game.party.money`
+        
+        Distinguishes units who belong in a single party from one another and separates their convoy, money, and bexp.
         
         Args:
             nid (NID): Unique ID for the party

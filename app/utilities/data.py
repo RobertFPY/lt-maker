@@ -153,6 +153,9 @@ class Data(Generic[T]):
     def __iter__(self):
         return iter(self._list)
 
+    def __contains__(self, key: NID) -> bool:
+        return key in self._dict
+
 class Prefab():
     def save(self):
         s_dict = {}

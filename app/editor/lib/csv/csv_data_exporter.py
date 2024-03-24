@@ -123,7 +123,7 @@ def update_db_with_unit_csv(db: Database, unit_csv_str):
             continue
         name = unit_data[0]
         nid = unit_data[1]
-        if nid in db.units.keys():
+        if nid in db.units:
             curr_unit = db.units.get(nid)
         else:
             curr_unit = UnitPrefab(nid, name)
@@ -138,7 +138,7 @@ def update_db_with_unit_csv(db: Database, unit_csv_str):
             elif '_growth' in headers[i]:
                 growth_stat_name = headers[i].replace('_growth', '')
                 curr_unit.growths[growth_stat_name] = int(unit_data[i])
-            elif headers[i] in db.weapons.keys(): # wrank
+            elif headers[i] in db.weapons: # wrank
                 weapon = headers[i]
                 rank = int(unit_data[i])
                 if rank > 0:
@@ -149,12 +149,12 @@ def update_db_with_unit_csv(db: Database, unit_csv_str):
 
 def validate_type(db: Database, expose_type: ComponentType, value: str):
     if expose_type == ComponentType.WeaponType:
-        if value in db.weapons.keys():
+        if value in db.weapons:
             return True
         else:
             return False
     elif expose_type == ComponentType.WeaponRank:
-        if value in db.weapon_ranks.keys():
+        if value in db.weapon_ranks:
             return True
         else:
             return False
@@ -170,7 +170,7 @@ def update_db_with_item_csv(db: Database, item_csv_str):
             continue
         name = item_data[0]
         nid = item_data[1]
-        if nid in db.items.keys():
+        if nid in db.items:
             curr_item = db.items.get(nid)
         else:
             curr_item = ItemPrefab(nid, name, "")

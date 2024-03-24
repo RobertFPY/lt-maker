@@ -54,7 +54,7 @@ class OverworldEntityObject():
 
         if unit_registry and party_prefab.leader in unit_registry:
             unit = unit_registry.get(party_prefab.leader)
-        elif party_prefab.leader in DB.units.keys():
+        elif party_prefab.leader in DB.units:
             unit = DB.units.get(party_prefab.leader)
         else:
             unit = DB.units.values()[0]

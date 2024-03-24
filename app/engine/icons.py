@@ -193,7 +193,7 @@ def draw_chibi(surf, nid, topleft=None, bottomright=None):
     return surf
 
 def draw_stat(surf, stat_nid, unit, topright, compact=False):
-    if stat_nid not in DB.stats.keys():
+    if stat_nid not in DB.stats:
         FONT['text-yellow'].blit_right('--', surf, topright)
         return
     value = unit.stats.get(stat_nid, 0)
@@ -224,7 +224,7 @@ def draw_stat(surf, stat_nid, unit, topright, compact=False):
             FONT['small-red'].blit(str(bonus), surf, topright)
 
 def draw_growth(surf, stat_nid, unit, topright, compact=False):
-    if stat_nid not in DB.stats.keys():
+    if stat_nid not in DB.stats:
         FONT['text-yellow'].blit_right('--', surf, topright)
         return
     value = unit.growths.get(stat_nid, 0)

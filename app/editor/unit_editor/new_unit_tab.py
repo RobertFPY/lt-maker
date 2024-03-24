@@ -80,14 +80,14 @@ class NewUnitDatabase(NewEditorTab):
         # Checking to see if any levels need to be changed
         for level in DB.levels:
             for unit in level.units.values():
-                if unit.generic or unit.nid in DB.units.keys():
+                if unit.generic or unit.nid in DB.units:
                     pass
                 else:  # Remove any unit that no longer exist
                     level.units.remove_key(unit.nid)
             # Now remove groups
             for unit_group in level.unit_groups:
                 for unit_nid in unit_group.units:
-                    if unit_nid not in level.units.keys():
+                    if unit_nid not in level.units:
                         unit_group.remove(unit_nid)
 
 def get(unit_nid=None):

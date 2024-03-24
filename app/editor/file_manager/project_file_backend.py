@@ -255,6 +255,8 @@ class ProjectFileBackend():
             os.rename(self.tmp_proj, self.current_proj)
         self.save_progress.setValue(100)
 
+        self.settings.append_or_bump_project(DB.constants.value('title') or os.path.basename(self.current_proj), self.current_proj)
+
         if DB.game_flags.has_fatal_errors:
             self.display_fatal_errors()
 

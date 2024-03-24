@@ -597,7 +597,7 @@ def inc_level_var(self: Event, nid, expression=None, flags=None):
         action.do(action.SetLevelVar(nid, self.game.level_vars.get(nid, 0) + 1))
 
 def set_next_chapter(self: Event, chapter, flags=None):
-    if chapter not in DB.levels.keys():
+    if chapter not in DB.levels:
         self.logger.error("set_next_chapter: %s is not a valid chapter nid" % chapter)
         return
     action.do(action.SetGameVar("_goto_level", chapter))
@@ -632,7 +632,7 @@ def set_fog_of_war(self: Event, fog_of_war_type, radius: int, ai_radius: Optiona
 def end_turn(self: Event, team: NID = None, flags=None):
     self.logger.info('Force end of turn.')
     if team is not None:
-        if team not in DB.teams.keys():
+        if team not in DB.teams:
             self.logger.error("end_turn: %s is not a valid team team nid" % team)
             return
         if not any(unit.team == team for unit in self.game.units if unit.position and 'Tile' not in unit.tags):
@@ -850,7 +850,7 @@ def make_generic(self: Event, nid, klass, level: int, team, ai=None, faction=Non
         self.logger.error("make_generic: Unit with NID %s already exists!" % unit_nid)
         return
 
-    if klass not in DB.classes.keys():
+    if klass not in DB.classes:
         self.logger.error("make_generic: Class %s doesn't exist in database " % klass)
         return
     if not ai:
@@ -1397,7 +1397,7 @@ def give_item(self: Event, global_unit_or_convoy, item, party=None, flags=None):
             self.logger.error("give_item: Couldn't find unit with nid %s" % global_unit)
             return
     item_id = item
-    if item_id in DB.items.keys():
+    if item_id in DB.items:
         item = item_funcs.create_item(None, item_id)
         self.game.register_item(item)
     elif str_utils.is_int(item_id) and int(item_id) in self.game.item_registry:
@@ -1946,7 +1946,7 @@ def give_skill(self: Event, global_unit, skill, initiator=None, flags=None):
         self.logger.error("give_skill: Couldn't find unit with nid %s" % global_unit)
         return
     skill_nid = skill
-    if skill_nid not in DB.skills.keys():
+    if skill_nid not in DB.skills:
         self.logger.error("give_skill: Couldn't find skill with nid %s" % skill)
         return
     if initiator is not None:
@@ -2003,7 +2003,7 @@ def change_ai(self: Event, global_unit, ai, flags=None):
     if not unit:
         self.logger.error("change_ai: Couldn't find unit %s" % global_unit)
         return
-    if ai in DB.ai.keys():
+    if ai in DB.ai:
         action.do(action.ChangeAI(unit, ai))
     else:
         self.logger.error("change_ai: Couldn't find AI %s" % ai)
@@ -2014,7 +2014,7 @@ def change_roam_ai(self: Event, global_unit, ai, flags=None):
     if not unit:
         self.logger.error("change_roam_ai: Couldn't find unit %s" % global_unit)
         return
-    if ai in DB.ai.keys():
+    if ai in DB.ai:
         action.do(action.ChangeRoamAI(unit, ai))
     else:
         self.logger.error("change_roam_ai: Couldn't find AI %s" % ai)
@@ -2032,7 +2032,7 @@ def change_party(self: Event, global_unit, party, flags=None):
     if not unit:
         self.logger.error("change_party: Couldn't find unit %s" % global_unit)
         return
-    if party in DB.parties.keys():
+    if party in DB.parties:
         action.do(action.ChangeParty(unit, party))
     else:
         self.logger.error("change_party: Couldn't find Party %s" % party)
@@ -2043,7 +2043,7 @@ def change_faction(self: Event, global_unit, faction, flags=None):
     if not unit:
         self.logger.error("change_faction: Couldn't find unit %s" % global_unit)
         return
-    if faction in DB.factions.keys():
+    if faction in DB.factions:
         action.do(action.ChangeFaction(unit, faction))
     else:
         self.logger.error("change_party: Couldn't find Faction %s" % faction)
@@ -2054,7 +2054,7 @@ def change_team(self: Event, global_unit, team, flags=None):
     if not unit:
         self.logger.error("change_team: Couldn't find unit %s" % global_unit)
         return
-    if team in DB.teams.keys():
+    if team in DB.teams:
         action.do(action.ChangeTeam(unit, team))
     else:
         self.logger.error("change_team: Not a valid team: %s" % team)
@@ -2342,7 +2342,7 @@ def add_tag(self: Event, global_unit, tag, flags=None):
     if not unit:
         self.logger.error("add_tag: Couldn't find unit %s" % global_unit)
         return
-    if tag in DB.tags.keys():
+    if tag in DB.tags:
         action.do(action.AddTag(unit, tag))
 
 def remove_tag(self: Event, global_unit, tag, flags=None):
@@ -2350,7 +2350,7 @@ def remove_tag(self: Event, global_unit, tag, flags=None):
     if not unit:
         self.logger.error("add_tag: Couldn't find unit %s" % global_unit)
         return
-    if tag in DB.tags.keys():
+    if tag in DB.tags:
         action.do(action.RemoveTag(unit, tag))
 
 def add_talk(self: Event, unit1, unit2, flags=None):
@@ -2430,7 +2430,7 @@ def unlock_support_rank(self: Event, unit1, unit2, support_rank, flags=None):
         self.logger.error("unlock_support_rank: Couldn't find unit %s" % unit2)
         return
     rank = support_rank
-    if rank not in DB.support_ranks.keys():
+    if rank not in DB.support_ranks:
         self.logger.error("unlock_support_rank: Support rank %s not a valid rank!" % rank)
         return
     prefabs = DB.support_pairs.get_pairs(_unit1.nid, _unit2.nid)
@@ -2455,7 +2455,7 @@ def disable_support_rank(self: Event, unit1, unit2, support_rank, flags=None):
         self.logger.error("disable_support_rank: Couldn't find unit %s" % unit2)
         return
     rank = support_rank
-    if rank not in DB.support_ranks.keys():
+    if rank not in DB.support_ranks:
         self.logger.error("disable_support_rank: Support rank %s not a valid rank!" % rank)
         return
     prefabs = DB.support_pairs.get_pairs(_unit1.nid, _unit2.nid)
@@ -2467,7 +2467,7 @@ def disable_support_rank(self: Event, unit1, unit2, support_rank, flags=None):
         return
 
 def add_market_item(self: Event, item, stock=-1, flags=None):
-    if item not in DB.items.keys():
+    if item not in DB.items:
         self.logger.warning("add_market_item: %s is not a legal item nid", item)
         return
     if stock > -1:
@@ -2479,7 +2479,7 @@ def add_market_item(self: Event, item, stock=-1, flags=None):
         self.game.market_items[item] = -1  # Any negative number means infinite
 
 def remove_market_item(self: Event, item, stock: int=0, flags=None):
-    if item not in DB.items.keys():
+    if item not in DB.items:
         self.logger.warning("remove_market_item: %s is not a legal item nid", item)
         return
     if stock and item in self.game.market_items:
@@ -2495,7 +2495,7 @@ def clear_market_items(self: Event, flags=None):
 def add_region(self: Event, region, position, size: Tuple, region_type, string=None, time_left=None, flags=None):
     flags = flags or set()
 
-    if region in self.game.level.regions.keys():
+    if region in self.game.level.regions:
         self.logger.error("add_region: RegionObject nid %s already present!" % region)
         return
     position = self._parse_pos(position)
@@ -2519,21 +2519,21 @@ def add_region(self: Event, region, position, size: Tuple, region_type, string=N
     action.do(action.AddRegion(new_region))
 
 def region_condition(self: Event, region, expression, flags=None):
-    if region in self.game.level.regions.keys():
+    if region in self.game.level.regions:
         region = self.game.level.regions.get(region)
         action.do(action.ChangeRegionCondition(region, expression))
     else:
         self.logger.error("region_condition: Couldn't find RegionObject %s" % region)
 
 def remove_region(self: Event, region, flags=None):
-    if region in self.game.level.regions.keys():
+    if region in self.game.level.regions:
         region = self.game.level.regions.get(region)
         action.do(action.RemoveRegion(region))
     else:
         self.logger.error("remove_region: Couldn't find RegionObject %s" % region)
 
 def remove_generics_from_region(self: Event, nid, flags=None):
-    if nid in self.game.level.regions.keys():
+    if nid in self.game.level.regions:
         region = self.game.level.regions.get(nid)
         for position in region.get_all_positions():
             unit = self.game.get_unit(position)
@@ -2543,7 +2543,7 @@ def remove_generics_from_region(self: Event, nid, flags=None):
         self.logger.error("remove_generics_from_region: Couldn't find RegionObject %s" % nid)
 
 def show_layer(self: Event, layer, layer_transition=None, flags=None):
-    if layer not in self.game.level.tilemap.layers.keys():
+    if layer not in self.game.level.tilemap.layers:
         self.logger.error("show_layer: Could not find layer %s in tilemap" % layer)
         return
     if not layer_transition:
@@ -2555,7 +2555,7 @@ def show_layer(self: Event, layer, layer_transition=None, flags=None):
     action.do(action.ShowLayer(layer, layer_transition))
 
 def hide_layer(self: Event, layer, layer_transition=None, flags=None):
-    if layer not in self.game.level.tilemap.layers.keys():
+    if layer not in self.game.level.tilemap.layers:
         self.logger.error("hide_layer: Could not find layer %s in tilemap" % layer)
         return
     if not layer_transition:
@@ -2593,7 +2593,7 @@ def set_position(self: Event, position, flags=None):
 def map_anim(self: Event, map_anim, float_position: Tuple[float, float] | NID, speed: float=1.0, flags=None):
     flags = flags or set()
     float_position = self._parse_pos(float_position, True)
-    if map_anim not in RESOURCES.animations.keys():
+    if map_anim not in RESOURCES.animations:
         self.logger.error("map_anim: Could not find map animation %s" % map_anim)
         return
     mode = engine.BlendMode.NONE
@@ -2623,7 +2623,7 @@ def remove_map_anim(self: Event, map_anim, position, flags=None):
 def add_unit_map_anim(self: Event, map_anim: NID, unit: NID, speed: float=1.0, flags=None):
     flags = flags or set()
 
-    if map_anim not in RESOURCES.animations.keys():
+    if map_anim not in RESOURCES.animations:
         self.logger.error("add_unit_map_anim: Could not find map animation %s" % map_anim)
         return
     unit_nid = unit
@@ -2656,10 +2656,10 @@ def remove_unit_map_anim(self: Event, map_anim, unit, flags=None):
 
 def merge_parties(self: Event, party1, party2, flags=None):
     host, guest = party1, party2
-    if host not in DB.parties.keys():
+    if host not in DB.parties:
         self.logger.error("merge_parties: Could not locate party %s" % host)
         return
-    if guest not in DB.parties.keys():
+    if guest not in DB.parties:
         self.logger.error("merge_parties: Could not locate party %s" % guest)
         return
     guest_party = self.game.get_party(guest)
@@ -3189,10 +3189,10 @@ def remove_overlay_sprite(self: Event, nid, animation=None, speed=1000, flags=No
             self.state = 'waiting'
 
 def alert(self: Event, string, item=None, skill=None, icon=None, flags=None):
-    if item and item in DB.items.keys():
+    if item and item in DB.items:
         custom_item = DB.items.get(item)
         self.game.alerts.append(banner.CustomIcon(string, custom_item))
-    elif skill and skill in DB.skills.keys():
+    elif skill and skill in DB.skills:
         custom_skill = DB.skills.get(skill)
         self.game.alerts.append(banner.CustomIcon(string, custom_skill))
     elif icon and any([sheet.get_index(icon) for sheet in RESOURCES.icons16]):

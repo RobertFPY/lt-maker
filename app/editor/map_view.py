@@ -211,7 +211,7 @@ class GlobalModeLevelMapView(SimpleMapView):
                 for unit in sorted(drawn_units, key=lambda unit: tuple(unit.starting_position)):
                     if not unit.starting_position:
                         continue
-                    if unit.generic or unit.nid in DB.units.keys():
+                    if unit.generic or unit.nid in DB.units:
                         if unit.starting_traveler:
                             partner = self.current_level.units.get(unit.starting_traveler)
                             if partner:
@@ -359,7 +359,7 @@ class NewMapView(SimpleMapView):
             for unit in sorted(drawn_units, key=lambda unit: tuple(unit.starting_position)):
                 if not unit.starting_position:
                     continue
-                if unit.generic or unit.nid in DB.units.keys():
+                if unit.generic or unit.nid in DB.units:
                     if unit.starting_traveler:
                         partner = self.current_level.units.get(unit.starting_traveler)
                         if partner:

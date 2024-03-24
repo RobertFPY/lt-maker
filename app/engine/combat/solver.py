@@ -302,7 +302,7 @@ class DefenderPartnerState(SolverState):
                         solver.defender_has_desperation() and \
                         solver.num_defends < defender_outspeed:
                     solver.num_subdefends = 0
-                    return 'defender'
+                    return 'defender'    
                 elif solver.item_has_uses() and \
                         solver.num_attacks < attacker_outspeed:
                     solver.num_subattacks = 0

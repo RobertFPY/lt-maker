@@ -613,6 +613,8 @@ class InfoMenuState(State):
             other_stats.insert(0, 'MANA')
         if DB.constants.value('pairup') and not DB.constants.value('attack_stance_only'):
             other_stats.insert(2, 'GAUGE')
+        if DB.constants.value('lead'):
+            other_stats.append('LEAD')
 
         other_stats = other_stats[:6 - len(right_stats)]
 
@@ -680,16 +682,16 @@ class InfoMenuState(State):
                 render_text(surf, ['text'], [text_funcs.translate('Talk')], ['yellow'], (72, 16 * true_idx + 24))
                 self.info_graph.register((96 + 72, 16 * true_idx + 24, 64, 16), 'Talk_desc', state)
 
-            if DB.constants.value('lead'):
-                render_text(surf, ['text'], [text_funcs.translate('Lead')], ['yellow'], (72, 120))
-                self.info_graph.register((96 + 72, 120, 64, 16), 'Lead_desc', state)
+            elif stat == 'LEAD':
+                render_text(surf, ['text'], [text_funcs.translate('Lead')], ['yellow'], (72, 16 * true_idx + 24))
+                self.info_graph.register((96 + 72, 16 * true_idx + 24, 64, 16), 'Lead_desc', state)
 
                 if growths:
-                    icons.draw_growth(surf, 'LEAD', self.unit, (111, 120))
+                    icons.draw_growth(surf, 'LEAD', self.unit, (111, 16 * true_idx + 24))
                 else:
-                    icons.draw_stat(surf, 'LEAD', self.unit, (111, 120))
+                    icons.draw_stat(surf, 'LEAD', self.unit, (111, 16 * true_idx + 24))
                     lead_surf = engine.subsurface(SPRITES.get('lead_star'), (0, 16, 16, 16))
-                    surf.blit(lead_surf, (111, 120))
+                    surf.blit(lead_surf, (111, 16 * true_idx + 24))
 
         return surf
 

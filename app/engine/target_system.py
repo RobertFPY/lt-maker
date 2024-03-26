@@ -155,8 +155,8 @@ class TargetSystem():
 
     def check_target_from_position(self, unit: UnitObject, item: ItemObject, target_pos: Pos) -> bool:
         """Returns whether the unit can target the target_pos from its current position with the item"""
-        main_target_pos, splash_positions = self.get_target_from_position(unit, item, target_pos)
-        return item_system.target_restrict(unit, item, main_target_pos, splash_positions)
+        _, splash_positions = self.get_target_from_position(unit, item, target_pos)
+        return item_system.target_restrict(unit, item, target_pos, splash_positions)
 
     def get_attackable_positions(self, unit: UnitObject, item: Optional[ItemObject] = None, force: bool = False) -> Set[Pos]:
         """Returns all positions the unit could attack given the item's range.
@@ -188,7 +188,7 @@ class TargetSystem():
         if not item_range:
             return set()
         max_range = max(item_range)
-        
+
         manhattan_restriction = item_system.range_restrict(unit, item)
         if max_range >= 99:
             attacks = self.game.board.get_all_positions_in_bounds()
@@ -374,7 +374,7 @@ class TargetSystem():
             # If there are no valid targets at all, then this cannot be a valid position to target
             if not main_target_pos and not splash_positions:
                 continue
-            if item_system.target_restrict(unit, item, main_target_pos, splash_positions):
+            if item_system.target_restrict(unit, item, position, splash_positions):
                 valid_targets.add(position)
 
         # Make sure we have enough targets to satisfy the item
@@ -434,7 +434,7 @@ class TargetSystem():
         for item in items:
             # AI does not handle sequence or multi-target items
             if item.sequence_item and item.subitems:
-                pass  # 
+                pass  #
             else:
                 possible_targets = item_system.valid_targets(unit, item)
                 attackable_positions = self._get_all_attackable_positions(unit, valid_moves, [item])

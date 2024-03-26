@@ -83,6 +83,23 @@ class MapSprite():
             engine.set_colorkey(img, COLORKEY, rleaccel=True)
         return imgs
 
+    def create_image(self, state, stationary=False):
+        image = self.__dict__.get(state)  # This is roughly 2x as fast as getattr, but getattr is safer
+        image = self.select_frame(image, state, stationary)
+        return image
+
+    def select_frame(self, image, state, stationary=False):
+        if stationary:
+            return image[0].copy()
+        elif state == 'passive' or state == 'gray':
+            return image[ANIMATION_COUNTERS.passive_sprite_counter.count].copy()
+        elif state == 'active':
+            return image[ANIMATION_COUNTERS.active_sprite_counter.count].copy()
+        elif state == 'combat_anim':
+            return image[ANIMATION_COUNTERS.fast_move_sprite_counter.count].copy()
+        else:
+            return image[ANIMATION_COUNTERS.move_sprite_counter.count].copy()
+
 def load_map_sprite(unit: UnitObject | UnitPrefab, team='player'):
     klass = DB.classes.get(unit.klass)
     nid = klass.map_sprite_nid
@@ -430,27 +447,14 @@ class UnitSprite():
             elif self.transition_state == 'swoosh_move':
                 self.set_transition('swoosh_in')
 
-    def select_frame(self, image, state):
-        if self.unit.is_dying:
-            return image[0].copy()
-        elif state == 'passive' or state == 'gray':
-            return image[ANIMATION_COUNTERS.passive_sprite_counter.count].copy()
-        elif state == 'active':
-            return image[ANIMATION_COUNTERS.active_sprite_counter.count].copy()
-        elif state == 'combat_anim':
-            return image[ANIMATION_COUNTERS.fast_move_sprite_counter.count].copy()
-        else:
-            return image[ANIMATION_COUNTERS.move_sprite_counter.count].copy()
-
-    def create_image(self, state):
+    def create_image(self, state, stationary=False):
+        stationary = stationary or self.unit.is_dying
         if not self.map_sprite:  # This shouldn't happen, but if it does...
             res = RESOURCES.map_sprites[0]
             self.map_sprite = MapSprite(res, self.unit.team)
         if self.transition_state == 'swoosh_in':
             state = 'down'
-        image = self.map_sprite.__dict__.get(state)  # This is roughly 2x as fast as getattr, but getattr is safer
-        image = self.select_frame(image, state)
-        return image
+        return self.map_sprite.create_image(state, stationary)
 
     def get_topleft(self, cull_rect):
         if self._fake_position:

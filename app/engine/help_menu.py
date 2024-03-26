@@ -113,16 +113,20 @@ class HelpDialog():
             h_surf = engine.transform_scale(h_surf, (int(progress * h_surf.get_width()), int(progress * h_surf.get_height())))
         return h_surf
 
+    def top_left(self, pos, right=False):
+        if right:
+            pos = (pos[0] - self.help_surf.get_width(), pos[1])
+        if pos[0] + self.help_surf.get_width() >= WINWIDTH:
+            pos = (WINWIDTH - self.help_surf.get_width() - 8, pos[1])
+        if pos[1] + self.help_surf.get_height() >= WINHEIGHT:
+            pos = (pos[0], max(0, pos[1] - self.help_surf.get_height() - 16))
+        return pos
+
     def final_draw(self, surf, pos, time, help_surf):
         # Draw help logo
         h_surf = engine.copy_surface(self.h_surf)
         h_surf.blit(help_surf, (0, 3))
         h_surf.blit(self.help_logo, (9, 0))
-
-        if pos[0] + help_surf.get_width() >= WINWIDTH:
-            pos = (WINWIDTH - help_surf.get_width() - 8, pos[1])
-        if pos[1] + help_surf.get_height() >= WINHEIGHT:
-            pos = (pos[0], max(0, pos[1] - help_surf.get_height() - 16))
 
         if self.transition_in:
             h_surf = self.handle_transition_in(time, h_surf)
@@ -147,12 +151,7 @@ class HelpDialog():
 
         self.dlg.update()
         self.dlg.draw(help_surf)
-
-        if right:
-            surf = self.final_draw(surf, (pos[0] - help_surf.get_width(), pos[1]), time, help_surf)
-        else:
-            surf = self.final_draw(surf, pos, time, help_surf)
-
+        surf = self.final_draw(surf, self.top_left(pos, right), time, help_surf)
         return surf
 
 class StatDialog(HelpDialog):
@@ -216,10 +215,7 @@ class StatDialog(HelpDialog):
             self.dlg.update()
             self.dlg.draw(help_surf)
 
-        if right:
-            surf = self.final_draw(surf, (pos[0] - help_surf.get_width(), pos[1]), time, help_surf)
-        else:
-            surf = self.final_draw(surf, pos, time, help_surf)
+        surf = self.final_draw(surf, self.top_left(pos, right), time, help_surf)
         return surf
 
 
@@ -329,8 +325,5 @@ class ItemHelpDialog(HelpDialog):
             self.dlg.update()
             self.dlg.draw(help_surf)
 
-        if right:
-            surf = self.final_draw(surf, (pos[0] - help_surf.get_width(), pos[1]), time, help_surf)
-        else:
-            surf = self.final_draw(surf, pos, time, help_surf)
+        surf = self.final_draw(surf, self.top_left(pos, right), time, help_surf)
         return surf

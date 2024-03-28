@@ -36,11 +36,11 @@
         "stat_cap_modifiers": {},
         "starting_items": [
             [
-                "Steel Axe",
+                "Steel_Axe",
                 false
             ],
             [
-                "Hand Axe",
+                "Hand_Axe",
                 false
             ]
         ],

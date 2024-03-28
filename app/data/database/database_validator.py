@@ -183,9 +183,15 @@ class DatabaseValidatorEngine():
                     continue
                 travelers[unit_traveler] = unit.nid
 
+    def repair_teams(self):
+        all_teams = self.db.teams.keys()
+        self.db.teams.alliance_pairs = {(team1, team2) for team1, team2 in self.db.teams.alliance_pairs if (team1 in all_teams and team2 in all_teams)}
+
     def repair(self):
         """Only obvious repairs should be done here.
         """
-        self.repair_units()
-        self.repair_klasses()
-        self.repair_levels()
+        # TODO(mag) - confirm these work, then uncomment
+        # self.repair_units()
+        # self.repair_klasses()
+        # self.repair_levels()
+        self.repair_teams()

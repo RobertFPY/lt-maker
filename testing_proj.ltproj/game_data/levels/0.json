@@ -6,12 +6,12 @@
         "bg_tilemap": null,
         "party": "Eirika",
         "music": {
-            "player_phase": "Distant Roads",
-            "enemy_phase": "Shadow of the Enemy",
+            "player_phase": null,
+            "enemy_phase": null,
             "other_phase": null,
             "enemy2_phase": null,
-            "player_battle": "Attack",
-            "enemy_battle": "Defense",
+            "player_battle": null,
+            "enemy_battle": null,
             "other_battle": null,
             "enemy2_battle": null
         },
@@ -59,7 +59,7 @@
                 "faction": "Soldier",
                 "starting_items": [
                     [
-                        "Iron Axe",
+                        "Iron_Axe",
                         false
                     ]
                 ],
@@ -83,7 +83,7 @@
                 "faction": "Soldier",
                 "starting_items": [
                     [
-                        "Iron Axe",
+                        "Iron_Axe",
                         false
                     ]
                 ],

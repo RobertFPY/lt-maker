@@ -62,7 +62,7 @@
             ],
             [
                 "status_on_equip",
-                "Speed +5"
+                "Speed_Plus5"
             ],
             [
                 "min_range",
@@ -73,18 +73,15 @@
                 2
             ],
             [
-                "effective",
-                36
-            ],
-            [
-                "effective_tag",
-                [
-                    "Monster"
-                ]
-            ],
-            [
-                "effective_multiplier",
-                1
+                "effective_damage",
+                {
+                    "effective_tags": [
+                        "Monster"
+                    ],
+                    "effective_multiplier": 1.0,
+                    "effective_bonus_damage": 36,
+                    "show_effectiveness_flash": true
+                }
             ]
         ]
     }

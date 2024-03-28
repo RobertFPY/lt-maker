@@ -840,6 +840,7 @@ class SecondaryAI():
                 terms += new_terms
             else:
                 return 0
+
         elif self.behaviour.action == 'Support' and enemy:
             ally = enemy
             # Try to help others since we already checked ourself in Primary AI
@@ -853,6 +854,12 @@ class SecondaryAI():
 
         elif self.behaviour.action == "Steal" and enemy:
             return 0  # TODO: For now, Steal just won't work with secondary AI
+
+        elif self.behaviour.action == "Interact":
+            # Lower the quality of positions where there is already a unit
+            enemy_already_there_term = 0 if enemy else 1
+            terms.append((enemy_already_there_term, 15))
+
         else:
             pass
 

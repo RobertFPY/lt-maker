@@ -10,10 +10,10 @@ from app.editor.base_database_gui import DragDropCollectionModel
 
 def get_pixmap(support_pair):
     unit1_chibi, unit2_chibi = None, None
-    if support_pair.unit1 and support_pair.unit1 in DB.units.keys():
+    if support_pair.unit1 and support_pair.unit1 in DB.units:
         unit1 = DB.units.get(support_pair.unit1)
         unit1_chibi = unit_model.get_chibi(unit1)
-    if support_pair.unit2 and support_pair.unit2 in DB.units.keys():
+    if support_pair.unit2 and support_pair.unit2 in DB.units:
         unit2 = DB.units.get(support_pair.unit2)
         unit2_chibi = unit_model.get_chibi(unit2)
 
@@ -58,7 +58,7 @@ class SupportPairModel(DragDropCollectionModel):
             for unit2 in DB.units:
                 new_support_pair = supports.SupportPair(
                     unit1.nid, unit2.nid, False, supports.SupportRankRequirementList())
-                if new_support_pair.nid in DB.support_pairs.keys():
+                if new_support_pair.nid in DB.support_pairs:
                     continue
                 else:
                     DB.support_pairs.append(new_support_pair)

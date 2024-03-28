@@ -38,7 +38,7 @@ def populate_palettes(current, images, nid):
                 new_colors = {(int((idx + orig_len) % 8), int((idx + orig_len) / 8)): color for idx, color in enumerate(new_colors)}
                 orig_palette.colors.update(new_colors)
         else:
-            if palette_nid not in RESOURCES.combat_palettes.keys():
+            if palette_nid not in RESOURCES.combat_palettes:
                 # Need to create palette
                 pix = QPixmap(image_fn)
                 palette_colors = editor_utilities.find_palette(pix.toImage())
@@ -149,7 +149,7 @@ def import_from_legacy(current, fn):
 
     add_poses(fn, new_weapon)
     # Actually add weapon to current
-    if new_weapon.nid in current.weapon_anims.keys():
+    if new_weapon.nid in current.weapon_anims:
         current.weapon_anims.remove_key(new_weapon.nid)
     current.weapon_anims.append(new_weapon)
     # print(id(new_weapon), id(new_weapon.pixmap))
@@ -161,7 +161,7 @@ def get_child_effects(fn_dir: str, current: combat_anims.EffectAnimation):
                 subeffect_nid = command.value[0]
                 # Check if the effect is in here somewhere
                 subeffect_fn = os.path.join(fn_dir, '%s-Script.txt' % subeffect_nid)
-                if subeffect_nid not in RESOURCES.combat_effects.keys() and os.path.exists(subeffect_fn):
+                if subeffect_nid not in RESOURCES.combat_effects and os.path.exists(subeffect_fn):
                     import_effect_from_legacy(subeffect_fn)
 
 def import_effect_from_legacy(fn: str):
@@ -189,7 +189,7 @@ def import_effect_from_legacy(fn: str):
         get_child_effects(fn_dir, current)
 
         # Actually add effect animation to RESOURCES
-        if current.nid in RESOURCES.combat_effects.keys():
+        if current.nid in RESOURCES.combat_effects:
             RESOURCES.combat_effects.remove_key(current.nid)
         RESOURCES.combat_effects.append(current)
         return current
@@ -215,7 +215,7 @@ def import_effect_from_legacy(fn: str):
     get_child_effects(fn_dir, current)
     
     # Actually add effect animation to RESOURCES
-    if current.nid in RESOURCES.combat_effects.keys():
+    if current.nid in RESOURCES.combat_effects:
         RESOURCES.combat_effects.remove_key(current.nid)
     RESOURCES.combat_effects.append(current)
 
@@ -459,7 +459,7 @@ def import_from_gba(current, fn):
         weapon_anim.poses.append(transform_pose)
 
     def add_weapon(weapon_anim):
-        if weapon_anim.nid in current.weapon_anims.keys():
+        if weapon_anim.nid in current.weapon_anims:
             current.weapon_anims.remove_key(weapon_anim.nid)
         current.weapon_anims.append(weapon_anim)
 
@@ -628,7 +628,7 @@ def parse_gba_script(fn, pixmaps, weapon_type, empty_pixmaps):
     def save_images(current_pose):
         if current_anim:
             for frame_nid in sorted(used_images):
-                if frame_nid in current_anim.frames.keys():
+                if frame_nid in current_anim.frames:
                     # Don't bother if already present
                     continue
                 pixmap = pixmaps[frame_nid]

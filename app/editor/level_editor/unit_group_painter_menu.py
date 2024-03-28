@@ -280,7 +280,7 @@ class GroupUnitModel(DragDropCollectionModel):
             if not unit:
                 return None
             # Don't draw any units which have been deleted in editor
-            if not unit.generic and unit_nid not in DB.units.keys():
+            if not unit.generic and unit_nid not in DB.units:
                 return None
             klass_nid = unit.klass
             num = timer.get_timer().passive_counter.count

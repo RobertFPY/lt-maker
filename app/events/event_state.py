@@ -1,11 +1,9 @@
 import logging
 
-import app.engine.config as cf
 from app.data.database.database import DB
-from app.engine.dialog_log import DialogLogState
 from app.engine.game_state import game
-from app.engine.sound import get_sound_thread
 from app.engine.state import State
+from app.engine import action
 from app.events import triggers
 
 
@@ -20,6 +18,7 @@ class EventState(State):
         self.game_over: bool = False  # Whether we've called for a game over
         if not self.event:
             self.event = game.events.get()
+            action.do(action.LockTurnwheel(True))
             if self.event and self.event.trigger and self.event.trigger.nid == 'on_turnwheel':
                 game.action_log.stop_recording()
             if self.event and game.cursor:
@@ -110,6 +109,7 @@ class EventState(State):
         logging.debug("Ending Event")
         if self.event and self.event.trigger and self.event.trigger.nid == 'on_turnwheel':
             game.action_log.start_recording()
+        action.do(action.LockTurnwheel(False))
         game.events.end(self.event)
         if game.level_vars.get('_win_game') or self.is_handling_end_event:
             logging.info("Player Wins!")

@@ -33,23 +33,23 @@ def get_from_xml(parent_dir: str, xml_fn: str) -> list:
         klass_stats = str_utils.intify(klass.find('bases').text)
         bases = {nid: 0 for nid in DB.stats.keys()}
         for idx, num in enumerate(klass_stats):
-            if stat_list[idx] in DB.stats.keys():
+            if stat_list[idx] in DB.stats:
                 bases[stat_list[idx]] = num
         klass_growths = str_utils.intify(klass.find('growths').text)
         growths = {nid: 0 for nid in DB.stats.keys()}
         for idx, num in enumerate(klass_growths):
-            if stat_list[idx] in DB.stats.keys():
+            if stat_list[idx] in DB.stats:
                 growths[stat_list[idx]] = num
         klass_max = str_utils.intify(klass.find('max').text)
         maxes = {nid: 30 for nid in DB.stats.keys()}
         for idx, num in enumerate(klass_max):
-            if stat_list[idx] in DB.stats.keys():
+            if stat_list[idx] in DB.stats:
                 maxes[stat_list[idx]] = num
         promotion = {nid: 0 for nid in DB.stats.keys()}
         if klass.find('promotion') is not None and klass.find('promotion').text is not None:
             klass_promotion = str_utils.intify(klass.find('promotion').text)
             for idx, num in enumerate(klass_promotion):
-                if stat_list[idx] in DB.stats.keys():
+                if stat_list[idx] in DB.stats:
                     promotion[stat_list[idx]] = num
         growth_bonus = {nid: 0 for nid in DB.stats.keys()}
 
@@ -63,12 +63,12 @@ def get_from_xml(parent_dir: str, xml_fn: str) -> list:
             with open(parent_dir + '/weapon_triangle.txt') as wfn:
                 weapon_order = [l.strip().split(';')[0] for l in wfn.readlines() if l.strip()]
         for idx, w in enumerate(wexp):
-            if w in DB.weapon_ranks.keys():
+            if w in DB.weapon_ranks:
                 num = DB.weapon_ranks.get(w).requirement
             else:
                 num = int(w)
             try:
-                if weapon_order[idx] in DB.weapons.keys():
+                if weapon_order[idx] in DB.weapons:
                     gain = wexp_gain.get(weapon_order[idx])
                     gain.wexp_gain = num
                     if num > 0:
@@ -77,11 +77,11 @@ def get_from_xml(parent_dir: str, xml_fn: str) -> list:
                 logging.warning("Failed to determine weapon experience")
 
         icon_nid = 'Generic_Portrait_%s' % nid
-        if icon_nid not in RESOURCES.icons80.keys():
+        if icon_nid not in RESOURCES.icons80:
             icon_nid = None
         icon_index = (0, 0)
 
-        if nid in RESOURCES.map_sprites.keys():
+        if nid in RESOURCES.map_sprites:
             map_sprite_nid = nid
         else:
             map_sprite_nid = None

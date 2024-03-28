@@ -30,7 +30,7 @@ def test_play(name: str = 'testing_proj'):
     DB.load(name + '.ltproj')
     title = DB.constants.value('title')
     driver.start(title, from_editor=True)
-    if 'DEBUG' in DB.levels.keys():
+    if 'DEBUG' in DB.levels:
         game = game_state.start_level('DEBUG')
     else:
         first_level_nid = DB.levels[0].nid

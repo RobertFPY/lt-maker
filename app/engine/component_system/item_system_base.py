@@ -428,11 +428,11 @@ def on_miss(actions, playback, unit: UnitObject, item: ItemObject, target: UnitO
     playback.append(pb.HitSound('Attack Miss 2'))
     playback.append(pb.HitAnim('MapMiss', target))
 
-def item_icon_mod(unit: UnitObject, item: ItemObject, target: UnitObject, sprite):
+def item_icon_mod(unit: UnitObject, item: ItemObject, target: UnitObject, item2: ItemObject, sprite):
     all_components = get_all_components(unit, item)
     for component in all_components:
         if component.defines('item_icon_mod'):
-            sprite = component.item_icon_mod(unit, item, target, sprite)
+            sprite = component.item_icon_mod(unit, item, target, item2, sprite)
     return sprite
 
 def can_unlock(unit: UnitObject, item: ItemObject, region) -> bool:

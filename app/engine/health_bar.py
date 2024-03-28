@@ -400,7 +400,7 @@ class MapCombatInfo():
             # Determine effectiveness
             icon = icons.get_icon(self.item)
             if icon:
-                icon = item_system.item_icon_mod(self.unit, self.item, self.target, icon)
+                icon = item_system.item_icon_mod(self.unit, self.item, self.target, self.target.get_weapon() if self.target else None, icon)
                 bg_surf.blit(icon, (2, 3))
 
             # Blit advantage

@@ -619,7 +619,7 @@ class Event():
                 position = self.game.get_rescuers_position(unit)
         elif self.game.is_displaying_overworld() and self._get_overworld_location_of_object(pos):
             position = self._get_overworld_location_of_object(pos).position
-        elif pos in self.game.level.regions.keys():
+        elif pos in self.game.level.regions:
             return self.game.level.regions.get(pos).position
         else:
             valid_regions = \
@@ -664,7 +664,7 @@ class Event():
             name = nid
         if unit and unit.portrait_nid:
             portrait = RESOURCES.portraits.get(unit.portrait_nid)
-        elif name in DB.units.keys():
+        elif name in DB.units:
             portrait = RESOURCES.portraits.get(DB.units.get(name).portrait_nid)
         else:
             portrait = RESOURCES.portraits.get(name)

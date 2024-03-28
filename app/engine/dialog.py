@@ -60,7 +60,7 @@ class Dialog():
     def __init__(self, text, portrait=None, background=None, position=None, width=None,
                  speaker=None, style_nid=None, autosize=False, speed: float = 1.0, font_color='black',
                  font_type='convo', num_lines=2, draw_cursor=True, message_tail='message_bg_tail',
-                 transparency=0.05, name_tag_bg='name_tag', flags=None):
+                 transparency=0.05, name_tag_bg='name_tag', boop_sound=None, flags=None):
         flags = flags or set()
         self.plain_text = text
         self.portrait = portrait
@@ -71,6 +71,7 @@ class Dialog():
         self.autosize = autosize
         self.speed = speed if speed is not None else 1.0
         self.starting_speed = self.speed
+        self.boop_sound = boop_sound
         self.num_lines = num_lines
         self.draw_cursor_flag = draw_cursor
         self.font = FONT[self.font_type]
@@ -317,14 +318,14 @@ class Dialog():
             else:
                 self._add_letter(' ')
                 if sound:
-                    self.play_talk_boop()
+                    self.play_talk_boop(self.boop_sound)
         elif command in ('.', ',', ';', '!', '?'):
             self._add_letter(command)
             self.pause()
         else:
             self._add_letter(command)
             if sound:
-                self.play_talk_boop()
+                self.play_talk_boop(self.boop_sound)
         self.text_index += 1
 
     def _get_next_word(self, text_index):
@@ -409,10 +410,13 @@ class Dialog():
                     else:
                         self.portrait.stop_talking()
 
-    def play_talk_boop(self):
+    def play_talk_boop(self, boop = None):
         if cf.SETTINGS['talk_boop'] and engine.get_true_time() - self.last_sound_update > 32 and self.should_speak_sound:
             self.last_sound_update = engine.get_true_time()
-            get_sound_thread().play_sfx('Talk_Boop')
+            if boop:
+                get_sound_thread().play_sfx(boop)
+            else:
+                get_sound_thread().play_sfx('Talk_Boop')
 
     def update(self):
         current_time = engine.get_time()
@@ -438,7 +442,7 @@ class Dialog():
                     # Skip regular pauses because we want MAXIMUM VELOCITY of characters
                     if self.state == DialogState.PAUSE:
                         self.state = DialogState.PROCESS
-                self.play_talk_boop()
+                self.play_talk_boop(self.boop_sound)
 
         elif self.state == DialogState.PAUSE_BEFORE_WAIT:
             if current_time - self.last_update > self.pause_before_wait_time:

@@ -870,7 +870,7 @@ class GameState():
         Returns:
             Any: The raw data retrieved from the database.
         """
-        if str(raw_data_nid) in DB.raw_data.keys():
+        if str(raw_data_nid) in DB.raw_data:
             return DB.raw_data.get(str(raw_data_nid))
         return None
 

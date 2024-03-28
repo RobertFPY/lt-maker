@@ -1,4 +1,5 @@
 Event Triggers
 -----------------------------------
 
-.. automodule:: app.events.triggers
+.. automodule:: app.events.triggers 
+    :members:

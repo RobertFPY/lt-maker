@@ -1,5 +1,4 @@
 from __future__ import annotations
-import dataclasses
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional, Tuple
 
@@ -77,7 +76,7 @@ class LevelSelect(EventTrigger):
     Occurs when an overworld entity is about to issue a move to the node
     containing the next level. Because of implementation detail, when
     this event occurs, it supersedes any queued moves. Therefore, the
-    entity will _not move_ to the selected node. Any events that use
+    entity will *not move* to the selected node. Any events that use
     this trigger should include a scripted move if movement is desired.
     """
     nid: ClassVar[NID] = 'level_select'
@@ -340,7 +339,7 @@ class OnOverworldNodeSelect(EventTrigger):
     (which may or may not contain the next level, or
     any level at all). Because of implementation detail,
     when this event occurs, it supersedes any queued moves.
-    Therefore, the entity will _not move_ to the selected node.
+    Therefore, the entity will *not move* to the selected node.
     Any events that use this trigger should include a scripted move
     if movement is desired.
 

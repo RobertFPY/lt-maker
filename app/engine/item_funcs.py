@@ -478,7 +478,7 @@ def get_max_range(unit: UnitObject) -> int:
     items = [item for item in get_all_items(unit) if available(unit, item)]
     return max([max(get_range(unit, item), default=0) for item in items], default=0)
 
-def create_skill(unit, skill_nid):
+def create_skill(unit: UnitObject, skill_nid: NID) -> SkillObject:
     skill_prefab = DB.skills.get(skill_nid)
     if not skill_prefab:
         logging.error("Couldn't find skill %s" % skill_nid)
@@ -509,7 +509,7 @@ def create_skill(unit, skill_nid):
 
     return skill
 
-def create_skills(unit, skill_nid_list: list) -> list:
+def create_skills(unit: UnitObject, skill_nid_list: List[NID]) -> List[SkillObject]:
     skills = []
     for skill_nid in skill_nid_list:
         skill = create_skill(unit, skill_nid)

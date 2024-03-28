@@ -1,5 +1,4 @@
 import math, random
-from typing import List
 
 from enum import IntEnum
 
@@ -185,8 +184,11 @@ class Sand(Particle):
 
 class Smoke(Particle):
     sprite = SPRITES.get('particle_smoke')
-    bottom_sprite = engine.subsurface(sprite, (3, 0, 3, 4))
-    top_sprite = engine.subsurface(sprite, (0, 0, 3, 4))
+    if sprite:
+        bottom_sprite = engine.subsurface(sprite, (3, 0, 3, 4))
+        top_sprite = engine.subsurface(sprite, (0, 0, 3, 4))
+    else:
+        bottom_sprite = top_sprite = None
     speed = 6
 
     def update(self):
@@ -208,7 +210,10 @@ class Smoke(Particle):
 
 _fire_sprite = SPRITES.get('particle_fire')
 class Fire(Particle):
-    sprites = [engine.subsurface(_fire_sprite, (0, i*2, 3, 2)) for i in range(6)]
+    if _fire_sprite:
+        sprites = [engine.subsurface(_fire_sprite, (0, i*2, 3, 2)) for i in range(6)]
+    else:
+        sprites = []
 
     def reset(self, pos):
         super().reset(pos)

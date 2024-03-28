@@ -34,7 +34,9 @@ class SpriteDict(dict):
         if val in self:
             return self[val].image
         # Defaults to this
-        return self[fallback].image
+        if fallback in self:
+            return self[fallback].image
+        return None
 
 def load_sprites(root):
     for root, dirs, files in os.walk(root):

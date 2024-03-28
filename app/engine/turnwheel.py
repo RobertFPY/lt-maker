@@ -138,7 +138,20 @@ class ActionLog():
                     current_move = None
                 self.unique_moves.append(('Lock', action_index, action.lock))
 
+        # Finalize an existing move if it was never ended by any other special
+        # action (usually would be ended by a Wait or death of the unit)
+        # But sometimes is not
+        if current_move:
+            finalize(current_move)
+            current_move = None
+
         # Handles having extra actions off the right of the action log
+        # Imagine you finish up a unit A's move, they wait. Then you 
+        # fiddle with the equipped item of unit B. When you turnwheel
+        # back from that point, the Equipped item of unit B better 
+        # be back to the previous point it was during Unit A's move, otherwise
+        # you have screwed up the timeline. This handles those extra
+        # actions at the end of the timeline not associated with a move
         if self.unique_moves:
             last_move = self.unique_moves[-1]
             last_action_index = len(self.actions) - 1

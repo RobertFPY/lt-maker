@@ -565,7 +565,7 @@ def compute_true_speed(unit, target, item, def_item, mode, attack_info) -> int:
     speed -= skill_system.dynamic_defense_speed(target, resolve_weapon(target), unit, item, mode, attack_info, speed)
     return speed
 
-def outspeed(unit, target, item, def_item, mode, attack_info) -> bool:
+def outspeed(unit, target, item, def_item, mode, attack_info) -> int:
     if not item:
         return 1
     if not item_system.can_double(unit, item):

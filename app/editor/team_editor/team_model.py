@@ -46,6 +46,8 @@ class TeamModel(DragDropCollectionModel):
                 self.on_nid_changed(nid, swap.nid)
             else:
                 return
+
+        DB.teams.alliance_pairs = {pair for pair in DB.teams.alliance_pairs if nid not in pair}
         super().delete(idx)
 
     def on_nid_changed(self, old_nid, new_nid):

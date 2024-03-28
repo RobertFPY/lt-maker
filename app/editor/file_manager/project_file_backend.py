@@ -147,7 +147,9 @@ class ProjectFileBackend():
         # we should allow the save so
         # the user can make a game
         try:
-            any_errors = DBChecker(DB, RESOURCES).validate_for_errors()
+            checker = DBChecker(DB, RESOURCES)
+            checker.repair()
+            any_errors = checker.validate_for_errors()
             DB.game_flags.has_fatal_errors = bool(any_errors)
         except Exception as e:
             QMessageBox.warning(self.parent, "Validation warning", "Validation failed with error. Please send this message to the devs.\nYour save will continue as normal.\nException:\n" + traceback.format_exc())

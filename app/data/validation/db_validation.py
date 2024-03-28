@@ -211,3 +211,6 @@ class DBChecker():
         all_warnings += self.validate_levels().warnings
         all_warnings += self.validate_units().warnings
         return all_warnings
+
+    def repair(self):
+        self.dve.repair()

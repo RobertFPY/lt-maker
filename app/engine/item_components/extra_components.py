@@ -55,11 +55,12 @@ class EffectiveDamage(ItemComponent):
     def _check_negate(self, target) -> bool:
         # Returns whether it DOES negate the effectiveness
         # Still need to check negation (Fili Shield, etc.)
-        if any(skill.negate for skill in target.skills):
+        if any(skill.negate for skill in target.skills if skill_system.condition(skill, target)):
             return True
         for skill in target.skills:
             # Do the tags match?
             if skill.negate_tags and skill.negate_tags.value and \
+                    skill_system.condition(skill, target) and \
                     any(tag in self.tags for tag in skill.negate_tags.value):
                 return True
         # No negation, so proceed with effective damage

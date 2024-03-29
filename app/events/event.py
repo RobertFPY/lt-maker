@@ -161,7 +161,6 @@ class Event():
             self.game.movement.update()
 
         self._update_state()
-        self._update_transition()
 
     def _update_state(self, dialog_log=True):
         current_time = engine.get_time()
@@ -290,6 +289,7 @@ class Event():
                 dialog_box.draw(surf)
 
         # Fade to black
+        self._update_transition()
         if self.transition_state:
             s = engine.create_surface((WINWIDTH, WINHEIGHT), transparent=True)
             if self.transition_background:

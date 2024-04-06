@@ -60,6 +60,7 @@ build_engine:
         name: "LT Engine"
         paths:
             - lt_engine/
+        expire_in: 3 mos
 
 build_editor:
     stage: generate_editor
@@ -100,6 +101,7 @@ build_editor:
         name: "LT Editor"
         paths:
             - lt_editor/
+        expire_in: 3 mos
 
 release:
     stage: release

@@ -507,6 +507,8 @@ def compute_damage(unit, target, item, def_item, mode, attack_info, crit=False, 
         # Add damage
         equation = skill_system.critical_addition_formula(unit)
         crit_add = equations.parser.get(equation, unit)
+        crit_add += item_system.modify_crit_damage(unit, item)
+        crit_add += skill_system.modify_crit_damage(unit, item)
         might += crit_add
 
         # Thracia Crit

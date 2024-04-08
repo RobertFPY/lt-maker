@@ -100,14 +100,14 @@ class RainAlgorithmX:
         if self.header.right.is_first:
             raise EmptyMatrixError()
         col_min = self.header.right
-        for col in iterate_cell(self.header, 'right'):
+        for col in iterate_cell_right(self.header):
             if not col.is_first and col.size < col_min.size:
                 col_min = col
         return col_min
 
     def solve(self) -> bool:
         counter = 0
-        limit = int(1e6)
+        limit = int(1e4)
         while counter < limit:
             counter += 1
             if self.header.right == self.header:
@@ -136,7 +136,7 @@ class RainAlgorithmX:
             self.bad_solutions[depth].clear()
         if self.solution_rows:
             bad_row = self.solution_rows.pop()
-            for j_cell in iterate_cell(bad_row, 'left'):
+            for j_cell in iterate_cell_left(bad_row):
                 self.uncover(j_cell.header)
             self.uncover(bad_row.header)
             if depth - 1 not in self.bad_solutions:
@@ -147,7 +147,10 @@ class RainAlgorithmX:
             return False  # No valid solutions at all
 
     def process(self):
-        # print("Process")
+        # print("--- Process ---")
+        # for idx, row in enumerate(self.solution_rows):
+        #     print("%s " % row, end='')
+        #     print(self.bad_solutions.get(idx, set()))
         # Choose a column
         column_header_cell = self.choose_column()
         # print("Column Index:", column_header_cell.indexes[1])
@@ -157,7 +160,7 @@ class RainAlgorithmX:
 
         # Choose a row that has a 1 in the column
         bad_rows = self.bad_solutions.get(len(self.solution_rows), set())
-        possible_rows = [row for row in iterate_cell(column_header_cell, 'down') if row not in bad_rows]
+        possible_rows = [row for row in iterate_cell_down(column_header_cell) if row not in bad_rows]
         # print("Possible Row Idxs", [r.indexes[0] for r in possible_rows])
         if not possible_rows:
             return self.revert()
@@ -169,7 +172,7 @@ class RainAlgorithmX:
 
         # Cover
         self.cover(column_header_cell)
-        for j_cell in iterate_cell(row, 'right'):
+        for j_cell in iterate_cell_right(row):
             self.cover(j_cell.header)
 
         return True
@@ -181,8 +184,8 @@ class RainAlgorithmX:
         column_header_cell.right.left = column_header_cell.left
         column_header_cell.left.right = column_header_cell.right
 
-        for i_cell in iterate_cell(column_header_cell, 'down'):
-            for j_cell in iterate_cell(i_cell, 'right'):
+        for i_cell in iterate_cell_down(column_header_cell):
+            for j_cell in iterate_cell_right(i_cell):
                 j_cell.down.up = j_cell.up
                 j_cell.up.down = j_cell.down
                 j_cell.header.size -= 1
@@ -191,18 +194,36 @@ class RainAlgorithmX:
         """
         # Uncovers the column of the column_header_cell and also all the row connected to that column
         """
-        for i_cell in iterate_cell(column_header_cell, 'up'):
-            for j_cell in iterate_cell(i_cell, 'left'):
+        for i_cell in iterate_cell_up(column_header_cell):
+            for j_cell in iterate_cell_left(i_cell):
                 j_cell.header.size += 1
                 j_cell.down.up = j_cell.up.down = j_cell
 
         column_header_cell.right.left = column_header_cell.left.right = column_header_cell
 
-def iterate_cell(cell, direction):
-    cur = getattr(cell, direction)
+def iterate_cell_right(cell):
+    cur = cell.right
     while cur is not cell:
         yield cur
-        cur = getattr(cur, direction)
+        cur = cur.right
+
+def iterate_cell_left(cell):
+    cur = cell.left
+    while cur is not cell:
+        yield cur
+        cur = cur.left
+
+def iterate_cell_down(cell):
+    cur = cell.down
+    while cur is not cell:
+        yield cur
+        cur = cur.down
+
+def iterate_cell_up(cell):
+    cur = cell.up
+    while cur is not cell:
+        yield cur
+        cur = cur.up
 
 # Testing code.
 if __name__ == '__main__':
@@ -253,8 +274,7 @@ if __name__ == '__main__':
     columns, row_names, rows = test4()
     print(len(columns), len(rows))
     pr.enable()
-    for seed in range(1):
-        seed = 9
+    for seed in range(10, 20):
         print("Seed: %d" % seed, flush=True)
         d = RainAlgorithmX(columns, row_names, rows, seed=seed)
         output = d.solve()

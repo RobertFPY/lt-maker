@@ -69,7 +69,7 @@ class Event():
 
         self.text_evaluator = TextEvaluator(self.logger, self.game, self.unit, self.unit2, self.position, self.local_args)
         if event_prefab.version() != EventVersion.EVENT:
-            self.processor = PythonEventProcessor(self.nid, event_prefab.source, self.game)
+            self.processor = PythonEventProcessor(self.nid, event_prefab.source, self.game, context=event_args)
         else:
             self.processor = EventProcessor(self.nid, event_prefab.source, self.text_evaluator)
 

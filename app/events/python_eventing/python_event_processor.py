@@ -14,13 +14,13 @@ from app.events.python_eventing.utils import DO_NOT_EXECUTE_SENTINEL
 from app.utilities.typing import NID
 
 class PythonEventProcessor():
-    def __init__(self, nid: NID, source: str, game: GameState, curr_cmd_idx: int = 0):
+    def __init__(self, nid: NID, source: str, game: GameState, curr_cmd_idx: int = 0, context: dict = None):
         self.nid = nid
         self.source = source
         self.curr_cmd_idx = curr_cmd_idx
         self.is_finished = False
         self._compiled_script = Compiler.compile(nid, source, 0)
-        self._executable = self._compiled_script.get_runnable(game)
+        self._executable = self._compiled_script.get_runnable(game, context)
 
     @lru_cache()
     def get_source_line(self, line: int) -> str:

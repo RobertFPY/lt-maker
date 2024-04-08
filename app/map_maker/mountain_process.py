@@ -34,7 +34,7 @@ class NaiveBacktrackingThread(QThread):
         self.process_group()
 
     def process_group(self):
-        print("--- Process Group ---", id(self))
+        print("--- Process Naive Group ---", id(self))
         # Determine coord 
         self.did_complete = False
         self.broke_out = False
@@ -207,10 +207,11 @@ class AlgorithmXThread(QThread):
     def run(self):
         self.process_group()
 
-    def process_group(self):
+    def process_group(self, iteration: int = 0):
         if not self.to_process:
             print("No positions to process!")
             return
+        print("--- Process Algorithm X Group %d --- %d" % (iteration, id(self)))
 
         columns = [(pos, True) for pos in self.to_process]
         # valid_coords = [self.find_valid_coords(pos) for pos in self.to_process]
@@ -274,9 +275,9 @@ class AlgorithmXThread(QThread):
         if self.broke_out:
             return
 
-        print("Setup 1 complete", id(self), len(rows), len(columns))
-        solver = rain_algorithm_x.RainAlgorithmX(columns, row_names, rows, self.to_process[0], get_random_seed())
-        print("Setup 2 complete", id(self))
+        print("Setup 1 complete", id(self), len(rows), len(columns), flush=True)
+        solver = rain_algorithm_x.RainAlgorithmX(columns, row_names, rows, self.to_process[0], get_random_seed() + iteration)
+        print("Setup 2 complete", id(self), flush=True)
 
         time.sleep(0.001)
         if self.broke_out:
@@ -284,12 +285,12 @@ class AlgorithmXThread(QThread):
 
         # Now solve
         counter = 0
-        limit = int(1e6)
+        limit = int(1e5)
         while counter < limit:
             # time.sleep(0)
             if counter % 10000 == 0:
                 time.sleep(0.01)
-                print("Still Processing", id(self), counter)
+                print("Still Processing", id(self), counter, flush=True)
             if self.broke_out:
                 return
             counter += 1
@@ -299,12 +300,14 @@ class AlgorithmXThread(QThread):
                     self.organization[pos] = coord
                 if not self.broke_out:
                     self.did_complete = True
+                print("Found solution at iteration %d" % counter, flush=True)
                 return True
             elif output is False:
-                print("No valid solution!")
+                print("No valid solution!", flush=True)
                 return False  # No valid solutions
         if counter >= limit:
-            print("Infinite Loop detected!")
+            print("Infinite Loop detected!", flush=True)
+            self.process_group(iteration + 1)
         return True
 
     def find_valid_coords(self, pos) -> list:

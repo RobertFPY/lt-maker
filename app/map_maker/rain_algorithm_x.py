@@ -241,15 +241,26 @@ if __name__ == '__main__':
         row_names = ['row%i' % i for i in range(len(rows))]
         return columns, row_names, rows
 
-    columns, row_names, rows = test3()
+    def test4():
+        try:
+            import cPickle as pickle
+        except ImportError:
+            import pickle
+        with open('waffle.json', 'rb') as fp:
+            data = pickle.load(fp)
+        return data
+
+    columns, row_names, rows = test4()
+    print(len(columns), len(rows))
     pr.enable()
-    for seed in range(10):
-        print("Seed: %d" % seed)
+    for seed in range(1):
+        seed = 9
+        print("Seed: %d" % seed, flush=True)
         d = RainAlgorithmX(columns, row_names, rows, seed=seed)
         output = d.solve()
         if output:
-            print(d.get_solution())
+            print(d.get_solution(), flush=True)
         else:
-            print("No valid solution")
+            print("No valid solution", flush=True)
     pr.disable()
     pr.print_stats(sort='time')

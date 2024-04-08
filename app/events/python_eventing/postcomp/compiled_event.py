@@ -14,8 +14,8 @@ class CompiledEvent():
     source: str         # original source code of event
     compiled: str       # pythonic source code of event
 
-    def get_runnable(self, game: GameState) -> Generator:
-        exec_context = get_context(game=game)
+    def get_runnable(self, game: GameState, context: dict=None) -> Generator:
+        exec_context = get_context(game=game, local_args=context)
         exec(self.compiled, exec_context)
         # possibility that there are some errors in python script
         try:

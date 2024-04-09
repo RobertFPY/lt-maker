@@ -1,16 +1,28 @@
 from typing import Optional, Tuple
-from app.utilities.typing import NID
+from app.utilities.typing import NID, Pos
 
 from app.events.regions import RegionType, Region
 
 class RegionObject(Region):
     """
-    Inherits from Region in order to access Region's helper funcs,
-    like area and center
+    A region object in the game. Not the same as a Region Prefab, which is the unchanging Region you created in the level editor. 
+
+    Inherits from the Region Prefab to access Region's helper functions like area and center.
+
+    Attributes:
+        nid (NID): The unique identifier for the region object.
+        region_type (RegionType): The type of region (Event, Formation, etc.).
+        position (Pos): The position of the region object. Defaults to None.
+        size (Tuple[int, int]): The size of the region object in tiles. Defaults to [1, 1].
+        sub_nid (str): Extra data for the region object. Defaults to None.
+        condition (str): The condition for the region object to be enabled. Defaults to 'True'.
+        time_left (Optional[int]): The number of turns left for the region object. Defaults to None, which means it is permanent.
+        only_once (bool): Flag indicating if the region object triggers only once. Defaults to False.
+        interrupt_move (bool): Flag indicating if the region object interrupts movement. Defaults to False. Set to True for things like an FE `Mine` or for Free Roam events
     """
 
     def __init__(self, nid: NID, region_type: RegionType, 
-                 position: Tuple[int, int] = None, size: Tuple[int, int] = [1, 1], 
+                 position: Pos = None, size: Tuple[int, int] = [1, 1], 
                  sub_nid: str = None, condition: str = 'True', time_left: Optional[int] = None,
                  only_once: bool = False, interrupt_move: bool = False):
         self.nid = nid

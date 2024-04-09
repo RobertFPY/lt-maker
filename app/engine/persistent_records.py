@@ -18,19 +18,19 @@ class PersistentRecordManager(Data):
         self.location = location
 
     def get(self, nid):
-        if nid in self.keys():
+        if nid in self:
             return super().get(nid).value
         return None
 
     def create(self, nid, value=None):
-        if nid in self.keys():
+        if nid in self:
             logging.info("Record with nid of %s already exists")
             return
         self.append(PersistentRecord(nid, value))
         persistent_data.serialize(self.location, self.save())
 
     def update(self, nid, value):
-        if nid in self.keys():
+        if nid in self:
             record = super().get(nid)
             record.value = value
             persistent_data.serialize(self.location, self.save())
@@ -38,7 +38,7 @@ class PersistentRecordManager(Data):
             logging.info("Record with nid of %s doesn't exist")
 
     def replace(self, nid, value):
-        if nid in self.keys():
+        if nid in self:
             record = super().get(nid)
             record.value = value
         else:
@@ -46,14 +46,14 @@ class PersistentRecordManager(Data):
         persistent_data.serialize(self.location, self.save())
 
     def delete(self, nid):
-        if nid in self.keys():
+        if nid in self:
             self.remove_key(nid)
             persistent_data.serialize(self.location, self.save())
         else:
             logging.info("Record with nid of %s doesn't exist")
     
     def unlock_difficulty(self, difficultyMode: str):
-        if difficultyMode in self.keys():
+        if difficultyMode in self:
             logging.info("Difficulty with nid of %s already unlocked")
             return
         else:
@@ -61,7 +61,7 @@ class PersistentRecordManager(Data):
         persistent_data.serialize(self.location, self.save())
     
     def check_difficulty_unlocked(self, difficultyMode: str):
-        if difficultyMode in self.keys():
+        if difficultyMode in self:
             return super().get(difficultyMode).value
         else:
             return False

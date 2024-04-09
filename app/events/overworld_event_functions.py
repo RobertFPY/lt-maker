@@ -153,7 +153,7 @@ def overworld_move_unit(self: Event, overworld_entity: NID, overworld_location: 
     if follow:
         game.camera.do_slow_pan(1000)
         game.camera.set_center(entity.display_position[0], entity.display_position[1])
-    if 'overworld_movement' not in self.should_update.keys(): # queue continuous update function if not exists
+    if 'overworld_movement' not in self.should_update: # queue continuous update function if not exists
         def update_movement(should_skip: bool):
             if should_skip:
                 self.overworld_movement_manager.finish_all_movement()
@@ -218,14 +218,14 @@ def create_overworld_entity(self: Event, nid, unit=None, team=None, flags=None):
     if 'delete' in flags:
         game.overworld_controller.delete_entity(nid)
         return
-    if nid in game.overworld_controller.entities.keys():
+    if nid in game.overworld_controller.entities:
         self.logger.error('%s: Entity with nid %s already exists', 'create_overworld_entity', nid)
         return
     if unit:
-        if unit not in DB.units.keys():
+        if unit not in DB.units:
             self.logger.error('%s: No such unit with nid %s', 'create_overworld_entity', unit)
             return
-        if team not in DB.teams.keys():
+        if team not in DB.teams:
             team = 'player'
         new_entity = OverworldEntityObject.from_unit_prefab(nid, None, unit, team)
         game.overworld_controller.add_entity(new_entity)

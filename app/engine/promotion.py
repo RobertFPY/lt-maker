@@ -186,7 +186,7 @@ class PromotionChoiceState(State):
             anim.draw(surf, (self.anim_offset + 12, 0))
 
         # Class Reel
-        FONT['class-purple'].blit(self.menu.get_current(), surf, (114, 5))
+        FONT['class'].blit(self.menu.get_current(), surf, (114, 5))
 
         # Weapon Icons
         for idx, weapon in enumerate(self.weapon_icons[self.menu.get_current_index()]):

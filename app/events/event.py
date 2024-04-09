@@ -69,7 +69,7 @@ class Event():
 
         self.text_evaluator = TextEvaluator(self.logger, self.game, self.unit, self.unit2, self.position, self.local_args)
         if event_prefab.version() != EventVersion.EVENT:
-            self.processor = PythonEventProcessor(self.nid, event_prefab.source, self.game)
+            self.processor = PythonEventProcessor(self.nid, event_prefab.source, self.game, context=event_args)
         else:
             self.processor = EventProcessor(self.nid, event_prefab.source, self.text_evaluator)
 
@@ -161,7 +161,6 @@ class Event():
             self.game.movement.update()
 
         self._update_state()
-        self._update_transition()
 
     def _update_state(self, dialog_log=True):
         current_time = engine.get_time()
@@ -290,6 +289,7 @@ class Event():
                 dialog_box.draw(surf)
 
         # Fade to black
+        self._update_transition()
         if self.transition_state:
             s = engine.create_surface((WINWIDTH, WINHEIGHT), transparent=True)
             if self.transition_background:
@@ -619,7 +619,7 @@ class Event():
                 position = self.game.get_rescuers_position(unit)
         elif self.game.is_displaying_overworld() and self._get_overworld_location_of_object(pos):
             position = self._get_overworld_location_of_object(pos).position
-        elif pos in self.game.level.regions.keys():
+        elif pos in self.game.level.regions:
             return self.game.level.regions.get(pos).position
         else:
             valid_regions = \
@@ -664,12 +664,11 @@ class Event():
             name = nid
         if unit and unit.portrait_nid:
             portrait = RESOURCES.portraits.get(unit.portrait_nid)
-        elif name in DB.units.keys():
+        elif name in DB.units:
             portrait = RESOURCES.portraits.get(DB.units.get(name).portrait_nid)
         else:
             portrait = RESOURCES.portraits.get(name)
         if not portrait:
-            self.logger.error("add_portrait: Couldn't find portrait %s" % name)
             return None, nid
         return portrait, nid
 

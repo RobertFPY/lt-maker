@@ -30,7 +30,7 @@ class AchievementManager(Data):
         self.location = location
 
     def add_achievement(self, nid: str, name: str, desc: str, complete=False, hidden=False):
-        if nid not in self.keys():
+        if nid not in self:
             new_achievement = Achievement(nid, name, desc, complete, hidden)
             self.append(new_achievement)
         else:
@@ -38,7 +38,7 @@ class AchievementManager(Data):
         persistent_data.serialize(self.location, self.save())
 
     def update_achievement(self, nid, name, desc, hidden):
-        if nid in self.keys():
+        if nid in self:
             a = self.get(nid)
             a.name = name
             a.desc = desc
@@ -48,17 +48,17 @@ class AchievementManager(Data):
         persistent_data.serialize(self.location, self.save())
 
     def remove_achievement(self, nid: str):
-        if nid in self.keys():
+        if nid in self:
             self.remove_key(nid)
         else:
             logging.info("Attempted to remove non-existant achievement with nid %s", nid)
         persistent_data.serialize(self.location, self.save())
 
     def check_achievement(self, nid: str) -> bool:
-        return nid in self.keys() and self.get(nid).get_complete()
+        return nid in self and self.get(nid).get_complete()
 
     def complete_achievement(self, nid: str, complete: bool, banner: bool) -> bool:
-        if nid in self.keys():
+        if nid in self:
             a = self.get(nid)
             a.set_complete(complete)
         else:

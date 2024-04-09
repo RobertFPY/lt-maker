@@ -8,6 +8,7 @@ from PyQt5.QtWidgets import QApplication, QTextEdit, QVBoxLayout, QWidget, QMenu
 from PyQt5.QtGui import QWindow
 
 from app import lt_log
+from app.utilities import file_utils
 import os
 
 from app.editor.settings.main_settings_controller import MainSettingsController
@@ -56,7 +57,7 @@ class LogViewer(QWidget):
     def open_log_location(self):
         log_file = lt_log.get_log_fname()
         if log_file:
-            os.startfile(os.path.dirname(log_file))
+            file_utils.startfile(os.path.dirname(log_file))
 
     def fetch_log(self, initial=False):
         if self.log_file_pointer.closed:

@@ -95,10 +95,6 @@ class Defaults():
         return 0
 
     @staticmethod
-    def canto_movement(unit, unit2) -> int:
-        return unit.movement_left
-
-    @staticmethod
     def limit_maximum_range(unit, item) -> int:
         return 1000
 
@@ -391,7 +387,8 @@ def ai_priority_multiplier(unit) -> float:
     for skill in unit.skills:
         for component in skill.components:
             if component.defines('ai_priority_multiplier'):
-                ai_priority_multiplier *= component.ai_priority_multiplier(unit)
+                if component.ignore_conditional or condition(skill, unit):
+                    ai_priority_multiplier *= component.ai_priority_multiplier(unit)
     return ai_priority_multiplier
 
 def get_combat_arts(unit):

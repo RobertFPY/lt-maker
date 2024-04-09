@@ -58,7 +58,7 @@ class SupportPair():
         if self.locked_ranks and game.supports.check_rank_limit(self):
             for rank in self.locked_ranks:
                 for bonus in reqs:
-                    if bonus.support_rank == rank and not bonus.gate or game.game_vars.get(bonus.gate):
+                    if bonus.support_rank == rank and (not bonus.gate or game.game_vars.get(bonus.gate)):
                         return True
         return False
 

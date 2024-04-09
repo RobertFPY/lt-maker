@@ -1386,7 +1386,7 @@ class ItemDiscardState(MapState):
 
     def start(self):
         game.cursor.hide()
-        self.cur_unit = game.cursor.cur_unit
+        self.cur_unit = game.memory['item_discard_current_unit']
         options = self.cur_unit.items
         self.menu = menus.Choice(self.cur_unit, options)
         ignore = [bool(item_system.locked(self.cur_unit, item)) for item in options]

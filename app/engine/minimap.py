@@ -1,3 +1,5 @@
+import logging
+
 from app.constants import WINWIDTH, WINHEIGHT, TILEX, TILEY
 
 from app.utilities import utils
@@ -202,7 +204,7 @@ class MiniMap(object):
         self.height = self.tilemap.height
         self.colorkey = (0, 0, 0)
         self.surf = engine.create_surface((self.width*self.scale_factor, self.height*self.scale_factor))
-        engine.set_colorkey(self.surf, self.colorkey, rleaccel=False) # black is transparent
+        engine.set_colorkey(self.surf, self.colorkey, rleaccel=False)  # black is transparent
         self.pin_surf = engine.create_surface((self.width*self.scale_factor, self.height*self.scale_factor), transparent=True)
 
         # All the rest of this is used for occlusion generation
@@ -295,7 +297,11 @@ class MiniMap(object):
             if unit.position and 'Tile' not in unit.tags and game.board.in_vision(unit.position):
                 pos = unit.position[0] * self.scale_factor, unit.position[1] * self.scale_factor
                 idx: int = DB.teams.index(unit.team)
-                self.pin_surf.blit(engine.subsurface(self.minimap_units, (self.scale_factor * idx, 0, self.scale_factor, self.scale_factor)), pos)
+                if idx * self.scale_factor < self.minimap_units.get_width():
+                    self.pin_surf.blit(engine.subsurface(self.minimap_units, (self.scale_factor * idx, 0, self.scale_factor, self.scale_factor)), pos)
+                else:
+                    logging.error("No unit sprite for team %s at idx %s in minimap sprite: %s" % (unit.team, idx, 'Minimap_Sprites.png'))
+                    self.pin_surf.blit(engine.subsurface(self.minimap_units, (0, 0, self.scale_factor, self.scale_factor)), pos)
 
     def coast(self, position, allow_recurse=True, coast_key='Coast', sea_keys=('Sea', 'Pier', 'River', 'Bridge'), offset=(0, 0)):
         # A is up, B is left, C is right, D is down

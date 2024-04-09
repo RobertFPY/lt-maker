@@ -6,8 +6,7 @@ from app.data.database.database import DB
 
 from app.engine.sprites import SPRITES
 from app.engine.fonts import FONT
-from app.engine import engine, skill_system, image_mods
-from app.engine.game_state import game
+from app.engine import engine, skill_system, image_mods, unit_funcs
 
 def get_icon_by_name(name) -> engine.Surface:
     image, index = None, None
@@ -194,7 +193,7 @@ def draw_chibi(surf, nid, topleft=None, bottomright=None):
     return surf
 
 def draw_stat(surf, stat_nid, unit, topright, compact=False):
-    if stat_nid not in DB.stats.keys():
+    if stat_nid not in DB.stats:
         FONT['text-yellow'].blit_right('--', surf, topright)
         return
     value = unit.stats.get(stat_nid, 0)
@@ -225,17 +224,12 @@ def draw_stat(surf, stat_nid, unit, topright, compact=False):
             FONT['small-red'].blit(str(bonus), surf, topright)
 
 def draw_growth(surf, stat_nid, unit, topright, compact=False):
-    if stat_nid not in DB.stats.keys():
+    if stat_nid not in DB.stats:
         FONT['text-yellow'].blit_right('--', surf, topright)
         return
-    class_obj = DB.classes.get(unit.klass)
     value = unit.growths.get(stat_nid, 0)
-    bonus = unit.growth_bonus(stat_nid)
-    klass_bonus = class_obj.growth_bonus.get(stat_nid, 0)
-    bonus += klass_bonus
-    difficulty_bonus = game.mode.get_growth_bonus(unit, DB)
-    d_bonus = difficulty_bonus.get(stat_nid, 0)
-    bonus += d_bonus
+    value_and_bonus = unit_funcs.growth_rate(unit, stat_nid)
+    bonus = value_and_bonus - value
     if compact:
         pass
     else:

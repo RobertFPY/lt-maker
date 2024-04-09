@@ -117,8 +117,9 @@ class SkillIcon():
         self.done: bool = False
         self.state = 'in'
 
-        self.fade_time = 300 if self.small else 400
-        self.hold_time = 700 if self.small else 1100
+        self.fade_in_time = 300 if self.small else 400
+        self.hold_time = 500 if self.small else 700
+        self.fade_out_time = 100 if self.small else 150
 
         self.left_pos = 0
 
@@ -127,22 +128,23 @@ class SkillIcon():
 
         if self.state == 'in':
             self.left_pos = 10 * math.exp(-current_time/250) * math.sin(current_time/25)
-            transparency = 1 - utils.clamp(current_time/200, 0, 1)
+            transparency = 1 - utils.clamp(current_time/int(self.fade_in_time * .66), 0, 1)
             self.image = image_mods.make_translucent(self.surf, transparency)
-            if current_time > self.fade_time:
+            if current_time > self.fade_in_time:
                 self.state = 'hold'
                 self.left_pos = 0
 
         elif self.state == 'hold':
+            state_time = current_time - self.fade_in_time
             self.image = self.surf
-            if current_time > self.hold_time:
+            if state_time > self.hold_time:
                 self.state = 'out'
 
         elif self.state == 'out':
-            state_time = current_time - self.hold_time
-            transparency = utils.clamp(state_time/300, 0, 1)
+            state_time = current_time - self.hold_time - self.fade_in_time
+            transparency = utils.clamp(state_time/self.fade_out_time, 0, 1)
             self.image = image_mods.make_translucent(self.surf, transparency)
-            if state_time > self.fade_time:
+            if state_time > self.fade_out_time:
                 self.done = True
 
     def draw(self, surf, pos=None):

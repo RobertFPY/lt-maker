@@ -5,7 +5,7 @@ from typing import Generator
 from app.engine.evaluate import get_context
 from app.engine.game_state import GameState
 from app.events.python_eventing.errors import InvalidPythonError
-from app.events.python_eventing.utils import EVENT_GEN_NAME
+from app.events.python_eventing.utils import EVENT_GEN_NAME, create_null_event
 from app.utilities.typing import NID
 
 @dataclass
@@ -14,12 +14,14 @@ class CompiledEvent():
     source: str         # original source code of event
     compiled: str       # pythonic source code of event
 
-    def get_runnable(self, game: GameState) -> Generator:
-        exec_context = get_context(game=game)
+    def get_runnable(self, game: GameState, context: dict=None) -> Generator:
+        exec_context = get_context(game=game, local_args=context)
         exec(self.compiled, exec_context)
         # possibility that there are some errors in python script
         try:
             gen = exec_context[EVENT_GEN_NAME]()
+            if not gen: # for some reason, a python event contains no real event commands
+                return create_null_event()
         except Exception as e:
             _, _, exc_tb = sys.exc_info()
             exception_lineno = traceback.extract_tb(exc_tb)[-1][1]

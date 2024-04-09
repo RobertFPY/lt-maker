@@ -14,7 +14,7 @@ class GenericUnit(Prefab):
 
     faction: NID = None
 
-    starting_items: List[List] = field(default_factory=list) # list is a tuple [item_nid, droppable]
+    starting_items: List[Tuple[NID, bool]] = field(default_factory=list) # list is a tuple [item_nid, droppable]
     starting_skills: List[NID] = field(default_factory=list)
 
     team: str = None
@@ -110,7 +110,7 @@ class UnitGroup(Prefab):
 
     @classmethod
     def restore(cls, value):
-        self = cls(value['nid'], value['units'], value['positions'])
+        self = cls(value['nid'], value['units'], value['positions'].copy())
         self.units = [u for u in self.units if u]
         return self
 

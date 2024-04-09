@@ -136,9 +136,9 @@ class CombatHealthBar(HealthBar):
         return surf
 
     def draw(self, surf, left, top):
-        font = FONT['number-small2']
+        font = FONT['number_small2']
         if self.big_number():
-            font = FONT['number-big2']
+            font = FONT['number_big2']
         if self.displayed_hp <= 240:
             font.blit_right(str(self.displayed_hp), surf, (left, top - 4))
         else:
@@ -187,9 +187,9 @@ class MapCombatHealthBar(HealthBar):
 
         # Blit HP number
         if self.display_numbers:
-            font = FONT['number-small2']
+            font = FONT['number_small2']
             if self.transition_flag:
-                font = FONT['number-big2']
+                font = FONT['number_big2']
             s = str(self.displayed_hp)
             position = 22 - font.size(s)[0], 15
             font.blit(s, surf, position)
@@ -430,16 +430,16 @@ class MapCombatInfo():
         bg_surf.blit(self.bg_surf, (0, 0))
 
         # Name
-        name_width = FONT['text-numbers'].size(self.unit.name)[0]
+        name_width = FONT['text_numbers'].size(self.unit.name)[0]
         position = width - name_width - 4, 3
-        FONT['text-numbers'].blit(self.unit.name, bg_surf, position)
+        FONT['text_numbers'].blit(self.unit.name, bg_surf, position)
 
         # Item
         if self.item:
             # Determine effectiveness
             icon = icons.get_icon(self.item)
             if icon:
-                icon = item_system.item_icon_mod(self.unit, self.item, self.target, icon)
+                icon = item_system.item_icon_mod(self.unit, self.item, self.target, self.target.get_weapon() if self.target else None, icon)
                 bg_surf.blit(icon, (2, 3))
 
             # Blit advantage

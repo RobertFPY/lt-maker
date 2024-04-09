@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Optional
 
 from app.data.database.database import DB
-from app.engine import (action, banner, item_system, skill_system,
+from app.engine import (action, banner, exp_funcs, item_system, skill_system,
                         supports)
 from app.engine.combat.solver import CombatPhaseSolver
 from app.engine.game_state import game
@@ -33,7 +33,7 @@ class SimpleCombat():
         self.defenders = [game.board.get_unit(main_target_pos) if main_target_pos else None for main_target_pos in main_target_positions]
         # List of UnitObject
         self.all_defenders = list(set([_ for _ in self.defenders if _]))
-        self.defender: UnitObject = None
+        self.defender: Optional[UnitObject] = None
         if len(self.all_defenders) == 1:
             self.defender = self.all_defenders[0]
 
@@ -53,7 +53,7 @@ class SimpleCombat():
 
         self.items = items
         self.def_items = [resolve_weapon(defender) for defender in self.defenders]
-        self.def_item = None
+        self.def_item: Optional[ItemObject] = None
         if self.defender:
             self.def_item = resolve_weapon(self.defender)
 
@@ -425,9 +425,9 @@ class SimpleCombat():
             item_system.on_unusable(self.attacker, self.main_item)
         if self.def_item and item_system.is_unusable(self.defender, self.def_item):
             item_system.on_unusable(self.defender, self.def_item)
-        if attack_partner and item_system.is_unusable(attack_partner, attack_partner.get_weapon()):
+        if attack_partner and attack_partner.get_weapon() and item_system.is_unusable(attack_partner, attack_partner.get_weapon()):
             item_system.on_unusable(attack_partner, attack_partner.get_weapon())
-        if defense_partner and item_system.is_unusable(defense_partner, defense_partner.get_weapon()):
+        if defense_partner and defense_partner.get_weapon() and item_system.is_unusable(defense_partner, defense_partner.get_weapon()):
             item_system.on_unusable(defense_partner, defense_partner.get_weapon())
 
     def handle_wexp(self, unit, item, target):
@@ -487,7 +487,6 @@ class SimpleCombat():
                     action.do(action.ChangeMana(self.defender, mana_gain))
 
     def handle_exp(self, combat_object=None):
-        from app.engine.level_up import ExpState
         # handle exp
         if self.attacker.team == 'player' and not self.attacker.is_dying:
             exp = self.calculate_exp(self.attacker, self.main_item)
@@ -502,7 +501,7 @@ class SimpleCombat():
                 game.exp_instance.append((self.attacker, exp, combat_object, 'init'))
                 game.state.change('exp')
                 game.ai.end_skip()
-            elif not self.alerts and exp != 0 and ExpState.can_give_exp(self.attacker, exp):
+            elif not self.alerts and exp != 0 and exp_funcs.can_give_exp(self.attacker, exp):
                 action.do(action.GainExp(self.attacker, exp))
 
         elif self.defender and self.defender.team == 'player' and not self.defender.is_dying:
@@ -517,7 +516,7 @@ class SimpleCombat():
                 game.exp_instance.append((self.defender, exp, combat_object, 'init'))
                 game.state.change('exp')
                 game.ai.end_skip()
-            elif not self.alerts and exp != 0 and ExpState.can_give_exp(self.defender, exp):
+            elif not self.alerts and exp != 0 and exp_funcs.can_give_exp(self.defender, exp):
                 action.do(action.GainExp(self.defender, exp))
 
     def handle_paired_exp(self, leader_unit, combat_object=None):

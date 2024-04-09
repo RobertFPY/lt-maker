@@ -28,19 +28,19 @@ Welcome to lt-maker's documentation!
 
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 2
    :caption: Events:
 
    source/events/index
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 2
    :caption: Guides:
 
    source/guides/index
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 2
    :caption: appendix:
 
    source/appendix/Useful_Functions
@@ -54,6 +54,11 @@ Welcome to lt-maker's documentation!
    source/appendix/misc_reference
    source/appendix/FAQ
    source/appendix/Contributing_to_the_LTWiki
+   source/appendix/Adding-Language-Support
+   source/appendix/Special-Commands-for-Dialogue-Formatting
+   source/appendix/index
+
+   
 
 Indices and tables
 ==================

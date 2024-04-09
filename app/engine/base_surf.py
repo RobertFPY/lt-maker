@@ -1,3 +1,8 @@
+from __future__ import annotations
+
+import random
+from typing import Optional
+
 from app.engine.sprites import SPRITES
 from app.engine import engine
 
@@ -8,7 +13,18 @@ HARDCODED_BG_SURFS = [
     'name_tag'
 ]
 
-def create_base_surf(width, height, base='menu_bg_base') -> engine.Surface:
+SLICE_9_WIDTH = 8
+SLICE_9_HEIGHT = 8
+
+def create_base_surf(width: int, height: int, base: Optional[str] = 'menu_bg_base') -> engine.Surface:
+    """
+    Given the width and height of a desired surface along with a base surface (usually 24x24),
+    uses slice 9 pattern to create a surface of the desired size.
+
+    If the base surface is larger than 24x24, each of it's additional slice 9 sprites are randomized
+    during the drawing of the desired surface
+    """
+
     sprite = SPRITES.get(base, 'menu_bg_base')
     if base and '_bg' not in base and base not in HARDCODED_BG_SURFS:
         new_base_surf = engine.create_surface((width, height), transparent=True)
@@ -18,45 +34,53 @@ def create_base_surf(width, height, base='menu_bg_base') -> engine.Surface:
     base_width = sprite.get_width()
     base_height = sprite.get_height()
 
-    full_width = width - width%(base_width//3)
-    full_height = height - height%(base_height//3)
-    width = base_width//3
-    height = base_height//3
+    assert (base_width % SLICE_9_WIDTH) == 0
+    assert (base_height % SLICE_9_HEIGHT) == 0
 
-    assert full_width%width == 0, "The dimensions of the menu are wrong (width: %d %d)" % (full_width, width)
-    assert full_height%height == 0, "The dimensions of the menu are wrong (height: %d %d)" % (full_height, height)
+    desired_width = width - (width % SLICE_9_WIDTH)
+    desired_height = height - (height % SLICE_9_HEIGHT)
+    surf = engine.create_surface((desired_width, desired_height), transparent=True)
 
-    surf = engine.create_surface((full_width, full_height), transparent=True)
+    # Gather up the pieces of the base surface
+    # Corners
+    topleft = engine.subsurface(sprite, (0, 0, SLICE_9_WIDTH, SLICE_9_HEIGHT))
+    topright = engine.subsurface(sprite, (base_width - SLICE_9_WIDTH, 0, SLICE_9_WIDTH, SLICE_9_HEIGHT))
+    botleft = engine.subsurface(sprite, (0, base_height - SLICE_9_HEIGHT, SLICE_9_WIDTH, SLICE_9_HEIGHT))
+    botright = engine.subsurface(sprite, (base_width - SLICE_9_WIDTH, base_height - SLICE_9_HEIGHT, SLICE_9_WIDTH, SLICE_9_HEIGHT))
 
-    topleft = engine.subsurface(sprite, (0, 0, width, height))
-    top = engine.subsurface(sprite, (width, 0, width, height))
-    topright = engine.subsurface(sprite, (2 * width, 0, width, height))
-    midleft = engine.subsurface(sprite, (0, height, width, height))
-    mid = engine.subsurface(sprite, (width, height, width, height))
-    midright = engine.subsurface(sprite, (2 * width, height, width, height))
-    botleft = engine.subsurface(sprite, (0, 2 * height, width, height))
-    bot = engine.subsurface(sprite, (width, 2 * height, width, height))
-    botright = engine.subsurface(sprite, (2 * width, 2 * height, width, height))
+    top, left, right, bot, center = [], [], [], [], []
+    # Sides
+    for x in range(SLICE_9_WIDTH, base_width - SLICE_9_WIDTH, SLICE_9_WIDTH):
+        top.append(engine.subsurface(sprite, (x, 0, SLICE_9_WIDTH, SLICE_9_HEIGHT)))
+        bot.append(engine.subsurface(sprite, (x, base_height - SLICE_9_HEIGHT, SLICE_9_WIDTH, SLICE_9_HEIGHT)))
+    for y in range(SLICE_9_HEIGHT, base_height - SLICE_9_HEIGHT, SLICE_9_HEIGHT):
+        left.append(engine.subsurface(sprite, (0, y, SLICE_9_WIDTH, SLICE_9_HEIGHT)))
+        right.append(engine.subsurface(sprite, (base_width - SLICE_9_WIDTH, y, SLICE_9_WIDTH, SLICE_9_HEIGHT)))
 
-    # center sprite
-    for x in range(full_width//width - 2):
-        for y in range(full_height//height - 2):
-            surf.blit(mid, ((x + 1) * width, (y + 1) * height))
+    # Center
+    for x in range(SLICE_9_WIDTH, base_width - SLICE_9_WIDTH, SLICE_9_WIDTH):
+        for y in range(SLICE_9_HEIGHT, base_height - SLICE_9_HEIGHT, SLICE_9_HEIGHT):
+            center.append(engine.subsurface(sprite, (x, y, SLICE_9_WIDTH, SLICE_9_HEIGHT)))
 
-    # edges
-    for x in range(full_width//width - 2):
-        surf.blit(top, ((x + 1) * width, 0))
-        surf.blit(bot, ((x + 1) * width, full_height - height))
+    # Now draw on the desired sprite
+    for x in range(SLICE_9_WIDTH, desired_width - SLICE_9_WIDTH, SLICE_9_WIDTH):
+        for y in range(SLICE_9_HEIGHT, desired_height - SLICE_9_HEIGHT, SLICE_9_HEIGHT):
+            surf.blit(random.choice(center), (x, y))
 
-    for y in range(full_height//height - 2):
-        surf.blit(midleft, (0, (y + 1) * height))
-        surf.blit(midright, (full_width - width, (y + 1) * height))
+    # Edges
+    for x in range(SLICE_9_WIDTH, desired_width - SLICE_9_WIDTH, SLICE_9_WIDTH):
+        surf.blit(random.choice(top), (x, 0))
+        surf.blit(random.choice(bot), (x, desired_height - SLICE_9_HEIGHT))
 
-    # corners
+    for y in range(SLICE_9_HEIGHT, desired_height - SLICE_9_HEIGHT, SLICE_9_HEIGHT):
+        surf.blit(random.choice(left), (0, y))
+        surf.blit(random.choice(right), (desired_width - SLICE_9_WIDTH, y))
+
+    # Corners
     surf.blit(topleft, (0, 0))
-    surf.blit(topright, (full_width - width, 0))
-    surf.blit(botleft, (0, full_height - height))
-    surf.blit(botright, (full_width - width, full_height - height))
+    surf.blit(topright, (desired_width - SLICE_9_WIDTH, 0))
+    surf.blit(botleft, (0, desired_height - SLICE_9_HEIGHT))
+    surf.blit(botright, (desired_width - SLICE_9_WIDTH, desired_height - SLICE_9_HEIGHT))
 
     return surf
 

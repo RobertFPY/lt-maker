@@ -78,8 +78,8 @@ class MapCombat(SimpleCombat):
                 self.set_up_pre_proc_animation('attack_pre_proc')
                 self.set_up_pre_proc_animation('defense_pre_proc')
                 self.set_up_other_proc_icons()
-                self.add_proc_icon.memory.clear()
                 self.first_phase = False
+            self.add_proc_icon.memory.clear()
 
             # Camera
             if self.get_from_playback('defender_phase') or self.get_from_playback('defender_partner_phase'):

@@ -394,23 +394,31 @@ class AnimationCombat(BaseCombat, MockCombat):
                 elif self.get_from_playback('defense_proc'):
                     self.set_up_proc_animation('defense_proc')
                 else:
+                    self.add_proc_icon.memory.clear()
                     self.set_up_combat_animation()
 
         elif self.state == 'attack_proc':
-            if self.left_battle_anim.done() and self.right_battle_anim.done() and current_time > 400:
-                if self.get_from_playback('defense_proc'):
+            if self.left_battle_anim.done() and self.right_battle_anim.done() and not self.proc_icons:
+                if self.get_from_playback('attack_proc'):
+                    self.set_up_proc_animation('attack_proc')
+                elif self.get_from_playback('defense_proc'):
                     self.set_up_proc_animation('defense_proc')
                 else:
+                    self.add_proc_icon.memory.clear()
                     self.set_up_combat_animation()
 
         elif self.state == 'defense_proc':
-            if self.left_battle_anim.done() and self.right_battle_anim.done() and current_time > 400:
-                self.set_up_combat_animation()
+            if self.left_battle_anim.done() and self.right_battle_anim.done() and not self.proc_icons:
+                if self.get_from_playback('defense_proc'):
+                    self.set_up_proc_animation('defense_proc')
+                else:
+                    self.add_proc_icon.memory.clear()
+                    self.set_up_combat_animation()
 
         elif self.state == 'anim':
             if self.left_battle_anim.done() and self.right_battle_anim.done() and \
-                    (not self.rp_battle_anim or self.rp_battle_anim.done()) and (not \
-                    self.lp_battle_anim or self.lp_battle_anim.done()):
+                    (not self.rp_battle_anim or self.rp_battle_anim.done()) and \
+                    (not self.lp_battle_anim or self.lp_battle_anim.done()):
                 self.state = 'end_phase'
 
         elif self.state == 'hp_change':
@@ -1073,7 +1081,7 @@ class AnimationCombat(BaseCombat, MockCombat):
         self.draw_damage_numbers(surf, (left_range_offset, right_range_offset, total_shake_x, total_shake_y))
 
         # make the combat ui (nametags & bars) fade out when appropriate
-        ui_fade_states = ['name_tags_out', 'all_out', 'entrance', 
+        ui_fade_states = ['name_tags_out', 'all_out', 'entrance',
                           'fade_in', 'red_cursor', 'init', 'arena_out',
                           'fade_out']
         if self.ui_should_be_hidden() and self.bar_offset > 0:
@@ -1117,11 +1125,11 @@ class AnimationCombat(BaseCombat, MockCombat):
             right_gauge = None
             left_gauge = None
             left_gauge = SPRITES.get('guard_' + left_color).copy()
-            font = FONT['number-small2']
+            font = FONT['number_small2']
             text = str(self.left.get_guard_gauge()) + '-' + str(self.left.get_max_guard_gauge())
             font.blit_center(text, left_gauge, (18, -1))
             right_gauge = SPRITES.get('guard_' + right_color).copy()
-            font = FONT['number-small2']
+            font = FONT['number_small2']
             text = str(self.right.get_guard_gauge()) + '-' + str(self.right.get_max_guard_gauge())
             font.blit_center(text, right_gauge, (18, -1))
             # Pair up info
@@ -1152,7 +1160,7 @@ class AnimationCombat(BaseCombat, MockCombat):
     def draw_item(self, surf, item, other_item, unit, other, topleft):
         icon = icons.get_icon(item)
         if icon:
-            icon = item_system.item_icon_mod(unit, item, other, icon)
+            icon = item_system.item_icon_mod(unit, item, other, other_item, icon)
             surf.blit(icon, (topleft[0] + 2, topleft[1] + 4))
 
         if skill_system.check_enemy(unit, other):
@@ -1171,10 +1179,10 @@ class AnimationCombat(BaseCombat, MockCombat):
                 damage = str(stats[1])
             if DB.constants.value('crit') and stats[2] is not None:
                 crit = str(utils.clamp(stats[2], 0, 100))
-        FONT['number-small2'].blit_right(hit, surf, (right, top))
-        FONT['number-small2'].blit_right(damage, surf, (right, top + 8))
+        FONT['number_small2'].blit_right(hit, surf, (right, top))
+        FONT['number_small2'].blit_right(damage, surf, (right, top + 8))
         if DB.constants.value('crit'):
-            FONT['number-small2'].blit_right(crit, surf, (right, top + 16))
+            FONT['number_small2'].blit_right(crit, surf, (right, top + 16))
 
     def clean_up1(self):
         """

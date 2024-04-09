@@ -5,6 +5,7 @@ import collections
 from datetime import datetime
 import time
 from app import lt_log
+from app.utilities import file_utils
 
 from app.constants import WINWIDTH, WINHEIGHT, VERSION, FPS
 from app.engine import engine
@@ -22,6 +23,9 @@ def start(title, from_editor=False):
     from app.engine import sprites
     sprites.load_images()
 
+    from app.engine import fonts
+    fonts.load_fonts()
+
     # Hack to get icon to show up in windows
     try:
         import ctypes
@@ -30,8 +34,7 @@ def start(title, from_editor=False):
     except:
         print("Maybe not Windows? (but that's OK)")
 
-    engine.DISPLAYSURF = engine.build_display(engine.SCREENSIZE)
-    engine.SCREENSIZE = (engine.DISPLAYSURF.get_width(), engine.DISPLAYSURF.get_height())
+    engine.DISPLAYSURF = engine.build_display(engine.get_screensize(True))
     engine.update_time()
     engine.set_title(title + ' - v' + VERSION)
     print("Version: %s" % VERSION)
@@ -131,7 +134,7 @@ def run(game):
             if inp.is_pressed('SELECT') or inp.is_pressed('BACK'):
                 log_file = lt_log.get_log_fname()
                 if log_file:
-                    os.startfile(log_file)
+                    file_utils.startfile(log_file)
         else:
             try:
                 surf, repeat = game.state.update(event, surf)
@@ -155,7 +158,7 @@ def run(game):
 
         get_sound_thread().update(raw_events)
 
-        engine.push_display(surf, engine.SCREENSIZE, engine.DISPLAYSURF)
+        engine.push_display(surf, engine.get_screensize(), engine.DISPLAYSURF)
 
         save_screenshot(raw_events, surf)
 
@@ -197,7 +200,7 @@ def run_in_isolation(obj):
 
         get_sound_thread().update(raw_events)
 
-        engine.push_display(surf, engine.SCREENSIZE, engine.DISPLAYSURF)
+        engine.push_display(surf, engine.get_screensize(), engine.DISPLAYSURF)
         save_screenshot(raw_events, surf)
 
         engine.update_display()

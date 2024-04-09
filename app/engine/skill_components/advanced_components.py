@@ -257,6 +257,70 @@ class ProcRate(SkillComponent):
         return equations.parser.get(self.value, unit)
 
 
+class AstraProc(SkillComponent):
+    nid = 'astra_proc'
+    desc = "Specific Proc component for Astra or Adept"
+    tag = SkillTags.CUSTOM
+
+    expose = ComponentType.NewMultipleOptions
+
+    options = {
+        'extra_attacks': ComponentType.Int,
+        'damage_percent': ComponentType.Float,
+    }
+
+    _num_procs = 0  # Number of times this astra has procced
+    _should_modify_damage = False  # Are we actually in an astra section of combat
+    _hitcount = 0  # Hit counts
+
+    def __init__(self, value=None):
+        self.value = {
+            'extra_attacks': 4,
+            'damage_percent': 0.5,
+        }
+        if value:
+            self.value.update(value)
+
+    def start_sub_combat(self, actions, playback, unit, item, target, item2, mode, attack_info):
+        # If we haven't done any subattacks
+        if attack_info[1] == 0:
+            self._num_procs = 0
+            self._should_modify_damage = False
+
+        if not self._should_modify_damage:
+            self._hitcount = 0
+
+        if not self._should_modify_damage and mode == 'attack' and target and skill_system.check_enemy(unit, target):
+            if not get_weapon_filter(self.skill, unit, item):
+                return
+            proc_rate = get_proc_rate(unit, self.skill)
+            if static_random.get_combat() < proc_rate:
+                self._num_procs += 1
+                self._should_modify_damage = True
+                action.do(action.TriggerCharge(unit, self.skill))
+                playback.append(pb.AttackProc(unit, self.skill))
+
+    def dynamic_multiattacks(self, unit, item, target, item2, mode, attack_info, base_value) -> int:
+        return int(self.value['extra_attacks']) * self._num_procs
+
+    def damage_multiplier(self, unit, item, target, item2, mode, attack_info, base_value):
+        if self._should_modify_damage:
+            return max(0, float(self.value['damage_percent']))
+        return 1
+
+    def after_strike(self, actions, playback, unit, item, target, item2, mode, attack_info, strike):
+        if self._should_modify_damage:
+            self._hitcount += 1
+            if self._hitcount >= int(self.value['extra_attacks']) + 1:    
+                self._should_modify_damage = False
+
+    def cleanup_combat(self, playback, unit, item, target, item2, mode):
+        # Shouln't be necessary but just in case
+        self._num_procs = 0
+        self._should_modify_damage = False
+        self._hitcount = 0
+
+
 class ItemOverride(SkillComponent):
     nid = 'item_override'
     desc = 'allows overriding of item properties'

@@ -4,6 +4,7 @@ import functools
 import json
 import logging
 import os
+from pathlib import Path
 import shutil
 from datetime import datetime
 import traceback
@@ -24,6 +25,7 @@ from app.editor.recent_project_dialog import choose_recent_project
 from app.editor.settings import MainSettingsController
 from app.extensions.custom_gui import SimpleDialog
 from app.utilities import exceptions
+import app.utilities.platformdirs as appdirs
 
 if TYPE_CHECKING:
     from app.editor.main_editor import MainEditor
@@ -123,13 +125,13 @@ class ProjectFileBackend():
     def save_mutex(func):
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
-            # If we're currently saving, we don't want to save again! So gate operations in the save mutex! 
+            # If we're currently saving, we don't want to save again! So gate operations in the save mutex!
             if not self.is_saving:
-                # If we're saving the game, we want to ensure autosave doesn't show up and mess with our stuff! Stop it. 
+                # If we're saving the game, we want to ensure autosave doesn't show up and mess with our stuff! Stop it.
                 timer.get_timer().autosave_timer.stop()
                 self.is_saving = True
 
-                # ... Then, actually save. 
+                # ... Then, actually save.
                 result = func(self, *args, *kwargs)
                 self.is_saving = False
 
@@ -145,7 +147,9 @@ class ProjectFileBackend():
         # we should allow the save so
         # the user can make a game
         try:
-            any_errors = DBChecker(DB, RESOURCES).validate_for_errors()
+            checker = DBChecker(DB, RESOURCES)
+            checker.repair()
+            any_errors = checker.validate_for_errors()
             DB.game_flags.has_fatal_errors = bool(any_errors)
         except Exception as e:
             QMessageBox.warning(self.parent, "Validation warning", "Validation failed with error. Please send this message to the devs.\nYour save will continue as normal.\nException:\n" + traceback.format_exc())
@@ -154,8 +158,11 @@ class ProjectFileBackend():
         # Returns whether we successfully saved
         # check if we're editing default, if so, prompt to save as
         if new or not self.current_proj or os.path.basename(self.current_proj) == DEFAULT_PROJECT:
-            starting_path = self.current_proj or QDir.currentPath()
-            fn, ok = QFileDialog.getSaveFileName(self.parent, "Save Project", starting_path,
+            if os.path.basename(self.current_proj) == DEFAULT_PROJECT:
+                starting_path = appdirs.user_documents_dir()
+            else:
+                starting_path = Path(self.current_proj or QDir.currentPath()).parent
+            fn, ok = QFileDialog.getSaveFileName(self.parent, "Save Project", str(starting_path),
                                                  "All Files (*)")
             if ok:
                 # Make sure you can't save as "autosave" or "default"
@@ -249,6 +256,8 @@ class ProjectFileBackend():
                 shutil.rmtree(self.current_proj)
             os.rename(self.tmp_proj, self.current_proj)
         self.save_progress.setValue(100)
+
+        self.settings.append_or_bump_project(DB.constants.value('title') or os.path.basename(self.current_proj), self.current_proj)
 
         if DB.game_flags.has_fatal_errors:
             self.display_fatal_errors()

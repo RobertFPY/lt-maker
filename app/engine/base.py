@@ -571,7 +571,7 @@ class BaseSupportsState(State):
         self.units = [unit for unit in player_units if
                       any(prefab.unit1 == unit.nid or prefab.unit2 == unit.nid for prefab in DB.support_pairs)]
         # sort to official unit order
-        self.units = sorted(self.units, key=lambda unit: DB.units.index(unit.nid) if unit.nid in DB.units.keys() else 999999)
+        self.units = sorted(self.units, key=lambda unit: DB.units.index(unit.nid) if unit.nid in DB.units else 999999)
 
         self.menu = menus.Table(None, self.units, (9, 1), (4, 4))
         self.menu.set_mode('unit')
@@ -821,7 +821,7 @@ class LoreDisplay():
             if game.get_unit(self.lore.nid):
                 unit = game.get_unit(self.lore.nid)
                 icons.draw_portrait(image, unit, (self.width - 96, WINHEIGHT - 12 - 80))
-            elif self.lore.nid in DB.units.keys():
+            elif self.lore.nid in DB.units:
                 portrait, offset = icons.get_portrait_from_nid(DB.units.get(self.lore.nid).portrait_nid)
                 image.blit(portrait, (self.width - 96, WINHEIGHT - 12 - 80))
 
@@ -863,7 +863,7 @@ class BaseLibraryState(State):
             self.menu.set_ignore(ignore)
 
     def start(self):
-        if 'base_bg' in game.memory:
+        if game.memory.get('base_bg'):
             self.bg = game.memory['base_bg']
         else:
             self.bg = base_background()
@@ -966,7 +966,7 @@ class BaseGuideState(BaseLibraryState):
     name = 'base_guide'
 
     def start(self):
-        if 'base_bg' in game.memory:
+        if game.memory.get('base_bg'):
             self.bg = game.memory['base_bg']
         else:
             self.bg = base_background()
@@ -1351,7 +1351,7 @@ class BaseAchievementState(State):
 
     def start(self):
         self.fluid = FluidScroll()
-        if 'base_bg' in game.memory:
+        if game.memory.get('base_bg'):
             self.bg = game.memory['base_bg']
         else:
             self.bg = base_background()

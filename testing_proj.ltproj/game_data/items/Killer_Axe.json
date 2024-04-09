@@ -1,6 +1,6 @@
 [
     {
-        "nid": "Killer Axe",
+        "nid": "Killer_Axe",
         "name": "Killer Axe",
         "desc": "",
         "icon_nid": "Axe",
@@ -43,13 +43,10 @@
             ],
             [
                 "uses_options",
-                [
-                    [
-                        "LoseUsesOnMiss (T/F)",
-                        "F",
-                        "Lose uses even on miss"
-                    ]
-                ]
+                {
+                    "lose_uses_on_miss": false,
+                    "one_loss_per_combat": false
+                }
             ],
             [
                 "weight",

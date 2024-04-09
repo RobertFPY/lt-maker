@@ -23,7 +23,7 @@ fast_quit = False
 def init():
     pygame.mixer.pre_init(44100, -16, 2, 128 * 2**cf.SETTINGS['sound_buffer_size'])
     pygame.init()
-    pygame.mixer.init()
+    pygame.font.init()
     logging.info("Engine Init Completed")
 
 def simple_init():
@@ -273,8 +273,13 @@ def get_mouse_focus():
     return pygame.mouse.get_focused()
 
 # === loop functions ===
-DISPLAYSURF = None
-SCREENSIZE = (WINWIDTH * min(cf.SETTINGS['screen_size'], 5), WINHEIGHT * min(cf.SETTINGS['screen_size'], 5))
+DISPLAYSURF: Surface = None
+
+def get_screensize(init=False):
+    global DISPLAYSURF
+    if not DISPLAYSURF or init:
+        return (WINWIDTH * min(cf.SETTINGS['screen_size'], 5), WINHEIGHT * min(cf.SETTINGS['screen_size'], 5))
+    return (DISPLAYSURF.get_width(), DISPLAYSURF.get_height())
 
 class Clock():
     def __init__(self) -> None:

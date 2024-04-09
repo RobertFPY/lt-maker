@@ -87,9 +87,9 @@ class PhaseController():
             self.current = (self.current + 1) % len(DB.teams)
 
     def _team_int(self, team: str) -> int:
-        if team in DB.teams.keys():
+        if team in DB.teams:
             return DB.teams.index(team)
-        return 1 # 1 is used instead of zero so that it will default to an AI turn
+        return 1  # 1 is used instead of zero so that it will default to an AI turn
 
     def next(self):
         self.previous = self.current

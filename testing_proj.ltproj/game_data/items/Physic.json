@@ -35,13 +35,10 @@
             ],
             [
                 "uses_options",
-                [
-                    [
-                        "LoseUsesOnMiss (T/F)",
-                        "F",
-                        "Lose uses even on miss"
-                    ]
-                ]
+                {
+                    "lose_uses_on_miss": false,
+                    "one_loss_per_combat": false
+                }
             ],
             [
                 "wexp",
@@ -64,16 +61,16 @@
                 ]
             ],
             [
-                "magic_heal",
-                20
-            ],
-            [
                 "max_equation_range",
                 "MAGIC_RANGE"
             ],
             [
                 "min_range",
                 1
+            ],
+            [
+                "equation_heal",
+                "HEAL"
             ]
         ]
     }

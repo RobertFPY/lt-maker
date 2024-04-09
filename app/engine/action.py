@@ -40,6 +40,8 @@ def wrap_do_exec_reverse(_cls):
     return wrapper
 
 class Action():
+    persist_through_menu_cancel = False
+    
     def __init_subclass__(cls, **kwargs):
         return wrap_do_exec_reverse(_cls=cls)
 
@@ -462,6 +464,7 @@ class RemoveFromMap(Action):
     def reverse(self):
         self.update_fow_action.reverse()
         self.unit.position = self.old_pos
+        self.unit.sprite.change_state('normal')
         if self.unit.position:
             self.unit.previous_position = self.unit.position
 
@@ -726,7 +729,7 @@ class Rescue(Action):
         self.rescuee.position = None
         self.unit.has_rescued = True
 
-        if not skill_system.ignore_rescue_penalty(self.unit) and 'Rescue' in DB.skills.keys():
+        if not skill_system.ignore_rescue_penalty(self.unit) and 'Rescue' in DB.skills:
             self.subactions.append(AddSkill(self.unit, 'Rescue', source=self.rescuee.nid, source_type=SourceType.TRAVELER))
 
         for action in self.subactions:
@@ -823,7 +826,7 @@ class Give(Action):
         self.subactions.clear()
 
         self.other.traveler = self.unit.traveler
-        if not skill_system.ignore_rescue_penalty(self.other) and 'Rescue' in DB.skills.keys():
+        if not skill_system.ignore_rescue_penalty(self.other) and 'Rescue' in DB.skills:
             self.subactions.append(AddSkill(self.other, 'Rescue', source=self.other.traveler, source_type=SourceType.TRAVELER))
 
         self.unit.traveler = None
@@ -853,7 +856,7 @@ class Take(Action):
         self.subactions.clear()
 
         self.unit.traveler = self.other.traveler
-        if not skill_system.ignore_rescue_penalty(self.unit) and 'Rescue' in DB.skills.keys():
+        if not skill_system.ignore_rescue_penalty(self.unit) and 'Rescue' in DB.skills:
             self.subactions.append(AddSkill(self.unit, 'Rescue', source=self.unit.traveler, source_type=SourceType.TRAVELER))
 
         self.other.traveler = None
@@ -1324,6 +1327,8 @@ class SetDroppable(Action):
         self.item.droppable = self.was_droppable
 
 class StoreItem(Action):
+    persist_through_menu_cancel = True
+
     def __init__(self, unit, item):
         self.unit = unit
         self.item = item
@@ -1350,6 +1355,8 @@ class RemoveItem(StoreItem):
 
 
 class EquipItem(Action):
+    persist_through_menu_cancel = True
+
     def __init__(self, unit, item):
         self.unit = unit
         self.item = item
@@ -1395,6 +1402,7 @@ class BringToTopItem(Action):
     """
     Assumes item is in inventory
     """
+    persist_through_menu_cancel = True
 
     def __init__(self, unit, item):
         self.unit = unit
@@ -1567,7 +1575,7 @@ class ModifyItemComponent(Action):
         self.property_name: Optional[NID] = None
         self.prev_component_value = None
         self.component_value = None
-        if self.component_nid in self.item.components.keys():
+        if self.component_nid in self.item.components:
             component = self.item.components.get(self.component_nid)
             # @TODO(mag): add validation for this with the cool new validators
             if isinstance(component.value, dict):
@@ -1581,7 +1589,7 @@ class ModifyItemComponent(Action):
                 self.component_value = self.prev_component_value + new_component_value
 
     def do(self):
-        if self.component_nid in self.item.components.keys():
+        if self.component_nid in self.item.components:
             component = self.item.components.get(self.component_nid)
             if self.property_name and isinstance(component.value, dict):
                 component.value[self.property_name] = self.component_value
@@ -1589,7 +1597,7 @@ class ModifyItemComponent(Action):
                 component.value = self.component_value
 
     def reverse(self):
-        if self.component_nid in self.item.components.keys():
+        if self.component_nid in self.item.components:
             component = self.item.components.get(self.component_nid)
             if self.property_name and isinstance(self.component.value, dict):
                 component.value[self.property_name] = self.prev_component_value
@@ -1605,7 +1613,7 @@ class RemoveItemComponent(Action):
 
     def do(self):
         self._did_remove = False
-        if self.component_nid in self.item.components.keys():
+        if self.component_nid in self.item.components:
             component = self.item.components.get(self.component_nid)
             self.component_value = component.value
             self.item.components.remove_key(self.component_nid)
@@ -1659,7 +1667,7 @@ class ModifySkillComponent(Action):
         self.property_name: Optional[NID] = None
         self.prev_component_value = None
         self.component_value = None
-        if self.component_nid in self.skill.components.keys():
+        if self.component_nid in self.skill.components:
             component = self.skill.components.get(self.component_nid)
             if isinstance(component.value, dict):
                 self.property_name = component_property
@@ -1672,7 +1680,7 @@ class ModifySkillComponent(Action):
                 self.component_value = self.prev_component_value + new_component_value
 
     def do(self):
-        if self.component_nid in self.skill.components.keys():
+        if self.component_nid in self.skill.components:
             component = self.skill.components.get(self.component_nid)
             if self.property_name and isinstance(component.value, dict):
                 component.value[self.property_name] = self.component_value
@@ -1680,7 +1688,7 @@ class ModifySkillComponent(Action):
                 component.value = self.component_value
 
     def reverse(self):
-        if self.component_nid in self.skill.components.keys():
+        if self.component_nid in self.skill.components:
             component = self.skill.components.get(self.component_nid)
             if self.property_name and isinstance(self.component.value, dict):
                 component.value[self.property_name] = self.prev_component_value
@@ -1696,7 +1704,7 @@ class RemoveSkillComponent(Action):
 
     def do(self):
         self._did_remove = False
-        if self.component_nid in self.skill.components.keys():
+        if self.component_nid in self.skill.components:
             component = self.skill.components.get(self.component_nid)
             self.component_value = component.value
             self.skill.components.remove_key(self.component_nid)
@@ -1937,6 +1945,7 @@ class Promote(Action):
         current_stats = self.unit.stats
         new_klass_maxes = DB.classes.get(self.new_klass).max_stats
         new_klass_bases = DB.classes.get(self.new_klass).bases
+        old_klass_bases = DB.classes.get(self.old_klass).bases
 
         self.stat_changes = {nid: 0 for nid in DB.stats.keys()}
         for stat_nid in DB.stats.keys():
@@ -1945,6 +1954,11 @@ class Promote(Action):
                 self.stat_changes[stat_nid] = new_klass_bases.get(stat_nid, 0) - current_stats[stat_nid]
             elif stat_value == -98:  # Use the new klass base only if it's bigger
                 self.stat_changes[stat_nid] = max(0, new_klass_bases.get(stat_nid, 0) - current_stats[stat_nid])
+            elif stat_value == -97: # Subtract the old klass base from the new klass base
+                change = new_klass_bases.get(stat_nid, 0) - old_klass_bases.get(stat_nid, 0)
+                current_stat = current_stats.get(stat_nid)
+                new_value = utils.clamp(change, -current_stat, new_klass_maxes.get(stat_nid, 0) + unit.stat_cap_modifiers.get(stat_nid, 0) - current_stat)
+                self.stat_changes[stat_nid] = new_value
             else:
                 max_gain_possible = new_klass_maxes.get(stat_nid, 0) + unit.stat_cap_modifiers.get(stat_nid, 0) - current_stats[stat_nid]
                 self.stat_changes[stat_nid] = min(stat_value, max_gain_possible)
@@ -2264,12 +2278,12 @@ class ChangeFatigue(Action):
         self.unit.set_fatigue(self.old_fatigue + self.num)
 
         if game.game_vars.get('_fatigue') == 2:
-            if 'Fatigued' in DB.skills.keys():
+            if 'Fatigued' in DB.skills:
                 if self.unit.get_fatigue() >= self.unit.get_max_fatigue():
                     self.subactions.append(AddSkill(self.unit, 'Fatigued', source='game', source_type=SourceType.FATIGUE))
                 elif 'Fatigued' in [skill.nid for skill in self.unit.skills]:
                     self.subactions.append(RemoveSkill(self.unit, 'Fatigued', source='game', source_type=SourceType.FATIGUE))
-            if 'Rested' in DB.skills.keys():
+            if 'Rested' in DB.skills:
                 if self.unit.get_fatigue() < self.unit.get_max_fatigue():
                     self.subactions.append(AddSkill(self.unit, 'Rested', source='game', source_type=SourceType.FATIGUE))
                 elif 'Rested' in [skill.nid for skill in self.unit.skills]:
@@ -2935,7 +2949,7 @@ class RemoveRegion(Action):
 
     def do(self):
         self.subactions.clear()
-        if self.region.nid in game.level.regions.keys():
+        if self.region.nid in game.level.regions:
             # Remember to remove the status from the unit
             if self.region.region_type == RegionType.STATUS:
                 for unit in game.units:
@@ -3259,7 +3273,7 @@ class RemoveAnimFromUnit(Action):
         self.did_remove = False
 
     def do(self):
-        if self.nid in self.unit.sprite.animations.keys():
+        if self.nid in self.unit.sprite.animations:
             self.speed_mult = self.unit.sprite.animations[self.nid].speed_adj
         self.did_remove = self.unit.sprite.remove_animation(self.nid)
 

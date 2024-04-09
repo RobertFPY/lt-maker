@@ -1,5 +1,7 @@
 from app.map_maker.utilities import random_choice
 
+# Inspired by https://github.com/DavideCanton/DancingLinksX/tree/master/dlx
+
 class EmptyMatrixError(Exception):
     pass
 

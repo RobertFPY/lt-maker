@@ -79,7 +79,7 @@ class GameQueryEngine():
             Optional[ItemObject]: Item if exists on unit, otherwise None
         """
         if is_int(item):
-            item = int(item)
+            return self.game.item_registry.get(int(item))
         else:
             item = self._resolve_to_nid(item)
         found_items = []

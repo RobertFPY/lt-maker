@@ -302,32 +302,32 @@ class MapCombatInfo():
             hit = str(utils.clamp(self.hit, 0, 100))
         else:
             hit = '--'
-        position = surf.get_width() // 2 - FONT['number-small2'].size(hit)[0] - 1, -2
-        FONT['number-small2'].blit(hit, surf, position)
+        position = surf.get_width() // 2 - FONT['number_small2'].size(hit)[0] - 1, -2
+        FONT['number_small2'].blit(hit, surf, position)
         # Blit damage
         if self.mt is not None:
             damage = str(max(0, self.mt))
         else:
             damage = '--'
-        position = surf.get_width() - FONT['number-small2'].size(damage)[0] - 2, -2
-        FONT['number-small2'].blit(damage, surf, position)
+        position = surf.get_width() - FONT['number_small2'].size(damage)[0] - 2, -2
+        FONT['number_small2'].blit(damage, surf, position)
         return surf
 
     def _blit_crt_and_grd(self, surf):
         # Blit crit
-        if self.crit is not None:
-            crit = str(utils.clamp(self.crit, 0, 100))
+        if self.crt is not None:
+            crit = str(utils.clamp(self.crt, 0, 100))
         else:
             crit = '--'
-        position = surf.get_width() // 2 - FONT['number-small2'].size(crit)[0] - 1, 8
-        FONT['number-small2'].blit(crit, surf, position)
+        position = surf.get_width() // 2 - FONT['number_small2'].size(crit)[0] - 1, 8
+        FONT['number_small2'].blit(crit, surf, position)
         # Blit damage
         if self.grd is not None:
-            guard = self.grd
+            guard = str(self.grd)
         else:
             guard = '--'
-        position = surf.get_width() - FONT['number-small2'].size(guard)[0] - 2, 8
-        FONT['number-small2'].blit(guard, surf, position)
+        position = surf.get_width() - FONT['number_small2'].size(guard)[0] - 2, 8
+        FONT['number_small2'].blit(guard, surf, position)
         return surf
 
     def build_hit_and_mt_surf(self):

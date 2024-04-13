@@ -132,7 +132,7 @@ SKILL_HOOKS: Dict[str, HookInfo] = {
     # union hooks (returns a set containing every unique hook return)
     'usable_wtypes':                        HookInfo(['unit'], ResolvePolicy.UNION),
     'forbidden_wtypes':                     HookInfo(['unit'], ResolvePolicy.UNION),
-    'target_icon':                          HookInfo(['unit', 'displaying_unit'], ResolvePolicy.UNION),
+    'target_icon':                          HookInfo(['unit', 'icon_unit'], ResolvePolicy.UNION),
 }
 
 def generate_skill_hook_str(hook_name: str, hook_info: HookInfo):

@@ -79,19 +79,17 @@ class StealIcon(SkillComponent):
     desc = "Displays icon above units with stealable items"
     tag = SkillTags.AESTHETIC
 
-    def target_icon(self, unit, target) -> str:
-        # Unit has item that could be stolen by the target
-        # Unit is the unit with the marker being drawn above them
-        if skill_system.check_enemy(unit, target):
-            attack = equations.parser.steal_atk(target)
-            defense = equations.parser.steal_def(unit)
+    def target_icon(self, hovered_unit, icon_unit) -> str:
+        if skill_system.check_enemy(hovered_unit, icon_unit):
+            attack = equations.parser.steal_atk(hovered_unit)
+            defense = equations.parser.steal_def(icon_unit)
             if attack >= defense:
-                for def_item in unit.items:
-                    if self._item_restrict(target, unit, def_item):
+                for def_item in icon_unit.items:
+                    if self._can_steal(hovered_unit, icon_unit, def_item):
                         return 'steal'
         return None
 
-    def _item_restrict(self, unit, defender, def_item) -> bool:
+    def _can_steal(self, unit, defender, def_item) -> bool:
         if item_system.unstealable(defender, def_item):
             return False
         if item_funcs.inventory_full(unit, def_item):
@@ -103,7 +101,7 @@ class StealIcon(SkillComponent):
 class GBAStealIcon(StealIcon):
     nid = 'gba_steal_icon'
 
-    def _item_restrict(self, unit, defender, def_item) -> bool:
+    def _can_steal(self, unit, defender, def_item) -> bool:
         if item_system.unstealable(defender, def_item):
             return False
         if item_funcs.inventory_full(unit, def_item):

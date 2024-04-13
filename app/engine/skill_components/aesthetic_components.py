@@ -80,35 +80,36 @@ class StealIcon(SkillComponent):
     tag = SkillTags.AESTHETIC
 
     def target_icon(self, unit, target) -> str:
-        # Unit has item that could be stolen by the target
+        stealer = target
+        # Unit has item that could be stolen by the stealer
         # Unit is the unit with the marker being drawn above them
-        if skill_system.check_enemy(unit, target):
-            attack = equations.parser.steal_atk(target)
+        if skill_system.check_enemy(unit, stealer):
+            attack = equations.parser.steal_atk(stealer)
             defense = equations.parser.steal_def(unit)
             if attack >= defense:
-                for def_item in unit.items:
-                    if self._item_restrict(target, unit, def_item):
+                for our_item in unit.items:
+                    if self._can_be_stolen(unit, our_item, stealer):
                         return 'steal'
         return None
 
-    def _item_restrict(self, unit, defender, def_item) -> bool:
-        if item_system.unstealable(defender, def_item):
+    def _can_be_stolen(self, unit, our_item, stealer) -> bool:
+        if item_system.unstealable(unit, our_item):
             return False
-        if item_funcs.inventory_full(unit, def_item):
+        if item_funcs.inventory_full(stealer, our_item):
             return False
-        if def_item is defender.get_weapon():
+        if our_item is unit.get_weapon():
             return False
         return True
 
 class GBAStealIcon(StealIcon):
     nid = 'gba_steal_icon'
 
-    def _item_restrict(self, unit, defender, def_item) -> bool:
-        if item_system.unstealable(defender, def_item):
+    def _can_be_stolen(self, unit, our_item, stealer) -> bool:
+        if item_system.unstealable(unit, our_item):
             return False
-        if item_funcs.inventory_full(unit, def_item):
+        if item_funcs.inventory_full(stealer, our_item):
             return False
-        if item_system.is_weapon(defender, def_item) or item_system.is_spell(defender, def_item):
+        if item_system.is_weapon(unit, our_item) or item_system.is_spell(unit, our_item):
             return False
         return True
 

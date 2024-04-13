@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import re
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 from app.engine import engine
 from app.engine.fonts import FONT
 from app.engine.icons import draw_icon_by_alias
+from app.engine.graphics.text.styled_text_parser import parse_styled_text
 from app.utilities.enums import HAlignment
 from app.utilities.typing import NID
 
@@ -143,7 +144,7 @@ def remove_tags(text_block: List[str]) -> List[str]:
     return new_text_block
 
 def render_text(surf: engine.Surface, fonts: List[NID], texts: List[str],
-                colors: List[NID | None], topleft: Tuple[int, int],
+                colors: List[Optional[NID]], topleft: Tuple[int, int],
                 align: HAlignment = HAlignment.LEFT) -> engine.Surface:
     """An enhanced text render layer wrapper around BmpFont.
     Supports multiple fonts and multiple text sections, as well as
@@ -214,3 +215,25 @@ def render_text(surf: engine.Surface, fonts: List[NID], texts: List[str],
             draw_icon_by_alias(surf, curr_text.strip(), (tx, ty))
             tx += 16
     return surf
+
+def render_styled_text(text: str,
+                       default_font: NID,
+                       default_color: Optional[NID],
+                       surf: engine.Surface,
+                       topleft: Tuple[int, int],
+                       align: HAlignment = HAlignment.LEFT) -> engine.Surface:
+    """Render a styled text string statically (no dynamic time-dependent animations)
+
+    Args:
+        text (str): Styled text to render.
+        default_font (NID): Default font to render text with.
+        default_color (Optional[NID]): Default color to render text with, if None then default color of default_font is used.
+        surf (engine.Surface): Surface to draw on.
+        topleft (Tuple[int, int]): Where to start drawing on surf.
+        align (HAlignment, optional): Text alignment. Defaults to HAlignment.LEFT.
+
+    Returns:
+        engine.Surface: Surface with styled text drawn on it.
+    """
+    tagged_text = parse_styled_text(text, default_font, default_color)
+    return tagged_text.draw(surf, topleft, align)

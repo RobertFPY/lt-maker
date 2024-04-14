@@ -184,9 +184,9 @@ class SupportController():
         ally_limit = DB.support_constants.value('ally_limit')
         unit1 = support_pair.unit1
         unit2 = support_pair.unit2
-        if ally_limit and get_num_allies(unit1) >= ally_limit:
+        if ally_limit and self.get_num_allies(unit1) >= ally_limit:
             return False
-        if ally_limit and get_num_allies(unit2) >= ally_limit:
+        if ally_limit and self.get_num_allies(unit2) >= ally_limit:
             return False
         return True
 

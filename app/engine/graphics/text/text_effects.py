@@ -72,7 +72,7 @@ class TextEffect:
         Returns:
             Tuple[str, str]: starting and ending tags for this
         """
-        pass
+        return "", ""
 
     def max_offset(self) -> Tuple[int, int, int, int]:
         """get the maximum offset in each cardinal direction rounded up to the nearest integer
@@ -81,6 +81,13 @@ class TextEffect:
             Tuple[int, int, int, int]: north, east, south, west
         """
         return 0, 0, 0, 0
+
+
+class NoneEffect(TextEffect):
+    nid = "None"
+
+    def __init__(self):
+        pass
 
 
 class ColorEffect(TextEffect):

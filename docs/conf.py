@@ -15,6 +15,10 @@ import sys
 # sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('../'))
 
+# Run the source generation step before we do the final import of item_system and skill_system
+from app.engine.codegen import source_generator
+source_generator.generate_all()
+
 
 # -- Project information -----------------------------------------------------
 

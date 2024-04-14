@@ -319,14 +319,14 @@ class MapCombatInfo():
             crit = str(utils.clamp(self.crt, 0, 100))
         else:
             crit = '--'
-        position = surf.get_width() // 2 - FONT['number_small2'].size(crit)[0] - 1, 8
+        position = surf.get_width() // 2 - FONT['number_small2'].size(crit)[0] - 1, 7
         FONT['number_small2'].blit(crit, surf, position)
         # Blit damage
         if self.grd is not None:
             guard = str(self.grd)
         else:
             guard = '--'
-        position = surf.get_width() - FONT['number_small2'].size(guard)[0] - 2, 8
+        position = surf.get_width() - FONT['number_small2'].size(guard)[0] - 2, 7
         FONT['number_small2'].blit(guard, surf, position)
         return surf
 
@@ -422,7 +422,7 @@ class MapCombatInfo():
         
         if self.grd is not None:
             stat_height = height + self.guard_surf.get_height()
-        elif self.hit or self.mt:
+        elif self.hit is not None or self.mt is not None:
             stat_height = height + self.hit_and_mt_surf.get_height()
         else:
             stat_height = height
@@ -475,8 +475,9 @@ class MapCombatInfo():
         if not self.true_position or self.draw_method == 'splash':
             self.determine_position(width, height)
 
-        blit_surf = engine.subsurface(bg_surf, (0, height//2 - int(height * self.blinds // 2), width, int(height * self.blinds)))
-        y_pos = self.true_position[1] + height//2 - int(height * self.blinds // 2)
+        blind_height = stat_height//2 - int(stat_height * self.blinds // 2)
+        blit_surf = engine.subsurface(bg_surf, (0, blind_height, width, int(stat_height * self.blinds)))
+        y_pos = self.true_position[1] + blind_height
         x, y = (self.true_position[0] + self.shake_offset[0], y_pos + self.shake_offset[1])
         surf.blit(blit_surf, (x, y))
 

@@ -36,7 +36,12 @@ These dialog commands also work for help text accessed by pressing the R button 
 
 `<icon>??</>`: Paste any 16x16 icon with a name directly into the text. For instance, `<icon>Waffle</>`.
 
-`<text>`: Can be used to change the font. Turn back to normal with `</text>` or `</>`. Can also use `<nconvo>`, `<narrow>`, `<iconvo>`, `<bconvo>`, etc. 
+`<text>`: Can be used to change the font. Turn back to normal with `</text>` or `</>`. Can also use `<nconvo>`, `<narrow>`, `<iconvo>`, `<bconvo>`, etc.
+
+`<wave>`: Can be used to change the text effect. Turn back to normal with `</wave>` or `</>`. Can also use `<wave2>`, `<sin>`, `<jitter>`, `<jitter2>`, etc.
+Advanced usage: some text effects may have arguments that can be used to customize the effect. For example, wave has a `amplitude` argument that can be used to customize the amplitude of vertical wave oscillation.
+The exact usage would look like `<wave amplitude=4.5>some text</>`. The general format for effect arguments is `<effect arg1=val1 arg2=val2 ...>`. Parsing for arguments is whitespace and case sensitive.
+For a full effect list look at `app/engine/graphics/text/text_effects.py`. Both `TextEffect` and `CoordinatedTextEffect` classes are available to use as text effects in dialog, and the corresponding names for each effect is under the effect class as its `nid` and the available arguments for each effect is the arguments to its `__init__` function excluding `self` and `idx` arguments.
 
 ## Example
 

@@ -205,6 +205,7 @@ class Event():
                 self.state = 'processing'
 
             elif self.state == 'almost_complete':
+                # Only grid moves matter so that we can end a roam event while somebody is moving in roam
                 if not self.game.movement or not any([c.grid_move for c in self.game.movement.moving_entities]):
                     self.state = 'complete'
 
@@ -344,7 +345,9 @@ class Event():
         self.transition_state = None
         self.hurry_up()
         self.text_boxes.clear()
-        self.other_boxes.clear()
+        # Remove all nidless boxes (location card, credits)
+        # Keep the nidded boxes (textbox, table)
+        self.other_boxes = [(nid, box) for nid, box in self.other_boxes if nid is not None]
         self.should_remain_blocked.clear()
         while self.should_update:
             self.should_update = {name: to_update for name, to_update in self.should_update.items() if not to_update(self.do_skip)}

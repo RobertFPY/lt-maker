@@ -55,7 +55,7 @@ class SupportPair():
     def can_support(self) -> bool:
         support_prefab = DB.support_pairs.get(self.nid)
         reqs = support_prefab.requirements
-        if self.locked_ranks and game.supports.check_rank_limit(self):
+        if self.locked_ranks and game.supports.check_rank_limit(self) and game.supports.check_ally_limit(self):
             for rank in self.locked_ranks:
                 for bonus in reqs:
                     if bonus.support_rank == rank and (not bonus.gate or game.game_vars.get(bonus.gate)):
@@ -167,13 +167,26 @@ class SupportController():
         """
         rank_limit = DB.support_constants.value('rank_limit')
         highest_rank_limit = DB.support_constants.value('highest_rank_limit')
-        rank1 = game.supports.get_num_ranks(support_pair.unit1)
-        rank2 = game.supports.get_num_ranks(support_pair.unit2)
-        highest_rank1 = game.supports.get_num_highest_ranks(support_pair.unit1)
-        highest_rank2 = game.supports.get_num_highest_ranks(support_pair.unit2)
+        rank1 = self.get_num_ranks(support_pair.unit1)
+        rank2 = self.get_num_ranks(support_pair.unit2)
+        highest_rank1 = self.get_num_highest_ranks(support_pair.unit1)
+        highest_rank2 = self.get_num_highest_ranks(support_pair.unit2)
         if rank_limit and (rank1 >= rank_limit or rank2 >= rank_limit):
             return False
         if highest_rank_limit and (highest_rank1 >= highest_rank_limit or highest_rank2 >= highest_rank_limit):
+            return False
+        return True
+
+    def check_ally_limit(self, support_pair: SupportPair) -> bool:
+        """
+        Return False if either of the units is already at their ally limit
+        """
+        ally_limit = DB.support_constants.value('ally_limit')
+        unit1 = support_pair.unit1
+        unit2 = support_pair.unit2
+        if ally_limit and self.get_num_allies(unit1) >= ally_limit:
+            return False
+        if ally_limit and self.get_num_allies(unit2) >= ally_limit:
             return False
         return True
 

@@ -3460,6 +3460,8 @@ def get_all_event_commands(version: EventVersion) -> Dict[NID, Type[EventCommand
             if not command_t.tag in [Tags.HIDDEN, Tags.FLOW_CONTROL]:
                 if not command_t.nid in FORBIDDEN_PYTHON_COMMAND_NIDS:
                     commands[nid] = command_t
+        commands['wait'] = Wait
+        commands['finish'] = Finish
         return commands
 
 @dataclass

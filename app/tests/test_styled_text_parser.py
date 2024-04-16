@@ -309,19 +309,35 @@ class StyledTextParsingTest(unittest.TestCase):
         test_styled_text = "<blue>this is some <red>red</> text</>"
         tagged_text = parse_styled_text(test_styled_text, default_font, default_color)
 
-        # test that single slices work as expected
+        # test that slicing entire tagged text works
         indexed_text = tagged_text[:]
         self.assertEqual(indexed_text, tagged_text)
 
+        # test that slicing to end works
         indexed_text = tagged_text[:len(tagged_text)]
         self.assertEqual(indexed_text, tagged_text)
 
+        # test that slicing past the end works
+        indexed_text = tagged_text[:len(tagged_text) + 1]
+        self.assertEqual(indexed_text, tagged_text)
+        indexed_text = tagged_text[:len(tagged_text) + 2]
+        self.assertEqual(indexed_text, tagged_text)
+
+        # test that slicing from beginning works
         indexed_text = tagged_text[0:]
         self.assertEqual(indexed_text, tagged_text)
 
+        # test that 0 length slice works
         indexed_text = tagged_text[0:0]
         self.assertEqual(len(indexed_text.chunks), 0)
+        indexed_text = tagged_text[len(tagged_text):len(tagged_text)]
+        self.assertEqual(len(indexed_text.chunks), 0)
 
+        # test that slicing starting from past the end works
+        indexed_text = tagged_text[len(tagged_text):len(tagged_text) + 1]
+        self.assertEqual(len(indexed_text.chunks), 0)
+
+        # regular slicing
         indexed_text = tagged_text[3:13]
         self.assertEqual(len(indexed_text.chunks), 1)
         chunk = indexed_text.chunks[0]
@@ -355,19 +371,40 @@ class StyledTextParsingTest(unittest.TestCase):
         self.assertEqual(self._tagged_text_color(chunk), "blue")
         self.assertEqual(self._tagged_offsets(chunk), [])
 
+        # test backward slicing
+        indexed_text = tagged_text[5:0]
+        self.assertEqual(len(indexed_text.chunks), 0)
+        indexed_text = tagged_text[len(tagged_text) + 1:0]
+        self.assertEqual(len(indexed_text.chunks), 0)
+
         # test that slicing with out of bounds and invalid slices
         with self.assertRaises(IndexError):
             tagged_text[-1:]
         with self.assertRaises(IndexError):
             tagged_text[:-1]
         with self.assertRaises(IndexError):
-            tagged_text[:len(tagged_text) + 1]
+            tagged_text[-1:-1]
         with self.assertRaises(IndexError):
-            tagged_text[len(tagged_text):]
-        with self.assertRaises(ValueError):
-            tagged_text[5:0]
+            tagged_text[-1:-5]
+        with self.assertRaises(IndexError):
+            tagged_text[0:-5]
         with self.assertRaises(ValueError):
             tagged_text[0:5:1]
+
+    def test_indexing_and_slicing_empty_string(self):
+        default_font = "convo"
+        default_color = "white"
+        test_styled_text = ""
+        tagged_text = parse_styled_text(test_styled_text, default_font, default_color)
+
+        with self.assertRaises(IndexError):
+            tagged_text[0]
+
+        indexed_text = tagged_text[0:0]
+        self.assertEqual(len(indexed_text.chunks), 0)
+
+        indexed_text = tagged_text[10:10]
+        self.assertEqual(len(indexed_text.chunks), 0)
 
 
 class TaggedTextCachingTest(unittest.TestCase):

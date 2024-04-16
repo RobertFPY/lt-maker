@@ -105,6 +105,8 @@ class TaggedText:
         else:
             if not isinstance(item, int):
                 raise KeyError(f"only supports integer or slice keys not {type(item)}")
+            if item >= self._size:
+                raise IndexError
             return self._get_slice(item, item + 1)
 
     def __repr__(self):
@@ -114,24 +116,23 @@ class TaggedText:
         if start is None:
             start = 0
         if stop is None:
-            stop = len(self)
+            stop = max(start, len(self))
 
         if start < 0 or stop < 0:
             raise IndexError(f"no support for negative indexes {start}:{stop}")
-        if start >= self._size or stop > self._size:
-            raise IndexError(f"out of range {start}:{stop}")
-        if stop < start:
-            raise ValueError(f"no support for backwards slice {start}:{stop}")
-
-        if start == 0 and stop == self._size:
-            return self
 
         tagged_text = TaggedText()
-        if start == stop:
+        if start >= stop:
             return tagged_text
+
+        if start == 0 and stop >= self._size:
+            return self
 
         chunk_idx = 0
         while stop > 0:
+            # handle past-the-end slicing
+            if chunk_idx == len(self.chunks):
+                break
             curr_chunk = self.chunks[chunk_idx]
             subchunk = curr_chunk[start:stop]
             if subchunk:

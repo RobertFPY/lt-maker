@@ -289,7 +289,7 @@ class MapCombat(SimpleCombat):
                     self.attacker, defender, self.main_item, None, 'attack', self.state_machine.get_attack_info())
                 mt = combat_calcs.compute_damage(
                     self.attacker, defender, self.main_item, None, 'attack', self.state_machine.get_attack_info())
-                crt = combat_calcs.compute_crt(
+                crt = combat_calcs.compute_crit(
                     self.attacker, defender, self.main_item, None, 'attack', self.state_machine.get_attack_info())
                 if self.attacker not in self.health_bars:
                     attacker_health = MapCombatInfo(

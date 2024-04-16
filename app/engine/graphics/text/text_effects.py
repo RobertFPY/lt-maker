@@ -114,7 +114,7 @@ class JitterEffect(TextEffect):
     )
 
     @classmethod
-    def _get_jitter(klass, magnitude: float = 1) -> Tuple[float, float]:
+    def _get_jitter(cls, magnitude: float = 1) -> Tuple[float, float]:
         return (_rng.gauss(0, 1) * magnitude, _rng.gauss(0, 1) * magnitude)
 
     def __init__(self, idx: int = 0, magnitude: float = 1, wait: int = 3):

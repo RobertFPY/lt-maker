@@ -3555,7 +3555,7 @@ def separate(self: Event, unit, flags=None):
         self.logger.error("separate: Unit is not traveling with anybody")
         return
     if DB.constants.value('pairup'):
-        action.do(action.Separate(unit, unit.traveler, None))
+        action.do(action.Separate(unit, self.game.get_unit(unit.traveler), None))
     else:
         action.do(action.RemovePartner(unit))
 

@@ -4,7 +4,6 @@ import unittest
 
 from typing import Tuple
 
-from app.engine import engine
 from app.engine.graphics.text.tagged_text import TaggedText, TaggedTextChunk
 from app.engine.graphics.text.text_effects import TextSettings, TextEffect
 from app.engine.graphics.text.styled_text_parser import parse_styled_text

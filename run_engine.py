@@ -71,7 +71,8 @@ if __name__ == '__main__':
     except Exception as e:
         logging.exception(e)
         inform_error()
-        print('*** Lex Talionis Engine Version %s ***' % VERSION)
+        pyver = f'{sys.version_info.major}.{sys.version_info.minor}'
+        print(f'*** Lex Talionis Engine Version {VERSION} on Python {pyver} ***')
         print('Main Crash {0}'.format(str(e)))
 
         # Now print exception to screen

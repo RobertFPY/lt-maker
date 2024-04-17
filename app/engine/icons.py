@@ -227,7 +227,7 @@ def draw_growth(surf, stat_nid, unit, topright, compact=False):
     if stat_nid not in DB.stats:
         FONT['text-yellow'].blit_right('--', surf, topright)
         return
-    value = unit.growths.get(stat_nid, 0)
+    value = unit_funcs.base_growth_rate(unit, stat_nid)
     value_and_bonus = unit_funcs.growth_rate(unit, stat_nid)
     bonus = value_and_bonus - value
     if compact:

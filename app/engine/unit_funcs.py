@@ -59,13 +59,16 @@ def growth_contribution(unit: UnitObject, nid: NID) -> Dict[str, int]:
     growth_rates = {}
     klass = DB.classes.get(unit.klass)
     base_growths = unit.growths[nid]
-    growth_rates["Base Value"] = base_growths
+    klass_growths = klass.growth_bonus.get(nid, 0)
+    if DB.constants.value('alt_growth_format'):
+        growth_rates["Base Value"] = base_growths + klass_growths
+    else:
+        growth_rates["Base Value"] = base_growths
+        if klass_growths != 0:
+            growth_rates["Class Bonus"] = klass_growths
     difficulty_growths = game.mode.get_growth_bonus(unit, DB).get(nid, 0)
     if difficulty_growths != 0:
         growth_rates["Difficulty Bonus"] = difficulty_growths
-    klass_growths = klass.growth_bonus.get(nid, 0)
-    if klass_growths != 0:
-        growth_rates["Class Bonus"] = klass_growths
     other_growths = unit.growth_bonus(nid)
     if other_growths != 0:
         growth_rates["Other Bonuses"] = other_growths

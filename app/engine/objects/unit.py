@@ -528,7 +528,7 @@ class UnitObject(Prefab):
         bonus = skill_system.subtle_stat_change(self, stat_nid)
         return bonus
 
-    def stat_contribution(self, stat_nid: NID) -> List[str]:
+    def stat_contribution(self, stat_nid: NID) -> dict:
         contribution = skill_system.stat_change_contribution(self, stat_nid)
         weapon = self.equipped_weapon
         if weapon:

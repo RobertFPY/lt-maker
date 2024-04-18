@@ -11,6 +11,7 @@ from PyQt5.QtGui import QIcon
 
 from app import autoupdate, dark_theme
 
+from app.editor.file_manager.project_builder.project_builder import build_project
 from app.editor.settings import MainSettingsController
 
 from app.constants import VERSION
@@ -200,6 +201,9 @@ class MainEditor(QMainWindow):
         self.dump_script = QAction(
             "Dump script", self, triggered=lambda: self.project_save_load_handler.dump_script(DB))
 
+        self.build_project = QAction(
+            "Build project", self, triggered=lambda: build_project(self.project_save_load_handler.current_proj))
+
         self.preferences_act = QAction(
             _("&Preferences..."), self, triggered=self.edit_preferences)
         self.about_act = QAction(_("&About"), self, triggered=self.about)
@@ -291,6 +295,7 @@ class MainEditor(QMainWindow):
         file_menu.addAction(self.save_as_act)
         file_menu.addAction(self.dump_csv)
         file_menu.addAction(self.dump_script)
+        file_menu.addAction(self.build_project)
         file_menu.addSeparator()
         file_menu.addAction(self.quit_act)
 

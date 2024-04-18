@@ -347,6 +347,7 @@ class TitleModeState(State):
             self.dialog.font = FONT['text']
             self.dialog.font_type = 'text'
             self.dialog.font_color = 'white'
+            self.dialog.reformat()
 
     def take_input(self, event):
         first_push = self.fluid.update()

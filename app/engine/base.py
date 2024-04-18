@@ -790,6 +790,7 @@ class LoreDisplay():
             dlg.font = FONT['text']
             dlg.font_type = 'text'
             dlg.font_color = 'white'
+            dlg.reformat()
             self.dialogs.append(dlg)
         self.num_pages = len(text)
 

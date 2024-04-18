@@ -220,6 +220,12 @@ class Dialog:
     def state(self, value: DialogState):
         self._state = value
 
+    def reformat(self):
+        """Call this if you change font type or font color"""
+        # reparse and clear cache
+        self.tagged_text = self.parse_plain_text(self.plain_text)
+        self.tagged_text_cache: Dict[Tuple[int, int], TaggedText] = {}
+
     def format_text(self, text):
         text = process_dialog_shorthand(text)
         if text.endswith("{no_wait}"):
@@ -973,6 +979,7 @@ class Ending:
         self.dialog.font = FONT["text"]
         self.dialog.font_type = "text"
         self.dialog.font_color = "white"
+        self.dialog.reformat()
 
     def make_background(self):
         size = WINWIDTH, WINHEIGHT

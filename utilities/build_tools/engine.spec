@@ -10,6 +10,8 @@ project = name + '.ltproj'
 
 root = Path('../../')
 def path(orig_path: str):
+    if os.path.isabs(orig_path):
+        return orig_path
     return root / orig_path
 
 # this is a really stupid way to do IPC
@@ -17,9 +19,12 @@ def path(orig_path: str):
 # to print out log messages formatted like `tag: 100`
 # which we use on the editor side to parse the logs
 # to read the progress messages.
-progress_sentinel_message = sys.argv[2] if len(sys.argv) > 1 else None
+progress_sentinel_message = sys.argv[2]
 def log_progress(pct: int):
     print(progress_sentinel_message + str(pct))
+
+# Also need to pass custom icon in, since options are disabled when we use a spec file (...why?)
+icon_path = sys.argv[3]
 
 log_progress(20)
 a = Analysis([path('run_engine.py')],
@@ -50,7 +55,7 @@ exe = EXE(pyz,
           strip=False,
           upx=True,
           console=False,
-          icon=path('favicon.ico'),
+          icon=path(icon_path),
           contents_directory='.' )
 log_progress(60)
 coll = COLLECT(exe,

@@ -344,16 +344,18 @@ class ClassStatAveragesModel(VirtualListModel):
             else:
                 level_ups += 0
         stat_base = obj.bases.get(stat_nid, 0)
+        growth_bonus = obj.growth_bonus.get(stat_nid, 0)
         stat_growth = obj.growths.get(stat_nid, 0)
         stat_max = obj.max_stats.get(stat_nid, DB.stats.get(stat_nid).maximum)
+        total_growth = stat_growth + growth_bonus
 
-        average = int(stat_base + 0.5 + (stat_growth/100) * level_ups)
+        average = int(stat_base + 0.5 + (total_growth/100) * level_ups)
 
-        while stat_growth > 100:
-            stat_growth -= 100
+        while total_growth > 100:
+            total_growth -= 100
             stat_base += level_ups
-        quantile10 = Binomial.quantile(.1, level_ups, stat_growth/100) + stat_base
-        quantile90 = Binomial.quantile(.9, level_ups, stat_growth/100) + stat_base
+        quantile10 = Binomial.quantile(.1, level_ups, total_growth/100) + stat_base
+        quantile90 = Binomial.quantile(.9, level_ups, total_growth/100) + stat_base
         return stat_max, average, quantile10, quantile90
 
     def update_column_header(self, columns):
@@ -420,17 +422,19 @@ class GenericStatAveragesModel(ClassStatAveragesModel):
             else:
                 level_ups += 0
         stat_base = klass.bases.get(stat_nid, 0)
+        growth_bonus = klass.growth_bonus.get(stat_nid, 0)
         stat_growth = klass.growths.get(stat_nid, 0)
         stat_max = klass.max_stats.get(stat_nid, DB.stats.get(stat_nid).maximum)
+        total_growth = stat_growth + growth_bonus
 
-        average = int(stat_base + 0.5 + (stat_growth/100) * level_ups)
+        average = int(stat_base + 0.5 + (total_growth/100) * level_ups)
 
         # average = quantile(.5, level_ups, stat_growth/100) + stat_base
-        while stat_growth > 100:
-            stat_growth -= 100
+        while total_growth > 100:
+            total_growth -= 100
             stat_base += level_ups
-        quantile10 = Binomial.quantile(.1, level_ups, stat_growth/100) + stat_base
-        quantile90 = Binomial.quantile(.9, level_ups, stat_growth/100) + stat_base
+        quantile10 = Binomial.quantile(.1, level_ups, total_growth/100) + stat_base
+        quantile90 = Binomial.quantile(.9, level_ups, total_growth/100) + stat_base
         return stat_max, average, quantile10, quantile90
 
 class UnitStatAveragesModel(ClassStatAveragesModel):

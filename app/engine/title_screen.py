@@ -74,7 +74,7 @@ class TitleStartState(State):
             game.sweep()
             game.events.trigger(triggers.OnTitleScreen())
             # On startup occurs before on title_screen
-            game.events.trigger(triggers.OnStartup()) 
+            game.events.trigger(triggers.OnStartup())
             game.memory['title_intro_already_played'] = True
 
         get_sound_thread().clear()
@@ -291,7 +291,7 @@ class TitleModeState(State):
         shimmer = SPRITES.get('menu_shimmer2')
         self.label.blit(shimmer, (95 - shimmer.get_width(), 83 - shimmer.get_height()))
         self.label = image_mods.make_translucent(self.label, .1)
-        
+
         self.available_difficulties = [difficulty for difficulty in DB.difficulty_modes if (not difficulty.start_locked or RECORDS.check_difficulty_unlocked(difficulty.nid))]
 
     def begin(self):
@@ -599,7 +599,7 @@ def build_new_game(slot: int):
 
     game.state.clear()
     game.current_save_slot = slot
-    
+
     if DB.constants.value('overworld_start'):
         game.state.change('overworld')
         game.state.process_temp_state()

@@ -21,7 +21,7 @@ def path(orig_path: str):
 # to read the progress messages.
 progress_sentinel_message = sys.argv[2]
 def log_progress(pct: int):
-    print(progress_sentinel_message + str(pct))
+    print(progress_sentinel_message + str(pct), flush=True)
 
 # Also need to pass custom icon in, since options are disabled when we use a spec file (...why?)
 icon_path = sys.argv[3]

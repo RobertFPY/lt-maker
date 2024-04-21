@@ -83,8 +83,8 @@ class InfoMenuState(State):
         game.state.change('transition_in')
         return 'repeat'
 
-    def reset_surfs(self):
-        self.info_graph.clear()
+    def reset_surfs(self, keep_last_info_graph_aabb=False):
+        self.info_graph.clear(keep_last_aabb=keep_last_info_graph_aabb)
         self.portrait_surf = None
         self.current_portrait = None
 
@@ -207,6 +207,7 @@ class InfoMenuState(State):
             if self.next_state == 'notes' and not (DB.constants.value('unit_notes') and self.unit.notes):
                 new_index = (new_index - 1) % len(info_states)
                 self.next_state = info_states[new_index]
+            self.info_graph.last_bb = None
             self.transition = 'LEFT'
             self.left_arrow.pulse()
             self.switch_logo(self.next_state)
@@ -220,6 +221,7 @@ class InfoMenuState(State):
             if self.next_state == 'notes' and not (DB.constants.value('unit_notes') and self.unit.notes):
                 new_index = (new_index + 1) % len(info_states)
                 self.next_state = info_states[new_index]
+            self.info_graph.last_bb = None
             self.transition = 'RIGHT'
             self.right_arrow.pulse()
             self.switch_logo(self.next_state)
@@ -314,7 +316,7 @@ class InfoMenuState(State):
                     self.scroll_offset_y = 160 if self.transition == 'DOWN' else -160
                 else:
                     self.unit = self.next_unit  # Now transition in
-                    self.reset_surfs()
+                    self.reset_surfs(keep_last_info_graph_aabb=True)
                     self.transition_counter = 0
 
         # Left and Right

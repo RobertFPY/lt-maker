@@ -8,7 +8,7 @@ from app.engine import (base_surf, engine, icons, item_funcs,
 from app.engine.fonts import FONT
 from app.engine.game_state import game
 from app.engine.graphics.text.text_renderer import (fix_tags, font_height, render_text,
-                                                    text_width, remove_tags)
+                                                    text_width)
 from app.engine.sprites import SPRITES
 from app.utilities import utils
 from app.utilities.enums import HAlignment
@@ -28,7 +28,6 @@ class HelpDialog():
 
         if not desc:
             desc = ''
-        desc = text_funcs.translate(desc)
         lines = self.build_lines(desc)
         num_lines = len(lines)
 
@@ -162,7 +161,6 @@ class StatDialog(HelpDialog):
         self.transition_in = False
         self.transition_out = 0
 
-        desc = text_funcs.translate(desc)
         self.plain_desc = desc
         self.bonuses = bonuses
 

@@ -10,6 +10,25 @@ def translate(string):
     return string
 
 
+def text_evaluate(string, local_args=None):
+    from app.engine.text_evaluator import get_default_text_evaluator
+    return get_default_text_evaluator()._evaluate_all(string, local_args=local_args)
+
+
+def translate_and_text_evaluate(string, self=None, local_args=None):
+    match (self, local_args):
+        case (self, local_args):
+            local_args['self'] = self
+        case (self, None):
+            local_args = {'self': self}
+    # evaluate first in case translate includes anything evaluable
+    string = text_evaluate(string, local_args=local_args)
+    # thing try to fetch translation
+    string = translate(string)
+    # then evaluate again in case translation includes anything evaluable
+    return text_evaluate(string, local_args=local_args)
+
+
 def get_max_width(font_name, text_list):
     return max(text_width(font_name, t) for t in text_list)
 

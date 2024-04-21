@@ -4,7 +4,7 @@ import logging
 from typing import List, Tuple
 
 from app.data.database.database import DB
-from app.engine import action
+from app.engine import action, text_funcs
 from app.engine.game_menus.menu_components.generic_menu.cursor_hand import CursorDrawMode
 from app.engine.game_menus.menu_components.generic_menu.grid_choice import GridChoiceMenu
 from app.engine.game_state import game
@@ -84,11 +84,13 @@ class PlayerChoiceState(MapState):
                 if item_system.is_weapon(None, item) or item_system.is_spell(None, item):
                     self.help_boxes.append(help_menu.ItemHelpDialog(item))
                 else:
-                    self.help_boxes.append(help_menu.HelpDialog(item.desc))
+                    text = text_funcs.translate_and_text_evaluate(item.desc, self=item)
+                    self.help_boxes.append(help_menu.HelpDialog(text))
         elif self.data_type == 'type_skill':
             for skill_nid in options_list:
                 skill = DB.skills.get(skill_nid)
-                self.help_boxes.append(help_menu.HelpDialog(skill.desc))
+                text = text_funcs.translate_and_text_evaluate(item.desc, self=skill)
+                self.help_boxes.append(help_menu.HelpDialog(text))
 
     def choose(self, selection):
         action.do(action.SetGameVar(self.nid, selection))

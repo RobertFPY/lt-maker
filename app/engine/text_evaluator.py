@@ -1,6 +1,6 @@
 from app.data.database.components import Component
 from app.data.database.database import DB
-from app.engine.game_state import GameState
+from app.engine.game_state import GameState, game
 from app.engine import evaluate
 import re
 from typing import Dict, List, Tuple
@@ -289,3 +289,10 @@ class TextEvaluator():
     def trim_eval_tags(self, text: str) -> str:
         colon_idx = text.index(':')
         return text[colon_idx+1:-1]
+
+
+_default_text_evaluator = TextEvaluator(logging.getLogger(), game)
+
+
+def get_default_text_evaluator():
+    return _default_text_evaluator

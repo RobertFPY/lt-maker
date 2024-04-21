@@ -1,3 +1,4 @@
+from typing import Tuple
 from app.utilities.utils import clamp
 import math
 
@@ -46,7 +47,7 @@ def log_interp(a: float, b: float, t: float, skew: float = 10) -> float:
     ratio = 1 + 1 / skew
     return (b - a) * math.pow(ratio, -1/t + 1) + a
 
-def tlog_interp(a: tuple, b: tuple, t: float, skew: float = 10) -> float:
+def tlog_interp(a: tuple, b: tuple, t: float, skew: float = 10) -> tuple:
     """exponential interpolation between two tuples
 
     Args:

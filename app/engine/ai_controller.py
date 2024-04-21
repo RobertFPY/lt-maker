@@ -1,7 +1,7 @@
 import logging
 import functools
 import math
-from typing import List
+from typing import Collection, List
 
 from app.constants import FRAMERATE
 from app.data.database.database import DB
@@ -15,7 +15,7 @@ from app.engine.movement import movement_funcs
 from app.events import triggers
 from app.events.regions import RegionType
 from app.utilities import utils
-from app.utilities.typing import Pos
+from app.utilities.typing import Point, Pos
 
 
 class AIController():
@@ -194,26 +194,26 @@ class AIController():
         single_move = zero_move + equations.parser.movement(self.unit)
         double_move = single_move + equations.parser.movement(self.unit)
 
-        target_positions = {(pos, utils.calculate_distance(self.unit.position, pos)) for pos in target_positions}
+        targets_and_dist = {(pos, utils.calculate_distance(self.unit.position, pos)) for pos in target_positions}
 
         if self.behaviour.view_range == -4:
             pass
         elif self.behaviour.view_range == -3:
-            target_positions = {(pos, mag) for pos, mag in target_positions if mag < double_move}
+            targets_and_dist = {(pos, mag) for pos, mag in targets_and_dist if mag < double_move}
         elif self.behaviour.view_range == -2:
-            target_positions = {(pos, mag) for pos, mag in target_positions if mag < single_move}
+            targets_and_dist = {(pos, mag) for pos, mag in targets_and_dist if mag < single_move}
         elif self.behaviour.view_range == -1:
-            target_positions = {(pos, mag) for pos, mag in target_positions if mag < zero_move}
+            targets_and_dist = {(pos, mag) for pos, mag in targets_and_dist if mag < zero_move}
         else:
-            target_positions = {(pos, mag) for pos, mag in target_positions if mag < self.behaviour.view_range}
+            targets_and_dist = {(pos, mag) for pos, mag in targets_and_dist if mag < self.behaviour.view_range}
 
-        if target_positions and len(valid_positions) > 1:
-            self.goal_position = utils.smart_farthest_away_pos(self.unit.position, valid_positions, target_positions)
+        if targets_and_dist and len(valid_positions) > 1:
+            self.goal_position = utils.smart_farthest_away_pos(self.unit.position, valid_positions, targets_and_dist)
             return True
         else:
             return False
 
-    def get_true_valid_moves(self) -> set:
+    def get_true_valid_moves(self) -> Collection[Point]:
         # Guard AI
         if self.behaviour.view_range == -1 and not game.ai_group_active(self.unit.ai_group):
             return {self.unit.position}
@@ -647,7 +647,7 @@ def handle_unit_spec(all_targets, behaviour):
         all_targets = [pos for pos in all_targets if any((u.team == target_spec[1]) ^ invert for u in game.board.get_units(pos))]
     return all_targets
 
-def get_targets(unit, behaviour):
+def get_targets(unit, behaviour) -> List[Point]:
     all_targets = []
     if behaviour.target == 'Unit':
         all_targets = [u.position for u in game.units if u.position]

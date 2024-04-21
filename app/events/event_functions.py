@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import ast
 import random
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
 from app.constants import WINHEIGHT, WINWIDTH
 from app.data.database.database import DB
@@ -36,6 +36,7 @@ from app.events import event_commands, regions, triggers
 from app.events.event_portrait import EventPortrait
 from app.events.screen_positions import parse_screen_position
 from app.events.speak_style import SpeakStyle
+from app.events.utils import TableRows
 from app.sprites import SPRITES
 from app.utilities import str_utils, utils
 from app.utilities.enums import Alignments, HAlignment, Orientation, VAlignment
@@ -2839,7 +2840,7 @@ def shop(self: Event, unit, item_list: List[str], shop_flavor=None, stock_list: 
     self.game.state.change('shop')
     self.state = 'paused'
 
-def choice(self: Event, nid: NID, title: str, choices: str, row_width: int = 0, orientation: Orientation = Orientation.VERTICAL,
+def choice(self: Event, nid: NID, title: str, choices: TableRows, row_width: int = 0, orientation: Orientation = Orientation.VERTICAL,
            alignment: Alignments = Alignments.CENTER, bg: str = 'menu_bg_base', event_nid: str = None, entry_type: str = 'str',
            dimensions: Optional[Tuple[str, str]] = None, text_align: HAlignment = HAlignment.LEFT, flags=None):
     flags = flags or set()
@@ -2850,33 +2851,8 @@ def choice(self: Event, nid: NID, title: str, choices: str, row_width: int = 0, 
     if 'no_bg' in flags:
         bg = None
 
-    # figure out function or list of NIDs
-    data = []
-    if 'expression' in flags:
-        try:
-            ast.parse(choices)
-            def tryexcept(callback_expr):
-                try:
-                    val = self._eval_expr(self.text_evaluator._evaluate_all(callback_expr), 'from_python' in flags)
-                    if isinstance(val, list):
-                        return val or ['']
-                    else:
-                        return [self._object_to_str(val)]
-                except Exception as e:
-                    self.logger.error("choice: Choice %s failed to evaluate expression %s with error %s", nid, callback_expr, str(e))
-                    return [""]
-            data = lambda: tryexcept(choices)
-        except:
-            self.logger.error('choice: %s is not a valid python expression' % choices)
-    else:  # list of NIDs
-        choices = self.text_evaluator._evaluate_all(choices)
-        if choices.startswith('['):
-            choices = choices[1:]
-        if choices.endswith(']'):
-            choices = choices[:-1]
-        data = choices.split(',')
-        data = [s.strip().replace('{comma}', ',') for s in data]
-    data = data or ['']
+    # is an evaluable string
+    data = self._get_rows_of_table(choices, 'expression' in flags)
 
     size = None
     if dimensions:
@@ -3035,29 +3011,7 @@ def table(self: Event, nid: NID, table_data: str, title: str = None,
     rows, cols = dimensions
 
     # figure out function or list of NIDs
-    data = []
-    if 'expression' in flags:
-        try:
-            # eval once to make sure it's eval-able
-            ast.parse(table_data)
-            def tryexcept(callback_expr):
-                try:
-                    val = self._eval_expr(self.text_evaluator._evaluate_all(callback_expr), 'from_python' in flags)
-                    if isinstance(val, list):
-                        return val or ['']
-                    else:
-                        return [self._object_to_str(val)]
-                except:
-                    self.logger.error("table: failed to eval %s", callback_expr)
-                    return [""]
-            data = lambda: tryexcept(table_data)
-        except:
-            self.logger.error('table: %s is not a valid python expression' % table_data)
-    else: # list of NIDs
-        table_data = self.text_evaluator._evaluate_all(table_data)
-        data = table_data.split(',')
-        data = [s.strip().replace('{comma}', ',') for s in data]
-    data = data or [""]
+    data = self._get_rows_of_table(table_data, 'expression' in flags)
     table_ui = SimpleMenuUI(
         data, entry_type, title=title, rows=rows, cols=cols,
         row_width=row_width, alignment=alignment, bg=bg,

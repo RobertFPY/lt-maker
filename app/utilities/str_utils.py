@@ -1,5 +1,6 @@
 import functools
 import re
+from typing import Dict, List
 
 
 RAW_NEWLINE = '\u2029'
@@ -51,16 +52,16 @@ def find_last_number(s: str):
         return int(last_number[-1])
     return None
 
-def get_prefix(s: str):
-    last_number = re.findall(r'\d+', s)
-    if last_number:
-        idx = re.search(r'\d+', s).span(0)[0]
+def get_prefix(s: str) -> str:
+    matches = re.search(r'\d+', s)
+    if matches:
+        idx = matches.span(0)[0]
         return s[:idx]
     else:
         idx = s.index('.')
         return s[:idx]
 
-def intify(s: str) -> list:
+def intify(s: str) -> List[int]:
     vals = s.split(',')
     return [int(i) for i in vals]
 
@@ -198,7 +199,7 @@ def remove_all_matched(s: str, opener: str, closer: str):
     return s
 
 
-_MIRRORED_BRACKETS = {
+_MIRRORED_BRACKETS: Dict[str, str] = {
     '[': ']',
     '{': '}',
     '(': ')',
@@ -207,7 +208,8 @@ for k, v in _MIRRORED_BRACKETS.copy().items():
     _MIRRORED_BRACKETS[v] = k
 
 def mirror_bracket(c: str) -> str:
-    return _MIRRORED_BRACKETS.get(c, None)
+    """Return the mirrored bracket of c, or c if it is not a bracket."""
+    return _MIRRORED_BRACKETS.get(c, c)
 
 if __name__ == '__main__':
     # print(camel_to_snake("Direction"))

@@ -8,6 +8,7 @@ from app.engine import config as cf
 from app.engine import driver
 from app.engine import game_state
 from app.engine.codegen import source_generator
+from app.utilities.system_info import is_editor_engine_built_version
 
 def main(name: str = 'testing_proj'):
     # Translation currently unused within engine proper
@@ -61,7 +62,7 @@ if __name__ == '__main__':
         engine.terminate()
 
     # compile necessary files
-    if not hasattr(sys, 'frozen'):
+    if not is_editor_engine_built_version():
         source_generator.generate_all()
 
     try:

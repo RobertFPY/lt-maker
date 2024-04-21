@@ -9,6 +9,8 @@ from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import QLockFile, QDir, Qt
 from PyQt5.QtGui import QIcon
 
+from app.utilities.system_info import is_editor_engine_built_version
+
 def initialize_translations():
     init_locale()
 
@@ -23,7 +25,7 @@ def initialize_icon():
 
 def code_gen():
     # compile necessary files
-    if not hasattr(sys, 'frozen'):
+    if not is_editor_engine_built_version():
         source_generator.generate_all()
 
 def initialize_logger():

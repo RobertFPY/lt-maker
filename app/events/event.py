@@ -1,4 +1,5 @@
 from __future__ import annotations
+import ast
 from app.data.database.units import UnitPrefab
 from app.data.resources.portraits import PortraitPrefab
 from app.data.resources.resources import RESOURCES
@@ -29,6 +30,7 @@ from app.events.python_eventing.errors import EventError
 from app.events.python_eventing.python_event_processor import PythonEventProcessor
 from app.events.python_eventing.utils import SAVE_COMMAND_NIDS
 from app.events.speak_style import SpeakStyle
+from app.events.utils import TableRows
 from app.utilities import str_utils, utils, static_random
 from app.utilities.data import HasNid
 from app.utilities.typing import NID, Color3, Point
@@ -680,3 +682,38 @@ class Event():
             return obj.nid
         except:
             return obj
+
+    def _eval_str_func_factory(self, func_as_str: str) -> Optional[Callable[[], List[str]]]:
+        try:
+            ast.parse(func_as_str)
+        except:
+            self.logger.error("%s is not a valid python expression" % func_as_str)
+            return None
+        def try_eval_str():
+            try:
+                val = self._eval_expr(self.text_evaluator._evaluate_all(func_as_str), False)
+                if isinstance(val, list):
+                    return val or ['']
+                else:
+                    return [self._object_to_str(val)]
+            except Exception as e:
+                self.logger.error("Failed to evaluate expression %s with error %s", func_as_str, str(e))
+                return [""]
+        return try_eval_str
+
+    def _get_rows_of_table(self, rows: TableRows, expression: bool = False) -> Callable[[], List[str]] | List[str]:
+        if expression and isinstance(rows, str):
+            data = self._eval_str_func_factory(rows)
+        elif isinstance(rows, str): # is a string containing a list of comma-separated choices
+            rows = self.text_evaluator._evaluate_all(rows)
+            if rows.startswith('['):
+                rows = rows[1:]
+            if rows.endswith(']'):
+                rows = rows[:-1]
+            data = rows.split(',')
+            data = [s.strip().replace('{comma}', ',') for s in data]
+        elif isinstance(rows, List): # list of objects - let's decay these into strings
+            data = [self._object_to_str(s) for s in rows]
+        else: # is a callable function
+            data = rows
+        return data or ['']

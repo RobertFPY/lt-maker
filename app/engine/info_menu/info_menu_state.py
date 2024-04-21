@@ -580,7 +580,7 @@ class InfoMenuState(State):
                 base_value += subtle_stat_bonus
                 contribution = self.unit.stat_contribution(stat_nid)
                 contribution['Base Value'] = base_value
-            desc_text = text_funcs.translate_and_text_evaluate(curr_stat.desc, self=curr_stat)
+            desc_text = curr_stat.desc
             help_box = help_menu.StatDialog(desc_text or ('%s_desc' % stat_nid), contribution)
             self.info_graph.register((96 + 8, 16 * idx + 24, 64, 16), help_box, state, first=(idx == 0))
 
@@ -605,7 +605,7 @@ class InfoMenuState(State):
                 base_value += subtle_stat_bonus
                 contribution = self.unit.stat_contribution(stat_nid)
                 contribution['Base Value'] = base_value
-            desc_text = text_funcs.translate_and_text_evaluate(curr_stat.desc, self=curr_stat)
+            desc_text = curr_stat.desc
             help_box = help_menu.StatDialog(desc_text or ('%s_desc' % stat_nid), contribution)
             self.info_graph.register((96 + 72, 16 * idx + 24, 64, 16), help_box, state)
 
@@ -870,8 +870,7 @@ class InfoMenuState(State):
                 charge = ' %d / %d' % (skill.data['charge'], skill.data['total_charge'])
             else:
                 charge = ''
-            text = text_funcs.translate_and_text_evaluate(skill.desc, self=skill)
-            self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 28, 16, 16), help_menu.HelpDialog(text, name=skill.name + charge), 'support_skills')
+            self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 28, 16, 16), help_menu.HelpDialog(skill.desc, name=skill.name + charge), 'support_skills')
 
         return surf
 
@@ -901,13 +900,12 @@ class InfoMenuState(State):
                 charge = ' %d / %d' % (skill.data['charge'], skill.data['total_charge'])
             else:
                 charge = ''
-            text = text_funcs.translate_and_text_evaluate(skill.desc, self=skill)
             if self._extra_stat_row:
-                self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 22, 16, 16), help_menu.HelpDialog(text, name=skill.name + charge), 'personal_data')
-                self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 22, 16, 16), help_menu.HelpDialog(text, name=skill.name + charge), 'growths')
+                self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 22, 16, 16), help_menu.HelpDialog(skill.desc, name=skill.name + charge), 'personal_data')
+                self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 22, 16, 16), help_menu.HelpDialog(skill.desc, name=skill.name + charge), 'growths')
             else:
-                self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 32, 16, 16), help_menu.HelpDialog(text, name=skill.name + charge), 'personal_data')
-                self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 32, 16, 16), help_menu.HelpDialog(text, name=skill.name + charge), 'growths')
+                self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 32, 16, 16), help_menu.HelpDialog(skill.desc, name=skill.name + charge), 'personal_data')
+                self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 32, 16, 16), help_menu.HelpDialog(skill.desc, name=skill.name + charge), 'growths')
 
         return surf
 

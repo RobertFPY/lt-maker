@@ -318,8 +318,7 @@ class ItemOption(BasicOption):
         if item_system.is_weapon(owner, self.item) or item_system.is_spell(owner, self.item):
             return help_menu.ItemHelpDialog(self.item)
         else:
-            text = text_funcs.translate_and_text_evaluate(self.item.desc, self=self.item)
-            return help_menu.HelpDialog(text)
+            return help_menu.HelpDialog(self.item.desc)
 
     def draw(self, surf, x, y):
         icon = icons.get_icon(self.item)

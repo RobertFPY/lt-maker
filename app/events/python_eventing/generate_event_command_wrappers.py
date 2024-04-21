@@ -23,9 +23,16 @@ def create_wrapper_func(command_name: str, command_t: Type[EventCommand]):
     func = \
 """
 def {command_name}({command_params}{command_optional_params}):
+    command_t = event_commands.{command_type}
     parameters = {command_param_dict}
     parameters = dict(filter(optional_value_filter({command_params_list}), parameters.items()))
-    return event_commands.{command_type}(parameters=parameters).set_flags('from_python')
+    for k, v in parameters.items():
+        if isinstance(v, str):
+            param_name = command_t.get_validator_from_keyword(k)
+            param_validator = event_validators.get(param_name)
+            if issubclass(param_validator, event_validators.EnumValidator):
+                parameters[k] = event_validators.convert(param_name, v)
+    return command_t(parameters=parameters).set_flags('from_python')
 """.format(command_name=command_name, command_type=command_t.__name__, command_params_list=command_params_list,
            command_params=command_params, command_optional_params=command_optional_params,
            command_param_dict=command_param_dict_str)

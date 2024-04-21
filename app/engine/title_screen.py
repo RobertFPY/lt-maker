@@ -339,9 +339,8 @@ class TitleModeState(State):
 
     def update_dialog(self):
         if self.menu:
-            option = self.menu.get_current()
-            text = option + '_desc'
-            text = text_funcs.translate_and_text_evaluate(text, self=option)
+            text = self.menu.get_current() + '_desc'
+            text = text_funcs.translate(text)
             self.dialog = dialog.Dialog(text, num_lines=4, draw_cursor=False)
             self.dialog.position = (140, 34)
             self.dialog.text_width = WINWIDTH - 142 - 12

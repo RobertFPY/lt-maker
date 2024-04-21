@@ -595,7 +595,7 @@ class UnitObject(Prefab):
         return combat_calcs.avoid(self, self.get_weapon())
 
     @property
-    def sprite(self) -> UnitSprite:
+    def sprite(self) -> "unit_sprite.UnitSprite":
         if not self._sprite:
             from app.engine import unit_sprite
             self._sprite = unit_sprite.UnitSprite(self)
@@ -611,7 +611,7 @@ class UnitObject(Prefab):
         return None
 
     @property
-    def sound(self) -> UnitSound:
+    def sound(self) -> "unit_sound.UnitSound":
         if not self._sound:
             from app.engine import unit_sound
             self._sound = unit_sound.UnitSound(self)

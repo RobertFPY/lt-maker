@@ -52,7 +52,7 @@ class LTProjectBuilder():
             return False
         # since it's not default, force a save. if save fails, we can't build.
         if not self.proj_file_manager.save():
-            QMessageBox .warning(None, "Cannot build project",
+            QMessageBox.warning(None, "Cannot build project",
                                 "Cannot build project without saving! Please save the project "
                                 "before attempting to build.")
             return False

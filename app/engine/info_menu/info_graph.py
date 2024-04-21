@@ -24,9 +24,10 @@ class InfoGraph():
         self.cursor = menus.Cursor()
         self.first_bb = None
 
-    def clear(self):
+    def clear(self, keep_last_aabb=False):
         self.registry = {state: [] for state in info_states}
         self.registry.update({'growths': []})
+        self.last_bb_aabb = self.last_bb.aabb if keep_last_aabb and self.last_bb else None
         self.current_bb = None
         self.last_bb = None
         self.first_bb = None
@@ -47,19 +48,30 @@ class InfoGraph():
             self.registry[state].append(BoundingBox(idx, aabb, help_box, state, first))
 
     def set_transition_in(self):
-        if self.last_bb and self.last_bb.state == self.current_state:
-            self.current_bb = self.last_bb
-            self.current_bb.help_box.set_transition_in()
-        elif self.registry:
-            for bb in self.registry[self.current_state]:
-                if bb.first:
-                    self.current_bb = bb
-                    self.current_bb.help_box.set_transition_in()
-                    break
-            else:
-                # For now, just use first help dialog
-                self.current_bb = self.registry[self.current_state][0]
+        # only display help if registry has help
+        if self.registry:
+            last_info_menu_bbs = [bb for bb in self.registry[self.current_state] if bb.aabb == self.last_bb_aabb]
+            if self.last_bb and self.last_bb.state == self.current_state:
+                # restore last bb selected before transition out
+                self.current_bb = self.last_bb
                 self.current_bb.help_box.set_transition_in()
+            elif last_info_menu_bbs:
+                # then check if last_bb_aabb exists in registry after last info menu transition
+                self.current_bb = last_info_menu_bbs[0]
+                self.current_bb.help_box.set_transition_in()
+            else:
+                for bb in self.registry[self.current_state]:
+                    if bb.first:
+                        self.current_bb = bb
+                        self.current_bb.help_box.set_transition_in()
+                        break
+                else:
+                    # For now, just use first help dialog
+                    self.current_bb = self.registry[self.current_state][0]
+                    self.current_bb.help_box.set_transition_in()
+        # reset last_bb_aabb, if it needs to be used it should have already been
+        # prevents accidentally becoming valid again when transitioning info menus
+        self.last_bb_aabb = None
 
     def set_transition_out(self):
         if self.current_bb:

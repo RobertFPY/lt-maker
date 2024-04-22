@@ -148,7 +148,10 @@ class Event():
         nid = ser_dict['nid']
         prefab = DB.events.get_by_nid_or_name(nid)[0]
         self = cls(prefab, triggers.GenericTrigger(unit, unit2, position, local_args), game)
-        self.processor = EventProcessor.restore(ser_dict['processor_state'], self.text_evaluator)
+        if prefab.version() != EventVersion.EVENT:
+            self.processor = PythonEventProcessor.restore(ser_dict['processor_state'], game)
+        else:
+            self.processor = EventProcessor.restore(ser_dict['processor_state'], self.text_evaluator)
         return self
 
     def finished(self):

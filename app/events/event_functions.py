@@ -40,7 +40,7 @@ from app.events.utils import TableRows
 from app.sprites import SPRITES
 from app.utilities import str_utils, utils
 from app.utilities.enums import Alignments, HAlignment, Orientation, VAlignment
-from app.utilities.type_checking import check_valid_type
+from app.utilities.type_checking import is_primitive_or_primitive_collection
 from app.utilities.typing import NID, Point
 from app.engine.source_type import SourceType
 
@@ -565,7 +565,7 @@ def screen_shake_end(self: Event, flags=None):
 
 def game_var(self: Event, nid, expression, flags=None):
     val = self._eval_expr(expression, 'from_python' in flags)
-    if check_valid_type(val):
+    if is_primitive_or_primitive_collection(val):
         action.do(action.SetGameVar(nid, val))
     else:
         self.logger.error("game_var: %s is not a valid variable", val)
@@ -573,7 +573,7 @@ def game_var(self: Event, nid, expression, flags=None):
 def inc_game_var(self: Event, nid, expression=None, flags=None):
     if expression:
         val = self._eval_expr(expression, 'from_python' in flags)
-        if check_valid_type(val):
+        if is_primitive_or_primitive_collection(val):
             action.do(action.SetGameVar(nid, self.game.game_vars.get(nid, 0) + val))
         else:
             self.logger.error("inc_game_var: %s is not a valid variable", val)
@@ -582,7 +582,7 @@ def inc_game_var(self: Event, nid, expression=None, flags=None):
 
 def level_var(self: Event, nid, expression, flags=None):
     val = self._eval_expr(expression, 'from_python' in flags)
-    if check_valid_type(val):
+    if is_primitive_or_primitive_collection(val):
         action.do(action.SetLevelVar(nid, val))
     else:
         self.logger.error("level_var: %s is not a valid variable", val)
@@ -590,7 +590,7 @@ def level_var(self: Event, nid, expression, flags=None):
 def inc_level_var(self: Event, nid, expression=None, flags=None):
     if expression:
         val = self._eval_expr(expression, 'from_python' in flags)
-        if check_valid_type(val):
+        if is_primitive_or_primitive_collection(val):
             action.do(action.SetLevelVar(nid, self.game.level_vars.get(nid, 0) + val))
         else:
             self.logger.error("inc_level_var: %s is not a valid variable", val)

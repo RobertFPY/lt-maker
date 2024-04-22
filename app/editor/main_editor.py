@@ -195,7 +195,6 @@ class MainEditor(QMainWindow):
                                 shortcut="Ctrl+S", triggered=self.save)
         self.save_as_act = QAction(
             _("Save Project As..."), self, shortcut="Ctrl+Shift+S", triggered=self.save_as)
-        # self.build_act = QAction(QIcon(), "Build Project...", self, shortcut="Ctrl+B", triggered=self.build_project)
         self.quit_act = QAction(
             _("&Quit"), self, shortcut="Ctrl+Q", triggered=self.close)
 
@@ -298,7 +297,8 @@ class MainEditor(QMainWindow):
         file_menu.addAction(self.save_as_act)
         file_menu.addAction(self.dump_csv)
         file_menu.addAction(self.dump_script)
-        file_menu.addAction(self.build_project)
+        if not is_editor_engine_built_version():
+            file_menu.addAction(self.build_project)
         file_menu.addSeparator()
         file_menu.addAction(self.quit_act)
 

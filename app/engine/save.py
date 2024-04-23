@@ -67,7 +67,7 @@ def dict_print(d):
         if isinstance(v, dict):
             dict_print(v)
         else:
-            s = "{0} : {1}".format(k, v)
+            s = "{0} : {1} ({2})".format(k, v, type(v))
             print(s)
             logging.error(s)
 
@@ -209,7 +209,7 @@ def delete_suspend():
 def delete_save(game_state, num: Optional[int] = None):
     """
     If num is not provided, deletes current save
-    """ 
+    """
     if game_state.current_save_slot is not None:
         num = game_state.current_save_slot
     if num is None:

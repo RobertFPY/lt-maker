@@ -796,13 +796,7 @@ def change_bg_tilemap(self: Event, tilemap=None, flags=None):
     flags = flags or set()
 
     tilemap_nid = tilemap
-    tilemap_prefab = RESOURCES.tilemaps.get(tilemap_nid)
-    if not tilemap_prefab:
-        self.game.level.bg_tilemap = None
-        return
-
-    tilemap = TileMapObject.from_prefab(tilemap_prefab)
-    action.do(action.ChangeBGTileMap(tilemap))
+    action.do(action.ChangeBGTileMap(tilemap_nid))
 
 def set_game_board_bounds(self: Event, min_x: int, min_y: int, max_x: int, max_y: int, flags=None):
     if not self.game.board:

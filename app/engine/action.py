@@ -1,6 +1,7 @@
 from __future__ import annotations
 from app.data.database.item_components import ItemComponent
 from app.data.database.supports import SupportPair
+from app.engine.objects.tilemap import TileMapObject
 from app.utilities.typing import NID
 
 import functools
@@ -41,7 +42,7 @@ def wrap_do_exec_reverse(_cls):
 
 class Action():
     persist_through_menu_cancel = False
-    
+
     def __init_subclass__(cls, **kwargs):
         return wrap_do_exec_reverse(_cls=cls)
 
@@ -2352,7 +2353,7 @@ class RemoveUnitNote(Action):
             self.old_note = self.unit.notes[self.deletion_idx]
         else:
             self.deletion_idx = None
-            self.old_note = None        
+            self.old_note = None
 
     def do(self):
         if self.deletion_idx is not None:
@@ -3136,15 +3137,22 @@ class HideLayer(Action):
         game.boundary.reset()
 
 class ChangeBGTileMap(Action):
-    def __init__(self, new_tilemap):
-        self.new_tilemap = new_tilemap
-        self.old_tilemap = game.bg_tilemap
+    def __init__(self, new_tilemap_nid):
+        self.new_tilemap_nid = new_tilemap_nid
+        self.old_tilemap_nid = game.bg_tilemap.nid if game.bg_tilemap else None
 
     def do(self):
-        game.level.bg_tilemap = self.new_tilemap
+        tilemap_prefab = RESOURCES.tilemaps.get(self.new_tilemap_nid)
+        game.level.bg_tilemap = TileMapObject.from_prefab(tilemap_prefab)
 
     def reverse(self):
-        game.level.bg_tilemap = self.old_tilemap
+        if self.old_tilemap_nid:
+            tilemap_prefab = RESOURCES.tilemaps.get(self.old_tilemap_nid)
+            game.level.bg_tilemap = TileMapObject.from_prefab(tilemap_prefab)
+        else:
+            game.level.bg_tilemap = None
+
+        
 
 class AddWeather(Action):
     def __init__(self, weather_nid, position):

@@ -13,6 +13,7 @@ from PyQt5.QtWidgets import (QApplication, QFileDialog, QMessageBox,
 
 from app.data.database.database import DB
 from app.editor.file_manager.project_file_backend import DEFAULT_PROJECT, ProjectFileBackend
+from app.engine import config as cf
 from app.utilities import file_utils
 
 def execute(cmd):
@@ -71,6 +72,11 @@ class LTProjectBuilder():
         return output_dir
 
     def _build_game(self, current_proj: Path, dist_cmd: str, work_cmd: str, path_to_icon: Path):
+        # disable debug settings
+        current_debug = cf.SETTINGS['debug']
+        cf.SETTINGS['debug'] = 0
+        cf.save_settings()
+
         kwargs: List[str] = []
         kwargs.append(dist_cmd)
         kwargs.append(work_cmd)
@@ -85,6 +91,9 @@ class LTProjectBuilder():
             if PROGRESS_SENTINEL in line:
                 progress = int(line.replace(PROGRESS_SENTINEL, ""))
                 self.progress_dialog.setValue(progress)
+
+        cf.SETTINGS['debug'] = current_debug
+        cf.save_settings()
 
     def _build_executable_wrapper(self, current_proj: Path, dist_cmd: str, work_cmd: str, path_to_icon: Path):
         project_name = current_proj.name.replace('.ltproj', '')

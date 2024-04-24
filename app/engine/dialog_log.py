@@ -32,7 +32,7 @@ class DialogLogState(State):
             game.dialog_log.ui.scroll_up()
         elif 'DOWN' in directions:
             game.dialog_log.ui.scroll_down()
-        
+
         if event == 'INFO' or event == 'BACK':
             game.state.back()
 
@@ -75,7 +75,7 @@ class DialogLog():
         chibi = None
         if portrait:
             chibi = icons.get_chibi(portrait)
-            
+
         return chibi
 
     def save(self) -> List[Tuple[str, str]]:
@@ -100,6 +100,7 @@ class DialogLog():
         s = s.replace('{semicolon}', ';')
         s = s.replace('|', '{br}')
         s = s.replace('{br}', '<br>')  # So we don't remove it
+        s = s.replace('{sub_break}', '<br>')
         s = re.sub(r'(\{[^\{]*?\})', '', s)  # remove all commands
         s = s.replace('<br>', '{br}')
         # Get rid of extra spaces beyond length of 1

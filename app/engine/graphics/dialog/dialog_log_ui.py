@@ -6,21 +6,20 @@ from app.constants import WINWIDTH, WINHEIGHT
 from app.engine import engine
 from app.engine.text_funcs import line_wrap
 from app.engine.graphics.text.text_renderer import render_text
-    
+
 class DialogLogEntry:
     FONT_HEIGHT = 16
     CHIBI_SIZE = 32
     FONT = 'text'
-    
+
     def __init__(self, name: str, chibi: Optional[engine.Surface], text: str):
         self.name = name
         self.chibi = chibi
         self.plain_text = text
-
         self.text_lines: List[str] = self.format_text(self.plain_text)
 
         self.size = (WINWIDTH, max(self.CHIBI_SIZE, self.FONT_HEIGHT + len(self.text_lines) * self.FONT_HEIGHT))
-    
+
     @property
     def height(self) -> int:
         return self.size[1]
@@ -67,7 +66,7 @@ class DialogLogUI:
     def pop_entry(self) -> DialogLogEntry:
         entry = self.entries.pop()
         return entry
-        
+
     def scroll_up(self) -> int:
         """
         # Returns how much it scrolled by

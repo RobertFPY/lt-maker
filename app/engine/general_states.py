@@ -2550,6 +2550,7 @@ class ShopState(State):
         d.width = d.text_width + 16
         d.font = FONT['convo-white']
         d.font_color = 'white'
+        d.reformat()
         return d
 
     def update_options(self):

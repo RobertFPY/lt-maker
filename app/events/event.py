@@ -606,7 +606,7 @@ class Event():
     def _apply_growth_changes(self, unit, growth_changes):
         action.do(action.ApplyGrowthChanges(unit, growth_changes))
 
-    def _parse_pos(self, pos: str | Point, is_float=False):
+    def _parse_pos(self, pos: str | Point, is_float=False) -> Optional[Point]:
         if isinstance(pos, tuple):
             return pos
         position = None

@@ -2588,6 +2588,9 @@ def set_position(self: Event, position, flags=None):
 def map_anim(self: Event, map_anim, float_position: Tuple[float, float] | NID, speed: float=1.0, flags=None):
     flags = flags or set()
     float_position = self._parse_pos(float_position, True)
+    if not float_position:
+        self.logger.warn("map_anim: Could not find position %s" % float_position)
+        return
     if map_anim not in RESOURCES.animations:
         self.logger.error("map_anim: Could not find map animation %s" % map_anim)
         return
@@ -2613,6 +2616,9 @@ def map_anim(self: Event, map_anim, float_position: Tuple[float, float] | NID, s
 def remove_map_anim(self: Event, map_anim, position, flags=None):
     flags = flags or set()
     pos = self._parse_pos(position, True)
+    if not pos:
+        self.logger.warn("remove_map_anim: Could not find position %s" % position)
+        return
     action.do(action.RemoveMapAnim(map_anim, pos, 'overlay' in flags))
 
 def add_unit_map_anim(self: Event, map_anim: NID, unit: NID, speed: float=1.0, flags=None):

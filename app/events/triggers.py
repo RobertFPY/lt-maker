@@ -157,6 +157,15 @@ class UnitSelect(EventTrigger):
     position: Tuple[int, int] #: the position they were selected at.
 
 @dataclass(init=True)
+class UnitDeselect(EventTrigger):
+    """
+    Occurs when a unit selected by the cursor is deselected.
+    """
+    nid: ClassVar[NID] = 'unit_deselect'
+    unit1: UnitObject
+    position: Tuple[int, int] #: the position they were deselected at.
+
+@dataclass(init=True)
 class UnitLevelUp(EventTrigger):
     """
     Occurs whenever a unit levels up.

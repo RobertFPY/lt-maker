@@ -374,8 +374,9 @@ class Dialog:
         elif command == "{w}" or command == "{wait}":
             self.pause_before_wait()
         elif command == "{clear}":
+            last_index = self.text_indices[-1].stop
             self.text_indices.clear()
-            self._next_line()
+            self.text_indices.append(self.TextIndex(last_index, last_index))
         elif command == "{p}":
             self.command_pause()
         elif command == "{tgm}":
@@ -785,6 +786,7 @@ class DynamicDialogWrapper:
 
     def draw(self, surf) -> engine.Surface:
         self.dialog.draw(surf)
+        return surf
 
 
 class LocationCard:

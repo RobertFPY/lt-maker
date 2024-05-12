@@ -156,13 +156,17 @@ class Dialog:
                 pos_x = position[0]
                 pos_y = position[1]
         elif self.portrait:
-            desired_center = self.determine_desired_center(self.portrait)
-            pos_x = utils.clamp(desired_center - self.width // 2, 8,
-                                WINWIDTH - 8 - self.width)
-            if pos_x % 8 != 0:
-                pos_x += 4
-            if pos_x == 0:
+            # If very big, just hard set to 4 pixels from the left
+            if self.width >= WINWIDTH - 8:
                 pos_x = 4
+            else:
+                desired_center = self.determine_desired_center(self.portrait)
+                pos_x = utils.clamp(desired_center - self.width // 2, 8,
+                                    WINWIDTH - 8 - self.width)
+                if pos_x % 8 != 0:
+                    pos_x += 4
+                if pos_x == 0:
+                    pos_x = 4
             pos_y = (WINHEIGHT - self.height -
                      event_portrait.EventPortrait.main_portrait_coords[3] - 4)
         else:

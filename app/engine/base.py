@@ -784,12 +784,9 @@ class LoreDisplay():
         self.page_num = 0
         self.dialogs.clear()
         for idx, line in enumerate(text):
-            dlg = dialog.Dialog(text[idx], num_lines=8, draw_cursor=False)
+            dlg = dialog.Dialog(text[idx], font_type="text", font_color="white", num_lines=8, draw_cursor=False)
             dlg.position = self.topleft[0], self.topleft[1] + 12
             dlg.text_width = WINWIDTH - 100
-            dlg.font = FONT['text']
-            dlg.font_type = 'text'
-            dlg.font_color = 'white'
             dlg.reformat()
             self.dialogs.append(dlg)
         self.num_pages = len(text)

@@ -166,7 +166,8 @@ class UIView():
                     ypos = WINHEIGHT - self.tile_info_disp.get_height() - 3
                     surf.blit(self.tile_info_disp, (xpos, ypos)) # Bottomright
 
-        if self.obj_info_disp and not self.initiative_info_disp:
+        # Only if we actually have a simple objective
+        if self.obj_info_disp and not self.initiative_info_disp and game.level.objective['simple']:
             # Should be in topright, unless the cursor is in the topright
             # TopRight - I believe this has RIGHT precedence
             if game.cursor.position[1] < TILEY // 2 + game.camera.get_y() and \

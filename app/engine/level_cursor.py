@@ -45,7 +45,7 @@ class LevelCursor(BaseCursor):
 
     def get_hover(self) -> Optional[UnitObject]:
         unit = self.game.board.get_unit(self.position)
-        if unit and 'Tile' not in unit.tags and self.game.board.in_vision(unit.position):
+        if unit and 'Tile' not in unit.tags and self.game.board.in_vision(self.position):
             return unit
         return None
 

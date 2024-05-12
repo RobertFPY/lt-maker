@@ -674,6 +674,9 @@ class AnimationCombat(BaseCombat, MockCombat):
         if not any(brush.nid in hp_brushes for brush in self.playback):
             self.current_battle_anim.resume()
 
+        if self.get_damage() <= 0:
+            self.no_damage()
+
     def _handle_playback(self, sound=True):
         hp_brushes = ('damage_hit', 'damage_crit', 'heal_hit')
         hit_brushes = ('defense_hit_proc', 'attack_hit_proc')

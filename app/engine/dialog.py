@@ -279,8 +279,9 @@ class Dialog:
                     split_lines = self.get_lines_from_block(current_line, 1)
                 else:
                     split_lines = self.get_lines_from_block(current_line)
-                width = max(width, text_funcs.get_max_width(self.font_type,
-                                                            split_lines))
+                current_width = text_funcs.get_max_width(self.font_type,
+                                                         split_lines)
+                width = max(width, current_width)
                 if len(split_lines) == 1:
                     waiting_cursor = True
                 current_line = ""
@@ -296,12 +297,13 @@ class Dialog:
                 split_lines = self.get_lines_from_block(current_line)
             else:
                 split_lines = self.get_lines_from_block(current_line, 1)
-            width = max(width, text_funcs.get_max_width(self.font_type, split_lines))
+            current_width = text_funcs.get_max_width(self.font_type, split_lines)
+            width = max(width, current_width)
             if len(split_lines) == 1:
                 waiting_cursor = True
         if waiting_cursor:
             if len(split_lines) == 1:
-                width += 16
+                width += utils.clamp(current_width - width + 16, 0, 16)
         return width
 
     def determine_height(self):

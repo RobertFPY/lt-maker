@@ -215,7 +215,7 @@ class AIController():
 
     def get_true_valid_moves(self) -> Collection[Point]:
         # Guard AI
-        if self.behaviour.view_range == -1 and not game.ai_group_active(self.unit.ai_group):
+        if self.behaviour and self.behaviour.view_range == -1 and not game.ai_group_active(self.unit.ai_group):
             return {self.unit.position}
         else:
             valid_moves = game.path_system.get_valid_moves(self.unit)

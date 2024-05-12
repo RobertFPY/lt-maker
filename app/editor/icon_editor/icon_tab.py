@@ -139,7 +139,7 @@ class Icon16Database(IconTab):
         return dialog
 
 class Icon32Database(Icon16Database):
-    side_menu_enabled = False
+    side_menu_enabled = True
     @classmethod
     def create(cls, parent=None, selected_icon_nid=None):
         data = RESOURCES.icons32
@@ -147,11 +147,11 @@ class Icon32Database(Icon16Database):
         collection_model = icon_model.Icon32Model
         deletion_criteria = None
 
-        dialog = cls(data, title, collection_model, parent)
+        dialog = cls(data, title, collection_model, parent, selected_icon_nid)
         return dialog
 
 class Icon80Database(Icon16Database):
-    side_menu_enabled = False
+    side_menu_enabled = True
     @classmethod
     def create(cls, parent=None, selected_icon_nid=None):
         data = RESOURCES.icons80
@@ -159,10 +159,11 @@ class Icon80Database(Icon16Database):
         collection_model = icon_model.Icon80Model
         deletion_criteria = None
 
-        dialog = cls(data, title, collection_model, parent)
+        dialog = cls(data, title, collection_model, parent, selected_icon_nid)
         return dialog
 
 class MapIconDatabase(IconTab):
+    side_menu_enabled = True
     @classmethod
     def create(cls, parent=None):
         data = RESOURCES.map_icons

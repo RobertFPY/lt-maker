@@ -19,6 +19,7 @@ class EffectiveDamage(ItemComponent):
         'effective_multiplier': ComponentType.Float,
         'effective_bonus_damage': ComponentType.Int,
         'show_effectiveness_flash': ComponentType.Bool,
+        'weapon_effectiveness_multiplied': ComponentType.Bool,
     }
 
     def __init__(self, value=None):
@@ -27,6 +28,7 @@ class EffectiveDamage(ItemComponent):
             'effective_multiplier': 3,
             'effective_bonus_damage': 0,
             'show_effectiveness_flash': True,
+            'weapon_effectiveness_multiplied': True,
         }
         if value:
             self.value.update(value)
@@ -46,6 +48,10 @@ class EffectiveDamage(ItemComponent):
     @property
     def show_flash(self):
         return self.value['show_effectiveness_flash']
+
+    @property
+    def weapon_effectiveness_multiplied(self):
+        return self.value['weapon_effectiveness_multiplied']
 
     def _check_effective(self, target):
         if self._check_negate(target):
@@ -81,6 +87,13 @@ class EffectiveDamage(ItemComponent):
     def dynamic_damage(self, unit, item, target, item2, mode, attack_info, base_value) -> int:
         if self._check_effective(target):
             might = item_system.damage(unit, item) or 0
+            if self.weapon_effectiveness_multiplied:
+                adv = combat_calcs.compute_advantage(unit, target, item, item2)
+                disadv = combat_calcs.compute_advantage(unit, target, item, item2, False)
+                if adv:
+                    might += int(adv.damage)
+                if disadv:
+                    might += int(disadv.damage)
             return int((self.multiplier - 1.0) * might + self.bonus_damage)
         return 0
 

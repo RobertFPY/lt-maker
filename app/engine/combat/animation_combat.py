@@ -674,7 +674,8 @@ class AnimationCombat(BaseCombat, MockCombat):
         if not any(brush.nid in hp_brushes for brush in self.playback):
             self.current_battle_anim.resume()
 
-        if self.get_damage() <= 0:
+        # If damage is 0 and this is a damaging spell
+        if self.get_damage() <= 0 and any(brush.nid in ('damage_hit', 'damage_crit') for brush in self.playback):
             self.no_damage()
 
     def _handle_playback(self, sound=True):

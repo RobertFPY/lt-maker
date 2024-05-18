@@ -90,6 +90,7 @@ class IconTab(QWidget):
 
     def update_list(self):
         # self.model.dataChanged.emit(self.model.index(0), self.model.index(self.model.rowCount()))
+        self.full_model.layoutAboutToBeChanged.emit()
         self.full_model.layoutChanged.emit()
         if self.side_menu_enabled:
             self.icon_sheet_list.clear()
@@ -139,7 +140,7 @@ class Icon16Database(IconTab):
         return dialog
 
 class Icon32Database(Icon16Database):
-    side_menu_enabled = True
+    side_menu_enabled = False
     @classmethod
     def create(cls, parent=None, selected_icon_nid=None):
         data = RESOURCES.icons32
@@ -151,7 +152,7 @@ class Icon32Database(Icon16Database):
         return dialog
 
 class Icon80Database(Icon16Database):
-    side_menu_enabled = True
+    side_menu_enabled = False
     @classmethod
     def create(cls, parent=None, selected_icon_nid=None):
         data = RESOURCES.icons80
@@ -163,7 +164,7 @@ class Icon80Database(Icon16Database):
         return dialog
 
 class MapIconDatabase(IconTab):
-    side_menu_enabled = True
+    side_menu_enabled = False
     @classmethod
     def create(cls, parent=None):
         data = RESOURCES.map_icons

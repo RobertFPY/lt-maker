@@ -1957,6 +1957,7 @@ class CombatTargetingState(MapState):
         game.cursor.set_pos(closest_pos)
 
         # Sets dual strike variables and chooses attacker dual strike
+        self.attacker_assist = None
         self.find_strike_partners(closest_pos)
 
         # Reset these
@@ -2115,7 +2116,7 @@ class CombatTargetingState(MapState):
                 game.ui_view.reset_info()
                 self.display_single_attack()
             # Switch chosen pairup with AUX
-            elif len(adj_allies) > 1 and self.num_targets == 1:
+            elif self.attacker_assist and len(adj_allies) > 1 and self.num_targets == 1:
                 i = adj_allies.index(self.attacker_assist)
                 # Hardset attacker
                 self.attacker_assist = adj_allies[(i + 1) % len(adj_allies)]

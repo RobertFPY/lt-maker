@@ -127,9 +127,19 @@ class OnRegionInteract(EventTrigger):
     region: RegionObject #: the event region.
 
 @dataclass(init=True)
+class CombatDeath(EventTrigger):
+    """
+    Occurs during combat when any unit dies, including generics.
+    """
+    nid: ClassVar[NID] = 'combat_death'
+    unit1: UnitObject #: the unit that died.
+    unit2: Optional[UnitObject] #: the unit that killed them (can be None).
+    position: Tuple[int, int] #: the position they died at.
+
+@dataclass(init=True)
 class UnitDeath(EventTrigger):
     """
-    Occurs when any unit dies, including generics.
+    Occurs after combat when any unit dies, including generics.
     """
     nid: ClassVar[NID] = 'unit_death'
     unit1: UnitObject #: the unit that died.

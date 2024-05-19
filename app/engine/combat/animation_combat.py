@@ -1204,6 +1204,10 @@ class AnimationCombat(BaseCombat, MockCombat):
 
         self.cleanup_combat()
 
+        self.handle_records(self.full_playback, all_units)
+
+        self.handle_combat_death(all_units)
+
         # handle wexp & skills
         if not self.attacker.is_dying:
             self.handle_wexp(self.attacker, self.main_item, self.defender)
@@ -1229,7 +1233,6 @@ class AnimationCombat(BaseCombat, MockCombat):
 
         pairs = self.handle_supports(all_units)
         self.handle_support_pairs(pairs)
-        self.handle_records(self.full_playback, all_units)
 
         asp = self.attacker.strike_partner
         dsp = None

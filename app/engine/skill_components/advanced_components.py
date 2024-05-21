@@ -19,15 +19,22 @@ class MultiSkill(SkillComponent):
     author = 'GreyWulfos'
 
     expose = (ComponentType.List, ComponentType.Skill)    
-    
+
+    # conditional component to be passed on to child skills
+    class ParentCondition(SkillComponent):
+        nid = 'parent_condition'
+        desc = ''
+        tag = SkillTags.HIDDEN
+
+        def __init__(self, parent_skill: SkillObject):
+            self.parent_skill = parent_skill
+
+        def condition(self, unit, item):
+            return all([component.condition(unit, item) for component in self.parent_skill.components if component.defines('condition')])
+
     # add all child skills when the skill is added
     def before_add(self, unit, skill):
-        # conditional component to be passed on to child skills
-        class ParentCondition(SkillComponent):
-            nid = 'parent_condition'
-            tags = SkillTags.ADVANCED
-            def condition(self, unit, item):
-                return all([component.condition(unit, item) for component in skill.components if component.defines('condition')])
+        parent_condition = self.ParentCondition(skill)
 
         subactions = []
         for child_skill in self.value:
@@ -37,7 +44,7 @@ class MultiSkill(SkillComponent):
             subactions.append(action.AddSkill(unit, child_skill, source=skill, source_type=SourceType.MULTISKILL))
         for subaction in subactions:
             action.execute(subaction)
-            subaction.skill_obj.components.append(ParentCondition())
+            subaction.skill_obj.components.append(parent_condition)
 
     # remove all child skills when the skill is removed
     def after_remove(self, unit, skill):

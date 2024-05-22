@@ -657,7 +657,6 @@ def get_targets(unit, behaviour) -> List[Point]:
         all_targets = [u.position for u in game.units if u.position and skill_system.check_ally(unit, u)]
     elif behaviour.target == 'Event':
         target_spec = behaviour.target_spec
-        all_targets = []
         for region in game.level.regions:
             try:
                 if region.region_type == RegionType.EVENT and region.sub_nid == target_spec and (not region.condition or evaluate.evaluate(region.condition, unit, local_args={'region': region})):
@@ -671,6 +670,12 @@ def get_targets(unit, behaviour) -> List[Point]:
                 all_targets = [unit.starting_position]
         else:
             all_targets = [tuple(behaviour.target_spec)]
+    elif behaviour.target == 'Terrain':
+        target_spec = behaviour.target_spec
+        for position in game.board.get_all_positions_in_bounds():
+            if game.tilemap.get_terrain(position) == target_spec:
+                all_targets.append(position)
+
     if behaviour.target in ('Unit', 'Enemy', 'Ally'):
         all_targets = handle_unit_spec(all_targets, behaviour)
 
@@ -774,6 +779,8 @@ class SecondaryAI():
             adj_good_enough = False
         elif self.behaviour.target == 'Position' and not game.board.get_unit(goal_pos):
             adj_good_enough = False  # Don't move adjacent if it's not necessary
+        elif self.behaviour.target == 'Terrain':
+            adj_good_enough = False
         else:
             adj_good_enough = True
 

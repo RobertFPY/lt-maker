@@ -145,6 +145,10 @@ class TerrainBox(ObjBox):
             database = Data([d for d in DB.terrain if d is not exclude])
         super().__init__("Terrain Type", TerrainModel, database, parent, button)
 
+    def setValue(self, nid):
+        terrain = DB.terrain.get(nid)
+        self.edit.setValue(terrain.nid + " : " + terrain.name)
+
 class TilemapBox(ObjBox):
     def __init__(self, parent=None, button=False):
         from app.editor.tile_editor.tile_model import TileMapModel

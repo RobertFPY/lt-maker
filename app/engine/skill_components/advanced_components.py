@@ -27,19 +27,13 @@ class MultiSkill(SkillComponent):
         tag = SkillTags.HIDDEN
 
         expose = ComponentType.Int
-        value = -1
-
-        def __init__(self, parent_uid: int):
-            self.parent_uid = parent_uid
-            self.value = parent_uid
         
         def condition(self, unit, item):
-            parent_skill = game.get_skill(self.parent_uid)
+            parent_skill = game.get_skill(self.value)
             if not parent_skill:
-                logging.error(f"Parent UID %{self.parent_uid} does not correspond to any known skill.")
+                logging.error(f"Parent UID %{self.value} does not correspond to any known skill.")
                 return False
             return all([component.condition(unit, item) for component in parent_skill.components if component.defines('condition')])
-
 
     # add all child skills when the skill is added
     def before_add(self, unit, skill):

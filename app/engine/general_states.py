@@ -876,7 +876,7 @@ class MenuState(MapState):
                     # No duplicates
                     if truth and region.sub_nid not in options:
                         options.append(region.sub_nid)
-                        info_descs.append(None)  # Could add actual descriptions later, somehow
+                        info_descs.append(region.sub_nid + '_desc')
                         self.valid_regions.append(region)
                 except:
                     logging.error("Region condition {%s} could not be evaluated" % region.condition)

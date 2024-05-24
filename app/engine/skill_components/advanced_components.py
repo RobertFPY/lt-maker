@@ -7,10 +7,52 @@ from app.engine import action, equations, item_funcs, skill_system
 from app.engine.game_state import game
 import app.engine.combat.playback as pb
 from app.utilities import static_random
+from app.engine.source_type import SourceType
 
 if TYPE_CHECKING:
     from app.engine.objects.item import ItemObject
 
+class MultiSkill(SkillComponent):
+    nid = 'multi_skill'
+    desc = 'Folds a list of skills into a single wrapper skill. Useful for skills with complicated effects or trigger conditions.'
+    tag = SkillTags.ADVANCED
+    author = 'GreyWulfos'
+
+    expose = (ComponentType.List, ComponentType.Skill)    
+
+    # conditional component to be passed on to child skills
+    class ParentCondition(SkillComponent):
+        nid = 'parent_condition'
+        desc = ''
+        tag = SkillTags.HIDDEN
+
+        expose = ComponentType.Int
+        
+        def condition(self, unit, item):
+            parent_skill = game.get_skill(self.value)
+            if not parent_skill:
+                logging.error(f"Parent UID %{self.value} does not correspond to any known skill.")
+                return False
+            return all([component.condition(unit, item) for component in parent_skill.components if component.defines('condition')])
+
+    # add all child skills when the skill is added
+    def before_add(self, unit, skill):
+        parent_condition = self.ParentCondition(skill.uid)
+
+        subactions = []
+        for child_skill in self.value:
+            if child_skill == skill:
+                logging.error("Skill %s attempted to create a recursive multiskill." % skill.nid)
+                return
+            subactions.append(action.AddSkill(unit, child_skill, source=skill, source_type=SourceType.MULTISKILL))
+        for subaction in subactions:
+            action.execute(subaction)
+            subaction.skill_obj.components.append(parent_condition)
+
+    # remove all child skills when the skill is removed
+    def after_remove(self, unit, skill):
+        for subaction in [action.RemoveSkill(unit, child_skill, source=skill, source_type=SourceType.MULTISKILL) for child_skill in self.value]:
+            action.execute(subaction) 
 
 class Ability(SkillComponent):
     nid = 'ability'

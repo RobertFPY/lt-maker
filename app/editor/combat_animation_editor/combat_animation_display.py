@@ -58,6 +58,8 @@ class CombatAnimProperties(QWidget):
         # for combat_anim in self._data:
         #     populate_anim_pixmaps(combat_anim)
 
+        self.settings = MainSettingsController()
+
         self.control_setup(current)
 
         self.info_form = QFormLayout()
@@ -66,7 +68,6 @@ class CombatAnimProperties(QWidget):
         self.nid_box.textChanged.connect(self.nid_changed)
         self.nid_box.editingFinished.connect(self.nid_done_editing)
 
-        self.settings = MainSettingsController()
         theme = dark_theme.get_theme()
         icon_folder = theme.icon_dir()
 
@@ -112,7 +113,8 @@ class CombatAnimProperties(QWidget):
 
         self.anim_background_check = QCheckBox(self)
         self.anim_background_check.setText("Use default background")
-        self.anim_background_check.setChecked(True)
+        self.anim_background_check.setChecked(self.settings.get_default_anim_background())
+        self.anim_background_check.stateChanged.connect(self.on_anim_background_changed)
 
         self.palette_menu = PaletteMenu(self)
         self.timeline_menu = TimelineMenu(self)
@@ -257,6 +259,9 @@ class CombatAnimProperties(QWidget):
 
     def tick(self):
         self.draw_frame()
+
+    def on_anim_background_changed(self, val):
+        self.settings.set_default_anim_background(bool(val))
 
     def play(self):
         self.playing = True

@@ -47,6 +47,8 @@ class CombatEffectProperties(CombatAnimProperties):
         # for effect_anim in self._data:
         #     populate_effect_pixmaps(effect_anim)
 
+        self.settings = MainSettingsController()
+
         self.control_setup(current)
         self.test_combat_button.setEnabled(False)
 
@@ -56,7 +58,6 @@ class CombatEffectProperties(CombatAnimProperties):
         self.nid_box.textChanged.connect(self.nid_changed)
         self.nid_box.editingFinished.connect(self.nid_done_editing)
 
-        self.settings = MainSettingsController()
         theme = dark_theme.get_theme()
         icon_folder = theme.icon_dir()
 

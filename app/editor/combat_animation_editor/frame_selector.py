@@ -87,7 +87,7 @@ class FrameSelector(Dialog):
         self.anim_background_check = QCheckBox(self)
         self.anim_background_check.stateChanged.connect(self.on_anim_background_changed)
         self.anim_background_check.setText("Use default background")
-        self.anim_background_check.setChecked(True)
+        self.anim_background_check.setChecked(self.settings.get_default_anim_background())
 
         self.view = QListView(self)
         self.view.currentChanged = self.on_item_changed
@@ -137,6 +137,7 @@ class FrameSelector(Dialog):
         self.draw()
 
     def on_anim_background_changed(self, val):
+        self.settings.set_default_anim_background(bool(val))
         self.draw()
 
     def export_frames(self):

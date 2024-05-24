@@ -7,8 +7,8 @@ import pickle
 from PyQt5.QtWidgets import QSplitter, QFrame, QVBoxLayout, \
     QWidget, QGroupBox, QFormLayout, QSpinBox, QFileDialog, \
     QMessageBox, QStyle, QHBoxLayout, QPushButton, QLineEdit, \
-    QLabel, QToolButton, QInputDialog
-from PyQt5.QtCore import Qt
+    QLabel, QToolButton, QInputDialog, QCheckBox
+from PyQt5.QtCore import Qt, QByteArray
 from PyQt5.QtGui import QImage, QPixmap, QIcon, QPainter
 
 from app.constants import WINWIDTH, WINHEIGHT
@@ -80,7 +80,7 @@ class CombatAnimProperties(QWidget):
         self.build_frames()
         self.set_layout()
 
-    def save_state(self) -> str:
+    def save_state(self) -> list[QByteArray]:
         return [self.main_splitter.saveState(), self.right_splitter.saveState()]
 
     def restore_state(self, state):
@@ -102,9 +102,17 @@ class CombatAnimProperties(QWidget):
         self.under_frame_nid = None
         self.custom_frame_offset = None
 
+        anim_marker_path = os.path.join("app", "editor", "combat_animation_editor", "assets")
+        self.anim_background = QImage(WINWIDTH, WINHEIGHT, QImage.Format_ARGB32)
+        self.anim_background.load(os.path.join(anim_marker_path, "combat-markers.png"))
+
         self.anim_view = IconView(self)
         self.anim_view.static_size = True
         self.anim_view.setSceneRect(0, 0, WINWIDTH, WINHEIGHT)
+
+        self.anim_background_check = QCheckBox(self)
+        self.anim_background_check.setText("Use default background")
+        self.anim_background_check.setChecked(True)
 
         self.palette_menu = PaletteMenu(self)
         self.timeline_menu = TimelineMenu(self)
@@ -221,6 +229,7 @@ class CombatAnimProperties(QWidget):
 
     def set_layout(self):
         self.view_section.addWidget(self.anim_view)
+        self.view_section.addWidget(self.anim_background_check)
         self.view_section.addLayout(self.button_section)
         self.view_section.addLayout(self.info_form)
         self.view_section.addWidget(self.frame_group_box)
@@ -467,7 +476,7 @@ class CombatAnimProperties(QWidget):
             self.timeline_menu.clear_pose()
             self.has_pose(False)
 
-    def get_available_pose_types(self, weapon_anim) -> float:
+    def get_available_pose_types(self, weapon_anim) -> list[str]:
         items = [_ for _ in combat_anims.required_poses] + ['Critical']
         items.append("Custom")
         for pose_nid in weapon_anim.poses.keys():
@@ -475,16 +484,16 @@ class CombatAnimProperties(QWidget):
                 items.remove(pose_nid)
         return items
 
-    def make_pose(self, weapon_anim) -> str:
+    def make_pose(self, weapon_anim) -> str | None:
         items = self.get_available_pose_types(weapon_anim)
 
         new_nid, ok = QInputDialog.getItem(self, "New Pose", "Select Pose", items, 0, False)
         if not new_nid or not ok:
-            return
+            return None
         if new_nid == "Custom":
             new_nid, ok = QInputDialog.getText(self, "Custom Pose", "Enter New Name for Pose: ")
             if not new_nid or not ok:
-                return
+                return None
             new_nid = str_utils.get_next_name(new_nid, self.current.weapon_anims.keys())
         return new_nid
 
@@ -756,8 +765,11 @@ class CombatAnimProperties(QWidget):
     def set_anim_view(self, actor_im, offset, under_actor_im, under_offset):
         offset_x, offset_y = offset
         under_offset_x, under_offset_y = under_offset
-        base_image = QImage(WINWIDTH, WINHEIGHT, QImage.Format_ARGB32)
-        base_image.fill(editor_utilities.qCOLORKEY)
+        if self.anim_background_check.isChecked():
+            base_image = QImage(WINWIDTH, WINHEIGHT, QImage.Format_ARGB32)
+            base_image.fill(editor_utilities.qCOLORKEY)
+        else:
+            base_image = QImage(self.anim_background)
         if actor_im or under_actor_im:
             painter = QPainter()
             painter.begin(base_image)

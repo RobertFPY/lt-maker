@@ -130,6 +130,8 @@ class OnRegionInteract(EventTrigger):
 class CombatDeath(EventTrigger):
     """
     Occurs during combat when any unit dies, including generics.
+    If triggered, will delay the death animation of unit1 until
+    after the attack animation of unit2 finishes.
     """
     nid: ClassVar[NID] = 'combat_death'
     unit1: UnitObject #: the unit that died.

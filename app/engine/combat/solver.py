@@ -65,6 +65,9 @@ class AttackerState(SolverState):
                     attacker_outspeed = combat_calcs.outspeed(solver.attacker, solver.defender, solver.main_item, solver.def_item, 'attack', solver.get_attack_info())
                 else:
                     attacker_outspeed = defender_outspeed = 1
+                
+                attacker_dynamic_attacks = combat_calcs.compute_dynamic_attacks(solver.attacker, solver.defender, solver.main_item, 'attack', solver.get_attack_info())
+                defender_dynamic_attacks = combat_calcs.compute_dynamic_attacks(solver.defender, solver.attacker, solver.def_item, 'defense', solver.get_defense_info())
 
                 if solver.attacker.strike_partner and \
                         (solver.num_attacks == 1 or can_double_in_pairup) and \
@@ -76,15 +79,15 @@ class AttackerState(SolverState):
                     return 'attacker'
                 elif solver.item_has_uses() and \
                         solver.attacker_has_desperation() and \
-                        solver.num_attacks < attacker_outspeed:
+                        solver.num_attacks < attacker_outspeed + attacker_dynamic_attacks:
                     solver.num_subattacks = 0
                     return 'attacker'
                 elif solver.allow_counterattack() and \
-                        solver.num_defends < defender_outspeed:
+                        solver.num_defends < defender_outspeed + defender_dynamic_attacks:
                     solver.num_subdefends = 0
                     return 'defender'
                 elif solver.item_has_uses() and \
-                        solver.num_attacks < attacker_outspeed:
+                        solver.num_attacks < attacker_outspeed + attacker_dynamic_attacks:
                     solver.num_subattacks = 0
                     return 'attacker'
                 return None
@@ -229,6 +232,9 @@ class DefenderState(SolverState):
 
                 attacker_outspeed = combat_calcs.outspeed(solver.attacker, solver.defender, solver.main_item, solver.def_item, 'attack', solver.get_attack_info())
 
+                attacker_dynamic_attacks = combat_calcs.compute_dynamic_attacks(solver.attacker, solver.defender, solver.main_item, 'attack', solver.get_attack_info())
+                defender_dynamic_attacks = combat_calcs.compute_dynamic_attacks(solver.defender, solver.attacker, solver.def_item, 'defense', solver.get_defense_info())
+
                 if solver.defender.strike_partner and \
                         (solver.num_defends == 1 or can_double_in_pairup) and \
                         solver.num_subdefends >= self.num_multiattacks:
@@ -239,15 +245,15 @@ class DefenderState(SolverState):
                     return 'defender'
                 elif solver.allow_counterattack() and \
                         solver.defender_has_desperation() and \
-                        solver.num_defends < defender_outspeed:
+                        solver.num_defends < defender_outspeed + defender_dynamic_attacks:
                     solver.num_subdefends = 0
                     return 'defender'
                 elif solver.item_has_uses() and \
-                        solver.num_attacks < attacker_outspeed:
+                        solver.num_attacks < attacker_outspeed + attacker_dynamic_attacks:
                     solver.num_subattacks = 0
                     return 'attacker'
                 elif solver.allow_counterattack() and \
-                        solver.num_defends < defender_outspeed:
+                        solver.num_defends < defender_outspeed + defender_dynamic_attacks:
                     solver.num_subdefends = 0
                     return 'defender'
                 return None

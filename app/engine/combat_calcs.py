@@ -581,6 +581,10 @@ def outspeed(unit, target, item, def_item, mode, attack_info) -> int:
 
 def compute_dynamic_attacks(unit, target, item, mode, attack_info) -> int:
     num_attacks = 0
+    if not item:
+        return 0
+    if skill_system.no_dynamic_attacks(target):
+        return 0
     num_attacks += item_system.dynamic_attacks(unit, item, target, resolve_weapon(target), mode, attack_info, num_attacks)
     num_attacks += skill_system.dynamic_attacks(unit, item, target, resolve_weapon(target), mode, attack_info, num_attacks)
 

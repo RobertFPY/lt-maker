@@ -1227,8 +1227,6 @@ class AnimationCombat(BaseCombat, MockCombat):
         for unit in all_units:
             if unit.get_hp() <= 0:
                 game.death.should_die(unit)
-            else:
-                unit.sprite.change_state('normal')
 
         self.cleanup_combat()
 
@@ -1242,6 +1240,11 @@ class AnimationCombat(BaseCombat, MockCombat):
         Handles exp, & wexp, etc.
         """
         all_units = self._all_units()
+
+        # Handle changing the sprite back
+        for unit in all_units:
+            if unit.get_hp() > 0:
+                unit.sprite.change_state('normal')
 
         # handle wexp & skills
         if not self.attacker.is_dying:

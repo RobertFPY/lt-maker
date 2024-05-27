@@ -133,7 +133,7 @@ class DynamicDefenseSpeed(SkillComponent):
 
 class DynamicAttacks(SkillComponent):
     nid = 'dynamic_attacks'
-    desc = "Gives +X extra attacks per phase (i.e. normal doubling) solved dynamically"
+    desc = "Gives +X extra phases per round of combat (i.e. normal doubling) solved dynamically"
     tag = SkillTags.DYNAMIC
 
     author = 'GreyWulfos'
@@ -151,7 +151,7 @@ class DynamicAttacks(SkillComponent):
 
 class DynamicMultiattacks(SkillComponent):
     nid = 'dynamic_multiattacks'
-    desc = "Gives +X extra attacks per attack (i.e. the Brave effect) solved dynamically"
+    desc = "Gives +X extra attacks per phase (i.e. the Brave effect) solved dynamically"
     tag = SkillTags.DYNAMIC
 
     expose = ComponentType.String

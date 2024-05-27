@@ -57,7 +57,6 @@ class DialogState(Enum):
 
 class Dialog:
     solo_flag = False
-    cursor = SPRITES.get("waiting_cursor")
     cursor_offset = [0] * 20 + [1] * 2 + [2] * 8 + [1] * 2
     transition_speed = utils.frames2ms(10)
     pause_before_wait_time = utils.frames2ms(9)
@@ -94,7 +93,9 @@ class Dialog:
                  name_tag_bg="name_tag",
                  boop_sound=None,
                  flags=None):
+        self.cursor = SPRITES.get("waiting_cursor")
         flags = flags or set()
+        
         self.plain_text = text
         self.portrait = portrait
         self.speaker = speaker

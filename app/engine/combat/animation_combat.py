@@ -1228,10 +1228,6 @@ class AnimationCombat(BaseCombat, MockCombat):
             if unit.get_hp() <= 0:
                 game.death.should_die(unit)
 
-        self.cleanup_combat()
-
-        self.handle_records(self.full_playback, all_units)
-
         self._delay_death = self.combat_death_should_trigger(all_units)
 
     def clean_up1(self):
@@ -1245,6 +1241,10 @@ class AnimationCombat(BaseCombat, MockCombat):
         for unit in all_units:
             if unit.get_hp() > 0:
                 unit.sprite.change_state('normal')
+
+        self.handle_records(self.full_playback, all_units)
+
+        self.cleanup_combat()
 
         # handle wexp & skills
         if not self.attacker.is_dying:
@@ -1315,9 +1315,13 @@ class AnimationCombat(BaseCombat, MockCombat):
         """
         for unit in units:
             if unit.is_dying:
-                killer = game.records.get_killer(unit.nid, game.level.nid if game.level else None)
-                if killer:
-                    killer = game.get_unit(killer)
+                # Find the killer
+                marks = [mark for mark in self.full_playback if mark.nid in ('mark_miss', 'mark_hit', 'mark_crit')]
+                killer = None
+                for mark in marks:
+                    if mark.defender == unit:
+                        killer = mark.attacker
+                        break
                 if game.events.should_trigger(triggers.CombatDeath(unit, killer, unit.position)):
                     return True
         return False

@@ -39,7 +39,8 @@ build_engine:
         - choco install -y python --version=3.11.8
         - "C:\\Python311\\python.exe -m pip install -r requirements_engine.txt"
         - "C:\\Python311\\python.exe -m pip install pywin32"
-        - "C:\\Python311\\python.exe -m pip install setuptools --upgrade"
+        # Necessary to use setuptools < 70 until we upgrade to Pyinstaller v6.7.0
+        - "C:\\Python311\\python.exe -m pip install setuptools<70 --upgrade"
         - echo "Prereqs successfully installed"
     script:
         - echo "Generating component files"
@@ -77,7 +78,8 @@ build_editor:
         - choco install -y python --version=3.11.8
         - "C:\\Python311\\python.exe -m pip install -r requirements_editor.txt"
         - "C:\\Python311\\python.exe -m pip install pywin32"
-        - "C:\\Python311\\python.exe -m pip install setuptools --upgrade"
+        # Necessary to use setuptools < 70 until we upgrade to Pyinstaller v6.7.0
+        - "C:\\Python311\\python.exe -m pip install setuptools<70 --upgrade"
         - echo "Prereqs successfully installed"
     script:
         - echo "Generating component files"

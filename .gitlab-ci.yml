@@ -1,8 +1,9 @@
 .shared_windows_runners:
   tags:
-  - shared-windows
-  - windows
-  - windows-1809
+  # - shared-windows
+  # - windows
+  # - windows-1809
+  - saas-windows-medium-amd64
 
 stages:
     - test

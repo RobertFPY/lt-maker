@@ -1,7 +1,7 @@
 import logging
 import functools
 import math
-from typing import List
+from typing import Collection, List
 
 from app.constants import FRAMERATE
 from app.data.database.database import DB
@@ -15,7 +15,7 @@ from app.engine.movement import movement_funcs
 from app.events import triggers
 from app.events.regions import RegionType
 from app.utilities import utils
-from app.utilities.typing import Pos
+from app.utilities.typing import Point, Pos
 
 
 class AIController():
@@ -194,28 +194,28 @@ class AIController():
         single_move = zero_move + equations.parser.movement(self.unit)
         double_move = single_move + equations.parser.movement(self.unit)
 
-        target_positions = {(pos, utils.calculate_distance(self.unit.position, pos)) for pos in target_positions}
+        targets_and_dist = {(pos, utils.calculate_distance(self.unit.position, pos)) for pos in target_positions}
 
         if self.behaviour.view_range == -4:
             pass
         elif self.behaviour.view_range == -3:
-            target_positions = {(pos, mag) for pos, mag in target_positions if mag < double_move}
+            targets_and_dist = {(pos, mag) for pos, mag in targets_and_dist if mag < double_move}
         elif self.behaviour.view_range == -2:
-            target_positions = {(pos, mag) for pos, mag in target_positions if mag < single_move}
+            targets_and_dist = {(pos, mag) for pos, mag in targets_and_dist if mag < single_move}
         elif self.behaviour.view_range == -1:
-            target_positions = {(pos, mag) for pos, mag in target_positions if mag < zero_move}
+            targets_and_dist = {(pos, mag) for pos, mag in targets_and_dist if mag < zero_move}
         else:
-            target_positions = {(pos, mag) for pos, mag in target_positions if mag < self.behaviour.view_range}
+            targets_and_dist = {(pos, mag) for pos, mag in targets_and_dist if mag < self.behaviour.view_range}
 
-        if target_positions and len(valid_positions) > 1:
-            self.goal_position = utils.smart_farthest_away_pos(self.unit.position, valid_positions, target_positions)
+        if targets_and_dist and len(valid_positions) > 1:
+            self.goal_position = utils.smart_farthest_away_pos(self.unit.position, valid_positions, targets_and_dist)
             return True
         else:
             return False
 
-    def get_true_valid_moves(self) -> set:
+    def get_true_valid_moves(self) -> Collection[Point]:
         # Guard AI
-        if self.behaviour.view_range == -1 and not game.ai_group_active(self.unit.ai_group):
+        if self.behaviour and self.behaviour.view_range == -1 and not game.ai_group_active(self.unit.ai_group):
             return {self.unit.position}
         else:
             valid_moves = game.path_system.get_valid_moves(self.unit)
@@ -647,7 +647,7 @@ def handle_unit_spec(all_targets, behaviour):
         all_targets = [pos for pos in all_targets if any((u.team == target_spec[1]) ^ invert for u in game.board.get_units(pos))]
     return all_targets
 
-def get_targets(unit, behaviour):
+def get_targets(unit, behaviour) -> List[Point]:
     all_targets = []
     if behaviour.target == 'Unit':
         all_targets = [u.position for u in game.units if u.position]
@@ -657,7 +657,6 @@ def get_targets(unit, behaviour):
         all_targets = [u.position for u in game.units if u.position and skill_system.check_ally(unit, u)]
     elif behaviour.target == 'Event':
         target_spec = behaviour.target_spec
-        all_targets = []
         for region in game.level.regions:
             try:
                 if region.region_type == RegionType.EVENT and region.sub_nid == target_spec and (not region.condition or evaluate.evaluate(region.condition, unit, local_args={'region': region})):
@@ -671,6 +670,12 @@ def get_targets(unit, behaviour):
                 all_targets = [unit.starting_position]
         else:
             all_targets = [tuple(behaviour.target_spec)]
+    elif behaviour.target == 'Terrain':
+        target_spec = behaviour.target_spec
+        for position in game.board.get_all_positions_in_bounds():
+            if game.tilemap.get_terrain(position) == target_spec:
+                all_targets.append(position)
+
     if behaviour.target in ('Unit', 'Enemy', 'Ally'):
         all_targets = handle_unit_spec(all_targets, behaviour)
 
@@ -774,6 +779,8 @@ class SecondaryAI():
             adj_good_enough = False
         elif self.behaviour.target == 'Position' and not game.board.get_unit(goal_pos):
             adj_good_enough = False  # Don't move adjacent if it's not necessary
+        elif self.behaviour.target == 'Terrain':
+            adj_good_enough = False
         else:
             adj_good_enough = True
 
@@ -840,6 +847,7 @@ class SecondaryAI():
                 terms += new_terms
             else:
                 return 0
+
         elif self.behaviour.action == 'Support' and enemy:
             ally = enemy
             # Try to help others since we already checked ourself in Primary AI
@@ -853,6 +861,12 @@ class SecondaryAI():
 
         elif self.behaviour.action == "Steal" and enemy:
             return 0  # TODO: For now, Steal just won't work with secondary AI
+
+        elif self.behaviour.action == "Interact":
+            # Lower the quality of positions where there is already a unit
+            enemy_already_there_term = 0 if enemy else 1
+            terms.append((enemy_already_there_term, 15))
+
         else:
             pass
 

@@ -99,7 +99,7 @@ class PaletteCatalog(ManifestCatalog[Palette]):
 
         # Always load in the default map sprite palettes
         for palette_nid, colors in default_palettes.items():
-            if palette_nid not in self.keys():
+            if palette_nid not in self:
                 new_palette = Palette.from_list(palette_nid, colors)
                 self.append(new_palette)
 

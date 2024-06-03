@@ -149,6 +149,7 @@ class PromotionChoiceState(State):
         d.font_color = 'white'
         d.font = FONT['convo-white']
         d.draw_cursor_flag = False
+        d.reformat()
         return d
 
     def update(self):

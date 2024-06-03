@@ -4,7 +4,7 @@ from functools import lru_cache
 import random
 import time
 from collections import Counter
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Tuple
 
 from app.engine.query_engine import GameQueryEngine
 
@@ -27,11 +27,13 @@ if TYPE_CHECKING:
     from app.engine.objects.unit import UnitObject
     from app.engine.objects.region import RegionObject
     from app.engine.objects.ai_group import AIGroupObject
+    from app.engine.objects.tilemap import TileMapObject
+    from app.data.database.klass import Klass
     from app.engine.dialog_log import DialogLog
     from app.events.event_manager import EventManager
     from app.engine.target_system import TargetSystem
     from app.engine.pathfinding.path_system import PathSystem
-    from app.utilities.typing import NID, UID
+    from app.utilities.typing import NID, UID, Pos
 
 from app.constants import VERSION
 from app.data.database.database import DB
@@ -48,6 +50,35 @@ from app.engine.source_type import SourceType
 import logging
 
 class GameState():
+    """
+    The game state itself. Keeps track of all objects in the game
+
+    This includes things like all Units, all Regions, all Skills, Items, Statuses, Parties, Events, etc.
+    It also keeps track of the current level, all game_vars and level_vars, the current difficulty mode, etc.
+
+    Attributes you can access:
+        current_mode (DifficultyModeObject): The current difficulty mode of the game.
+        game_vars (Counter): A counter for storing game-wide variables. You can do `game.game_vars.get('Waffle')` to determine the value of the Waffle variable.
+        level_vars (Counter): A counter for storing level-specific variables.
+        playtime (int): The total playtime of the game in milliseconds.
+        current_save_slot (int): The current save slot.
+        unit_registry (Dict[NID, UnitObject]): A dictionary mapping unit NIDs to UnitObjects.
+        item_registry (Dict[UID, ItemObject]): A dictionary mapping item UIDs to ItemObjects.
+        skill_registry (Dict[UID, SkillObject]): A dictionary mapping skill UIDs to SkillObjects.
+        region_registry (Dict[NID, RegionObject]): A dictionary mapping region NIDs to RegionObjects.
+        overworld_registry (Dict[NID, OverworldObject]): A dictionary mapping overworld NIDs to OverworldObjects.
+        parties (Dict[NID, PartyObject]): A dictionary mapping party NIDs to PartyObjects.
+        unlocked_lore (List[NID]): A list of unlocked lore entries.
+        market_items (Dict[NID, int]): A dictionary mapping item NIDs to their stock quantity.
+        supports (supports.SupportController): The support controller.
+        records (records.Recordkeeper): The record keeper.
+        turncount (int): The current turn count.
+        talk_options (List[Tuple[NID, NID]]): A list of talk options.
+        board (game_board.GameBoard): The game board.
+        cursor (cursor.BaseCursor): The cursor.
+        camera (camera.Camera): The camera.
+        phase (phase.PhaseController): The phase controller. `game.phase.get_current_phase() == 'player'`
+    """
     def __init__(self):
         # define all GameState properties
         self.memory: Dict = {}
@@ -84,7 +115,7 @@ class GameState():
         self.query_engine: GameQueryEngine = GameQueryEngine(logging.Logger('query_engine'), self)
 
         # 'current' state information, typically varies by level
-        self.current_level: LevelObject = None
+        self._current_level: LevelObject = None
         self._current_party: NID = None
         self.turncount: int = 0
         self.roam_info: RoamInfo = RoamInfo()
@@ -121,10 +152,6 @@ class GameState():
         from app.engine import skill_system
         skill_system.reset_cache()
 
-    def is_displaying_overworld(self) -> bool:
-        from app.engine.overworld.overworld_map_view import OverworldMapView
-        return isinstance(self.map_view, OverworldMapView)
-
     def clear(self):
         self.game_vars = Counter()
         self.memory = {}
@@ -140,7 +167,7 @@ class GameState():
         self.movement = None
 
         self.current_save_slot = None
-        self.current_level = None
+        self._current_level = None
         self.roam_info.clear()
 
         self.speak_styles = speak_style.SpeakStyleLibrary()
@@ -161,11 +188,11 @@ class GameState():
         self.terrain_status_registry = {}
         self.region_registry = {}
 
-        self.current_mode = self.default_mode()
+        self.current_mode = self._default_mode()
 
         self.parties = {}
         self.current_party = None
-        self.current_level = None
+        self._current_level = None
         self.roam_info.clear()
         self.game_vars.clear()
 
@@ -253,30 +280,30 @@ class GameState():
 
         # Build party object for new parties
         if self.current_party not in self.parties:
-            self.build_party(self.current_party)
+            self._build_party(self.current_party)
 
         # Assign every unit the levels party if they don't already have one
-        for unit in self.current_level.units:
+        for unit in self._current_level.units:
             if not unit.party:
                 unit.party = self.current_party
-        self.set_up_game_board(self.current_level.tilemap)
+        self.set_up_game_board(self._current_level.tilemap)
 
-        for region in self.current_level.regions:
+        for region in self._current_level.regions:
             self.register_region(region)
 
         # The fog and vision regions affect the game board
-        for region in self.current_level.regions:
+        for region in self._current_level.regions:
             if region.region_type == RegionType.FOG:
                 action.AddFogRegion(region).execute()
             elif region.region_type == RegionType.VISION:
                 action.AddVisionRegion(region).execute()
 
-        for unit in self.current_level.units:
+        for unit in self._current_level.units:
             self.full_register(unit)
-        for unit in self.current_level.units:
+        for unit in self._current_level.units:
             # Only let unit's that have a VALID position spawn onto the map
             if unit.position:
-                if self.current_level.tilemap.check_bounds(unit.position):
+                if self._current_level.tilemap.check_bounds(unit.position):
                     self.arrive(unit)
                 else:
                     logging.warning("Unit %s's position not on map. Removing...", unit.nid)
@@ -306,11 +333,11 @@ class GameState():
         tilemap = TileMapObject.from_prefab(tilemap_prefab)
         bg_tilemap = TileMapObject.from_prefab(RESOURCES.tilemaps.get(level_prefab.bg_tilemap)) if level_prefab.bg_tilemap else None
         self.cursor = LevelCursor(self)
-        self.current_level = LevelObject.from_prefab(level_prefab, tilemap, bg_tilemap, self.unit_registry, self.current_mode)
+        self._current_level = LevelObject.from_prefab(level_prefab, tilemap, bg_tilemap, self.unit_registry, self.current_mode)
         if with_party:
             self.current_party = with_party
         else:
-            self.current_party = self.current_level.party
+            self.current_party = self._current_level.party
 
         self.roam_info = RoamInfo(level_prefab.roam, level_prefab.roam_unit)
 
@@ -329,8 +356,8 @@ class GameState():
 
         self.cursor = LevelCursor(self)
         party = DB.parties.keys()[0]
-        self.current_level = LevelObject.from_scratch(level_nid, tilemap, None, party, self.unit_registry, self.current_mode)
-        self.current_party = self.current_level.party
+        self._current_level = LevelObject.from_scratch(level_nid, tilemap, None, party, self.unit_registry, self.current_mode)
+        self.current_party = self._current_level.party
         self.roam_info.clear()
 
         self.level_setup()
@@ -355,7 +382,7 @@ class GameState():
                   'skills': [skill.save() for skill in self.skill_registry.values()],
                   'terrain_status_registry': self.terrain_status_registry,
                   'regions': [region.save() for region in self.region_registry.values()],
-                  'level': self.current_level.save() if self.current_level else None,
+                  'level': self._current_level.save() if self._current_level else None,
                   'overworlds': [overworld.save() for overworld in self.overworld_registry.values()],
                   'turncount': self.turncount,
                   'playtime': self.playtime,
@@ -386,9 +413,9 @@ class GameState():
                      'title': DB.constants.value('title'),
                      'mode': self.current_mode.nid,
                      }
-        if self.current_level:
-            meta_dict['level_nid'] = self.current_level.nid
-            meta_dict['level_title'] = self.current_level.name
+        if self._current_level:
+            meta_dict['level_nid'] = self._current_level.nid
+            meta_dict['level_title'] = self._current_level.name
         elif self.game_vars.get('_next_level_nid') is not None:
             fake_level = DB.levels.get(self.game_vars.get('_next_level_nid'))
             meta_dict['level_nid'] = fake_level.nid
@@ -419,7 +446,7 @@ class GameState():
         if mode_dict:
             self.current_mode = DifficultyModeObject.restore(mode_dict)
         else:
-            self.current_mode = self.default_mode()
+            self.current_mode = self._default_mode()
         self.playtime = float(s_dict['playtime'])
         self.current_party = s_dict['current_party']
         self.turncount = int(s_dict['turncount'])
@@ -487,15 +514,15 @@ class GameState():
 
         if s_dict['level']:
             logging.info("Loading Level...")
-            self.current_level = LevelObject.restore(s_dict['level'], self)
-            self.set_up_game_board(self.current_level.tilemap, s_dict.get('bounds'))
+            self._current_level = LevelObject.restore(s_dict['level'], self)
+            self.set_up_game_board(self._current_level.tilemap, s_dict.get('bounds'))
 
             self.generic()
             from app.engine.level_cursor import LevelCursor
             self.cursor = LevelCursor(self)
 
             # The fog and vision regions affect the game board
-            for region in self.current_level.regions:
+            for region in self._current_level.regions:
                 if region.region_type == RegionType.FOG:
                     action.AddFogRegion(region).execute()
                 elif region.region_type == RegionType.VISION:
@@ -627,26 +654,54 @@ class GameState():
         # Remove unnecessary information between levels
         if full:
             self.sweep()
-            self.current_level = None
+            self._current_level = None
             self.roam_info.clear()
         else:
             self.turncount = 1
             self.action_log.set_first_free_action()
         self.on_alter_game_state()
 
-    @property
-    def level(self):
-        return self.current_level
+    def is_displaying_overworld(self) -> bool:
+        """
+        Checks if the game is currently displaying the overworld map.
+
+        Returns:
+            bool: True if the overworld map is being displayed, False otherwise.
+        """
+        from app.engine.overworld.overworld_map_view import OverworldMapView
+        return isinstance(self.map_view, OverworldMapView)
 
     @property
-    def level_nid(self):
+    def level(self) -> LevelObject:
+        """
+        Gets the current level object.
+
+        Returns:
+            LevelObject: The current level object.
+        """
+        return self._current_level
+
+    @property
+    def level_nid(self) -> NID:
+        """
+        Gets the NID of the current level.
+
+        Returns:
+            NID: The NID of the current level.
+        """
         if self.is_displaying_overworld():
             return self.overworld_controller.next_level
         elif self.level:
             return self.level.nid
 
     @property
-    def current_party(self):
+    def current_party(self) -> NID:
+        """
+        Gets the NID of the current party.
+
+        Returns:
+            str: The NID of the current party.
+        """
         if self.is_displaying_overworld() and self.overworld_controller.selected_entity.nid:
             self._current_party = self.overworld_controller.selected_entity.nid
         return self._current_party
@@ -658,25 +713,43 @@ class GameState():
             self.overworld_controller.select_entity(self._current_party)
 
     @property
-    def tilemap(self):
+    def tilemap(self) -> Optional[TileMapObject]:
+        """
+        Gets the tilemap of the current level or the overworld.
+
+        Returns:
+            TileMapObject: The tilemap of the current level or the overworld.
+        """
         if self.is_displaying_overworld():
             return self.overworld_controller.tilemap
-        elif self.current_level:
-            return self.current_level.tilemap
+        elif self._current_level:
+            return self._current_level.tilemap
         else:
             return None
 
     @property
-    def bg_tilemap(self):
-        if self.current_level and self.current_level.bg_tilemap:
-            return self.current_level.bg_tilemap
+    def bg_tilemap(self) -> Optional[TileMapObject]:
+        """
+        Gets the background tilemap of the current level.
+
+        Returns:
+            TileMapObject: The background tilemap of the current level.
+        """
+        if self._current_level and self._current_level.bg_tilemap:
+            return self._current_level.bg_tilemap
         return None
 
     @property
-    def mode(self):
+    def mode(self) -> DifficultyModeObject:
+        """
+        Gets the current difficulty mode object.
+
+        Returns:
+            DifficultyModeObject: The current difficulty mode object.
+        """
         return DB.difficulty_modes.get(self.current_mode.nid)
 
-    def default_mode(self):
+    def _default_mode(self):
         from app.engine.objects.difficulty_mode import DifficultyModeObject
         first_mode = DB.difficulty_modes[0]
         if first_mode.permadeath_choice == PermadeathOption.PLAYER_CHOICE:
@@ -690,17 +763,32 @@ class GameState():
         return DifficultyModeObject(first_mode.nid, permadeath, growths)
 
     @property
-    def party(self):
+    def party(self) -> PartyObject:
+        """
+        Gets the current party object.
+
+        Returns:
+            PartyObject: The current party object.
+        """
         return self.parties[self.current_party]
 
-    def get_party(self, party_nid: str = None):
+    def get_party(self, party_nid: NID = None) -> PartyObject:
+        """
+        Gets the party object with the given NID.
+
+        Args:
+            party_nid (NID, optional): The NID of the party to get. Defaults to the current party.
+
+        Returns:
+            PartyObject: The party object.
+        """
         if not party_nid:
             party_nid = self.current_party
         if party_nid not in self.parties:
-            self.build_party(party_nid)
+            self._build_party(party_nid)
         return self.parties[party_nid]
 
-    def build_party(self, party_nid):
+    def _build_party(self, party_nid):
         from app.engine.objects.party import PartyObject
         party_prefab = DB.parties.get(party_nid)
         if not party_prefab:
@@ -709,11 +797,23 @@ class GameState():
         self.parties[self.current_party] = PartyObject(nid, name, leader)
 
     @property
-    def units(self):
+    def units(self) -> List[UnitObject]:
+        """
+        Gets a list of all registered units.
+
+        Returns:
+            List[UnitObject]: A list of all registered unit objects.
+        """
         return list(self.unit_registry.values())
 
     @property
-    def regions(self):
+    def regions(self) -> List[RegionObject]:
+        """
+        Gets a list of all registered region objects.
+
+        Returns:
+            List[RegionObject]: A list of all registered region objects.
+        """
         return list(self.region_registry.values())
 
     def register_unit(self, unit):
@@ -760,52 +860,119 @@ class GameState():
         logging.debug("Registering region %s", region.nid)
         self.region_registry[region.nid] = region
 
-    def get_data(self, raw_data_nid):
-        if str(raw_data_nid) in DB.raw_data.keys():
+    def get_data(self, raw_data_nid: NID):
+        """
+        Gets data from the raw data database.
+
+        Args:
+            raw_data_nid (NID): The NID of the raw data.
+
+        Returns:
+            Any: The raw data retrieved from the database.
+        """
+        if str(raw_data_nid) in DB.raw_data:
             return DB.raw_data.get(str(raw_data_nid))
         return None
 
-    def get_unit(self, unit_nid):
+    def get_unit(self, unit_nid: NID) -> Optional[UnitObject]:
         """
-        Can get units not just in the current level
-        Could be used to get units in overworld, base,
-        etc.
+        Gets a unit object by its NID.
+
+        Can get units not just in the current level, but also overworld, base, etc.
+
+        Args:
+            unit_nid (NID): The NID of the unit.
+
+        Returns:
+            UnitObject: The unit object with the given NID.
         """
         unit = self.unit_registry.get(unit_nid)
         return unit
 
-    def get_klass(self, unit_nid):
+    def get_klass(self, unit_nid: NID) -> Optional[Klass]:
+        """
+        Gets the class data for a unit's current class.
+
+        Args:
+            unit_nid (NID): The NID of the unit.
+
+        Returns:
+            Klass: The class data for the unit.
+        """
         unit = self.unit_registry.get(unit_nid)
         if not unit:
             return None
         klass = DB.classes.get(unit.klass)
         return klass
 
-    def get_convoy_inventory(self, party=None):
+    def get_convoy_inventory(self, party: Optional[PartyObject] = None) -> List[ItemObject]:
+        """
+        Gets a list of the items in the party's convoy.
+
+        Args:
+            party (PartyObject, optional): The party to get the convoy inventory from. Defaults to current party.
+
+        Returns:
+            List[ItemObject]: The convoy inventory of the party.
+        """
         if not party:
             party = self.party
         return party.convoy
 
-    def get_item(self, item_uid):
+    def get_item(self, item_uid: UID) -> Optional[ItemObject]:
+        """
+        Gets an item object by its UID (unique id).
+
+        Args:
+            item_uid (UID): The unique id of the item.
+
+        Returns:
+            ItemObject: The item object with the given UID.
+        """
         item = self.item_registry.get(item_uid)
         return item
 
-    def get_skill(self, skill_uid):
+    def get_skill(self, skill_uid: UID) -> Optional[SkillObject]:
+        """
+        Gets a skill object by its UID (unique id).
+
+        Args:
+            skill_uid (UID): The unique id of the skill.
+
+        Returns:
+            SkillObject: The skill object with the given UID.
+        """
         skill = self.skill_registry.get(skill_uid)
         return skill
 
-    def get_terrain_status(self, key: Tuple[int, int, NID]) -> UID:
+    def _get_terrain_status(self, key: Tuple[int, int, NID]) -> UID:
         skill_uid = self.terrain_status_registry.get(key)
         return skill_uid
 
-    def get_region(self, region_nid):
+    def get_region(self, region_nid: NID) -> Optional[RegionObject]:
+        """
+        Gets a region object by its NID.
+
+        Args:
+            region_nid (NID): The NID of the region.
+
+        Returns:
+            RegionObject: The region object with the given NID.
+        """
         region = self.region_registry.get(region_nid)
         return region
 
     @lru_cache(128)
-    def get_region_under_pos(self, pos: Tuple[int, int], region_type: RegionType = None) -> Optional[RegionObject]:
+    def get_region_under_pos(self, pos: Pos, region_type: RegionType = None) -> Optional[RegionObject]:
         """
-        if region_type arguments is None, all region types are accepted and available to be returned
+        Gets the region object located at the given position.
+
+        Args:
+            pos (Pos): The position to check for a region.
+            region_type (RegionType, optional): The type of region to filter by. Defaults to no filtering.
+
+        Returns:
+            Optional[RegionObject]: The first region object located at the position, or None if not found.
         """
         if pos and self.level:
             for region in self.level.regions.values():
@@ -813,68 +980,207 @@ class GameState():
                     return region
 
     def get_ai_group(self, ai_group_nid: NID) -> Optional[AIGroupObject]:
+        """
+        Gets an AI group object by its NID.
+
+        Args:
+            ai_group_nid (str): The NID of the AI group.
+
+        Returns:
+            Optional[AIGroupObject]: The AI group object with the given NID, or None if not found.
+        """
         if self.level:
             return self.level.ai_groups.get(ai_group_nid)
         return None
 
     def ai_group_active(self, ai_group_nid: NID) -> bool:
+        """
+        Checks if an AI group is active.
+
+        Args:
+            ai_group_nid (str): The NID of the AI group.
+
+        Returns:
+            bool: True if the AI group is active, False otherwise.
+        """
         group = self.get_ai_group(ai_group_nid)
         if group:
             return group.active
         return False
 
     def get_units_in_ai_group(self, ai_group_nid: NID) -> List[UnitObject]:
+        """
+        Gets all units belonging to a specific AI group.
+
+        Args:
+            ai_group_nid (str): The NID of the AI group.
+
+        Returns:
+            List[UnitObject]: A list of units belonging to the specified AI group.
+        """
         return [unit for unit in self.get_all_units() if unit.ai_group == ai_group_nid]
 
-    def get_all_units(self, only_on_field=True) -> List[UnitObject]:
+    def get_all_units(self, only_on_field: bool = True) -> List[UnitObject]:
+        """
+        Gets all units currently loaded in the game.
+
+        Args:
+            only_on_field (bool, optional): Whether to include only units on the field. Defaults to True.
+
+        Returns:
+            List[UnitObject]: A list of all units in the game.
+        """
         if only_on_field:
             return [unit for unit in self.units if unit.position and not unit.dead and not unit.is_dying and 'Tile' not in unit.tags]
         else:
             return self.units
 
-    def get_player_units(self, only_on_field=True) -> List[UnitObject]:
+    def get_player_units(self, only_on_field: bool = True) -> List[UnitObject]:
+        """
+        Gets all units belonging to the player's team.
+
+        Args:
+            only_on_field (bool, optional): Whether to include only units currently on the field. Defaults to True.
+
+        Returns:
+            List[UnitObject]: A list of all units belonging to the player's team.
+        """
         return [unit for unit in self.get_all_units(only_on_field) if unit.team == 'player']
 
-    def get_enemy_units(self, only_on_field=True) -> List[UnitObject]:
+    def get_enemy_units(self, only_on_field: bool = True) -> List[UnitObject]:
+        """
+        Gets all units belonging to enemy teams. Enemy teams are those that are not allies of the player team.
+
+        Args:
+            only_on_field (bool, optional): Whether to include only units currently on the field. Defaults to True.
+
+        Returns:
+            List[UnitObject]: A list of all units belonging to enemy teams.
+        """
         return [unit for unit in self.get_all_units(only_on_field) if unit.team in DB.teams.enemies]
 
-    def get_enemy1_units(self, only_on_field=True) -> List[UnitObject]:
+    def get_enemy1_units(self, only_on_field: bool = True) -> List[UnitObject]:
+        """
+        Gets all units belonging to the 'enemy' team.
+
+        Args:
+            only_on_field (bool, optional): Whether to include only units currently on the field. Defaults to True.
+
+        Returns:
+            List[UnitObject]: A list of all units belonging to the 'enemy' team.
+        """
         return [unit for unit in self.get_all_units(only_on_field) if unit.team == 'enemy']
 
-    def get_enemy2_units(self, only_on_field=True) -> List[UnitObject]:
+    def get_enemy2_units(self, only_on_field: bool = True) -> List[UnitObject]:
+        """
+        Gets all units belonging to the 'enemy2' team.
+
+        Args:
+            only_on_field (bool, optional): Whether to include only units currently on the field. Defaults to True.
+
+        Returns:
+            List[UnitObject]: A list of all units belonging to the 'enemy2' team.
+        """
         return [unit for unit in self.get_all_units(only_on_field) if unit.team == 'enemy2']
 
-    def get_other_units(self, only_on_field=True) -> List[UnitObject]:
+    def get_other_units(self, only_on_field: bool = True) -> List[UnitObject]:
+        """
+        Gets all units belonging to the 'other' team.
+
+        Args:
+            only_on_field (bool, optional): Whether to include only units currently on the field. Defaults to True.
+
+        Returns:
+            List[UnitObject]: A list of all units belonging to the 'other' team.
+        """
         return [unit for unit in self.get_all_units(only_on_field) if unit.team == 'other']
 
-    def get_team_units(self, team: str, only_on_field=True) -> List[UnitObject]:
+    def get_team_units(self, team: str, only_on_field: bool = True) -> List[UnitObject]:
+        """
+        Gets all units belonging to the specified team.
+
+        Args:
+            team (str): The team identifier.
+            only_on_field (bool, optional): Whether to include only units currently on the field. Defaults to True.
+
+        Returns:
+            List[UnitObject]: A list of all units belonging to the specified team.
+        """
         return [unit for unit in self.get_all_units(only_on_field) if unit.team == team]
 
     def get_travelers(self) -> List[UnitObject]:
+        """
+        Gets all units acting as travelers. These units are currently being rescued or paired up with someone else.
+
+        Returns:
+            List[UnitObject]: A list of all units acting as travelers.
+        """
         return [self.get_unit(unit.traveler) for unit in self.get_all_units() if unit.traveler]
 
     def get_player_units_and_travelers(self) -> List[UnitObject]:
+        """
+        Gets all player units on the field and their travelers.
+
+        Returns:
+            List[UnitObject]: A list of all player units and traveler units.
+        """
         return self.get_player_units() + [unit for unit in self.get_travelers() if unit.team == 'player']
 
-    def get_rescuer(self, unit):
+    def get_rescuer(self, unit: UnitObject) -> Optional[UnitObject]:
+        """
+        Gets the rescuer of a unit.
+
+        Args:
+            unit (UnitObject): The unit to find the rescuer for.
+
+        Returns:
+            UnitObject: The rescuer unit, if found, otherwise None.
+        """
         for rescuer in self.units:
             if rescuer.traveler == unit.nid:
                 return rescuer
         return None
 
-    def get_rescuers_position(self, unit):
+    def get_rescuers_position(self, unit: UnitObject) -> Optional[Pos]:
+        """
+        Gets the position of the rescuer of a unit.
+
+        Args:
+            unit (UnitObject): The unit to find the rescuer's position for.
+
+        Returns:
+            Pos: The position of the rescuer unit, if found, otherwise None.
+        """
         for rescuer in self.units:
             if rescuer.traveler == unit.nid:
                 return rescuer.position
         return None
 
-    def get_all_units_in_party(self, party=None) -> List[UnitObject]:
+    def get_all_units_in_party(self, party: PartyObject = None) -> List[UnitObject]:
+        """
+        Gets all units in a specified party (even dead ones).
+
+        Args:
+            party (str, optional): The NID of the party. Defaults to the current party.
+
+        Returns:
+            List[UnitObject]: A list of all units in the specified party.
+        """
         if party is None:
             party = self.current_party
         party_units = [unit for unit in self.units if unit.team == 'player' and unit.persistent and unit.party == party]
         return party_units
 
-    def get_units_in_party(self, party=None) -> List[UnitObject]:
+    def get_units_in_party(self, party: PartyObject = None) -> List[UnitObject]:
+        """
+        Gets all living units in a specified party, sorted according to party preparation.
+
+        Args:
+            party (str, optional): The NID of the party. Defaults to the current party.
+
+        Returns:
+            List[UnitObject]: A list of all living units in the specified party, sorted according to party preparation.
+        """
         if party is None:
             party = self.current_party
         party_order = self.parties[party].party_prep_manage_sort_order
@@ -884,18 +1190,33 @@ class GameState():
 
     def get_all_player_units(self) -> List[UnitObject]:
         """
-        # Return all units who are currently player team and persistent
+        Gets all persistent player units (even if dead).
+
+        Returns:
+            List[UnitObject]: A list of all persistent player units.
         """
         return [unit for unit in self.units if unit.team == 'player' and unit.persistent]
 
     # For working with roaming
     def is_roam(self) -> bool:
+        """
+        Checks if roaming mode is enabled.
+
+        Returns:
+            bool: True if roaming mode is enabled, False otherwise.
+        """
         return self.roam_info.roam
 
     def set_roam(self, b: bool):
         self.roam_info.roam = b
 
-    def get_roam_unit(self) -> UnitObject:
+    def get_roam_unit(self) -> Optional[UnitObject]:
+        """
+        Gets the roaming unit.
+
+        Returns:
+            UnitObject: The roaming unit if it exists, otherwise None.
+        """
         if self.roam_info.roam_unit_nid:
             return game.get_unit(self.roam_info.roam_unit_nid)
         return None
@@ -906,13 +1227,31 @@ class GameState():
     def clear_roam_unit(self):
         self.roam_info.roam_unit_nid = None
 
-    def check_dead(self, nid):
+    def check_dead(self, nid: NID) -> bool:
+        """
+        Checks if a unit with the given NID is dead or dying.
+
+        Args:
+            nid: The NID of the unit to check.
+
+        Returns:
+            bool: True if the unit is dead or dying, False otherwise.
+        """
         unit = self.get_unit(nid)
         if unit and (unit.dead or unit.is_dying):
             return True
         return False
 
-    def check_alive(self, nid):
+    def check_alive(self, nid: NID) -> bool:
+        """
+        Checks if a unit with the given NID is alive.
+
+        Args:
+            nid: The NID of the unit to check.
+
+        Returns:
+            bool: True if the unit is alive, False otherwise.
+        """
         unit = self.get_unit(nid)
         if unit and not (unit.dead or unit.is_dying):
             return True
@@ -920,19 +1259,18 @@ class GameState():
 
     def leave(self, unit, test=False):
         """
-        # Removes a unit from the map
-        # This function should always be called BEFORE changing the unit's position
-        # Handles:
-        # 1. removing the unit from the boundary manager
-        # 2. Removes any auras from the unit's skill list, since they will no longer be on the map
-        # 3. Removes any of the unit's own auras from the map
-        # 4. Removes any status/skills that the terrain or regions on the map are giving
-        # the unit
-        #
-        # If "test" is True, some of these are skipped, such as removing the unit from
-        # the boundary manager and registering these actions with the action_log
-        # Set "test" to True when you are just testing what would happen by moving
-        # to a position (generally used for AI)
+        Removes a unit from the map
+        This function should always be called BEFORE changing the unit's position
+        Handles:
+        1. removing the unit from the boundary manager
+        2. Removes any auras from the unit's skill list, since they will no longer be on the map
+        3. Removes any of the unit's own auras from the map
+        4. Removes any status/skills that the terrain or regions on the map are giving
+        the unit
+                If "test" is True, some of these are skipped, such as removing the unit from
+        the boundary manager and registering these actions with the action_log
+        Set "test" to True when you are just testing what would happen by moving
+        to a position (generally used for AI)
         """
         from app.engine import action, aura_funcs
         if unit.position:
@@ -950,7 +1288,7 @@ class GameState():
             # Status Regions
             for region in game.level.regions:
                 if region.region_type == RegionType.STATUS and region.contains(unit.position):
-                    skill_uid = self.get_terrain_status((*region.position, region.sub_nid))
+                    skill_uid = self._get_terrain_status((*region.position, region.sub_nid))
                     skill_obj = self.get_skill(skill_uid)
                     if skill_obj and skill_obj in unit.all_skills:
                         if test:
@@ -973,7 +1311,7 @@ class GameState():
         terrain = DB.terrain.get(terrain_nid)
         terrain_key = (*unit.position, terrain.status)
 
-        skill_uid = self.get_terrain_status(terrain_key)
+        skill_uid = self._get_terrain_status(terrain_key)
         skill_obj = self.get_skill(skill_uid)
         if skill_obj and skill_obj in unit.all_skills:
             if test:
@@ -984,18 +1322,18 @@ class GameState():
 
     def arrive(self, unit, test=False):
         """
-        # Adds a unit to the map
-        # This function should always be called AFTER changing the unit's position
-        # Handles:
-        # 1. adding the unit to the boundary manager
-        # 2. adding any auras from that the unit should be affected by to the the unit's skill list
-        # 3. Adding any of the unit's own auras to other units
-        # 4. Adding any status/skills that the terrain or regions on the map are giving
-        #
-        # If "test" is True, some of these are skipped, such as adding the unit to
-        # the boundary manager and registering these actions with the action_log
-        # Set "test" to True when you are just testing what would happen by moving
-        # to a position (generally used for AI)
+        Adds a unit to the map
+        This function should always be called AFTER changing the unit's position
+        Handles:
+        1. adding the unit to the boundary manager
+        2. adding any auras from that the unit should be affected by to the the unit's skill list
+        3. Adding any of the unit's own auras to other units
+        4. Adding any status/skills that the terrain or regions on the map are giving
+        
+        If "test" is True, some of these are skipped, such as adding the unit to
+        the boundary manager and registering these actions with the action_log
+        Set "test" to True when you are just testing what would happen by moving
+        to a position (generally used for AI)
         """
         from app.engine import aura_funcs, skill_system
         if unit.position:
@@ -1028,7 +1366,7 @@ class GameState():
         terrain = DB.terrain.get(terrain_nid)
         terrain_key = (*unit.position, terrain.status)
 
-        skill_uid = self.get_terrain_status(terrain_key)
+        skill_uid = self._get_terrain_status(terrain_key)
         skill_obj = self.get_skill(skill_uid)
 
         if not skill_obj:
@@ -1053,7 +1391,7 @@ class GameState():
     def add_region_status(self, unit: UnitObject, region: RegionObject, test: bool):
         from app.engine import action, item_funcs
         terrain_key = (*region.position, region.sub_nid)
-        skill_uid = self.get_terrain_status(terrain_key)
+        skill_uid = self._get_terrain_status(terrain_key)
         skill_obj = self.get_skill(skill_uid)
 
         if not skill_obj:
@@ -1081,7 +1419,17 @@ class GameState():
                     return region
         return None
 
-    def get_terrain_nid(self, tilemap, position) -> NID:
+    def get_terrain_nid(self, tilemap: TileMapObject, position: Pos) -> NID:
+        """
+        Gets the terrain NID at a given position on the tilemap.
+
+        Args:
+            tilemap (TileMapObject): The tilemap object.
+            position (Pos): The position to check.
+
+        Returns:
+            NID: The NID of the terrain at the specified position.
+        """
         terrain_region = self.get_region_under_pos(position, RegionType.TERRAIN)
         if terrain_region:
             terrain_nid = terrain_region.sub_nid
@@ -1089,7 +1437,13 @@ class GameState():
             terrain_nid = tilemap.get_terrain(position)
         return terrain_nid
 
-    def get_all_formation_spots(self) -> list:
+    def get_all_formation_spots(self) -> List[Pos]:
+        """
+        Gets all the formation spots on the current level.
+
+        Returns:
+            List[Pos]: A list of tuples representing the coordinates of formation spots.
+        """
         legal_spots = set()
         for region in game.level.regions:
             if region.region_type == RegionType.FORMATION:
@@ -1098,7 +1452,13 @@ class GameState():
                         legal_spots.add((region.position[0] + x, region.position[1] + y))
         return legal_spots
 
-    def get_open_formation_spots(self) -> list:
+    def get_open_formation_spots(self) -> List[Pos]:
+        """
+        Gets all open formation spots on the current level.
+
+        Returns:
+            List[Pos]: A list of tuples representing the coordinates of open formation spots.
+        """
         all_formation_spots = self.get_all_formation_spots()
         return sorted({pos for pos in all_formation_spots if not self.board.get_unit(pos)})
 
@@ -1108,13 +1468,25 @@ class GameState():
             return legal_spots[0]
         return None
 
-    def get_money(self):
+    def get_money(self) -> int:
+        """
+        Gets the current amount of money for the current party.
+
+        Returns:
+            int: The amount of money.
+        """
         return self.parties[self.current_party].money
 
     def set_money(self, val):
         self.parties[self.current_party].money = val
 
-    def get_bexp(self):
+    def get_bexp(self) -> int:
+        """
+        Gets the current amount of bonus experience (BEXP) for the current party.
+
+        Returns:
+            int: The amount of BEXP.
+        """
         return self.parties[self.current_party].bexp
 
     def inc_bexp(self, amount):
@@ -1126,9 +1498,14 @@ class GameState():
     # Random funcs
     def get_random(self, a: int, b: int) -> int:
         """
-        Canonical method for getting a random integer from within an event
-        without screwing up the turnwheel
-        Inclusive between a and b
+        Canononical method for getting a random integer between a and b (inclusive) without screwing up the turnwheel.
+
+        Args:
+            a (int): The lower bound.
+            b (int): The upper bound.
+
+        Returns:
+            int: A random integer.
         """
         from app.engine import action
         old = static_random.get_other_random_state()
@@ -1139,8 +1516,10 @@ class GameState():
 
     def get_random_float(self) -> float:
         """
-        Canonical method for getting a random float (0, 1]
-        without screwing up the turnwheel
+        Canonical method for getting a random float (0, 1] without messing up the turnwheel.
+
+        Returns:
+            float: A random float.
         """
         from app.engine import action
         old = static_random.get_other_random_state()
@@ -1149,10 +1528,16 @@ class GameState():
         action.do(action.RecordOtherRandomState(old, new))
         return result
 
-    def get_random_choice(self, choices, seed=None):
+    def get_random_choice(self, choices: Iterable, seed: int = None):
         """
-        Canonical method for getting a random choice from an iterable
-        without screwing up the turnwheel
+        Canonical method for getting a random choice from an iterable (a list or set) without messing up the turnwheel.
+
+        Args:
+            choices (Iterable): The iterable to choose from.
+            seed (int): An optional seed for reproducibility. Defaults to in-game seed.
+
+        Returns:
+            Any: A random choice from the iterable.
         """
         from app.engine import action
         if seed is not None:
@@ -1166,6 +1551,16 @@ class GameState():
         return list(choices)[idx]
 
     def get_random_weighted_choice(self, choices: List, weights: List[float]):
+        """
+        Canonical method for getting a random weighted choice from a list of choices without messing up the turnwheel.
+
+        Args:
+            choices (List): The list of choices.
+            weights (List[float]): The corresponding weights for each choice.
+
+        Returns:
+            Any: A random choice from the list, weighted by the provided weights.
+        """
         from app.engine import action
         old = static_random.get_other_random_state()
         idx = static_random.weighted_choice(weights, static_random.r.other_random)

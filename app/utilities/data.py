@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Dict, Generic, List, Optional, Tuple, Type, TypeVar
+from typing import ClassVar, Dict, Generic, List, Optional, Tuple, Type, TypeVar
 
 from app.utilities.typing import NID, Protocol
 
@@ -16,15 +16,12 @@ class Data(Generic[T]):
     Only accepts data points that have nid attribute
     Generally behaves as a list first and a dictionary second
     """
-    datatype: Type = T
+    datatype: ClassVar[Type]
 
     def __init__(self, vals: Optional[List[T]] = None):
-        if vals:
-            self._list: List[T] = vals
-            self._dict: Dict[NID, T] = {val.nid: val for val in vals}
-        else:
-            self._list: List[T] = []
-            self._dict: Dict[NID, T] = {}
+        vals = vals or []
+        self._list: List[T] = vals
+        self._dict: Dict[NID, T] = {val.nid: val for val in vals}
 
     def values(self) -> List[T]:
         return self._list
@@ -57,6 +54,7 @@ class Data(Generic[T]):
         for k, v in self._dict.items():
             if v == val:
                 return k
+        return None
 
     def change_key(self, old_key: NID, new_key: NID):
         if old_key in self._dict:
@@ -129,7 +127,7 @@ class Data(Generic[T]):
         else:
             return self._list[:]
 
-    def restore(self, vals: T):
+    def restore(self, vals: list):
         self.clear()
         if self.datatype and issubclass(self.datatype, Prefab):
             for s_dict in vals:
@@ -152,6 +150,9 @@ class Data(Generic[T]):
 
     def __iter__(self):
         return iter(self._list)
+
+    def __contains__(self, key: NID) -> bool:
+        return key in self._dict
 
 class Prefab():
     def save(self):

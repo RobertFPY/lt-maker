@@ -5,7 +5,7 @@ from app.engine.graphics.text.text_renderer import text_width
 
 def translate(string):
     from app.data.database.database import DB
-    if string in DB.translations.keys():
+    if string in DB.translations:
         return DB.translations.get(string).text
     return string
 

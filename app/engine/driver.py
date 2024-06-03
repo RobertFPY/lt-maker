@@ -5,12 +5,23 @@ import collections
 from datetime import datetime
 import time
 from app import lt_log
+from app.utilities import file_utils
 
 from app.constants import WINWIDTH, WINHEIGHT, VERSION, FPS
 from app.engine import engine
 from app.data.database.database import DB
 
 import app.engine.config as cf
+
+_profile = "LT_PROFILE" in os.environ
+_default_profile_threshold = 0
+_profile_threshold = _default_profile_threshold
+if "LT_PROFILE_THRESHOLD" in os.environ:
+    try:
+        _profile_threshold = float(os.environ["LT_PROFILE_THRESHOLD"])
+    except ValueError:
+        _profile = False
+        print(f'could not parse {os.environ["LT_PROFILE_THRESHOLD"]} as float')
 
 def start(title, from_editor=False):
     if from_editor:
@@ -33,8 +44,7 @@ def start(title, from_editor=False):
     except:
         print("Maybe not Windows? (but that's OK)")
 
-    engine.DISPLAYSURF = engine.build_display(engine.SCREENSIZE)
-    engine.SCREENSIZE = (engine.DISPLAYSURF.get_width(), engine.DISPLAYSURF.get_height())
+    engine.DISPLAYSURF = engine.build_display(engine.get_screensize(True))
     engine.update_time()
     engine.set_title(title + ' - v' + VERSION)
     print("Version: %s" % VERSION)
@@ -92,7 +102,6 @@ def run(game):
     get_sound_thread().set_sfx_volume(cf.SETTINGS['sound_volume'])
 
     surf = engine.create_surface((WINWIDTH, WINHEIGHT))
-    # import time
     clock = engine.Clock()
     fps_records = collections.deque(maxlen=FPS)
     inp = get_input_manager()
@@ -102,7 +111,8 @@ def run(game):
     _soft_reset_start_time: int = None  # UTC time.time()
     SOFT_RESET_TIME = 3  # seconds
     while True:
-        # start = time.time_ns()
+        start = time.perf_counter_ns()
+
         engine.update_time()
         fps_records.append(engine.get_delta())
         # print(engine.get_delta())
@@ -134,7 +144,7 @@ def run(game):
             if inp.is_pressed('SELECT') or inp.is_pressed('BACK'):
                 log_file = lt_log.get_log_fname()
                 if log_file:
-                    os.startfile(log_file)
+                    file_utils.startfile(log_file)
         else:
             try:
                 surf, repeat = game.state.update(event, surf)
@@ -158,15 +168,19 @@ def run(game):
 
         get_sound_thread().update(raw_events)
 
-        engine.push_display(surf, engine.SCREENSIZE, engine.DISPLAYSURF)
+        engine.push_display(surf, engine.get_screensize(), engine.DISPLAYSURF)
 
         save_screenshot(raw_events, surf)
 
         engine.update_display()
-        # end = time.time_ns()
-        # milliseconds_elapsed = (end - start)/1e6
-        # if milliseconds_elapsed > 10:
-        #     print("Engine took too long: %f" % milliseconds_elapsed)
+
+        end = time.perf_counter_ns()
+        ms_elapsed = (end - start) / 1e6
+        if _profile and ms_elapsed > _profile_threshold:
+            if _profile_threshold != _default_profile_threshold:
+                print(f"Engine took longer than {_profile_threshold}ms: {ms_elapsed}", flush=True)
+            else:
+                print(f"Engine took: {ms_elapsed}", flush=True)
 
         game.playtime += clock.tick()
 
@@ -200,7 +214,7 @@ def run_in_isolation(obj):
 
         get_sound_thread().update(raw_events)
 
-        engine.push_display(surf, engine.SCREENSIZE, engine.DISPLAYSURF)
+        engine.push_display(surf, engine.get_screensize(), engine.DISPLAYSURF)
         save_screenshot(raw_events, surf)
 
         engine.update_display()

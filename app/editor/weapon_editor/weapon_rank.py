@@ -160,7 +160,7 @@ class WexpGainMultiAttrModel(DefaultMultiAttrListModel):
 
         current_value = getattr(data, attr)
         if attr in ('wexp_gain', 'cap'):
-            if value in DB.weapon_ranks.keys():
+            if value in DB.weapon_ranks:
                 value = DB.weapon_ranks.get(value).requirement
             elif str_utils.is_int(value):
                 value = int(value)

@@ -3,6 +3,8 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any, List, Optional, Tuple
 
+from app.utilities.str_utils import is_int
+
 if TYPE_CHECKING:
     from app.data.database.klass import Klass
     from app.engine.game_state import GameState
@@ -67,7 +69,7 @@ class GameQueryEngine():
 
     @categorize(QueryType.ITEM)
     def get_item(self, unit, item) -> Optional[ItemObject]:
-        """Returns a item object by nid.
+        """Returns a item object by nid or uid.
 
         Args:
             unit: unit to check
@@ -76,7 +78,10 @@ class GameQueryEngine():
         Returns:
             Optional[ItemObject]: Item if exists on unit, otherwise None
         """
-        item = self._resolve_to_nid(item)
+        if is_int(item):
+            return self.game.item_registry.get(int(item))
+        else:
+            item = self._resolve_to_nid(item)
         found_items = []
         if unit == 'convoy':
             found_items = [it for it in self.game.get_convoy_inventory() if it.uid == item or it.nid == item]

@@ -8,6 +8,7 @@ from app.engine import config as cf
 from app.engine import driver
 from app.engine import game_state
 from app.engine.codegen import source_generator
+from app.utilities.system_info import is_editor_engine_built_version
 
 def main(name: str = 'testing_proj'):
     # Translation currently unused within engine proper
@@ -30,7 +31,7 @@ def test_play(name: str = 'testing_proj'):
     DB.load(name + '.ltproj')
     title = DB.constants.value('title')
     driver.start(title, from_editor=True)
-    if 'DEBUG' in DB.levels.keys():
+    if 'DEBUG' in DB.levels:
         game = game_state.start_level('DEBUG')
     else:
         first_level_nid = DB.levels[0].nid
@@ -61,7 +62,7 @@ if __name__ == '__main__':
         engine.terminate()
 
     # compile necessary files
-    if not hasattr(sys, 'frozen'):
+    if not is_editor_engine_built_version():
         source_generator.generate_all()
 
     try:
@@ -71,7 +72,8 @@ if __name__ == '__main__':
     except Exception as e:
         logging.exception(e)
         inform_error()
-        print('*** Lex Talionis Engine Version %s ***' % VERSION)
+        pyver = f'{sys.version_info.major}.{sys.version_info.minor}'
+        print(f'*** Lex Talionis Engine Version {VERSION} on Python {pyver} ***')
         print('Main Crash {0}'.format(str(e)))
 
         # Now print exception to screen

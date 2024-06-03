@@ -26,7 +26,7 @@ class Resources():
     save_data_types = ("icons16", "icons32", "icons80", "portraits", "animations", "panoramas", "fonts",
                        "map_icons", "map_sprites", "combat_palettes", "combat_anims", "combat_effects", "music", "sfx",
                        "tilesets", "tilemaps")
-    loose_file_types = ["custom_components", "custom_sprites"]
+    loose_file_types = ["custom_components", "custom_sprites", "system"]
 
     def __init__(self):
         self.main_folder = None

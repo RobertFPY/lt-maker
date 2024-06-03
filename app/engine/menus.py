@@ -771,10 +771,10 @@ class Trade(Simple):
         full_items2 = self.get_items(self.partner)
 
         self.menu1 = Choice(self.owner, full_items1, (11, 68))
-        self.menu1.set_limit(DB.constants.total_items())
+        self.menu1.set_limit(min(5, DB.constants.total_items()))
         self.menu1.set_hard_limit(True)  # Makes hard limit
         self.menu2 = Choice(self.partner, full_items2, (125, 68))
-        self.menu2.set_limit(DB.constants.total_items())
+        self.menu2.set_limit(min(5, DB.constants.total_items()))
         self.menu2.set_hard_limit(True)  # Makes hard limit
         self.menu2.set_cursor(0)
 

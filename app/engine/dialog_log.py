@@ -32,7 +32,7 @@ class DialogLogState(State):
             game.dialog_log.ui.scroll_up()
         elif 'DOWN' in directions:
             game.dialog_log.ui.scroll_down()
-        
+
         if event == 'INFO' or event == 'BACK':
             game.state.back()
 
@@ -66,7 +66,7 @@ class DialogLog():
             name = unit.nid
         if unit and unit.portrait_nid:
             portrait = RESOURCES.portraits.get(unit.portrait_nid)
-        elif name in DB.units.keys():
+        elif name in DB.units:
             portrait = RESOURCES.portraits.get(DB.units.get(name).portrait_nid)
         else:
             portrait = RESOURCES.portraits.get(name)
@@ -75,7 +75,7 @@ class DialogLog():
         chibi = None
         if portrait:
             chibi = icons.get_chibi(portrait)
-            
+
         return chibi
 
     def save(self) -> List[Tuple[str, str]]:
@@ -84,6 +84,7 @@ class DialogLog():
     def load(self, entries: List[Tuple[str, str]]):
         for entry in entries:
             self.append(entry)
+
 
     @staticmethod
     def clean_speak_text(s: str) -> str:
@@ -95,11 +96,13 @@ class DialogLog():
         >>> clean_speak_text(s)
         >>> 'This is a test{br} with{br} commands.'
         """
+        NEWLINE_COMMANDS = ['{br}', '{clear}', '{sub_break}']
         # x = re.sub(r'({\w*})|(\|)|(;)/', ' ', s)
         s = s.strip()
         s = s.replace('{semicolon}', ';')
         s = s.replace('|', '{br}')
-        s = s.replace('{br}', '<br>')  # So we don't remove it
+        for nlc in NEWLINE_COMMANDS:
+            s = s.replace(nlc, '<br>')  # Replace all newline commands with <br> so we don't remove them
         s = re.sub(r'(\{[^\{]*?\})', '', s)  # remove all commands
         s = s.replace('<br>', '{br}')
         # Get rid of extra spaces beyond length of 1

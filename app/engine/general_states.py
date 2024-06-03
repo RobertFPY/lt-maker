@@ -700,6 +700,7 @@ class MoveState(MapState):
                     cur_unit.wait()
             else:
                 cur_unit.sprite.change_state('normal')
+            game.events.trigger(triggers.UnitDeselect(cur_unit, cur_unit.position))
 
         elif event == 'SELECT':
             if game.cursor.position == cur_unit.position:
@@ -875,7 +876,7 @@ class MenuState(MapState):
                     # No duplicates
                     if truth and region.sub_nid not in options:
                         options.append(region.sub_nid)
-                        info_descs.append(None)  # Could add actual descriptions later, somehow
+                        info_descs.append(region.sub_nid + '_desc')
                         self.valid_regions.append(region)
                 except:
                     logging.error("Region condition {%s} could not be evaluated" % region.condition)
@@ -1956,6 +1957,7 @@ class CombatTargetingState(MapState):
         game.cursor.set_pos(closest_pos)
 
         # Sets dual strike variables and chooses attacker dual strike
+        self.attacker_assist = None
         self.find_strike_partners(closest_pos)
 
         # Reset these
@@ -2114,7 +2116,7 @@ class CombatTargetingState(MapState):
                 game.ui_view.reset_info()
                 self.display_single_attack()
             # Switch chosen pairup with AUX
-            elif len(adj_allies) > 1 and self.num_targets == 1:
+            elif self.attacker_assist and len(adj_allies) > 1 and self.num_targets == 1:
                 i = adj_allies.index(self.attacker_assist)
                 # Hardset attacker
                 self.attacker_assist = adj_allies[(i + 1) % len(adj_allies)]
@@ -2550,6 +2552,7 @@ class ShopState(State):
         d.width = d.text_width + 16
         d.font = FONT['convo-white']
         d.font_color = 'white'
+        d.reformat()
         return d
 
     def update_options(self):

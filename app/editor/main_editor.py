@@ -11,6 +11,7 @@ from PyQt5.QtGui import QIcon
 
 from app import autoupdate, dark_theme
 
+from app.editor.file_manager.project_builder.project_builder import LTProjectBuilder
 from app.editor.settings import MainSettingsController
 
 from app.constants import VERSION
@@ -73,6 +74,7 @@ from app.editor.portrait_editor.portrait_tab import PortraitDatabase
 from app.editor.panorama_editor.panorama_tab import PanoramaDatabase
 from app.editor.map_sprite_editor.map_sprite_tab import MapSpriteDatabase
 from app.editor.map_animation_editor.map_animation_tab import MapAnimationDatabase
+from app.utilities.system_info import is_editor_engine_built_version
 
 __version__ = VERSION
 
@@ -109,6 +111,8 @@ class MainEditor(QMainWindow):
         self.project_save_load_handler = ProjectFileBackend(
             self,
             self.app_state_manager)
+
+        self.project_builder = LTProjectBuilder(self.project_save_load_handler)
 
         # initialize possible editors and put them in the stack
         self.global_editor = GlobalEditor(self.app_state_manager)
@@ -191,7 +195,6 @@ class MainEditor(QMainWindow):
                                 shortcut="Ctrl+S", triggered=self.save)
         self.save_as_act = QAction(
             _("Save Project As..."), self, shortcut="Ctrl+Shift+S", triggered=self.save_as)
-        # self.build_act = QAction(QIcon(), "Build Project...", self, shortcut="Ctrl+B", triggered=self.build_project)
         self.quit_act = QAction(
             _("&Quit"), self, shortcut="Ctrl+Q", triggered=self.close)
 
@@ -199,6 +202,9 @@ class MainEditor(QMainWindow):
             "Dump CSV data", self, triggered=lambda: self.project_save_load_handler.dump_csv(DB))
         self.dump_script = QAction(
             "Dump script", self, triggered=lambda: self.project_save_load_handler.dump_script(DB))
+
+        self.build_project = QAction(
+            "Build project", self, triggered=lambda: self.project_builder.build(self.project_save_load_handler.current_proj))
 
         self.preferences_act = QAction(
             _("&Preferences..."), self, triggered=self.edit_preferences)
@@ -291,6 +297,8 @@ class MainEditor(QMainWindow):
         file_menu.addAction(self.save_as_act)
         file_menu.addAction(self.dump_csv)
         file_menu.addAction(self.dump_script)
+        if not is_editor_engine_built_version():
+            file_menu.addAction(self.build_project)
         file_menu.addSeparator()
         file_menu.addAction(self.quit_act)
 
@@ -599,7 +607,7 @@ class MainEditor(QMainWindow):
 
     def check_for_updates(self):
         # Only check for updates in frozen version
-        if hasattr(sys, 'frozen'):
+        if is_editor_engine_built_version():
             if autoupdate.check_for_update():
                 link = r"https://gitlab.com/rainlash/lt-maker/-/releases/permalink/latest/downloads/lex_talionis_maker"
                 QMessageBox.information(self, "Update Available", "A new update to LT-maker is available!\n"

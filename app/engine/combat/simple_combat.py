@@ -33,7 +33,7 @@ class SimpleCombat():
         self.defenders = [game.board.get_unit(main_target_pos) if main_target_pos else None for main_target_pos in main_target_positions]
         # List of UnitObject
         self.all_defenders = list(set([_ for _ in self.defenders if _]))
-        self.defender: UnitObject = None
+        self.defender: Optional[UnitObject] = None
         if len(self.all_defenders) == 1:
             self.defender = self.all_defenders[0]
 
@@ -53,7 +53,7 @@ class SimpleCombat():
 
         self.items = items
         self.def_items = [resolve_weapon(defender) for defender in self.defenders]
-        self.def_item = None
+        self.def_item: Optional[ItemObject] = None
         if self.defender:
             self.def_item = resolve_weapon(self.defender)
 
@@ -127,6 +127,8 @@ class SimpleCombat():
             if unit.get_hp() <= 0:
                 game.death.should_die(unit)
 
+        self.handle_records(self.full_playback, all_units)
+
         self.turnwheel_death_messages(all_units)
 
         self.handle_state_stack()
@@ -158,8 +160,6 @@ class SimpleCombat():
         self.handle_mana(all_units)
         self.handle_exp()
 
-        self.handle_records(self.full_playback, all_units)
-
         asp = self.attacker.strike_partner
         dsp = None
         if self.defender:
@@ -172,6 +172,7 @@ class SimpleCombat():
             self.defender.strike_partner = None
             self.defender.built_guard = True
 
+        self.handle_combat_death(all_units)
         self.handle_death(all_units)
 
         self.handle_unusable_items(asp, dsp)
@@ -425,9 +426,9 @@ class SimpleCombat():
             item_system.on_unusable(self.attacker, self.main_item)
         if self.def_item and item_system.is_unusable(self.defender, self.def_item):
             item_system.on_unusable(self.defender, self.def_item)
-        if attack_partner and item_system.is_unusable(attack_partner, attack_partner.get_weapon()):
+        if attack_partner and attack_partner.get_weapon() and item_system.is_unusable(attack_partner, attack_partner.get_weapon()):
             item_system.on_unusable(attack_partner, attack_partner.get_weapon())
-        if defense_partner and item_system.is_unusable(defense_partner, defense_partner.get_weapon()):
+        if defense_partner and defense_partner.get_weapon() and item_system.is_unusable(defense_partner, defense_partner.get_weapon()):
             item_system.on_unusable(defense_partner, defense_partner.get_weapon())
 
     def handle_wexp(self, unit, item, target):
@@ -643,6 +644,14 @@ class SimpleCombat():
                     if mark.attacker.team == 'player':  # If player is dying, save this result even if we turnwheel back
                         act = action.UpdateRecords('death', pair)
                         act.do()
+
+    def handle_combat_death(self, units):
+        for unit in units:
+            if unit.is_dying:
+                killer = game.records.get_killer(unit.nid, game.level.nid if game.level else None)
+                if killer:
+                    killer = game.get_unit(killer)
+                game.events.trigger(triggers.CombatDeath(unit, killer, unit.position))
 
     def handle_death(self, units):
         if not self.arena_combat:

@@ -9,8 +9,23 @@ from app.engine.objects.tilemap import TileMapObject
 from app.data.database.level_units import UnitGroup
 from app.utilities.typing import NID
 
-# Main Level Object used by engine
 class LevelObject():
+    """Representation of a Level or Chapter in the engine. Contains information
+    about the tilemap of the level, which is the chapter's main party, what music
+    should exist for each phase, etc.
+    
+    Attributes:
+        nid (NID): The unique ID for the level
+        name (str): The name of the level (displayed in the Chapter Title card)
+        tilemap (TileMapObject): The current tilemap for the level
+        bg_tilemap (TileMapObject): The current background tilemap for the level
+        party (NID): The chapter's main party
+        music (dict): Keys are the phase, value is the song name
+        objective (dict): The objective text
+        units: (Data[UnitObject]): Database of the units in the level
+        regions: (Data[RegionObject]): Database of regions in the level
+        ai_groups (Data[AIGroupObject]): Database of AI Groups in the level
+    """
     def __init__(self):
         self.nid: NID = None
         self.name: str = None

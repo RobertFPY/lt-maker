@@ -10,10 +10,6 @@
         ],
         "components": [
             [
-                "map_cast_sfx",
-                "RefreshDanceMap"
-            ],
-            [
                 "min_range",
                 1
             ],

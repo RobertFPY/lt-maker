@@ -39,10 +39,10 @@ class TeamCatalog(Data[Team]):
         self.add_defaults()
 
     def add_defaults(self):
-        if 'player' not in self.keys():
+        if 'player' not in self:
             self.alliance_pairs.add(('other', 'player'))
         for idx, nid in enumerate(self.default_teams):
-            if nid not in self.keys():
+            if nid not in self:
                 team = Team(
                     nid, 'map_sprite_%s' % self.default_colors[idx],
                     self.default_combat_palettes[idx], 

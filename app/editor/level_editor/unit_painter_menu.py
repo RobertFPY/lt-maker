@@ -129,7 +129,7 @@ class UnitPainterMenu(QWidget):
     def load_unit(self):
         unit, ok = LoadUnitDialog.get_unit(self)
         if ok:
-            if unit.nid in self._data.keys():
+            if unit.nid in self._data:
                 QMessageBox.critical(
                     self, "Error!", "%s already present in level!" % unit.nid)
             else:
@@ -195,7 +195,7 @@ class LevelUnitModel(DragDropCollectionModel):
         elif role == Qt.DecorationRole:
             unit = self._data[index.row()]
             # Don't draw any units which have been deleted in editor
-            if not unit.generic and unit.nid not in DB.units.keys():
+            if not unit.generic and unit.nid not in DB.units:
                 return None
             klass_nid = unit.klass
             num = timer.get_timer().passive_counter.count
@@ -279,7 +279,7 @@ class InventoryDelegate(QStyledItemDelegate):
         if not unit:
             return None
         # Don't draw any units which have been deleted in editor
-        if not unit.generic and unit.nid not in DB.units.keys():
+        if not unit.generic and unit.nid not in DB.units:
             return None
 
         # Draw faction, if applicable
@@ -450,14 +450,14 @@ class LoadUnitDialog(Dialog):
         # if it's an already existing ai group
         """
         ai_group = self.ai_group_box.edit.currentText()
-        if ai_group in self.window.current_level.ai_groups.keys():
+        if ai_group in self.window.current_level.ai_groups:
             threshold = self.window.current_level.ai_groups.get(ai_group).trigger_threshold
             self.ai_group_threshold_box.edit.setValue(threshold)
 
     def check_ai_group(self):
         ai_group = self.ai_group_box.edit.currentText()
         threshold = int(self.ai_group_threshold_box.edit.value())
-        if ai_group in self.window.current_level.ai_groups.keys():
+        if ai_group in self.window.current_level.ai_groups:
             self.window.current_level.ai_groups.get(ai_group).trigger_threshold = threshold
         else:
             self.window.current_level.ai_groups.append(AIGroup(ai_group, threshold))
@@ -708,14 +708,14 @@ class GenericUnitDialog(Dialog):
         # if it's an already existing ai group
         """
         ai_group = self.ai_group_box.edit.currentText()
-        if ai_group in self.window.current_level.ai_groups.keys():
+        if ai_group in self.window.current_level.ai_groups:
             threshold = self.window.current_level.ai_groups.get(ai_group).trigger_threshold
             self.ai_group_threshold_box.edit.setValue(threshold)
 
     def check_ai_group(self):
         ai_group = self.ai_group_box.edit.currentText()
         threshold = int(self.ai_group_threshold_box.edit.value())
-        if ai_group in self.window.current_level.ai_groups.keys():
+        if ai_group in self.window.current_level.ai_groups:
             self.window.current_level.ai_groups.get(ai_group).trigger_threshold = threshold
         else:
             self.window.current_level.ai_groups.append(AIGroup(ai_group, threshold))

@@ -61,16 +61,16 @@
                 ]
             ],
             [
-                "magic_heal",
-                20
-            ],
-            [
                 "max_equation_range",
                 "MAGIC_RANGE"
             ],
             [
                 "min_range",
                 1
+            ],
+            [
+                "equation_heal",
+                "HEAL"
             ]
         ]
     }

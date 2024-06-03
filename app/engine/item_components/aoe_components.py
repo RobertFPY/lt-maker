@@ -89,17 +89,17 @@ class SmartBlastAOE(BlastAOE):
     tag = ItemTags.AOE
 
     def splash(self, unit, item, position) -> tuple:
-        if 'target_ally' in item.components.keys():
+        if 'target_ally' in item.components:
             return AllyBlastAOE.splash(self, unit, item, position)
-        elif 'target_enemy' in item.components.keys():
+        elif 'target_enemy' in item.components:
             return EnemyBlastAOE.splash(self, unit, item, position)
         else:
             return BlastAOE.splash(self, unit, item, position)
 
     def splash_positions(self, unit, item, position) -> set:
-        if 'target_ally' in item.components.keys():
+        if 'target_ally' in item.components:
             return AllyBlastAOE.splash_positions(self, unit, item, position)
-        elif 'target_enemy' in item.components.keys():
+        elif 'target_enemy' in item.components:
             return EnemyBlastAOE.splash_positions(self, unit, item, position)
         else:
             return BlastAOE.splash_positions(self, unit, item, position)

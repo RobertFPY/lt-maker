@@ -42,3 +42,4 @@ class ProjectInitializer():
         new_project_db.load(path)
         new_project_db.constants.get('game_nid').set_value(nid)
         new_project_db.constants.get('title').set_value(title)
+        new_project_db.serialize(path)

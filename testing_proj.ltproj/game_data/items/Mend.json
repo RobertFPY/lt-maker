@@ -65,8 +65,8 @@
                 ]
             ],
             [
-                "magic_heal",
-                20
+                "equation_heal",
+                "HEAL"
             ]
         ]
     }

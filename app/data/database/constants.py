@@ -88,6 +88,7 @@ constants = ConstantCatalog([
     Constant('allow_negative_as', "Allow Attack Speed to be negative", ConstantType.BOOL, False, ConstantTag.OTHER),
     Constant('trade', "Can trade items on map", ConstantType.BOOL, True, ConstantTag.OTHER),
     Constant('growth_info', "Can view unit growths in Info Menu", ConstantType.BOOL, True, ConstantTag.OTHER),
+    Constant('alt_growth_format', "Base growths include class growths in Info Menu", ConstantType.BOOL, False, ConstantTag.OTHER),
     Constant('glancing_hit', "Chance (%) to score a glancing hit", ConstantType.INT, 0, ConstantTag.MAJOR_FEATURES),
     Constant('backpropagate_difficulty_growths', "Apply difficulty bonus growths to past levels", ConstantType.BOOL, True, ConstantTag.OTHER),
     Constant('traveler_time_decrement', "Timed skills applied to traveler units will decrease.", ConstantType.BOOL, False, ConstantTag.OTHER),

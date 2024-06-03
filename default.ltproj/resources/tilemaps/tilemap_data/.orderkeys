@@ -1,12 +1,12 @@
-{
-    "Prologue.json": 0,
-    "Chapter_1.json": 1,
-    "Chapter_2.json": 2,
-    "Chapter_3.json": 3,
-    "FogOfWarTest.json": 4,
-    "Grado_Keep.json": 5,
-    "Chapter_14B.json": 6,
-    "Chapter_4.json": 7,
-    "Chapter_5.json": 8,
-    "Magvel.json": 9
-}
+[
+    "Prologue.json",
+    "Chapter_1.json",
+    "Chapter_2.json",
+    "Chapter_3.json",
+    "FogOfWarTest.json",
+    "Grado_Keep.json",
+    "Chapter_14B.json",
+    "Chapter_4.json",
+    "Chapter_5.json",
+    "Magvel.json"
+]

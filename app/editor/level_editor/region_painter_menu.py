@@ -119,6 +119,8 @@ class RegionMenu(QWidget):
         self._data.append(created_region)
         self.modify_region_widget.setEnabled(True)
         self.model.update()
+        if len(self._data) == 1:
+            self.modify_region_widget.set_current(created_region)
         # Select the region
         idx = self._data.index(created_region.nid)
         index = self.model.index(idx)

@@ -52,7 +52,7 @@ def on_delete(old_nid: NID):
     for ai in DB.ai:
         ai.change_unit_spec("ID", old_nid, new_nid)
     for level in DB.levels:
-        if old_nid in level.units.keys():
+        if old_nid in level.units:
             level.units.remove_key(old_nid)
         for unit_group in level.unit_groups:
             unit_group.remove(old_nid)

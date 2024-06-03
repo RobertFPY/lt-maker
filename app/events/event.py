@@ -1,4 +1,5 @@
 from __future__ import annotations
+import ast
 from app.data.database.units import UnitPrefab
 from app.data.resources.portraits import PortraitPrefab
 from app.data.resources.resources import RESOURCES
@@ -29,6 +30,7 @@ from app.events.python_eventing.errors import EventError
 from app.events.python_eventing.python_event_processor import PythonEventProcessor
 from app.events.python_eventing.utils import SAVE_COMMAND_NIDS
 from app.events.speak_style import SpeakStyle
+from app.events.utils import TableRows
 from app.utilities import str_utils, utils, static_random
 from app.utilities.data import HasNid
 from app.utilities.typing import NID, Color3, Point
@@ -69,7 +71,7 @@ class Event():
 
         self.text_evaluator = TextEvaluator(self.logger, self.game, self.unit, self.unit2, self.position, self.local_args)
         if event_prefab.version() != EventVersion.EVENT:
-            self.processor = PythonEventProcessor(self.nid, event_prefab.source, self.game)
+            self.processor = PythonEventProcessor(self.nid, event_prefab.source, self.game, context=event_args)
         else:
             self.processor = EventProcessor(self.nid, event_prefab.source, self.text_evaluator)
 
@@ -161,7 +163,6 @@ class Event():
             self.game.movement.update()
 
         self._update_state()
-        self._update_transition()
 
     def _update_state(self, dialog_log=True):
         current_time = engine.get_time()
@@ -206,6 +207,7 @@ class Event():
                 self.state = 'processing'
 
             elif self.state == 'almost_complete':
+                # Only grid moves matter so that we can end a roam event while somebody is moving in roam
                 if not self.game.movement or not any([c.grid_move for c in self.game.movement.moving_entities]):
                     self.state = 'complete'
 
@@ -290,6 +292,7 @@ class Event():
                 dialog_box.draw(surf)
 
         # Fade to black
+        self._update_transition()
         if self.transition_state:
             s = engine.create_surface((WINWIDTH, WINHEIGHT), transparent=True)
             if self.transition_background:
@@ -344,7 +347,9 @@ class Event():
         self.transition_state = None
         self.hurry_up()
         self.text_boxes.clear()
-        self.other_boxes.clear()
+        # Remove all nidless boxes (location card, credits)
+        # Keep the nidded boxes (textbox, table)
+        self.other_boxes = [(nid, box) for nid, box in self.other_boxes if nid is not None]
         self.should_remain_blocked.clear()
         while self.should_update:
             self.should_update = {name: to_update for name, to_update in self.should_update.items() if not to_update(self.do_skip)}
@@ -497,7 +502,7 @@ class Event():
             elif placement == 'stack':
                 return position
             elif placement == 'closest':
-                position = self.game.target_system.get_nearest_open_tile(unit, position)
+                position = self.game.target_system.get_closest_reachable_tile(unit, position)
                 if not position:
                     self.logger.warning("Somehow wasn't able to find a nearby open tile")
                     return None
@@ -601,7 +606,7 @@ class Event():
     def _apply_growth_changes(self, unit, growth_changes):
         action.do(action.ApplyGrowthChanges(unit, growth_changes))
 
-    def _parse_pos(self, pos: str | Point, is_float=False):
+    def _parse_pos(self, pos: str | Point, is_float=False) -> Optional[Point]:
         if isinstance(pos, tuple):
             return pos
         position = None
@@ -619,7 +624,7 @@ class Event():
                 position = self.game.get_rescuers_position(unit)
         elif self.game.is_displaying_overworld() and self._get_overworld_location_of_object(pos):
             position = self._get_overworld_location_of_object(pos).position
-        elif pos in self.game.level.regions.keys():
+        elif pos in self.game.level.regions:
             return self.game.level.regions.get(pos).position
         else:
             valid_regions = \
@@ -664,12 +669,11 @@ class Event():
             name = nid
         if unit and unit.portrait_nid:
             portrait = RESOURCES.portraits.get(unit.portrait_nid)
-        elif name in DB.units.keys():
+        elif name in DB.units:
             portrait = RESOURCES.portraits.get(DB.units.get(name).portrait_nid)
         else:
             portrait = RESOURCES.portraits.get(name)
         if not portrait:
-            self.logger.error("add_portrait: Couldn't find portrait %s" % name)
             return None, nid
         return portrait, nid
 
@@ -678,3 +682,38 @@ class Event():
             return obj.nid
         except:
             return obj
+
+    def _eval_str_func_factory(self, func_as_str: str) -> Optional[Callable[[], List[str]]]:
+        try:
+            ast.parse(func_as_str)
+        except:
+            self.logger.error("%s is not a valid python expression" % func_as_str)
+            return None
+        def try_eval_str():
+            try:
+                val = self._eval_expr(self.text_evaluator._evaluate_all(func_as_str), False)
+                if isinstance(val, list):
+                    return val or ['']
+                else:
+                    return [self._object_to_str(val)]
+            except Exception as e:
+                self.logger.error("Failed to evaluate expression %s with error %s", func_as_str, str(e))
+                return [""]
+        return try_eval_str
+
+    def _get_rows_of_table(self, rows: TableRows, expression: bool = False) -> Callable[[], List[str]] | List[str]:
+        if expression and isinstance(rows, str):
+            data = self._eval_str_func_factory(rows)
+        elif isinstance(rows, str): # is a string containing a list of comma-separated choices
+            rows = self.text_evaluator._evaluate_all(rows)
+            if rows.startswith('['):
+                rows = rows[1:]
+            if rows.endswith(']'):
+                rows = rows[:-1]
+            data = rows.split(',')
+            data = [s.strip().replace('{comma}', ',') for s in data]
+        elif isinstance(rows, List): # list of objects - let's decay these into strings
+            data = [self._object_to_str(s) for s in rows]
+        else: # is a callable function
+            data = rows
+        return data or ['']

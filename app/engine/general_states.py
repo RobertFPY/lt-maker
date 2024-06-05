@@ -2504,7 +2504,7 @@ class ShopState(State):
                 return string % 'shop'
 
         if self.flavor:
-            self.portrait = SPRITES.get(apply_flavor('%s_portrait'))
+            self.portrait = SPRITES.get('%s_portrait' % self.flavor)
             self.opening_message = apply_flavor('%s_opener')
             self.buy_message = apply_flavor('%s_buy')
             self.back_message = apply_flavor('%s_back')
@@ -2772,7 +2772,10 @@ class RepairShopState(ShopState):
             else:
                 return string % 'shop'
 
-        self.portrait = SPRITES.get('armory_portrait')
+        if 'repair_portrait' in SPRITES:
+            self.portrait = SPRITES.get('repair_portrait')
+        else:
+            self.portrait = SPRITES.get('armory_portrait')
         self.opening_message = apply_flavor('%s_opener')
         self.buy_message = apply_flavor('%s_buy')
         self.no_money_message = apply_flavor('%s_no_money')

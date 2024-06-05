@@ -2496,18 +2496,41 @@ class ShopState(State):
         self.shop_id = game.memory['shop_id']
         self.unit = game.memory['current_unit']
         self.flavor = game.memory['shop_flavor']
+
+        def apply_flavor(string: str) -> str:
+            if (string % self.flavor) in DB.translations:
+                return string % self.flavor
+            else:
+                return string % 'shop'
+
         if self.flavor:
-            self.portrait = SPRITES.get('%s_portrait' % self.flavor)
-            self.opening_message = '%s_opener' % self.flavor
-            self.buy_message = '%s_buy' % self.flavor
-            self.back_message = '%s_back' % self.flavor
-            self.leave_message = '%s_leave' % self.flavor
+            self.portrait = SPRITES.get(apply_flavor('%s_portrait'))
+            self.opening_message = apply_flavor('%s_opener')
+            self.buy_message = apply_flavor('%s_buy')
+            self.back_message = apply_flavor('%s_back')
+            self.leave_message = apply_flavor('%s_leave')
+            self.buy_again_message = apply_flavor('%s_buy_again')
+            self.convoy_message = apply_flavor('%s_convoy')
+            self.no_stock_message = apply_flavor('%s_no_stock')
+            self.no_money_message = apply_flavor('%s_no_money')
+            self.max_inventory_message = apply_flavor('%s_max_inventory')
+            self.sell_again_message = apply_flavor('%s_sell_again')
+            self.again_message = apply_flavor('%s_again')
+            self.no_value_message = apply_flavor('%s_no_value')
         else:
             self.portrait = SPRITES.get('armory_portrait')
             self.opening_message = 'armory_opener'
             self.buy_message = 'armory_buy'
             self.back_message = 'armory_back'
             self.leave_message = 'armory_leave'
+            self.buy_again_message = 'shop_buy_again'
+            self.convoy_message = 'shop_convoy'
+            self.no_stock_message = 'shop_no_stock'
+            self.no_money_message = 'shop_no_money'
+            self.max_inventory_message = 'shop_max_inventory'
+            self.sell_again_message = 'shop_sell_again'
+            self.again_message = 'shop_again'
+            self.no_value_message = 'shop_no_value'
 
         items = game.memory['shop_items']
         self.stock = game.memory.get('shop_stock', None)
@@ -2612,24 +2635,24 @@ class ShopState(State):
                         game.register_item(new_item)
                         if not item_funcs.inventory_full(self.unit, new_item):
                             action.do(action.GiveItem(self.unit, new_item))
-                            self.current_msg = self.get_dialog('shop_buy_again')
+                            self.current_msg = self.get_dialog(self.buy_again_message)
                         elif game.game_vars.get('_convoy'):
                             action.do(action.PutItemInConvoy(new_item))
-                            self.current_msg = self.get_dialog('shop_convoy')
+                            self.current_msg = self.get_dialog(self.convoy_message)
 
                     # How it could fail
                     elif self.buy_menu.get_stock() == 0:
                         # We don't have any more of this in stock
                         get_sound_thread().play_sfx('Select 4')
-                        self.current_msg = self.get_dialog('shop_no_stock')
+                        self.current_msg = self.get_dialog(self.no_stock_message)
                     elif game.get_money() - value < 0:
                         # You don't have enough money
                         get_sound_thread().play_sfx('Select 4')
-                        self.current_msg = self.get_dialog('shop_no_money')
+                        self.current_msg = self.get_dialog(self.no_money_message)
                     else:
                         # No inventory space
                         get_sound_thread().play_sfx('Select 4')
-                        self.current_msg = self.get_dialog('shop_max')
+                        self.current_msg = self.get_dialog(self.max_inventory_message)
 
             elif self.state == 'sell':
                 item = self.sell_menu.get_current()
@@ -2642,12 +2665,12 @@ class ShopState(State):
                         action.do(action.UpdateRecords('money', (game.current_party, value)))
                         self.money_counter_disp.start(value)
                         action.do(action.RemoveItem(self.unit, item))
-                        self.current_msg = self.get_dialog('shop_sell_again')
+                        self.current_msg = self.get_dialog(self.sell_again_message)
                         self.update_options()
                     else:
                         # No value, can't be sold
                         get_sound_thread().play_sfx('Select 4')
-                        self.current_msg = self.get_dialog('shop_no_value')
+                        self.current_msg = self.get_dialog(self.no_value_message)
                 else:
                     # You didn't choose anything to sell
                     get_sound_thread().play_sfx('Select 4')
@@ -2680,7 +2703,7 @@ class ShopState(State):
                     self.state = 'choice'
                     self.menu.set_takes_input(False)
                     self.menu = self.choice_menu
-                    self.current_msg = self.get_dialog('shop_again')
+                    self.current_msg = self.get_dialog(self.again_message)
 
         elif event == 'INFO':
             if self.state == 'buy' or self.state == 'sell':
@@ -2743,9 +2766,17 @@ class RepairShopState(ShopState):
 
         self.unit = game.memory['current_unit']
 
+        def apply_flavor(string: str) -> str:
+            if (string % 'repair') in DB.translations:
+                return string % 'repair'
+            else:
+                return string % 'shop'
+
         self.portrait = SPRITES.get('armory_portrait')
-        self.opening_message = 'repair_opener'
-        self.buy_message = 'repair_buy'
+        self.opening_message = apply_flavor('%s_opener')
+        self.buy_message = apply_flavor('%s_buy')
+        self.no_money_message = apply_flavor('%s_no_money')
+        self.again_message = apply_flavor('%s_again')
 
         items = self.unit.items[:]
         topleft = (44, WINHEIGHT - 16 * 5 - 8 - 4)
@@ -2801,7 +2832,7 @@ class RepairShopState(ShopState):
                     else:
                         # You don't have enough money
                         get_sound_thread().play_sfx('Select 4')
-                        self.current_msg = self.get_dialog('shop_no_money')
+                        self.current_msg = self.get_dialog(self.no_money_message)
                 else:
                     # Item doesn't have a repair cost
                     get_sound_thread().play_sfx('Select 4')
@@ -2815,7 +2846,7 @@ class RepairShopState(ShopState):
                 get_sound_thread().play_sfx('Info Out')
             else:
                 get_sound_thread().play_sfx('Select 4')
-                self.current_msg = self.get_dialog('shop_again')
+                self.current_msg = self.get_dialog(self.again_message)
                 game.state.change('transition_pop')
 
         elif event == 'INFO':

@@ -20,10 +20,11 @@ from app.engine.state import MapState
 from app.engine.game_state import game
 from app.engine import menus, base_surf, background, text_funcs, \
     image_mods, gui, icons, prep, record_book, unit_sprite, action, \
-    engine
+    engine, equations
 from app.engine.fluid_scroll import FluidScroll
 from app.engine.graphics.text.text_renderer import render_text
 
+from app.utilities.utils import linspace
 from app.utilities.enums import HAlignment
 import app.engine.config as cf
 from app.events import triggers
@@ -1310,7 +1311,10 @@ class BaseBEXPAllocateState(State):
                 get_sound_thread().play_sfx('Error')
         # Right increments by 1 EXP
         elif 'RIGHT' in directions:
-            bexp_cost, exp_gain = get_bexp_cost_for_an_experience_point(self.new_exp)
+            if self.new_exp < 100:
+                bexp_cost, exp_gain = self.get_bexp_cost_for_an_experience_point(self.new_exp)
+            else:
+                bexp_cost, exp_gain = 0, 0
             # If we aren't at 100 exp and we have at least than bexp_cost bexp 
             if self.new_exp + exp_gain <= 100 and self.new_bexp >= bexp_cost:
                 get_sound_thread().play_sfx('Select 5')
@@ -1323,7 +1327,7 @@ class BaseBEXPAllocateState(State):
             # If we've gained at least some exp from bonus exp
             if self.new_exp > self.original_exp:
                 # Go back to the original value
-                bexp_cost, exp_gain = get_bexp_cost_for_an_experience_point(self.new_exp - 1)
+                bexp_cost, exp_gain = self.get_bexp_cost_for_an_experience_point(self.new_exp - 1)
                 get_sound_thread().play_sfx('Select 5')
                 self.new_exp -= exp_gain
                 self.new_bexp += bexp_cost
@@ -1332,11 +1336,15 @@ class BaseBEXPAllocateState(State):
         # Up attempts to get us to 100 EXP, or the highest amount possible if 100 cannot be reached.
         elif 'UP' in directions:
             get_sound_thread().play_sfx('Select 5')
-            bexp_cost, exp_gain = get_bexp_cost_for_an_experience_point(self.new_exp)
-            while self.new_exp + exp_gain <= 100 and self.new_bexp >= bexp_cost:
-                self.new_exp += exp_gain
-                self.new_bexp -= bexp_cost
-                bexp_cost, exp_gain = get_bexp_cost_for_an_experience_point(self.new_exp)
+            if self.new_exp < 100:
+                bexp_cost, exp_gain = self.get_bexp_cost_for_an_experience_point(self.new_exp)
+                while self.new_exp + exp_gain <= 100 and self.new_bexp >= bexp_cost:
+                    self.new_exp += exp_gain
+                    self.new_bexp -= bexp_cost
+                    if self.new_exp < 100:
+                        bexp_cost, exp_gain = self.get_bexp_cost_for_an_experience_point(self.new_exp)
+                    else:
+                        break
 
         # Allocates EXP, performs level up, and sets values as needed
         if event == 'SELECT':

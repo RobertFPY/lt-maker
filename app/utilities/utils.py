@@ -68,6 +68,18 @@ def process_terms(terms):
         return 0
     return sum(float(val * weight) for weight, val in terms) / weight_sum
 
+def linspace(start: float, stop: float, num: float, endpoint: bool = True) -> List[float]:
+    """
+    Mocks numpy's linspace function. 
+    Returns a list of size num starting at start and stopping at stop.
+    If endpoint is false, do not include stop in the list returned.
+    """
+    if endpoint:
+        step = (stop - start) / (num - 1)
+    else:
+        step = (stop - start) / num
+    return [start + (step * i) for i in range(num)]
+
 """Vector Tuple Math
 """
 def dot_product(a: tuple, b: tuple) -> float:

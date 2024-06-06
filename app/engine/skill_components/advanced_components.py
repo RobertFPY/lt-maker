@@ -309,6 +309,7 @@ class AstraProc(SkillComponent):
     options = {
         'extra_attacks': ComponentType.Int,
         'damage_percent': ComponentType.Float,
+        'show_proc_effects': ComponentType.Bool,
     }
 
     _num_procs = 0  # Number of times this astra has procced
@@ -319,6 +320,7 @@ class AstraProc(SkillComponent):
         self.value = {
             'extra_attacks': 4,
             'damage_percent': 0.5,
+            'show_proc_effects': True,
         }
         if value:
             self.value.update(value)
@@ -340,7 +342,8 @@ class AstraProc(SkillComponent):
                 self._num_procs += 1
                 self._should_modify_damage = True
                 action.do(action.TriggerCharge(unit, self.skill))
-                playback.append(pb.AttackProc(unit, self.skill))
+                if bool(self.value['show_proc_effects']):
+                    playback.append(pb.AttackProc(unit, self.skill))
 
     def dynamic_multiattacks(self, unit, item, target, item2, mode, attack_info, base_value) -> int:
         return int(self.value['extra_attacks']) * self._num_procs

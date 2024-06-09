@@ -650,7 +650,7 @@ If no speaker NID is specified, the most recent text box is unpaused.
 
 class Narrate(EventCommand):
     nid = "narrate"
-    tag = Tags.DIALOGUE_TEXT
+    tag = Tags.HIDDEN # command is deprecated
 
     desc = \
         """

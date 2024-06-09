@@ -204,6 +204,7 @@ class TargetSystem():
         manhattan_restriction = item_system.range_restrict(unit, item)
         if max_range >= 99:
             attacks = self.game.board.get_all_positions_in_bounds()
+            attacks = attacks - self.get_shell({unit.position}, set(range(0, min(item_range, default=0))), self.game.board.bounds)
             if manhattan_restriction:
                 x, y = unit.position
                 attacks = {(a, b) for (a, b) in attacks if (a - x, b - y) in manhattan_restriction}
@@ -256,6 +257,7 @@ class TargetSystem():
             manhattan_restriction = item_system.range_restrict(unit, item)
             if max_range >= 99:
                 item_attacks = self.game.board.get_all_positions_in_bounds()
+                item_attacks = item_attacks - self.get_shell({unit.position}, set(range(0, min(item_range, default=0))), self.game.board.bounds)
                 if manhattan_restriction:
                     attacks = set()
                     for move in moves:

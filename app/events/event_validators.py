@@ -594,7 +594,7 @@ class IllegalCharacterList(SequenceValidator):
         return valids
 
 class DialogVariant(Validator):
-    built_in = ["thought_bubble", "noir", "hint", "narration", "narration_top", "cinematic", "clear", "boss_convo_left", "boss_convo_right"]
+    built_in = ["thought_bubble", "noir", "hint", "narration", "narration_top", "cinematic", "clear", "boss_convo_left", "boss_convo_right", "overworld_narration"]
 
     def validate(self, text, level):
         slots = self.built_in.copy()

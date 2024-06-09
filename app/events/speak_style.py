@@ -72,6 +72,7 @@ class SpeakStyleLibrary(Dict[NID, SpeakStyle]):
                                            message_tail='message_bg_tail', transparency=0.0, position=(72, 112), width=WINWIDTH - 80),
              'boss_convo_right': SpeakStyle('boss_convo_right', speed=1, font_type='convo', background='message_bg_base', num_lines=2, draw_cursor=True,
                                             message_tail='message_bg_tail', transparency=0.0, position=(8, 112), width=WINWIDTH - 80),
+             'overworld_narration': SpeakStyle("overworld_narration", background='None', position=(4, 110), width=WINWIDTH - 8, font_color="white", message_tail=None, num_lines=2, speed=2)
              }
         )
 

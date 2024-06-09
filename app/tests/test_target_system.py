@@ -25,7 +25,7 @@ class TargetSystemUnitTests(unittest.TestCase):
         self.game.board.bounds = (0, 0, 28, 28)
         self.game.units = []
 
-        self.player_unit = UnitObject('player')         
+        self.player_unit = UnitObject('player')
         self.player_unit.team = 'player'
 
         self.ally_unit = UnitObject('ally')
@@ -122,7 +122,8 @@ class TargetSystemUnitTests(unittest.TestCase):
 
         valid_positions = self.target_system.get_attackable_positions(self.player_unit, weapon)
 
-        num_positions = (self.game.board.bounds[2] - self.game.board.bounds[0] + 1) * (self.game.board.bounds[3] - self.game.board.bounds[1] + 1)
+        # `- 1` because a minimum range of 1 excludes our current position
+        num_positions = (self.game.board.bounds[2] - self.game.board.bounds[0] + 1) * (self.game.board.bounds[3] - self.game.board.bounds[1] + 1) - 1
         self.assertEqual(len(valid_positions), num_positions)
 
     def test_targets_in_range_adjacent(self):
@@ -135,7 +136,7 @@ class TargetSystemUnitTests(unittest.TestCase):
         self.game.units.append(self.enemy_unit)
 
         weapon = self.mock_weapon(self.enemy_unit.position, 1, 1)
-        
+
         targets = self.target_system.targets_in_range(self.player_unit, weapon)
         self.assertEqual(len(targets), 1)
         self.assertIn((0, 1), targets)

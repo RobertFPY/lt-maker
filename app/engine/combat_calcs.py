@@ -569,24 +569,26 @@ def compute_true_speed(unit, target, item, def_item, mode, attack_info) -> int:
 
 def outspeed(unit, target, item, def_item, mode, attack_info) -> int:
     if not item:
-        return 1
+        return 0
     if not item_system.can_double(unit, item):
-        return 1
+        return 0
     if skill_system.no_double(unit):
-        return 1
+        return 0
+    if mode == 'defense' and not DB.constants.value('def_double'):
+        return 0
 
     speed = compute_true_speed(unit, target, item, def_item, mode, attack_info)
 
-    return 2 if speed >= equations.parser.speed_to_double(unit) else 1
+    return 1 if speed >= equations.parser.speed_to_double(unit) else 0
 
-def compute_dynamic_attacks(unit, target, item, mode, attack_info) -> int:
-    num_attacks = 0
+def compute_attack_phases(unit, target, item, def_item, mode, attack_info) -> int:
+    num_attacks = 1
     if not item:
         return 0
-    if skill_system.no_dynamic_attacks(target):
-        return 0
+
     num_attacks += item_system.dynamic_attacks(unit, item, target, resolve_weapon(target), mode, attack_info, num_attacks)
     num_attacks += skill_system.dynamic_attacks(unit, item, target, resolve_weapon(target), mode, attack_info, num_attacks)
+    num_attacks += outspeed(unit, target, item, def_item, mode, attack_info)
 
     return num_attacks
 

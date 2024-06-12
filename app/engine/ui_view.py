@@ -581,8 +581,7 @@ class UIView():
         x2_pos_player_partner = (topleft[0] + 107 + self.x_positions[count], topleft[1] + 38 + self.y_positions[count])
         x2_pos_enemy_partner = (topleft[0] + 20 + self.x_positions[count], topleft[1] + 38 + self.y_positions[count])
 
-        my_num = combat_calcs.outspeed(attacker, defender, weapon, resolve_weapon(defender), "attack", (0, 0))
-        my_num += combat_calcs.compute_dynamic_attacks(attacker, defender, weapon, "attack", (0 , 0))
+        my_num = combat_calcs.compute_attack_phases(attacker, defender, weapon, "attack", (0 , 0))
         my_num *= combat_calcs.compute_multiattacks(attacker, defender, weapon, "attack", (0, 0))
         if weapon.uses_options and weapon.uses_options.one_loss_per_combat():
             pass  # If you can only lose one use at a time, no need to min this
@@ -599,11 +598,7 @@ class UIView():
         # Enemy doubling
         eweapon = defender.get_weapon()
         if eweapon and combat_calcs.can_counterattack(attacker, weapon, defender, eweapon):
-            if DB.constants.value('def_double') or skill_system.def_double(defender):
-                e_num = combat_calcs.outspeed(defender, attacker, eweapon, weapon, 'defense', (0, 0))
-            else:
-                e_num = 1
-            e_num += combat_calcs.compute_dynamic_attacks(defender, attacker, eweapon, 'defense', (0, 0))
+            e_num = combat_calcs.compute_attack_phases(defender, attacker, eweapon, 'defense', (0, 0))
             e_num *= combat_calcs.compute_multiattacks(defender, attacker, eweapon, 'defense', (0, 0))
             e_num = min(e_num, eweapon.data.get('uses', 100))
 

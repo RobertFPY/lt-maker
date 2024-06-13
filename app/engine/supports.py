@@ -165,12 +165,15 @@ class SupportController():
         """
         Return False if either of the units is already at their limit
         """
+        print("check rank limit")
         rank_limit = DB.support_constants.value('rank_limit')
         highest_rank_limit = DB.support_constants.value('highest_rank_limit')
         rank1 = self.get_num_ranks(support_pair.unit1)
         rank2 = self.get_num_ranks(support_pair.unit2)
+        print(support_pair.unit1, support_pair.unit2, rank1, rank2)
         highest_rank1 = self.get_num_highest_ranks(support_pair.unit1)
         highest_rank2 = self.get_num_highest_ranks(support_pair.unit2)
+        print(highest_rank1, highest_rank2, highest_rank_limit)
         if rank_limit and (rank1 >= rank_limit or rank2 >= rank_limit):
             return False
         if highest_rank_limit and (highest_rank1 >= highest_rank_limit or highest_rank2 >= highest_rank_limit):
@@ -200,7 +203,10 @@ class SupportController():
 
     def get_num_highest_ranks(self, unit_nid: str) -> int:
         highest_rank = DB.support_ranks[-1]
-        return len([pair for pair in self.get_pairs(unit_nid) if highest_rank in pair.unlocked_ranks])
+        print(unit_nid, highest_rank)
+        for pair in self.get_pairs(unit_nid):
+            print(pair, pair.unlocked_ranks)
+        return len([pair for pair in self.get_pairs(unit_nid) if highest_rank.nid in pair.unlocked_ranks])
 
     def get_num_allies(self, unit_nid: str) -> int:
         return len([pair for pair in self.get_pairs(unit_nid) if pair.unlocked_ranks])

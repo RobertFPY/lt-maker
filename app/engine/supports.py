@@ -200,7 +200,7 @@ class SupportController():
 
     def get_num_highest_ranks(self, unit_nid: str) -> int:
         highest_rank = DB.support_ranks[-1]
-        return len([pair for pair in self.get_pairs(unit_nid) if highest_rank in pair.unlocked_ranks])
+        return len([pair for pair in self.get_pairs(unit_nid) if highest_rank.nid in pair.unlocked_ranks])
 
     def get_num_allies(self, unit_nid: str) -> int:
         return len([pair for pair in self.get_pairs(unit_nid) if pair.unlocked_ranks])

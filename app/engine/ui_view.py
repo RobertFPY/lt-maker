@@ -347,7 +347,7 @@ class UIView():
                 FONT['text-blue'].blit_right(str(num), surf, (x_pos, y_pos))
 
         crit_flag = DB.constants.value('crit')
-        grandmaster = game.mode.rng_choice == RNGOption.GRANDMASTER
+        grandmaster = game.rng_mode == RNGOption.GRANDMASTER
         if grandmaster:  # Grandmaster takes precedence
             crit_flag = False
 
@@ -524,7 +524,7 @@ class UIView():
             self.attack_info_disp = self.create_attack_info(attacker, weapon, defender, a_assist, d_assist)
 
         crit_flag = DB.constants.value('crit')
-        grandmaster = game.mode.rng_choice == RNGOption.GRANDMASTER
+        grandmaster = game.rng_mode == RNGOption.GRANDMASTER
         if grandmaster:  # Grandmaster takes precedence
             crit_flag = False
 

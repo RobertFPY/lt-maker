@@ -37,7 +37,7 @@ if TYPE_CHECKING:
 
 from app.constants import VERSION
 from app.data.database.database import DB
-from app.data.database.difficulty_modes import GrowthOption, PermadeathOption
+from app.data.database.difficulty_modes import DifficultyModePrefab, GrowthOption, PermadeathOption, RNGOption
 from app.events.regions import RegionType
 from app.events import speak_style
 from app.engine import config as cf
@@ -740,14 +740,25 @@ class GameState():
         return None
 
     @property
-    def mode(self) -> DifficultyModeObject:
+    def mode(self) -> DifficultyModePrefab:
         """
-        Gets the current difficulty mode object.
+        Gets the difficulty mode prefab.
 
         Returns:
-            DifficultyModeObject: The current difficulty mode object.
+            DifficultyModePrefab: The current difficulty mode prefab.
         """
         return DB.difficulty_modes.get(self.current_mode.nid)
+
+    @property
+    def rng_mode(self) -> RNGOption:
+        """
+        Gets which RNG Option the game is currently using. 
+        If none have been set, falls back to the DifficultyModePrefab's RNG option
+
+        Returns:
+            RNGOption: The current RNGOption
+        """
+        return self.current_mode.rng_mode or DB.difficulty_modes.get(self.current_mode.nid).rng_choice
 
     def _default_mode(self):
         from app.engine.objects.difficulty_mode import DifficultyModeObject
@@ -760,7 +771,7 @@ class GameState():
             growths = GrowthOption.FIXED
         else:
             growths = first_mode.growths_choice
-        return DifficultyModeObject(first_mode.nid, permadeath, growths)
+        return DifficultyModeObject(first_mode.nid, permadeath, growths, RNGOption.TRUE_HIT)
 
     @property
     def party(self) -> PartyObject:

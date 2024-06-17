@@ -397,7 +397,7 @@ class CombatPhaseSolver():
         return self.current_command
 
     def generate_roll(self):
-        rng_mode = game.mode.rng_choice
+        rng_mode = game.rng_mode
         if rng_mode == RNGOption.CLASSIC:
             roll = static_random.get_combat()
         elif rng_mode == RNGOption.TRUE_HIT:
@@ -409,14 +409,14 @@ class CombatPhaseSolver():
         elif rng_mode == RNGOption.GRANDMASTER:
             roll = 0
         else:  # Default to True Hit
-            logging.error("Not a valid rng_mode: %s (defaulting to true hit)", game.mode.rng_choice)
+            logging.error("Not a valid rng_mode: %s (defaulting to true hit)", game.rng_mode)
             roll = (static_random.get_combat() + static_random.get_combat()) // 2
         return roll
 
     def generate_crit_roll(self):
         return static_random.get_combat()
     
-    def calculate_fates_hit(self, hit):
+    def calculate_fates_hit(self, hit: int) -> int:
         """
         Modified slightly from the actual Fates formula to instead compare against values from 0 - 100, 
         rather than from 0 - 10000. This is so we can use the existing functions in the engine that
@@ -432,7 +432,7 @@ class CombatPhaseSolver():
             item = attacker.get_weapon()
 
         to_hit = combat_calcs.compute_hit(attacker, defender, item, def_item, mode, attack_info)
-        if game.mode.rng_choice == RNGOption.FATES_HIT:
+        if game.rng_mode == RNGOption.FATES_HIT:
             to_hit = self.calculate_fates_hit(to_hit)
 
         if self.current_command.lower() in ('hit1', 'hit2', 'crit1', 'crit2'):

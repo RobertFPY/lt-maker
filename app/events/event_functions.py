@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 from app.constants import WINHEIGHT, WINWIDTH
 from app.data.database.database import DB
 from app.data.database.level_units import GenericUnit, UniqueUnit
+from app.data.database.difficulty_modes import RNGOption
 from app.data.resources.resources import RESOURCES
 from app.data.resources.sounds import SFXPrefab, SongPrefab
 from app.engine import (action, background, banner, base_surf, dialog, engine,
@@ -2220,7 +2221,16 @@ def set_mode_autolevels(self: Event, level: int, flags=None):
         else:
             self.game.current_mode.enemy_truelevels = autolevel
 
-def promote(self: Event, global_unit, klass_list: Optional[List[NID]]=None, flags=None):
+def set_mode_rng(self: Event, rng: str, flags=None):
+    flags = flags or set()
+
+    new_mode = rng
+    if new_mode not in [r.value for r in RNGOption]:
+        self.logger.error("set_mode_rng: %s is not a valid RNG Option" % new_mode)
+        return
+    self.game.current_mode.rng_mode = RNGOption(new_mode)
+
+def promote(self: Event, global_unit, klass_list: Optional[List[NID]] = None, flags=None):
     flags = flags or set()
     unit = self._get_unit(global_unit)
     if not unit:

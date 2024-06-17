@@ -1586,6 +1586,7 @@ def set_item_uses(self: Event, global_unit_or_convoy, item, uses: int, flags=Non
         action.do(action.SetObjData(item, 'c_uses', utils.clamp(uses, 0, item.data['starting_c_uses'])))
     else:
         self.logger.error("set_item_uses: Item %s does not have uses!" % item.nid)
+        return
 
 def set_item_data(self: Event, global_unit_or_convoy, item, nid, expression, flags=None):
     flags = flags or set()

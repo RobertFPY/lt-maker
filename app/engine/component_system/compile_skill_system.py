@@ -95,6 +95,7 @@ SKILL_HOOKS: Dict[str, HookInfo] = {
     'dynamic_crit_avoid':                   HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
     'dynamic_attack_speed':                 HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
     'dynamic_defense_speed':                HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
+    'dynamic_attacks':                      HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
     'dynamic_multiattacks':                 HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
     # mana (as item numeric modifiers)
     'mana':                                 HookInfo(['playback', 'unit', 'item', 'target'], ResolvePolicy.NUMERIC_ACCUM),

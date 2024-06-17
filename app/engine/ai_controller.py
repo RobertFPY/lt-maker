@@ -585,7 +585,8 @@ class PrimaryAI():
             target_damage *= 0.3
             target_accuracy *= 0.3
 
-        num_attacks = combat_calcs.outspeed(self.unit, main_target, item, target_weapon, "attack", (0, 0))
+        num_attacks = combat_calcs.compute_attack_phases(self.unit, main_target, item, target_weapon, "attack", (0, 0))
+        num_attacks *= combat_calcs.compute_multiattacks(self.unit, main_target, item, "attack", (0, 0))
         first_strike = lethality * accuracy if lethality >= 1 else 0
 
         if num_attacks > 1 and target_damage >= 1:

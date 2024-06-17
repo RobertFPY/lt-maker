@@ -321,7 +321,6 @@ class CanDoubleOnDefense(SkillComponent):
     def def_double(self, unit):
         return True
 
-
 class Vantage(SkillComponent):
     nid = 'vantage'
     desc = "Unit will attack first even while defending"

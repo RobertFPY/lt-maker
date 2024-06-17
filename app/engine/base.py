@@ -424,9 +424,12 @@ class SupportDisplay():
 
     def move_left(self, first_push=True) -> bool:
         self.rank_idx -= 1
-        if self.rank_idx < 0 and first_push:
-            self.rank_idx = 0
-            return False
+        if self.rank_idx < 0:
+            if first_push:
+                self.rank_idx = 0
+                return False
+            else:
+                self.rank_idx = 0
         return True
 
     def move_right(self, first_push=True) -> bool:

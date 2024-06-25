@@ -1219,7 +1219,17 @@ The optional flag *copy_stats* will cause the new unit to have exactly the same 
     optional_keywords = ["Nid", "Level", "Position", "EntryType", "Placement"]
     keyword_types = ["Unit", "Nid", "PositiveInteger", "Position", "EntryType", "Placement"]
     _flags = ["copy_stats"]
+class CopyStat(EventCommand):
+    nid = 'copy_stat'
+    tag = Tags.ADD_REMOVE_INTERACT_WITH_UNITS
 
+    desc = \
+        """
+Copy stat of *Unit*2 to *Unit*. 
+        """
+
+    keywords = ["Unit", "Unit2"]
+    keyword_types = ["GlobalUnitOrConvoy", "GlobalUnitOrConvoy"]
 class AddUnit(EventCommand):
     nid = 'add_unit'
     nickname = 'add'
@@ -3432,7 +3442,156 @@ class UnlockDifficulty(EventCommand):
 
     keywords = ['DifficultyMode']
     keyword_types = ['DifficultyMode']
+class ChestLootItem(EventCommand):
+    nid = 'chest_loot_item'
+    tag = Tags.MODIFY_UNIT_PROPERTIES
 
+    desc = \
+        """
+Intended to be used with chest tiles. Gives a new copy of *Item* to *GlobalUnitOrConvoy*. If the unit's inventory is full, the player will be given the option of which item to send to the convoy. If the unlocking unit is on the enemy team, the banner and sound effect will vary and the item will automatically be droppable.
+        """
+
+    keywords = ["GlobalUnitOrConvoy", "Item"]
+    
+class ClearMapAnims(EventCommand):
+    nid = 'clear_map_anims'
+    tag = Tags.TILEMAP
+    desc = ('Removes all map animations')
+
+class SetDifficultyMode(EventCommand):
+    nid = 'set_difficulty_mode'
+    tag = Tags.GAME_VARS
+
+    desc = \
+        """
+Changes the current difficulty mode setting. Primarily used in level testing.
+        """
+    keywords = ['DifficultyMode']
+
+class SetGameRules(EventCommand):
+    nid = 'set_game_rules'
+    tag = Tags.GAME_VARS
+
+    desc = \
+        """
+Changes the current rule/mod options to a preset. Primarily used in level testing.
+        """
+    keywords = ['Ruleset']
+
+class UpgradePersonalSkillT2(EventCommand):
+    nid = 'upgrade_personal_skill_t2'
+    tag = Tags.MODIFY_UNIT_PROPERTIES
+
+    desc = \
+        """
+*GlobalUnit* loses its personal skill and gains the T2 upgraded version. The skill ID should be *T2* plus the base skills' ID. If the *no_banner* flag is set, the player will not be informed of this.
+         """
+
+    keywords = ["GlobalUnit"]
+    keyword_types = ["GlobalUnit"]
+    _flags = ['no_banner']
+
+class UpgradePersonalSkillT3(EventCommand):
+    nid = 'upgrade_personal_skill_t3'
+    tag = Tags.MODIFY_UNIT_PROPERTIES
+
+    desc = \
+        """
+*GlobalUnit* loses its personal skill and gains the T3 upgraded version. The skill ID should be *T3* plus the base skills' ID. If the *no_banner* flag is set, the player will not be informed of this.
+         """
+
+    keywords = ["GlobalUnit"]
+    keyword_types = ["GlobalUnit"]
+    _flags = ['no_banner']
+
+class RestoreStatus(EventCommand):
+    nid = 'restore_status'
+    tag = Tags.MODIFY_UNIT_PROPERTIES
+
+    desc = \
+        """
+*GlobalUnit* has all negative statuses removed. Similar to a Restore staff.
+         """
+
+    keywords = ["GlobalUnit"]
+    keyword_types = ["GlobalUnit"]
+
+class HealUnit(EventCommand):
+    nid = 'heal_unit'
+    tag = Tags.MODIFY_UNIT_PROPERTIES
+
+    desc = \
+        """
+Heal *GlobalUnit*'s HP. Empower Heal components do not affect this.
+        """
+    keywords = ["GlobalUnit", "Integer"]
+    keyword_types = ["GlobalUnit", "Integer"]
+
+class ClearPortraits(EventCommand):
+    nid = "clear_portraits"
+    tag = Tags.PORTRAIT
+
+    desc = \
+        """
+Removes all portraits from the scene immediately.
+        """
+
+class WipeWeaponType(EventCommand):
+    nid = 'wipe_weapon_type'
+    tag = Tags.MODIFY_UNIT_PROPERTIES
+
+    desc = \
+        """
+Removes all weapons of the given type from the unit's inventory.
+        """
+
+    keywords = ["GlobalUnit","WeaponType"]
+
+class SetLevel(EventCommand):
+    nid = 'set_level'
+    tag = Tags.MODIFY_UNIT_PROPERTIES
+
+    desc = \
+        """
+Changes the on-paper level *GlobalUnit* by *Int* without changing its stats.
+        """
+
+    keywords = ["GlobalUnit", "Integer"]
+    _flags = ['immediate']
+
+class UnloadUnit(EventCommand):
+    nid = 'unload_unit'
+    tag = Tags.ADD_REMOVE_INTERACT_WITH_UNITS
+
+    desc = \
+        """
+Unloads a unique (non-generic) unit from memory.
+If the unit is on the map, this also removes it. If the unit doesn't exist in the game's memory, this command will do nothing.
+        """
+
+    keywords = ["UniqueUnit"]
+
+class StoreRegions(EventCommand):
+    nid = "store_regions"
+    tag = Tags.PORTRAIT
+
+    desc = \
+        """
+Removes and stores all regions on the current tilemap.
+
+Stored regions can be later recalled using recall_regions.
+        """
+
+class RecallRegions(EventCommand):
+    nid = "recall_regions"
+    tag = Tags.PORTRAIT
+
+    desc = \
+        """
+Places regions stored in memory onto the current tilemap.
+
+Used with store_regions.
+        """
 def get_commands():
     return EventCommand.__subclasses__()
 

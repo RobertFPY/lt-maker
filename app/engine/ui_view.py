@@ -222,7 +222,17 @@ class UIView():
         font = FONT['info-grey']
         dimensions = (112, 40)
         width, height = dimensions
-        surf = SPRITES.get('unit_info_bg').copy()
+        # Use a custom info background sprite depending on team.
+        if unit.team == 'player':
+            surf = SPRITES.get('unit_info_bg_player').copy()
+        elif unit.team == 'enemy':
+            surf = SPRITES.get('unit_info_bg_enemy').copy()
+        elif unit.team == 'enemy2':
+            surf = SPRITES.get('unit_info_bg_enemy2').copy()
+        elif unit.team == 'other':
+            surf = SPRITES.get('unit_info_bg_other').copy()            
+        else:
+            surf = SPRITES.get('unit_info_bg').copy()
         top, left = 4, 6
         if unit.generic:
             icons.draw_faction(surf, DB.factions.get(unit.faction), (left + 1, top + 4))

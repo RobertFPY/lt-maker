@@ -3,12 +3,13 @@ from typing import TYPE_CHECKING
 
 from app.data.database.components import ComponentType
 from app.data.database.skill_components import SkillComponent, SkillTags
-from app.engine import action, equations, item_funcs, skill_system
+from app.engine import action, equations, item_funcs, item_system, skill_system
 from app.engine.game_state import game
 import app.engine.combat.playback as pb
-from app.utilities import static_random
+from app.utilities import utils, static_random
+from app.utilities.enums import Strike
 from app.engine.source_type import SourceType
-
+import logging
 if TYPE_CHECKING:
     from app.engine.objects.item import ItemObject
 
@@ -152,7 +153,15 @@ def get_proc_rate(unit, skill) -> int:
             return component.proc_rate(unit)
     return 100  # 100 is default
 
-
+def get_modify_self_proc_rate(unit, skill) -> int:
+    for component in skill.components:
+        if component.defines('modify_self_proc_rate'):
+            return component.modify_self_proc_rate(unit)
+    return 0  # 0 is defaultdef get_modify_enemy_proc_rate(unit, skill) -> int:
+    for component in skill.components:
+        if component.defines('modify_enemy_proc_rate'):
+            return component.modify_enemy_proc_rate(unit)
+    return 0  # 0 is default
 def get_weapon_filter(skill, unit, item) -> bool:
     for component in skill.components:
         if component.defines('weapon_filter'):
@@ -169,7 +178,16 @@ class ProcGainSkillForTurn(SkillComponent):
     _did_action = False
 
     def on_upkeep(self, actions, playback, unit):
-        proc_rate = get_proc_rate(unit, self.skill)
+        proc_rate = get_proc_rate(unit, self.skill)        modify_proc_rate_unit = 0
+        modify_proc_rate_target = 0
+        for skill in unit.skills:
+            if get_modify_self_proc_rate(unit, skill) != 0:      
+                modify_proc_rate_unit = get_modify_self_proc_rate(unit, skill)
+        for skill in target.skills:
+            if get_modify_enemy_proc_rate(target, skill) != 0:      
+                modify_proc_rate_target = get_modify_enemy_proc_rate(target, skill)
+        proc_rate += modify_proc_rate_unit
+        proc_rate += modify_proc_rate_target
         if static_random.get_combat() < proc_rate:
             actions.append(action.AddSkill(unit, self.value))
             actions.append(action.TriggerCharge(unit, self.skill))
@@ -192,7 +210,10 @@ class AttackProc(SkillComponent):
         if mode == 'attack' and target and skill_system.check_enemy(unit, target):
             if not get_weapon_filter(self.skill, unit, item):
                 return
-            proc_rate = get_proc_rate(unit, self.skill)
+            proc_rate = get_proc_rate(unit, self.skill)            modify_proc_rate_unit = 0            modify_proc_rate_target = 0            for skill in unit.skills:
+                if get_modify_self_proc_rate(unit, skill) != 0:      
+                    modify_proc_rate_unit = get_modify_self_proc_rate(unit, skill)            for skill in target.skills:                if get_modify_enemy_proc_rate(target, skill) != 0:                          modify_proc_rate_target = get_modify_enemy_proc_rate(target, skill)
+            proc_rate += modify_proc_rate_unit            proc_rate += modify_proc_rate_target
             if static_random.get_combat() < proc_rate:
                 act = action.AddSkill(unit, self.value)
                 action.do(act)
@@ -219,7 +240,16 @@ class DefenseProc(SkillComponent):
         if mode == 'defense' and target and skill_system.check_enemy(unit, target):
             if not get_weapon_filter(self.skill, unit, item):
                 return
-            proc_rate = get_proc_rate(unit, self.skill)
+            proc_rate = get_proc_rate(unit, self.skill)            modify_proc_rate_unit = 0
+            modify_proc_rate_target = 0
+            for skill in unit.skills:
+                if get_modify_self_proc_rate(unit, skill) != 0:      
+                    modify_proc_rate_unit = get_modify_self_proc_rate(unit, skill)
+            for skill in target.skills:
+                if get_modify_enemy_proc_rate(target, skill) != 0:      
+                    modify_proc_rate_target = get_modify_enemy_proc_rate(target, skill)
+            proc_rate += modify_proc_rate_unit
+            proc_rate += modify_proc_rate_target
             if static_random.get_combat() < proc_rate:
                 act = action.AddSkill(unit, self.value)
                 action.do(act)
@@ -246,7 +276,16 @@ class AttackPreProc(SkillComponent):
         if mode == 'attack' and target and skill_system.check_enemy(unit, target):
             if not get_weapon_filter(self.skill, unit, item):
                 return
-            proc_rate = get_proc_rate(unit, self.skill)
+            proc_rate = get_proc_rate(unit, self.skill)            modify_proc_rate_unit = 0
+            modify_proc_rate_target = 0
+            for skill in unit.skills:
+                if get_modify_self_proc_rate(unit, skill) != 0:      
+                    modify_proc_rate_unit = get_modify_self_proc_rate(unit, skill)
+            for skill in target.skills:
+                if get_modify_enemy_proc_rate(target, skill) != 0:      
+                    modify_proc_rate_target = get_modify_enemy_proc_rate(target, skill)
+            proc_rate += modify_proc_rate_unit
+            proc_rate += modify_proc_rate_target
             if static_random.get_combat() < proc_rate:
                 act = action.AddSkill(unit, self.value)
                 action.do(act)
@@ -273,7 +312,16 @@ class DefensePreProc(SkillComponent):
         if mode == 'defense' and target and skill_system.check_enemy(unit, target):
             if not get_weapon_filter(self.skill, unit, item):
                 return
-            proc_rate = get_proc_rate(unit, self.skill)
+            proc_rate = get_proc_rate(unit, self.skill)            modify_proc_rate_unit = 0
+            modify_proc_rate_target = 0
+            for skill in unit.skills:
+                if get_modify_self_proc_rate(unit, skill) != 0:      
+                    modify_proc_rate_unit = get_modify_self_proc_rate(unit, skill)
+            for skill in target.skills:
+                if get_modify_enemy_proc_rate(target, skill) != 0:      
+                    modify_proc_rate_target = get_modify_enemy_proc_rate(target, skill)
+            proc_rate += modify_proc_rate_unit
+            proc_rate += modify_proc_rate_target
             if static_random.get_combat() < proc_rate:
                 act = action.AddSkill(unit, self.value)
                 action.do(act)
@@ -298,7 +346,23 @@ class ProcRate(SkillComponent):
     def proc_rate(self, unit):
         return equations.parser.get(self.value, unit)
 
+class ModifySelfProcRate(SkillComponent):
+    nid = 'modify_self_proc_rate'
+    desc = "Modify the proc rate"
+    tag = SkillTags.ADVANCED
 
+    expose = ComponentType.Int
+
+    def modify_self_proc_rate(self, unit):
+        return self.valueclass ModifyEnemyProcRate(SkillComponent):
+    nid = 'modify_enemy_proc_rate'
+    desc = "Modify the proc rate"
+    tag = SkillTags.ADVANCED
+
+    expose = ComponentType.Int
+
+    def modify_enemy_proc_rate(self, unit):
+        return self.value
 class AstraProc(SkillComponent):
     nid = 'astra_proc'
     desc = "Specific Proc component for Astra or Adept"
@@ -337,7 +401,16 @@ class AstraProc(SkillComponent):
         if not self._should_modify_damage and mode == 'attack' and target and skill_system.check_enemy(unit, target):
             if not get_weapon_filter(self.skill, unit, item):
                 return
-            proc_rate = get_proc_rate(unit, self.skill)
+            proc_rate = get_proc_rate(unit, self.skill)            modify_proc_rate_unit = 0
+            modify_proc_rate_target = 0
+            for skill in unit.skills:
+                if get_modify_self_proc_rate(unit, skill) != 0:      
+                    modify_proc_rate_unit = get_modify_self_proc_rate(unit, skill)
+            for skill in target.skills:
+                if get_modify_enemy_proc_rate(target, skill) != 0:      
+                    modify_proc_rate_target = get_modify_enemy_proc_rate(target, skill)
+            proc_rate += modify_proc_rate_unit
+            proc_rate += modify_proc_rate_target
             if static_random.get_combat() < proc_rate:
                 self._num_procs += 1
                 self._should_modify_damage = True
@@ -366,6 +439,102 @@ class AstraProc(SkillComponent):
         self._hitcount = 0
 
 
+class AetherProc(SkillComponent):
+    nid = 'aether_proc'
+    desc = "Specific Proc component for Aether"
+    tag = SkillTags.CUSTOM
+
+    expose = ComponentType.NewMultipleOptions
+
+    options = {
+        'extra_attacks': ComponentType.Int,
+        'dynamic_damage': ComponentType.String,
+        'lifelink': ComponentType.Float,
+        'show_proc_effects': ComponentType.Bool,
+    }
+
+    _num_procs = 0  # Number of times this astra has procced
+    _should_modify_damage = False  # Are we actually in an astra section of combat
+    _hitcount = 0  # Hit counts
+
+    def __init__(self, value=None):
+        self.value = {
+            'extra_attacks': 1,
+            'dynamic_damage': '',
+            'lifelink': 0.5,
+            'show_proc_effects': True,
+        }
+        if value:
+            self.value.update(value)
+
+    def start_sub_combat(self, actions, playback, unit, item, target, item2, mode, attack_info):
+        # If we haven't done any subattacks
+        if attack_info[1] == 0:
+            self._num_procs = 0
+            self._should_modify_damage = False
+
+        if not self._should_modify_damage:
+            self._hitcount = 0
+
+        if not self._should_modify_damage and mode == 'attack' and target and skill_system.check_enemy(unit, target):
+            if not get_weapon_filter(self.skill, unit, item):
+                return
+            proc_rate = get_proc_rate(unit, self.skill)
+            modify_proc_rate_unit = 0
+            modify_proc_rate_target = 0
+            for skill in unit.skills:
+                if get_modify_self_proc_rate(unit, skill) != 0:      
+                    modify_proc_rate_unit = get_modify_self_proc_rate(unit, skill)
+            for skill in target.skills:
+                if get_modify_enemy_proc_rate(target, skill) != 0:      
+                    modify_proc_rate_target = get_modify_enemy_proc_rate(target, skill)
+            proc_rate += modify_proc_rate_unit
+            proc_rate += modify_proc_rate_target
+            if static_random.get_combat() < proc_rate:
+                self._num_procs += 1
+                self._should_modify_damage = True
+                action.do(action.TriggerCharge(unit, self.skill))
+                if bool(self.value['show_proc_effects']):
+                    playback.append(pb.AttackProc(unit, self.skill))
+
+    def dynamic_multiattacks(self, unit, item, target, item2, mode, attack_info, base_value) -> int:
+        return int(self.value['extra_attacks']) * self._num_procs
+
+    def dynamic_damage(self, unit, item, target, item2, mode, attack_info, base_value) -> int:
+        if self._should_modify_damage:
+            if self._hitcount == 0:  
+                from app.engine import evaluate
+                try:
+                    local_args = {'item': item, 'item2': item2, 'mode': mode, 'skill': self.skill, 'attack_info': attack_info, 'base_value': base_value}
+                    return int(evaluate.evaluate(self.value['dynamic_damage'], unit, target, unit.position, local_args))
+                except Exception as e:
+                    logging.error("Couldn't evaluate %s conditional (%s)", self.value['dynamic_damage'], e)
+                    return 0
+        return 0
+
+    def after_strike(self, actions, playback, unit, item, target, item2, mode, attack_info, strike):
+        if self._should_modify_damage:
+            self._hitcount += 1
+            if self._hitcount >= int(self.value['extra_attacks']) + 1:    
+                self._should_modify_damage = False
+        if self._hitcount == 2:    
+            total_damage_dealt = 0
+            playbacks = [p for p in playback if p.nid in (
+                'damage_hit', 'damage_crit') and p.attacker == unit]
+            for p in playbacks:
+                total_damage_dealt += p.true_damage
+
+            damage = utils.clamp(total_damage_dealt, 0, target.get_hp())
+            true_damage = int(damage * self.value['lifelink'])
+            actions.append(action.ChangeHP(unit, true_damage))
+
+            playback.append(pb.HealHit(unit, item, unit, true_damage, true_damage))
+
+    def cleanup_combat(self, playback, unit, item, target, item2, mode):
+        # Shouln't be necessary but just in case
+        self._num_procs = 0
+        self._should_modify_damage = False
+        self._hitcount = 0
 class ItemOverride(SkillComponent):
     nid = 'item_override'
     desc = 'allows overriding of item properties'

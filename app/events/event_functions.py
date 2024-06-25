@@ -913,7 +913,17 @@ def create_unit(self: Event, unit, nid=None, level: Optional[int]=None, position
         position = self._check_placement(new_unit, position, placement)
     if position:
         self._place_unit(new_unit, position, entry_type)
+def copy_stat(self: Event, unit, unit2, flags=None):
+    unit1 = self.game.get_unit(unit)
+    unit2 = self.game.get_unit(unit2)
+    if not unit1:
+        self.logger.error("add_unit: Couldn't find unit %s" % unit)
+        return
+    if not unit2:
+        self.logger.error("add_unit: Couldn't find unit %s" % unit)
+        return
 
+    unit1.stats = unit2.stats.copy()
 def add_unit(self: Event, unit, position=None, entry_type=None, placement=None, animation_type=None, flags=None):
     new_unit = self._get_unit(unit)
     if not new_unit:
@@ -3635,7 +3645,271 @@ def delete_record(self: Event, nid: str, flags=None):
 
 def unlock_difficulty(self: Event, difficulty_mode: str, flags=None):
     RECORDS.unlock_difficulty(difficulty_mode)
+def chest_loot_item(self: Event, global_unit_or_convoy, item, flags=None):
+    flags = flags or set()
+    global_unit = global_unit_or_convoy
 
+    if global_unit.lower() == 'convoy':
+        unit = None
+    else:
+        unit = self._get_unit(global_unit)
+        if not unit:
+            self.logger.error("Couldn't find unit with nid %s" % global_unit)
+            return
+    item_id = item
+    if item_id in DB.items.keys():
+        #Auto-swap for item variants based on game rules.
+        fates_nid = item + '_Fates'
+        acc_nid = item + '_Acc'
+        fates_acc_nid = item + '_Fates_Acc'
+        #Don't give spell tomes if Personal Spells is active.
+        if self.game.mod_settings['personal_spells'] and DB.items.get(item).weapon_type and DB.items.get(item).weapon_type.value in ('Anima', 'Dark', 'Light'):
+            return
+        #Don't give staves if Personal Staves is active.
+        elif self.game.mod_settings['personal_staves'] and DB.items.get(item).weapon_type and DB.items.get(item).weapon_type.value == 'Staff':
+            return
+        #Replace the few items affected by both Fates-style Durability and Boosters as Accessories.
+        elif self.game.mod_settings['durability'] and self.game.mod_settings['boosters'] == 'Accessory' and fates_acc_nid in DB.items.keys():
+            item_id = fates_acc_nid
+        #Replace weapons if Fates-style Durability is active.
+        elif self.game.mod_settings['durability'] and fates_nid in DB.items.keys():
+            item_id = fates_nid
+        #Replace boosters if Boosters as Accessories is active.
+        elif self.game.mod_settings['boosters'] == 'Accessory' and acc_nid in DB.items.keys():
+            item_id = acc_nid
+        item = item_funcs.create_item(None, item_id)
+        self.game.register_item(item)
+    elif str_utils.is_int(item_id) and int(item_id) in self.game.item_registry:
+        item = self.game.item_registry[int(item_id)]
+    else:
+        self.logger.error("Couldn't find item with nid %s" % item_id)
+        return
+
+    if unit and unit.team in ('player', 'other'):
+        if item_funcs.inventory_full(unit, item):
+            if 'no_choice' in flags:
+                action.do(action.PutItemInConvoy(item))
+                self.game.alerts.append(banner.SentToConvoy(item))
+                self.game.state.change('alert')
+                self.state = 'paused'
+            else:
+                action.do(action.GiveItem(unit, item))
+                self.game.memory['item_discard_current_unit'] = unit
+                self.game.state.change('item_discard')
+                self.state = 'paused'
+                self.game.alerts.append(banner.AcquiredItem(unit, item))
+                self.game.state.change('alert')
+        else:
+            action.do(action.GiveItem(unit, item))
+            self.game.alerts.append(banner.AcquiredItem(unit, item))
+            self.game.state.change('alert')
+            self.state = 'paused'
+
+    elif unit and unit.team in ('enemy','enemy2'):
+        item.droppable = True
+        action.do(action.GiveItem(unit, item))
+        self.game.alerts.append(banner.EnemyLooted(unit, item))
+        self.game.state.change('alert')
+        self.state = 'paused'
+
+def clear_map_anims(self: Event, flags=None):
+    for anim in self.game.tilemap.animations[:]:
+        action.do(action.RemoveMapAnim(anim.nid, anim.xy_pos, False))
+    for anim in self.game.tilemap.high_animations[:]:
+        action.do(action.RemoveMapAnim(anim.nid, anim.xy_pos, True))
+        
+def set_difficulty_mode(self: Event, difficulty_mode, flags=None):
+    from app.engine.objects.difficulty_mode import DifficultyModeObject
+    mode_index = 1000
+    if difficulty_mode == 'Normal':
+        mode_index = 0
+    elif difficulty_mode == 'Hard':
+        mode_index = 1
+    elif difficulty_mode == 'Lunatic':
+        mode_index = 2    
+
+    if mode_index in (0,1,2):
+        mode = DB.difficulty_modes[mode_index]
+        self.game.current_mode = DifficultyModeObject.from_prefab(mode)
+
+def set_game_rules(self: Event, ruleset, flags=None):
+    from app.engine import mods
+    
+    if ruleset in ('Retro','retro','default'):
+        self.game.mod_settings = mods.mod_defaults()
+    elif ruleset in ('Modern','modern'):
+        self.game.mod_settings = mods.mod_modern()
+
+def upgrade_personal_skill_t2(self: Event, global_unit, flags=None):
+    flags = flags or set()
+
+    unit = self._get_unit(global_unit)
+    if not unit:
+        self.logger.error("upgrade_personal_skill: Couldn't find unit with nid %s" % global_unit)
+        return
+
+    personal_skill = [skill for skill in unit.skills if skill.char_skill]
+    if personal_skill:
+        personal_skill = personal_skill[0]
+    if not personal_skill:
+        self.logger.error("Couldn't find unit's personal skill!")
+        return
+    upgraded_skill_nid = 'T2' + personal_skill.nid
+    if upgraded_skill_nid not in DB.skills.keys():
+        self.logger.error("Couldn't find upgraded skill with nid %s" % upgraded_skill_nid)
+        return
+    
+    action.do(action.RemoveSkill(unit, personal_skill.nid, count=-1))
+    action.do(action.AddSkill(unit, upgraded_skill_nid, initiator=None))
+
+    banner_flag = 'no_banner' not in flags
+    if banner_flag:
+        skill = DB.skills.get(upgraded_skill_nid)
+        b = banner.GiveSkill(unit, skill)
+        self.game.alerts.append(b)
+        self.game.state.change('alert')
+        self.state = 'paused'
+
+def upgrade_personal_skill_t3(self: Event, global_unit, flags=None):
+    flags = flags or set()
+
+    unit = self._get_unit(global_unit)
+    if not unit:
+        self.logger.error("upgrade_personal_skill: Couldn't find unit with nid %s" % global_unit)
+        return
+
+    personal_skill = [skill for skill in unit.skills if skill.char_skill]
+    if personal_skill:
+        personal_skill = personal_skill[0]
+    if not personal_skill:
+        self.logger.error("Couldn't find unit's personal skill!")
+        return
+    upgraded_skill_nid = 'T3' + personal_skill.nid
+    if upgraded_skill_nid not in DB.skills.keys():
+        self.logger.error("Couldn't find upgraded skill with nid %s" % upgraded_skill_nid)
+        return
+    
+    action.do(action.RemoveSkill(unit, personal_skill.nid, count=-1))
+    action.do(action.AddSkill(unit, upgraded_skill_nid, initiator=None))
+
+    banner_flag = 'no_banner' not in flags
+    if banner_flag:
+        skill = DB.skills.get(upgraded_skill_nid)
+        b = banner.GiveSkill(unit, skill)
+        self.game.alerts.append(b)
+        self.game.state.change('alert')
+        self.state = 'paused'
+
+def restore_status(self: Event, global_unit, flags=None):
+    flags = flags or set()
+
+    unit = self._get_unit(global_unit)
+    if not unit:
+        self.logger.error("restore_status: Couldn't find unit with nid %s" % global_unit)
+        return
+
+    if any(skill.negative for skill in unit.skills):
+        for skill in unit.all_skills[:]:
+            if skill.negative:
+                action.do(action.RemoveSkill(unit, skill))
+                # Restore animation.
+                if unit.position:
+                    get_sound_thread().play_sfx('DebuffRecover', volume=1.0)
+                    mode = engine.BlendMode.NONE
+                    anim = RESOURCES.animations.get('MapAntitoxin')
+                    anim = MapAnimation(anim, unit.position, speed_adj=1)
+                    anim.set_tint(mode)
+                    self.animations.append(anim)
+                    self.wait_time = engine.get_time() + anim.get_wait()
+                    self.state = 'waiting'
+
+def heal_unit(self: Event, global_unit, integer, flags=None):
+    flags = flags or set()
+
+    unit = self._get_unit(global_unit)
+    if not unit:
+        self.logger.error("heal: Couldn't find unit with nid %s" % global_unit)
+        return
+
+    heal_amount = int(integer)
+    true_heal = min(heal_amount, unit.get_max_hp() - unit.get_hp())
+    action.do(action.ChangeHP(unit, heal_amount))
+
+    # For animation
+    if true_heal > 0:
+        if heal_amount >= 30:
+            name = 'MapBigHealTrans'
+        elif heal_amount >= 15:
+            name = 'MapMediumHealTrans'
+        else:
+            name = 'MapSmallHealTrans'
+        # Heal animation.
+        if unit.position:
+            get_sound_thread().play_sfx('Heal', volume=1.0)
+            mode = engine.BlendMode.NONE
+            anim = RESOURCES.animations.get(name)
+            anim = MapAnimation(anim, unit.position, speed_adj=1)
+            anim.set_tint(mode)
+            self.animations.append(anim)
+            self.wait_time = engine.get_time() + anim.get_wait()
+            self.state = 'waiting'
+
+def clear_portraits(self: Event, flags=None):
+    self.portraits.clear()
+
+def wipe_weapon_type(self: Event, global_unit, weapon_type, flags=None):
+    flags = flags or set()
+
+    unit = self._get_unit(global_unit)
+    if unit.items:
+        for item in unit.items[:]:
+            if item_system.weapon_type(unit, item) == weapon_type:
+                action.do(action.RemoveItem(unit, item))
+
+def set_level(self: Event, global_unit, integer, flags=None):
+    flags = flags or set()
+
+    unit = self._get_unit(global_unit)
+    if not unit:
+        self.logger.error("change_stats: Couldn't find unit %s" % global_unit)
+        return
+
+    new_level = unit.level + int(integer)
+    action.do(action.SetLevel(unit, new_level))
+
+def unload_unit(self: Event, unique_unit, flags=None):
+    if not self.game.get_unit(unique_unit):
+        self.logger.error("load_unit: Unit with NID %s doesn't exist!" % unique_unit)
+        return
+    unloadme = self.game.get_unit(unique_unit)
+    if unloadme.position:
+        if DB.constants.value('initiative'):
+            action.do(action.RemoveInitiative(unloadme))
+        action.do(action.LeaveMap(unloadme))
+    self.game.unit_registry.pop(unique_unit)
+
+def store_regions(self: Event, flags=None):
+    flags = flags or set()
+
+    # Remove and store all regions
+    previous_region_pos = {}
+    for region in list(self.game.level.regions):
+        if region.position:
+            previous_region_pos[region.nid] = region.position
+            act = action.RemoveRegion(region)
+            act.execute()
+    self.game.level_vars['_stored_region_%s' % self.game.level.tilemap.nid] = previous_region_pos
+
+def recall_regions(self: Event, flags=None):
+    flags = flags or set()
+
+    if self.game.level_vars.get('_stored_region_%s' % self.game.level.tilemap.nid):
+        for region_nid, pos in self.game.level_vars['_stored_region_%s' % self.game.level.tilemap.nid].items():
+            region = self.game.get_region(region_nid)
+            if region:
+                region.position = pos
+                act = action.AddRegion(region)
+                act.execute()
 def hide_combat_ui(self: Event, flags=None):
     self.game.game_vars["_hide_ui"] = True
 

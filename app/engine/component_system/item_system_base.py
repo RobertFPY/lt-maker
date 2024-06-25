@@ -110,6 +110,9 @@ class Defaults():
     def text_color(unit: UnitObject, item: ItemObject) -> str:
         return None
 
+    @staticmethod
+    def change_animation(unit: UnitObject, item: ItemObject) -> str:
+        return unit.klass
 def get_all_components(unit: UnitObject, item: ItemObject) -> list:
     from app.engine import skill_system
     override_components = skill_system.item_override(unit, item)

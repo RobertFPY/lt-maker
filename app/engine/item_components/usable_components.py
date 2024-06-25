@@ -162,6 +162,16 @@ class UsesOptions(ItemComponent):
     def one_loss_per_combat(self) -> bool:
         return self.value.get('one_loss_per_combat', False)
 
+class NoAlertOnBreak(ItemComponent):
+    nid = 'no_alert_on_break'
+    desc = "Item will not display 'X broke!' when it runs out of uses."
+    tag = ItemTags.USES
+
+    expose = ComponentType.Bool
+
+    def alerts_when_broken(self, unit, item):
+        return False
+
 class HPCost(ItemComponent):
     nid = 'hp_cost'
     desc = "Item subtracts the specified amount of HP upon use. If the subtraction would kill the unit the item becomes unusable."

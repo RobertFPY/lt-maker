@@ -626,7 +626,7 @@ class UIView():
             if mt is not None:
                 height += 1
             hit = combat_calcs.compute_hit(attacker, defender, spell, resolve_weapon(defender), 'attack', (0, 0))
-            if hit is not None:
+            if spell.hit is not None:
                 height += 1
             crit = combat_calcs.compute_crit(attacker, defender, spell, resolve_weapon(defender), 'attack', (0, 0))
             if DB.constants.value('crit') and crit is not None:
@@ -660,7 +660,7 @@ class UIView():
                 mt_width = FONT['text-blue'].width(str(mt))
                 FONT['text-blue'].blit(str(mt), bg_surf, (width - 5 - mt_width, running_height))
 
-            if hit is not None:
+            if spell.hit is not None:
                 running_height += 16
                 FONT['text-yellow'].blit('Hit', bg_surf, (9, running_height))
                 if hit >= 100:

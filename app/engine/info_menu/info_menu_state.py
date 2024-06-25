@@ -653,14 +653,19 @@ class InfoMenuState(State):
                     render_text(surf, ['text'], [str(aid)], ['blue'], (111, 16 * true_idx + 24), HAlignment.RIGHT)
 
                     # Mount Symbols
-                    if 'Dragon' in self.unit.tags:
-                        aid_surf = engine.subsurface(SPRITES.get('aid_icons'), (0, 48, 16, 16))
-                    elif 'Flying' in self.unit.tags:
-                        aid_surf = engine.subsurface(SPRITES.get('aid_icons'), (0, 32, 16, 16))
-                    elif 'Mounted' in self.unit.tags:
-                        aid_surf = engine.subsurface(SPRITES.get('aid_icons'), (0, 16, 16, 16))
+                    for tag in self.unit.tags:
+                        if ('aid_icon_%s' % tag) in SPRITES:
+                            aid_surf = SPRITES.get('aid_icon_%s' % tag)
+                            break
                     else:
-                        aid_surf = engine.subsurface(SPRITES.get('aid_icons'), (0, 0, 16, 16))
+                        if 'Dragon' in self.unit.tags:
+                            aid_surf = engine.subsurface(SPRITES.get('aid_icons'), (0, 48, 16, 16))
+                        elif 'Flying' in self.unit.tags:
+                            aid_surf = engine.subsurface(SPRITES.get('aid_icons'), (0, 32, 16, 16))
+                        elif 'Mounted' in self.unit.tags:
+                            aid_surf = engine.subsurface(SPRITES.get('aid_icons'), (0, 16, 16, 16))
+                        else:
+                            aid_surf = engine.subsurface(SPRITES.get('aid_icons'), (0, 0, 16, 16))
                     surf.blit(aid_surf, (112, 16 * true_idx + 24))
                     render_text(surf, ['text'], [text_funcs.translate('Aid')], ['yellow'], (72, 16 * true_idx + 24))
                     self.info_graph.register((96 + 72, 16 * true_idx + 24, 64, 16), 'Aid_desc', state)

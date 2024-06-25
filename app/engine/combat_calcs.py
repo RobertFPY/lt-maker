@@ -588,7 +588,9 @@ def compute_attack_phases(unit, target, item, def_item, mode, attack_info) -> in
 
     num_attacks += item_system.dynamic_attacks(unit, item, target, resolve_weapon(target), mode, attack_info, num_attacks)
     num_attacks += skill_system.dynamic_attacks(unit, item, target, resolve_weapon(target), mode, attack_info, num_attacks)
-    num_attacks += outspeed(unit, target, item, def_item, mode, attack_info)
+    # Only bother calculating whether we outspeed when there is a target
+    if target:
+        num_attacks += outspeed(unit, target, item, def_item, mode, attack_info)
 
     return num_attacks
 

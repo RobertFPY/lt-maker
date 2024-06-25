@@ -58,8 +58,14 @@ class AttackerState(SolverState):
         if solver.attacker_alive() and (not solver.defender or solver.defender_alive()):
             if command == '--':
 
-                attacker_num_phases = combat_calcs.compute_attack_phases(solver.attacker, solver.defender, solver.main_item, solver.def_item, 'attack', solver.get_attack_info())
-                defender_num_phases = combat_calcs.compute_attack_phases(solver.defender, solver.attacker, solver.def_item, solver.main_item, 'defense', solver.get_defense_info())
+                # Calculate the number of phases in this combat
+                attacker_num_phases = combat_calcs.compute_attack_phases(
+                    solver.attacker, solver.defender, solver.main_item, solver.def_item, 'attack', solver.get_attack_info())
+                if solver.defender:
+                    defender_num_phases = combat_calcs.compute_attack_phases(
+                        solver.defender, solver.attacker, solver.def_item, solver.main_item, 'defense', solver.get_defense_info())
+                else:
+                    defender_num_phases = 1
 
                 if solver.attacker.strike_partner and \
                         (solver.num_attacks == 1 or can_double_in_pairup) and \
@@ -146,8 +152,14 @@ class AttackerPartnerState(SolverState):
         if solver.attacker_alive() and (not solver.defender or solver.defender_alive()):
             if command == '--':
                 
-                attacker_num_phases = combat_calcs.compute_attack_phases(solver.attacker, solver.defender, solver.main_item, solver.def_item, 'attack', solver.get_attack_info())
-                defender_num_phases = combat_calcs.compute_attack_phases(solver.defender, solver.attacker, solver.def_item, solver.main_item, 'defense', solver.get_defense_info())
+                # Calculate the number of phases in this combat
+                attacker_num_phases = combat_calcs.compute_attack_phases(
+                    solver.attacker, solver.defender, solver.main_item, solver.def_item, 'attack', solver.get_attack_info())
+                if solver.defender:
+                    defender_num_phases = combat_calcs.compute_attack_phases(
+                        solver.defender, solver.attacker, solver.def_item, solver.main_item, 'defense', solver.get_defense_info())
+                else:
+                    defender_num_phases = 1
 
                 if solver.item_has_uses() and \
                         solver.num_subattacks < self.num_multiattacks:
@@ -211,6 +223,7 @@ class DefenderState(SolverState):
         if solver.attacker_alive() and solver.defender_alive():
             if command == '--':
 
+                # Calculate the number of phases in this combat
                 attacker_num_phases = combat_calcs.compute_attack_phases(solver.attacker, solver.defender, solver.main_item, solver.def_item, 'attack', solver.get_attack_info())
                 defender_num_phases = combat_calcs.compute_attack_phases(solver.defender, solver.attacker, solver.def_item, solver.main_item, 'defense', solver.get_defense_info())
 
@@ -273,6 +286,7 @@ class DefenderPartnerState(SolverState):
         if solver.attacker_alive() and solver.defender_alive():
             if command == '--':
                 
+                # Calculate the number of phases in this combat
                 attacker_num_phases = combat_calcs.compute_attack_phases(solver.attacker, solver.defender, solver.main_item, solver.def_item, 'attack', solver.get_attack_info())
                 defender_num_phases = combat_calcs.compute_attack_phases(solver.defender, solver.attacker, solver.def_item, solver.main_item, 'defense', solver.get_defense_info())
 

@@ -1219,7 +1219,8 @@ The optional flag *copy_stats* will cause the new unit to have exactly the same 
     optional_keywords = ["Nid", "Level", "Position", "EntryType", "Placement"]
     keyword_types = ["Unit", "Nid", "PositiveInteger", "Position", "EntryType", "Placement"]
     _flags = ["copy_stats"]
-class CopyStat(EventCommand):
+
+class CopyStat(EventCommand):
     nid = 'copy_stat'
     tag = Tags.ADD_REMOVE_INTERACT_WITH_UNITS
 
@@ -1229,7 +1230,8 @@ Copy stat of *Unit*2 to *Unit*.
         """
 
     keywords = ["Unit", "Unit2"]
-    keyword_types = ["GlobalUnitOrConvoy", "GlobalUnitOrConvoy"]
+    keyword_types = ["GlobalUnitOrConvoy", "GlobalUnitOrConvoy"]
+
 class AddUnit(EventCommand):
     nid = 'add_unit'
     nickname = 'add'
@@ -1330,12 +1332,13 @@ A *CombatScript* can optionally be provided to ensure a pre-set outcome to the b
 *PositiveInteger* can be set to determine the number of rounds the combat will go on for. Defaults to 1. Useful for arena combats (set to 20+).
 The *arena* flag should be set when you want to allow the player to be able to press B and leave the combat between rounds. It also sets the combat background to the arena.
 The *force_animation* and *force_no_animation* flags tell the engine whether to ignore the player's settings when choosing to display a combat animation. Useful for arena combats.
+The *immediate* flag will cause the combat to happen as quickly as possible, often instantaneously. Use when you want the effects of combat to happen without the player waiting to see it.
         """
 
     keywords = ["Unit", "Position"]
     optional_keywords = ["CombatScript", "Ability", "Rounds"]
     keyword_types = ["Unit", "Position", "CombatScript", "Ability", "PositiveInteger"]
-    _flags = ["arena", "force_animation", "force_no_animation"]
+    _flags = ["arena", "force_animation", "force_no_animation", "immediate"]
 
 class SetName(EventCommand):
     nid = 'set_name'
@@ -3442,7 +3445,8 @@ class UnlockDifficulty(EventCommand):
 
     keywords = ['DifficultyMode']
     keyword_types = ['DifficultyMode']
-class ChestLootItem(EventCommand):
+
+class ChestLootItem(EventCommand):
     nid = 'chest_loot_item'
     tag = Tags.MODIFY_UNIT_PROPERTIES
 
@@ -3591,7 +3595,8 @@ class RecallRegions(EventCommand):
 Places regions stored in memory onto the current tilemap.
 
 Used with store_regions.
-        """
+        """
+
 def get_commands():
     return EventCommand.__subclasses__()
 

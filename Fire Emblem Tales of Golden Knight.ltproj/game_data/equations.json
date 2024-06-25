@@ -1,0 +1,198 @@
+[
+    {
+        "nid": "HITPOINTS",
+        "expression": "HP"
+    },
+    {
+        "nid": "MOVEMENT",
+        "expression": "MOV"
+    },
+    {
+        "nid": "ATTACK_SPEED",
+        "expression": "SPD"
+    },
+    {
+        "nid": "DEFENSE_SPEED",
+        "expression": "SPD"
+    },
+    {
+        "nid": "HIT",
+        "expression": "SKL*2 + LCK//2"
+    },
+    {
+        "nid": "AVOID",
+        "expression": "SPD*2 + LCK"
+    },
+    {
+        "nid": "CRIT_HIT",
+        "expression": "SKL//2"
+    },
+    {
+        "nid": "CRIT_AVOID",
+        "expression": "LCK"
+    },
+    {
+        "nid": "DAMAGE",
+        "expression": "STR"
+    },
+    {
+        "nid": "DEFENSE",
+        "expression": "DEF"
+    },
+    {
+        "nid": "MAGIC_DAMAGE",
+        "expression": "MAG"
+    },
+    {
+        "nid": "MAGIC_DEFENSE",
+        "expression": "RES"
+    },
+    {
+        "nid": "MAGIC_RANGE",
+        "expression": "max(5, MAG//2)"
+    },
+    {
+        "nid": "CRIT_ADD",
+        "expression": "0"
+    },
+    {
+        "nid": "CRIT_MULT",
+        "expression": "3"
+    },
+    {
+        "nid": "SPEED_TO_DOUBLE",
+        "expression": "4"
+    },
+    {
+        "nid": "RATING",
+        "expression": "(HP - 10)//2 + max(STR, MAG) + SKL + SPD + LCK//2 + DEF + RES"
+    },
+    {
+        "nid": "RESCUE_AID",
+        "expression": "max(0, 25 - CON) if 'Mounted' in unit.tags else max(0, CON - 1)"
+    },
+    {
+        "nid": "RESCUE_WEIGHT",
+        "expression": "CON"
+    },
+    {
+        "nid": "STEAL_ATK",
+        "expression": "SPD"
+    },
+    {
+        "nid": "STEAL_DEF",
+        "expression": "SPD"
+    },
+    {
+        "nid": "HEAL",
+        "expression": "MAG + 10"
+    },
+    {
+        "nid": "MEND",
+        "expression": "MAG + 20"
+    },
+    {
+        "nid": "CONSTITUTION",
+        "expression": "CON"
+    },
+    {
+        "nid": "INITIATIVE",
+        "expression": "SPD"
+    },
+    {
+        "nid": "MANA",
+        "expression": "0"
+    },
+    {
+        "nid": "ZERO",
+        "expression": "0"
+    },
+    {
+        "nid": "ONE_HUNDRED",
+        "expression": "100"
+    },
+    {
+        "nid": "FIFTY",
+        "expression": "50"
+    },
+    {
+        "nid": "TWENTY",
+        "expression": "20"
+    },
+    {
+        "nid": "THIRTY",
+        "expression": "30"
+    },
+    {
+        "nid": "SKILL",
+        "expression": "SKL"
+    },
+    {
+        "nid": "HALF_SKILL",
+        "expression": "SKL//2"
+    },
+    {
+        "nid": "LUCK",
+        "expression": "LCK"
+    },
+    {
+        "nid": "DOUBLE_LUCK",
+        "expression": "LCK * 2"
+    },
+    {
+        "nid": "HALF_LUCK",
+        "expression": "LCK//2"
+    },
+    {
+        "nid": "LETHALITY",
+        "expression": "999"
+    },
+    {
+        "nid": "STAFFHIT",
+        "expression": "30+(MAG*5)+SKL"
+    },
+    {
+        "nid": "STAFFAVOID",
+        "expression": "RES*5"
+    },
+    {
+        "nid": "SPEED",
+        "expression": "SPD"
+    },
+    {
+        "nid": "HALF_SPEED",
+        "expression": "SPD//2"
+    },
+    {
+        "nid": "HEALTH_AVOID",
+        "expression": "(unit.get_hp() / unit.get_max_hp()) * 100"
+    },
+    {
+        "nid": "FAVORED_DAMAGE",
+        "expression": "max(STR, MAG)"
+    },
+    {
+        "nid": "BOTH_DAMAGE",
+        "expression": "STR + MAG"
+    },
+    {
+        "nid": "BOTH_DEFENSE",
+        "expression": "DEF + RES"
+    },
+    {
+        "nid": "WORSE_DEFENSE",
+        "expression": "min(DEF,RES)"
+    },
+    {
+        "nid": "BETTER_DEFENSE",
+        "expression": "max(DEF,RES)"
+    },
+    {
+        "nid": "INVERTED_DEFENSE",
+        "expression": "min(-1 * DEF,-1 * RES)"
+    },
+    {
+        "nid": "DOUBLE_MAGIC",
+        "expression": "MAG + MAG"
+    }
+]

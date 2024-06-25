@@ -1473,7 +1473,7 @@ class GameState():
         all_formation_spots = self.get_all_formation_spots()
         return sorted({pos for pos in all_formation_spots if not self.board.get_unit(pos)})
 
-    def get_next_formation_spot(self) -> tuple:
+    def get_next_formation_spot(self) -> Optional[Pos]:
         legal_spots = self.get_open_formation_spots()
         if legal_spots:
             return legal_spots[0]

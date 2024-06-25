@@ -507,6 +507,7 @@ class UnitSprite():
                 top -= extra_height
             image = image_mods.make_translucent(image.convert_alpha(), progress)
 
+        # Flickering the unit a specific color, like flash white during a map combat hit
         for flicker in self.flicker[:]:
             starting_time, total_time, color, direction, fade_out = flicker
             if engine.get_time() >= starting_time:
@@ -521,9 +522,11 @@ class UnitSprite():
                 elif direction == 'sub':
                     image = image_mods.sub_tint(image.convert_alpha(), color)
 
+        # Color a unit red if they are highlighted by the boundary
         if not self.flicker and game.boundary.draw_flag and self.unit.nid in game.boundary.displaying_units:
             image = image_mods.change_color(image.convert_alpha(), (60, 0, 0))
 
+        # Turnwheel tint of unit sprite
         if game.action_log.hovered_unit is self.unit:
             length = 200
             if not (current_time // length) % 2:
@@ -536,14 +539,19 @@ class UnitSprite():
 
         flicker_tint = skill_system.unit_sprite_flicker_tint(self.unit)
         for idx, tint in enumerate(flicker_tint):
-            color, period, width = tint
-            offset = idx * period / len(flicker_tint)
-            diff = utils.model_wave(current_time + offset, period, width)
-            diff = utils.clamp(diff, 0, 1)
-            color = tuple([int(c * diff) for c in color])
-            image = image_mods.add_tint(image.convert_alpha(), color)
-
-        # Each image has (self.image.get_width() - 32)//2 buggers on the
+            color, period, width, add = tint
+            # Modify the color by the wave
+            if period > 0 and width > 0:
+                offset = idx * period / len(flicker_tint)
+                diff = utils.model_wave(current_time + offset, period, width)
+                diff = utils.clamp(diff, 0, 1)
+                color = tuple([int(c * diff) for c in color])
+            if add:
+                image = image_mods.add_tint(image.convert_alpha(), color)
+            else:
+                image = image_mods.sub_tint(image.convert_alpha(), color)
+                
+        # Each image has (self.image.get_width() - 32)//2 pixels on the
         # left and right of it, to handle any off tile spriting
         topleft = left - max(0, (image.get_width() - 16)//2), top - 24
 
@@ -557,7 +565,6 @@ class UnitSprite():
             surf.blit(image, topleft)
 
         # Draw animations
-
         valid_anims: list = skill_system.should_draw_anim(self.unit)
         for animation in self.animations.values():
             if not animation.contingent or animation.nid in valid_anims:

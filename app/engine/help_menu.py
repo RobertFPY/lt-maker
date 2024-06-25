@@ -13,7 +13,7 @@ from app.engine.sprites import SPRITES
 from app.utilities import utils
 from app.utilities.enums import HAlignment
 from app.utilities.typing import NID
-
+
 MAX_TEXT_WIDTH = WINWIDTH - 40
 
 class HelpDialog():
@@ -324,6 +324,94 @@ class ItemHelpDialog(HelpDialog):
         if self.dlg:
             self.dlg.update()
             self.dlg.draw(help_surf)
+
+        surf = self.final_draw(surf, self.top_left(pos, right), time, help_surf)
+        return surf
+class SkillHelpDialog(HelpDialog):
+
+    def __init__(self, desc, name=False):
+        self.name = name
+        self.last_time = self.start_time = 0
+        self.transition_in = False
+        self.transition_out = 0
+        self.help_text = False
+        self.bg_sprite = 'skill_info'
+        self.panel_width = SPRITES.get(self.bg_sprite).get_width()
+        
+        if not desc:
+            desc = ''
+        desc = text_funcs.translate(desc)
+        lines = self.build_lines(desc)
+        num_lines = len(lines)
+
+        self.create_dialog(desc)
+
+        if num_lines == 1:
+            self.bg_sprite = 'skill_info_small'
+        elif num_lines == 3:
+            self.bg_sprite = 'skill_info_large'        elif num_lines == 4:
+            self.bg_sprite = 'skill_info_xlarge'        elif num_lines == 5:
+            self.bg_sprite = 'skill_info_xxlarge'
+
+        #height = font_height(self.font) * num_lines + 16
+        height = SPRITES.get(self.bg_sprite).get_height()
+        width = SPRITES.get(self.bg_sprite).get_width()
+        self.help_surf = base_surf.create_base_surf(width, height, self.bg_sprite)
+        self.h_surf = engine.create_surface((self.panel_width, height + 3), transparent=True)
+
+    def find_num_lines(self, desc: str) -> int:
+        '''Returns the number of lines in the description'''
+        # Split on \n, then go through each element in the list
+        # and break it into further strings if too long
+        desc = desc.replace('{br}', '\n')
+        lines = desc.split("\n")
+        total_lines = len(lines)
+        for line in lines:
+            desc_length = text_width(self.font, line)
+            total_lines += desc_length // (self.panel_width - 18)            
+        return total_lines
+
+    def build_lines(self, desc: str) -> List[str]:
+        # Hard set num lines if desc is very short
+        if '\n' in desc:
+            desc_lines = desc.splitlines()
+            lines = []
+            for line in desc_lines:
+                num = self.find_num_lines(line)
+                line = text_funcs.split(self.font, line, num, self.panel_width)
+                lines.extend(line)
+        else:
+            num = self.find_num_lines(desc)
+            lines = text_funcs.split(self.font, desc, num, self.panel_width)
+        lines = fix_tags(lines)
+        return lines
+
+    def create_dialog(self, desc):
+        from app.engine import dialog
+        desc = desc.replace('\n', '{br}')
+        #self.dlg = \
+        #    dialog.Dialog.from_style(game.speak_styles.get('__default_help'), desc,
+        #                             width=self.greatest_line_len + 16)
+        self.dlg = \
+             dialog.Dialog.from_style(game.speak_styles.get('__default_help'), desc,
+                                      width = self.panel_width)
+        self.dlg.position = (0, (16 if self.name else 0))
+
+    def draw(self, surf, pos, right=False):
+        time = engine.get_time()
+        if time > self.last_time + 1000:  # If it's been at least a second since last update
+            self.start_time = time - 16
+            self.transition_in = True
+            self.transition_out = 0
+            self.create_dialog(self.dlg.plain_text)
+        self.last_time = time
+
+        help_surf = engine.copy_surface(self.help_surf)
+        if self.name:
+            #render_text(help_surf, [self.font], [self.name], [game.speak_styles.get('__default_help').font_color], (8, 8))
+            render_text(help_surf, ['bconvo'], [self.name], ['brown'], (10, 8))
+        self.dlg.update()
+        self.dlg.draw(help_surf)
 
         surf = self.final_draw(surf, self.top_left(pos, right), time, help_surf)
         return surf

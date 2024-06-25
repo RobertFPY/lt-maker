@@ -56,7 +56,7 @@ ITEM_HOOKS: Dict[str, HookInfo] = {
     'hit':                                             HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
     'crit':                                            HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
     'effect_animation':                                HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
-    'text_color':                                      HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
+    'text_color':                                      HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),    'change_animation':                                HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
     # returns set of all defined values
     'target_icon':                                     HookInfo(['unit', 'item', 'target'], ResolvePolicy.UNION),
     # returns sum of all defined values

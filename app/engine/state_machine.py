@@ -122,6 +122,7 @@ class StateMachine():
              'prep_pick_units': prep.PrepPickUnitsState,
              'prep_formation': prep.PrepFormationState,
              'prep_formation_select': prep.PrepFormationSelectState,
+             'prep_formation_menu': prep.PrepFormationMenuState,
              'prep_manage': prep.PrepManageState,
              'prep_manage_select': prep.PrepManageSelectState,
              'optimize_all_choice': prep.OptimizeAllChoiceState,

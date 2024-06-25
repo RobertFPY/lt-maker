@@ -543,7 +543,7 @@ class UnitOption(BasicOption):
             elif DB.constants.value('fatigue') and game.game_vars.get('_fatigue') and \
                     self.unit.get_fatigue() >= self.unit.get_max_fatigue():
                 color = 'red'
-            elif not self.unit.position:
+            elif not self.unit.position and not game.get_rescuer(self.unit):
                 color = 'grey'
             elif self.unit.position and (not game.check_for_region(self.unit.position, 'formation') or 'Required' in self.unit.tags):
                 color = 'green'
@@ -556,7 +556,7 @@ class UnitOption(BasicOption):
 
     def draw_map_sprite(self, surf, x, y, highlight=False):
         map_sprite = self.unit.sprite.create_image('passive')
-        if self.mode == 'position' and not self.unit.position:
+        if self.mode == 'position' and (not self.unit.position and not game.get_rescuer(self.unit)):
             map_sprite = self.unit.sprite.create_image('gray')
         elif highlight:
             map_sprite = self.unit.sprite.create_image('active')

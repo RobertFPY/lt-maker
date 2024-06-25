@@ -1,0 +1,767 @@
+[
+    {
+        "nid": "1",
+        "name": "Plain",
+        "color": [
+            192,
+            224,
+            48
+        ],
+        "minimap": "Grass",
+        "platform": "Plains",
+        "background": "combat_plains",
+        "mtype": "Normal",
+        "opaque": false,
+        "status": "Plain"
+    },
+    {
+        "nid": "CantMovePlain",
+        "name": "Plain",
+        "color": [
+            66,
+            76,
+            16
+        ],
+        "minimap": "Grass",
+        "platform": "Plains",
+        "background": "combat_plains",
+        "mtype": "Wall",
+        "opaque": false,
+        "status": "Plain"
+    },
+    {
+        "nid": "0",
+        "name": "--",
+        "color": [
+            0,
+            0,
+            0
+        ],
+        "minimap": "Wall",
+        "platform": "Wall",
+        "background": "BlackBackground",
+        "mtype": "Fence",
+        "opaque": false,
+        "status": null
+    },
+    {
+        "nid": "2",
+        "name": "Forest",
+        "color": [
+            64,
+            128,
+            64
+        ],
+        "minimap": "Forest",
+        "platform": "Forest",
+        "background": "combat_forrest",
+        "mtype": "Forest",
+        "opaque": false,
+        "status": "Forest"
+    },
+    {
+        "nid": "3",
+        "name": "Thicket",
+        "color": [
+            0,
+            32,
+            0
+        ],
+        "minimap": "Thicket",
+        "platform": "Thicket",
+        "background": "BattleThicket",
+        "mtype": "Thicket",
+        "opaque": false,
+        "status": "Thicket"
+    },
+    {
+        "nid": "4",
+        "name": "Bridge",
+        "color": [
+            170,
+            170,
+            127
+        ],
+        "minimap": "Bridge",
+        "platform": "Bridge",
+        "background": "BattleBridge",
+        "mtype": "Normal",
+        "opaque": false,
+        "status": "Bridge"
+    },
+    {
+        "nid": "5",
+        "name": "Stairs",
+        "color": [
+            84,
+            24,
+            84
+        ],
+        "minimap": "Floor",
+        "platform": "Floor",
+        "background": "combat_castle4",
+        "mtype": "Stairs",
+        "opaque": false,
+        "status": "Stair"
+    },
+    {
+        "nid": "ShipStairs",
+        "name": "Stairs",
+        "color": [
+            179,
+            85,
+            186
+        ],
+        "minimap": "Floor",
+        "platform": "Deck",
+        "background": "combat_castle3",
+        "mtype": "Stairs",
+        "opaque": false,
+        "status": "Stair"
+    },
+    {
+        "nid": "6",
+        "name": "Floor",
+        "color": [
+            84,
+            84,
+            84
+        ],
+        "minimap": "Floor",
+        "platform": "Floor",
+        "background": "combat_castle4",
+        "mtype": "Normal",
+        "opaque": false,
+        "status": "Floor"
+    },
+    {
+        "nid": "14",
+        "name": "Dock",
+        "color": [
+            84,
+            84,
+            84
+        ],
+        "minimap": "Floor",
+        "platform": "Deck",
+        "background": "combat_village2",
+        "mtype": "Normal",
+        "opaque": false,
+        "status": "Floor"
+    },
+    {
+        "nid": "15",
+        "name": "Deck",
+        "color": [
+            84,
+            84,
+            84
+        ],
+        "minimap": "Floor",
+        "platform": "Deck",
+        "background": "combat_sea2",
+        "mtype": "Normal",
+        "opaque": false,
+        "status": "Floor"
+    },
+    {
+        "nid": "7",
+        "name": "Road",
+        "color": [
+            240,
+            240,
+            128
+        ],
+        "minimap": "Sand",
+        "platform": "Road",
+        "background": "combat_plains",
+        "mtype": "Normal",
+        "opaque": false,
+        "status": "Road"
+    },
+    {
+        "nid": "8",
+        "name": "Pillar",
+        "color": [
+            64,
+            56,
+            40
+        ],
+        "minimap": "Pillar",
+        "platform": "Pillar",
+        "background": "combat_castle4",
+        "mtype": "Pillar",
+        "opaque": false,
+        "status": "Pillar"
+    },
+    {
+        "nid": "9",
+        "name": "Wall",
+        "color": [
+            40,
+            40,
+            40
+        ],
+        "minimap": "Wall",
+        "platform": "Wall",
+        "background": "None",
+        "mtype": "Wall",
+        "opaque": true,
+        "status": null
+    },
+    {
+        "nid": "13",
+        "name": "Roof",
+        "color": [
+            40,
+            40,
+            40
+        ],
+        "minimap": "Wall",
+        "platform": "Wall",
+        "background": "None",
+        "mtype": "Wall",
+        "opaque": true,
+        "status": null
+    },
+    {
+        "nid": "16",
+        "name": "Fence",
+        "color": [
+            64,
+            40,
+            40
+        ],
+        "minimap": "Wall",
+        "platform": "Wall",
+        "background": "None",
+        "mtype": "Fence",
+        "opaque": false,
+        "status": null
+    },
+    {
+        "nid": "17",
+        "name": "Gunnel",
+        "color": [
+            0,
+            104,
+            160
+        ],
+        "minimap": "Wall",
+        "platform": "Bridge",
+        "background": "combat_sea",
+        "mtype": "Fence",
+        "opaque": false,
+        "status": null
+    },
+    {
+        "nid": "10",
+        "name": "Lake",
+        "color": [
+            0,
+            160,
+            248
+        ],
+        "minimap": "Sea",
+        "platform": "Lake",
+        "background": "combat_river",
+        "mtype": "Sea",
+        "opaque": false,
+        "status": "Avoid10"
+    },
+    {
+        "nid": "11",
+        "name": "Sea",
+        "color": [
+            0,
+            104,
+            160
+        ],
+        "minimap": "Sea",
+        "platform": "Sea",
+        "background": "combat_sea",
+        "mtype": "Sea",
+        "opaque": false,
+        "status": "Avoid10"
+    },
+    {
+        "nid": "12",
+        "name": "River",
+        "color": [
+            0,
+            160,
+            248
+        ],
+        "minimap": "River",
+        "platform": "River",
+        "background": "combat_river",
+        "mtype": "River",
+        "opaque": false,
+        "status": null
+    },
+    {
+        "nid": "20",
+        "name": "Hill",
+        "color": [
+            112,
+            84,
+            56
+        ],
+        "minimap": "Hill",
+        "platform": "Hill",
+        "background": "combat_hill",
+        "mtype": "Hill",
+        "opaque": false,
+        "status": "Hill"
+    },
+    {
+        "nid": "21",
+        "name": "Mountain",
+        "color": [
+            80,
+            48,
+            40
+        ],
+        "minimap": "Mountain",
+        "platform": "Mountain",
+        "background": "combat_moutain",
+        "mtype": "Mountain",
+        "opaque": false,
+        "status": "Peak"
+    },
+    {
+        "nid": "22",
+        "name": "Cliff",
+        "color": [
+            136,
+            136,
+            104
+        ],
+        "minimap": "Cliff",
+        "platform": "Cliff",
+        "background": "combat_hill",
+        "mtype": "Cliff",
+        "opaque": false,
+        "status": null
+    },
+    {
+        "nid": "23",
+        "name": "Snag",
+        "color": [
+            153,
+            92,
+            76
+        ],
+        "minimap": "Switch",
+        "platform": "Plains",
+        "background": "combat_plain2",
+        "mtype": "Fence",
+        "opaque": true,
+        "status": null
+    },
+    {
+        "nid": "25",
+        "name": "Barrel",
+        "color": [
+            168,
+            104,
+            56
+        ],
+        "minimap": "Wall",
+        "platform": "Deck",
+        "background": "combat_sea",
+        "mtype": "Fence",
+        "opaque": false,
+        "status": null
+    },
+    {
+        "nid": "39",
+        "name": "Mast",
+        "color": [
+            168,
+            104,
+            56
+        ],
+        "minimap": "Wall",
+        "platform": "Deck",
+        "background": "None",
+        "mtype": "Fence",
+        "opaque": false,
+        "status": null
+    },
+    {
+        "nid": "30",
+        "name": "House",
+        "color": [
+            168,
+            88,
+            80
+        ],
+        "minimap": "House",
+        "platform": "House",
+        "background": "combat_village",
+        "mtype": "Normal",
+        "opaque": false,
+        "status": "Avoid10"
+    },
+    {
+        "nid": "31",
+        "name": "Fort",
+        "color": [
+            168,
+            80,
+            168
+        ],
+        "minimap": "Fort",
+        "platform": "Fort",
+        "background": "combat_outside_castle",
+        "mtype": "Fort",
+        "opaque": false,
+        "status": "Fort"
+    },
+    {
+        "nid": "32",
+        "name": "Gate",
+        "color": [
+            32,
+            96,
+            216
+        ],
+        "minimap": "Throne",
+        "platform": "Gate",
+        "background": "combat_gate",
+        "mtype": "Throne",
+        "opaque": false,
+        "status": "Gate"
+    },
+    {
+        "nid": "33",
+        "name": "Armory",
+        "color": [
+            168,
+            1,
+            4
+        ],
+        "minimap": "Shop",
+        "platform": "Armory",
+        "background": "combat_village2",
+        "mtype": "Normal",
+        "opaque": false,
+        "status": "Avoid10"
+    },
+    {
+        "nid": "34",
+        "name": "Vendor",
+        "color": [
+            160,
+            1,
+            4
+        ],
+        "minimap": "Shop",
+        "platform": "Vendor",
+        "background": "combat_village2",
+        "mtype": "Normal",
+        "opaque": false,
+        "status": "Avoid10"
+    },
+    {
+        "nid": "Arena",
+        "name": "Arena",
+        "color": [
+            152,
+            1,
+            4
+        ],
+        "minimap": "Shop",
+        "platform": "Arena",
+        "background": "combat_village2",
+        "mtype": "Normal",
+        "opaque": false,
+        "status": "Avoid10"
+    },
+    {
+        "nid": "35",
+        "name": "Village",
+        "color": [
+            85,
+            0,
+            0
+        ],
+        "minimap": "House",
+        "platform": "Village",
+        "background": "combat_village2",
+        "mtype": "Normal",
+        "opaque": false,
+        "status": "Avoid10"
+    },
+    {
+        "nid": "36",
+        "name": "Chest",
+        "color": [
+            255,
+            247,
+            0
+        ],
+        "minimap": "Chest",
+        "platform": "Chest",
+        "background": "combat_castle4",
+        "mtype": "Normal",
+        "opaque": false,
+        "status": null
+    },
+    {
+        "nid": "37",
+        "name": "Door",
+        "color": [
+            80,
+            0,
+            0
+        ],
+        "minimap": "Door",
+        "platform": "Floor",
+        "background": "None",
+        "mtype": "Wall",
+        "opaque": false,
+        "status": null
+    },
+    {
+        "nid": "38",
+        "name": "Throne",
+        "color": [
+            150,
+            0,
+            77
+        ],
+        "minimap": "Throne",
+        "platform": "Throne",
+        "background": "combat_throne",
+        "mtype": "Throne",
+        "opaque": false,
+        "status": "Throne"
+    },
+    {
+        "nid": "Ruins",
+        "name": "Ruins",
+        "color": [
+            32,
+            32,
+            32
+        ],
+        "minimap": "Ruins",
+        "platform": "Ruins",
+        "background": "combat_ruins",
+        "mtype": "Normal",
+        "opaque": false,
+        "status": "Avoid10"
+    },
+    {
+        "nid": "Village Ruins",
+        "name": "Ruins",
+        "color": [
+            72,
+            64,
+            64
+        ],
+        "minimap": "Ruins",
+        "platform": "Ruins",
+        "background": "BattlePillaged",
+        "mtype": "Fort",
+        "opaque": false,
+        "status": null
+    },
+    {
+        "nid": "41",
+        "name": "Sand",
+        "color": [
+            0,
+            0,
+            0
+        ],
+        "minimap": "Sand",
+        "platform": "Sand",
+        "background": "combat_sand",
+        "mtype": "Normal",
+        "opaque": false,
+        "status": "Avoid5"
+    },
+    {
+        "nid": "42",
+        "name": "Desert",
+        "color": [
+            0,
+            0,
+            0
+        ],
+        "minimap": "Desert",
+        "platform": "Desert",
+        "background": "combat_desert",
+        "mtype": "Desert",
+        "opaque": false,
+        "status": "Avoid5"
+    },
+    {
+        "nid": "DesertHills",
+        "name": "Hill",
+        "color": [
+            0,
+            0,
+            0
+        ],
+        "minimap": "Desert_Cliff",
+        "platform": "Desert",
+        "background": "None",
+        "mtype": "Hill",
+        "opaque": false,
+        "status": "Mountain"
+    },
+    {
+        "nid": "NightPlain",
+        "name": "Plain",
+        "color": [
+            186,
+            214,
+            46
+        ],
+        "minimap": "Grass",
+        "platform": "NightPlains",
+        "background": "combat_plains_night",
+        "mtype": "Normal",
+        "opaque": false,
+        "status": "Plain"
+    },
+    {
+        "nid": "NightRoad",
+        "name": "Road",
+        "color": [
+            194,
+            194,
+            103
+        ],
+        "minimap": "Sand",
+        "platform": "NightPlains",
+        "background": "combat_plains_night",
+        "mtype": "Normal",
+        "opaque": false,
+        "status": "Road"
+    },
+    {
+        "nid": "NightForest",
+        "name": "Forest",
+        "color": [
+            46,
+            93,
+            46
+        ],
+        "minimap": "Forest",
+        "platform": "NightForest",
+        "background": "combat_forrestnight",
+        "mtype": "Forest",
+        "opaque": false,
+        "status": "Forest"
+    },
+    {
+        "nid": "NightDock",
+        "name": "Dock",
+        "color": [
+            84,
+            84,
+            84
+        ],
+        "minimap": "Floor",
+        "platform": "NightVillage",
+        "background": "combat_villagenight",
+        "mtype": "Normal",
+        "opaque": false,
+        "status": "Floor"
+    },
+    {
+        "nid": "NightMountain",
+        "name": "Mountain",
+        "color": [
+            67,
+            40,
+            33
+        ],
+        "minimap": "Mountain",
+        "platform": "NightPlains",
+        "background": "combat_night_moutain",
+        "mtype": "Mountain",
+        "opaque": false,
+        "status": "Peak"
+    },
+    {
+        "nid": "NightBridge",
+        "name": "Bridge",
+        "color": [
+            126,
+            126,
+            94
+        ],
+        "minimap": "Bridge",
+        "platform": "NightBridge",
+        "background": "BattleNightRiver",
+        "mtype": "Normal",
+        "opaque": false,
+        "status": "Bridge"
+    },
+    {
+        "nid": "NightVillage",
+        "name": "Village",
+        "color": [
+            67,
+            0,
+            0
+        ],
+        "minimap": "House",
+        "platform": "NightVillage",
+        "background": "combat_villagenight",
+        "mtype": "Normal",
+        "opaque": false,
+        "status": "Avoid10"
+    },
+    {
+        "nid": "NightRiver",
+        "name": "River",
+        "color": [
+            0,
+            110,
+            170
+        ],
+        "minimap": "River",
+        "platform": "NightRiver",
+        "background": "BattleNightRiver",
+        "mtype": "River",
+        "opaque": false,
+        "status": null
+    },
+    {
+        "nid": "NightSnag",
+        "name": "Snag",
+        "color": [
+            115,
+            69,
+            57
+        ],
+        "minimap": "Switch",
+        "platform": "NightSnag",
+        "background": "combat_plain3",
+        "mtype": "Fence",
+        "opaque": true,
+        "status": null
+    },
+    {
+        "nid": "NightVillageRuins",
+        "name": "Ruins",
+        "color": [
+            45,
+            40,
+            40
+        ],
+        "minimap": "Ruins",
+        "platform": "NightVillage",
+        "background": "BattleNightRuins",
+        "mtype": "Fort",
+        "opaque": false,
+        "status": null
+    }
+]

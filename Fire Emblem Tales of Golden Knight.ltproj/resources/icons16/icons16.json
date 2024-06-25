@@ -1,0 +1,255 @@
+[
+    {
+        "nid": "Affinity",
+        "subicon_dict": {}
+    },
+    {
+        "nid": "Anima",
+        "subicon_dict": {}
+    },
+    {
+        "nid": "Axe",
+        "subicon_dict": {
+            "Axe 0, 16": [
+                0,
+                16
+            ],
+            "Axe 0, 17": [
+                0,
+                17
+            ]
+        }
+    },
+    {
+        "nid": "Boosters",
+        "subicon_dict": {}
+    },
+    {
+        "nid": "Bow",
+        "subicon_dict": {}
+    },
+    {
+        "nid": "Consumable",
+        "subicon_dict": {}
+    },
+    {
+        "nid": "Dark",
+        "subicon_dict": {}
+    },
+    {
+        "nid": "Lance",
+        "subicon_dict": {}
+    },
+    {
+        "nid": "Light",
+        "subicon_dict": {}
+    },
+    {
+        "nid": "Neutral",
+        "subicon_dict": {}
+    },
+    {
+        "nid": "Skills",
+        "subicon_dict": {}
+    },
+    {
+        "nid": "Staff",
+        "subicon_dict": {}
+    },
+    {
+        "nid": "Sword",
+        "subicon_dict": {}
+    },
+    {
+        "nid": "Valuable",
+        "subicon_dict": {}
+    },
+    {
+        "nid": "wexp_icons",
+        "subicon_dict": {}
+    },
+    {
+        "nid": "{Alice} Dagger",
+        "subicon_dict": {}
+    },
+    {
+        "nid": "Armor",
+        "subicon_dict": {
+            "Armor 0, 0": [
+                0,
+                0
+            ]
+        }
+    },
+    {
+        "nid": "Special",
+        "subicon_dict": {}
+    },
+    {
+        "nid": "All_Skills",
+        "subicon_dict": {
+            "All_Skills 9, 19": [
+                9,
+                19
+            ],
+            "All_Skills 3, 49": [
+                3,
+                49
+            ],
+            "All_Skills 14, 45": [
+                14,
+                45
+            ],
+            "All_Skills 15, 45": [
+                15,
+                45
+            ],
+            "All_Skills 3, 43": [
+                3,
+                43
+            ],
+            "All_Skills 15, 6": [
+                15,
+                6
+            ],
+            "All_Skills 14, 6": [
+                14,
+                6
+            ],
+            "All_Skills 14, 30": [
+                14,
+                30
+            ],
+            "All_Skills 15, 30": [
+                15,
+                30
+            ],
+            "All_Skills 4, 39": [
+                4,
+                39
+            ],
+            "All_Skills 8, 40": [
+                8,
+                40
+            ],
+            "All_Skills 4, 35": [
+                4,
+                35
+            ],
+            "All_Skills 12, 35": [
+                12,
+                35
+            ],
+            "All_Skills 5, 47": [
+                5,
+                47
+            ],
+            "All_Skills 11, 44": [
+                11,
+                44
+            ],
+            "All_Skills 15, 50": [
+                15,
+                50
+            ],
+            "All_Skills 15, 46": [
+                15,
+                46
+            ],
+            "All_Skills 15, 33": [
+                15,
+                33
+            ],
+            "All_Skills 2, 31": [
+                2,
+                31
+            ],
+            "All_Skills 6, 31": [
+                6,
+                31
+            ],
+            "All_Skills 3, 31": [
+                3,
+                31
+            ]
+        }
+    },
+    {
+        "nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
+        "subicon_dict": {
+            "{Ereshkigal} Sprite Sheet V1.4 Converted 1, 2": [
+                1,
+                2
+            ],
+            "{Ereshkigal} Sprite Sheet V1.4 Converted 5, 7": [
+                5,
+                7
+            ]
+        }
+    },
+    {
+        "nid": "{Ereshkigal} Staves",
+        "subicon_dict": {
+            "{Ereshkigal} Staves 3, 2": [
+                3,
+                2
+            ]
+        }
+    },
+    {
+        "nid": "{LordGlenn} {ArchaneaIconProject} 2019",
+        "subicon_dict": {}
+    },
+    {
+        "nid": "{LordGlenn} All Icons LordGlenn Pack 1",
+        "subicon_dict": {}
+    },
+    {
+        "nid": "jellyunicorns item icons ltinsert",
+        "subicon_dict": {}
+    },
+    {
+        "nid": "tactics_ogre",
+        "subicon_dict": {}
+    },
+    {
+        "nid": "zarg icons ltinsert",
+        "subicon_dict": {}
+    },
+    {
+        "nid": "Rain",
+        "subicon_dict": {}
+    },
+    {
+        "nid": "Axes Sheet",
+        "subicon_dict": {}
+    },
+    {
+        "nid": "Bows Sheet",
+        "subicon_dict": {}
+    },
+    {
+        "nid": "Light_1",
+        "subicon_dict": {}
+    },
+    {
+        "nid": "Lances Sheet",
+        "subicon_dict": {}
+    },
+    {
+        "nid": "Staffs Sheet",
+        "subicon_dict": {}
+    },
+    {
+        "nid": "GBASkill",
+        "subicon_dict": {}
+    },
+    {
+        "nid": "CustomSkill",
+        "subicon_dict": {}
+    },
+    {
+        "nid": "Knife",
+        "subicon_dict": {}
+    }
+]

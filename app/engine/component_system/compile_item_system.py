@@ -56,7 +56,8 @@ ITEM_HOOKS: Dict[str, HookInfo] = {
     'hit':                                             HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
     'crit':                                            HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
     'effect_animation':                                HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
-    'text_color':                                      HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),    'change_animation':                                HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
+    'text_color':                                      HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
+    'change_animation':                                HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
     # returns set of all defined values
     'target_icon':                                     HookInfo(['unit', 'item', 'target'], ResolvePolicy.UNION),
     # returns sum of all defined values
@@ -78,6 +79,8 @@ ITEM_HOOKS: Dict[str, HookInfo] = {
     'dynamic_attacks':                                 HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
     'dynamic_multiattacks':                            HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
     # aesthetic components that return a value
+    'show_weapon_advantage':                           HookInfo(['unit', 'item', 'target', 'item2'], ResolvePolicy.UNIQUE),
+    'show_weapon_disadvantage':                        HookInfo(['unit', 'item', 'target', 'item2'], ResolvePolicy.UNIQUE),
     'battle_music':                                    HookInfo(['unit', 'item', 'target', 'item2', 'mode'], ResolvePolicy.UNIQUE),
     'combat_effect':                                   HookInfo(['unit', 'item', 'target', 'item2', 'mode'], ResolvePolicy.UNIQUE),
     # events do not return, but are the only item components currently inherited from parents

@@ -913,7 +913,8 @@ def create_unit(self: Event, unit, nid=None, level: Optional[int]=None, position
         position = self._check_placement(new_unit, position, placement)
     if position:
         self._place_unit(new_unit, position, entry_type)
-def copy_stat(self: Event, unit, unit2, flags=None):
+
+def copy_stat(self: Event, unit, unit2, flags=None):
     unit1 = self.game.get_unit(unit)
     unit2 = self.game.get_unit(unit2)
     if not unit1:
@@ -923,7 +924,8 @@ def create_unit(self: Event, unit, nid=None, level: Optional[int]=None, position
         self.logger.error("add_unit: Couldn't find unit %s" % unit)
         return
 
-    unit1.stats = unit2.stats.copy()
+    unit1.stats = unit2.stats.copy()
+
 def add_unit(self: Event, unit, position=None, entry_type=None, placement=None, animation_type=None, flags=None):
     new_unit = self._get_unit(unit)
     if not new_unit:
@@ -1136,7 +1138,7 @@ def interact_unit(self: Event, unit, position, combat_script: Optional[List[str]
             return
 
     interaction.start_combat(
-        actor, target, item, event_combat=True, script=script, total_rounds=total_rounds,
+        actor, target, item, skip='immediate' in flags, event_combat=True, script=script, total_rounds=total_rounds,
         arena='arena' in flags, force_animation='force_animation' in flags, force_no_animation='force_no_animation' in flags)
     self.state = "paused"
 
@@ -3645,7 +3647,8 @@ def delete_record(self: Event, nid: str, flags=None):
 
 def unlock_difficulty(self: Event, difficulty_mode: str, flags=None):
     RECORDS.unlock_difficulty(difficulty_mode)
-def chest_loot_item(self: Event, global_unit_or_convoy, item, flags=None):
+
+def chest_loot_item(self: Event, global_unit_or_convoy, item, flags=None):
     flags = flags or set()
     global_unit = global_unit_or_convoy
 
@@ -3909,7 +3912,8 @@ def recall_regions(self: Event, flags=None):
             if region:
                 region.position = pos
                 act = action.AddRegion(region)
-                act.execute()
+                act.execute()
+
 def hide_combat_ui(self: Event, flags=None):
     self.game.game_vars["_hide_ui"] = True
 

@@ -999,10 +999,11 @@ class SwitchPaired(Action):
 
 # This is shamelessly copied from Drop, but I've kept it separate in case a madlad wants Rescue and Pair Up
 class Separate(Action):
-    def __init__(self, unit, droppee, pos):
+    def __init__(self, unit, droppee, pos, with_wait=True):
         self.unit = unit
         self.droppee = droppee
         self.pos = pos
+        self.with_wait = with_wait
         self.droppee_wait_action = Wait(self.droppee)
         self.old_gauge = self.unit.get_guard_gauge()
 
@@ -1010,7 +1011,8 @@ class Separate(Action):
         self.droppee.position = self.pos
         game.arrive(self.droppee)
         self.droppee.sprite.change_state('normal')
-        self.droppee_wait_action.do()
+        if self.with_wait:
+            self.droppee_wait_action.do()
 
         self.unit.traveler = None
         self.unit.has_dropped = True
@@ -1032,7 +1034,8 @@ class Separate(Action):
         self.droppee.position = self.pos
         game.arrive(self.droppee)
         self.droppee.sprite.change_state('normal')
-        self.droppee_wait_action.execute()
+        if self.with_wait:
+            self.droppee_wait_action.execute()
 
         self.unit.traveler = None
         self.unit.has_dropped = True
@@ -1045,7 +1048,8 @@ class Separate(Action):
     def reverse(self):
         self.unit.traveler = self.droppee.nid
 
-        self.droppee_wait_action.reverse()
+        if self.with_wait:
+            self.droppee_wait_action.reverse()
         game.leave(self.droppee)
         self.droppee.position = None
         self.unit.has_dropped = False

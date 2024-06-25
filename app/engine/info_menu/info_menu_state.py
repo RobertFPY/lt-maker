@@ -447,7 +447,8 @@ class InfoMenuState(State):
         affinity = DB.affinities.get(self.unit.affinity)
         if affinity:
             icons.draw_item(surf, affinity, (78, 81))
-            self.info_graph.register((76, 80, 16, 16), affinity.desc, 'all')
+            self.info_graph.register((76, 80, 16, 16), affinity.desc, 'all')
+
         # Blit accessories
         for idx, item in enumerate(self.unit.accessories):
             aidx = item_funcs.get_num_items(self.unit) + idx
@@ -665,14 +666,19 @@ class InfoMenuState(State):
                     render_text(surf, ['text'], [str(aid)], ['blue'], (111, 16 * true_idx + 24), HAlignment.RIGHT)
 
                     # Mount Symbols
-                    if 'Dragon' in self.unit.tags:
-                        aid_surf = engine.subsurface(SPRITES.get('aid_icons'), (0, 48, 16, 16))
-                    elif 'Flying' in self.unit.tags:
-                        aid_surf = engine.subsurface(SPRITES.get('aid_icons'), (0, 32, 16, 16))
-                    elif 'Mounted' in self.unit.tags:
-                        aid_surf = engine.subsurface(SPRITES.get('aid_icons'), (0, 16, 16, 16))
+                    for tag in self.unit.tags:
+                        if ('aid_icon_%s' % tag) in SPRITES:
+                            aid_surf = SPRITES.get('aid_icon_%s' % tag)
+                            break
                     else:
-                        aid_surf = engine.subsurface(SPRITES.get('aid_icons'), (0, 0, 16, 16))
+                        if 'Dragon' in self.unit.tags:
+                            aid_surf = engine.subsurface(SPRITES.get('aid_icons'), (0, 48, 16, 16))
+                        elif 'Flying' in self.unit.tags:
+                            aid_surf = engine.subsurface(SPRITES.get('aid_icons'), (0, 32, 16, 16))
+                        elif 'Mounted' in self.unit.tags:
+                            aid_surf = engine.subsurface(SPRITES.get('aid_icons'), (0, 16, 16, 16))
+                        else:
+                            aid_surf = engine.subsurface(SPRITES.get('aid_icons'), (0, 0, 16, 16))
                     surf.blit(aid_surf, (112, 16 * true_idx + 24))
                     render_text(surf, ['text'], [text_funcs.translate('Aid')], ['yellow'], (72, 16 * true_idx + 24))
                     self.info_graph.register((96 + 72, 16 * true_idx + 24, 64, 16), 'Aid_desc', state)
@@ -998,7 +1004,8 @@ class InfoMenuState(State):
                     tier = ' (T2)'
                 elif 'T3' in skill.nid:
                     surf.blit(SPRITES.get('T3SkillBG'), (79, 7))
-                    tier = ' (T3)'                elif 'T4' in skill.nid:
+                    tier = ' (T3)'
+                elif 'T4' in skill.nid:
                     surf.blit(SPRITES.get('T4SkillBG'), (79, 7))
                     tier = ' (T4)'
                 elif 'Ultra' in skill.nid:
@@ -1039,7 +1046,8 @@ class InfoMenuState(State):
                     tier = ' (T2)'
                 elif 'T3' in skill.nid:
                     surf.blit(SPRITES.get('T3SkillBG'), (59, 27))
-                    tier = ' (T3)'                elif 'T4' in skill.nid:
+                    tier = ' (T3)'
+                elif 'T4' in skill.nid:
                     surf.blit(SPRITES.get('T4SkillBG'), (59, 27))
                     tier = ' (T4)'
                 elif 'Ultra' in skill.nid:
@@ -1080,7 +1088,8 @@ class InfoMenuState(State):
                     tier = ' (T2)'
                 elif 'T3' in skill.nid:
                     surf.blit(SPRITES.get('T3SkillBG'), (65, 47))
-                    tier = ' (T3)'                elif 'T4' in skill.nid:
+                    tier = ' (T3)'
+                elif 'T4' in skill.nid:
                     surf.blit(SPRITES.get('T4SkillBG'), (65, 47))
                     tier = ' (T4)'
                 elif 'Ultra' in skill.nid:
@@ -1121,7 +1130,8 @@ class InfoMenuState(State):
                     tier = ' (T2)'
                 elif 'T3' in skill.nid:
                     surf.blit(SPRITES.get('T3SkillBG'), (39, 67))
-                    tier = ' (T3)'                elif 'T4' in skill.nid:
+                    tier = ' (T3)'
+                elif 'T4' in skill.nid:
                     surf.blit(SPRITES.get('T4SkillBG'), (39, 67))
                     tier = ' (T4)'
                 elif 'Ultra' in skill.nid:
@@ -1162,7 +1172,8 @@ class InfoMenuState(State):
                     tier = ' (T2)'
                 elif 'T3' in skill.nid:
                     surf.blit(SPRITES.get('T3SkillBG'), (39, 87))
-                    tier = ' (T3)'                elif 'T4' in skill.nid:
+                    tier = ' (T3)'
+                elif 'T4' in skill.nid:
                     surf.blit(SPRITES.get('T4SkillBG'), (39, 87))
                     tier = ' (T4)'
                 elif 'Ultra' in skill.nid:
@@ -1203,7 +1214,8 @@ class InfoMenuState(State):
                     tier = ' (T2)'
                 elif 'T3' in skill.nid:
                     surf.blit(SPRITES.get('T3SkillBG'), (39, 107))
-                    tier = ' (T3)'                elif 'T4' in skill.nid:
+                    tier = ' (T3)'
+                elif 'T4' in skill.nid:
                     surf.blit(SPRITES.get('T4SkillBG'), (39, 87))
                     tier = ' (T4)'
                 elif 'Ultra' in skill.nid:

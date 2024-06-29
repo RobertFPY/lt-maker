@@ -1172,12 +1172,12 @@ def add_fatigue(self: Event, unit, fatigue: int, flags=None):
         return
     action.do(action.ChangeFatigue(actor, fatigue))
 
-def set_unit_field(self: Event, unit, key, value, flags=None):
+def set_unit_field(self: Event, global_unit, key, value, flags=None):
     flags = flags or set()
 
-    actor = self._get_unit(unit)
+    actor = self._get_unit(global_unit)
     if not actor:
-        self.logger.error("set_unit_field: Couldn't find unit %s" % unit)
+        self.logger.error("set_unit_field: Couldn't find unit %s" % global_unit)
         return
     try:
         value = self._eval_expr(value, 'from_python' in flags)

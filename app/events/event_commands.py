@@ -1387,8 +1387,8 @@ vars that are persisted across events.
 If the flag `increment_mode` is supplied, this will add the value to the existing value instead instead of setting it.
 Please try to avoid using `increment_mode` with non-numerical fields. That would erase your field and then nobody will be happy.
         """
-    keywords = ["Unit", "Key", "Value"]
-    keyword_types = ['Unit', 'UnitField', 'String']
+    keywords = ["GlobalUnit", "Key", "Value"]
+    keyword_types = ['GlobalUnit', 'UnitField', 'String']
     _flags = ['increment_mode']
 
 class SetUnitNote(EventCommand):

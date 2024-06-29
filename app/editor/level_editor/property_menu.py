@@ -305,7 +305,6 @@ class PropertiesMenu(QWidget):
         self.current.roam_unit = self.unit_box.edit.currentText()
         self.unit_box.edit.setValue(self.current.roam_unit)
 
-
     def access_tags(self):
         dlg = TagDialog.create(self)
         result = dlg.exec_()

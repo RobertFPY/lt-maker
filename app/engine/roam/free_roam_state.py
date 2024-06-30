@@ -186,8 +186,8 @@ class FreeRoamState(MapState):
         # Called whenever the player presses AUX
         """
         other_unit = self.get_closest_unit()
-        self.rationalize_all_units()
         did_trigger = game.events.trigger(triggers.RoamPressAux(self.roam_unit, other_unit))
+        self.rationalize_all_units()
         if not did_trigger:
             game.state.change('option_menu')
 

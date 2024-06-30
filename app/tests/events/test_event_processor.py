@@ -29,7 +29,7 @@ class EventProcessorUnitTests(unittest.TestCase):
         logging.disable(logging.NOTSET)
 
     def test_conditional_handling(self):
-        script_path = Path(__file__).parent / 'data' / 'processor' / 'conditionals.event'
+        script_path = Path(__file__).parent / 'test_files' / 'processor' / 'conditionals.event'
         processor = EventProcessor('conditionals', script_path.read_text(), self.text_evaluator)
 
         # basic tests
@@ -48,7 +48,7 @@ class EventProcessorUnitTests(unittest.TestCase):
         self.assertEqual(processor._find_end(19), 21)
 
     def test_event_processor_handles_conditionals(self):
-        script_path = Path(__file__).parent / 'data' / 'processor' / 'second_conditional.event'
+        script_path = Path(__file__).parent / 'test_files' / 'processor' / 'second_conditional.event'
         processor = EventProcessor('conditionals', script_path.read_text(), self.text_evaluator)
 
         called_commands = []
@@ -61,7 +61,7 @@ class EventProcessorUnitTests(unittest.TestCase):
         self.assertEqual(called_commands[0].parameters['Text'], '2')
 
     def test_parse_events(self):
-        script_path = Path(__file__).parent / 'data' / 'processor' / 'test.event'
+        script_path = Path(__file__).parent / 'test_files' / 'processor' / 'test.event'
         processor = EventProcessor('test', script_path.read_text(), self.text_evaluator)
 
         # normal command
@@ -114,7 +114,7 @@ class EventProcessorUnitTests(unittest.TestCase):
         self.assertEqual(new_iterator.iterator.get(), 'c')
 
     def test_save_restore_processor_state(self):
-        script_path = Path(__file__).parent / 'data' / 'processor' / 'test.event'
+        script_path = Path(__file__).parent / 'test_files' / 'processor' / 'test.event'
         processor = EventProcessor('test', script_path.read_text(), self.text_evaluator)
 
         processor.fetch_next_command()

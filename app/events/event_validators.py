@@ -410,8 +410,9 @@ class Sound(Validator):
         return valids
 
 class PhaseMusic(OptionValidator):
-    valid = ['player_phase', 'enemy_phase', 'other_phase', 'enemy2_phase',
-             'player_battle', 'enemy_battle', 'other_battle', 'enemy2_battle']
+    @property
+    def valid(self) -> List[str]:
+        return self._db.music_keys
 
 class SpecialMusicType(OptionValidator):
     valid = ['title_screen', 'promotion', 'class_change', 'game_over']

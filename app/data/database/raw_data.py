@@ -16,8 +16,8 @@ class RawDataPrefab(Prefab):
     dtype: str = "str"
     svalue: str = field(default_factory=str)                    # arbitrary string data
     kvvalue: list = field(default_factory=list)                 # arbitrary key-value pair
-    lovalue: list = field(default_factory=list)                 # list of arbitrary objects
     oattrs: List[str] = field(default_factory=lambda:['nid'])             # official object attributes for objs in lovalue; all objects should have nid (see RawListDataObjectBase)
+    lovalue: list = field(default_factory=list)                 # list of arbitrary objects
 
     def __repr__(self):
         return str(vars(self))
@@ -47,6 +47,8 @@ class RawDataPrefab(Prefab):
                 lovalue = []
                 for obj_dict in value:
                     obj = RawListDataObjectBase()
+                    for attr_name in self.oattrs:
+                        setattr(obj, attr_name, None)
                     for k, v in obj_dict.items():
                         setattr(obj, k, v)
                     lovalue.append(obj)

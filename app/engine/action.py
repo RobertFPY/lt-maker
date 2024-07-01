@@ -62,7 +62,7 @@ class Action():
         pass
 
     def __repr__(self):
-        s = "action.%s: " % self.__class__.__name__
+        s = "%s: " % self.__class__.__name__
         for attr in self.__dict__.items():
             name, value = attr
             s += '%s: %s, ' % (name, value)

@@ -1309,7 +1309,7 @@ class AnimationCombat(BaseCombat, MockCombat):
         """
         MapCombat.handle_support_pairs(self, pairs)
 
-    def combat_death_should_trigger(self, units):
+    def combat_death_should_trigger(self, units) -> bool:
         """
         Check if combat_death trigger should trigger on any units dying
         """

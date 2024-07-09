@@ -26,6 +26,7 @@ from app.editor.combat_animation_editor.frame_selector import FrameSelector
 from app.editor.combat_animation_editor.combat_animation_model import palette_swap
 from app.editor.file_manager.project_file_backend import DEFAULT_PROJECT
 import app.editor.combat_animation_editor.combat_animation_imports as combat_animation_imports
+import app.editor.combat_animation_editor.combat_animation_export as combat_animation_export
 from app.extensions.custom_gui import ComboBox
 
 import app.editor.utilities as editor_utilities
@@ -211,9 +212,16 @@ class CombatAnimProperties(QWidget):
         self.frame_group_box.setTitle("Image Frames")
         frame_layout = QVBoxLayout()
         self.frame_group_box.setLayout(frame_layout)
-        self.import_from_lt_button = QPushButton("Import Legacy Weapon Animation...")
+
+        legacy_section = QHBoxLayout()
+        self.import_from_lt_button = QPushButton("Import Legacy Weapon Anim...")
         self.import_from_lt_button.clicked.connect(self.import_legacy)
-        self.import_from_gba_button = QPushButton("Import GBA Weapon Animation...")
+        self.export_from_lt_button = QPushButton("Export as Legacy Anim...")
+        self.export_from_lt_button.clicked.connect(self.export_legacy)
+        legacy_section.addWidget(self.import_from_lt_button)
+        legacy_section.addWidget(self.export_from_lt_button)
+        
+        self.import_from_gba_button = QPushButton("Import GBA Weapon Anim...")
         self.import_from_gba_button.clicked.connect(self.import_gba)
         self.import_png_button = QPushButton("View Frames...")
         self.import_png_button.clicked.connect(self.select_frame)
@@ -225,7 +233,7 @@ class CombatAnimProperties(QWidget):
 
         self.window.left_frame.layout().addWidget(self.import_anim_button, 3, 0)
         self.window.left_frame.layout().addWidget(self.export_anim_button, 3, 1)
-        frame_layout.addWidget(self.import_from_lt_button)
+        frame_layout.addLayout(legacy_section)
         frame_layout.addWidget(self.import_from_gba_button)
         frame_layout.addWidget(self.import_png_button)
 
@@ -586,6 +594,32 @@ class CombatAnimProperties(QWidget):
             self.set_current(self.current)
             if self.current.weapon_anims:
                 self.weapon_box.setValue(self.current.weapon_anims[-1].nid)
+
+    def export_legacy(self):
+        # Ask user for location
+        if not self.current:
+            return
+        starting_path = self.settings.get_last_open_path()
+        fn_dir = QFileDialog.getExistingDirectory(
+            self, "Export Combat Animation as Legacy", starting_path)
+        if not fn_dir:
+            return
+        self.settings.set_last_open_path(fn_dir)
+        combat_anim = self.current
+        # Create folder at location named {combat_anim.nid}.ltlegacyanim
+        folder_name = f'{combat_anim.nid}.ltlegacyanim'
+        path = os.path.join(fn_dir, folder_name)
+        if not os.path.exists(path):
+            os.mkdir(path)
+
+        # Do cleanup steps to make sure the animation is fully populated and accessible to exporter
+        populate_anim_pixmaps(combat_anim)
+        RESOURCES.combat_anims.save_image(path, combat_anim, temp=True)
+        # Now actally export
+        for weapon_anim in combat_anim.weapon_anims:
+            combat_animation_export.export_to_legacy(weapon_anim, combat_anim, path)
+        # Print done export! Export to %s complete!
+        QMessageBox.information(self, "Export Complete", f"Legacy export of combat animation {combat_anim.nid} to {path} complete!")
 
     def import_gba(self):
         starting_path = self.settings.get_last_open_path()

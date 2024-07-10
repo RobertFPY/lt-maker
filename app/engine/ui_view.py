@@ -496,7 +496,11 @@ class UIView():
         up_arrow = engine.subsurface(SPRITES.get('arrow_advantage'), (ANIMATION_COUNTERS.arrow_counter.count * 7, 0, 7, 10))
         down_arrow = engine.subsurface(SPRITES.get('arrow_advantage'), (ANIMATION_COUNTERS.arrow_counter.count * 7, 10, 7, 10))
 
-        if adv and adv.modification > 0:
+        if item_system.show_weapon_advantage(attacker, weapon, defender, def_weapon):
+            surf.blit(up_arrow, topleft)
+        elif item_system.show_weapon_disadvantage(attacker, weapon, defender, def_weapon):
+            surf.blit(down_arrow, topleft)
+        elif adv and adv.modification > 0:
             surf.blit(up_arrow, topleft)
         elif adv and adv.modification < 0:
             surf.blit(down_arrow, topleft)

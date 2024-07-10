@@ -668,7 +668,7 @@ def force_chapter_clean_up(self: Event, flags=None):
 def skip_save(self: Event, true_or_false: bool, flags=None):
     action.do(action.SetLevelVar('_skip_save', true_or_false))
 
-def activate_turnwheel(self: Event, force: bool=True, flags=None):
+def activate_turnwheel(self: Event, force: bool = True, flags=None):
     self.turnwheel_flag = 2 if force else 1
 
 def battle_save(self: Event, flags=None):
@@ -1126,7 +1126,7 @@ def interact_unit(self: Event, unit, position, combat_script: Optional[List[str]
             return
 
     interaction.start_combat(
-        actor, target, item, event_combat=True, script=script, total_rounds=total_rounds,
+        actor, target, item, skip='immediate' in flags, event_combat=True, script=script, total_rounds=total_rounds,
         arena='arena' in flags, force_animation='force_animation' in flags, force_no_animation='force_no_animation' in flags)
     self.state = "paused"
 
@@ -1172,12 +1172,12 @@ def add_fatigue(self: Event, unit, fatigue: int, flags=None):
         return
     action.do(action.ChangeFatigue(actor, fatigue))
 
-def set_unit_field(self: Event, unit, key, value, flags=None):
+def set_unit_field(self: Event, global_unit, key, value, flags=None):
     flags = flags or set()
 
-    actor = self._get_unit(unit)
+    actor = self._get_unit(global_unit)
     if not actor:
-        self.logger.error("set_unit_field: Couldn't find unit %s" % unit)
+        self.logger.error("set_unit_field: Couldn't find unit %s" % global_unit)
         return
     try:
         value = self._eval_expr(value, 'from_python' in flags)

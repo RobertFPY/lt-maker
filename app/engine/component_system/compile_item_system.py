@@ -78,6 +78,8 @@ ITEM_HOOKS: Dict[str, HookInfo] = {
     'dynamic_attacks':                                 HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
     'dynamic_multiattacks':                            HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
     # aesthetic components that return a value
+    'show_weapon_advantage':                           HookInfo(['unit', 'item', 'target', 'item2'], ResolvePolicy.UNIQUE),
+    'show_weapon_disadvantage':                        HookInfo(['unit', 'item', 'target', 'item2'], ResolvePolicy.UNIQUE),
     'battle_music':                                    HookInfo(['unit', 'item', 'target', 'item2', 'mode'], ResolvePolicy.UNIQUE),
     'combat_effect':                                   HookInfo(['unit', 'item', 'target', 'item2', 'mode'], ResolvePolicy.UNIQUE),
     # events do not return, but are the only item components currently inherited from parents

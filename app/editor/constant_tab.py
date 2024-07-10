@@ -267,10 +267,10 @@ class DisplayExpResults(QWidget):
         elif self._data.get('exp_formula').value == ExpCalcType.GOMPERTZ.value:
             try:
                 exp_gained = ExpCalculator.gompertz_curve_calculator(level_diff,
-                                                                    self._data.get('gexp_max').value,
-                                                                    self._data.get('gexp_min').value,
-                                                                    self._data.get('gexp_slope').value,
-                                                                    self._data.get('gexp_intercept').value)
+                                                                     self._data.get('gexp_max').value,
+                                                                     self._data.get('gexp_min').value,
+                                                                     self._data.get('gexp_slope').value,
+                                                                     self._data.get('gexp_intercept').value)
             except:
                 exp_gained = 0
         display = str(int(exp_gained)) + " (" + str(round(exp_gained, 2)) + ")"
@@ -449,10 +449,7 @@ class ConstantDatabase(DatabaseTab):
         self.setWindowTitle('%s Editor' % self.title)
         self.setStyleSheet("font: 10pt")
 
-        self.left_frame = QFrame(self)
-        self.layout = QGridLayout(self)
-        self.left_frame.setLayout(self.layout)
-
+        # === Right Section ===
         bool_section = QGroupBox(self)
         all_bool_constants = Data([d for d in self._data if d.attr == ConstantType.BOOL and not d.tag == 'hidden'])
 
@@ -475,6 +472,9 @@ class ConstantDatabase(DatabaseTab):
         bool_section.setLayout(bool_layout)
         bool_layout.addWidget(self.bool_tab_bar)
 
+        # === Left Section ===
+        left_section = QGroupBox(self)
+        self.left_tab_bar = QTabWidget(self)
         battle_constants = ('num_items', 'num_accessories', 'min_damage', 'enemy_leveling')
         battle_info = ("Number of non-accessory items units will be able to carry. The engine will not display inventories of size 6 or greater correctly.",
                        "Number of accessory items units will be able to carry. Combine with Number of Items to get total inventory size.",
@@ -489,38 +489,42 @@ class ConstantDatabase(DatabaseTab):
         music_section = self.create_section(music_constants)
         music_section.setTitle("Music Constants")
 
-        # exp_section = QGroupBox(self)
-        # exp_layout = QVBoxLayout()
-        # exp_section.setLayout(exp_layout)
-        # exp_widget = ExperienceWidget(self._data, self)
-        # exp_layout.addWidget(exp_widget)
-        # exp_section.setTitle("Combat Experience Constants")
+        main_frame = QFrame(self)
+        main_layout = QGridLayout(self)
+        main_frame.setLayout(main_layout)
 
-        exp_section = FrameLayout(self, "Combat Experience Constants")
+        main_layout.addWidget(battle_section, 0, 0, 2, 1)
+        main_layout.addWidget(misc_section, 0, 1)
+        main_layout.addWidget(music_section, 1, 1)
+        self.left_tab_bar.addTab(main_frame, "Main")
+
+        exp_frame = QFrame(self)
+        exp_layout = QVBoxLayout(self)
+        exp_frame.setLayout(exp_layout)
+
+        combat_exp_layout = QHBoxLayout(self)
+        exp_section = QGroupBox("Combat Experience Constants", self)
+        exp_section.setLayout(combat_exp_layout)
         exp_widget = ExperienceWidget(self._data, self)
-        exp_section.addWidget(exp_widget)
+        combat_exp_layout.addWidget(exp_widget)
 
-        # heal_section = QGroupBox(self)
-        # heal_layout = QVBoxLayout()
-        # heal_section.setLayout(heal_layout)
-        # heal_widget = MiscExperienceWidget(self._data, self)
-        # heal_layout.addWidget(heal_widget)
-        # heal_section.setTitle("Miscellaneous Experience Constants")
+        misc_exp_layout = QHBoxLayout(self)
+        misc_exp_section = QGroupBox("Miscellaneous Experience Constants", self)
+        misc_exp_section.setLayout(misc_exp_layout)
+        misc_exp_widget = MiscExperienceWidget(self._data, self)
+        misc_exp_layout.addWidget(misc_exp_widget)
+        
+        exp_layout.addWidget(exp_section)
+        exp_layout.addWidget(misc_exp_section)
+        self.left_tab_bar.addTab(exp_frame, "Exp")
 
-        heal_section = FrameLayout(self, "Miscellaneous Experience Constants")
-        heal_widget = MiscExperienceWidget(self._data, self)
-        heal_section.addWidget(heal_widget)
-
-        self.layout.addWidget(battle_section, 0, 0, 2, 1)
-        self.layout.addWidget(misc_section, 0, 1)
-        self.layout.addWidget(music_section, 1, 1)
-        self.layout.addWidget(exp_section, 2, 0, 1, 2)
-        self.layout.addWidget(heal_section, 3, 0, 1, 2)
-        # self.layout.addWidget(bool_section, 0, 2, 3, 1)
+        left_layout = QHBoxLayout()
+        left_section.setLayout(left_layout)
+        left_layout.addWidget(self.left_tab_bar)
 
         self.splitter = QSplitter(self)
         self.splitter.setChildrenCollapsible(False)
-        self.splitter.addWidget(self.left_frame)
+        self.splitter.addWidget(left_section)
         self.splitter.addWidget(bool_section)
         self.splitter.setStyleSheet("QSplitter::handle:horizontal {background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #eee, stop:1 #ccc); border: 1px solid #777; width: 13px; margin-top: 2px; margin-bottom: 2px; border-radius: 4px;}")
 

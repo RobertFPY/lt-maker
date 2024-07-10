@@ -91,7 +91,7 @@ class MainSettingsController():
     def set_should_save_as_chunks(self, value):
         self.state.setValue("should_save_as_chunks", value)
 
-    def get_should_save_as_chunks(self, fallback=True):
+    def get_should_save_as_chunks(self, fallback=False):
         return self.state.value("should_save_as_chunks", fallback, type=bool)
 
     def set_auto_open(self, value):

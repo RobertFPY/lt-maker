@@ -267,10 +267,10 @@ class DisplayExpResults(QWidget):
         elif self._data.get('exp_formula').value == ExpCalcType.GOMPERTZ.value:
             try:
                 exp_gained = ExpCalculator.gompertz_curve_calculator(level_diff,
-                                                                    self._data.get('gexp_max').value,
-                                                                    self._data.get('gexp_min').value,
-                                                                    self._data.get('gexp_slope').value,
-                                                                    self._data.get('gexp_intercept').value)
+                                                                     self._data.get('gexp_max').value,
+                                                                     self._data.get('gexp_min').value,
+                                                                     self._data.get('gexp_slope').value,
+                                                                     self._data.get('gexp_intercept').value)
             except:
                 exp_gained = 0
         display = str(int(exp_gained)) + " (" + str(round(exp_gained, 2)) + ")"
@@ -502,12 +502,18 @@ class ConstantDatabase(DatabaseTab):
         exp_layout = QVBoxLayout(self)
         exp_frame.setLayout(exp_layout)
 
-        exp_section = FrameLayout(self, "Combat Experience Constants")
+        combat_exp_layout = QHBoxLayout(self)
+        exp_section = QGroupBox("Combat Experience Constants", self)
+        exp_section.setLayout(combat_exp_layout)
         exp_widget = ExperienceWidget(self._data, self)
-        exp_section.addWidget(exp_widget)
-        misc_exp_section = FrameLayout(self, "Miscellaneous Experience Constants")
+        combat_exp_layout.addWidget(exp_widget)
+
+        misc_exp_layout = QHBoxLayout(self)
+        misc_exp_section = QGroupBox("Miscellaneous Experience Constants", self)
+        misc_exp_section.setLayout(misc_exp_layout)
         misc_exp_widget = MiscExperienceWidget(self._data, self)
-        misc_exp_section.addWidget(misc_exp_widget)
+        misc_exp_layout.addWidget(misc_exp_widget)
+        
         exp_layout.addWidget(exp_section)
         exp_layout.addWidget(misc_exp_section)
         self.left_tab_bar.addTab(exp_frame, "Exp")

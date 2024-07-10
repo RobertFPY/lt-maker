@@ -213,18 +213,15 @@ class CombatAnimProperties(QWidget):
         frame_layout = QVBoxLayout()
         self.frame_group_box.setLayout(frame_layout)
 
-        legacy_section = QHBoxLayout()
         self.import_from_lt_button = QPushButton("Import Legacy Weapon Anim...")
         self.import_from_lt_button.clicked.connect(self.import_legacy)
-        self.export_from_lt_button = QPushButton("Export as Legacy Anim...")
-        self.export_from_lt_button.clicked.connect(self.export_legacy)
-        legacy_section.addWidget(self.import_from_lt_button)
-        legacy_section.addWidget(self.export_from_lt_button)
-        
         self.import_from_gba_button = QPushButton("Import GBA Weapon Anim...")
         self.import_from_gba_button.clicked.connect(self.import_gba)
         self.import_png_button = QPushButton("View Frames...")
         self.import_png_button.clicked.connect(self.select_frame)
+
+        self.export_from_lt_button = QPushButton("Export as Legacy Anim...")
+        self.export_from_lt_button.clicked.connect(self.export_legacy)
 
         self.import_anim_button = QPushButton("Import...")
         self.import_anim_button.clicked.connect(self.import_anim)
@@ -233,7 +230,9 @@ class CombatAnimProperties(QWidget):
 
         self.window.left_frame.layout().addWidget(self.import_anim_button, 3, 0)
         self.window.left_frame.layout().addWidget(self.export_anim_button, 3, 1)
-        frame_layout.addLayout(legacy_section)
+        self.window.left_frame.layout().addWidget(self.export_from_lt_button, 4, 0, 1, 2)
+
+        frame_layout.addWidget(self.import_from_lt_button)
         frame_layout.addWidget(self.import_from_gba_button)
         frame_layout.addWidget(self.import_png_button)
 
@@ -614,7 +613,7 @@ class CombatAnimProperties(QWidget):
 
         # Do cleanup steps to make sure the animation is fully populated and accessible to exporter
         populate_anim_pixmaps(combat_anim)
-        RESOURCES.combat_anims.save_image(path, combat_anim, temp=True)
+        # RESOURCES.combat_anims.save_image(path, combat_anim, temp=True)
         # Now actally export
         for weapon_anim in combat_anim.weapon_anims:
             combat_animation_export.export_to_legacy(weapon_anim, combat_anim, path)

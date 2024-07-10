@@ -1,5 +1,7 @@
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import qRgb, QPixmap, QIcon, QBrush, QColor
+from PyQt5.QtGui import qRgb, QPixmap, QIcon, QBrush, QColor, QImage
+
+from app.utilities.typing import NID
 
 from app.utilities.data import Data
 from app.data.database.database import DB
@@ -14,7 +16,7 @@ from app.extensions.custom_gui import DeletionTab, DeletionDialog
 from app.utilities import str_utils
 from app.editor import utilities as editor_utilities
 
-def palette_swap(pixmap, palette_nid, with_colorkey=True):
+def palette_swap(pixmap: QPixmap, palette_nid: NID, with_colorkey=True) -> QImage:
     palette = RESOURCES.combat_palettes.get(palette_nid)
     if not palette:
         return pixmap.toImage()

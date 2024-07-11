@@ -725,7 +725,8 @@ class Rescue(Action):
         self.subactions.clear()
         self.unit.traveler = self.rescuee.nid
         # TODO Add transition
-        skill_system.on_rescue(self.rescuee, self.unit)
+
+        skill_system.on_rescue(self.rescuee, self.unit)
         game.leave(self.rescuee)
         self.rescuee.position = None
         self.unit.has_rescued = True
@@ -739,7 +740,8 @@ class Rescue(Action):
 
     def execute(self):
         self.unit.traveler = self.rescuee.nid
-        skill_system.on_rescue(self.rescuee, self.unit)
+
+        skill_system.on_rescue(self.rescuee, self.unit)
         game.leave(self.rescuee)
         self.rescuee.position = None
         self.unit.has_rescued = True
@@ -753,7 +755,9 @@ class Rescue(Action):
         game.arrive(self.rescuee)
         self.unit.traveler = None
         self.unit.has_rescued = False
-        skill_system.on_give(self.rescuee, self.unit)
+
+        skill_system.on_give(self.rescuee, self.unit)
+
         self.update_fow_rescuee.reverse()
         for action in self.subactions:
             action.reverse()
@@ -781,7 +785,9 @@ class Drop(Action):
 
         self.unit.traveler = None
         self.unit.has_dropped = True
-        skill_system.on_give(self.droppee, self.unit)
+
+        skill_system.on_give(self.droppee, self.unit)
+
         self.subactions.append(RemoveSkill(self.unit, "Rescue", source=self.droppee.nid, source_type=SourceType.TRAVELER))
         for action in self.subactions:
             action.do()
@@ -803,7 +809,9 @@ class Drop(Action):
 
         self.unit.traveler = None
         self.unit.has_dropped = True
-        skill_system.on_give(self.droppee, self.unit)
+
+        skill_system.on_give(self.droppee, self.unit)
+
     def reverse(self):
         self.unit.traveler = self.droppee.nid
 
@@ -812,7 +820,9 @@ class Drop(Action):
         game.leave(self.droppee)
         self.droppee.position = None
         self.unit.has_dropped = False
-        skill_system.on_rescue(self.droppee, self.unit)
+
+        skill_system.on_rescue(self.droppee, self.unit)
+
         for action in self.subactions:
             action.reverse()
 
@@ -825,8 +835,10 @@ class Give(Action):
 
     def do(self):
         self.subactions.clear()
-        skill_system.on_give(game.get_unit(self.unit.traveler), self.unit)
-        self.other.traveler = self.unit.traveler        skill_system.on_rescue(game.get_unit(self.other.traveler), self.other)
+
+        skill_system.on_give(game.get_unit(self.unit.traveler), self.unit)
+        self.other.traveler = self.unit.traveler
+        skill_system.on_rescue(game.get_unit(self.other.traveler), self.other)
         if not skill_system.ignore_rescue_penalty(self.other) and 'Rescue' in DB.skills:
             self.subactions.append(AddSkill(self.other, 'Rescue', source=self.other.traveler, source_type=SourceType.TRAVELER))
 
@@ -838,11 +850,14 @@ class Give(Action):
         for action in self.subactions:
             action.do()
 
-    def reverse(self):        skill_system.on_give(game.get_unit(self.other.traveler), self.other)
+    def reverse(self):
+        skill_system.on_give(game.get_unit(self.other.traveler), self.other)
         self.unit.traveler = self.other.traveler
         self.other.traveler = None
         self.unit.has_given = False
-        skill_system.on_rescue(game.get_unit(self.unit.traveler), self.unit)
+
+        skill_system.on_rescue(game.get_unit(self.unit.traveler), self.unit)
+
         for action in self.subactions:
             action.reverse()
 
@@ -855,8 +870,10 @@ class Take(Action):
 
     def do(self):
         self.subactions.clear()
-        skill_system.on_give(game.get_unit(self.other.traveler), self.other)
-        self.unit.traveler = self.other.traveler        skill_system.on_rescue(game.get_unit(self.unit.traveler), self.unit)
+
+        skill_system.on_give(game.get_unit(self.other.traveler), self.other)
+        self.unit.traveler = self.other.traveler
+        skill_system.on_rescue(game.get_unit(self.unit.traveler), self.unit)
         if not skill_system.ignore_rescue_penalty(self.unit) and 'Rescue' in DB.skills:
             self.subactions.append(AddSkill(self.unit, 'Rescue', source=self.unit.traveler, source_type=SourceType.TRAVELER))
 
@@ -868,11 +885,14 @@ class Take(Action):
         for action in self.subactions:
             action.do()
 
-    def reverse(self):        skill_system.on_give(game.get_unit(self.unit.traveler), self.unit)
+    def reverse(self):
+        skill_system.on_give(game.get_unit(self.unit.traveler), self.unit)
         self.other.traveler = self.unit.traveler
         self.unit.traveler = None
         self.unit.has_taken = False
-        skill_system.on_rescue(game.get_unit(self.other.traveler), self.other)
+
+        skill_system.on_rescue(game.get_unit(self.other.traveler), self.other)
+
         for action in self.subactions:
             action.reverse()
 
@@ -2080,12 +2100,29 @@ class GainWexp(Action):
     def __init__(self, unit, item, wexp_gain):
         self.unit = unit
         self.item = item
-        self.wexp_gain = wexp_gain        self.klass = DB.classes.get(unit.klass)
+        self.wexp_gain = wexp_gain
+        self.klass = DB.classes.get(unit.klass)
 
     def increase_wexp(self) -> Tuple[int, int]:
         weapon_type = item_system.weapon_type(self.unit, self.item)
         if not weapon_type:
-            return 0, 0        if self.klass.tier <= 1:            wexp_cap = 250        elif self.klass.tier == 2:            swtype = ''            for weapon, wexp in self.unit.wexp.items():                if wexp > 250 and weapon in unit_funcs.usable_wtypes(self.unit):                    swtype = weapon            if not swtype:                    wexp_cap = 330            else:                if swtype == weapon_type:                    wexp_cap = 330                else:                    wexp_cap = 250        else:            wexp_cap = unit_funcs.get_weapon_cap(self.unit, weapon_type)
+            return 0, 0
+        if self.klass.tier <= 1:
+            wexp_cap = 250
+        elif self.klass.tier == 2:
+            swtype = ''
+            for weapon, wexp in self.unit.wexp.items():
+                if wexp > 250 and weapon in unit_funcs.usable_wtypes(self.unit):
+                    swtype = weapon
+            if not swtype:
+                    wexp_cap = 330
+            else:
+                if swtype == weapon_type:
+                    wexp_cap = 330
+                else:
+                    wexp_cap = 250
+        else:
+            wexp_cap = unit_funcs.get_weapon_cap(self.unit, weapon_type)
         old_value = self.unit.wexp[weapon_type]
         self.unit.wexp[weapon_type] += self.wexp_gain
         self.unit.wexp[weapon_type] = utils.clamp(self.unit.wexp[weapon_type], 0, wexp_cap)

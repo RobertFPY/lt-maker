@@ -570,9 +570,9 @@ def compute_true_speed(unit, target, item, def_item, mode, attack_info) -> int:
 def outspeed(unit, target, item, def_item, mode, attack_info) -> int:
     if not item:
         return 0
-    if not item_system.can_double(unit, item):
+    if not item_system.can_double(unit, item) and not skill_system.negate_no_double(unit):
         return 0
-    if skill_system.no_double(unit):
+    if skill_system.no_double(unit) and not skill_system.negate_no_double(unit):
         return 0
     if mode == 'defense' and not (DB.constants.value('def_double') or skill_system.def_double(target)):
         return 0

@@ -439,7 +439,15 @@ def deactivate_combat_art(unit, skill):
 def deactivate_all_combat_arts(unit):
     for skill in unit.skills:
         deactivate_combat_art(unit, skill)
-
+def on_rescue(unit, leader):
+    for skill in unit.skills:
+        for component in skill.components:
+            if component.defines('on_rescue'):
+                component.on_rescue(unit, leader)def on_give(unit, leader):
+    for skill in unit.skills:
+        for component in skill.components:
+            if component.defines('on_give'):
+                component.on_give(unit, leader)
 def on_pairup(unit, leader):
     for skill in unit.skills:
         for component in skill.components:

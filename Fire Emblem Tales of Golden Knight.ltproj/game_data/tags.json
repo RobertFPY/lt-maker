@@ -24,5 +24,9 @@
     "Magical",
     "Wyvern",
     "Beast",
-    "Infantry"
+    "Infantry",
+    "CannotHeal",
+    "CannotRecover",
+    "PhysicalWeapon",
+    "MagicalWeapon"
 ]

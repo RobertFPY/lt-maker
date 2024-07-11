@@ -132,6 +132,14 @@
         "expression": "SKL//2"
     },
     {
+        "nid": "ONEPLUS_SKILL",
+        "expression": "SKL*1.5"
+    },
+    {
+        "nid": "TWOPLUS_SKILL",
+        "expression": "SKL*0.75"
+    },
+    {
         "nid": "LUCK",
         "expression": "LCK"
     },

@@ -1007,9 +1007,6 @@ class InfoMenuState(State):
                     tier = ' (T3)'
                 elif 'T4' in skill.nid:
                     surf.blit(SPRITES.get('T4SkillBG'), (79, 7))
-                    tier = ' (T4)'
-                elif 'Ultra' in skill.nid:
-                    surf.blit(SPRITES.get('UltraSkillBG'), (79, 7))
                     tier = ' (Ultra)'
                 elif 'Personal' in skill.nid:
                     surf.blit(SPRITES.get('PersonalSkillBG'), (79, 7))
@@ -1049,9 +1046,6 @@ class InfoMenuState(State):
                     tier = ' (T3)'
                 elif 'T4' in skill.nid:
                     surf.blit(SPRITES.get('T4SkillBG'), (59, 27))
-                    tier = ' (T4)'
-                elif 'Ultra' in skill.nid:
-                    surf.blit(SPRITES.get('UltraSkillBG'), (59, 27))
                     tier = ' (Ultra)'
                 elif 'Personal' in skill.nid:
                     surf.blit(SPRITES.get('PersonalSkillBG'), (59, 27))
@@ -1091,9 +1085,6 @@ class InfoMenuState(State):
                     tier = ' (T3)'
                 elif 'T4' in skill.nid:
                     surf.blit(SPRITES.get('T4SkillBG'), (65, 47))
-                    tier = ' (T4)'
-                elif 'Ultra' in skill.nid:
-                    surf.blit(SPRITES.get('UltraSkillBG'), (65, 47))
                     tier = ' (Ultra)'
                 elif 'Personal' in skill.nid:
                     surf.blit(SPRITES.get('PersonalSkillBG'), (65, 47))
@@ -1133,9 +1124,6 @@ class InfoMenuState(State):
                     tier = ' (T3)'
                 elif 'T4' in skill.nid:
                     surf.blit(SPRITES.get('T4SkillBG'), (39, 67))
-                    tier = ' (T4)'
-                elif 'Ultra' in skill.nid:
-                    surf.blit(SPRITES.get('UltraSkillBG'), (39, 67))
                     tier = ' (Ultra)'
                 elif 'Personal' in skill.nid:
                     surf.blit(SPRITES.get('PersonalSkillBG'), (39, 67))
@@ -1175,9 +1163,6 @@ class InfoMenuState(State):
                     tier = ' (T3)'
                 elif 'T4' in skill.nid:
                     surf.blit(SPRITES.get('T4SkillBG'), (39, 87))
-                    tier = ' (T4)'
-                elif 'Ultra' in skill.nid:
-                    surf.blit(SPRITES.get('UltraSkillBG'), (39, 87))
                     tier = ' (Ultra)'
                 elif 'Personal' in skill.nid:
                     surf.blit(SPRITES.get('PersonalSkillBG'), (39, 87))
@@ -1217,9 +1202,6 @@ class InfoMenuState(State):
                     tier = ' (T3)'
                 elif 'T4' in skill.nid:
                     surf.blit(SPRITES.get('T4SkillBG'), (39, 87))
-                    tier = ' (T4)'
-                elif 'Ultra' in skill.nid:
-                    surf.blit(SPRITES.get('UltraSkillBG'), (39, 107))
                     tier = ' (Ultra)'
                 elif 'Personal' in skill.nid:
                     surf.blit(SPRITES.get('PersonalSkillBG'), (39, 107))

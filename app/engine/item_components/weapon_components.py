@@ -111,69 +111,84 @@ class Damage(ItemComponent):
         return False
 
     def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
-        playback_nids = [brush.nid for brush in playback]
-        if 'attacker_partner_phase' in playback_nids or 'defender_partner_phase' in playback_nids:
-            damage = combat_calcs.compute_assist_damage(unit, target, item, target.get_weapon(), mode, attack_info)
-        else:
-            damage = combat_calcs.compute_damage(unit, target, item, target.get_weapon(), mode, attack_info)
+        if 'Fatal_Wound_Effect' in [skill.nid for skill in unit.skills]:            return        elif 'Lethality_Effect' in [skill.nid for skill in unit.skills]:            return        elif 'Bane_Effect' in [skill.nid for skill in unit.skills]:            return        else:
+            playback_nids = [brush.nid for brush in playback]
+            if 'attacker_partner_phase' in playback_nids or 'defender_partner_phase' in playback_nids:
+                damage = combat_calcs.compute_assist_damage(unit, target, item, target.get_weapon(), mode, attack_info)
+            else:
+                damage = combat_calcs.compute_damage(unit, target, item, target.get_weapon(), mode, attack_info)
 
-        # Reduce damage if in Grandmaster Mode
-        if game.rng_mode == RNGOption.GRANDMASTER:
-            hit = utils.clamp(combat_calcs.compute_hit(unit, target, item, target.get_weapon(), mode, attack_info), 0, 100)
-            damage = int(damage * float(hit) / 100)
+            # Reduce damage if in Grandmaster Mode
+            if game.rng_mode == RNGOption.GRANDMASTER:
+                hit = utils.clamp(combat_calcs.compute_hit(unit, target, item, target.get_weapon(), mode, attack_info), 0, 100)
+                damage = int(damage * float(hit) / 100)
 
-        true_damage = min(damage, target.get_hp())
-        actions.append(action.ChangeHP(target, -damage))
+            true_damage = min(damage, target.get_hp())
+            actions.append(action.ChangeHP(target, -damage))
 
-        # For animation
-        playback.append(pb.DamageHit(unit, item, target, damage, true_damage))
-        if damage == 0:
-            playback.append(pb.HitSound('No Damage'))
-            playback.append(pb.HitAnim('MapNoDamage', target))
+            # For animation
+            playback.append(pb.DamageHit(unit, item, target, damage, true_damage))
+            if damage == 0:
+                playback.append(pb.HitSound('No Damage'))
+                playback.append(pb.HitAnim('MapNoDamage', target))
 
     def on_glancing_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
-        playback_nids = [brush.nid for brush in playback]
-        if 'attacker_partner_phase' in playback_nids or 'defender_partner_phase' in playback_nids:
-            damage = combat_calcs.compute_assist_damage(unit, target, item, target.get_weapon(), mode, attack_info)
+        if 'Fatal_Wound_Effect' in [skill.nid for skill in unit.skills]:
+            return
+        elif 'Lethality_Effect' in [skill.nid for skill in unit.skills]:
+            return
+        elif 'Bane_Effect' in [skill.nid for skill in unit.skills]:
+            return
         else:
-            damage = combat_calcs.compute_damage(unit, target, item, target.get_weapon(), mode, attack_info)
+            playback_nids = [brush.nid for brush in playback]
+            if 'attacker_partner_phase' in playback_nids or 'defender_partner_phase' in playback_nids:
+                damage = combat_calcs.compute_assist_damage(unit, target, item, target.get_weapon(), mode, attack_info)
+            else:
+                damage = combat_calcs.compute_damage(unit, target, item, target.get_weapon(), mode, attack_info)
 
-        # Reduce damage if in Grandmaster Mode
-        if game.rng_mode == RNGOption.GRANDMASTER:
-            hit = utils.clamp(combat_calcs.compute_hit(unit, target, item, target.get_weapon(), mode, attack_info), 0, 100)
-            damage = int(damage * float(hit) / 100)
+            # Reduce damage if in Grandmaster Mode
+            if game.rng_mode == RNGOption.GRANDMASTER:
+                hit = utils.clamp(combat_calcs.compute_hit(unit, target, item, target.get_weapon(), mode, attack_info), 0, 100)
+                damage = int(damage * float(hit) / 100)
 
-        damage //= 2  # Because glancing hit
+            damage //= 2  # Because glancing hit
 
-        true_damage = min(damage, target.get_hp())
-        actions.append(action.ChangeHP(target, -damage))
+            true_damage = min(damage, target.get_hp())
+            actions.append(action.ChangeHP(target, -damage))
 
-        # For animation
-        playback.append(pb.DamageHit(unit, item, target, damage, true_damage))
-        if damage == 0:
-            playback.append(pb.HitAnim('MapNoDamage', target))
-        else:
-            playback.append(pb.HitAnim('MapGlancingHit', target))
+            # For animation
+            playback.append(pb.DamageHit(unit, item, target, damage, true_damage))
+            if damage == 0:
+                playback.append(pb.HitAnim('MapNoDamage', target))
+            else:
+                playback.append(pb.HitAnim('MapGlancingHit', target))
 
     def on_crit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
-        playback_nids = [brush.nid for brush in playback]
-        if 'attacker_partner_phase' in playback_nids or 'defender_partner_phase' in playback_nids:
-            damage = combat_calcs.compute_assist_damage(unit, target, item, target.get_weapon(), mode, attack_info, crit=True)
+        if 'Fatal_Wound_Effect' in [skill.nid for skill in unit.skills]:
+            return
+        elif 'Lethality_Effect' in [skill.nid for skill in unit.skills]:
+            return
+        elif 'Bane_Effect' in [skill.nid for skill in unit.skills]:
+            return
         else:
-            damage = combat_calcs.compute_damage(unit, target, item, target.get_weapon(), mode, attack_info, crit=True)
+            playback_nids = [brush.nid for brush in playback]
+            if 'attacker_partner_phase' in playback_nids or 'defender_partner_phase' in playback_nids:
+                damage = combat_calcs.compute_assist_damage(unit, target, item, target.get_weapon(), mode, attack_info, crit=True)
+            else:
+                damage = combat_calcs.compute_damage(unit, target, item, target.get_weapon(), mode, attack_info, crit=True)
 
-        # Reduce damage if in Grandmaster Mode (although crit doesn't make much sense with Grandmaster mode)
-        if game.rng_mode == RNGOption.GRANDMASTER:
-            hit = utils.clamp(combat_calcs.compute_hit(unit, target, item, target.get_weapon(), mode, attack_info), 0, 100)
-            damage = int(damage * float(hit) / 100)
+            # Reduce damage if in Grandmaster Mode (although crit doesn't make much sense with Grandmaster mode)
+            if game.rng_mode == RNGOption.GRANDMASTER:
+                hit = utils.clamp(combat_calcs.compute_hit(unit, target, item, target.get_weapon(), mode, attack_info), 0, 100)
+                damage = int(damage * float(hit) / 100)
 
-        true_damage = min(damage, target.get_hp())
-        actions.append(action.ChangeHP(target, -damage))
+            true_damage = min(damage, target.get_hp())
+            actions.append(action.ChangeHP(target, -damage))
 
-        playback.append(pb.DamageCrit(unit, item, target, damage, true_damage))
-        if damage == 0:
-            playback.append(pb.HitSound('No Damage'))
-            playback.append(pb.HitAnim('MapNoDamage', target))
+            playback.append(pb.DamageCrit(unit, item, target, damage, true_damage))
+            if damage == 0:
+                playback.append(pb.HitSound('No Damage'))
+                playback.append(pb.HitAnim('MapNoDamage', target))
 
 class Crit(ItemComponent):
     nid = 'crit'

@@ -1092,7 +1092,7 @@
                 "nid": "107",
                 "variant": null,
                 "level": 7,
-                "klass": "Armored_Sword_Elite",
+                "klass": "Armored_Sword_Elite_Melee",
                 "faction": "Soldier",
                 "starting_items": [
                     [
@@ -4873,17 +4873,21 @@
                 "nid": "103",
                 "variant": null,
                 "level": 20,
-                "klass": "Swordmaster",
+                "klass": "Cleric",
                 "faction": "Soldier",
                 "starting_items": [
                     [
                         "Master_Blade",
                         false
+                    ],
+                    [
+                        "Recover",
+                        false
                     ]
                 ],
                 "starting_skills": [],
                 "team": "enemy",
-                "ai": "None",
+                "ai": "HealCoward",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": [
@@ -4923,7 +4927,7 @@
                 "nid": "101",
                 "variant": null,
                 "level": 20,
-                "klass": "Summoner",
+                "klass": "Shaman",
                 "faction": "Soldier",
                 "starting_items": [
                     [
@@ -4950,12 +4954,12 @@
             {
                 "nid": "102",
                 "variant": null,
-                "level": 7,
-                "klass": "Soldier",
+                "level": 20,
+                "klass": "Armored_Axe_Melee",
                 "faction": "Soldier",
                 "starting_items": [
                     [
-                        "Javelin",
+                        "Hand_Axe",
                         false
                     ]
                 ],
@@ -4987,12 +4991,12 @@
             {
                 "nid": "104",
                 "variant": null,
-                "level": 4,
-                "klass": "Armored_Lance",
+                "level": 20,
+                "klass": "Pegasus_Knight",
                 "faction": "Soldier",
                 "starting_items": [
                     [
-                        "Silver_Axe",
+                        "Javelin",
                         false
                     ],
                     [
@@ -5039,6 +5043,115 @@
                 ],
                 "starting_traveler": null,
                 "generic": true
+            },
+            {
+                "nid": "106",
+                "variant": null,
+                "level": 1,
+                "klass": "Thief",
+                "faction": "Soldier",
+                "starting_items": [
+                    [
+                        "Bronze_Sword",
+                        false
+                    ]
+                ],
+                "starting_skills": [],
+                "team": "player",
+                "ai": "None",
+                "roam_ai": null,
+                "ai_group": "",
+                "starting_position": [
+                    4,
+                    5
+                ],
+                "starting_traveler": null,
+                "generic": true
+            },
+            {
+                "nid": "107",
+                "variant": null,
+                "level": 1,
+                "klass": "Myrmidon",
+                "faction": "Soldier",
+                "starting_items": [
+                    [
+                        "Bronze_Sword",
+                        false
+                    ]
+                ],
+                "starting_skills": [],
+                "team": "enemy",
+                "ai": "None",
+                "roam_ai": null,
+                "ai_group": "",
+                "starting_position": [
+                    4,
+                    9
+                ],
+                "starting_traveler": null,
+                "generic": true
+            },
+            {
+                "nid": "108",
+                "variant": null,
+                "level": 20,
+                "klass": "Halberdier",
+                "faction": "Soldier",
+                "starting_items": [
+                    [
+                        "Steel_Lance",
+                        false
+                    ]
+                ],
+                "starting_skills": [],
+                "team": "enemy",
+                "ai": "None",
+                "roam_ai": null,
+                "ai_group": "",
+                "starting_position": [
+                    6,
+                    9
+                ],
+                "starting_traveler": null,
+                "generic": true
+            },
+            {
+                "nid": "109",
+                "variant": null,
+                "level": 1,
+                "klass": "Axe_General_Melee",
+                "faction": "Soldier",
+                "starting_items": [
+                    [
+                        "Steel_Axe",
+                        false
+                    ]
+                ],
+                "starting_skills": [],
+                "team": "enemy",
+                "ai": "None",
+                "roam_ai": null,
+                "ai_group": "",
+                "starting_position": [
+                    6,
+                    8
+                ],
+                "starting_traveler": null,
+                "generic": true
+            },
+            {
+                "nid": "UnitTest_2",
+                "team": "player",
+                "ai": "None",
+                "roam_ai": null,
+                "ai_group": "",
+                "starting_position": [
+                    5,
+                    6
+                ],
+                "starting_traveler": null,
+                "generic": false
             }
         ],
         "regions": [
@@ -5112,6 +5225,11 @@
             }
         ],
         "unit_groups": [],
-        "ai_groups": []
+        "ai_groups": [
+            {
+                "nid": "",
+                "trigger_threshold": 1
+            }
+        ]
     }
 ]

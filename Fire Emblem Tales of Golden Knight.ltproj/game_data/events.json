@@ -1463,11 +1463,7 @@
             "#wait;5000",
             "#music;Attack;2000",
             "#wait;5000",
-            "give_item;Camus;Dragonspear;no_banner",
-            "give_skill;102;Test;;no_banner",
-            "give_skill;Martin;lv_up_child;;no_banner",
-            "#give_skill;UnitTest;Test;;no_banner",
-            "set_current_hp;UnitTest;10"
+            "give_skill;109;Test2;;no_banner"
         ]
     },
     {
@@ -1535,8 +1531,19 @@
         "only_once": false,
         "priority": 20,
         "_source": [
-            "change_team;Bone;player",
-            "game_var;EirikaSupport;True"
+            "set_current_hp;UnitTest;10"
+        ]
+    },
+    {
+        "name": "Turn3",
+        "trigger": "turn_change",
+        "level_nid": "DEBUG",
+        "condition": "game.turncount == 3",
+        "commands": [],
+        "only_once": false,
+        "priority": 20,
+        "_source": [
+            "heal_unit;UnitTest;60"
         ]
     },
     {
@@ -2668,17 +2675,10 @@
         "level_nid": "DEBUG",
         "condition": "True",
         "commands": [],
-        "only_once": true,
+        "only_once": false,
         "priority": 20,
         "_source": [
-            "if;False",
-            "if;True",
-            "speak;Joshua;Wow, such wait.",
-            "elif;False",
-            "speak;Joshua;No",
-            "end",
-            "end",
-            "reset;Martin"
+            "reset;UnitTest"
         ]
     },
     {
@@ -3911,7 +3911,6 @@
         "only_once": false,
         "priority": 20,
         "_source": [
-            "if;'Panic_Ploy_T1' not in [skill.nid for skill in game.get_unit('{unit2}').skills] or 'Panic_Ploy_T2' not in [skill.nid for skill in game.get_unit('{unit2}').skills] or 'Panic_Ploy_T3' not in [skill.nid for skill in game.get_unit('{unit2}').skills]",
             "if;game.get_unit('{unit2}').stat_bonus('STR') > 0",
             "level_var;{e:'{unit2}' + '_change_str_bonus'};1",
             "level_var;{e:'panic_ploy_str_' + '{unit2}'};game.get_unit('{unit2}').stat_bonus('STR')*2",
@@ -3946,7 +3945,52 @@
             "level_var;{e:'{unit2}' + '_change_res_bonus'};1",
             "level_var;{e:'panic_ploy_res_' + '{unit2}'};game.get_unit('{unit2}').stat_bonus('RES')*2",
             "change_stats;{unit2};RES,-{eval:game.get_unit('{unit2}').stat_bonus('RES')*2};immediate",
+            "end"
+        ]
+    },
+    {
+        "name": "WilyFighterSkill",
+        "trigger": null,
+        "level_nid": null,
+        "condition": "True",
+        "commands": [],
+        "only_once": false,
+        "priority": 20,
+        "_source": [
+            "if;game.get_unit('{unit2}').stat_bonus('STR') > 0",
+            "level_var;{e:'{unit2}' + '_change_str_bonus'};1",
+            "level_var;{e:'willy_fighter_str_' + '{unit2}'};game.get_unit('{unit2}').stat_bonus('STR')",
+            "change_stats;{unit2};STR,-{eval:game.get_unit('{unit2}').stat_bonus('STR')};immediate",
             "end",
+            "if;game.get_unit('{unit2}').stat_bonus('MAG') > 0",
+            "level_var;{e:'{unit2}' + '_change_mag_bonus'};1",
+            "level_var;{e:'willy_fighter_mag_' + '{unit2}'};game.get_unit('{unit2}').stat_bonus('MAG')",
+            "change_stats;{unit2};MAG,-{eval:game.get_unit('{unit2}').stat_bonus('MAG')};immediate",
+            "end",
+            "if;game.get_unit('{unit2}').stat_bonus('SKL') > 0",
+            "level_var;{e:'{unit2}' + '_change_skl_bonus'};1",
+            "level_var;{e:'willy_fighter_skl_' + '{unit2}'};game.get_unit('{unit2}').stat_bonus('SKL')",
+            "change_stats;{unit2};SKL,-{eval:game.get_unit('{unit2}').stat_bonus('SKL')};immediate",
+            "end",
+            "if;game.get_unit('{unit2}').stat_bonus('SPD') > 0",
+            "level_var;{e:'{unit2}' + '_change_spd_bonus'};1",
+            "level_var;{e:'willy_fighter_spd_' + '{unit2}'};game.get_unit('{unit2}').stat_bonus('SPD')",
+            "change_stats;{unit2};SPD,-{eval:game.get_unit('{unit2}').stat_bonus('SPD')};immediate",
+            "end",
+            "if;game.get_unit('{unit2}').stat_bonus('LCK') > 0",
+            "level_var;{e:'{unit2}' + '_change_lck_bonus'};1",
+            "level_var;{e:'willy_fighter_lck_' + '{unit2}'};game.get_unit('{unit2}').stat_bonus('LCK')",
+            "change_stats;{unit2};LCK,-{eval:game.get_unit('{unit2}').stat_bonus('LCK')};immediate",
+            "end",
+            "if;game.get_unit('{unit2}').stat_bonus('DEF') > 0",
+            "level_var;{e:'{unit2}' + '_change_def_bonus'};1",
+            "level_var;{e:'willy_fighter_def_' + '{unit2}'};game.get_unit('{unit2}').stat_bonus('DEF')",
+            "change_stats;{unit2};DEF,-{eval:game.get_unit('{unit2}').stat_bonus('DEF')};immediate",
+            "end",
+            "if;game.get_unit('{unit2}').stat_bonus('RES') > 0",
+            "level_var;{e:'{unit2}' + '_change_res_bonus'};1",
+            "level_var;{e:'willy_fighter_res_' + '{unit2}'};game.get_unit('{unit2}').stat_bonus('RES')",
+            "change_stats;{unit2};RES,-{eval:game.get_unit('{unit2}').stat_bonus('RES')};immediate",
             "end"
         ]
     },
@@ -3996,8 +4040,39 @@
             "end",
             "if;{v:{unit}_change_res_bonus}",
             "change_stats;{unit};RES,{v:panic_ploy_res_{unit}};immediate",
+            "end"
+        ]
+    },
+    {
+        "name": "WilyFighterSkill2",
+        "trigger": null,
+        "level_nid": null,
+        "condition": "True",
+        "commands": [],
+        "only_once": false,
+        "priority": 20,
+        "_source": [
+            "if;{v:{unit}_change_str_bonus}",
+            "change_stats;{unit};STR,{v:willy_fighter_str_{unit}};immediate",
             "end",
-            "remove_skill;{unit};Test2;no_banner"
+            "if;{v:{unit}_change_mag_bonus}",
+            "change_stats;{unit};MAG,{v:willy_fighter_mag_{unit}};immediate",
+            "end",
+            "if;{v:{unit}_change_skl_bonus}",
+            "change_stats;{unit};SKL,{v:willy_fighter_skl_{unit}};immediate",
+            "end",
+            "if;{v:{unit}_change_spd_bonus}",
+            "change_stats;{unit};SPD,{v:willy_fighter_spd_{unit}};immediate",
+            "end",
+            "if;{v:{unit}_change_lck_bonus}",
+            "change_stats;{unit};LCK,{v:willy_fighter_lck_{unit}};immediate",
+            "end",
+            "if;{v:{unit}_change_def_bonus}",
+            "change_stats;{unit};DEF,{v:willy_fighter_def_{unit}};immediate",
+            "end",
+            "if;{v:{unit}_change_res_bonus}",
+            "change_stats;{unit};RES,{v:willy_fighter_res_{unit}};immediate",
+            "end"
         ]
     },
     {
@@ -4136,6 +4211,29 @@
         "only_once": false,
         "priority": 20,
         "_source": [
+            "make_generic;;Fighter;1;player;None;Phantom;;Iron_Axe,Hand_Axe",
+            "autolevel_to;{created_unit};{e:unit.level};fixed",
+            "set_unit_field;{created_unit};Summoner;unit.nid",
+            "set_unit_field;{created_unit};Summoned_by;'Summon_Phantom'",
+            "give_skill;{created_unit};No_Trade;no_banner",
+            "give_skill;{created_unit};Phantom_Personal_Effect;no_banner",
+            "add_tag;{created_unit};Temporary",
+            "for;summon_item;[i.uid for i in u('{created_unit}').items]",
+            "add_item_component;{created_unit};{summon_item};locked;no_warn",
+            "endf",
+            "add_unit;{created_unit};{e:target_pos};warp;closest",
+            "set_current_hp;{unit};{e:unit.get_hp()-10}"
+        ]
+    },
+    {
+        "name": "Summon Phantom 3",
+        "trigger": null,
+        "level_nid": null,
+        "condition": "True",
+        "commands": [],
+        "only_once": false,
+        "priority": 20,
+        "_source": [
             "make_generic;;Fighter;1;player;None;Phantom;;Steel_Axe,Short_Axe",
             "autolevel_to;{created_unit};{e:unit.level};fixed",
             "set_unit_field;{created_unit};Summoner;unit.nid",
@@ -4175,6 +4273,146 @@
             "#choice;lean_new_skill;Choose Skill To Learn;{eval:unit.get_field(unit.klass + str(unit.level))};;;center;;;type_skill;{eval:int(unit.get_field('NumSkill' + str(unit.level)))},1;left",
             "#give_skill;{unit};{v:_last_choice}",
             "#end"
+        ]
+    },
+    {
+        "name": "SkillChillSpeed",
+        "trigger": null,
+        "level_nid": null,
+        "condition": "True",
+        "commands": [],
+        "only_once": false,
+        "priority": 20,
+        "_source": [
+            "level_var;chill_speed_unit;''",
+            "level_var;highest_stat_speed;0",
+            "for;enemy_unit;[u for u in game.level.units if u.team in ['enemy', 'enemy2']]",
+            "if;{eval:game.get_unit('{enemy_unit}').stats['SPD']} > {v:highest_stat_speed}",
+            "level_var;chill_speed_unit;'{enemy_unit}'",
+            "level_var;highest_stat_speed;{eval:game.get_unit('{enemy_unit}').stats['SPD']}",
+            "else",
+            "end",
+            "endf",
+            "if;'Chill_Speed_T1' in [skill.nid for skill in unit.skills]",
+            "give_skill;{v:chill_speed_unit};Chill_Speed_T1_Effect;no_banner",
+            "elif;'Chill_Speed_T2' in [skill.nid for skill in unit.skills]",
+            "give_skill;{v:chill_speed_unit};Chill_Speed_T2_Effect;no_banner",
+            "elif;'Chill_Speed_T3' in [skill.nid for skill in unit.skills]",
+            "give_skill;{v:chill_speed_unit};Chill_Speed_T3_Effect;no_banner",
+            "else",
+            "end"
+        ]
+    },
+    {
+        "name": "SkillChillStrength",
+        "trigger": null,
+        "level_nid": null,
+        "condition": "True",
+        "commands": [],
+        "only_once": false,
+        "priority": 20,
+        "_source": [
+            "level_var;chill_strength_unit;''",
+            "level_var;highest_stat_str;0",
+            "for;enemy_unit;[u for u in game.level.units if u.team in ['enemy', 'enemy2']]",
+            "if;{eval:game.get_unit('{enemy_unit}').stats['STR']} > {v:highest_stat_str}",
+            "level_var;chill_strength_unit;'{enemy_unit}'",
+            "level_var;highest_stat_str;{eval:game.get_unit('{enemy_unit}').stats['STR']}",
+            "else",
+            "end",
+            "endf",
+            "if;'Chill_Strength_T1' in [skill.nid for skill in unit.skills]",
+            "give_skill;{v:chill_strength_unit};Chill_Strength_T1_Effect;no_banner",
+            "elif;'Chill_Strength_T2' in [skill.nid for skill in unit.skills]",
+            "give_skill;{v:chill_strength_unit};Chill_Strength_T2_Effect;no_banner",
+            "elif;'Chill_Strength_T3' in [skill.nid for skill in unit.skills]",
+            "give_skill;{v:chill_strength_unit};Chill_Strength_T3_Effect;no_banner",
+            "else",
+            "end"
+        ]
+    },
+    {
+        "name": "SkillChillMagic",
+        "trigger": null,
+        "level_nid": null,
+        "condition": "True",
+        "commands": [],
+        "only_once": false,
+        "priority": 20,
+        "_source": [
+            "level_var;chill_magic_unit;''",
+            "level_var;highest_stat_mag;0",
+            "for;enemy_unit;[u for u in game.level.units if u.team in ['enemy', 'enemy2']]",
+            "if;{eval:game.get_unit('{enemy_unit}').stats['MAG']} > {v:highest_stat_mag}",
+            "level_var;chill_magic_unit;'{enemy_unit}'",
+            "level_var;highest_stat_mag;{eval:game.get_unit('{enemy_unit}').stats['MAG']}",
+            "else",
+            "end",
+            "endf",
+            "if;'Chill_Magic_T1' in [skill.nid for skill in unit.skills]",
+            "give_skill;{v:chill_magic_unit};Chill_Magic_T1_Effect;no_banner",
+            "elif;'Chill_Magic_T2' in [skill.nid for skill in unit.skills]",
+            "give_skill;{v:chill_magic_unit};Chill_Magic_T2_Effect;no_banner",
+            "elif;'Chill_Magic_T3' in [skill.nid for skill in unit.skills]",
+            "give_skill;{v:chill_magic_unit};Chill_Magic_T3_Effect;no_banner",
+            "else",
+            "end"
+        ]
+    },
+    {
+        "name": "SkillChillDefense",
+        "trigger": null,
+        "level_nid": null,
+        "condition": "True",
+        "commands": [],
+        "only_once": false,
+        "priority": 20,
+        "_source": [
+            "level_var;chill_defense_unit;''",
+            "level_var;highest_stat_def;0",
+            "for;enemy_unit;[u for u in game.level.units if u.team in ['enemy', 'enemy2']]",
+            "if;{eval:game.get_unit('{enemy_unit}').stats['DEF']} > {v:highest_stat_def}",
+            "level_var;chill_defense_unit;'{enemy_unit}'",
+            "level_var;highest_stat_def;{eval:game.get_unit('{enemy_unit}').stats['DEF']}",
+            "else",
+            "end",
+            "endf",
+            "if;'Chill_Denfense_T1' in [skill.nid for skill in unit.skills]",
+            "give_skill;{v:chill_defense_unit};Chill_Denfense_T1_Effect;no_banner",
+            "elif;'Chill_Denfense_T2' in [skill.nid for skill in unit.skills]",
+            "give_skill;{v:chill_defense_unit};Chill_Denfense_T2_Effect;no_banner",
+            "elif;'Chill_Denfense_T3' in [skill.nid for skill in unit.skills]",
+            "give_skill;{v:chill_defense_unit};Chill_Denfense_T3_Effect;no_banner",
+            "else",
+            "end"
+        ]
+    },
+    {
+        "name": "SkillChillResistance",
+        "trigger": null,
+        "level_nid": null,
+        "condition": "True",
+        "commands": [],
+        "only_once": false,
+        "priority": 20,
+        "_source": [
+            "level_var;chill_resistance_unit;''",
+            "level_var;highest_stat_res;0",
+            "for;enemy_unit;[u for u in game.level.units if u.team in ['enemy', 'enemy2']]",
+            "if;{eval:game.get_unit('{enemy_unit}').stats['RES']} > {v:highest_stat_res}",
+            "level_var;chill_resistance_unit;'{enemy_unit}'",
+            "level_var;highest_stat_res;{eval:game.get_unit('{enemy_unit}').stats['RES']}",
+            "else",
+            "end",
+            "endf",
+            "if;'Chill_Resistance_T1' in [skill.nid for skill in unit.skills]",
+            "give_skill;{v:chill_resistance_unit};Chill_Resistance_T1_Effect;no_banner",
+            "elif;'Chill_Resistance_T2' in [skill.nid for skill in unit.skills]",
+            "give_skill;{v:chill_resistance_unit};Chill_Resistance_T2_Effect;no_banner",
+            "elif;'Chill_Resistance_T3' in [skill.nid for skill in unit.skills]",
+            "give_skill;{v:chill_resistance_unit};Chill_Resistance_T3_Effect;no_banner",
+            "else",
+            "end"
         ]
     }
 ]

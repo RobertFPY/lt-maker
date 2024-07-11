@@ -284,18 +284,5 @@
             0,
             10
         ]
-    },
-    {
-        "nid": "Dragonstone",
-        "name": "Dragonstone",
-        "force_melee_anim": false,
-        "rank_bonus": [],
-        "advantage": [],
-        "disadvantage": [],
-        "icon_nid": "wexp_icons",
-        "icon_index": [
-            0,
-            9
-        ]
     }
 ]

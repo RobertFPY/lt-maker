@@ -10,7 +10,7 @@ from app.engine.game_state import game
 from app.engine.objects.unit import UnitObject
 from app.utilities import utils, static_random
 from app.engine.combat import playback as pb
-from app.utilities.enums import Strike
+from app.utilities.enums import Strikefrom app.engine.source_type import SourceType
 import logging
 
 class DoNothing(SkillComponent):
@@ -1396,7 +1396,19 @@ class PostCombatHealing(SkillComponent):
     def start_combat(self, playback, unit, item, target, item2, mode):
         if target and skill_system.check_enemy(unit, target):
             action.do(action.AddSkill(target, self.value, unit))
-            action.do(action.TriggerCharge(unit, self.skill))            self._did_action = Trueclass NegatedBySkills(SkillComponent):
+            action.do(action.TriggerCharge(unit, self.skill))            self._did_action = Trueclass GiveStatusBeforePreCombat(SkillComponent):
+    nid = 'give_status_before_pre_combat'
+    desc = "Gives a status to target enemy before pre combat"
+    tag = SkillTags.COMBAT2
+
+    expose = ComponentType.Skill
+    author = 'Beccarte'
+    
+    def pre_combat(self, playback, unit, item, target, item2, mode):
+        if target and skill_system.check_enemy(unit, target):
+            action.do(action.AddSkill(target, self.value, unit))
+            action.do(action.TriggerCharge(unit, self.skill))
+            self._did_action = Trueclass NegatedBySkills(SkillComponent):
     nid = 'negated_by_skills'
     desc = "Skill does not work against a holder of other skill(s)"
     tag = SkillTags.CUSTOM
@@ -1897,20 +1909,7 @@ class LupinStealIcon(SkillComponent):
             return False
         if item_funcs.inventory_full(unit, def_item):
             return False
-        return Trueclass TrueMiracleDontShow(SkillComponent):
-    nid = 'TrueMiracleDontShow'
-    desc = "Unit cannot go beneath 1hp"
-    tag = SkillTags.COMBAT2
-
-    def after_take_strike(self, actions, playback, unit, item, target, item2, mode, attack_info, strike):
-        did_something = False
-        for act in reversed(actions):
-            if isinstance(act, action.ChangeHP) and -act.num >= act.old_hp and act.unit == unit:
-                act.num = -act.old_hp + 1
-                did_something = True
-
-        if did_something:
-            actions.append(action.TriggerCharge(unit, self.skill))class GiveAllyStatusAfterCombatIfFullHP(SkillComponent):
+        return Trueclass GiveAllyStatusAfterCombatIfFullHP(SkillComponent):
     nid = 'give_ally_status_after_combat_if_full_hp'
     desc = "Gives a status to target ally after combat if target full hp"
     tag = SkillTags.COMBAT2
@@ -1928,4 +1927,48 @@ class LupinStealIcon(SkillComponent):
     expose = ComponentType.Event
     value = ''
     def on_death(self, unit):
-        game.events.trigger_specific_event(self.value, unit, unit.position)
+        game.events.trigger_specific_event(self.value, unit, unit.position)class GiveStatusesAfterHit(SkillComponent):
+    nid = 'give_statuses_after_hit'
+    desc = "Gives statuses to target after hitting them"
+    tag = SkillTags.COMBAT2
+
+    expose = (ComponentType.List, ComponentType.Skill)
+
+    def after_strike(self, actions, playback, unit, item, target, item2, mode, attack_info, strike):
+        mark_playbacks = [p for p in playback if p.nid in (
+            'mark_hit', 'mark_crit')]
+
+        if target and any(p.attacker == unit for p in mark_playbacks):
+            from app.engine import skill_system
+            if target and skill_system.check_enemy(unit, target):
+                for status in self.value:
+                    action.do(action.AddSkill(target, status, unit))
+                action.do(action.TriggerCharge(unit, self.skill))
+class RescueBonus(SkillComponent):
+    nid = 'rescue_bonus'
+    desc = "Grants a child skill to lead units while in rescue."
+    tag = SkillTags.STATUS
+
+    expose = ComponentType.Skill
+
+    def on_rescue(self, unit, leader):
+        action.do(action.AddSkill(leader, self.value, source=unit.nid, source_type=SourceType.TRAVELER))
+
+    def on_give(self, unit, leader):
+        if self.value in [skill.nid for skill in leader.skills]:
+            action.do(action.RemoveSkill(leader, self.value, source=unit.nid, source_type=SourceType.TRAVELER))class ResistFirstStrike(SkillComponent):
+    nid = 'resist_first_strike'
+    desc = "Multiplies damage taken by a fraction at the first strike"
+    tag = SkillTags.COMBAT
+
+    expose = ComponentType.Float
+    value = 0.5
+
+    def resist_multiplier(self, unit, item, target, item2, mode, attack_info, base_value):
+        return self.value if attack_info[0] == 0 else 1class NegateCannotDouble(SkillComponent):
+    nid = 'NEGATE_cannot_double'
+    desc = "NEgate Unit cannot double"
+    tag = SkillTags.COMBAT2
+
+    def negate_no_double(self, unit):
+        return True

@@ -7,10 +7,23 @@ from app.engine import (action, banner, combat_calcs, engine, equations,
                         image_mods, item_funcs, item_system, skill_system,
                         target_system)
 from app.engine.game_state import game
-from app.engine.objects.unit import UnitObjectfrom app.engine.combat import playback as pb
-from app.utilities import utils, static_random
-
-
+from app.engine.objects.unit import UnitObjectfrom app.utilities import utils, static_random
+from app.data.database.difficulty_modes import RNGOption
+from app.engine.combat import playback as pb
+from app.engine.movement import movement_funcs
+import logging
+def ai_status_priority(unit, target, item, move, status_nid) -> float:
+    if target and status_nid not in [skill.nid for skill in target.skills]:
+        accuracy_term = utils.clamp(combat_calcs.compute_hit(unit, target, item, target.get_weapon(), "attack", (0, 0))/100., 0, 1)
+        num_attacks = combat_calcs.outspeed(unit, target, item, target.get_weapon(), "attack", (0, 0))
+        accuracy_term *= num_attacks
+        # Tries to maximize distance from target
+        distance_term = 0.01 * utils.calculate_distance(move, target.position)
+        if skill_system.check_enemy(unit, target):
+            return 0.5 * accuracy_term + distance_term
+        else:
+            return -0.5 * accuracy_term
+    return 0
 class DoNothing(ItemComponent):
     nid = 'do_nothing'
     desc = 'does nothing'
@@ -370,7 +383,48 @@ class ShoveOnEndCombatInitiate(ItemComponent):
             new_position = self._check_shove(target, unit.position, self.value)
             if new_position:
                 action.do(action.ForcedMovement(target, new_position))
+class ShoveOnEndCombatInitiatePlus(ItemComponent):
+    nid = 'shove_on_end_combat_initiate_plus'
+    desc = "Item shoves target at the end of combat, only on initiation, if target couldn't move back due to terrain limit, target suffered x damage."
+    tag = ItemTags.CUSTOM
+    expose = ComponentType.NewMultipleOptions
 
+    options = {
+        'space': ComponentType.Int,
+        'damage': ComponentType.Int,
+    }
+
+    def __init__(self, value=None):
+        self.value = {
+            'space': 1,
+            'damage': 10,
+        }
+        if value:
+            self.value.update(value)
+
+    def _check_shove(self, unit_to_move, anchor_pos, magnitude):
+        offset_x = utils.clamp(unit_to_move.position[0] - anchor_pos[0], -1, 1)
+        offset_y = utils.clamp(unit_to_move.position[1] - anchor_pos[1], -1, 1)
+        new_position = (unit_to_move.position[0] + offset_x * magnitude,
+                        unit_to_move.position[1] + offset_y * magnitude)
+
+        mcost = movement_funcs.get_mcost(unit_to_move, new_position)
+        #If we could pass through it if we had movement, allow the action to occur
+        if mcost != 99:
+            mcost = 0
+        if game.board.check_bounds(new_position) and \
+                not game.board.get_unit(new_position) and \
+                mcost <= equations.parser.movement(unit_to_move):
+            return new_position
+        return False
+    
+    def end_combat(self, playback, unit, item, target, item2, mode):
+        if target and not skill_system.ignore_forced_movement(target) and mode and mode == 'attack':
+            new_position = self._check_shove(target, unit.position, self.value['space'])
+            if new_position:
+                action.do(action.ForcedMovement(target, new_position))            else:                if target and skill_system.check_enemy(unit, target) and not target.get_hp() <= 0:
+                    end_health = target.get_hp() - self.value['damage']
+                    action.do(action.SetHP(target, max(1, end_health)))
 class ShoveFlexibleOnEndCombatInitiate(ItemComponent):
     nid = 'shove_flexible_on_end_combat_initiate'
     desc = "Item shoves target at the end of combat, only on initiation. Target will stop if they hit a wall."
@@ -732,7 +786,42 @@ class Backdash(ItemComponent):
             if new_position:
                 actions.append(action.ForcedMovement(unit, new_position))
                 playback.append(pb.ShoveHit(unit, item, target))
+class BackdashInitiate(ItemComponent):
+    nid = 'backdash_initiate'
+    desc = 'Unit shoves *itself* backwards from the target point.'
+    tag = ItemTags.CUSTOM
+    author = 'mag'
 
+    expose = ComponentType.Int
+    value = 1
+
+    def _check_dash(self, target, user, magnitude):
+        tpos = target.position
+        upos = user.position
+        offset = utils.tmult(utils.tclamp(utils.tuple_sub(upos, tpos), (-1, -1), (1, 1)), magnitude)
+        npos = utils.tuple_add(upos, offset)
+
+        mcost_user = game.movement.get_mcost(user, npos)
+        if game.board.check_bounds(npos) and not game.board.get_unit(npos) and \
+                mcost_user <= equations.parser.movement(user):
+            return npos
+        return None
+
+    def target_restrict(self, unit, item, def_pos, splash) -> bool:
+        target = game.board.get_unit(def_pos)
+        if not target:
+            return False
+        new_position = self._check_dash(target, unit, self.value)
+        if new_position:
+            return True
+        return False
+
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
+        if target and not skill_system.ignore_forced_movement(unit) and mode and mode == 'attack':
+            new_position = self._check_dash(target, unit, self.value)
+            if new_position:
+                actions.append(action.ForcedMovement(unit, new_position))
+                playback.append(pb.ShoveHit(unit, item, target))
 class DrawBackOnEndCombatInitiate(ItemComponent):
     nid = 'draw_back_on_end_combat_initiate'
     desc = "Item moves both user and target back at the end of combat, only on initiation"
@@ -1177,4 +1266,103 @@ class ChangeAnimation(ItemComponent):
         playback.append(pb.DamageHit(unit, item, target, damage, true_damage))
         if true_damage == 0:
             playback.append(pb.HitSound('No Damage'))
-            playback.append(pb.HitAnim('MapNoDamage', target))
+            playback.append(pb.HitAnim('MapNoDamage', target))class Lethality(ItemComponent):
+    nid = 'lethality'
+    desc = "One hit target"
+    tag = ItemTags.CUSTOM
+    
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
+        true_damage = damage = target.get_hp()
+        actions.append(action.ChangeHP(target, -damage))
+
+        # For animation
+        playback.append(pb.DamageHit(unit, item, target, damage, true_damage))
+        if true_damage == 0:
+            playback.append(pb.HitSound('No Damage'))
+            playback.append(pb.HitAnim('MapNoDamage', target))class DamageImproved(ItemComponent):
+    nid = 'damage_improved'
+    desc = "Item does damage on hit"
+    tag = ItemTags.WEAPON
+
+    expose = ComponentType.Int
+    value = 0
+
+    def damage(self, unit, item):
+        return self.value
+
+    def target_restrict(self, unit, item, def_pos, splash) -> bool:
+        # Restricts target based on whether any unit is an enemy
+        defender = game.board.get_unit(def_pos)
+        if defender and skill_system.check_enemy(unit, defender):
+            return True
+        for s_pos in splash:
+            s = game.board.get_unit(s_pos)
+            if s and skill_system.check_enemy(unit, s):
+                return True
+        return False
+
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
+        if not 'Bane_Effect' and 'Lethality_Effect' in [skill.nid for skill in unit.skills]:
+            playback_nids = [brush.nid for brush in playback]
+            if 'attacker_partner_phase' in playback_nids or 'defender_partner_phase' in playback_nids:
+                damage = combat_calcs.compute_assist_damage(unit, target, item, target.get_weapon(), mode, attack_info)
+            else:
+                damage = combat_calcs.compute_damage(unit, target, item, target.get_weapon(), mode, attack_info)
+
+            # Reduce damage if in Grandmaster Mode
+            if game.rng_mode == RNGOption.GRANDMASTER:
+                hit = utils.clamp(combat_calcs.compute_hit(unit, target, item, target.get_weapon(), mode, attack_info), 0, 100)
+                damage = int(damage * float(hit) / 100)
+
+            true_damage = min(damage, target.get_hp())
+            actions.append(action.ChangeHP(target, -damage))
+
+            # For animation
+            playback.append(pb.DamageHit(unit, item, target, damage, true_damage))
+            if damage == 0:
+                playback.append(pb.HitSound('No Damage'))
+                playback.append(pb.HitAnim('MapNoDamage', target))
+
+    def on_glancing_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):        if not 'Bane_Effect' and 'Lethality_Effect' in [skill.nid for skill in unit.skills]:
+            playback_nids = [brush.nid for brush in playback]
+            if 'attacker_partner_phase' in playback_nids or 'defender_partner_phase' in playback_nids:
+                damage = combat_calcs.compute_assist_damage(unit, target, item, target.get_weapon(), mode, attack_info)
+            else:
+                damage = combat_calcs.compute_damage(unit, target, item, target.get_weapon(), mode, attack_info)
+
+            # Reduce damage if in Grandmaster Mode
+            if game.rng_mode == RNGOption.GRANDMASTER:
+                hit = utils.clamp(combat_calcs.compute_hit(unit, target, item, target.get_weapon(), mode, attack_info), 0, 100)
+                damage = int(damage * float(hit) / 100)
+
+            damage //= 2  # Because glancing hit
+
+            true_damage = min(damage, target.get_hp())
+            actions.append(action.ChangeHP(target, -damage))
+
+            # For animation
+            playback.append(pb.DamageHit(unit, item, target, damage, true_damage))
+            if damage == 0:
+                playback.append(pb.HitAnim('MapNoDamage', target))
+            else:
+                playback.append(pb.HitAnim('MapGlancingHit', target))
+
+    def on_crit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):        if not 'Bane_Effect' and 'Lethality_Effect' in [skill.nid for skill in unit.skills]:
+            playback_nids = [brush.nid for brush in playback]
+            if 'attacker_partner_phase' in playback_nids or 'defender_partner_phase' in playback_nids:
+                damage = combat_calcs.compute_assist_damage(unit, target, item, target.get_weapon(), mode, attack_info, crit=True)
+            else:
+                damage = combat_calcs.compute_damage(unit, target, item, target.get_weapon(), mode, attack_info, crit=True)
+
+            # Reduce damage if in Grandmaster Mode (although crit doesn't make much sense with Grandmaster mode)
+            if game.rng_mode == RNGOption.GRANDMASTER:
+                hit = utils.clamp(combat_calcs.compute_hit(unit, target, item, target.get_weapon(), mode, attack_info), 0, 100)
+                damage = int(damage * float(hit) / 100)
+
+            true_damage = min(damage, target.get_hp())
+            actions.append(action.ChangeHP(target, -damage))
+
+            playback.append(pb.DamageCrit(unit, item, target, damage, true_damage))
+            if damage == 0:
+                playback.append(pb.HitSound('No Damage'))
+                playback.append(pb.HitAnim('MapNoDamage', target))

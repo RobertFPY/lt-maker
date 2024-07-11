@@ -133,7 +133,7 @@
     ],
     [
         "enemy_leveling",
-        "Dynamic"
+        "Fixed"
     ],
     [
         "auto_promote",
@@ -193,11 +193,11 @@
     ],
     [
         "translucent_unit_sprite",
-        false
+        true
     ],
     [
         "talk_display",
-        false
+        true
     ],
     [
         "show_abilities",
@@ -249,7 +249,7 @@
     ],
     [
         "attack_zero_dam",
-        false
+        true
     ],
     [
         "zero_move",

@@ -63,6 +63,12 @@
             [
                 "weapon_rank",
                 "E"
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -134,6 +140,12 @@
             [
                 "weapon_rank",
                 "D"
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -205,6 +217,12 @@
             [
                 "weapon_rank",
                 "E"
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -276,6 +294,12 @@
             [
                 "weapon_rank",
                 "C"
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -347,6 +371,12 @@
                     "lose_uses_on_miss": false,
                     "one_loss_per_combat": false
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -418,6 +448,12 @@
                     "lose_uses_on_miss": false,
                     "one_loss_per_combat": false
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -493,6 +529,12 @@
             [
                 "max_range",
                 1
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -568,6 +610,12 @@
             [
                 "max_range",
                 1
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -643,6 +691,12 @@
             [
                 "max_range",
                 1
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -718,6 +772,12 @@
             [
                 "max_range",
                 1
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -789,6 +849,12 @@
             [
                 "max_range",
                 1
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -864,6 +930,12 @@
             [
                 "warning",
                 null
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -947,6 +1019,12 @@
                     "show_effectiveness_flash": true,
                     "weapon_effectiveness_multiplied": true
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -1030,6 +1108,12 @@
                     "show_effectiveness_flash": true,
                     "weapon_effectiveness_multiplied": true
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -1113,6 +1197,12 @@
                     "show_effectiveness_flash": true,
                     "weapon_effectiveness_multiplied": true
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -1192,6 +1282,12 @@
             [
                 "reaver",
                 null
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -1267,6 +1363,12 @@
             [
                 "brave",
                 null
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -1349,6 +1451,12 @@
                     "show_effectiveness_flash": true,
                     "weapon_effectiveness_multiplied": true
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -1428,6 +1536,12 @@
                         "DEF",
                         5
                     ]
+                ]
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
                 ]
             ]
         ]
@@ -1515,6 +1629,12 @@
             [
                 "weapon_rank",
                 "C"
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -1590,6 +1710,12 @@
             [
                 "crit",
                 0
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -1669,6 +1795,12 @@
             [
                 "crit",
                 0
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -1748,6 +1880,12 @@
                     "show_effectiveness_flash": true,
                     "weapon_effectiveness_multiplied": true
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -1833,6 +1971,12 @@
                     "show_effectiveness_flash": true,
                     "weapon_effectiveness_multiplied": true
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -1916,6 +2060,12 @@
                     "show_effectiveness_flash": true,
                     "weapon_effectiveness_multiplied": true
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -1983,6 +2133,12 @@
                     "lose_uses_on_miss": false,
                     "one_loss_per_combat": false
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -2054,6 +2210,12 @@
                     "lose_uses_on_miss": false,
                     "one_loss_per_combat": false
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -2125,6 +2287,12 @@
                     "lose_uses_on_miss": false,
                     "one_loss_per_combat": false
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -2200,6 +2368,12 @@
             [
                 "max_range",
                 1
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -2271,6 +2445,12 @@
                     "lose_uses_on_miss": false,
                     "one_loss_per_combat": false
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -2342,6 +2522,12 @@
                     "lose_uses_on_miss": false,
                     "one_loss_per_combat": false
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -2413,6 +2599,12 @@
             [
                 "max_range",
                 1
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -2488,6 +2680,12 @@
             [
                 "warning",
                 null
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -2563,6 +2761,12 @@
             [
                 "battle_cast_anim",
                 "JavelinSoldier"
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -2638,6 +2842,12 @@
             [
                 "battle_cast_anim",
                 "Javelin"
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -2717,6 +2927,12 @@
             [
                 "magic",
                 null
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -2785,6 +3001,12 @@
             [
                 "battle_cast_anim",
                 "JavelinGeneral"
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -2860,6 +3082,12 @@
             [
                 "battle_cast_anim",
                 "JavelinDracoknight"
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -2935,6 +3163,12 @@
             [
                 "battle_cast_anim",
                 "JavelinDracolord"
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -3010,6 +3244,12 @@
             [
                 "max_range",
                 1
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -3093,6 +3333,12 @@
                     "show_effectiveness_flash": true,
                     "weapon_effectiveness_multiplied": true
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -3176,6 +3422,12 @@
                     "show_effectiveness_flash": true,
                     "weapon_effectiveness_multiplied": true
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -3247,6 +3499,12 @@
             [
                 "max_range",
                 1
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -3330,6 +3588,12 @@
                     "show_effectiveness_flash": true,
                     "weapon_effectiveness_multiplied": true
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -3409,6 +3673,12 @@
             [
                 "max_range",
                 1
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -3499,6 +3769,12 @@
                     "show_effectiveness_flash": true,
                     "weapon_effectiveness_multiplied": true
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -3582,6 +3858,12 @@
                     "show_effectiveness_flash": true,
                     "weapon_effectiveness_multiplied": true
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -3667,6 +3949,12 @@
                     "show_effectiveness_flash": true,
                     "weapon_effectiveness_multiplied": true
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -3744,6 +4032,12 @@
             [
                 "status_on_equip",
                 "Guardian"
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -3811,6 +4105,12 @@
             [
                 "weapon_rank",
                 "E"
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -3882,6 +4182,12 @@
             [
                 "weapon_rank",
                 "D"
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -3957,6 +4263,12 @@
             [
                 "wexp",
                 2
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -4028,6 +4340,12 @@
             [
                 "weapon_rank",
                 "B"
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -4099,6 +4417,12 @@
             [
                 "weapon_rank",
                 "A"
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -4170,6 +4494,12 @@
             [
                 "max_range",
                 1
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -4245,6 +4575,12 @@
             [
                 "battle_cast_anim",
                 "ThrowingAxe"
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -4320,6 +4656,12 @@
             [
                 "battle_cast_anim",
                 "ThrowingAxe"
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -4395,6 +4737,12 @@
             [
                 "battle_cast_anim",
                 "ThrowingAxe"
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -4470,6 +4818,12 @@
             [
                 "max_range",
                 1
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -4549,6 +4903,12 @@
             [
                 "magic",
                 null
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -4633,6 +4993,12 @@
                     "show_effectiveness_flash": true,
                     "weapon_effectiveness_multiplied": true
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -4717,6 +5083,12 @@
                     "show_effectiveness_flash": true,
                     "weapon_effectiveness_multiplied": true
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -4804,6 +5176,12 @@
                     "show_effectiveness_flash": true,
                     "weapon_effectiveness_multiplied": true
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -4887,6 +5265,12 @@
                     "show_effectiveness_flash": true,
                     "weapon_effectiveness_multiplied": true
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -4966,6 +5350,12 @@
             [
                 "max_range",
                 1
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -5041,6 +5431,12 @@
             [
                 "reaver",
                 null
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -5128,6 +5524,12 @@
                     "show_effectiveness_flash": true,
                     "weapon_effectiveness_multiplied": true
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -5203,6 +5605,12 @@
             [
                 "max_range",
                 1
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -5274,6 +5682,12 @@
             [
                 "max_range",
                 1
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -5345,6 +5759,12 @@
             [
                 "max_range",
                 1
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -5428,6 +5848,12 @@
                     "show_effectiveness_flash": true,
                     "weapon_effectiveness_multiplied": true
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -5505,6 +5931,12 @@
             [
                 "status_on_equip",
                 "Guardian"
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -5584,6 +6016,12 @@
                     "show_effectiveness_flash": true,
                     "weapon_effectiveness_multiplied": true
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -5667,6 +6105,12 @@
                     "show_effectiveness_flash": true,
                     "weapon_effectiveness_multiplied": true
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -5758,6 +6202,12 @@
             [
                 "battle_cast_anim",
                 "Lightning"
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -5841,6 +6291,12 @@
                     "show_effectiveness_flash": true,
                     "weapon_effectiveness_multiplied": true
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -5924,6 +6380,12 @@
                     "show_effectiveness_flash": true,
                     "weapon_effectiveness_multiplied": true
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -6007,6 +6469,12 @@
                     "show_effectiveness_flash": true,
                     "weapon_effectiveness_multiplied": true
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -6090,6 +6558,12 @@
                     "show_effectiveness_flash": true,
                     "weapon_effectiveness_multiplied": true
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -6177,6 +6651,12 @@
                     "show_effectiveness_flash": true,
                     "weapon_effectiveness_multiplied": true
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -6264,6 +6744,12 @@
                     "show_effectiveness_flash": true,
                     "weapon_effectiveness_multiplied": true
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -6351,6 +6837,12 @@
                     "show_effectiveness_flash": true,
                     "weapon_effectiveness_multiplied": true
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -6438,6 +6930,12 @@
                     "show_effectiveness_flash": true,
                     "weapon_effectiveness_multiplied": true
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -6522,6 +7020,12 @@
                     "show_effectiveness_flash": true,
                     "weapon_effectiveness_multiplied": true
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -6605,6 +7109,12 @@
                     "show_effectiveness_flash": true,
                     "weapon_effectiveness_multiplied": true
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -6688,6 +7198,12 @@
                     "show_effectiveness_flash": true,
                     "weapon_effectiveness_multiplied": true
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -6778,6 +7294,12 @@
                     "show_effectiveness_flash": true,
                     "weapon_effectiveness_multiplied": true
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -6868,6 +7390,12 @@
                     "show_effectiveness_flash": true,
                     "weapon_effectiveness_multiplied": true
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -6958,6 +7486,12 @@
                     "show_effectiveness_flash": true,
                     "weapon_effectiveness_multiplied": true
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -7039,6 +7573,10 @@
                 [
                     "Heal"
                 ]
+            ],
+            [
+                "eval_target_restrict_2",
+                "'CannotHeal' not in target.tags"
             ]
         ]
     },
@@ -7120,6 +7658,10 @@
                 [
                     "Heal"
                 ]
+            ],
+            [
+                "eval_target_restrict_2",
+                "'CannotHeal' not in target.tags"
             ]
         ]
     },
@@ -7205,6 +7747,10 @@
                 [
                     "Heal"
                 ]
+            ],
+            [
+                "eval_target_restrict_2",
+                "'CannotHeal' not in target.tags"
             ]
         ]
     },
@@ -7290,6 +7836,10 @@
                 [
                     "Heal"
                 ]
+            ],
+            [
+                "eval_target_restrict_2",
+                "'CannotHeal' not in target.tags"
             ]
         ]
     },
@@ -7383,6 +7933,10 @@
                 [
                     "Heal"
                 ]
+            ],
+            [
+                "eval_target_restrict_2",
+                "'CannotHeal' not in target.tags"
             ]
         ]
     },
@@ -7472,6 +8026,10 @@
                 [
                     "Heal"
                 ]
+            ],
+            [
+                "eval_target_restrict_2",
+                "'CannotHeal' not in target.tags"
             ]
         ]
     },
@@ -7559,6 +8117,10 @@
             [
                 "wexp",
                 5
+            ],
+            [
+                "item_tags",
+                []
             ]
         ]
     },
@@ -7638,6 +8200,10 @@
             [
                 "battle_cast_anim",
                 "Arrow"
+            ],
+            [
+                "item_tags",
+                []
             ]
         ]
     },
@@ -7705,6 +8271,10 @@
             [
                 "map_cast_anim",
                 "MapUnlock"
+            ],
+            [
+                "item_tags",
+                []
             ]
         ]
     },
@@ -7780,6 +8350,10 @@
             [
                 "map_hit_sfx",
                 "DebuffRecover"
+            ],
+            [
+                "item_tags",
+                []
             ]
         ]
     },
@@ -7867,6 +8441,10 @@
             [
                 "alternate_avoid_formula",
                 "STAFFAVOID"
+            ],
+            [
+                "item_tags",
+                []
             ]
         ]
     },
@@ -7962,6 +8540,10 @@
             [
                 "alternate_avoid_formula",
                 "STAFFAVOID"
+            ],
+            [
+                "item_tags",
+                []
             ]
         ]
     },
@@ -8057,6 +8639,10 @@
             [
                 "alternate_avoid_formula",
                 "STAFFAVOID"
+            ],
+            [
+                "item_tags",
+                []
             ]
         ]
     },
@@ -8144,6 +8730,10 @@
             [
                 "hit",
                 0
+            ],
+            [
+                "item_tags",
+                []
             ]
         ]
     },
@@ -8239,6 +8829,10 @@
                     0,
                     0
                 ]
+            ],
+            [
+                "item_tags",
+                []
             ]
         ]
     },
@@ -8317,6 +8911,10 @@
             [
                 "eval_target_restrict_2",
                 "\"Tile\" not in target.tags and not skill_system.ignore_forced_movement(target)"
+            ],
+            [
+                "item_tags",
+                []
             ]
         ]
     },
@@ -8412,6 +9010,10 @@
                     105,
                     106
                 ]
+            ],
+            [
+                "item_tags",
+                []
             ]
         ]
     },
@@ -8515,6 +9117,10 @@
             [
                 "all_enemies_aoe",
                 null
+            ],
+            [
+                "item_tags",
+                []
             ]
         ]
     },
@@ -8594,6 +9200,10 @@
             [
                 "map_hit_sfx",
                 "Weapon Shine"
+            ],
+            [
+                "item_tags",
+                []
             ]
         ]
     },
@@ -8677,6 +9287,10 @@
             [
                 "empty_tile_target_restrict",
                 null
+            ],
+            [
+                "item_tags",
+                []
             ]
         ]
     },
@@ -8744,6 +9358,10 @@
             [
                 "target_enemy",
                 null
+            ],
+            [
+                "item_tags",
+                []
             ]
         ]
     },
@@ -8815,6 +9433,10 @@
             [
                 "battle_cast_anim",
                 "Barrier"
+            ],
+            [
+                "item_tags",
+                []
             ]
         ]
     },
@@ -8908,6 +9530,10 @@
             [
                 "lifelink",
                 0.5
+            ],
+            [
+                "item_tags",
+                []
             ]
         ]
     },
@@ -8982,6 +9608,10 @@
             [
                 "target_tile",
                 null
+            ],
+            [
+                "item_tags",
+                []
             ]
         ]
     },
@@ -9135,6 +9765,10 @@
             [
                 "max_range",
                 1
+            ],
+            [
+                "item_tags",
+                []
             ]
         ]
     },
@@ -9209,6 +9843,10 @@
             [
                 "target_tile",
                 null
+            ],
+            [
+                "item_tags",
+                []
             ]
         ]
     },
@@ -9632,6 +10270,12 @@
             [
                 "battle_cast_anim",
                 "Lightning"
+            ],
+            [
+                "item_tags",
+                [
+                    "MagicalWeapon"
+                ]
             ]
         ]
     },
@@ -9723,6 +10367,12 @@
             [
                 "battle_cast_anim",
                 "Shine"
+            ],
+            [
+                "item_tags",
+                [
+                    "MagicalWeapon"
+                ]
             ]
         ]
     },
@@ -9810,6 +10460,12 @@
             [
                 "battle_cast_anim",
                 "Divine"
+            ],
+            [
+                "item_tags",
+                [
+                    "MagicalWeapon"
+                ]
             ]
         ]
     },
@@ -9896,6 +10552,12 @@
                     255,
                     255,
                     0
+                ]
+            ],
+            [
+                "item_tags",
+                [
+                    "MagicalWeapon"
                 ]
             ]
         ]
@@ -9984,6 +10646,12 @@
             [
                 "battle_cast_anim",
                 "Aura"
+            ],
+            [
+                "item_tags",
+                [
+                    "MagicalWeapon"
+                ]
             ]
         ]
     },
@@ -10083,6 +10751,12 @@
                     "show_effectiveness_flash": true,
                     "weapon_effectiveness_multiplied": true
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "MagicalWeapon"
+                ]
             ]
         ]
     },
@@ -10170,6 +10844,12 @@
             [
                 "battle_cast_anim",
                 "Fire"
+            ],
+            [
+                "item_tags",
+                [
+                    "MagicalWeapon"
+                ]
             ]
         ]
     },
@@ -10257,6 +10937,12 @@
             [
                 "wexp",
                 2
+            ],
+            [
+                "item_tags",
+                [
+                    "MagicalWeapon"
+                ]
             ]
         ]
     },
@@ -10344,6 +11030,12 @@
             [
                 "battle_cast_anim",
                 "Thunder"
+            ],
+            [
+                "item_tags",
+                [
+                    "MagicalWeapon"
+                ]
             ]
         ]
     },
@@ -10427,6 +11119,12 @@
             [
                 "siege_weapon",
                 null
+            ],
+            [
+                "item_tags",
+                [
+                    "MagicalWeapon"
+                ]
             ]
         ]
     },
@@ -10503,6 +11201,12 @@
                     "show_effectiveness_flash": true,
                     "weapon_effectiveness_multiplied": true
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "MagicalWeapon"
+                ]
             ]
         ]
     },
@@ -10590,6 +11294,12 @@
                     "show_effectiveness_flash": true,
                     "weapon_effectiveness_multiplied": true
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "MagicalWeapon"
+                ]
             ]
         ]
     },
@@ -10677,6 +11387,12 @@
                     "show_effectiveness_flash": true,
                     "weapon_effectiveness_multiplied": true
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "MagicalWeapon"
+                ]
             ]
         ]
     },
@@ -10764,6 +11480,12 @@
             [
                 "battle_cast_anim",
                 "Flux"
+            ],
+            [
+                "item_tags",
+                [
+                    "MagicalWeapon"
+                ]
             ]
         ]
     },
@@ -10847,6 +11569,12 @@
             [
                 "battle_cast_anim",
                 "Luna"
+            ],
+            [
+                "item_tags",
+                [
+                    "MagicalWeapon"
+                ]
             ]
         ]
     },
@@ -10938,6 +11666,12 @@
             [
                 "battle_cast_anim",
                 "Nosferatu"
+            ],
+            [
+                "item_tags",
+                [
+                    "MagicalWeapon"
+                ]
             ]
         ]
     },
@@ -11021,6 +11755,12 @@
             [
                 "eclipse",
                 null
+            ],
+            [
+                "item_tags",
+                [
+                    "MagicalWeapon"
+                ]
             ]
         ]
     },
@@ -11108,6 +11848,12 @@
             [
                 "battle_cast_anim",
                 "Fenrir"
+            ],
+            [
+                "item_tags",
+                [
+                    "MagicalWeapon"
+                ]
             ]
         ]
     },
@@ -11191,6 +11937,12 @@
             [
                 "battle_cast_anim",
                 "Gleipnir"
+            ],
+            [
+                "item_tags",
+                [
+                    "MagicalWeapon"
+                ]
             ]
         ]
     },
@@ -11251,6 +12003,12 @@
             [
                 "max_range",
                 2
+            ],
+            [
+                "item_tags",
+                [
+                    "MagicalWeapon"
+                ]
             ]
         ]
     },
@@ -11311,6 +12069,10 @@
             [
                 "alternate_resist_formula",
                 "ZERO"
+            ],
+            [
+                "item_tags",
+                []
             ]
         ]
     },
@@ -11370,6 +12132,10 @@
             [
                 "enemy_blast_aoe",
                 3
+            ],
+            [
+                "item_tags",
+                []
             ]
         ]
     },
@@ -11430,6 +12196,10 @@
             [
                 "max_range",
                 3
+            ],
+            [
+                "item_tags",
+                []
             ]
         ]
     },
@@ -11486,6 +12256,10 @@
             [
                 "max_range",
                 1
+            ],
+            [
+                "item_tags",
+                []
             ]
         ]
     },
@@ -11550,6 +12324,10 @@
             [
                 "max_range",
                 2
+            ],
+            [
+                "item_tags",
+                []
             ]
         ]
     },
@@ -11614,6 +12392,10 @@
             [
                 "siege_weapon",
                 null
+            ],
+            [
+                "item_tags",
+                []
             ]
         ]
     },
@@ -11670,6 +12452,10 @@
             [
                 "max_range",
                 1
+            ],
+            [
+                "item_tags",
+                []
             ]
         ]
     },
@@ -11726,6 +12512,10 @@
             [
                 "max_range",
                 1
+            ],
+            [
+                "item_tags",
+                []
             ]
         ]
     },
@@ -11782,6 +12572,10 @@
             [
                 "max_range",
                 1
+            ],
+            [
+                "item_tags",
+                []
             ]
         ]
     },
@@ -11842,6 +12636,10 @@
             [
                 "max_range",
                 1
+            ],
+            [
+                "item_tags",
+                []
             ]
         ]
     },
@@ -11902,6 +12700,10 @@
             [
                 "max_range",
                 1
+            ],
+            [
+                "item_tags",
+                []
             ]
         ]
     },
@@ -11958,6 +12760,10 @@
             [
                 "max_range",
                 1
+            ],
+            [
+                "item_tags",
+                []
             ]
         ]
     },
@@ -12014,6 +12820,10 @@
             [
                 "max_range",
                 1
+            ],
+            [
+                "item_tags",
+                []
             ]
         ]
     },
@@ -12078,6 +12888,10 @@
             [
                 "max_range",
                 2
+            ],
+            [
+                "item_tags",
+                []
             ]
         ]
     },
@@ -12142,6 +12956,10 @@
             [
                 "max_range",
                 2
+            ],
+            [
+                "item_tags",
+                []
             ]
         ]
     },
@@ -12217,6 +13035,10 @@
             [
                 "no_double",
                 null
+            ],
+            [
+                "item_tags",
+                []
             ]
         ]
     },
@@ -12296,6 +13118,12 @@
                     "show_effectiveness_flash": true,
                     "weapon_effectiveness_multiplied": true
                 }
+            ],
+            [
+                "item_tags",
+                [
+                    "MagicalWeapon"
+                ]
             ]
         ]
     },
@@ -12376,6 +13204,12 @@
             [
                 "wexp",
                 0
+            ],
+            [
+                "item_tags",
+                [
+                    "MagicalWeapon"
+                ]
             ]
         ]
     },
@@ -12453,6 +13287,12 @@
             [
                 "weight",
                 8
+            ],
+            [
+                "item_tags",
+                [
+                    "MagicalWeapon"
+                ]
             ]
         ]
     },
@@ -12524,6 +13364,12 @@
             [
                 "status_on_hit",
                 "Poisoned"
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -12599,6 +13445,12 @@
             [
                 "status_on_hit",
                 "Poisoned"
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -12674,6 +13526,12 @@
             [
                 "status_on_hit",
                 "Poisoned"
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -12749,6 +13607,12 @@
             [
                 "status_on_hit",
                 "Poisoned"
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -12824,6 +13688,12 @@
             [
                 "status_on_hit",
                 "Poisoned"
+            ],
+            [
+                "item_tags",
+                [
+                    "PhysicalWeapon"
+                ]
             ]
         ]
     },
@@ -12848,7 +13718,7 @@
             [
                 "multi_status_on_equip",
                 [
-                    "Dragonskin_Ultra",
+                    "Dragonskin_T4",
                     "Renewal_T3"
                 ]
             ],
@@ -12906,7 +13776,7 @@
             [
                 "multi_status_on_equip",
                 [
-                    "Dragonskin_Ultra"
+                    "Dragonskin_T4"
                 ]
             ],
             [
@@ -13744,11 +14614,7 @@
             ],
             [
                 "prf_class",
-                [
-                    "Armored_Axe",
-                    "Armored_Lance",
-                    "Armored_Sword"
-                ]
+                []
             ],
             [
                 "promote",
@@ -13967,7 +14833,6 @@
             [
                 "prf_class",
                 [
-                    "Monk",
                     "Cleric",
                     "Mage",
                     "Shaman",
@@ -14176,16 +15041,13 @@
                     "Mercenary",
                     "Thief",
                     "Pegasus_Knight",
-                    "Armored_Axe",
                     "Fighter",
                     "Pirate",
                     "Archer",
-                    "Monk",
                     "Cleric",
                     "Mage",
                     "Shaman",
                     "Troubadour",
-                    "Armored_Sword",
                     "Axe_Wyvern_Rider",
                     "Lance_Wyvern_Rider"
                 ]
@@ -14585,6 +15447,42 @@
         ]
     },
     {
+        "nid": "Summon_T4",
+        "name": "Summon+",
+        "desc": "Summons a phantom.",
+        "icon_nid": "Skills",
+        "icon_index": [
+            9,
+            0
+        ],
+        "components": [
+            [
+                "min_range",
+                1
+            ],
+            [
+                "max_range",
+                1
+            ],
+            [
+                "target_tile",
+                null
+            ],
+            [
+                "spell",
+                null
+            ],
+            [
+                "empty_tile_target_restrict",
+                null
+            ],
+            [
+                "event_on_hit",
+                "Global Summon Phantom 3"
+            ]
+        ]
+    },
+    {
         "nid": "Summon_Soldier",
         "name": "Summon",
         "desc": "Summons soldiers.",
@@ -14657,6 +15555,89 @@
         ]
     },
     {
+        "nid": "Knock_Back",
+        "name": "Knock Back",
+        "desc": "If User initites combat, Foe moves 1 space away from User after combat.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            9,
+            4
+        ],
+        "components": [
+            [
+                "shove_on_end_combat_initiate",
+                1
+            ]
+        ]
+    },
+    {
+        "nid": "Knock_Back_Plus",
+        "name": "Knock Back+",
+        "desc": "If User initites combat, Foe moves 1 space away from User after combat. If Foe couldn't move back 1 space due to terrain limit, Foe suffered 10 damage.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            9,
+            4
+        ],
+        "components": [
+            [
+                "shove_on_end_combat_initiate_plus",
+                {
+                    "space": 1,
+                    "damage": 10
+                }
+            ]
+        ]
+    },
+    {
+        "nid": "Lunge",
+        "name": "Lunge",
+        "desc": "If User initiates combat, User and Foe swap spaces after combat.",
+        "icon_nid": "All_Skills",
+        "icon_index": [
+            12,
+            25
+        ],
+        "components": [
+            [
+                "swap_on_end_combat",
+                null
+            ]
+        ]
+    },
+    {
+        "nid": "Drag_Back",
+        "name": "Drag Back",
+        "desc": "If User initiates combat, User and Foe moves back 1 space to User's direction after combat.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            0,
+            5
+        ],
+        "components": [
+            [
+                "draw_back_on_end_combat_initiate",
+                1
+            ]
+        ]
+    },
+    {
+        "nid": "Hit_and_Run",
+        "name": "Hit and Run",
+        "desc": "If User initiates combat, User moves back 1 space after combat.",
+        "icon_nid": "All_Skills",
+        "icon_index": [
+            15,
+            3
+        ],
+        "components": [
+            [
+                "backdash_initiate",
+                1
+            ]
+        ]
+    },
+    {
         "nid": "Luna_Tag_Override",
         "name": "Luna Tag Override",
         "desc": "Luna_Tag_Override",
@@ -14675,7 +15656,7 @@
     {
         "nid": "Bane_Tag_Override",
         "name": "Bane Tag Override",
-        "desc": "Lethality Tag Override",
+        "desc": "Bane Tag Override",
         "icon_nid": "Skills",
         "icon_index": [
             0,
@@ -14683,15 +15664,19 @@
         ],
         "components": [
             [
-                "alternate_damage_formula",
-                "ZERO"
+                "eclipse_one_hp",
+                null
+            ],
+            [
+                "damage_improved",
+                0
             ]
         ]
     },
     {
         "nid": "Bane_Tag_Override_2",
         "name": "Bane Tag Override",
-        "desc": "Lethality Tag Override",
+        "desc": "Bane Tag Override",
         "icon_nid": "Skills",
         "icon_index": [
             0,
@@ -14700,6 +15685,22 @@
         "components": [
             [
                 "cannot_counter",
+                null
+            ]
+        ]
+    },
+    {
+        "nid": "Lethality_Tag_Override",
+        "name": "Lethality Tag Override",
+        "desc": "Lethality Tag Override",
+        "icon_nid": "Skills",
+        "icon_index": [
+            0,
+            0
+        ],
+        "components": [
+            [
+                "lethality",
                 null
             ]
         ]
@@ -15109,6 +16110,22 @@
         ]
     },
     {
+        "nid": "WorseDefense_Weapons",
+        "name": "WorseDefense Weapons",
+        "desc": "",
+        "icon_nid": "Skills",
+        "icon_index": [
+            0,
+            0
+        ],
+        "components": [
+            [
+                "alternate_resist_formula",
+                "WORSE_DEFENSE"
+            ]
+        ]
+    },
+    {
         "nid": "Sear",
         "name": "Sear",
         "desc": "Attack up to three units.",
@@ -15384,56 +16401,7 @@
             0,
             0
         ],
-        "components": [
-            [
-                "weapon",
-                null
-            ],
-            [
-                "target_enemy",
-                null
-            ],
-            [
-                "min_range",
-                1
-            ],
-            [
-                "max_range",
-                2
-            ],
-            [
-                "damage",
-                0
-            ],
-            [
-                "hit",
-                120
-            ],
-            [
-                "crit",
-                0
-            ],
-            [
-                "weight",
-                10
-            ],
-            [
-                "level_exp",
-                null
-            ],
-            [
-                "weapon_type",
-                "Lance"
-            ],
-            [
-                "weapon_rank",
-                "E"
-            ],
-            [
-                "status_on_equip",
-                "Test"
-            ]
-        ]
+        "components": []
     },
     {
         "nid": "Test_Effect",

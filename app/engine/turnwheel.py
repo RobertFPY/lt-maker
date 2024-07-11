@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from app.data.resources.resources import RESOURCES
 
 import app.engine.action as Action
-from app.constants import WINHEIGHT, WINWIDTH, TILEWIDTH, TILEHEIGHT
+from app.constants import WINHEIGHT, WINWIDTH
 from app.engine import base_surf, engine, gui, image_mods
 from app.engine.background import SpriteBackground
 from app.engine.battle_animation import BattleAnimation
@@ -48,12 +48,12 @@ class ActionLog():
         self.unique_moves = []
 
     def append(self, action):
-        logging.debug("Add Action %d: %s", self.action_index + 1, action.__class__.__name__)
+        logging.debug("Add Action %d: %s", self.action_index + 1, action)
         self.actions.append(action)
         self.action_index += 1
 
     def remove(self, action):
-        logging.debug("Remove Action %d: %s", self.action_index, action.__class__.__name__)
+        logging.debug("Remove Action %d: %s", self.action_index, action)
         self.actions.remove(action)
         self.action_index -= 1
 
@@ -62,7 +62,7 @@ class ActionLog():
         Reverses and removes action and all actions that happened after it
         (except Equip action)
         """
-        logging.debug("Hard Remove Action %d: %s", self.action_index, action.__class__.__name__)
+        logging.debug("Hard Remove Action %d: %s", self.action_index, action)
         idx = self.actions.index(action)
         for act in reversed(self.actions[idx:]):
             if act.persist_through_menu_cancel:
@@ -323,7 +323,7 @@ class ActionLog():
         while not self.at_far_future():
             self.run_action_forward()
 
-    def get_last_lock(self):
+    def get_last_lock(self) -> bool:
         cur_index = self.action_index
         while cur_index > self.first_free_action:
             cur_index -= 1
@@ -392,7 +392,7 @@ class ActionLog():
     @classmethod
     def restore(cls, serial):
         self = cls()
-        if len(serial) == 2: # deprecated
+        if len(serial) == 2:  # deprecated
             actions, first_free_action = serial
             record = 0
         else:

@@ -668,7 +668,7 @@ def force_chapter_clean_up(self: Event, flags=None):
 def skip_save(self: Event, true_or_false: bool, flags=None):
     action.do(action.SetLevelVar('_skip_save', true_or_false))
 
-def activate_turnwheel(self: Event, force: bool=True, flags=None):
+def activate_turnwheel(self: Event, force: bool = True, flags=None):
     self.turnwheel_flag = 2 if force else 1
 
 def battle_save(self: Event, flags=None):

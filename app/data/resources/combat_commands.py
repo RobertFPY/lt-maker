@@ -63,8 +63,8 @@ def parse_attr(attr, text: str):
 
 def generate_text(command: CombatAnimationCommand) -> str:
     s = [command.nid]
-    if isinstance(command.attrs, tuple):
-        for idx, attr in command.attrs:
+    if isinstance(command.attr, tuple):
+        for idx, attr in enumerate(command.attr):
             if command.value[idx] is not None:
                 s.append(str(command.value[idx]))
     return ';'.join(s)

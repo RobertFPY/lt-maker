@@ -1967,8 +1967,42 @@ class LupinStealIcon(SkillComponent):
     def resist_multiplier(self, unit, item, target, item2, mode, attack_info, base_value):
         return self.value if attack_info[0] == 0 else 1class NegateCannotDouble(SkillComponent):
     nid = 'NEGATE_cannot_double'
-    desc = "NEgate Unit cannot double"
+    desc = "Negate Unit cannot double"
     tag = SkillTags.COMBAT2
 
     def negate_no_double(self, unit):
-        return True
+        return True
+class NegateCannotBeCountered(SkillComponent):
+    nid = 'negate_cannot_be_countered'
+    desc = "Negate cannot be countered"
+    tag = SkillTags.COMBAT2
+
+    def negate_cannot_be_countered(self, unit):
+        return Trueclass EnemyCannotDynamicAttacks(SkillComponent):
+    nid = 'no_dynamic_attacks'
+    desc = "Target can't do dynamic attacks"
+    tag = SkillTags.COMBAT2
+
+    def no_dynamic_attacks(self, unit):
+        return Trueclass NegateNoDynamicAttacks(SkillComponent):
+    nid = 'negate_no_dynamic_attacks'
+    desc = "Negate cannot dynamic attacks"
+    tag = SkillTags.COMBAT2
+
+    def negate_no_dynamic_attacks(self, unit):
+        return Trueclass EnemyCannotDouble(SkillComponent):
+    nid = 'Target_cannot_double'
+    desc = "Target cannot double"
+    tag = SkillTags.COMBAT2
+
+    def target_no_double(self, unit):
+        return Trueclass ReduceResistMultiplier(SkillComponent):
+    nid = 'reduce_resist_multiplier'
+    desc = "Reduce Multiplies damage taken by a fraction"
+    tag = SkillTags.COMBAT
+
+    expose = ComponentType.Float
+    value = 0.5
+
+    def reduce_resist_multiplier(self, unit, item, target, item2, mode, attack_info, base_value):
+        return self.value

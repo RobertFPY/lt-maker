@@ -234,6 +234,23 @@ Example usage:
                             key=lambda pair: pair[1])[:num]
         return []
 
+    @categorize(QueryType.MAP)    def get_closest_enemies(self, position, num: int = 1) -> List[Tuple[UnitObject, int]]:
+        """Return a list containing the closest enemy units and their distances.
+
+        Args:
+            position: position or unit
+            num (int, optional): How many enemies to search for. Defaults to 1.
+
+        Returns:
+            List[Tuple[UnitObject, int]]: Returns `num` pairs of `(unit, distance)` to the position.
+            Will return fewer if there are fewer enemy units than `num`.
+        """
+        position = self._resolve_pos(position)
+        if position:
+            return sorted([(unit, utils.calculate_distance(unit.position, position)) for unit in self.game.get_enemy_units()],
+                            key=lambda pair: pair[1])[:num]
+        return []
+
     @categorize(QueryType.MAP)
     def get_units_within_distance(self, position, dist: int = 1, nid=None, team=None, tag=None, party=None) -> List[Tuple[UnitObject, int]]:
         """Return a list containing all units within `dist` distance to the specific position

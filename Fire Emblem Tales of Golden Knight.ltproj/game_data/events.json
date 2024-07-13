@@ -1463,7 +1463,8 @@
             "#wait;5000",
             "#music;Attack;2000",
             "#wait;5000",
-            "give_skill;109;Test2;;no_banner"
+            "give_skill;109;Test2;;no_banner",
+            "set_current_hp;104;10"
         ]
     },
     {
@@ -4413,6 +4414,20 @@
             "give_skill;{v:chill_resistance_unit};Chill_Resistance_T3_Effect;no_banner",
             "else",
             "end"
+        ]
+    },
+    {
+        "name": "SkillDazzlingDiscord",
+        "trigger": null,
+        "level_nid": null,
+        "condition": "True",
+        "commands": [],
+        "only_once": false,
+        "priority": 20,
+        "_source": [
+            "for;enemy_unit;[u.nid for u, _ in get_closest_enemies(unit, 1)]",
+            "give_skill;{enemy_unit};Dazzling_Staff_T4_2_Effect;;no_banner",
+            "endf"
         ]
     }
 ]

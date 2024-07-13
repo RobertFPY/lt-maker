@@ -4715,7 +4715,7 @@
         },
         "starting_items": [
             [
-                "Steel_Lance",
+                "Hero_Lance",
                 false
             ],
             [
@@ -4738,7 +4738,7 @@
         "learned_skills": [
             [
                 1,
-                "Wrathfull_Staff_T4_1"
+                "Test"
             ]
         ],
         "unit_notes": [],

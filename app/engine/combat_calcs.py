@@ -108,7 +108,7 @@ def can_counterattack(attacker, aweapon, defender, dweapon) -> bool:
         return False
     if not item_funcs.available(defender, dweapon):
         return False
-    if not item_system.can_be_countered(attacker, aweapon):
+    if not item_system.can_be_countered(attacker, aweapon) and not skill_system.negate_cannot_be_countered(defender):
         return False
     if not item_system.can_counter(defender, dweapon):
         return False
@@ -517,8 +517,8 @@ def compute_damage(unit, target, item, def_item, mode, attack_info, crit=False, 
         if thracia_crit:
             might += total_might * thracia_crit
 
-    might *= skill_system.damage_multiplier(unit, item, target, resolve_weapon(target), mode, attack_info, might)
-    might *= skill_system.resist_multiplier(target, resolve_weapon(target), unit, item, mode, attack_info, might)
+    might *= skill_system.damage_multiplier(unit, item, target, resolve_weapon(target), mode, attack_info, might)    if not skill_system.reduce_resist_multiplier(unit, item, target, resolve_weapon(target), mode, attack_info, might):
+        might *= skill_system.resist_multiplier(target, resolve_weapon(target), unit, item, mode, attack_info, might)    else:        might *= 1 - ((1 - skill_system.resist_multiplier(target, resolve_weapon(target), unit, item, mode, attack_info, might)) * skill_system.reduce_resist_multiplier(unit, item, target, resolve_weapon(target), mode, attack_info, might))
 
     return int(max(DB.constants.get('min_damage').value, might))
 
@@ -570,9 +570,10 @@ def compute_true_speed(unit, target, item, def_item, mode, attack_info) -> int:
 def outspeed(unit, target, item, def_item, mode, attack_info) -> int:
     if not item:
         return 0
-    if not item_system.can_double(unit, item) and not skill_system.negate_no_double(unit):
+    if not item_system.can_double(unit, item):
         return 0
-    if skill_system.no_double(unit) and not skill_system.negate_no_double(unit):
+    if skill_system.no_double(unit):
+        return 0    if skill_system.target_no_double(target) and not skill_system.negate_no_double(unit):
         return 0
     if mode == 'defense' and not (DB.constants.value('def_double') or skill_system.def_double(target)):
         return 0
@@ -585,9 +586,11 @@ def compute_attack_phases(unit, target, item, def_item, mode, attack_info) -> in
     num_attacks = 1
     if not item:
         return 0
-
-    num_attacks += item_system.dynamic_attacks(unit, item, target, resolve_weapon(target), mode, attack_info, num_attacks)
-    num_attacks += skill_system.dynamic_attacks(unit, item, target, resolve_weapon(target), mode, attack_info, num_attacks)
+    if skill_system.no_dynamic_attacks(target) and skill_system.negate_no_dynamic_attacks(unit):
+        num_attacks += item_system.dynamic_attacks(unit, item, target, resolve_weapon(target), mode, attack_info, num_attacks)
+        num_attacks += skill_system.dynamic_attacks(unit, item, target, resolve_weapon(target), mode, attack_info, num_attacks)    elif not skill_system.no_dynamic_attacks(target) and skill_system.negate_no_dynamic_attacks(unit):        num_attacks += item_system.dynamic_attacks(unit, item, target, resolve_weapon(target), mode, attack_info, num_attacks)
+        num_attacks += skill_system.dynamic_attacks(unit, item, target, resolve_weapon(target), mode, attack_info, num_attacks)    elif not skill_system.no_dynamic_attacks(target) and not skill_system.negate_no_dynamic_attacks(unit):        num_attacks += item_system.dynamic_attacks(unit, item, target, resolve_weapon(target), mode, attack_info, num_attacks)
+        num_attacks += skill_system.dynamic_attacks(unit, item, target, resolve_weapon(target), mode, attack_info, num_attacks)
     # Only bother calculating whether we outspeed when there is a target
     if target:
         num_attacks += outspeed(unit, target, item, def_item, mode, attack_info)

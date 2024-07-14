@@ -3363,11 +3363,14 @@ def find_unlock(self: Event, unit, flags=None):
                 item_system.can_unlock(unit, item, region):
             all_items.append(item)
 
-    if len(all_items) > 1:
+    if len(all_items) > 1 and unit.team == 'player':
         self.game.memory['current_unit'] = unit
         self.game.memory['all_unlock_items'] = all_items
         self.game.state.change('unlock_select')
         self.state = 'paused'
+    elif len(all_items) > 1:  # Must be some non-player character using it
+        # For now, default to just using the first valid item that can unlock the region
+        self.game.memory['unlock_item'] = all_items[0]
     elif len(all_items) == 1:
         self.game.memory['unlock_item'] = all_items[0]
     else:

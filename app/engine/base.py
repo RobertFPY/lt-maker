@@ -1274,10 +1274,10 @@ class BaseBEXPAllocateState(State):
     def determine_needed_bexp(self, unit):
         necessary_exp = equations.parser.get('BONUS_EXP', unit)  # The amount of EXP needed to get to the next level
         if necessary_exp > 0:
-            self.bexp_needed = int(necessary_exp)
+            self.bexp_needed = max(1, int(necessary_exp))
         else:
             # This is Radiant Dawn's formula as a default
-            self.bexp_needed = 50 * int(self.unit.get_internal_level()) + 50
+            self.bexp_needed = max(1, 50 * int(self.unit.get_internal_level()) + 50)
 
     def get_bexp_cost_for_an_experience_point(self, current_exp: int) -> Tuple[int, int]:
         """Takes in the current exp of the unit as the input

@@ -14,7 +14,7 @@ ITEM_HOOKS: Dict[str, HookInfo] = {
     'can_double':                                      HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'can_use':                                         HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'can_use_in_base':                                 HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
-    'locked':                                          HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    # 'locked':                                          HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'unstealable':                                     HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'allow_same_target':                               HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'allow_less_than_max_targets':                     HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
@@ -34,6 +34,9 @@ ITEM_HOOKS: Dict[str, HookInfo] = {
     'ignore_fog_of_war':                               HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
     # default true, return false if any component returns false
     'alerts_when_broken':                              HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_TRUE, inherits_parent=True),
+    'tradeable':                                       HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_TRUE),                                       
+    'storeable':                                       HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_TRUE),
+    'discardable':                                     HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_TRUE),
     # returns latest value defined by a component, or default value if not defined
     'damage_formula':                                  HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
     'resist_formula':                                  HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),

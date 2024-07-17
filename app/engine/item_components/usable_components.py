@@ -353,8 +353,14 @@ class Locked(ItemComponent):
     desc = 'Item cannot be taken or dropped from a units inventory. However, the trade command can be used to rearrange its position, and event commands can remove the item.'
     tag = ItemTags.USES
 
-    def locked(self, unit, item) -> bool:
-        return True
+    def tradeable(self, unit, item) -> bool:
+        return False
+
+    def storeable(self, unit, item) -> bool:
+        return False
+
+    def discardable(self, unit, item) -> bool:
+        return False
 
     def unstealable(self, unit, item) -> bool:
         return True
@@ -366,6 +372,14 @@ class Unstealable(ItemComponent):
 
     def unstealable(self, unit, item) -> bool:
         return True
+
+class Undiscardable(ItemComponent):
+    nid = 'undiscardable'
+    desc = 'Item cannot be discarded'
+    tag = ItemTags.USES
+
+    def discardable(self, unit, item) -> bool:
+        return False
 
 class EvalAvailable(ItemComponent):
     nid = 'eval_available'

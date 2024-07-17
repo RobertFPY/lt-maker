@@ -1014,8 +1014,9 @@ class PrepItemsState(State):
                     if current:
                         self.state = 'owner_item'
                         options = []
-                        if not item_system.locked(self.unit, current):
+                        if item_system.storeable(self.unit, current):
                             options.append('Store')
+                        if item_system.tradeable(self.unit, current):
                             options.append('Trade')
                         if self.name != 'supply_items' and \
                                 item_funcs.can_be_used_in_base(self.unit, current):

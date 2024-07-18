@@ -644,14 +644,8 @@ def end_turn(self: Event, team: NID = None, flags=None):
         while self.game.phase.get_next() != team:
             self.game.phase.next()
 
-    if self.game.phase.get_next() == 'player':
-        self.game.state.change('turn_change')
-        self.game.state.change('status_endstep')
-    else:
-        self.game.state.change('turn_change')
-        self.game.state.change('status_endstep')
-        self.game.state.change('ai')
-        self.game.ui_view.remove_unit_display()
+    self.end()
+    self.end_turn_flag = True
 
 def win_game(self: Event, flags=None):
     self.game.level_vars['_win_game'] = True

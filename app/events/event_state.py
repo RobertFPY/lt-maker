@@ -163,6 +163,18 @@ class EventState(State):
             game.memory['event_turnwheel'] = True
             self.event.turnwheel_flag = False
 
+        elif self.event.end_turn_flag:
+            game.state.back()
+            game.events.clear()  # Ending the turn FORCIBLY removes all events off the stack
+            if game.phase.get_next() == 'player':
+                game.state.change('turn_change')
+                game.state.change('status_endstep')
+            else:
+                game.state.change('turn_change')
+                game.state.change('status_endstep')
+                game.state.change('ai')
+                game.ui_view.remove_unit_display()
+
         else:
             game.state.back()
 

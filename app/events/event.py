@@ -89,6 +89,7 @@ class Event():
 
         self.turnwheel_flag = 0  # Whether to enter the turnwheel state after this event is finished
         self.battle_save_flag = 0  # Whether to enter the battle save state after this event is finished
+        self.end_turn_flag = 0  # Whether to end the turn as this event finishes
 
         self.wait_time: int = 0
 

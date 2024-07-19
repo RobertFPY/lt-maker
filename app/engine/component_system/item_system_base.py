@@ -75,38 +75,6 @@ class Defaults():
         return 1
 
     @staticmethod
-    def damage_formula(unit: UnitObject, item: ItemObject) -> str:
-        return 'DAMAGE'
-
-    @staticmethod
-    def resist_formula(unit: UnitObject, item: ItemObject) -> str:
-        return 'DEFENSE'
-
-    @staticmethod
-    def accuracy_formula(unit: UnitObject, item: ItemObject) -> str:
-        return 'HIT'
-
-    @staticmethod
-    def avoid_formula(unit: UnitObject, item: ItemObject) -> str:
-        return 'AVOID'
-
-    @staticmethod
-    def crit_accuracy_formula(unit: UnitObject, item: ItemObject) -> str:
-        return 'CRIT_HIT'
-
-    @staticmethod
-    def crit_avoid_formula(unit: UnitObject, item: ItemObject) -> str:
-        return 'CRIT_AVOID'
-
-    @staticmethod
-    def attack_speed_formula(unit: UnitObject, item: ItemObject) -> str:
-        return 'ATTACK_SPEED'
-
-    @staticmethod
-    def defense_speed_formula(unit: UnitObject, item: ItemObject) -> str:
-        return 'DEFENSE_SPEED'
-
-    @staticmethod
     def text_color(unit: UnitObject, item: ItemObject) -> str:
         return None
 

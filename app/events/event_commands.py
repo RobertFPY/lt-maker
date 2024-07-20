@@ -1942,6 +1942,7 @@ Sets *GlobalUnit*'s weapon experience in the given *WeaponType* to *WholeNumber*
 
 class GiveSkill(EventCommand):
     nid = 'give_skill'
+    nickname = 'add_skill'
     tag = Tags.MODIFY_UNIT_PROPERTIES
 
     desc = \

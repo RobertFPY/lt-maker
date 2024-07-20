@@ -272,9 +272,10 @@ class BaseConvosChildState(State):
         ignore = [game.base_convos[event_nid] for event_nid in self.options]
 
         selection = game.memory['option_owner']
-        topleft = game.memory['option_menu']
+        topleft_menu = game.memory['option_menu']
 
-        self.menu = menus.Choice(selection, self.options, topleft)
+        self.menu = menus.Choice(selection, self.options, topleft_menu)
+        self.menu.set_limit(5)
         self.menu.set_ignore(ignore)
 
     def begin(self):

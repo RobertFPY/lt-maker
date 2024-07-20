@@ -54,9 +54,9 @@ SKILL_HOOKS: Dict[str, HookInfo] = {
     'crit_avoid_formula':                   HookInfo(['unit'], ResolvePolicy.UNIQUE),
     'attack_speed_formula':                 HookInfo(['unit'], ResolvePolicy.UNIQUE),
     'defense_speed_formula':                HookInfo(['unit'], ResolvePolicy.UNIQUE),
-    'critical_multiplier_formula':          HookInfo(['unit'], ResolvePolicy.UNIQUE),
-    'critical_addition_formula':            HookInfo(['unit'], ResolvePolicy.UNIQUE),
-    'thracia_critical_multiplier_formula':  HookInfo(['unit'], ResolvePolicy.UNIQUE),
+    'critical_multiplier_formula':          HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
+    'critical_addition_formula':            HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
+    'thracia_critical_multiplier_formula':  HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
     # formula_overrides (as exclusive)
     'damage_formula_override':              HookInfo(['unit'], ResolvePolicy.UNIQUE),
     'resist_formula_override':              HookInfo(['unit'], ResolvePolicy.UNIQUE),

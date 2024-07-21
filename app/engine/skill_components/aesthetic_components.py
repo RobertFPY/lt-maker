@@ -136,7 +136,7 @@ class AlternateBattleAnim(SkillComponent):
 
 class ChangeVariant(SkillComponent):
     nid = 'change_variant'
-    desc = "Change the unit's variant"
+    desc = "Change the unit's variant. Does not work well with conditions."
     tag = SkillTags.AESTHETIC
 
     expose = ComponentType.String

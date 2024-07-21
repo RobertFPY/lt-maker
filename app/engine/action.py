@@ -2196,6 +2196,20 @@ class SetName(Action):
     def reverse(self):
         self.unit.name = self.old_name
 
+class SetVariant(Action):
+    def __init__(self, unit, new_variant):
+        self.unit = unit
+        self.new_variant = new_variant
+        self.old_variant = self.unit.variant
+
+    def do(self):
+        self.unit.variant = self.new_variant
+        self.unit.sprite.load_sprites()
+
+    def reverse(self):
+        self.unit.variant = self.old_variant
+        self.unit.sprite.load_sprites()
+
 class SetNid(Action):
     """Changes the NID of a UnitObject.
 

@@ -129,11 +129,13 @@ class FrameSelector(Dialog):
             self.set_current(new_data)
 
     def on_x_changed(self, val):
-        self.current.offset = (val, self.current.offset[1])
+        if self.current:
+            self.current.offset = (val, self.current.offset[1])
         self.draw()
 
     def on_y_changed(self, val):
-        self.current.offset = (self.current.offset[0], val)
+        if self.current:
+            self.current.offset = (self.current.offset[0], val)
         self.draw()
 
     def on_anim_background_changed(self, val):
@@ -152,9 +154,14 @@ class FrameSelector(Dialog):
     def set_current(self, frame):
         self.current = frame
         if self.current:
+            self.x_box.setEnabled(True)
+            self.y_box.setEnabled(True)
             self.x_box.setValue(self.current.offset[0])
             self.y_box.setValue(self.current.offset[1])
             self.draw()
+        else:
+            self.x_box.setEnabled(False)
+            self.y_box.setEnabled(False)
 
     def delete_frame(self):
         if self.current:
@@ -170,12 +177,15 @@ class FrameSelector(Dialog):
             base_image.fill(editor_utilities.qCOLORKEY)
         else:
             base_image = QImage(self.anim_background)
-        painter = QPainter()
-        painter.begin(base_image)
-        pixmap = self.current.pixmap
-        im = combat_animation_model.palette_swap(pixmap, self.current_palette_nid)
-        painter.drawImage(self.current.offset[0], self.current.offset[1], im)
-        painter.end()
+
+        if self.current:
+            painter = QPainter()
+            painter.begin(base_image)
+            pixmap = self.current.pixmap
+            im = combat_animation_model.palette_swap(pixmap, self.current_palette_nid)
+            painter.drawImage(self.current.offset[0], self.current.offset[1], im)
+            painter.end()
+
         self.display.set_image(QPixmap.fromImage(base_image))
         self.display.show_image()
 

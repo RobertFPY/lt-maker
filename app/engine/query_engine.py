@@ -299,6 +299,19 @@ Example usage:
         """
         return self.get_units_within_distance(position, dist, team='player')
 
+    @categorize(QueryType.MAP)    def get_enemies_within_distance(self, position, dist: int = 1) -> List[Tuple[UnitObject, int]]:
+        """Return a list containing all enemy units within `dist` distance to the specific position.
+
+        Args:
+            position: position or unit
+            dist (int, optional): How far to search. Defaults to 1.
+
+        Returns:
+            List[Tuple[UnitObject, int]]: Returns all pairs of `(unit, distance)`
+            within the specified `dist`.
+        """
+        return self.get_units_within_distance(position, dist, team='enemy')
+
     @categorize(QueryType.MAP)
     def get_units_in_area(self, position_corner_1: Tuple[int, int], position_corner_2: Tuple[int, int]) -> List[UnitObject]:
         """Returns a list of units within a rectangular area.

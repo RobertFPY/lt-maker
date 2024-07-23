@@ -272,9 +272,10 @@ class BaseConvosChildState(State):
         ignore = [game.base_convos[event_nid] for event_nid in self.options]
 
         selection = game.memory['option_owner']
-        topleft = game.memory['option_menu']
+        topleft_menu = game.memory['option_menu']
 
-        self.menu = menus.Choice(selection, self.options, topleft)
+        self.menu = menus.Choice(selection, self.options, topleft_menu)
+        self.menu.set_limit(5)
         self.menu.set_ignore(ignore)
 
     def begin(self):
@@ -1274,10 +1275,10 @@ class BaseBEXPAllocateState(State):
     def determine_needed_bexp(self, unit):
         necessary_exp = equations.parser.get('BONUS_EXP', unit)  # The amount of EXP needed to get to the next level
         if necessary_exp > 0:
-            self.bexp_needed = int(necessary_exp)
+            self.bexp_needed = max(1, int(necessary_exp))
         else:
             # This is Radiant Dawn's formula as a default
-            self.bexp_needed = 50 * int(self.unit.get_internal_level()) + 50
+            self.bexp_needed = max(1, 50 * int(self.unit.get_internal_level()) + 50)
 
     def get_bexp_cost_for_an_experience_point(self, current_exp: int) -> Tuple[int, int]:
         """Takes in the current exp of the unit as the input

@@ -1351,6 +1351,18 @@ Sets *Unit*'s name to *String*. This is permanent.
 
     keywords = ["Unit", "String"]
 
+class SetVariant(EventCommand):
+    nid = 'set_variant'
+    tag = Tags.MODIFY_UNIT_PROPERTIES
+
+    desc = \
+        """
+Sets *Unit*'s variant to *String*. This is permanent. If *String* is not supplied, sets variant to None
+        """
+
+    keywords = ["Unit"]
+    optional_keywords = ["String"]
+
 class SetCurrentHP(EventCommand):
     nid = 'set_current_hp'
     tag = Tags.MODIFY_UNIT_PROPERTIES
@@ -1954,6 +1966,7 @@ Sets *GlobalUnit*'s weapon experience in the given *WeaponType* to *WholeNumber*
 
 class GiveSkill(EventCommand):
     nid = 'give_skill'
+    nickname = 'add_skill'
     tag = Tags.MODIFY_UNIT_PROPERTIES
 
     desc = \

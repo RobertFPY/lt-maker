@@ -18122,6 +18122,921 @@
         ]
     },
     {
+        "nid": "Sabotage_Strength_T1",
+        "name": "Sabotage Strength",
+        "desc": "If any Foe's Resistance below User's Resistance -3 and that Foe is adjacent with another Foe at the start of turn, inflicts -3 Strength to those Foes through their next actions.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            1,
+            9
+        ],
+        "components": [
+            [
+                "class_skill",
+                null
+            ],
+            [
+                "slotb_skill",
+                null
+            ],
+            [
+                "priority",
+                0
+            ],
+            [
+                "condition_slotb",
+                "True"
+            ],
+            [
+                "upkeep_event",
+                "Global SkillSabotageStrength"
+            ]
+        ]
+    },
+    {
+        "nid": "Sabotage_Strength_T1_Effect",
+        "name": "Sabotage Strength 1",
+        "desc": "-3 Strength through next actions.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            1,
+            9
+        ],
+        "components": [
+            [
+                "stat_change",
+                [
+                    [
+                        "STR",
+                        -3
+                    ]
+                ]
+            ],
+            [
+                "lost_on_endstep",
+                null
+            ],
+            [
+                "lost_on_end_chapter",
+                null
+            ]
+        ]
+    },
+    {
+        "nid": "Sabotage_Strength_T2",
+        "name": "Sabotage Strength",
+        "desc": "If any Foe's Resistance below User's Resistance -3 and that Foe is adjacent with another Foe at the start of turn, inflicts -5 Strength to those Foes through their next actions.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            1,
+            9
+        ],
+        "components": [
+            [
+                "class_skill",
+                null
+            ],
+            [
+                "slotb_skill",
+                null
+            ],
+            [
+                "priority",
+                1
+            ],
+            [
+                "condition_slotb",
+                "True"
+            ],
+            [
+                "upkeep_event",
+                "Global SkillSabotageStrength"
+            ]
+        ]
+    },
+    {
+        "nid": "Sabotage_Strength_T2_Effect",
+        "name": "Sabotage Strength 2",
+        "desc": "-5 Strength through next actions.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            1,
+            9
+        ],
+        "components": [
+            [
+                "stat_change",
+                [
+                    [
+                        "STR",
+                        -5
+                    ]
+                ]
+            ],
+            [
+                "lost_on_endstep",
+                null
+            ],
+            [
+                "lost_on_end_chapter",
+                null
+            ]
+        ]
+    },
+    {
+        "nid": "Sabotage_Strength_T3",
+        "name": "Sabotage Strength",
+        "desc": "If any Foe's Resistance below User's Resistance -3 and that Foe is adjacent with another Foe at the start of turn, inflicts -7 Strength to those Foes through their next actions.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            1,
+            9
+        ],
+        "components": [
+            [
+                "class_skill",
+                null
+            ],
+            [
+                "slotb_skill",
+                null
+            ],
+            [
+                "priority",
+                2
+            ],
+            [
+                "condition_slotb",
+                "True"
+            ],
+            [
+                "upkeep_event",
+                "Global SkillSabotageStrength"
+            ]
+        ]
+    },
+    {
+        "nid": "Sabotage_Strength_T3_Effect",
+        "name": "Sabotage Strength 3",
+        "desc": "-7 Strength through next actions.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            1,
+            9
+        ],
+        "components": [
+            [
+                "stat_change",
+                [
+                    [
+                        "STR",
+                        -7
+                    ]
+                ]
+            ],
+            [
+                "lost_on_endstep",
+                null
+            ],
+            [
+                "lost_on_end_chapter",
+                null
+            ]
+        ]
+    },
+    {
+        "nid": "Sabotage_Magic_T1",
+        "name": "Sabotage Magic",
+        "desc": "If any Foe's Resistance below User's Resistance -3 and that Foe is adjacent with another Foe at the start of turn, inflicts -3 Magic to those Foes through their next actions.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            2,
+            9
+        ],
+        "components": [
+            [
+                "class_skill",
+                null
+            ],
+            [
+                "slotb_skill",
+                null
+            ],
+            [
+                "priority",
+                0
+            ],
+            [
+                "condition_slotb",
+                "True"
+            ],
+            [
+                "upkeep_event",
+                "Global SkillSabotageMagic"
+            ]
+        ]
+    },
+    {
+        "nid": "Sabotage_Magic_T1_Effect",
+        "name": "Sabotage Magic 1",
+        "desc": "-3 Magic through next actions.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            2,
+            9
+        ],
+        "components": [
+            [
+                "stat_change",
+                [
+                    [
+                        "MAG",
+                        -3
+                    ]
+                ]
+            ],
+            [
+                "lost_on_endstep",
+                null
+            ],
+            [
+                "lost_on_end_chapter",
+                null
+            ]
+        ]
+    },
+    {
+        "nid": "Sabotage_Magic_T2",
+        "name": "Sabotage Magic",
+        "desc": "If any Foe's Resistance below User's Resistance -3 and that Foe is adjacent with another Foe at the start of turn, inflicts -5 Magic to those Foes through their next actions.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            2,
+            9
+        ],
+        "components": [
+            [
+                "class_skill",
+                null
+            ],
+            [
+                "slotb_skill",
+                null
+            ],
+            [
+                "priority",
+                1
+            ],
+            [
+                "condition_slotb",
+                "True"
+            ],
+            [
+                "upkeep_event",
+                "Global SkillSabotageMagic"
+            ]
+        ]
+    },
+    {
+        "nid": "Sabotage_Magic_T2_Effect",
+        "name": "Sabotage Magic 2",
+        "desc": "-5 Magic through next actions.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            2,
+            9
+        ],
+        "components": [
+            [
+                "stat_change",
+                [
+                    [
+                        "MAG",
+                        -5
+                    ]
+                ]
+            ],
+            [
+                "lost_on_endstep",
+                null
+            ],
+            [
+                "lost_on_end_chapter",
+                null
+            ]
+        ]
+    },
+    {
+        "nid": "Sabotage_Magic_T3",
+        "name": "Sabotage Magic",
+        "desc": "If any Foe's Resistance below User's Resistance -3 and that Foe is adjacent with another Foe at the start of turn, inflicts -7 Magic to those Foes through their next actions.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            2,
+            9
+        ],
+        "components": [
+            [
+                "class_skill",
+                null
+            ],
+            [
+                "slotb_skill",
+                null
+            ],
+            [
+                "priority",
+                2
+            ],
+            [
+                "condition_slotb",
+                "True"
+            ],
+            [
+                "upkeep_event",
+                "Global SkillSabotageMagic"
+            ]
+        ]
+    },
+    {
+        "nid": "Sabotage_Magic_T3_Effect",
+        "name": "Sabotage Magic 3",
+        "desc": "-7 Magic through next actions.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            2,
+            9
+        ],
+        "components": [
+            [
+                "stat_change",
+                [
+                    [
+                        "MAG",
+                        -7
+                    ]
+                ]
+            ],
+            [
+                "lost_on_endstep",
+                null
+            ],
+            [
+                "lost_on_end_chapter",
+                null
+            ]
+        ]
+    },
+    {
+        "nid": "Sabotage_Speed_T1",
+        "name": "Sabotage Speed",
+        "desc": "If any Foe's Resistance below User's Resistance -3 and that Foe is adjacent with another Foe at the start of turn, inflicts -3 Speed to those Foes through their next actions.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            3,
+            9
+        ],
+        "components": [
+            [
+                "class_skill",
+                null
+            ],
+            [
+                "slotb_skill",
+                null
+            ],
+            [
+                "priority",
+                0
+            ],
+            [
+                "condition_slotb",
+                "True"
+            ],
+            [
+                "upkeep_event",
+                "Global SkillSabotageSpeed"
+            ]
+        ]
+    },
+    {
+        "nid": "Sabotage_Speed_T1_Effect",
+        "name": "Sabotage Speed 1",
+        "desc": "-3 Speed through next actions.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            3,
+            9
+        ],
+        "components": [
+            [
+                "stat_change",
+                [
+                    [
+                        "SPD",
+                        -3
+                    ]
+                ]
+            ],
+            [
+                "lost_on_endstep",
+                null
+            ],
+            [
+                "lost_on_end_chapter",
+                null
+            ]
+        ]
+    },
+    {
+        "nid": "Sabotage_Speed_T2",
+        "name": "Sabotage Speed",
+        "desc": "If any Foe's Resistance below User's Resistance -3 and that Foe is adjacent with another Foe at the start of turn, inflicts -5 Speed to those Foes through their next actions.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            3,
+            9
+        ],
+        "components": [
+            [
+                "class_skill",
+                null
+            ],
+            [
+                "slotb_skill",
+                null
+            ],
+            [
+                "priority",
+                1
+            ],
+            [
+                "condition_slotb",
+                "True"
+            ],
+            [
+                "upkeep_event",
+                "Global SkillSabotageSpeed"
+            ]
+        ]
+    },
+    {
+        "nid": "Sabotage_Speed_T2_Effect",
+        "name": "Sabotage Speed 2",
+        "desc": "-5 Speed through next actions.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            3,
+            9
+        ],
+        "components": [
+            [
+                "stat_change",
+                [
+                    [
+                        "SPD",
+                        -5
+                    ]
+                ]
+            ],
+            [
+                "lost_on_endstep",
+                null
+            ],
+            [
+                "lost_on_end_chapter",
+                null
+            ]
+        ]
+    },
+    {
+        "nid": "Sabotage_Speed_T3",
+        "name": "Sabotage Speed",
+        "desc": "If any Foe's Resistance below User's Resistance -3 and that Foe is adjacent with another Foe at the start of turn, inflicts -7 Speed to those Foes through their next actions.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            3,
+            9
+        ],
+        "components": [
+            [
+                "class_skill",
+                null
+            ],
+            [
+                "slotb_skill",
+                null
+            ],
+            [
+                "priority",
+                2
+            ],
+            [
+                "condition_slotb",
+                "True"
+            ],
+            [
+                "upkeep_event",
+                "Global SkillSabotageSpeed"
+            ]
+        ]
+    },
+    {
+        "nid": "Sabotage_Speed_T3_Effect",
+        "name": "Sabotage Speed 3",
+        "desc": "-7 Speed through next actions.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            3,
+            9
+        ],
+        "components": [
+            [
+                "stat_change",
+                [
+                    [
+                        "SPD",
+                        -7
+                    ]
+                ]
+            ],
+            [
+                "lost_on_endstep",
+                null
+            ],
+            [
+                "lost_on_end_chapter",
+                null
+            ]
+        ]
+    },
+    {
+        "nid": "Sabotage_Defense_T1",
+        "name": "Sabotage Defense",
+        "desc": "If any Foe's Resistance below User's Resistance -3 and that Foe is adjacent with another Foe at the start of turn, inflicts -3 Defense to those Foes through their next actions.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            4,
+            9
+        ],
+        "components": [
+            [
+                "class_skill",
+                null
+            ],
+            [
+                "slotb_skill",
+                null
+            ],
+            [
+                "priority",
+                0
+            ],
+            [
+                "condition_slotb",
+                "True"
+            ],
+            [
+                "upkeep_event",
+                "Global SkillSabotageDefense"
+            ]
+        ]
+    },
+    {
+        "nid": "Sabotage_Defense_T1_Effect",
+        "name": "Sabotage Defense 1",
+        "desc": "-3 Defense through next actions.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            4,
+            9
+        ],
+        "components": [
+            [
+                "stat_change",
+                [
+                    [
+                        "DEF",
+                        -3
+                    ]
+                ]
+            ],
+            [
+                "lost_on_endstep",
+                null
+            ],
+            [
+                "lost_on_end_chapter",
+                null
+            ]
+        ]
+    },
+    {
+        "nid": "Sabotage_Defense_T2",
+        "name": "Sabotage Defense",
+        "desc": "If any Foe's Resistance below User's Resistance -3 and that Foe is adjacent with another Foe at the start of turn, inflicts -5 Defense to those Foes through their next actions.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            4,
+            9
+        ],
+        "components": [
+            [
+                "class_skill",
+                null
+            ],
+            [
+                "slotb_skill",
+                null
+            ],
+            [
+                "priority",
+                1
+            ],
+            [
+                "condition_slotb",
+                "True"
+            ],
+            [
+                "upkeep_event",
+                "Global SkillSabotageDefense"
+            ]
+        ]
+    },
+    {
+        "nid": "Sabotage_Defense_T2_Effect",
+        "name": "Sabotage Defense 2",
+        "desc": "-5 Defense through next actions.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            4,
+            9
+        ],
+        "components": [
+            [
+                "stat_change",
+                [
+                    [
+                        "DEF",
+                        -5
+                    ]
+                ]
+            ],
+            [
+                "lost_on_endstep",
+                null
+            ],
+            [
+                "lost_on_end_chapter",
+                null
+            ]
+        ]
+    },
+    {
+        "nid": "Sabotage_Defense_T3",
+        "name": "Sabotage Defense",
+        "desc": "If any Foe's Resistance below User's Resistance -3 and that Foe is adjacent with another Foe at the start of turn, inflicts -7 Defense to those Foes through their next actions.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            4,
+            9
+        ],
+        "components": [
+            [
+                "class_skill",
+                null
+            ],
+            [
+                "slotb_skill",
+                null
+            ],
+            [
+                "priority",
+                2
+            ],
+            [
+                "condition_slotb",
+                "True"
+            ],
+            [
+                "upkeep_event",
+                "Global SkillSabotageDefense"
+            ]
+        ]
+    },
+    {
+        "nid": "Sabotage_Defense_T3_Effect",
+        "name": "Sabotage Defense 3",
+        "desc": "-7 Defense through next actions.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            4,
+            9
+        ],
+        "components": [
+            [
+                "stat_change",
+                [
+                    [
+                        "DEF",
+                        -7
+                    ]
+                ]
+            ],
+            [
+                "lost_on_endstep",
+                null
+            ],
+            [
+                "lost_on_end_chapter",
+                null
+            ]
+        ]
+    },
+    {
+        "nid": "Sabotage_Resistance_T1",
+        "name": "Sabotage Resistance",
+        "desc": "If any Foe's Resistance below User's Resistance -3 and that Foe is adjacent with another Foe at the start of turn, inflicts -3 Resistance to those Foes through their next actions.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            5,
+            9
+        ],
+        "components": [
+            [
+                "class_skill",
+                null
+            ],
+            [
+                "slotb_skill",
+                null
+            ],
+            [
+                "priority",
+                0
+            ],
+            [
+                "condition_slotb",
+                "True"
+            ],
+            [
+                "upkeep_event",
+                "Global SkillSabotageResistance"
+            ]
+        ]
+    },
+    {
+        "nid": "Sabotage_Resistance_T1_Effect",
+        "name": "Sabotage Resistance 1",
+        "desc": "-3 Resistance through next actions.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            5,
+            9
+        ],
+        "components": [
+            [
+                "stat_change",
+                [
+                    [
+                        "RES",
+                        -3
+                    ]
+                ]
+            ],
+            [
+                "lost_on_endstep",
+                null
+            ],
+            [
+                "lost_on_end_chapter",
+                null
+            ]
+        ]
+    },
+    {
+        "nid": "Sabotage_Resistance_T2",
+        "name": "Sabotage Resistance",
+        "desc": "If any Foe's Resistance below User's Resistance -3 and that Foe is adjacent with another Foe at the start of turn, inflicts -5 Resistance to those Foes through their next actions.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            5,
+            9
+        ],
+        "components": [
+            [
+                "class_skill",
+                null
+            ],
+            [
+                "slotb_skill",
+                null
+            ],
+            [
+                "priority",
+                1
+            ],
+            [
+                "condition_slotb",
+                "True"
+            ],
+            [
+                "upkeep_event",
+                "Global SkillSabotageResistance"
+            ]
+        ]
+    },
+    {
+        "nid": "Sabotage_Resistance_T2_Effect",
+        "name": "Sabotage Resistance 2",
+        "desc": "-5 Resistance through next actions.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            5,
+            9
+        ],
+        "components": [
+            [
+                "stat_change",
+                [
+                    [
+                        "RES",
+                        -5
+                    ]
+                ]
+            ],
+            [
+                "lost_on_endstep",
+                null
+            ],
+            [
+                "lost_on_end_chapter",
+                null
+            ]
+        ]
+    },
+    {
+        "nid": "Sabotage_Resistance_T3",
+        "name": "Sabotage Resistance",
+        "desc": "If any Foe's Resistance below User's Resistance -3 and that Foe is adjacent with another Foe at the start of turn, inflicts -7 Resistance to those Foes through their next actions.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            5,
+            9
+        ],
+        "components": [
+            [
+                "class_skill",
+                null
+            ],
+            [
+                "slotb_skill",
+                null
+            ],
+            [
+                "priority",
+                2
+            ],
+            [
+                "condition_slotb",
+                "True"
+            ],
+            [
+                "upkeep_event",
+                "Global SkillSabotageResistance"
+            ]
+        ]
+    },
+    {
+        "nid": "Sabotage_Resistance_T3_Effect",
+        "name": "Sabotage Resistance 3",
+        "desc": "-7 Resistance through next actions.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            5,
+            9
+        ],
+        "components": [
+            [
+                "stat_change",
+                [
+                    [
+                        "RES",
+                        -7
+                    ]
+                ]
+            ],
+            [
+                "lost_on_endstep",
+                null
+            ],
+            [
+                "lost_on_end_chapter",
+                null
+            ]
+        ]
+    },
+    {
         "nid": "Poison_Strike_T1",
         "name": "Poison Strike",
         "desc": "If User initiates combat and survives, deals 4 damage to Foe after combat.",

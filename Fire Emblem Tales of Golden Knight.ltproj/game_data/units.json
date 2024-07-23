@@ -4738,7 +4738,11 @@
         "learned_skills": [
             [
                 1,
-                "Test"
+                "Sabotage_Strength_T1"
+            ],
+            [
+                1,
+                "Sabotage_Strength_T3"
             ]
         ],
         "unit_notes": [],

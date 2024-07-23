@@ -4429,5 +4429,125 @@
             "give_skill;{enemy_unit};Dazzling_Staff_T4_2_Effect;;no_banner",
             "endf"
         ]
+    },
+    {
+        "name": "SkillSabotageStrength",
+        "trigger": null,
+        "level_nid": null,
+        "condition": "True",
+        "commands": [],
+        "only_once": false,
+        "priority": 20,
+        "_source": [
+            "for;loop_unit;[unitx.nid for unitx in game._current_level.units if unitx.team in ('enemy','enemy2')]",
+            "if;{eval:game.get_unit('{loop_unit}').stats['RES']} < {eval:game.get_unit('{unit}').stats['RES'] - 3} and len(get_enemies_within_distance(game.get_unit('{loop_unit}'), 1)) >= 2",
+            "if;has_skill(unit, 'Sabotage_Strength_T3')",
+            "give_skill;{loop_unit};Sabotage_Strength_T3_Effect;;no_banner",
+            "elif;has_skill(unit, 'Sabotage_Strength_T2')",
+            "give_skill;{loop_unit};Sabotage_Strength_T2_Effect;;no_banner",
+            "elif;has_skill(unit, 'Sabotage_Strength_T1')",
+            "give_skill;{loop_unit};Sabotage_Strength_T1_Effect;;no_banner",
+            "else",
+            "end",
+            "else",
+            "end",
+            "endf"
+        ]
+    },
+    {
+        "name": "SkillSabotageMagic",
+        "trigger": null,
+        "level_nid": null,
+        "condition": "True",
+        "commands": [],
+        "only_once": false,
+        "priority": 20,
+        "_source": [
+            "for;loop_unit;[unitx.nid for unitx in game._current_level.units if unitx.team in ('enemy','enemy2')]",
+            "if;{eval:game.get_unit('{loop_unit}').stats['RES']} < {eval:game.get_unit('{unit}').stats['RES'] - 3} and len(get_enemies_within_distance(game.get_unit('{loop_unit}'), 1)) >= 2",
+            "if;has_skill(unit, 'Sabotage_Magic_T3')",
+            "give_skill;{loop_unit};Sabotage_Magic_T3_Effect;;no_banner",
+            "elif;has_skill(unit, 'Sabotage_Magic_T2')",
+            "give_skill;{loop_unit};Sabotage_Magic_T2_Effect;;no_banner",
+            "elif;has_skill(unit, 'Sabotage_Magic_T1')",
+            "give_skill;{loop_unit};Sabotage_Magic_T1_Effect;;no_banner",
+            "else",
+            "end",
+            "else",
+            "end",
+            "endf"
+        ]
+    },
+    {
+        "name": "SkillSabotageSpeed",
+        "trigger": null,
+        "level_nid": null,
+        "condition": "True",
+        "commands": [],
+        "only_once": false,
+        "priority": 20,
+        "_source": [
+            "for;loop_unit;[unitx.nid for unitx in game._current_level.units if unitx.team in ('enemy','enemy2')]",
+            "if;{eval:game.get_unit('{loop_unit}').stats['RES']} < {eval:game.get_unit('{unit}').stats['RES'] - 3} and len(get_enemies_within_distance(game.get_unit('{loop_unit}'), 1)) >= 2",
+            "if;has_skill(unit, 'Sabotage_Speed_T3')",
+            "give_skill;{loop_unit};Sabotage_Speed_T3_Effect;;no_banner",
+            "elif;has_skill(unit, 'Sabotage_Speed_T2')",
+            "give_skill;{loop_unit};Sabotage_Speed_T2_Effect;;no_banner",
+            "elif;has_skill(unit, 'Sabotage_Speed_T1')",
+            "give_skill;{loop_unit};Sabotage_Speed_T1_Effect;;no_banner",
+            "else",
+            "end",
+            "else",
+            "end",
+            "endf"
+        ]
+    },
+    {
+        "name": "SkillSabotageDefense",
+        "trigger": null,
+        "level_nid": null,
+        "condition": "True",
+        "commands": [],
+        "only_once": false,
+        "priority": 20,
+        "_source": [
+            "for;loop_unit;[unitx.nid for unitx in game._current_level.units if unitx.team in ('enemy','enemy2')]",
+            "if;{eval:game.get_unit('{loop_unit}').stats['RES']} < {eval:game.get_unit('{unit}').stats['RES'] - 3} and len(get_enemies_within_distance(game.get_unit('{loop_unit}'), 1)) >= 2",
+            "if;has_skill(unit, 'Sabotage_Defense_T3')",
+            "give_skill;{loop_unit};Sabotage_Defense_T3_Effect;;no_banner",
+            "elif;has_skill(unit, 'Sabotage_Defense_T2')",
+            "give_skill;{loop_unit};Sabotage_Defense_T2_Effect;;no_banner",
+            "elif;has_skill(unit, 'Sabotage_Defense_T1')",
+            "give_skill;{loop_unit};Sabotage_Defense_T1_Effect;;no_banner",
+            "else",
+            "end",
+            "else",
+            "end",
+            "endf"
+        ]
+    },
+    {
+        "name": "SkillSabotageResistance",
+        "trigger": null,
+        "level_nid": null,
+        "condition": "True",
+        "commands": [],
+        "only_once": false,
+        "priority": 20,
+        "_source": [
+            "for;loop_unit;[unitx.nid for unitx in game._current_level.units if unitx.team in ('enemy','enemy2')]",
+            "if;{eval:game.get_unit('{loop_unit}').stats['RES']} < {eval:game.get_unit('{unit}').stats['RES'] - 3} and len(get_enemies_within_distance(game.get_unit('{loop_unit}'), 1)) >= 2",
+            "if;has_skill(unit, 'Sabotage_Resistance_T3')",
+            "give_skill;{loop_unit};Sabotage_Resistance_T3_Effect;;no_banner",
+            "elif;has_skill(unit, 'Sabotage_Resistance_T2')",
+            "give_skill;{loop_unit};Sabotage_Resistance_T2_Effect;;no_banner",
+            "elif;has_skill(unit, 'Sabotage_Resistance_T1')",
+            "give_skill;{loop_unit};Sabotage_Resistance_T1_Effect;;no_banner",
+            "else",
+            "end",
+            "else",
+            "end",
+            "endf"
+        ]
     }
 ]

@@ -158,13 +158,19 @@ class UIView():
                 else:
                     offset = 0
 
-                # Should be in bottom, no matter what. Can be in bottomleft or bottomright, depending on where cursor is
+                # Should be in bottom. Can be in bottomleft or bottomright, depending on where cursor is. May move to the top if Initiative is enabled.
                 if right:
-                    surf.blit(self.tile_info_disp, (5 - offset, WINHEIGHT - self.tile_info_disp.get_height() - 3)) # Bottomleft
+                    if self.initiative_info_disp and game.cursor.position[1] < TILEY // 2 + game.camera.get_y():
+                        surf.blit(self.tile_info_disp, (5 - offset, 0)) # Topleft
+                    else:
+                        surf.blit(self.tile_info_disp, (5 - offset, WINHEIGHT - self.tile_info_disp.get_height() - 3)) # Bottomleft
                 else:
                     xpos = WINWIDTH - self.tile_info_disp.get_width() - 5 + offset
-                    ypos = WINHEIGHT - self.tile_info_disp.get_height() - 3
-                    surf.blit(self.tile_info_disp, (xpos, ypos)) # Bottomright
+                    if self.initiative_info_disp and game.cursor.position[1] < TILEY // 2 + game.camera.get_y():
+                        surf.blit(self.tile_info_disp, (xpos, 0))
+                    else:
+                        ypos = WINHEIGHT - self.tile_info_disp.get_height() - 3
+                        surf.blit(self.tile_info_disp, (xpos, ypos)) # Bottomright
 
         # Only if we actually have a simple objective
         if self.obj_info_disp and not self.initiative_info_disp and game.level.objective['simple']:
@@ -188,7 +194,12 @@ class UIView():
                 surf.blit(self.obj_info_disp, pos)
 
         if self.initiative_info_disp:
-            surf.blit(self.initiative_info_disp, (0, 0))
+            if game.cursor.position[1] < TILEY // 2 + game.camera.get_y():
+                self.initiative_info_offset = self.initiative_info_disp.get_height()
+                ypos = WINHEIGHT - self.initiative_info_disp.get_height()
+                surf.blit(self.initiative_info_disp, (0, ypos))
+            else:
+                surf.blit(self.initiative_info_disp, (0, 0))
 
         return surf
 

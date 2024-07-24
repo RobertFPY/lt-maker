@@ -860,7 +860,9 @@ class ItemDescriptionPanel():
                 FONT['text-blue'].blit('--', bg_surf, (left + width//2 - 16//2 + affin_width + 8, top + 4))
 
         else:
-            if self.item.desc:
+            if item_system.hover_description(self.unit, self.item):
+                desc = item_system.hover_description(self.unit, self.item)
+            elif self.item.desc:
                 desc = self.item.desc
             elif not available:
                 desc = "Cannot wield."
@@ -868,11 +870,8 @@ class ItemDescriptionPanel():
                 desc = ""
 
             desc = desc.replace('{br}', '\n')
-            lines = text_funcs.line_wrap('text', desc, width - 8)
-            new_lines = []
-            for line in lines:
-                new_lines += line.split('\n')
-            lines = fix_tags(new_lines)
+            lines = self.build_lines(desc, width - 8)
+            lines = fix_tags(lines)
             for idx, line in enumerate(lines):
                 render_text(bg_surf, ['text'], [line], [None], (4 + 2, 8 + idx * 16))
 
@@ -899,3 +898,19 @@ class ItemDescriptionPanel():
 
         surf.blit(self.surf, topleft)
         return surf
+
+    def build_lines(self, desc, width):
+        if not desc:
+            desc = ''
+        desc = text_funcs.translate(desc)
+        # Hard set num lines if desc is very short
+        if '\n' in desc:
+            lines_pre = desc.splitlines()
+            lines = []
+            for line in lines_pre:
+                line = text_funcs.line_wrap('text', line, width)
+                lines.extend(line)
+        else:
+            lines = text_funcs.line_wrap('text', desc, width)
+        
+        return lines

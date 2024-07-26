@@ -127,7 +127,7 @@ class UnitObject(Prefab):
             return super().__getattr__(attr)
         elif self.nid:
             prefab = DB.units.get(self.prefab_nid)
-            if prefab:
+            if prefab and hasattr(prefab, attr):
                 return getattr(prefab, attr)
         # not in prefab, so...
         raise AttributeError('UnitObject has no attribute %s' % attr)
@@ -473,7 +473,7 @@ class UnitObject(Prefab):
     @property
     def skills(self) -> List[SkillObject]:
         """Returns a list of the unit's current skills.
-        
+
         Units keep track of all skills the unit has received, even when they would be duplicates.
         This method returns only those actionable skills that aren't being shadowed by other more recently added skills with the same nid
         Utilizes a cache that is reset when a skill is added or removed from self._skills

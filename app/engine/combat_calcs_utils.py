@@ -1,6 +1,8 @@
-from typing import Callable, Optional
-from app.engine.objects.item import ItemObject
-from app.engine.objects.unit import UnitObject
+from __future__ import annotations
+from typing import TYPE_CHECKING, Callable, Optional
+if TYPE_CHECKING:
+    from app.engine.objects.item import ItemObject
+    from app.engine.objects.unit import UnitObject
 
 def resolve_offensive_formula(unit: UnitObject, item: Optional[ItemObject],
                     low_prio_item_formula: Callable[[UnitObject, ItemObject], Optional[str]],

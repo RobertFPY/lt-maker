@@ -719,8 +719,9 @@ def change_tilemap(self: Event, tilemap, position_offset=None, load_tilemap=None
         self.game.cursor = level_cursor.LevelCursor(self.game)
         self.game.movement = movement_system.MovementSystem(self.game.cursor, self.game.camera)
         self.game.map_view = map_view.MapView()
-        self.game.boundary = self.prev_game_boundary
-        self.game.board = self.prev_board
+        if self._prev_game_boundary and self._prev_board:
+            self.game.boundary = self._prev_game_boundary
+            self.game.board = self._prev_board
         if reload_map and self.game.level_vars.get('_prev_pos_%s' % reload_map_nid):
             for unit_nid, pos in self.game.level_vars['_prev_pos_%s' % reload_map_nid].items():
                 # Reload unit's position with position offset

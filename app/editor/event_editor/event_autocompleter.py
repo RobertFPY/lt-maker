@@ -66,13 +66,13 @@ class EventScriptCompleter(QCompleter):
         self.version = EventVersion.EVENT
 
     def _get_word_under_cursor(self, source: str, cursor_idx: int) -> str:
-        r = cursor_idx
-        l = r - 1
-        while l > 0 and re.match(r'[a-zA-Z0-9_]', source[l]):
-            l -= 1
-        while r < len(source) and re.match(r'[a-zA-Z0-9_]', source[r]):
-            r += 1
-        return source[l:r].strip()
+        right = cursor_idx
+        left = right - 1
+        while left > 0 and re.match(r'[a-zA-Z0-9_]', source[left]):
+            left -= 1
+        while right < len(source) and re.match(r'[a-zA-Z0-9_]', source[right]):
+            right += 1
+        return source[left:right].strip()
 
     def generate_generic_completions(self, source: str, cursor_idx: int) -> List[CompletionEntry]:
         """Generates generic completions from all strings in the document.
@@ -142,9 +142,11 @@ class EventScriptCompleter(QCompleter):
             option.font.setFamily(self.settings.get_code_font())
             option.font.setBold(True)
             completion: CompletionEntry = index.data(COMPLETION_DATA_ROLE)
+
             def set_text_color(color: QColor):
                 option.palette.setBrush(QPalette.ColorRole.Text, color)
                 option.palette.setBrush(QPalette.ColorRole.HighlightedText, color)
+
             if completion.ctype == CompletionType.SPECIAL:
                 set_text_color(self.syntax_colors.special_text_color)
             elif completion.ctype == CompletionType.FLAG:
@@ -234,7 +236,8 @@ def generate_pyev1_completions(line: str, level_nid: NID) -> List[CompletionEntr
     if not as_tokens:
         return []
     arg = as_tokens.tokens[-1]
-    def create_completion(nid, name, is_command: bool=False, ctype: CompletionType=CompletionType.NORMAL):
+
+    def create_completion(nid, name, is_command: bool = False, ctype: CompletionType = CompletionType.NORMAL):
         nid_or_name = nid
         if name and nid != name:
             nid_or_name = "%s (%s)" % (name, nid)
@@ -270,10 +273,10 @@ def generate_pyev1_completions(line: str, level_nid: NID) -> List[CompletionEntr
         return completions
 
 def generate_generic_completions(source: str, word_under_cursor: str) -> List[CompletionEntry]:
-    if len(word_under_cursor) < 2:
+    if len(word_under_cursor) < 3:
         return []
-    all_compl = source.replace('\n', ' ').split()
-    all_compl = [t for t in all_compl if re.match('^[A-Za-z_]+$', t) and len(t) >= 3]
+    all_compl = source.replace('\n', ' ').replace(';', ' ').split()
+    all_compl = [t for t in all_compl if re.match('^[A-Za-z_]+$', t) and len(t) > 3]
     all_compl = Counter(all_compl)
     all_compl[word_under_cursor] -= 1
     return [CompletionEntry(trim_arg_text(key), trim_arg_text(key), trim_arg_text(key), CompletionType.GENERIC) for key in all_compl.keys() if all_compl[key] > 0]
@@ -289,7 +292,7 @@ def get_arg_info(line: str, end_idx: int, version: EventVersion) -> CompletionLo
         return CompletionLocation(arg_to_replace, arg_to_match, end_idx - len(arg_to_replace))
     elif version == EventVersion.PYEV1:
         as_tokens = SWSCompilerV1.parse_line(line)
-        if not as_tokens: # normal line, not a python eventing line
+        if not as_tokens:  # normal line, not a python eventing line
             arg_to_replace = trim_arg_match(line)
             return CompletionLocation(arg_to_replace, arg_to_replace, end_idx - len(arg_to_replace))
         full_arg = as_tokens.tokens[-1]
@@ -319,4 +322,3 @@ def trim_arg_text(arg_text: str) -> str:
 
 def trim_arg_text_python(arg_text: str) -> str:
     return re.split('[^a-zA-Z0-9_"\']', arg_text)[-1]
-

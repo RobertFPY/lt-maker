@@ -150,6 +150,9 @@ class TitleMainState(State):
         game.state.change('transition_in')
         return 'repeat'
 
+    def begin(self):
+        self.fluid.reset_on_change_state()
+
     def take_input(self, event):
         first_push = self.fluid.update()
         directions = self.fluid.get_directions()
@@ -334,6 +337,7 @@ class TitleModeState(State):
                 game.state.change('transition_to')
 
         self.update_dialog()
+        self.fluid.reset_on_change_state()
 
         return 'repeat'
 
@@ -464,6 +468,9 @@ class TitleLoadState(State):
         self.menu = menus.ChapterSelect(options, colors)
         most_recent = self.save_slots.index(max(self.save_slots, key=lambda x: x.realtime))
         self.menu.move_to(most_recent)
+
+    def begin(self):
+        self.fluid.reset_on_change_state()
 
     def take_input(self, event):
         # Only take input in normal state
@@ -743,6 +750,7 @@ class TitleExtrasState(TitleLoadState):
         self.menu = menus.Main(options, 'title_menu_dark')
 
     def begin(self):
+        super().begin()
         # If we came back from the credits event, fade in
         if game.state.prev_state == 'event':
             game.state.change('transition_in')
@@ -895,6 +903,10 @@ class TitleSaveState(State):
 
         game.state.change('transition_in')
         return 'repeat'
+
+    def begin(self):
+        if self.fluid:
+            self.fluid.reset_on_change_state()
 
     def go_to_next_level(self, make_save=True):
         current_state = game.state.state[-1]

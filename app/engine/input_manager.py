@@ -18,9 +18,7 @@ class InputManager():
         # Build and down button checker
         self.keys_pressed = {}
         self.joys_pressed = {}
-        for button in self.buttons:
-            self.keys_pressed[button] = False
-            self.joys_pressed[button] = False
+        self.reset_keys_pressed()
 
         self.update_joystick_control()
 
@@ -48,6 +46,11 @@ class InputManager():
 
     def set_change_keymap(self, val):
         self.change_keymap_mode = val
+
+    def reset_keys_pressed(self):
+        for button in self.buttons:
+            self.keys_pressed[button] = False
+            self.joys_pressed[button] = False
 
     def is_pressed(self, button):
         return self.keys_pressed[button] or self.joys_pressed[button]

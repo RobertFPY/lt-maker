@@ -5,7 +5,7 @@ from app.constants import TILEHEIGHT, TILEWIDTH, WINHEIGHT, WINWIDTH
 from app.data.database.database import DB
 from app.engine import action, background, banner, base_surf
 from app.engine import config as cf
-from app.engine import (convoy_funcs, engine, equations, gui, image_mods,
+from app.engine import (convoy_funcs, engine, gui, image_mods,
                         item_funcs, item_system, menus, text_funcs,
                         trade)
 from app.engine.background import SpriteBackground
@@ -84,6 +84,7 @@ class PrepMainState(MapState):
         game.events.trigger(triggers.OnPrepStart())
 
     def begin(self):
+        self.fluid.reset_on_change_state()
         prep_music = game.game_vars.get('_prep_music')
         if prep_music:
             get_sound_thread().fade_in(prep_music)
@@ -198,6 +199,9 @@ class PrepPickUnitsState(State):
 
         game.state.change('transition_in')
         return 'repeat'
+
+    def begin(self):
+        self.fluid.reset_on_change_state()
 
     def order_party(self):
         '''Run on exiting the prep menu. Saves the order for future levels with the party.
@@ -530,6 +534,9 @@ class PrepFormationMenuState(MapState):
         self.menu = game.memory['child_menu']
         game.memory['child_menu'] = None
 
+    def begin(self):
+        self.fluid.reset_on_change_state()
+
     def take_input(self, event):
         first_push = self.fluid.update()
         directions = self.fluid.get_directions()
@@ -638,6 +645,7 @@ class PrepManageState(State):
         return 'repeat'
 
     def begin(self):
+        self.fluid.reset_on_change_state()
         # If come back from info menu
         unit = game.memory.get('current_unit')
         if unit and unit in self.units:
@@ -804,6 +812,7 @@ class PrepManageSelectState(State):
         return ignore
 
     def begin(self):
+        self.fluid.reset_on_change_state()
         ignore = self.get_ignore()
         self.select_menu.set_ignore(ignore)
         self.menu.move_to(self.current_index)
@@ -885,6 +894,9 @@ class PrepTradeSelectState(State):
         if game.state.from_transition():
             game.state.change('transition_in')
             return 'repeat'
+
+    def begin(self):
+        self.fluid.reset_on_change_state()
 
     def take_input(self, event):
         first_push = self.fluid.update()
@@ -972,6 +984,7 @@ class PrepItemsState(State):
                 interaction.start_combat(self.unit, None, item)
                 return 'repeat'
 
+        self.fluid.reset_on_change_state()
         self.menu.update_options()
         if self.name.startswith('base'):
             base_music = game.game_vars.get('_base_music')
@@ -1205,6 +1218,9 @@ class PrepRestockState(State):
         ignore = [not convoy_funcs.can_restock(option.get()) if option.get() else True for option in self.menu.options]
         self.menu.set_ignore(ignore)
 
+    def begin(self):
+        self.fluid.reset_on_change_state()
+
     def take_input(self, event):
         first_push = self.fluid.update()
         directions = self.fluid.get_directions()
@@ -1266,6 +1282,7 @@ class PrepUseState(State):
         self.menu = menus.Inventory(self.unit, self.unit.items, topleft)
 
     def begin(self):
+        self.fluid.reset_on_change_state()
         self.menu.update_options(self.unit.items)
         ignore = self.get_ignore()
         self.menu.set_ignore(ignore)
@@ -1354,6 +1371,9 @@ class PrepMarketState(State):
 
         game.state.change('transition_in')
         return 'repeat'
+
+    def begin(self):
+        self.fluid.reset_on_change_state()
 
     def update_options(self):
         self.buy_menu.update_options()

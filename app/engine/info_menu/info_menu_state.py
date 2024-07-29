@@ -83,6 +83,9 @@ class InfoMenuState(State):
         game.state.change('transition_in')
         return 'repeat'
 
+    def begin(self):
+        self.fluid.reset_on_change_state()
+
     def reset_surfs(self, keep_last_info_graph_aabb=False):
         self.info_graph.clear(keep_last_aabb=keep_last_info_graph_aabb)
         self.portrait_surf = None

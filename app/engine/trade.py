@@ -53,6 +53,9 @@ class TradeState(MapState):
 
         self.menu = menus.Trade(self.initiator, self.partner)
 
+    def begin(self):
+        self.fluid.reset_on_change_state()
+
     def do_trade(self) -> bool:
         item1 = self.menu.selected_option().get()
         item2 = self.menu.get_current_option().get()

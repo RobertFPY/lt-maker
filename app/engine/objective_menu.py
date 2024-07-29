@@ -27,6 +27,9 @@ class ObjectiveMenuState(State):
         game.state.change('transition_in')
         return 'repeat'
 
+    def begin(self):
+        self.fluid.reset_on_change_state()
+
     def get_surfaces(self) -> list:
         surfaces = []
 

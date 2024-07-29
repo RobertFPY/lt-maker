@@ -158,13 +158,19 @@ class UIView():
                 else:
                     offset = 0
 
-                # Should be in bottom, no matter what. Can be in bottomleft or bottomright, depending on where cursor is
+                # Should be in bottom. Can be in bottomleft or bottomright, depending on where cursor is. May move to the top if Initiative is enabled.
                 if right:
-                    surf.blit(self.tile_info_disp, (5 - offset, WINHEIGHT - self.tile_info_disp.get_height() - 3)) # Bottomleft
+                    if self.initiative_info_disp and game.cursor.position[1] < TILEY // 2 + game.camera.get_y():
+                        surf.blit(self.tile_info_disp, (5 - offset, 0)) # Topleft
+                    else:
+                        surf.blit(self.tile_info_disp, (5 - offset, WINHEIGHT - self.tile_info_disp.get_height() - 3)) # Bottomleft
                 else:
                     xpos = WINWIDTH - self.tile_info_disp.get_width() - 5 + offset
-                    ypos = WINHEIGHT - self.tile_info_disp.get_height() - 3
-                    surf.blit(self.tile_info_disp, (xpos, ypos)) # Bottomright
+                    if self.initiative_info_disp and game.cursor.position[1] < TILEY // 2 + game.camera.get_y():
+                        surf.blit(self.tile_info_disp, (xpos, 0))
+                    else:
+                        ypos = WINHEIGHT - self.tile_info_disp.get_height() - 3
+                        surf.blit(self.tile_info_disp, (xpos, ypos)) # Bottomright
 
         # Only if we actually have a simple objective
         if self.obj_info_disp and not self.initiative_info_disp and game.level.objective['simple']:
@@ -188,7 +194,12 @@ class UIView():
                 surf.blit(self.obj_info_disp, pos)
 
         if self.initiative_info_disp:
-            surf.blit(self.initiative_info_disp, (0, 0))
+            if game.cursor.position[1] < TILEY // 2 + game.camera.get_y():
+                self.initiative_info_offset = self.initiative_info_disp.get_height()
+                ypos = WINHEIGHT - self.initiative_info_disp.get_height()
+                surf.blit(self.initiative_info_disp, (0, ypos))
+            else:
+                surf.blit(self.initiative_info_disp, (0, 0))
 
         return surf
 
@@ -860,7 +871,9 @@ class ItemDescriptionPanel():
                 FONT['text-blue'].blit('--', bg_surf, (left + width//2 - 16//2 + affin_width + 8, top + 4))
 
         else:
-            if self.item.desc:
+            if item_system.hover_description(self.unit, self.item):
+                desc = item_system.hover_description(self.unit, self.item)
+            elif self.item.desc:
                 desc = self.item.desc
             elif not available:
                 desc = "Cannot wield."
@@ -868,11 +881,8 @@ class ItemDescriptionPanel():
                 desc = ""
 
             desc = desc.replace('{br}', '\n')
-            lines = text_funcs.line_wrap('text', desc, width - 8)
-            new_lines = []
-            for line in lines:
-                new_lines += line.split('\n')
-            lines = fix_tags(new_lines)
+            lines = self.build_lines(desc, width - 8)
+            lines = fix_tags(lines)
             for idx, line in enumerate(lines):
                 render_text(bg_surf, ['text'], [line], [None], (4 + 2, 8 + idx * 16))
 
@@ -899,3 +909,19 @@ class ItemDescriptionPanel():
 
         surf.blit(self.surf, topleft)
         return surf
+
+    def build_lines(self, desc, width):
+        if not desc:
+            desc = ''
+        desc = text_funcs.translate(desc)
+        # Hard set num lines if desc is very short
+        if '\n' in desc:
+            lines_pre = desc.splitlines()
+            lines = []
+            for line in lines_pre:
+                line = text_funcs.line_wrap('text', line, width)
+                lines.extend(line)
+        else:
+            lines = text_funcs.line_wrap('text', desc, width)
+        
+        return lines

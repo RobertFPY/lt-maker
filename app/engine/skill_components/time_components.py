@@ -225,3 +225,15 @@ class EventOnRemove(SkillComponent):
         event_prefab = DB.events.get_from_nid(self.value)
         if event_prefab:
             game.events.trigger_specific_event(event_prefab.nid, unit)
+
+class UpkeepEvent(SkillComponent):
+    nid = 'upkeep_event'
+    desc = "Triggers the designated event at upkeep"
+    tag = SkillTags.TIME
+    author = 'Lord_Tweed'
+
+    expose = ComponentType.Event
+    value = ''
+
+    def on_upkeep(self, actions, playback, unit):
+        game.events.trigger_specific_event(self.value, unit, None, unit.position, local_args={})

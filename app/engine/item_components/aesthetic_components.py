@@ -175,3 +175,14 @@ class ItemIconFlash(ItemComponent):
         if val:
             sprite = image_mods.make_white(sprite.convert_alpha(), abs(250 - engine.get_time() % 500)/250)
         return sprite
+        
+class HoverDescription(ItemComponent):
+    nid = 'hover_description'
+    desc = "Replaces the item's help text when the item is hovered over in the items menu."
+    tag = ItemTags.AESTHETIC
+
+    expose = ComponentType.String
+    value = ''
+
+    def hover_description(self, unit, item):
+        return self.value

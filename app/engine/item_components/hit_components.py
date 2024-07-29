@@ -474,7 +474,7 @@ class GBASteal(Steal):
             return False
         return True
 
-class EventOnHit(ItemComponent):
+class EventBeforeHit(ItemComponent):
     nid = 'event_on_hit'
     desc = "The selected event plays before a hit, if the unit will hit with this item. The event is triggered with args (unit1=attacking unit, unit2=target, item=item, position=attacking unit's position, target_pos=position of target, mode='attack' or 'defense', attack_info=a tuple containing which attack this is as the first element, and which subattack this is as the second element)"
     tag = ItemTags.SPECIAL

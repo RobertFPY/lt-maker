@@ -713,7 +713,8 @@ def change_tilemap(self: Event, tilemap, position_offset=None, load_tilemap=None
 
     reload_map = 'reload' in flags
     # For Overworld
-    if reload_map and self.game.is_displaying_overworld():  # just go back to the level
+    # just go back to the level
+    if reload_map and self.game.is_displaying_overworld():  
         from app.engine import level_cursor, map_view
         from app.engine.movement import movement_system
         self.game.cursor = level_cursor.LevelCursor(self.game)
@@ -731,6 +732,7 @@ def change_tilemap(self: Event, tilemap, position_offset=None, load_tilemap=None
                     act = action.ArriveOnMap(unit, final_pos)
                     act.execute()
         return
+        # Never gets below this
 
     # Reset cursor position
     self.game.cursor.set_pos((0, 0))

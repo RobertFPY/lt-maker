@@ -12,9 +12,9 @@ def check_trade(item1: ItemObject, item1_owner, item2: ItemObject, item2_owner) 
     if item1_owner is item2_owner:
         return True
     # Can't trade locked items
-    if isinstance(item1, ItemObject) and item_system.locked(item1_owner, item1):
+    if isinstance(item1, ItemObject) and not item_system.tradeable(item1_owner, item1):
         return False
-    if isinstance(item2, ItemObject) and item_system.locked(item2_owner, item2):
+    if isinstance(item2, ItemObject) and not item_system.tradeable(item2_owner, item2):
         return False
     # If items are the same type, we are good
     if isinstance(item1, ItemObject) and isinstance(item2, ItemObject) and \

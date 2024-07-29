@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Callable, List, Optional, Tuple
 from collections import OrderedDict
+from enum import Enum
 
 from app.constants import TILEWIDTH, TILEHEIGHT, WINWIDTH, WINHEIGHT, TILEX
 from app.data.database.database import DB
@@ -22,7 +23,7 @@ from app.engine import engine, action, menus, image_mods, \
     text_funcs, equations, evaluate, supports
 from app.engine.combat import interaction
 from app.engine.selection_helper import SelectionHelper
-from app.engine.abilities import ABILITIES, PRIMARY_ABILITIES, OTHER_ABILITIES
+from app.engine.abilities import ABILITIES, PRIMARY_ABILITIES, OTHER_ABILITIES, TradeAbility, SupplyAbility
 from app.engine.input_manager import get_input_manager
 from app.engine.fluid_scroll import FluidScroll
 import threading
@@ -1289,12 +1290,12 @@ class ItemChildState(MapState):
                 options.append("Expand")
             if item_funcs.can_use(self.cur_unit, item) and not self.cur_unit.has_attacked:
                 options.append("Use")
-            if abilities.TradeAbility.targets(self.cur_unit) and item_system.tradeable(self.cur_unit, item):
+            if TradeAbility.targets(self.cur_unit) and item_system.tradeable(self.cur_unit, item):
                 options.append('Trade')
             if item in self.cur_unit.items:
                 if item_system.storeable(self.cur_unit, item) and game.game_vars.get('_convoy') and DB.constants.value("long_range_storage"):
                     options.append('Storage')
-                elif item_system.storeable(self.cur_unit, item) and game.game_vars.get('_convoy') and abilities.SupplyAbility.targets(self.cur_unit):
+                elif item_system.storeable(self.cur_unit, item) and game.game_vars.get('_convoy') and SupplyAbility.targets(self.cur_unit):
                     options.append('Storage') 
                 elif item_system.discardable(self.cur_unit, item):
                     options.append('Discard')
@@ -1379,7 +1380,7 @@ class ItemChildState(MapState):
                 game.state.change('option_child')
 
             elif selection == 'Trade':
-                game.memory['ability'] = abilities.TradeAbility
+                game.memory['ability'] = TradeAbility
                 game.state.change('targeting')
 
     def update(self):
@@ -1404,11 +1405,11 @@ class ItemDiscardState(MapState):
         self.cur_unit = game.memory['item_discard_current_unit']
 
         if game.game_vars.get('_convoy') and DB.constants.value("long_range_storage"):
-            self.mode = ItemDiscardMode.STORAGE
-        elif game.game_vars.get('_convoy') and abilities.SupplyAbility.targets(self.cur_unit):
-            self.mode = ItemDiscardMode.STORAGE
+            self.mode = self.ItemDiscardMode.STORAGE
+        elif game.game_vars.get('_convoy') and SupplyAbility.targets(self.cur_unit):
+            self.mode = self.ItemDiscardMode.STORAGE
         else:
-            self.mode = ItemDiscardMode.DISCARD
+            self.mode = self.ItemDiscardMode.DISCARD
 
         options = self.cur_unit.items
         self.menu = menus.Choice(self.cur_unit, options)
@@ -1416,7 +1417,7 @@ class ItemDiscardState(MapState):
         self.menu.set_ignore(ignore)
         self.menu.set_limit(8)
 
-        if self.mode == ItemDiscardMode.STORAGE:
+        if self.mode == self.ItemDiscardMode.STORAGE:
             self.pennant = banner.Pennant('Choose item to send to storage')
         else:
             self.pennant = banner.Pennant('Choose item to discard')
@@ -1426,7 +1427,7 @@ class ItemDiscardState(MapState):
         Returns a list of booleans, one for each item, that determines whether the item is locked to the unit
         and cannot be discarded or stored at the moment
         """
-        if self.mode == ItemDiscardMode.STORAGE:
+        if self.mode == self.ItemDiscardMode.STORAGE:
             locked = [not bool(item_system.storeable(self.cur_unit, item)) for item in options]
         else:
             locked = [not bool(item_system.discardable(self.cur_unit, item)) for item in options]
@@ -1437,7 +1438,8 @@ class ItemDiscardState(MapState):
             game.state.back()
             game.state.change('alert')
             return 'repeat'
-        self.menu.update_options(self.cur_unit.items)
+        options = self.cur_unit.items
+        self.menu.update_options(options)
         ignore = self._get_ignore(options)
         self.menu.set_ignore(ignore)
         # Don't need to do this if we are under items
@@ -1449,7 +1451,7 @@ class ItemDiscardState(MapState):
         locked = self._get_locked(self.cur_unit.items)
         locked_items = [item for idx, item in enumerate(self.cur_unit.items) if locked[idx] and not item_system.is_accessory(self.cur_unit, item)]
         if len(locked_items) > item_funcs.get_num_items(self.cur_unit):
-            if self.mode == ItemDiscardMode.STORAGE:
+            if self.mode == self.ItemDiscardMode.STORAGE:
                 game.alerts.append(banner.SentToConvoy(locked_items[-1]))
                 action.do(action.StoreItem(self.cur_unit, locked_items[-1]))
             else:
@@ -1458,7 +1460,7 @@ class ItemDiscardState(MapState):
             return True
         locked_accessories = [item for idx, item in enumerate(self.cur_unit.items) if locked[idx] and item_system.is_accessory(self.cur_unit, item)]
         if len(locked_accessories) > item_funcs.get_num_accessories(self.cur_unit):
-            if self.mode == ItemDiscardMode.STORAGE:
+            if self.mode == self.ItemDiscardMode.STORAGE:
                 game.alerts.append(banner.SentToConvoy(locked_accessories[-1]))
                 action.do(action.StoreItem(self.cur_unit, locked_accessories[-1]))
             else:
@@ -1485,7 +1487,7 @@ class ItemDiscardState(MapState):
         elif event == 'SELECT':
             get_sound_thread().play_sfx('Select 1')
             selection = self.menu.get_current()
-            owner = 'Storage' if self.mode == ItemDiscardMode.STORAGE else 'Discard'
+            owner = 'Storage' if self.mode == self.ItemDiscardMode.STORAGE else 'Discard'
             game.memory['option_owner'] = owner
             game.memory['option_item'] = selection
             game.memory['option_unit'] = self.cur_unit

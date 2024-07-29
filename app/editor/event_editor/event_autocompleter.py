@@ -273,7 +273,7 @@ def generate_pyev1_completions(line: str, level_nid: NID) -> List[CompletionEntr
         return completions
 
 def generate_generic_completions(source: str, word_under_cursor: str) -> List[CompletionEntry]:
-    if len(word_under_cursor) < 3:
+    if len(word_under_cursor) < 2:
         return []
     all_compl = source.replace('\n', ' ').replace(';', ' ').split()
     all_compl = [t for t in all_compl if re.match('^[A-Za-z_]+$', t) and len(t) > 3]

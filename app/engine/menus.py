@@ -1,3 +1,6 @@
+from __future__ import annotations
+from typing import List
+
 import math, string
 
 from app.constants import TILEX, WINWIDTH, WINHEIGHT
@@ -1961,6 +1964,9 @@ class KeyboardMenu(Table):
         for idx, option in enumerate(options):
             option = menu_options.SingleCharacterOption(idx, option)
             self.options.append(option)
+
+    def all_legal_characters(self) -> List[str]:
+        return [option.get() for option in self.options]
 
     def updateName(self, character):
         if character == 'back':

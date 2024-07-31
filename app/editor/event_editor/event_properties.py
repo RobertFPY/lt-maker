@@ -1,6 +1,7 @@
 from __future__ import annotations
-from enum import Enum
+from typing import Optional
 
+from enum import Enum
 import functools
 import logging
 import math
@@ -374,7 +375,6 @@ class EventProperties(QWidget):
         self.show_map_button = QPushButton("Show Map")
         self.show_map_button.clicked.connect(self.show_map)
         bottom_section.addWidget(self.show_map_button)
-        self.show_map_button.setEnabled(False)
 
         self.show_commands_dialog = None
         self.show_commands_button = QPushButton("Show Commands")
@@ -425,7 +425,7 @@ class EventProperties(QWidget):
     def show_map(self):
         # Modeless dialog
         if not self.show_map_dialog:
-            current_level = DB.levels.get(self.current.level_nid)
+            current_level: Optional[LevelPrefab] = DB.levels.get(self.current.level_nid)
             self.show_map_dialog = ShowMapDialog(current_level, self)
         self.show_map_dialog.setAttribute(Qt.WA_ShowWithoutActivating, True)
         # self.show_map_dialog.setWindowFlags(self.show_map_dialog.windowFlags() | Qt.WindowDoesNotAcceptFocus)
@@ -508,17 +508,11 @@ class EventProperties(QWidget):
         if idx == 0:
             self.current.level_nid = None
             self.name_done_editing()
-            self.show_map_button.setEnabled(False)
             if self.level_filter_box.edit.currentText() != "All":
                 self.level_filter_box.edit.setValue("Global")
         else:
             self.current.level_nid = DB.levels[idx - 1].nid
             self.name_done_editing()
-            current_level = DB.levels.get(self.current.level_nid)
-            if current_level.tilemap:
-                self.show_map_button.setEnabled(True)
-            else:
-                self.show_map_button.setEnabled(False)
             if self.level_filter_box.edit.currentText() != "All":
                 self.level_filter_box.edit.setValue(self.current.level_nid)
 
@@ -601,7 +595,7 @@ class EventProperties(QWidget):
         self.close_find_and_replace()
 
 class ShowMapDialog(QDialog):
-    def __init__(self, current_level: LevelPrefab, parent=None):
+    def __init__(self, current_level: Optional[LevelPrefab], parent=None):
         super().__init__(parent)
         self.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
         self.setWindowTitle("Level Map View")
@@ -616,7 +610,8 @@ class ShowMapDialog(QDialog):
         self.map_view = SimpleMapView(self)
         self.map_view.position_clicked.connect(self.position_clicked)
         self.map_view.position_moved.connect(self.position_moved)
-        self.map_view.set_current_level(self.current_level)
+        if self.current_level:
+            self.map_view.set_current_level(self.current_level)
 
         self.position_edit = QLineEdit(self)
         self.position_edit.setAlignment(Qt.AlignRight)
@@ -659,12 +654,13 @@ class ShowMapDialog(QDialog):
     def update(self):
         self.map_view.update_view()
 
-    def set_current(self, current):
+    def set_current(self, current: Optional[LevelPrefab]):
         self.current_level = current
-        self.map_view.set_current_level(self.current_level)
-        tilemap = RESOURCES.tilemaps.get(self.current_level.tilemap)
-        if tilemap:
-            self.map_view.set_current_map(tilemap)
+        if self.current_level:
+            self.map_view.set_current_level(self.current_level)
+            tilemap = RESOURCES.tilemaps.get(self.current_level.tilemap)
+            if tilemap:
+                self.map_view.set_current_map(tilemap)
 
     def closeEvent(self, event):
         self.window.show_map_dialog = None

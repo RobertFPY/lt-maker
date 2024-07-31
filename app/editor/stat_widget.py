@@ -326,14 +326,17 @@ class ClassStatAveragesModel(VirtualListModel):
         self.window = parent
         self._columns = self._headers = columns
         self.current = current
-        self._rows = [1] + list(range(5, current.max_level, 5)) + [current.max_level]
+        self._rows = self._get_level_range(current.max_level)
+
+    def _get_level_range(self, max_level, all_levels: bool = False):
+        if all_levels:
+            return list(range(1, max_level + 1))
+        else:
+            return [1] + list(range(5, max_level, 5)) + [max_level]
 
     def set_current(self, current, all_levels=False):
         self.current = current
-        if not all_levels:
-            self._rows = [1] + list(range(5, current.max_level, 5)) + [current.max_level]
-        else:
-            self._rows = list(range(1, current.max_level + 1))
+        self._rows = self._get_level_range(current.max_level, all_levels)
         self.layoutChanged.emit()
 
     def determine_average(self, obj, stat_nid, level_ups):
@@ -415,27 +418,7 @@ class GenericStatAveragesModel(ClassStatAveragesModel):
 
     def determine_average(self, obj, stat_nid, level_ups):
         klass = DB.classes.get(obj.klass)
-        if klass.tier > 1:
-            if klass.promotes_from:
-                prev_klass = DB.classes.get(klass.promotes_from)
-                level_ups += prev_klass.max_level
-            else:
-                level_ups += 0
-        stat_base = klass.bases.get(stat_nid, 0)
-        growth_bonus = klass.growth_bonus.get(stat_nid, 0)
-        stat_growth = klass.growths.get(stat_nid, 0)
-        stat_max = klass.max_stats.get(stat_nid, DB.stats.get(stat_nid).maximum)
-        total_growth = stat_growth + growth_bonus
-
-        average = int(stat_base + 0.5 + (total_growth/100) * level_ups)
-
-        # average = quantile(.5, level_ups, stat_growth/100) + stat_base
-        while total_growth > 100:
-            total_growth -= 100
-            stat_base += level_ups
-        quantile10 = Binomial.quantile(.1, level_ups, total_growth/100) + stat_base
-        quantile90 = Binomial.quantile(.9, level_ups, total_growth/100) + stat_base
-        return stat_max, average, quantile10, quantile90
+        super(klass, stat_nid, level_ups)
 
 class UnitStatAveragesModel(ClassStatAveragesModel):
     def __init__(self, columns, current, parent=None):
@@ -449,22 +432,29 @@ class UnitStatAveragesModel(ClassStatAveragesModel):
         klass = DB.classes.get(self.current.klass)
         max_level = klass.max_level
         self._rows = []
-        if not all_levels:
-            level_range = [1] + list(range(5, max_level, 5)) + [max_level]
-        else:
-            level_range = list(range(1, max_level+1))
+        level_range = self._get_level_range(max_level, all_levels)
         for i in level_range:
             self._rows.append((klass.nid, i, i))
-        true_levels = 0
-        while klass.promotion_options(DB):
-            true_levels += max_level
-            klass = DB.classes.get(klass.promotion_options(DB)[0])
+
+        # Determine all possible promotion options for this unit and place them on the rows
+        promotion_options = klass.promotion_options(DB)
+        true_levels = [0 for _ in promotion_options]
+        while promotion_options:
+            next_klass_nid = promotion_options.pop(0)
+            klass = DB.classes.get(next_klass_nid)
+            current_true_level = true_levels.pop(0)
             if klass:
                 max_level = klass.max_level
+                level_range = self._get_level_range(max_level, all_levels)
                 for i in level_range:
-                    self._rows.append((klass.nid, i, i + true_levels))
-            else:
-                return
+                    self._rows.append((klass.nid, i, i + current_true_level))
+                # Now for the next iteration
+                # recalculate the promotion options and insert them in
+                next_options = klass.promotion_options(DB)
+                if next_options:
+                    for option in reversed(next_options):
+                        true_levels.insert(0, current_true_level + max_level)
+                        promotion_options.insert(0, option)
 
     def set_current(self, current, all_levels=False):
         self.current = current

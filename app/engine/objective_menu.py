@@ -156,7 +156,7 @@ class ObjectiveMenuState(State):
             surfaces.append((surf, (WINWIDTH - pos[0] - surf.get_width(), pos[1])))
 
         # Party Leader Name surf
-        party_leader_surf((42, 104), 'text-white', unit.name)
+        party_leader_surf((40, 104), 'text-white', unit.name)
 
         # Party Leader Level Surf
         party_golden_words_surf(0, 48, 16, 24, (140, 122))
@@ -222,7 +222,7 @@ class ObjectiveMenuState(State):
         unit = self.determine_party_leader()
         if unit:
             mapsprite = unit.sprite.create_image('passive')
-            surf.blit(mapsprite, (124, 82))
+            surf.blit(mapsprite, (116, 82))
 
         # Playtime
         time = datetime.timedelta(milliseconds=game.playtime)

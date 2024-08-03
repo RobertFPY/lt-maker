@@ -606,12 +606,19 @@ class ShowMapDialog(QDialog):
         self.map_selector.edit.activated.connect(self.select_current)
         if self.current_level and self.current_level.tilemap:
             self.map_selector.edit.setCurrentIndex(self.map_selector.edit.findText(self.current_level.tilemap))
+        else:
+            self.map_selector.edit.setCurrentIndex(0)
 
         self.map_view = SimpleMapView(self)
         self.map_view.position_clicked.connect(self.position_clicked)
         self.map_view.position_moved.connect(self.position_moved)
         if self.current_level:
             self.map_view.set_current_level(self.current_level)
+        else:
+            tilemap_nid = self.map_selector.edit.currentText()
+            tilemap = RESOURCES.tilemaps.get(tilemap_nid)
+            if tilemap:
+                self.map_view.set_current_map(tilemap)
 
         self.position_edit = QLineEdit(self)
         self.position_edit.setAlignment(Qt.AlignRight)
@@ -627,7 +634,7 @@ class ShowMapDialog(QDialog):
 
     def select_current(self):
         tilemap_nid = self.map_selector.edit.currentText()
-        if tilemap_nid == self.current_level.tilemap:
+        if self.current_level and tilemap_nid == self.current_level.tilemap:
             self.map_view.set_current_level(self.current_level)
         else:
             tilemap = RESOURCES.tilemaps.get(tilemap_nid)
@@ -639,6 +646,9 @@ class ShowMapDialog(QDialog):
 
     def position_moved(self, x, y):
         if x >= 0 and y >= 0:
+            if not self.current_level:
+                self.position_edit.setText("%d,%d" % (x, y))
+                return
             unit_name = None
             for unit in self.current_level.units:
                 if unit.starting_position and unit.starting_position[0] == x and unit.starting_position[1] == y:

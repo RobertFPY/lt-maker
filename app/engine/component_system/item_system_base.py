@@ -261,7 +261,7 @@ def splash(unit: UnitObject, item: ItemObject, position) -> tuple:
     # If not default
     if main_target or splash:
         return main_target, splash
-    else: # DEFAULT
+    else:  # DEFAULT
         from app.engine import skill_system
         alternate_splash_component = skill_system.alternate_splash(unit)
         if alternate_splash_component and not unsplashable(unit, item):

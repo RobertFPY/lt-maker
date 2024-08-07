@@ -142,7 +142,7 @@ def save_surface(surf, fn):
 def _subsurface_fix(
         surf_size: Tuple[int, int], rect: Tuple[int, int, int, int]) -> Tuple[int, int, int, int]:
     x, y, width, height = rect
-    nx, ny = x + width, y + height
+    nx, ny = x + max(width, 1), y + max(height, 1)
     surf_width, surf_height = surf_size
     tx = utils.clamp(0, x, surf_width - 1)
     ty = utils.clamp(0, y, surf_height - 1)

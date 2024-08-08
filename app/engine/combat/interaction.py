@@ -69,6 +69,7 @@ def engage(attacker: UnitObject, positions: list, main_item: ItemObject, skip: b
             target_positions.append(position)
         else:  # Using an item in the base/prep
             main_target, splash = position, []
+            target_positions.append(position)
         main_targets.append(main_target)
         splashes.append(splash)
 

@@ -154,8 +154,9 @@ def _subsurface_fix(
 
 def subsurface(surf: pygame.Surface, rect: Tuple[int, int, int, int]) -> pygame.Surface:
     surf_width, surf_height = surf.get_width(), surf.get_height()
+    # If surface width and height are reasonable
     if surf_width > 0 and surf_height > 0:
-        tx, ty, twidth, theight = _subsurface_fix((surf.get_width(), surf.get_height()), rect)
+        tx, ty, twidth, theight = _subsurface_fix((surf_width, surf_height), rect)
     else:
         tx, ty, twidth, theight = rect
     return surf.subsurface(tx, ty, twidth, theight)

@@ -129,6 +129,7 @@ class BaseMainState(State):
         return 'repeat'
 
     def begin(self):
+        self.fluid.reset_on_change_state()
         base_music = game.game_vars.get('_base_music')
         if base_music:
             get_sound_thread().fade_in(base_music)
@@ -282,6 +283,7 @@ class BaseConvosChildState(State):
         if not game.base_convos:
             game.state.back()
             return 'repeat'
+        self.fluid.reset_on_change_state()
         self.options = [event_nid for event_nid in game.base_convos.keys()]
         ignore = [game.base_convos[event_nid] for event_nid in self.options]
         self.menu.update_options(self.options)
@@ -590,6 +592,7 @@ class BaseSupportsState(State):
         return 'repeat'
 
     def begin(self):
+        self.fluid.reset_on_change_state()
         base_music = game.game_vars.get('_base_music')
         if base_music:
             get_sound_thread().fade_in(base_music)
@@ -712,6 +715,9 @@ class BaseCodexChildState(State):
         topleft = game.memory['option_menu']
 
         self.menu = menus.Choice(selection, options, topleft)
+
+    def begin(self):
+        self.fluid.reset_on_change_state()
 
     def take_input(self, event):
         first_push = self.fluid.update()
@@ -891,6 +897,9 @@ class BaseLibraryState(State):
         game.state.change('transition_in')
         return 'repeat'
 
+    def begin(self):
+        self.fluid.reset_on_change_state()
+
     def take_input(self, event):
         first_push = self.fluid.update()
         directions = self.fluid.get_directions()
@@ -1018,6 +1027,9 @@ class BaseRecordsState(State):
 
         game.state.change('transition_in')
         return 'repeat'
+
+    def begin(self):
+        self.fluid.reset_on_change_state()
 
     def take_input(self, event):
         first_push = self.fluid.update()
@@ -1272,6 +1284,9 @@ class BaseBEXPAllocateState(State):
         
         self.determine_needed_bexp(self.unit)
 
+    def begin(self):
+        self.fluid.reset_on_change_state()
+
     def determine_needed_bexp(self, unit):
         necessary_exp = equations.parser.get('BONUS_EXP', unit)  # The amount of EXP needed to get to the next level
         if necessary_exp > 0:
@@ -1405,6 +1420,9 @@ class BaseAchievementState(State):
         game.state.change('transition_in')
         return 'repeat'
 
+    def begin(self):
+        self.fluid.reset_on_change_state()
+
     def take_input(self, event):
         first_push = self.fluid.update()
         directions = self.fluid.get_directions()
@@ -1475,6 +1493,7 @@ class BaseSoundRoomState(State):
         return 'repeat'
 
     def begin(self):
+        self.fluid.reset_on_change_state()
         get_sound_thread().fade_clear()
         self.playing = False
 

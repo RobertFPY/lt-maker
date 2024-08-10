@@ -85,6 +85,7 @@ constants = ConstantCatalog([
     Constant('unit_notes', "Unit Notes", ConstantType.BOOL, False, ConstantTag.MAJOR_FEATURES),
     Constant('crit', "Allow Criticals", ConstantType.BOOL, True, ConstantTag.MAJOR_FEATURES),
     Constant('reset_uses', "Reset uses on droppable items when acquired", ConstantType.BOOL, True, ConstantTag.OTHER),
+    Constant('long_range_storage', "Allow use of storage even when not near convoy", ConstantType.BOOL, True, ConstantTag.OTHER),
     Constant('allow_negative_as', "Allow Attack Speed to be negative", ConstantType.BOOL, False, ConstantTag.OTHER),
     Constant('trade', "Can trade items on map", ConstantType.BOOL, True, ConstantTag.OTHER),
     Constant('growth_info', "Can view unit growths in Info Menu", ConstantType.BOOL, True, ConstantTag.OTHER),

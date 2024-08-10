@@ -21,6 +21,9 @@ class TextEntryState(MapState):
         game.state.change('transition_in')
         return 'repeat'
 
+    def begin(self):
+        self.fluid.reset_on_change_state()
+
     def create_bg_surf(self):
         width_of_header = FONT['text'].width(self.header) + 16
         menu_width = self.menu.get_menu_width()

@@ -19037,6 +19037,17 @@
         ]
     },
     {
+        "nid": "Lull_Atk_Spd_T1",
+        "name": "Lull Atk/Spd 1",
+        "desc": "",
+        "icon_nid": null,
+        "icon_index": [
+            0,
+            0
+        ],
+        "components": []
+    },
+    {
         "nid": "Poison_Strike_T1",
         "name": "Poison Strike",
         "desc": "If User initiates combat and survives, deals 4 damage to Foe after combat.",

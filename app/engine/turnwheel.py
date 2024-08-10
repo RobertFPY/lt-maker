@@ -473,6 +473,7 @@ class TurnwheelDisplay():
 
 class TurnwheelState(MapState):
     def begin(self):
+        self.fluid.reset_on_change_state()
         # Remember who gets resurrected
         game.level_vars['_resurrect'] = set()
         # Whether the player MUST move the turnwheel back

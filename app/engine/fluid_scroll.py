@@ -19,6 +19,14 @@ class FluidScroll():
         self.move_up = False
         self.move_down = False
 
+    def reset_on_change_state(self):
+        current_time = engine.get_time()
+        self.left_update = current_time
+        self.right_update = current_time
+        self.up_update = current_time
+        self.down_update = current_time
+        self.move_counter = 0
+
     def update_speed(self, speed=64, slow_speed=3):
         self.fast_speed = speed
         self.slow_speed = int(speed*slow_speed)

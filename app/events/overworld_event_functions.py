@@ -24,8 +24,8 @@ def overworld_cinematic(self: Event, overworld_nid=None, flags=None):
             self.logger.error('No overworlds in the DB - why are you calling the overworld command?')
             return
     # save level state
-    self.prev_game_boundary = game.boundary
-    self.prev_board = game.board
+    self._prev_game_boundary = game.boundary
+    self._prev_board = game.board
 
     # Remove all units from the map
     # But remember their original positions for later

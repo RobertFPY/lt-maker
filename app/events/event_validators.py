@@ -26,6 +26,8 @@ class Validator():
     # generally True, but false in case of commands such as change_objective
     # that set a string that supports being evaluated elsewhere (and therefore must not be pre-emptively evaluated here)
     can_preprocess = True
+    # Whether to include the generic words in the current event that match the given text in the valid_entries list
+    include_generic_completions = False
 
     def __init__(self, db: Optional[Database] = None, resources: Optional[Resources] = None):
         self._db = db or Database()
@@ -630,6 +632,8 @@ class PointList(SequenceValidator):
         return float(x), float(y)
 
 class Speaker(Validator):
+    include_generic_completions = True
+
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
         predefined_variants = self._db.events.inspector.find_all_calls_of_command(event_commands.SpeakStyle())
         slots = [(None, style) for style in set([variant.parameters['Style'] for variant in predefined_variants.values()])]
@@ -647,6 +651,7 @@ class Panorama(Validator):
 
 class Width(Integer):
     desc = "is measured in pixels"
+
 class Speed(Integer):
     desc = "is measured in milliseconds"
 

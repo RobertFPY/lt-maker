@@ -70,6 +70,9 @@ class SettingsMenuState(State):
         game.state.change('transition_in')
         return 'repeat'
 
+    def begin(self):
+        self.fluid.reset_on_change_state()
+
     @property
     def current_menu(self):
         if self.state in ('top_menu_left', 'config'):

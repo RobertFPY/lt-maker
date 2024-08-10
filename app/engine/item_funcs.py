@@ -347,7 +347,7 @@ def get_all_items_from_multi_item(unit: UnitObject, item: ItemObject) -> List[It
 
 def get_all_tradeable_items(unit: UnitObject) -> List[ItemObject]:
     """
-    Retrieves all tradeable items possessed by a unit. Locked items are not tradeable.
+    Retrieves all tradeable items possessed by a unit.
 
     Args:
         unit (UnitObject): The unit whose tradeable items to retrieve.
@@ -357,7 +357,7 @@ def get_all_tradeable_items(unit: UnitObject) -> List[ItemObject]:
     """
     items = []
     for item in unit.items:
-        if not item_system.locked(unit, item):
+        if item_system.tradeable(unit, item):
             items.append(item)
     return items
 

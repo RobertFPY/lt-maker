@@ -81,6 +81,9 @@ class PromotionChoiceState(State):
         game.state.change('transition_in')
         return 'repeat'
 
+    def begin(self):
+        self.fluid.reset_on_change_state()
+
     def take_input(self, event):
         first_push = self.fluid.update()
         directions = self.fluid.get_directions()

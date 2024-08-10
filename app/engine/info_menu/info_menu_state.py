@@ -88,6 +88,9 @@ class InfoMenuState(State):
         game.state.change('transition_in')
         return 'repeat'
 
+    def begin(self):
+        self.fluid.reset_on_change_state()
+
     def reset_surfs(self, keep_last_info_graph_aabb=False):
         self.info_graph.clear(keep_last_aabb=keep_last_info_graph_aabb)
         self.portrait_surf = None
@@ -236,7 +239,14 @@ class InfoMenuState(State):
         else:
             return
         self.next_unit = self.scroll_units[new_index]
+<<<<<<< HEAD
         self.transition = 'DOWN'
+=======
+        if self.state == 'notes' and not (DB.constants.value('unit_notes') and self.next_unit.notes):
+            self.state = 'personal_data'
+            self.switch_logo('personal_data')
+        self.transition = 'UP'
+>>>>>>> 7997f65e304fa93bd11886c4620b3097b6daf1f9
 
     def move_up(self):
         get_sound_thread().play_sfx('Status_Character')
@@ -249,7 +259,14 @@ class InfoMenuState(State):
         else:
             return
         self.next_unit = self.scroll_units[new_index]
+<<<<<<< HEAD
         self.transition = 'UP'
+=======
+        if self.state == 'notes' and not (DB.constants.value('unit_notes') and self.next_unit.notes):
+            self.state = 'personal_data'
+            self.switch_logo('personal_data')
+        self.transition = 'DOWN'
+>>>>>>> 7997f65e304fa93bd11886c4620b3097b6daf1f9
 
     def move_traveler(self):
         get_sound_thread().play_sfx('Status_Character')

@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import List
 
 import math, string
@@ -1965,9 +1966,6 @@ class KeyboardMenu(Table):
             self.options.append(option)
 
     def all_legal_characters(self) -> List[str]:
-        """
-        Returns a list of all the characters that this TextEntry will accept
-        """
         return [option.get() for option in self.options]
 
     def updateName(self, character):

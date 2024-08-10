@@ -981,7 +981,7 @@ class Ending:
         self.wait_update = 0
 
     def build_dialog(self):
-        self.dialog = Dialog(self.plain_text, num_lines=6, draw_cursor=False)
+        self.dialog = Dialog(self.plain_text, num_lines=5, draw_cursor=False)
         self.dialog.position = (8, 40)
         self.dialog.text_width = WINWIDTH - 32
         self.dialog.width = self.dialog.text_width + 16

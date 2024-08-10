@@ -713,14 +713,16 @@ def change_tilemap(self: Event, tilemap, position_offset=None, load_tilemap=None
 
     reload_map = 'reload' in flags
     # For Overworld
-    if reload_map and self.game.is_displaying_overworld():  # just go back to the level
+    # just go back to the level
+    if reload_map and self.game.is_displaying_overworld():  
         from app.engine import level_cursor, map_view
         from app.engine.movement import movement_system
         self.game.cursor = level_cursor.LevelCursor(self.game)
         self.game.movement = movement_system.MovementSystem(self.game.cursor, self.game.camera)
         self.game.map_view = map_view.MapView()
-        self.game.boundary = self.prev_game_boundary
-        self.game.board = self.prev_board
+        if self._prev_game_boundary and self._prev_board:
+            self.game.boundary = self._prev_game_boundary
+            self.game.board = self._prev_board
         if reload_map and self.game.level_vars.get('_prev_pos_%s' % reload_map_nid):
             for unit_nid, pos in self.game.level_vars['_prev_pos_%s' % reload_map_nid].items():
                 # Reload unit's position with position offset
@@ -730,6 +732,7 @@ def change_tilemap(self: Event, tilemap, position_offset=None, load_tilemap=None
                     act = action.ArriveOnMap(unit, final_pos)
                     act.execute()
         return
+        # Never gets below this
 
     # Reset cursor position
     self.game.cursor.set_pos((0, 0))
@@ -3313,6 +3316,10 @@ def ending(self: Event, portrait, title, text, flags=None):
         portrait, _ = icons.get_portrait(unit)
         portrait = portrait.convert_alpha()
         portrait = image_mods.make_translucent(portrait, 0.2)
+    elif portrait in RESOURCES.portraits:
+        portrait, _ = icons.get_portrait_from_nid(portrait)
+        portrait = portrait.convert_alpha()
+        portrait = image_mods.make_translucent(portrait, 0.2)
     else:
         self.logger.error("ending: Couldn't find unit or portrait %s" % portrait)
         return False
@@ -3328,6 +3335,10 @@ def paired_ending(self: Event, left_portrait, right_portrait, left_title, right_
         left_portrait = engine.flip_horiz(left_portrait)
         left_portrait = left_portrait.convert_alpha()
         left_portrait = image_mods.make_translucent(left_portrait, 0.5)
+    elif left_portrait in RESOURCES.portraits:
+        left_portrait, _ = icons.get_portrait_from_nid(left_portrait)
+        left_portrait = left_portrait.convert_alpha()
+        left_portrait = image_mods.make_translucent(left_portrait, 0.5)
     else:
         self.logger.error("ending: Couldn't find unit or portrait %s" % left_portrait)
         return False
@@ -3335,6 +3346,10 @@ def paired_ending(self: Event, left_portrait, right_portrait, left_title, right_
     right_unit = self._get_unit(right_portrait)
     if right_unit and right_unit.portrait_nid:
         right_portrait, _ = icons.get_portrait(right_unit)
+        right_portrait = right_portrait.convert_alpha()
+        right_portrait = image_mods.make_translucent(right_portrait, 0.5)
+    elif right_portrait in RESOURCES.portraits:
+        right_portrait, _ = icons.get_portrait_from_nid(right_portrait)
         right_portrait = right_portrait.convert_alpha()
         right_portrait = image_mods.make_translucent(right_portrait, 0.5)
     else:

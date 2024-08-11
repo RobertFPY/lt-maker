@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import logging
 from typing import ClassVar, Dict, Generic, List, Optional, Tuple, Type, TypeVar
+from typing_extensions import Protocol
 
-from app.utilities.typing import NID, Protocol
+from app.utilities.typing import NID
 
 
 class HasNid(Protocol):

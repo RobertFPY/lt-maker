@@ -2,6 +2,7 @@ import functools
 from enum import Enum
 from typing import (Callable, Dict, Generic, List, Optional, Tuple, Type,
                     TypeVar)
+from typing_extensions import Protocol
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFontMetrics, QIcon
@@ -20,7 +21,7 @@ from app.editor.settings import MainSettingsController
 from app.extensions.custom_gui import PropertyBox, QHLine
 from app.extensions.qhelpmenu import QHelpMenu
 from app.utilities.data import Data
-from app.utilities.typing import NID, Protocol
+from app.utilities.typing import NID
 
 class HasComponents(Protocol):
     nid: NID

@@ -1,5 +1,4 @@
 from typing import Tuple
-from typing_extensions import Protocol, override
 
 Pos = Tuple[int, int]
 

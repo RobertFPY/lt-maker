@@ -1448,7 +1448,7 @@ class ItemDiscardState(MapState):
         self.fluid.reset_on_change_state()
         options = self.cur_unit.items
         self.menu.update_options(options)
-        ignore = self._get_ignore(options)
+        ignore = self._get_locked(options)
         self.menu.set_ignore(ignore)
         # Don't need to do this if we are under items
         if not item_funcs.too_much_in_inventory(self.cur_unit):

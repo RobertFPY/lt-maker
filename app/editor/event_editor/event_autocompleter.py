@@ -81,7 +81,7 @@ class EventScriptCompleter(QCompleter):
             return []
         else:
             word_under_cursor = self._get_word_under_cursor(source, cursor_idx)
-            return generate_generic_completions(source, cursor_idx, word_under_cursor)
+            return generate_generic_completions(source, word_under_cursor)
 
     def set_version(self, version: EventVersion):
         self.version = version

@@ -1278,10 +1278,20 @@ class PrepUseState(State):
         self.unit = game.memory['current_unit']
         self.unit_menu = game.memory['manage_menu']
 
+        self._proceed_with_targets_item = False
+
         topleft = (6, 72)
         self.menu = menus.Inventory(self.unit, self.unit.items, topleft)
 
     def begin(self):
+        if self._proceed_with_targets_item:
+            self._proceed_with_targets_item = False
+            if game.memory.get('item') and game.memory.get('item').data.get('target_item'):
+                item = game.memory.get('item')
+                action.do(action.HasTraded(self.unit))
+                interaction.start_combat(self.unit, None, item)
+                return 'repeat'
+
         self.fluid.reset_on_change_state()
         self.menu.update_options(self.unit.items)
         ignore = self.get_ignore()

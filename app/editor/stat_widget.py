@@ -438,7 +438,7 @@ class UnitStatAveragesModel(ClassStatAveragesModel):
 
         # Determine all possible promotion options for this unit and place them on the rows
         promotion_options = klass.promotion_options(DB)
-        true_levels = [0 for _ in promotion_options]
+        true_levels = [klass.max_level for _ in promotion_options]
         while promotion_options:
             next_klass_nid = promotion_options.pop(0)
             klass = DB.classes.get(next_klass_nid)
@@ -472,29 +472,37 @@ class UnitStatAveragesModel(ClassStatAveragesModel):
         elif orientation == Qt.Horizontal:
             return self._columns[idx]
 
-    def determine_average(self, obj, stat_nid, level_ups):
-        stat_base = obj.bases.get(stat_nid, 0)
-        stat_growth = obj.growths.get(stat_nid, 0)
+    def determine_average(self, obj, stat_nid, level_ups, klass_nid):
         stat_cap_modifier = obj.stat_cap_modifiers.get(stat_nid, 0)
-        if DB.constants.value('unit_stats_as_bonus'):
-            klass = DB.classes.get(obj.klass)
-            stat_base += klass.bases.get(stat_nid, 0)
-            stat_growth += klass.growths.get(stat_nid, 0)
+
         average = 0.5
         quantile10 = 0
         quantile90 = 0
-        classes = [obj.klass]
+
+        # Figure out how to get to new klass
         base_klass = DB.classes.get(obj.klass)
-        turns_into = base_klass.promotion_options(DB)
-        while turns_into:
-            classes.append(turns_into[0])
-            new_klass = DB.classes.get(turns_into[0])
-            turns_into = new_klass.promotion_options(DB)
+        path = []
+        to_explore = [([], k) for k in base_klass.promotion_options(DB)]
+        while to_explore:
+            path, klass = to_explore.pop()
+            if klass == klass_nid:
+                break
+            path.append(klass)
+            to_explore.extend([(path, k) for k in DB.classes.get(klass).promotion_options(DB)])
+        classes = [obj.klass] + path + [klass_nid]
 
         for idx, klass in enumerate(classes):
+            klass = DB.classes.get(klass)
+
+            stat_base = obj.bases.get(stat_nid, 0)
+            stat_growth = obj.growths.get(stat_nid, 0)
+            if DB.constants.value('unit_stats_as_bonus'):
+                stat_base += klass.bases.get(stat_nid, 0)
+                stat_growth += klass.growths.get(stat_nid, 0)
+
             if idx != 0:
                 level_ups -= 1  # Costs one level to move up a class
-            klass = DB.classes.get(klass)
+            
             stat_max = klass.max_stats.get(stat_nid, DB.stats.get(stat_nid).maximum)
             stat_max += stat_cap_modifier
             if idx == 0:
@@ -507,7 +515,8 @@ class UnitStatAveragesModel(ClassStatAveragesModel):
                 promotion_bonus = klass.promotion.get(stat_nid, 0)
                 if promotion_bonus in (-99, -98):
                     prev_klass = classes[idx - 1]
-                    promotion_bonus = klass.bases.get(stat_nid, 0) - DB.classes.get(prev_klass).bases.get(stat_nid, 0)
+                    promotion_bonus = klass.bases.get(stat_nid, 0) \
+                        - DB.classes.get(prev_klass).bases.get(stat_nid, 0)
             else:
                 promotion_bonus = stat_base
             growth = (stat_growth + growth_bonus)/100
@@ -525,7 +534,7 @@ class UnitStatAveragesModel(ClassStatAveragesModel):
         base_level = self.current.level
         nid, level, true_level = self._rows[index.row()]
         stat_nid = self._columns[index.column()]
-        vals = self.determine_average(self.current, stat_nid, max(0, true_level - base_level))
+        vals = self.determine_average(self.current, stat_nid, max(0, true_level - base_level), nid)
         avg = vals[self.average_idx]
         maxim = vals[0]
         return maxim, avg

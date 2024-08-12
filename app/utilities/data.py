@@ -181,10 +181,6 @@ class Prefab():
         return self
 
     def restore_attr(self, name, value):
-        if isinstance(value, Data):
-            value = value.restore()
-        else:
-            value = value
         return value
 
     @classmethod

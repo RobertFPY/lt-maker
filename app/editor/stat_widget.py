@@ -418,7 +418,7 @@ class GenericStatAveragesModel(ClassStatAveragesModel):
 
     def determine_average(self, obj, stat_nid, level_ups):
         klass = DB.classes.get(obj.klass)
-        super(klass, stat_nid, level_ups)
+        return super().determine_average(klass, stat_nid, level_ups)
 
 class UnitStatAveragesModel(ClassStatAveragesModel):
     def __init__(self, columns, current, parent=None):

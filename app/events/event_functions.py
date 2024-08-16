@@ -3252,7 +3252,7 @@ def open_trade(self: Event, unit1, unit2, flags=None):
     self.game.memory['trade_partner'] = unit2_obj
 
     self.state = "paused"
-    self.game.memory['next_state'] = 'trade'
+    self.game.memory['next_state'] = 'combat_trade'
     self.game.state.change('transition_to')
 
 def show_minimap(self: Event, flags=None):

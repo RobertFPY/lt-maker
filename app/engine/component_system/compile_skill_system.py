@@ -44,7 +44,7 @@ SKILL_HOOKS: Dict[str, HookInfo] = {
     'change_animation':                     HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
     'change_ai':                            HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
     'change_roam_ai':                       HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
-    'witch_warp':                           HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
+    'witch_warp':                           HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True, is_cached=True),
     # formula (as exclusive)
     'damage_formula':                       HookInfo(['unit'], ResolvePolicy.UNIQUE),
     'resist_formula':                       HookInfo(['unit'], ResolvePolicy.UNIQUE),
@@ -154,6 +154,7 @@ def generate_skill_hook_str(hook_name: str, hook_info: HookInfo):
     conditional_check = "condition(skill, unit)" if 'item' not in args else 'condition(skill, unit, item)'
     default_handling = "return result"
     unconditional_handling = ""
+    cache_handling = ""
     if hook_info.has_default_value:
         default_handling = "return result if values else Defaults.{hook_name}({args})".format(hook_name=hook_name, args=', '.join(args))
     if hook_info.has_unconditional:
@@ -161,8 +162,11 @@ def generate_skill_hook_str(hook_name: str, hook_info: HookInfo):
             if component.defines('{hook_name}_unconditional'):
                 values.append(component.{hook_name}_unconditional({args}))
 """.format(hook_name=hook_name, args=', '.join(args))
+    if hook_info.is_cached:
+        cache_handling = """
+@lru_cache(65535)"""
 
-    func_text = """
+    func_text = """{cache_handling}
 def {hook_name}({func_signature}):
     values = []
     for skill in unit.skills[:]:
@@ -179,7 +183,8 @@ def {hook_name}({func_signature}):
            args=', '.join(args),
            policy_resolution=hook_info.policy.value,
            default_handling=default_handling,
-           unconditional_handling=unconditional_handling)
+           unconditional_handling=unconditional_handling,
+           cache_handling=cache_handling)
 
     return func_text
 
@@ -197,10 +202,20 @@ def compile_skill_system():
     # copy skill system base
     for line in skill_system_base.readlines():
         compiled_skill_system.write(line)
+        
+    cache_func_text = """
+def reset_cache():
+    condition.cache_clear()
+"""
 
     for hook_name, hook_info in SKILL_HOOKS.items():
         func = generate_skill_hook_str(hook_name, hook_info)
         compiled_skill_system.write(func)
+        if hook_info.is_cached:
+            cache_func_text += '    ' + hook_name + """.cache_clear()
+"""
+
+    compiled_skill_system.write(cache_func_text)
 
     skill_system_base.close()
     compiled_skill_system.close()

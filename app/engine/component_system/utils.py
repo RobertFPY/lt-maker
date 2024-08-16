@@ -36,6 +36,7 @@ class HookInfo():
     has_default_value: bool = False
     has_unconditional: bool = False
     inherits_parent: bool = False
+    is_cached: bool = False
 
 
 """

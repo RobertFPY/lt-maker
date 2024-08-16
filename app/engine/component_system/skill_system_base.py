@@ -162,9 +162,6 @@ class Defaults():
     def thracia_critical_multiplier_formula(unit) -> str:
         return 'THRACIA_CRIT'
 
-def reset_cache():
-    condition.cache_clear()
-
 @lru_cache(65535)
 def condition(skill, unit: UnitObject, item=None) -> bool:
     if not item:

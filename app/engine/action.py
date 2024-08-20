@@ -2672,7 +2672,6 @@ class ChangeFaction(Action):
         self.unit.name = self.old_name
         self.unit.desc = self.old_desc
 
-
 class ChangeTeam(Action):
     def __init__(self, unit, team):
         self.unit = unit

@@ -1510,7 +1510,8 @@ Be extremely careful with this function. The new NID *must* be unique across eve
 Otherwise extremely undefined behavior can occur.
 """
 
-    keywords = ['Unit', 'Nid', 'Name']
+    keywords = ['Unit', 'Nid']
+    optional_keywords = ['Name']
     keyword_types = ['Unit', 'Nid', 'String']
 
 class AddGroup(EventCommand):

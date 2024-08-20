@@ -808,7 +808,7 @@ class PrepManageSelectState(State):
             if game.game_vars.get('_prep_market') and game.market_items:
                 ignore[5] = False
         if DB.constants.value('repair_shop'):
-            ignore[3] = not item_funcs.has_repair(self.unit)
+            ignore[3] = not game.game_vars.get('_repair_shop', True) or not item_funcs.has_repair(self.unit)
         return ignore
 
     def begin(self):

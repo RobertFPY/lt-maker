@@ -235,14 +235,14 @@ class UIView():
         width, height = dimensions
         surf = SPRITES.get('unit_info_bg').copy()
         top, left = 4, 6
-        if unit.generic:
+        if not unit.portrait_nid:
             icons.draw_faction(surf, DB.factions.get(unit.faction), (left + 1, top + 4))
         else:
             portrait_nid = unit.portrait_nid
             icons.draw_chibi(surf, portrait_nid, (left + 1, top + 4))
 
         name = unit.name
-        if unit.generic:
+        if not unit.name:
             short_name = DB.classes.get(unit.klass).name
             name = short_name + ' ' + str(unit.level)
         pos = (left + width//2 + 6 - font.width(name)//2, top + 4)

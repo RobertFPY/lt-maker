@@ -34,6 +34,8 @@ These variables are saved for the entirety of a given game.
 
 `_fatigue` **int** Set to 0 to turn off fatigue. Set to 1 to have fatigue prevent unit from participating in a chapter. Set to 2 to have fatigue apply a Fatigued status when fatigue >= max fatigue and Rested when fatigue < max fatigue. Set to 3 to have the engine track fatigue but not do anything with it by default.
 
+`_repair_shop` **bool** Set to True to give the player access to the repair shop in the prep and base menus.
+
 `_prep_market` **bool** Set to True to give the player access to the market in the prep screen.
 
 `_prep_music` **Music (str)** Set this music as the background music in the prep screen. You don't normally need to set this manually, since it is set by the `prep` event command.

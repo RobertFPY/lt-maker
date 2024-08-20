@@ -606,6 +606,9 @@ def set_next_chapter(self: Event, chapter, flags=None):
 
 def enable_convoy(self: Event, activated: bool, flags=None):
     action.do(action.SetGameVar("_convoy", activated))
+    
+def enable_repair_shop(self: Event, activated: bool, flags=None):
+    action.do(action.SetGameVar("_repair_shop", activated))
 
 def enable_supports(self: Event, activated: bool, flags=None):
     action.do(action.SetGameVar("_supports", activated))

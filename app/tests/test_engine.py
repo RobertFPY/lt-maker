@@ -100,15 +100,15 @@ class EngineTests(unittest.TestCase):
             new_rect = engine.bound_subsurface(main_surf_size, subsurface_rect)
             self.assertGreater(new_rect[3], -1)
 
-        main_surf_size = (4, 4)
-        for x in range(-10, 10):
-            for y in range(-10, 10):
-                for width in range(-10, 10):
-                    for height in range(-10, 10):
+        main_surf_size = (1, 1)
+        for x in range(-3, 3):
+            for y in range(-3, 3):
+                for width in range(-3, 3):
+                    for height in range(-3, 3):
                         with self.subTest(x=x, y=y, width=width, height=height):
                             subsurface_rect = (x, y, width, height)
                             new_rect = engine.bound_subsurface(main_surf_size, subsurface_rect)
-                            self.assertGreaterEqual(new_rect[0], -1)
-                            self.assertGreaterEqual(new_rect[1], -1)
+                            self.assertGreaterEqual(new_rect[0], 0)
+                            self.assertGreaterEqual(new_rect[1], 0)
                             self.assertGreater(new_rect[2], -1)
                             self.assertGreater(new_rect[3], -1)

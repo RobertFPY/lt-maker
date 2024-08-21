@@ -146,24 +146,28 @@ def empty_surf() -> Surface:
         _empty_surf = create_surface((0, 0), True)
     return _empty_surf
 
+def bound_subsurface(surf_size: Tuple[int, int], rect: Tuple[int, int, int, int]) -> Tuple[int, int, int, int]:
+    surf_width, surf_height = surf_size
+    lx, ly, width, height = rect
+    rx = lx + width
+    ry = ly + height
+    # sanity clamp
+    lx = utils.clamp(lx, 0, surf_width)
+    ly = utils.clamp(ly, 0, surf_height)
+    rx = utils.clamp(rx, 0, surf_width)
+    ry = utils.clamp(ry, 0, surf_height)
+    if rx < lx:
+        rx, lx = lx, rx
+    if ry < ly:
+        ry, ly = ly, ry
+    return lx, ly, rx - lx, ry - ly
+
 def subsurface(surf: Surface, rect: Tuple[int, int, int, int]) -> Surface:
-    surf_width, surf_height = surf.get_width(), surf.get_height()
-    tx, ty, twidth, theight = rect
-    # sanity check
-    if surf_width == 0 or surf_height == 0:
-        return empty_surf()
+    rect = bound_subsurface(surf.get_size(), rect)
+    _, _, twidth, theight = rect
     if twidth == 0 or theight == 0:
         return empty_surf()
-    # sanity clamp
-    tx = utils.clamp(tx, 0, surf_width)
-    ty = utils.clamp(ty, 0, surf_height)
-    max_width = surf_width - tx
-    max_height = surf_height - ty
-    twidth = utils.clamp(twidth, 0, max_width)
-    theight = utils.clamp(theight, 0, max_height)
-
-
-    return surf.subsurface(tx, ty, twidth, theight)
+    return surf.subsurface(rect)
 
 def image_load(fn, convert=False, convert_alpha=False):
     image = pygame.image.load(fn)

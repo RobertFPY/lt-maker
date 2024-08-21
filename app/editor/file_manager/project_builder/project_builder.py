@@ -108,7 +108,7 @@ class LTProjectBuilder():
         exe_kwargs: List[str] = []
         exe_kwargs.append(dist_cmd)
         exe_kwargs.append(work_cmd)
-        icon_cmd = '--icon=%s' % path_to_icon
+        icon_cmd = '--icon="%s"' % path_to_icon
         exe_kwargs.append(icon_cmd)
 
         exe_kwargstr = ' '.join(exe_kwargs)

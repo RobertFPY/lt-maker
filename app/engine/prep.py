@@ -889,7 +889,8 @@ class PrepTradeSelectState(State):
         self.menu = game.memory['manage_menu']
         self.bg = game.memory['prep_bg']
         self.unit = game.memory['current_unit']
-        self.menu.set_fake_cursor(self.menu.current_index)
+        self.current_index = self.menu.current_index
+        self.menu.set_fake_cursor(self.current_index)
 
         if game.state.from_transition():
             game.state.change('transition_in')

@@ -102,6 +102,7 @@ class StateMachine():
              'repair_shop': general_states.RepairShopState,
              'unlock_select': general_states.UnlockSelectState,
              'exp': level_up.ExpState,
+             'bonus_exp': level_up.ExpState,
              'promotion_choice': promotion.PromotionChoiceState,
              'class_change_choice': promotion.ClassChangeChoiceState,
              'promotion': promotion.PromotionState,

@@ -1374,7 +1374,7 @@ class BaseBEXPAllocateState(State):
                 if DB.constants.value('rd_bexp_lvl'):
                     game.memory['exp_method'] = 'Bexp'
                 game.exp_instance.append((self.unit, exp_to_gain, None, 'init'))
-                game.state.change('exp')
+                game.state.change('bonus_exp')
                 if self.new_exp == 100:
                     self.original_exp = 0
                     self.new_exp = 0

@@ -225,7 +225,7 @@ class GameBoard(object):
                     valid: bool = False  # Can we see the pos?
                     # We can if any of our allies can see the pos.
                     for team_nid in DB.teams.get_allies(team):
-                        valid |= line_of_sight.simple_check(pos, team_nid, fog_of_war_radius)
+                        valid |= line_of_sight.simple_check(pos, team_nid, fog_of_war_radius, self.fow_vantage_point)
                     if not valid:
                         return False
                 
@@ -236,7 +236,7 @@ class GameBoard(object):
             else:
                 if DB.constants.value('fog_los'):
                     fog_of_war_radius = self.get_fog_of_war_radius(team)
-                    valid = line_of_sight.simple_check(pos, team, fog_of_war_radius)
+                    valid = line_of_sight.simple_check(pos, team, fog_of_war_radius, self.fow_vantage_point)
                     if not valid:
                         return False
                 grid = self.fog_of_war_grids[team]

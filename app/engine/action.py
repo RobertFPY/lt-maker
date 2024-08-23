@@ -952,8 +952,6 @@ class SwitchPaired(Action):
         self.follower = follower
         self.pos = leader.position
         self.orig_guard_gauge = leader.get_guard_gauge()
-        self.update_fow_leader = UpdateFogOfWar(self.leader)
-        self.update_fow_follower = UpdateFogOfWar(self.follower)
 
     def do(self):
         self.leader.traveler = None
@@ -969,8 +967,6 @@ class SwitchPaired(Action):
         self.leader.position = None
         self.follower.position = self.pos
         game.arrive(self.follower)
-        self.update_fow_leader.do()
-        self.update_fow_follower.do()
         # What is this if statement doing?
         if not self.follower.lead_unit:
             self.follower.has_moved = True
@@ -986,8 +982,6 @@ class SwitchPaired(Action):
         skill_system.on_separate(self.leader, self.follower)
         skill_system.on_pairup(self.follower, self.leader)
 
-        self.update_fow_leader.reverse()
-        self.update_fow_follower.reverse()
         game.leave(self.follower)
         self.follower.position = None
         self.leader.position = self.pos

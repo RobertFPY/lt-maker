@@ -235,9 +235,9 @@ class UIView():
         width, height = dimensions
         surf = SPRITES.get('unit_info_bg').copy()
         top, left = 4, 6
-        if not unit.portrait_nid:
+        if not unit.portrait_nid and unit.faction:
             icons.draw_faction(surf, DB.factions.get(unit.faction), (left + 1, top + 4))
-        else:
+        elif unit.portrait_nid:
             portrait_nid = unit.portrait_nid
             icons.draw_chibi(surf, portrait_nid, (left + 1, top + 4))
 

@@ -7,7 +7,7 @@ from app.engine import action, background, banner, base_surf
 from app.engine import config as cf
 from app.engine import (convoy_funcs, engine, gui, image_mods,
                         item_funcs, item_system, menus, text_funcs,
-                        trade)
+                        trade, skill_system)
 from app.engine.background import SpriteBackground
 from app.engine.combat import interaction
 from app.engine.fluid_scroll import FluidScroll
@@ -809,6 +809,8 @@ class PrepManageSelectState(State):
                 ignore[5] = False
         if DB.constants.value('repair_shop'):
             ignore[3] = not game.game_vars.get('_repair_shop', True) or not item_funcs.has_repair(self.unit)
+        if skill_system.no_trade(self.unit):
+            ignore[0] = True
         return ignore
 
     def begin(self):
@@ -919,10 +921,13 @@ class PrepTradeSelectState(State):
 
         if event == 'SELECT':
             unit2 = self.menu.get_current()
-            game.memory['unit1'] = self.unit
-            game.memory['unit2'] = unit2
-            game.memory['next_state'] = 'prep_trade'
-            game.state.change('transition_to')
+            if skill_system.no_trade(unit2):
+                get_sound_thread().play_sfx('Error')
+            else:
+                game.memory['unit1'] = self.unit
+                game.memory['unit2'] = unit2
+                game.memory['next_state'] = 'prep_trade'
+                game.state.change('transition_to')
 
         elif event == 'BACK':
             get_sound_thread().play_sfx('Select 4')

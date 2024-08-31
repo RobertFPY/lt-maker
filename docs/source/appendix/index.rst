@@ -1,7 +1,7 @@
 Code Documentation
 ==================
 
-Documentation for many of the functions and objects utilized by the engine. 
+Documentation for many of the functions and objects utilized by the engine.
 
 These functions and objects can be refrenced in your own events and conditions.
 
@@ -14,6 +14,6 @@ These functions and objects can be refrenced in your own events and conditions.
    unit-reference
    region-reference
    party-reference
-   trigger-reference
    unit_funcs-reference
    item_funcs-reference
+   query_funcs-reference

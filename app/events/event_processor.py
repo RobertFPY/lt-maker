@@ -202,7 +202,7 @@ class EventProcessor():
             return self.fetch_next_command()
         elif command.nid in ('endf'): # jump to iterator
             self.command_pointer = self.iterator_stack[-1].line
-            return self.fetch_next_command()
+            return None
 
         # ignore comments
         if isinstance(command, event_commands.Comment):

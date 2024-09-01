@@ -172,15 +172,7 @@ class Database(object):
                     orderkeys: List[str] = []
                     for idx, subvalue in enumerate(value):
                         # ordering
-                        if 'nid' in subvalue:
-                            name = subvalue['nid']
-                        elif 'name' in subvalue:
-                            if 'level_nid' in subvalue: # to handle the wonky event nid property
-                                name = (subvalue['level_nid'] if subvalue['level_nid'] else 'global') + "_" + subvalue['name']
-                            else:
-                                name = subvalue['name']
-                        else:
-                            name = str(idx).zfill(6)
+                        name = subvalue['nid']
                         name = re.sub(r'[\\/*?:"<>|]', "", name)
                         name = name.replace(' ', '_')
                         orderkeys.append(name)

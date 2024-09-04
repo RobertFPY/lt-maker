@@ -1,8 +1,12 @@
+import json
+from pathlib import Path
 import os, sys
 
 from app.constants import VERSION
+from app.data.metadata import Metadata
 from app.data.resources.resources import RESOURCES
 from app.data.database.database import DB
+from app.data.serialization.dataclass_serialization import dataclass_from_dict
 from app.engine import engine
 from app.engine import config as cf
 from app.engine import driver
@@ -17,6 +21,9 @@ def main(name: str = 'testing_proj'):
     # init_locale()
     if not os.path.exists(name + '.ltproj'):
         raise ValueError("Could not locate LT project %s" % (name + '.ltproj'))
+    metadata = dataclass_from_dict(Metadata, json.loads(Path(name + '.ltproj', 'metadata.json').read_text()))
+    if metadata.has_fatal_errors:
+        raise ValueError("Fatal errors detected in game. If you are the developer, please validate and then save your game data before proceeding. Aborting launch.")
     RESOURCES.load(name + '.ltproj')
     DB.load(name + '.ltproj')
     title = DB.constants.value('title')
@@ -27,6 +34,9 @@ def main(name: str = 'testing_proj'):
 def test_play(name: str = 'testing_proj'):
     if not os.path.exists(name + '.ltproj'):
         raise ValueError("Could not locate LT project %s" % (name + '.ltproj'))
+    metadata = dataclass_from_dict(Metadata, json.loads(Path(name + '.ltproj', 'metadata.json').read_text()))
+    if metadata.has_fatal_errors:
+        raise ValueError("Fatal errors detected in game. If you are the developer, please validate and then save your game data before proceeding. Aborting launch.")
     RESOURCES.load(name + '.ltproj')
     DB.load(name + '.ltproj')
     title = DB.constants.value('title')

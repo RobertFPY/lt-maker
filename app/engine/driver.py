@@ -9,7 +9,6 @@ from app.utilities import file_utils
 
 from app.constants import WINWIDTH, WINHEIGHT, VERSION, FPS
 from app.engine import engine
-from app.data.database.database import DB
 
 import app.engine.config as cf
 
@@ -48,8 +47,6 @@ def start(title, from_editor=False):
     engine.update_time()
     engine.set_title(title + ' - v' + VERSION)
     print("Version: %s" % VERSION)
-    if DB.game_flags.has_fatal_errors and not from_editor:
-        raise Exception("Fatal errors detected in game. If you are the developer, please validate and then save your game data before proceeding. Aborting launch.")
 
 screenshot = False
 def save_screenshot(raw_events: list, surf):

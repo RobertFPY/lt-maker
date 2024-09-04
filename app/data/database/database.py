@@ -14,7 +14,6 @@ from app.data.database import (ai, constants, difficulty_modes, equations,
                                minimap, overworld, parties,
                                raw_data, skills, stats, supports, tags, teams,
                                terrain, translations, units, varslot, weapons)
-from app.data.database.game_flags import GameFlags
 from app.events import event_prefab
 from app.utilities.data_order import parse_order_keys_file
 from app.utilities.serialization import load_json, save_json
@@ -27,7 +26,7 @@ class Database(object):
                        "weapons", "teams", "factions", "items", "skills", "tags", "game_var_slots",
                        "classes", "support_constants", "support_ranks", "affinities", "units",
                        "support_pairs", "ai", "parties", "difficulty_modes",
-                       "translations", "lore", "levels", "events", "overworlds", "raw_data", 'game_flags')
+                       "translations", "lore", "levels", "events", "overworlds", "raw_data")
     save_as_chunks = ("events", 'items', 'skills', 'units', 'classes', 'levels')
 
     def __init__(self):
@@ -70,8 +69,6 @@ class Database(object):
         self.lore = lore.LoreCatalog()
 
         self.raw_data = raw_data.RawDataCatalog()
-
-        self.game_flags = GameFlags()
 
     @property
     def music_keys(self) -> List[str]:

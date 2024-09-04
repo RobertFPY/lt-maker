@@ -57,7 +57,7 @@ class LTProjectBuilder():
                                 "Cannot build project without saving! Please save the project "
                                 "before attempting to build.")
             return False
-        if DB.game_flags.has_fatal_errors:
+        if self.proj_file_manager.metadata.has_fatal_errors:
             QMessageBox.warning(None, "Cannot build project",
                                 "Cannot build project with fatal errors! Please fix the errors "
                                 "before attempting to build.")

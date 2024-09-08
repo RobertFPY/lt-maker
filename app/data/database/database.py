@@ -80,24 +80,6 @@ class Database(object):
         keys.append("boss_battle")
         return keys
 
-    # Disk Interaction Functions
-    def load_categories(self, data_dir: str, key: str) -> Dict[NID, List[str]]:
-        full_data_dir = os.path.join(data_dir, key)
-        single_data_file_loc = os.path.join(data_dir, '.%s_categories' % key)
-        categories = Categories()
-        if os.path.exists(full_data_dir):
-            category_path = os.path.join(full_data_dir, '.categories')
-            try:
-                if os.path.exists(category_path):
-                    with open(category_path) as load_file:
-                        categories = Categories.load(json.load(load_file))
-            except:
-                logging.error("category file %s not found or corrupted" % category_path)
-        elif os.path.exists(single_data_file_loc):
-            with open(single_data_file_loc) as load_file:
-                categories = Categories.load(json.load(load_file))
-        return categories
-
     def json_load(self, data_dir: str, key: str) -> Dict | List:
         data_path = Path(data_dir, key)
         if data_path.exists(): # data type is a directory, browse within
@@ -212,15 +194,6 @@ class Database(object):
                 save_obj[key + CATEGORY_SUFFIX] = self.json_load(data_dir, key + CATEGORY_SUFFIX)
 
         self.restore(save_obj)
-
-        # load categories
-        # @TODO(rainlash) Remove this old method of restoring/loading categories at 2024/1/1
-        for key in self.save_data_types:
-            if key + CATEGORY_SUFFIX not in save_obj:  # Because we already restored it
-                key_categories = self.load_categories(data_dir, key)
-                catalog = getattr(self, key)
-                if hasattr(catalog, 'categories'):
-                    getattr(self, key).categories = key_categories
 
         # TODO -- This is a shitty fix that should be superseded
         from app.engine import equations

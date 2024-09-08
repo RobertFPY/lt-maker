@@ -131,65 +131,6 @@ if;len(game.get_units_in_party()) < 5
 end
 ```
 
-## Full Unit Attributes
-
-```python
-nid: str
-position: tuple[int, int]  # (x, y)
-team: str  # one of 'player', 'other', 'enemy', or 'enemy2'
-party: str  # party nid
-klass: str  # klass nid
-variant: str  # animation variant
-level: int
-generic: bool
-ai: str  # ai nid
-ai_group: str
-faction: str  # faction nid
-name: str
-desc: str
-tags: list[str]
-stats: dict[str: int]  # you can access like unit.stats['STR']
-growths: dict[str: int]
-wexp: dict[str: int]
-portrait_nid: str
-affinity: str  # affinity nid
-notes: list[tuple[str, str]]
-items: list[ItemObject]
-skills: list[SkillObject]
-finished: bool
-dead: bool
-traveler: str  # nid of rescued unit (can be None)
-
-get_hp() -> int
-get_max_hp() -> int
-get_mana() -> int
-get_max_mana() -> int
-get_fatigue() -> int
-get_exp() -> int
-get_stat(str) -> int  # Takes in the stat nid as the only argument
-get_weapon() -> Optional[ItemObject]
-get_internal_level() -> int
-```
-
-## Full Region Attributes
-
-```python
-nid: str
-region_type: str  # Can be one of 'normal', 'status', 'event', or 'formation'
-position: tuple[int, int]  # Topleft position
-size: tuple[int, int]
-sub_nid: str
-condition: str
-only_once: bool
-interrupt_move: bool
-
-area: int
-center: tuple[int, int]
-
-contains(tuple[int, int]) -> bool  # checks if the region contains a position
-get_all_positions() -> list  # List of all positions the region encompasses
-```
-
 ## Full Useful Attributes of Global Game Object
 
 The game object is a very powerful source of information about the state of the game. It keeps track of all units in the current level as well as all non-generic units ever loaded into the game (whether alive or dead).

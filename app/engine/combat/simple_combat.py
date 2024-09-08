@@ -172,8 +172,10 @@ class SimpleCombat():
             self.defender.strike_partner = None
             self.defender.built_guard = True
 
-        self.handle_combat_death(all_units)
         self.handle_death(all_units)
+        # combat death gets handled after unit death here since
+        # triggered events get added in stack order (combat death should run first)
+        self.handle_combat_death(all_units)
 
         self.handle_unusable_items(asp, dsp)
         self.handle_broken_items(asp, dsp)

@@ -153,7 +153,10 @@ class Event():
         nid = ser_dict['nid']
         prefab = DB.events.get_by_nid_or_name(nid)[0]
         self = cls(prefab, triggers.GenericTrigger(unit, unit2, position, local_args), game)
-        self.processor = EventProcessor.restore(ser_dict['processor_state'], self.text_evaluator)
+        if(prefab.version() != EventVersion.EVENT):
+            self.processor = PythonEventProcessor.restore(ser_dict['processor_state'], self.game)
+        else:
+            self.processor = EventProcessor.restore(ser_dict['processor_state'], self.text_evaluator)
         return self
 
     def finished(self):
@@ -698,12 +701,12 @@ class Event():
             try:
                 val = self._eval_expr(self.text_evaluator._evaluate_all(func_as_str), False)
                 if isinstance(val, list):
-                    return val or ['']
+                    return val or []
                 else:
                     return [self._object_to_str(val)]
             except Exception as e:
                 self.logger.error("Failed to evaluate expression %s with error %s", func_as_str, str(e))
-                return [""]
+                return []
         return try_eval_str
 
     def _get_rows_of_table(self, rows: TableRows, expression: bool = False) -> Callable[[], List[str]] | List[str]:
@@ -721,4 +724,4 @@ class Event():
             data = [self._object_to_str(s) for s in rows]
         else: # is a callable function
             data = rows
-        return data or ['']
+        return data or []

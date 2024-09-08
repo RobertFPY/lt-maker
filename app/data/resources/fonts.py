@@ -2,9 +2,9 @@ from dataclasses import asdict, dataclass, field
 import os
 from pathlib import Path
 from typing import Dict, List, Optional
-from app.data.database.game_flags import dataclass_from_dict
 
 from app.data.resources.base_catalog import ManifestCatalog
+from app.data.serialization.dataclass_serialization import dataclass_from_dict
 from app.utilities.typing import Color4
 
 @dataclass

@@ -12,9 +12,9 @@ def check_trade(item1: ItemObject, item1_owner, item2: ItemObject, item2_owner) 
     if item1_owner is item2_owner:
         return True
     # Can't trade locked items
-    if isinstance(item1, ItemObject) and item_system.locked(item1_owner, item1):
+    if isinstance(item1, ItemObject) and not item_system.tradeable(item1_owner, item1):
         return False
-    if isinstance(item2, ItemObject) and item_system.locked(item2_owner, item2):
+    if isinstance(item2, ItemObject) and not item_system.tradeable(item2_owner, item2):
         return False
     # If items are the same type, we are good
     if isinstance(item1, ItemObject) and isinstance(item2, ItemObject) and \
@@ -52,6 +52,9 @@ class TradeState(MapState):
         self.partner = game.memory['trade_partner']
 
         self.menu = menus.Trade(self.initiator, self.partner)
+
+    def begin(self):
+        self.fluid.reset_on_change_state()
 
     def do_trade(self) -> bool:
         item1 = self.menu.selected_option().get()
@@ -164,7 +167,7 @@ class PrepTradeState(TradeState):
         return 'repeat'
 
     def back(self):
-        game.state.back()
+        game.state.change('transition_pop')
 
     def update(self):
         self.menu.update()

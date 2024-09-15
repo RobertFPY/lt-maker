@@ -16,9 +16,13 @@ from PyQt5.QtWidgets import QFileDialog, QMessageBox, QProgressDialog, QVBoxLayo
 from app.constants import VERSION
 from app.data.database.database import DB, Database
 from app.data.resources.resources import RESOURCES, Resources
+from app.data.serialization.dataclass_serialization import dataclass_from_dict
+from app.data.serialization.versions import CURRENT_SERIALIZATION_VERSION
 from app.data.validation.db_validation import DBChecker
 from app.editor import timer
 from app.editor.error_viewer import show_error_report
+from app.editor.file_manager.file_manager import FileManager
+from app.data.metadata import Metadata
 from app.editor.file_manager.project_initializer import ProjectInitializer
 from app.editor.lib.csv import csv_data_exporter, text_data_exporter
 from app.editor.recent_project_dialog import choose_recent_project
@@ -71,7 +75,10 @@ class ProjectFileBackend():
         self.app_state_manager = app_state_manager
         self.settings = MainSettingsController()
         self.current_proj = self.settings.get_current_project()
+        self.file_manager = FileManager(self.current_proj)
         self.is_saving = False
+
+        self.metadata: Metadata = dataclass_from_dict(Metadata, self.file_manager.load_json(Path('metadata.json')))
 
         self.save_progress = QProgressDialog(
             "Saving project to %s" % self.current_proj, None, 0, 100, self.parent)
@@ -150,10 +157,10 @@ class ProjectFileBackend():
             checker = DBChecker(DB, RESOURCES)
             checker.repair()
             any_errors = checker.validate_for_errors()
-            DB.game_flags.has_fatal_errors = bool(any_errors)
+            self.metadata.has_fatal_errors = bool(any_errors)
         except Exception as e:
             QMessageBox.warning(self.parent, "Validation warning", "Validation failed with error. Please send this message to the devs.\nYour save will continue as normal.\nException:\n" + traceback.format_exc())
-            DB.game_flags.has_fatal_errors = False
+            self.metadata.has_fatal_errors = False
 
         # Returns whether we successfully saved
         # check if we're editing default, if so, prompt to save as
@@ -259,7 +266,7 @@ class ProjectFileBackend():
 
         self.settings.append_or_bump_project(DB.constants.value('title') or os.path.basename(self.current_proj), self.current_proj)
 
-        if DB.game_flags.has_fatal_errors:
+        if self.metadata.has_fatal_errors:
             self.display_fatal_errors()
 
         return True
@@ -325,6 +332,8 @@ class ProjectFileBackend():
 
     def load(self):
         if os.path.exists(self.current_proj):
+            self.file_manager = FileManager(self.current_proj)
+            self.metadata = dataclass_from_dict(Metadata, self.file_manager.load_json(Path('metadata.json')))
             RESOURCES.load(self.current_proj)
             DB.load(self.current_proj)
             self.settings.append_or_bump_project(
@@ -367,13 +376,15 @@ class ProjectFileBackend():
         self.autosave_progress.setValue(100)
 
     def save_metadata(self, save_dir):
+        self.metadata.date = str(datetime.now())
+        self.metadata.engine_version = VERSION
+        # always uses the current version to save. this is only required to select the deserializer on the load side
+        self.metadata.serialization_version = CURRENT_SERIALIZATION_VERSION
+        self.metadata.project = DB.constants.get('game_nid').value
+        self.metadata.as_chunks = self.settings.get_should_save_as_chunks()
         metadata_loc = os.path.join(save_dir, 'metadata.json')
-        metadata = {}
-        metadata['date'] = str(datetime.now())
-        metadata['version'] = VERSION
-        metadata['project'] = DB.constants.get('game_nid').value
         with open(metadata_loc, 'w') as serialize_file:
-            json.dump(metadata, serialize_file, indent=4)
+            json.dump(self.metadata.save(), serialize_file, indent=4)
 
     def get_unused_files(self) -> Dict[str, List[str]]:
         return RESOURCES.get_unused_files(self.current_proj)

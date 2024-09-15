@@ -279,6 +279,9 @@ class OverworldGameOptionMenuState(State):
         self.menu = menus.Choice(None, options, info=info_desc)
         self.menu.set_ignore(ignore)
 
+    def begin(self):
+        self.fluid.reset_on_change_state()
+
     def make_save(self):
         logging.info('%s: Creating Overworld Save...', 'make_save')
         game.memory['next_state'] = 'title_save'
@@ -365,6 +368,9 @@ class OverworldPartyOptionMenu(State):
 
         self.menu = menus.Choice(None, options, info=info_desc)
         self.menu.set_ignore(ignore)
+
+    def begin(self):
+        self.fluid.reset_on_change_state()
 
     def take_input(self, event):
         first_push = self.fluid.update()

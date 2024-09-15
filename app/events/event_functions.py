@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 from app.constants import WINHEIGHT, WINWIDTH
 from app.data.database.database import DB
 from app.data.database.level_units import GenericUnit, UniqueUnit
+from app.data.database.difficulty_modes import RNGOption
 from app.data.resources.resources import RESOURCES
 from app.data.resources.sounds import SFXPrefab, SongPrefab
 from app.engine import (action, background, banner, base_surf, dialog, engine,
@@ -605,6 +606,9 @@ def set_next_chapter(self: Event, chapter, flags=None):
 
 def enable_convoy(self: Event, activated: bool, flags=None):
     action.do(action.SetGameVar("_convoy", activated))
+    
+def enable_repair_shop(self: Event, activated: bool, flags=None):
+    action.do(action.SetGameVar("_repair_shop", activated))
 
 def enable_supports(self: Event, activated: bool, flags=None):
     action.do(action.SetGameVar("_supports", activated))
@@ -643,14 +647,8 @@ def end_turn(self: Event, team: NID = None, flags=None):
         while self.game.phase.get_next() != team:
             self.game.phase.next()
 
-    if self.game.phase.get_next() == 'player':
-        self.game.state.change('turn_change')
-        self.game.state.change('status_endstep')
-    else:
-        self.game.state.change('turn_change')
-        self.game.state.change('status_endstep')
-        self.game.state.change('ai')
-        self.game.ui_view.remove_unit_display()
+    self.end()
+    self.end_turn_flag = True
 
 def win_game(self: Event, flags=None):
     self.game.level_vars['_win_game'] = True
@@ -667,7 +665,7 @@ def force_chapter_clean_up(self: Event, flags=None):
 def skip_save(self: Event, true_or_false: bool, flags=None):
     action.do(action.SetLevelVar('_skip_save', true_or_false))
 
-def activate_turnwheel(self: Event, force: bool=True, flags=None):
+def activate_turnwheel(self: Event, force: bool = True, flags=None):
     self.turnwheel_flag = 2 if force else 1
 
 def battle_save(self: Event, flags=None):
@@ -718,14 +716,16 @@ def change_tilemap(self: Event, tilemap, position_offset=None, load_tilemap=None
 
     reload_map = 'reload' in flags
     # For Overworld
-    if reload_map and self.game.is_displaying_overworld():  # just go back to the level
+    # just go back to the level
+    if reload_map and self.game.is_displaying_overworld():  
         from app.engine import level_cursor, map_view
         from app.engine.movement import movement_system
         self.game.cursor = level_cursor.LevelCursor(self.game)
         self.game.movement = movement_system.MovementSystem(self.game.cursor, self.game.camera)
         self.game.map_view = map_view.MapView()
-        self.game.boundary = self.prev_game_boundary
-        self.game.board = self.prev_board
+        if self._prev_game_boundary and self._prev_board:
+            self.game.boundary = self._prev_game_boundary
+            self.game.board = self._prev_board
         if reload_map and self.game.level_vars.get('_prev_pos_%s' % reload_map_nid):
             for unit_nid, pos in self.game.level_vars['_prev_pos_%s' % reload_map_nid].items():
                 # Reload unit's position with position offset
@@ -735,6 +735,7 @@ def change_tilemap(self: Event, tilemap, position_offset=None, load_tilemap=None
                     act = action.ArriveOnMap(unit, final_pos)
                     act.execute()
         return
+        # Never gets below this
 
     # Reset cursor position
     self.game.cursor.set_pos((0, 0))
@@ -796,13 +797,7 @@ def change_bg_tilemap(self: Event, tilemap=None, flags=None):
     flags = flags or set()
 
     tilemap_nid = tilemap
-    tilemap_prefab = RESOURCES.tilemaps.get(tilemap_nid)
-    if not tilemap_prefab:
-        self.game.level.bg_tilemap = None
-        return
-
-    tilemap = TileMapObject.from_prefab(tilemap_prefab)
-    action.do(action.ChangeBGTileMap(tilemap))
+    action.do(action.ChangeBGTileMap(tilemap_nid))
 
 def set_game_board_bounds(self: Event, min_x: int, min_y: int, max_x: int, max_y: int, flags=None):
     if not self.game.board:
@@ -1131,11 +1126,11 @@ def interact_unit(self: Event, unit, position, combat_script: Optional[List[str]
             return
 
     interaction.start_combat(
-        actor, target, item, event_combat=True, script=script, total_rounds=total_rounds,
+        actor, target, item, skip='immediate' in flags, event_combat=True, script=script, total_rounds=total_rounds,
         arena='arena' in flags, force_animation='force_animation' in flags, force_no_animation='force_no_animation' in flags)
     self.state = "paused"
 
-def recruit_generic(self: Event, unit, nid, name, flags=None):
+def recruit_generic(self: Event, unit, nid, name=None, flags=None):
     new_unit = self._get_unit(unit)
     if not new_unit:
         self.logger.error("recruit_generic: Couldn't find unit %s" % unit)
@@ -1143,18 +1138,26 @@ def recruit_generic(self: Event, unit, nid, name, flags=None):
     unit = new_unit
     action.do(action.SetPersistent(unit))
     action.do(action.SetNid(unit, nid))
-    action.do(action.SetName(unit, name))
+    if name:
+        action.do(action.SetName(unit, name))
     for item in unit.items:
         action.do(action.SetItemOwner(item, nid))
     for skill in unit.all_skills:
         action.do(action.SetSkillOwner(skill, nid))
 
-def set_name(self: Event, unit, string, flags=None):
+def set_name(self: Event, unit: NID, string: str, flags=None):
     actor = self._get_unit(unit)
     if not actor:
         self.logger.error("set_name: Couldn't find unit %s" % unit)
         return
     action.do(action.SetName(actor, string))
+
+def set_variant(self: Event, unit: NID, string: str = None, flags=None):
+    actor = self._get_unit(unit)
+    if not actor:
+        self.logger.error("set_variant: Couldn't find unit %s" % unit)
+        return
+    action.do(action.SetVariant(actor, string))
 
 def set_current_hp(self: Event, unit, hp: int, flags=None):
     actor = self._get_unit(unit)
@@ -1177,12 +1180,12 @@ def add_fatigue(self: Event, unit, fatigue: int, flags=None):
         return
     action.do(action.ChangeFatigue(actor, fatigue))
 
-def set_unit_field(self: Event, unit, key, value, flags=None):
+def set_unit_field(self: Event, global_unit, key, value, flags=None):
     flags = flags or set()
 
-    actor = self._get_unit(unit)
+    actor = self._get_unit(global_unit)
     if not actor:
-        self.logger.error("set_unit_field: Couldn't find unit %s" % unit)
+        self.logger.error("set_unit_field: Couldn't find unit %s" % global_unit)
         return
     try:
         value = self._eval_expr(value, 'from_python' in flags)
@@ -1592,6 +1595,7 @@ def set_item_uses(self: Event, global_unit_or_convoy, item, uses: int, flags=Non
         action.do(action.SetObjData(item, 'c_uses', utils.clamp(uses, 0, item.data['starting_c_uses'])))
     else:
         self.logger.error("set_item_uses: Item %s does not have uses!" % item.nid)
+        return
 
 def set_item_data(self: Event, global_unit_or_convoy, item, nid, expression, flags=None):
     flags = flags or set()
@@ -1663,21 +1667,34 @@ def add_item_to_multiitem(self: Event, global_unit_or_convoy, multi_item, child_
     if not item.multi_item:
         self.logger.error("add_item_to_muliitem: Item %s is not a multi-item!" % item.nid)
         return
-    subitem_prefab = DB.items.get(child_item)
-    if not subitem_prefab:
-        self.logger.error("add_item_to_multiitem: Couldn't find item with nid %s" % child_item)
-        return
-    if 'no_duplicate' in flags:
-        children = {item.nid for item in item.subitems}
-        if child_item in children:
-            self.logger.info("add_item_to_multiitem: Item %s already exists on multi-item %s on unit %s" % (child_item, item.nid, unit.nid))
-            return
-    # Create subitem
+
     owner_nid = None
     if unit:
         owner_nid = unit.nid
-    subitem = item_funcs.create_item(unit, subitem_prefab.nid, assign_ownership=False)
-    self.game.register_item(subitem)
+
+    # Try for a uid first and then just grab the item from whereever it is
+    if str_utils.is_int(child_item) and self.game.get_item(int(child_item)):
+        subitem = self.game.get_item(int(child_item))
+        if 'no_duplicate' in flags:
+            children = {item.nid for item in item.subitems}
+            if subitem.nid in children:
+                self.logger.info("add_item_to_multiitem: Item %s already exists on multi-item %s on unit %s" % (subitem.nid, item.nid, unit.nid))
+                return
+    else:
+        # Otherwise create the item from a prefab
+        subitem_prefab = DB.items.get(child_item)
+        if not subitem_prefab:
+            self.logger.error("add_item_to_multiitem: Couldn't find item with nid %s" % child_item)
+            return
+        if 'no_duplicate' in flags:
+            children = {item.nid for item in item.subitems}
+            if child_item in children:
+                self.logger.info("add_item_to_multiitem: Item %s already exists on multi-item %s on unit %s" % (child_item, item.nid, unit.nid))
+                return
+        # Create subitem
+        subitem = item_funcs.create_item(unit, subitem_prefab.nid, assign_ownership=False)
+        self.game.register_item(subitem)
+
     action.do(action.AddItemToMultiItem(owner_nid, item, subitem))
     if 'equip' in flags and owner_nid:
         if unit.can_equip(subitem):
@@ -2212,7 +2229,16 @@ def set_mode_autolevels(self: Event, level: int, flags=None):
         else:
             self.game.current_mode.enemy_truelevels = autolevel
 
-def promote(self: Event, global_unit, klass_list: Optional[List[NID]]=None, flags=None):
+def set_mode_rng(self: Event, rng: str, flags=None):
+    flags = flags or set()
+
+    new_mode = rng
+    if new_mode not in [r.value for r in RNGOption]:
+        self.logger.error("set_mode_rng: %s is not a valid RNG Option" % new_mode)
+        return
+    self.game.current_mode.rng_mode = RNGOption(new_mode)
+
+def promote(self: Event, global_unit, klass_list: Optional[List[NID]] = None, flags=None):
     flags = flags or set()
     unit = self._get_unit(global_unit)
     if not unit:
@@ -2594,6 +2620,9 @@ def set_position(self: Event, position, flags=None):
 def map_anim(self: Event, map_anim, float_position: Tuple[float, float] | NID, speed: float=1.0, flags=None):
     flags = flags or set()
     float_position = self._parse_pos(float_position, True)
+    if not float_position:
+        self.logger.warn("map_anim: Could not find position %s" % float_position)
+        return
     if map_anim not in RESOURCES.animations:
         self.logger.error("map_anim: Could not find map animation %s" % map_anim)
         return
@@ -2619,6 +2648,9 @@ def map_anim(self: Event, map_anim, float_position: Tuple[float, float] | NID, s
 def remove_map_anim(self: Event, map_anim, position, flags=None):
     flags = flags or set()
     pos = self._parse_pos(position, True)
+    if not pos:
+        self.logger.warn("remove_map_anim: Could not find position %s" % position)
+        return
     action.do(action.RemoveMapAnim(map_anim, pos, 'overlay' in flags))
 
 def add_unit_map_anim(self: Event, map_anim: NID, unit: NID, speed: float=1.0, flags=None):
@@ -3224,7 +3256,7 @@ def open_trade(self: Event, unit1, unit2, flags=None):
     self.game.memory['trade_partner'] = unit2_obj
 
     self.state = "paused"
-    self.game.memory['next_state'] = 'trade'
+    self.game.memory['next_state'] = 'combat_trade'
     self.game.state.change('transition_to')
 
 def show_minimap(self: Event, flags=None):
@@ -3276,6 +3308,10 @@ def ending(self: Event, portrait, title, text, flags=None):
         portrait, _ = icons.get_portrait(unit)
         portrait = portrait.convert_alpha()
         portrait = image_mods.make_translucent(portrait, 0.2)
+    elif portrait in RESOURCES.portraits:
+        portrait, _ = icons.get_portrait_from_nid(portrait)
+        portrait = portrait.convert_alpha()
+        portrait = image_mods.make_translucent(portrait, 0.2)
     else:
         self.logger.error("ending: Couldn't find unit or portrait %s" % portrait)
         return False
@@ -3291,6 +3327,10 @@ def paired_ending(self: Event, left_portrait, right_portrait, left_title, right_
         left_portrait = engine.flip_horiz(left_portrait)
         left_portrait = left_portrait.convert_alpha()
         left_portrait = image_mods.make_translucent(left_portrait, 0.5)
+    elif left_portrait in RESOURCES.portraits:
+        left_portrait, _ = icons.get_portrait_from_nid(left_portrait)
+        left_portrait = left_portrait.convert_alpha()
+        left_portrait = image_mods.make_translucent(left_portrait, 0.5)
     else:
         self.logger.error("ending: Couldn't find unit or portrait %s" % left_portrait)
         return False
@@ -3298,6 +3338,10 @@ def paired_ending(self: Event, left_portrait, right_portrait, left_title, right_
     right_unit = self._get_unit(right_portrait)
     if right_unit and right_unit.portrait_nid:
         right_portrait, _ = icons.get_portrait(right_unit)
+        right_portrait = right_portrait.convert_alpha()
+        right_portrait = image_mods.make_translucent(right_portrait, 0.5)
+    elif right_portrait in RESOURCES.portraits:
+        right_portrait, _ = icons.get_portrait_from_nid(right_portrait)
         right_portrait = right_portrait.convert_alpha()
         right_portrait = image_mods.make_translucent(right_portrait, 0.5)
     else:
@@ -3339,11 +3383,14 @@ def find_unlock(self: Event, unit, flags=None):
                 item_system.can_unlock(unit, item, region):
             all_items.append(item)
 
-    if len(all_items) > 1:
+    if len(all_items) > 1 and unit.team == 'player':
         self.game.memory['current_unit'] = unit
         self.game.memory['all_unlock_items'] = all_items
         self.game.state.change('unlock_select')
         self.state = 'paused'
+    elif len(all_items) > 1:  # Must be some non-player character using it
+        # For now, default to just using the first valid item that can unlock the region
+        self.game.memory['unlock_item'] = all_items[0]
     elif len(all_items) == 1:
         self.game.memory['unlock_item'] = all_items[0]
     else:

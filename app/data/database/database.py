@@ -14,7 +14,6 @@ from app.data.database import (ai, constants, difficulty_modes, equations,
                                minimap, overworld, parties,
                                raw_data, skills, stats, supports, tags, teams,
                                terrain, translations, units, varslot, weapons)
-from app.data.database.game_flags import GameFlags
 from app.events import event_prefab
 from app.utilities.data_order import parse_order_keys_file
 from app.utilities.serialization import load_json, save_json
@@ -27,7 +26,7 @@ class Database(object):
                        "weapons", "teams", "factions", "items", "skills", "tags", "game_var_slots",
                        "classes", "support_constants", "support_ranks", "affinities", "units",
                        "support_pairs", "ai", "parties", "difficulty_modes",
-                       "translations", "lore", "levels", "events", "overworlds", "raw_data", 'game_flags')
+                       "translations", "lore", "levels", "events", "overworlds", "raw_data")
     save_as_chunks = ("events", 'items', 'skills', 'units', 'classes', 'levels')
 
     def __init__(self):
@@ -71,8 +70,6 @@ class Database(object):
 
         self.raw_data = raw_data.RawDataCatalog()
 
-        self.game_flags = GameFlags()
-
     @property
     def music_keys(self) -> List[str]:
         keys = []
@@ -82,24 +79,6 @@ class Database(object):
             keys.append("%s_battle" % team.nid)
         keys.append("boss_battle")
         return keys
-
-    # Disk Interaction Functions
-    def load_categories(self, data_dir: str, key: str) -> Dict[NID, List[str]]:
-        full_data_dir = os.path.join(data_dir, key)
-        single_data_file_loc = os.path.join(data_dir, '.%s_categories' % key)
-        categories = Categories()
-        if os.path.exists(full_data_dir):
-            category_path = os.path.join(full_data_dir, '.categories')
-            try:
-                if os.path.exists(category_path):
-                    with open(category_path) as load_file:
-                        categories = Categories.load(json.load(load_file))
-            except:
-                logging.error("category file %s not found or corrupted" % category_path)
-        elif os.path.exists(single_data_file_loc):
-            with open(single_data_file_loc) as load_file:
-                categories = Categories.load(json.load(load_file))
-        return categories
 
     def json_load(self, data_dir: str, key: str) -> Dict | List:
         data_path = Path(data_dir, key)
@@ -172,15 +151,7 @@ class Database(object):
                     orderkeys: List[str] = []
                     for idx, subvalue in enumerate(value):
                         # ordering
-                        if 'nid' in subvalue:
-                            name = subvalue['nid']
-                        elif 'name' in subvalue:
-                            if 'level_nid' in subvalue: # to handle the wonky event nid property
-                                name = (subvalue['level_nid'] if subvalue['level_nid'] else 'global') + "_" + subvalue['name']
-                            else:
-                                name = subvalue['name']
-                        else:
-                            name = str(idx).zfill(6)
+                        name = subvalue['nid']
                         name = re.sub(r'[\\/*?:"<>|]', "", name)
                         name = name.replace(' ', '_')
                         orderkeys.append(name)
@@ -223,15 +194,6 @@ class Database(object):
                 save_obj[key + CATEGORY_SUFFIX] = self.json_load(data_dir, key + CATEGORY_SUFFIX)
 
         self.restore(save_obj)
-
-        # load categories
-        # @TODO(rainlash) Remove this old method of restoring/loading categories at 2024/1/1
-        for key in self.save_data_types:
-            if key + CATEGORY_SUFFIX not in save_obj:  # Because we already restored it
-                key_categories = self.load_categories(data_dir, key)
-                catalog = getattr(self, key)
-                if hasattr(catalog, 'categories'):
-                    getattr(self, key).categories = key_categories
 
         # TODO -- This is a shitty fix that should be superseded
         from app.engine import equations

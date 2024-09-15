@@ -118,7 +118,7 @@ class Damage(ItemComponent):
             damage = combat_calcs.compute_damage(unit, target, item, target.get_weapon(), mode, attack_info)
 
         # Reduce damage if in Grandmaster Mode
-        if game.mode.rng_choice == RNGOption.GRANDMASTER:
+        if game.rng_mode == RNGOption.GRANDMASTER:
             hit = utils.clamp(combat_calcs.compute_hit(unit, target, item, target.get_weapon(), mode, attack_info), 0, 100)
             damage = int(damage * float(hit) / 100)
 
@@ -139,7 +139,7 @@ class Damage(ItemComponent):
             damage = combat_calcs.compute_damage(unit, target, item, target.get_weapon(), mode, attack_info)
 
         # Reduce damage if in Grandmaster Mode
-        if game.mode.rng_choice == RNGOption.GRANDMASTER:
+        if game.rng_mode == RNGOption.GRANDMASTER:
             hit = utils.clamp(combat_calcs.compute_hit(unit, target, item, target.get_weapon(), mode, attack_info), 0, 100)
             damage = int(damage * float(hit) / 100)
 
@@ -163,7 +163,7 @@ class Damage(ItemComponent):
             damage = combat_calcs.compute_damage(unit, target, item, target.get_weapon(), mode, attack_info, crit=True)
 
         # Reduce damage if in Grandmaster Mode (although crit doesn't make much sense with Grandmaster mode)
-        if game.mode.rng_choice == RNGOption.GRANDMASTER:
+        if game.rng_mode == RNGOption.GRANDMASTER:
             hit = utils.clamp(combat_calcs.compute_hit(unit, target, item, target.get_weapon(), mode, attack_info), 0, 100)
             damage = int(damage * float(hit) / 100)
 

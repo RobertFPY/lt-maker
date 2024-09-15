@@ -5,7 +5,7 @@ from app.engine import action
 
 class BuildCharge(SkillComponent):
     nid = 'build_charge'
-    desc = "Skill gains charges until full"
+    desc = "Skill starts each chapter with 0 charges. Skill will only be active while the there are *value* or more charges. Upon use of skill, charges are reset to 0. Often used with Combat Arts."
     tag = SkillTags.CHARGE
 
     expose = ComponentType.Int
@@ -37,7 +37,7 @@ class BuildCharge(SkillComponent):
 
 class DrainCharge(SkillComponent):
     nid = 'drain_charge'
-    desc = "Skill will have a number of charges that are drained by 1 when activated"
+    desc = "Skill starts each chapter with the number of charges you set here. Every use of the skill will reduce the number of charges by 1. Skill is active while the number of charges is greater than 0. Often used with Combat Arts."
     tag = SkillTags.CHARGE
 
     expose = ComponentType.Int
@@ -67,7 +67,7 @@ class DrainCharge(SkillComponent):
 
 class ChargesPerTurn(DrainCharge):
     nid = 'charges_per_turn'
-    desc = "Skill will have a number of charges that are refreshed each turn"
+    desc = "Skill starts each turn with the number of charges you set here. Every use of the skill will reduce the number of charges by 1. Skill is active while the number of charges is greater than 0."
     tag = SkillTags.CHARGE
 
     expose = ComponentType.Int
@@ -81,7 +81,7 @@ class ChargesPerTurn(DrainCharge):
 
 class UpkeepChargeIncrease(SkillComponent):
     nid = 'upkeep_charge_increase'
-    desc = "Increases charge of skill each upkeep"
+    desc = "Increases charge of skill by the *value* set here each upkeep. Usually used in conjunction with `Build Charge` skill component."
     tag = SkillTags.CHARGE
 
     expose = ComponentType.Int
@@ -105,7 +105,7 @@ def get_marks(playback, unit, item):
 
 class CombatChargeIncrease(SkillComponent):
     nid = 'combat_charge_increase'
-    desc = "Increases charge of skill each combat"
+    desc = "Increases charge of skill by the *value* set here each combat. Usually used in conjunction with `Build Charge` skill component."
     tag = SkillTags.CHARGE
 
     expose = ComponentType.Int
@@ -122,7 +122,7 @@ class CombatChargeIncrease(SkillComponent):
 
 class CombatChargeIncreaseByStat(SkillComponent):
     nid = 'combat_charge_increase_by_stat'
-    desc = "Increases charge of skill each combat"
+    desc = "Increases charge of skill by the *value* set here each combat. Usually used in conjunction with `Build Charge` skill component."
     tag = SkillTags.CHARGE
 
     expose = ComponentType.Stat
@@ -175,7 +175,7 @@ class CostMana(SkillComponent):
 
 class CheckMana(SkillComponent):
     nid = 'check_mana'
-    desc = "Unit must have more than X Mana to use this skill. Does not subtract Mana on use."
+    desc = "Unit must have X or more Mana to use this skill. Does not subtract Mana on use."
     tag = SkillTags.CHARGE
     author = 'KD'
 

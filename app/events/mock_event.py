@@ -37,7 +37,8 @@ class MockEvent(Event):
                  "transition", "change_background", "table",
                  "remove_table", "draw_overlay_sprite",
                  "remove_overlay_sprite", "location_card", "credits",
-                 "ending", "pop_dialog", "unpause", "screen_shake"}
+                 "ending", "paired_ending", "pop_dialog", "unpause", 
+                 "screen_shake"}
 
     def __init__(self, nid, event_prefab: EventPrefab, command_idx=0, if_statement_strategy=IfStatementStrategy.ALWAYS_TRUE):
         self._transition_speed = 250

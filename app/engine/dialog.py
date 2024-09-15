@@ -57,7 +57,6 @@ class DialogState(Enum):
 
 class Dialog:
     solo_flag = False
-    cursor = SPRITES.get("waiting_cursor")
     cursor_offset = [0] * 20 + [1] * 2 + [2] * 8 + [1] * 2
     transition_speed = utils.frames2ms(10)
     pause_before_wait_time = utils.frames2ms(9)
@@ -94,7 +93,9 @@ class Dialog:
                  name_tag_bg="name_tag",
                  boop_sound=None,
                  flags=None):
+        self.cursor = SPRITES.get("waiting_cursor")
         flags = flags or set()
+        
         self.plain_text = text
         self.portrait = portrait
         self.speaker = speaker
@@ -156,13 +157,17 @@ class Dialog:
                 pos_x = position[0]
                 pos_y = position[1]
         elif self.portrait:
-            desired_center = self.determine_desired_center(self.portrait)
-            pos_x = utils.clamp(desired_center - self.width // 2, 8,
-                                WINWIDTH - 8 - self.width)
-            if pos_x % 8 != 0:
-                pos_x += 4
-            if pos_x == 0:
+            # If very big, just hard set to 4 pixels from the left
+            if self.width >= WINWIDTH - 8:
                 pos_x = 4
+            else:
+                desired_center = self.determine_desired_center(self.portrait)
+                pos_x = utils.clamp(desired_center - self.width // 2, 8,
+                                    WINWIDTH - 8 - self.width)
+                if pos_x % 8 != 0:
+                    pos_x += 4
+                if pos_x == 0:
+                    pos_x = 4
             pos_y = (WINHEIGHT - self.height -
                      event_portrait.EventPortrait.main_portrait_coords[3] - 4)
         else:
@@ -275,8 +280,9 @@ class Dialog:
                     split_lines = self.get_lines_from_block(current_line, 1)
                 else:
                     split_lines = self.get_lines_from_block(current_line)
-                width = max(width, text_funcs.get_max_width(self.font_type,
-                                                            split_lines))
+                current_width = text_funcs.get_max_width(self.font_type,
+                                                         split_lines)
+                width = max(width, current_width)
                 if len(split_lines) == 1:
                     waiting_cursor = True
                 current_line = ""
@@ -292,12 +298,13 @@ class Dialog:
                 split_lines = self.get_lines_from_block(current_line)
             else:
                 split_lines = self.get_lines_from_block(current_line, 1)
-            width = max(width, text_funcs.get_max_width(self.font_type, split_lines))
+            current_width = text_funcs.get_max_width(self.font_type, split_lines)
+            width = max(width, current_width)
             if len(split_lines) == 1:
                 waiting_cursor = True
         if waiting_cursor:
             if len(split_lines) == 1:
-                width += 16
+                width += utils.clamp(current_width - width + 16, 0, 16)
         return width
 
     def determine_height(self):
@@ -374,8 +381,9 @@ class Dialog:
         elif command == "{w}" or command == "{wait}":
             self.pause_before_wait()
         elif command == "{clear}":
+            last_index = self.text_indices[-1].stop
             self.text_indices.clear()
-            self._next_line()
+            self.text_indices.append(self.TextIndex(last_index, last_index))
         elif command == "{p}":
             self.command_pause()
         elif command == "{tgm}":
@@ -785,6 +793,7 @@ class DynamicDialogWrapper:
 
     def draw(self, surf) -> engine.Surface:
         self.dialog.draw(surf)
+        return surf
 
 
 class LocationCard:
@@ -972,7 +981,7 @@ class Ending:
         self.wait_update = 0
 
     def build_dialog(self):
-        self.dialog = Dialog(self.plain_text, num_lines=6, draw_cursor=False)
+        self.dialog = Dialog(self.plain_text, num_lines=5, draw_cursor=False)
         self.dialog.position = (8, 40)
         self.dialog.text_width = WINWIDTH - 32
         self.dialog.width = self.dialog.text_width + 16

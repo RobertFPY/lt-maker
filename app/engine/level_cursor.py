@@ -14,6 +14,8 @@ from app.engine.sprites import SPRITES
 from app.utilities.utils import frames2ms
 from app.engine.engine import Surface
 
+import logging
+
 class LevelCursorDrawState(IntEnum):
     Hidden = 0
     Visible = 1
@@ -45,8 +47,12 @@ class LevelCursor(BaseCursor):
 
     def get_hover(self) -> Optional[UnitObject]:
         unit = self.game.board.get_unit(self.position)
-        if unit and 'Tile' not in unit.tags and self.game.board.in_vision(unit.position):
-            return unit
+        if unit and 'Tile' not in unit.tags and self.game.board.in_vision(self.position):
+            if unit.position:
+                return unit
+            else:
+                logging.error("Somehow, the unit %s has no position even though the engine thinks they are at %s", unit, self.position)
+                raise ValueError
         return None
 
     def get_bounds(self) -> Tuple[int, int, int, int]:

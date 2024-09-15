@@ -1,6 +1,7 @@
 from __future__ import annotations
 from app.data.database.item_components import ItemComponent
 from app.data.database.supports import SupportPair
+from app.engine.objects.tilemap import TileMapObject
 from app.utilities.typing import NID
 
 import functools
@@ -41,7 +42,7 @@ def wrap_do_exec_reverse(_cls):
 
 class Action():
     persist_through_menu_cancel = False
-    
+
     def __init_subclass__(cls, **kwargs):
         return wrap_do_exec_reverse(_cls=cls)
 
@@ -61,7 +62,7 @@ class Action():
         pass
 
     def __repr__(self):
-        s = "action.%s: " % self.__class__.__name__
+        s = "%s: " % self.__class__.__name__
         for attr in self.__dict__.items():
             name, value = attr
             s += '%s: %s, ' % (name, value)
@@ -951,8 +952,6 @@ class SwitchPaired(Action):
         self.follower = follower
         self.pos = leader.position
         self.orig_guard_gauge = leader.get_guard_gauge()
-        self.update_fow_leader = UpdateFogOfWar(self.leader)
-        self.update_fow_follower = UpdateFogOfWar(self.follower)
 
     def do(self):
         self.leader.traveler = None
@@ -968,8 +967,6 @@ class SwitchPaired(Action):
         self.leader.position = None
         self.follower.position = self.pos
         game.arrive(self.follower)
-        self.update_fow_leader.do()
-        self.update_fow_follower.do()
         # What is this if statement doing?
         if not self.follower.lead_unit:
             self.follower.has_moved = True
@@ -985,8 +982,6 @@ class SwitchPaired(Action):
         skill_system.on_separate(self.leader, self.follower)
         skill_system.on_pairup(self.follower, self.leader)
 
-        self.update_fow_leader.reverse()
-        self.update_fow_follower.reverse()
         game.leave(self.follower)
         self.follower.position = None
         self.leader.position = self.pos
@@ -998,10 +993,11 @@ class SwitchPaired(Action):
 
 # This is shamelessly copied from Drop, but I've kept it separate in case a madlad wants Rescue and Pair Up
 class Separate(Action):
-    def __init__(self, unit, droppee, pos):
+    def __init__(self, unit, droppee, pos, with_wait=True):
         self.unit = unit
         self.droppee = droppee
         self.pos = pos
+        self.with_wait = with_wait
         self.droppee_wait_action = Wait(self.droppee)
         self.old_gauge = self.unit.get_guard_gauge()
 
@@ -1009,7 +1005,8 @@ class Separate(Action):
         self.droppee.position = self.pos
         game.arrive(self.droppee)
         self.droppee.sprite.change_state('normal')
-        self.droppee_wait_action.do()
+        if self.with_wait:
+            self.droppee_wait_action.do()
 
         self.unit.traveler = None
         self.unit.has_dropped = True
@@ -1031,7 +1028,8 @@ class Separate(Action):
         self.droppee.position = self.pos
         game.arrive(self.droppee)
         self.droppee.sprite.change_state('normal')
-        self.droppee_wait_action.execute()
+        if self.with_wait:
+            self.droppee_wait_action.execute()
 
         self.unit.traveler = None
         self.unit.has_dropped = True
@@ -1044,7 +1042,8 @@ class Separate(Action):
     def reverse(self):
         self.unit.traveler = self.droppee.nid
 
-        self.droppee_wait_action.reverse()
+        if self.with_wait:
+            self.droppee_wait_action.reverse()
         game.leave(self.droppee)
         self.droppee.position = None
         self.unit.has_dropped = False
@@ -2191,6 +2190,20 @@ class SetName(Action):
     def reverse(self):
         self.unit.name = self.old_name
 
+class SetVariant(Action):
+    def __init__(self, unit, new_variant):
+        self.unit = unit
+        self.new_variant = new_variant
+        self.old_variant = self.unit.variant
+
+    def do(self):
+        self.unit.variant = self.new_variant
+        self.unit.sprite.load_sprites()
+
+    def reverse(self):
+        self.unit.variant = self.old_variant
+        self.unit.sprite.load_sprites()
+
 class SetNid(Action):
     """Changes the NID of a UnitObject.
 
@@ -2352,7 +2365,7 @@ class RemoveUnitNote(Action):
             self.old_note = self.unit.notes[self.deletion_idx]
         else:
             self.deletion_idx = None
-            self.old_note = None        
+            self.old_note = None
 
     def do(self):
         if self.deletion_idx is not None:
@@ -2652,7 +2665,6 @@ class ChangeFaction(Action):
         self.unit.faction = self.old_faction_nid
         self.unit.name = self.old_name
         self.unit.desc = self.old_desc
-
 
 class ChangeTeam(Action):
     def __init__(self, unit, team):
@@ -3136,15 +3148,22 @@ class HideLayer(Action):
         game.boundary.reset()
 
 class ChangeBGTileMap(Action):
-    def __init__(self, new_tilemap):
-        self.new_tilemap = new_tilemap
-        self.old_tilemap = game.bg_tilemap
+    def __init__(self, new_tilemap_nid):
+        self.new_tilemap_nid = new_tilemap_nid
+        self.old_tilemap_nid = game.bg_tilemap.nid if game.bg_tilemap else None
 
     def do(self):
-        game.level.bg_tilemap = self.new_tilemap
+        tilemap_prefab = RESOURCES.tilemaps.get(self.new_tilemap_nid)
+        game.level.bg_tilemap = TileMapObject.from_prefab(tilemap_prefab)
 
     def reverse(self):
-        game.level.bg_tilemap = self.old_tilemap
+        if self.old_tilemap_nid:
+            tilemap_prefab = RESOURCES.tilemaps.get(self.old_tilemap_nid)
+            game.level.bg_tilemap = TileMapObject.from_prefab(tilemap_prefab)
+        else:
+            game.level.bg_tilemap = None
+
+        
 
 class AddWeather(Action):
     def __init__(self, weather_nid, position):

@@ -1,6 +1,7 @@
 from __future__ import annotations
-from enum import Enum
+from typing import Optional
 
+from enum import Enum
 import functools
 import logging
 import math
@@ -17,6 +18,7 @@ from PyQt5.QtWidgets import (QAbstractItemView, QAction, QApplication,
                              QPlainTextEdit, QPushButton, QSizePolicy,
                              QSpinBox, QSplitter, QStyle, QStyledItemDelegate,
                              QTextEdit, QToolBar, QVBoxLayout, QWidget)
+from app.editor.event_editor.commands_dialog import ShowCommandsDialog
 from app.editor.event_editor.event_function_hinter import EventScriptFunctionHinter, PythonFunctionHinter
 from app.editor.event_editor.event_text_editor import EventTextEditor
 
@@ -374,7 +376,6 @@ class EventProperties(QWidget):
         self.show_map_button = QPushButton("Show Map")
         self.show_map_button.clicked.connect(self.show_map)
         bottom_section.addWidget(self.show_map_button)
-        self.show_map_button.setEnabled(False)
 
         self.show_commands_dialog = None
         self.show_commands_button = QPushButton("Show Commands")
@@ -425,7 +426,7 @@ class EventProperties(QWidget):
     def show_map(self):
         # Modeless dialog
         if not self.show_map_dialog:
-            current_level = DB.levels.get(self.current.level_nid)
+            current_level: Optional[LevelPrefab] = DB.levels.get(self.current.level_nid)
             self.show_map_dialog = ShowMapDialog(current_level, self)
         self.show_map_dialog.setAttribute(Qt.WA_ShowWithoutActivating, True)
         # self.show_map_dialog.setWindowFlags(self.show_map_dialog.windowFlags() | Qt.WindowDoesNotAcceptFocus)
@@ -440,8 +441,8 @@ class EventProperties(QWidget):
 
     def show_commands(self):
         # Modeless dialog
-        if not self.show_commands_dialog:
-            self.show_commands_dialog = ShowCommandsDialog(self)
+        # if not self.show_commands_dialog:
+        self.show_commands_dialog = ShowCommandsDialog(self, self.current.version() == EventVersion.PYEV1)
         # self.show_commands_dialog.setAttribute(Qt.WA_ShowWithoutActivating, True)
         # self.show_commands_dialog.setWindowFlags(self.show_commands_dialog.windowFlags() | Qt.WindowDoesNotAcceptFocus)
         self.show_commands_dialog.show()
@@ -508,17 +509,11 @@ class EventProperties(QWidget):
         if idx == 0:
             self.current.level_nid = None
             self.name_done_editing()
-            self.show_map_button.setEnabled(False)
             if self.level_filter_box.edit.currentText() != "All":
                 self.level_filter_box.edit.setValue("Global")
         else:
             self.current.level_nid = DB.levels[idx - 1].nid
             self.name_done_editing()
-            current_level = DB.levels.get(self.current.level_nid)
-            if current_level.tilemap:
-                self.show_map_button.setEnabled(True)
-            else:
-                self.show_map_button.setEnabled(False)
             if self.level_filter_box.edit.currentText() != "All":
                 self.level_filter_box.edit.setValue(self.current.level_nid)
 
@@ -601,7 +596,7 @@ class EventProperties(QWidget):
         self.close_find_and_replace()
 
 class ShowMapDialog(QDialog):
-    def __init__(self, current_level: LevelPrefab, parent=None):
+    def __init__(self, current_level: Optional[LevelPrefab], parent=None):
         super().__init__(parent)
         self.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
         self.setWindowTitle("Level Map View")
@@ -612,11 +607,19 @@ class ShowMapDialog(QDialog):
         self.map_selector.edit.activated.connect(self.select_current)
         if self.current_level and self.current_level.tilemap:
             self.map_selector.edit.setCurrentIndex(self.map_selector.edit.findText(self.current_level.tilemap))
+        else:
+            self.map_selector.edit.setCurrentIndex(0)
 
         self.map_view = SimpleMapView(self)
         self.map_view.position_clicked.connect(self.position_clicked)
         self.map_view.position_moved.connect(self.position_moved)
-        self.map_view.set_current_level(self.current_level)
+        if self.current_level:
+            self.map_view.set_current_level(self.current_level)
+        else:
+            tilemap_nid = self.map_selector.edit.currentText()
+            tilemap = RESOURCES.tilemaps.get(tilemap_nid)
+            if tilemap:
+                self.map_view.set_current_map(tilemap)
 
         self.position_edit = QLineEdit(self)
         self.position_edit.setAlignment(Qt.AlignRight)
@@ -632,7 +635,7 @@ class ShowMapDialog(QDialog):
 
     def select_current(self):
         tilemap_nid = self.map_selector.edit.currentText()
-        if tilemap_nid == self.current_level.tilemap:
+        if self.current_level and tilemap_nid == self.current_level.tilemap:
             self.map_view.set_current_level(self.current_level)
         else:
             tilemap = RESOURCES.tilemaps.get(tilemap_nid)
@@ -644,6 +647,9 @@ class ShowMapDialog(QDialog):
 
     def position_moved(self, x, y):
         if x >= 0 and y >= 0:
+            if not self.current_level:
+                self.position_edit.setText("%d,%d" % (x, y))
+                return
             unit_name = None
             for unit in self.current_level.units:
                 if unit.starting_position and unit.starting_position[0] == x and unit.starting_position[1] == y:
@@ -659,200 +665,13 @@ class ShowMapDialog(QDialog):
     def update(self):
         self.map_view.update_view()
 
-    def set_current(self, current):
+    def set_current(self, current: Optional[LevelPrefab]):
         self.current_level = current
-        self.map_view.set_current_level(self.current_level)
-        tilemap = RESOURCES.tilemaps.get(self.current_level.tilemap)
-        if tilemap:
-            self.map_view.set_current_map(tilemap)
+        if self.current_level:
+            self.map_view.set_current_level(self.current_level)
+            tilemap = RESOURCES.tilemaps.get(self.current_level.tilemap)
+            if tilemap:
+                self.map_view.set_current_map(tilemap)
 
     def closeEvent(self, event):
         self.window.show_map_dialog = None
-
-class ShowCommandsDialog(QDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
-        self.setWindowTitle("Event Commands")
-        self.window = parent
-
-        self.commands = event_commands.get_commands()
-        self.categories = [category.value for category in event_commands.Tags]
-        self._data = []
-        for category in self.categories:
-            # Ignore hidden category
-            if category == event_commands.Tags.HIDDEN.value:
-                continue
-            self._data.append(category)
-            commands = [command() for command in self.commands if command.tag.value == category]
-            self._data += commands
-
-        self.model = EventCommandModel(self._data, self.categories, self)
-        self.proxy_model = QSortFilterProxyModel()
-        self.proxy_model.setSourceModel(self.model)
-        self.view = QListView(self)
-        self.view.setMinimumSize(256, 360)
-        self.view.setModel(self.proxy_model)
-        self.view.doubleClicked.connect(self.on_double_click)
-
-        self.delegate = CommandDelegate(self._data, self)
-        self.view.setItemDelegate(self.delegate)
-
-        self.search_box = QLineEdit(self)
-        self.search_box.setPlaceholderText("Enter search term here...")
-        self.search_box.textChanged.connect(self.search)
-
-        self.desc_box = QTextEdit(self)
-        self.desc_box.setReadOnly(True)
-        self.view.selectionModel().selectionChanged.connect(self.on_item_changed)
-
-        left_layout = QVBoxLayout()
-        left_layout.addWidget(self.search_box)
-        left_layout.addWidget(self.view)
-        left_frame = QFrame(self)
-        left_frame.setLayout(left_layout)
-
-        splitter = QSplitter(self)
-        splitter.setOrientation(Qt.Horizontal)
-        splitter.setChildrenCollapsible(False)
-        splitter.setStyleSheet("QSplitter::handle:horizontal {background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #eee, stop:1 #ccc); border: 1px solid #777; width: 13px; margin-top: 2px; margin-bottom: 2px; border-radius: 4px;}")
-        splitter.addWidget(left_frame)
-        splitter.addWidget(self.desc_box)
-
-        main_layout = QHBoxLayout()
-        main_layout.addWidget(splitter)
-        self.setLayout(main_layout)
-
-    def search(self, text):
-        self.proxy_model.setFilterRegularExpression(text.lower())
-
-    def on_double_click(self, index):
-        index = self.proxy_model.mapToSource(index)
-        idx = index.row()
-        command = self._data[idx]
-        if command not in self.categories:
-            self.window.insert_text_with_newline(command.nid)
-
-    def on_item_changed(self, curr, prev):
-        if curr.indexes():
-            index = curr.indexes()[0]
-            index = self.proxy_model.mapToSource(index)
-            idx = index.row()
-            command = self._data[idx]
-            if command not in self.categories:
-                # command name
-                if command.nickname:
-                    text = '**%s**' % command.nickname
-                else:
-                    text = '**%s**' % command.nid
-                text += ';'
-
-                # command keywords
-                i = 0
-                all_keywords = command.keywords + command.optional_keywords
-                for i, kwyd in enumerate(all_keywords):
-                    next_text = kwyd
-                    if command.keyword_types:
-                        next_text = next_text + '=' + command.keyword_types[i]
-                    if not i < len(command.keywords): # it's an optional
-                        next_text = '_' + next_text + '_'
-                    next_text += ';'
-                    text += next_text
-                if command.flags:
-                    text += '_flags_'
-                else:
-                    if text[-1] == ';':
-                        text = text[:-1]
-                text += '\n\n'
-                if command.flags:
-                    text += '_Optional Flags:_ ' + ';'.join(command.flags) + '\n\n'
-                text += " --- \n\n"
-                already = []
-                for keyword in command.keywords + command.optional_keywords:
-                    if keyword in already:
-                        continue
-                    else:
-                        already.append(keyword)
-                    validator = event_validators.get(keyword)
-                    if validator and validator().desc:
-                        text += '_%s_ %s\n\n' % (keyword, str(validator().desc))
-                    else:
-                        text += '_%s_ %s\n\n' % (keyword, "")
-                if command.desc:
-                    text += " --- \n\n"
-                text += str(command.desc)
-                self.desc_box.setMarkdown(text)
-            else:
-                self.desc_box.setMarkdown(command + ' Section')
-        else:
-            self.desc_box.setMarkdown('')
-
-class EventCommandModel(CollectionModel):
-    def __init__(self, data, categories, window):
-        super().__init__(data, window)
-        self.categories = categories
-
-    def get_text(self, command) -> str:
-        full_text = command.nid + ';'.join(command.keywords) + ';'.join(command.optional_keywords) + \
-            ';'.join(command.flags) + ':' + str(command.desc)
-        return full_text
-
-    def data(self, index, role):
-        if not index.isValid():
-            return None
-        if role == Qt.DisplayRole:
-            command = self._data[index.row()]
-            if command in self.categories:
-                category = command
-                # We want to include the header if any of it's children are counted
-                return '-'.join([self.get_text(command).lower() for command in self._data if command not in self.categories and command.tag == category])
-            else:
-                return self.get_text(command).lower()
-
-class CommandDelegate(QStyledItemDelegate):
-    def __init__(self, data, parent=None):
-        super().__init__(parent=None)
-        self.window = parent
-        self._data = data
-
-    def sizeHint(self, option, index):
-        index = self.window.proxy_model.mapToSource(index)
-        command = self._data[index.row()]
-        if hasattr(command, 'nid'):
-            return QSize(0, 24)
-        else:
-            return QSize(0, 32)
-
-    def paint(self, painter, option, index):
-        index = self.window.proxy_model.mapToSource(index)
-        command = self._data[index.row()]
-        rect = option.rect
-        left = rect.left()
-        right = rect.right()
-        top = rect.top()
-        bottom = rect.bottom()
-        if option.state & QStyle.State_Selected:
-            palette = QApplication.palette()
-            color = palette.color(QPalette.Highlight)
-            painter.fillRect(rect, color)
-        font = painter.font()
-        if hasattr(command, 'nid'):
-            font.setBold(True)
-            font_height = QFontMetrics(font).lineSpacing()
-            painter.setFont(font)
-            painter.drawText(left, top + font_height, command.nid)
-            horiz_advance = QFontMetrics(font).horizontalAdvance(command.nid)
-            font.setBold(False)
-            painter.setFont(font)
-            keywords = ";".join(command.keywords)
-            if keywords:
-                painter.drawText(left + horiz_advance, top + font_height, ";" + keywords)
-        else:
-            prev_size = font.pointSize()
-            font.setPointSize(prev_size + 4)
-            font_height = QFontMetrics(font).lineSpacing()
-            painter.setFont(font)
-            painter.drawText(left, top + font_height, command)
-            font.setPointSize(prev_size)
-            painter.setFont(font)
-            painter.drawLine(left, int(top + 1.25 * font_height), right, int(top + 1.25 * font_height))

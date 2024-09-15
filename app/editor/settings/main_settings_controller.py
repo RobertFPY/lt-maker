@@ -86,19 +86,25 @@ class MainSettingsController():
         self.state.setValue("should_make_backup_save", value)
 
     def get_should_make_backup_save(self, fallback=False):
-        return self.state.value("should_make_backup_save", fallback)
+        return self.state.value("should_make_backup_save", fallback, type=bool)
 
     def set_should_save_as_chunks(self, value):
         self.state.setValue("should_save_as_chunks", value)
 
-    def get_should_save_as_chunks(self, fallback=True):
-        return self.state.value("should_save_as_chunks", fallback)
+    def get_should_save_as_chunks(self, fallback=False):
+        return self.state.value("should_save_as_chunks", fallback, type=bool)
 
     def set_auto_open(self, value):
         self.state.setValue('auto_open', value)
 
     def get_auto_open(self, fallback=False):
-        return self.state.value('auto_open', fallback)
+        return self.state.value('auto_open', fallback, type=bool)
+
+    def set_default_anim_background(self, value):
+        self.state.setValue('default_anim_background', value)
+
+    def get_default_anim_background(self, fallback=True):
+        return self.state.value('default_anim_background', fallback, type=bool)
 
     """========== General Control Settings =========="""
 

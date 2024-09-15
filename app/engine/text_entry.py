@@ -21,6 +21,9 @@ class TextEntryState(MapState):
         game.state.change('transition_in')
         return 'repeat'
 
+    def begin(self):
+        self.fluid.reset_on_change_state()
+
     def create_bg_surf(self):
         width_of_header = FONT['text'].width(self.header) + 16
         menu_width = self.menu.get_menu_width()
@@ -39,7 +42,9 @@ class TextEntryState(MapState):
             get_sound_thread().play_sfx('Error')
 
     def _add(self, selection):
-        if len(self.menu.name) < self.menu.character_limit and selection:
+        if len(self.menu.name) < self.menu.character_limit \
+               and selection \
+               and selection in self.menu.all_legal_characters():
             self.menu.updateName(selection)
             get_sound_thread().play_sfx('Select 1')
         else:

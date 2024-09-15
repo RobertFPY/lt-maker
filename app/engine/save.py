@@ -67,7 +67,7 @@ def dict_print(d):
         if isinstance(v, dict):
             dict_print(v)
         else:
-            s = "{0} : {1}".format(k, v)
+            s = "{0} : {1} ({2})".format(k, v, type(v))
             print(s)
             logging.error(s)
 
@@ -88,8 +88,20 @@ def save_io(s_dict, meta_dict, old_slot, slot, force_loc=None, name=None):
             pickle.dump(s_dict, fp)
         except TypeError as e:
             # There's a surface somewhere in the dictionary of things to save...
+            logging.error(e)
             dict_print(s_dict)
             print(e)
+            for k, v in s_dict.items():
+                try:
+                    pickle.dumps(v)
+                except TypeError as e2:
+                    logging.error(e2)
+                    print(e2)
+                    logging.error("The offending object is in %s" % k)
+                    print("The offending object is in %s" % k)
+                    logging.error(v)
+                    print(v)
+
     with open(meta_loc, 'wb') as fp:
         pickle.dump(meta_dict, fp)
 
@@ -209,7 +221,7 @@ def delete_suspend():
 def delete_save(game_state, num: Optional[int] = None):
     """
     If num is not provided, deletes current save
-    """ 
+    """
     if game_state.current_save_slot is not None:
         num = game_state.current_save_slot
     if num is None:

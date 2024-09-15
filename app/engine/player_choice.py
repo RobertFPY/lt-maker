@@ -58,6 +58,9 @@ class PlayerChoiceState(MapState):
         self.info_flag = False
         self.create_help_boxes(values)
 
+    def begin(self):
+        self.fluid.reset_on_change_state()
+
     def process_data(self, data: List[str]) -> Tuple[List[str], List[str]]:
         data = list(map(str, data))
         values = []

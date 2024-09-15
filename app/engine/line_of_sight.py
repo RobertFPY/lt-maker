@@ -1,3 +1,6 @@
+from __future__ import annotations
+from app.utilities.typing import NID, Pos
+
 from app.utilities import utils
 from enum import IntEnum
 
@@ -31,11 +34,11 @@ def line_of_sight(source_pos: list, dest_pos: list, max_range: int) -> list:
     lit_tiles = [pos for pos in dest_pos if all_tiles[pos] != Visibility.Dark]
     return lit_tiles
 
-def simple_check(dest_pos: tuple, team: str, default_range: int) -> bool:
+def simple_check(dest_pos: Pos, team: Nid, default_range: int, fow_vantage_point: Dict[NID, Pos] = None) -> bool:
     """
     Returns true if can see position with line of sight
     """
-    info = [(unit.position, skill_system.sight_range(unit)) for unit in game.units if unit.position and unit.team == team]
+    info = [(fow_vantage_point[unit.nid], skill_system.sight_range(unit)) for unit in game.units if unit.team == team and fow_vantage_point.get(unit.nid)]
     for s_pos, extra_range in info:
         if s_pos == dest_pos:
             return True

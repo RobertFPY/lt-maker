@@ -198,6 +198,9 @@ class MockCombat():
         self.state = 'hp_change'
         self.generate_damage_numbers()
 
+        if self.get_damage() <= 0:
+            self.no_damage()
+
     def generate_damage_numbers(self):
         str_damage = str(self.damage)
         for idx, num in enumerate(str_damage):

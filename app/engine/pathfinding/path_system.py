@@ -70,6 +70,7 @@ class PathSystem():
         """
         mtype = movement_funcs.get_movement_group(unit)
         grid: BoundedGrid[Node] = self.game.board.get_movement_grid(mtype)
+        assert unit.position
         start_pos = unit.position
 
         if skill_system.pass_through(unit) or free_movement:

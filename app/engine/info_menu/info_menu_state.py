@@ -83,6 +83,9 @@ class InfoMenuState(State):
         game.state.change('transition_in')
         return 'repeat'
 
+    def begin(self):
+        self.fluid.reset_on_change_state()
+
     def reset_surfs(self, keep_last_info_graph_aabb=False):
         self.info_graph.clear(keep_last_aabb=keep_last_info_graph_aabb)
         self.portrait_surf = None
@@ -240,7 +243,7 @@ class InfoMenuState(State):
         if self.state == 'notes' and not (DB.constants.value('unit_notes') and self.next_unit.notes):
             self.state = 'personal_data'
             self.switch_logo('personal_data')
-        self.transition = 'DOWN'
+        self.transition = 'UP'
 
     def move_up(self):
         get_sound_thread().play_sfx('Status_Character')
@@ -256,7 +259,7 @@ class InfoMenuState(State):
         if self.state == 'notes' and not (DB.constants.value('unit_notes') and self.next_unit.notes):
             self.state = 'personal_data'
             self.switch_logo('personal_data')
-        self.transition = 'UP'
+        self.transition = 'DOWN'
 
     def move_traveler(self):
         get_sound_thread().play_sfx('Status_Character')
@@ -653,14 +656,19 @@ class InfoMenuState(State):
                     render_text(surf, ['text'], [str(aid)], ['blue'], (111, 16 * true_idx + 24), HAlignment.RIGHT)
 
                     # Mount Symbols
-                    if 'Dragon' in self.unit.tags:
-                        aid_surf = engine.subsurface(SPRITES.get('aid_icons'), (0, 48, 16, 16))
-                    elif 'Flying' in self.unit.tags:
-                        aid_surf = engine.subsurface(SPRITES.get('aid_icons'), (0, 32, 16, 16))
-                    elif 'Mounted' in self.unit.tags:
-                        aid_surf = engine.subsurface(SPRITES.get('aid_icons'), (0, 16, 16, 16))
+                    for tag in self.unit.tags:
+                        if ('aid_icon_%s' % tag) in SPRITES:
+                            aid_surf = SPRITES.get('aid_icon_%s' % tag)
+                            break
                     else:
-                        aid_surf = engine.subsurface(SPRITES.get('aid_icons'), (0, 0, 16, 16))
+                        if 'Dragon' in self.unit.tags:
+                            aid_surf = engine.subsurface(SPRITES.get('aid_icons'), (0, 48, 16, 16))
+                        elif 'Flying' in self.unit.tags:
+                            aid_surf = engine.subsurface(SPRITES.get('aid_icons'), (0, 32, 16, 16))
+                        elif 'Mounted' in self.unit.tags:
+                            aid_surf = engine.subsurface(SPRITES.get('aid_icons'), (0, 16, 16, 16))
+                        else:
+                            aid_surf = engine.subsurface(SPRITES.get('aid_icons'), (0, 0, 16, 16))
                     surf.blit(aid_surf, (112, 16 * true_idx + 24))
                     render_text(surf, ['text'], [text_funcs.translate('Aid')], ['yellow'], (72, 16 * true_idx + 24))
                     self.info_graph.register((96 + 72, 16 * true_idx + 24, 64, 16), 'Aid_desc', state)

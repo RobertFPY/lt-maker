@@ -1,7 +1,8 @@
 import os
 
 from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QListView, QDialog, \
-    QPushButton, QFileDialog, QMessageBox, QGroupBox, QFormLayout, QSpinBox
+    QPushButton, QFileDialog, QMessageBox, QGroupBox, QFormLayout, QSpinBox, \
+    QCheckBox
 from PyQt5.QtCore import Qt, QDir
 from PyQt5.QtGui import QPixmap, QIcon, QImage, QPainter, QColor
 
@@ -79,6 +80,15 @@ class FrameSelector(Dialog):
         offset_layout.addRow("Y:", self.y_box)
         offset_section.setLayout(offset_layout)
 
+        anim_marker_path = os.path.join("app", "editor", "combat_animation_editor", "assets")
+        self.anim_background = QImage(WINWIDTH, WINHEIGHT, QImage.Format_ARGB32)
+        self.anim_background.load(os.path.join(anim_marker_path, "combat-markers.png"))
+
+        self.anim_background_check = QCheckBox(self)
+        self.anim_background_check.stateChanged.connect(self.on_anim_background_changed)
+        self.anim_background_check.setText("Use default background")
+        self.anim_background_check.setChecked(self.settings.get_default_anim_background())
+
         self.view = QListView(self)
         self.view.currentChanged = self.on_item_changed
 
@@ -101,6 +111,7 @@ class FrameSelector(Dialog):
         left_layout.addWidget(self.export_button)
         right_layout = QVBoxLayout()
         right_layout.addWidget(self.display)
+        right_layout.addWidget(self.anim_background_check)
         right_layout.addWidget(offset_section)
         main_layout.addLayout(left_layout)
         main_layout.addLayout(right_layout)
@@ -118,11 +129,17 @@ class FrameSelector(Dialog):
             self.set_current(new_data)
 
     def on_x_changed(self, val):
-        self.current.offset = (val, self.current.offset[1])
+        if self.current:
+            self.current.offset = (val, self.current.offset[1])
         self.draw()
 
     def on_y_changed(self, val):
-        self.current.offset = (self.current.offset[0], val)
+        if self.current:
+            self.current.offset = (self.current.offset[0], val)
+        self.draw()
+
+    def on_anim_background_changed(self, val):
+        self.settings.set_default_anim_background(bool(val))
         self.draw()
 
     def export_frames(self):
@@ -137,9 +154,14 @@ class FrameSelector(Dialog):
     def set_current(self, frame):
         self.current = frame
         if self.current:
+            self.x_box.setEnabled(True)
+            self.y_box.setEnabled(True)
             self.x_box.setValue(self.current.offset[0])
             self.y_box.setValue(self.current.offset[1])
             self.draw()
+        else:
+            self.x_box.setEnabled(False)
+            self.y_box.setEnabled(False)
 
     def delete_frame(self):
         if self.current:
@@ -150,14 +172,20 @@ class FrameSelector(Dialog):
                 self.set_current(new_frame)
 
     def draw(self):
-        base_image = QImage(WINWIDTH, WINHEIGHT, QImage.Format_ARGB32)
-        base_image.fill(editor_utilities.qCOLORKEY)
-        painter = QPainter()
-        painter.begin(base_image)
-        pixmap = self.current.pixmap
-        im = combat_animation_model.palette_swap(pixmap, self.current_palette_nid)
-        painter.drawImage(self.current.offset[0], self.current.offset[1], im)
-        painter.end()
+        if self.anim_background_check.isChecked():
+            base_image = QImage(WINWIDTH, WINHEIGHT, QImage.Format_ARGB32)
+            base_image.fill(editor_utilities.qCOLORKEY)
+        else:
+            base_image = QImage(self.anim_background)
+
+        if self.current:
+            painter = QPainter()
+            painter.begin(base_image)
+            pixmap = self.current.pixmap
+            im = combat_animation_model.palette_swap(pixmap, self.current_palette_nid)
+            painter.drawImage(self.current.offset[0], self.current.offset[1], im)
+            painter.end()
+
         self.display.set_image(QPixmap.fromImage(base_image))
         self.display.show_image()
 

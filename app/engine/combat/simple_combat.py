@@ -127,6 +127,8 @@ class SimpleCombat():
             if unit.get_hp() <= 0:
                 game.death.should_die(unit)
 
+        self.handle_records(self.full_playback, all_units)
+
         self.turnwheel_death_messages(all_units)
 
         self.handle_state_stack()
@@ -158,8 +160,6 @@ class SimpleCombat():
         self.handle_mana(all_units)
         self.handle_exp()
 
-        self.handle_records(self.full_playback, all_units)
-
         asp = self.attacker.strike_partner
         dsp = None
         if self.defender:
@@ -173,6 +173,9 @@ class SimpleCombat():
             self.defender.built_guard = True
 
         self.handle_death(all_units)
+        # combat death gets handled after unit death here since
+        # triggered events get added in stack order (combat death should run first)
+        self.handle_combat_death(all_units)
 
         self.handle_unusable_items(asp, dsp)
         self.handle_broken_items(asp, dsp)
@@ -643,6 +646,14 @@ class SimpleCombat():
                     if mark.attacker.team == 'player':  # If player is dying, save this result even if we turnwheel back
                         act = action.UpdateRecords('death', pair)
                         act.do()
+
+    def handle_combat_death(self, units):
+        for unit in units:
+            if unit.is_dying:
+                killer = game.records.get_killer(unit.nid, game.level.nid if game.level else None)
+                if killer:
+                    killer = game.get_unit(killer)
+                game.events.trigger(triggers.CombatDeath(unit, killer, unit.position))
 
     def handle_death(self, units):
         if not self.arena_combat:

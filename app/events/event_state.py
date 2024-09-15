@@ -16,9 +16,13 @@ class EventState(State):
     def begin(self):
         logging.debug("Begin Event State")
         self.game_over: bool = False  # Whether we've called for a game over
+        self.previous_turnwheel_lock = False  # Whether the game is currently in a turnwheel locked state (enemy turn, for instance)
         if not self.event:
             self.event = game.events.get()
-            action.do(action.LockTurnwheel(True))
+            self.previous_turnwheel_lock = game.action_log.get_last_lock()
+            # Only lock if we actually need to...
+            if not self.previous_turnwheel_lock:
+                action.do(action.LockTurnwheel(True))
             if self.event and self.event.trigger and self.event.trigger.nid == 'on_turnwheel':
                 game.action_log.stop_recording()
             if self.event and game.cursor:
@@ -109,7 +113,9 @@ class EventState(State):
         logging.debug("Ending Event")
         if self.event and self.event.trigger and self.event.trigger.nid == 'on_turnwheel':
             game.action_log.start_recording()
-        action.do(action.LockTurnwheel(False))
+        # Only unlock if we are allowed to...
+        if not self.previous_turnwheel_lock:
+            action.do(action.LockTurnwheel(False))
         game.events.end(self.event)
         if game.level_vars.get('_win_game') or self.is_handling_end_event:
             logging.info("Player Wins!")
@@ -156,6 +162,18 @@ class EventState(State):
                 game.memory['force_turnwheel'] = False
             game.memory['event_turnwheel'] = True
             self.event.turnwheel_flag = False
+
+        elif self.event.end_turn_flag:
+            game.state.back()
+            game.events.clear()  # Ending the turn FORCIBLY removes all events off the stack
+            if game.phase.get_next() == 'player':
+                game.state.change('turn_change')
+                game.state.change('status_endstep')
+            else:
+                game.state.change('turn_change')
+                game.state.change('status_endstep')
+                game.state.change('ai')
+                game.ui_view.remove_unit_display()
 
         else:
             game.state.back()

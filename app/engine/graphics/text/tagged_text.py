@@ -236,7 +236,7 @@ class TaggedText:
                 text_surf = test_surf
             else:
                 text_surf = engine.create_surface(
-                    (self.width() + padding_x, 16 + padding_y), transparent=True)
+                    (self.width() + padding_x + 1, 16 + padding_y), transparent=True)
             text_surf_tx, text_surf_ty = offset_left, offset_up
             for chunk in self.chunks:
                 text_surf_tx += chunk.draw(text_surf, (text_surf_tx, text_surf_ty))

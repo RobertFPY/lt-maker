@@ -25,6 +25,7 @@ class LevelPrefab(Prefab):
 
         self.go_to_overworld: bool = False
         self.should_record: bool = True
+        self.tags: list = []
 
         self.units = Data[Union[UniqueUnit, GenericUnit]]()
         self.regions = Data[Region]()

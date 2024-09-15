@@ -650,7 +650,7 @@ If no speaker NID is specified, the most recent text box is unpaused.
 
 class Narrate(EventCommand):
     nid = "narrate"
-    tag = Tags.DIALOGUE_TEXT
+    tag = Tags.HIDDEN # command is deprecated
 
     desc = \
         """
@@ -886,6 +886,19 @@ class EnableConvoy(EventCommand):
     desc = \
         """
 Activates or deactivates convoy access.
+        """
+
+    keywords = ["Activated"]
+    keyword_types = ['Bool']
+    
+class EnableRepairShop(EventCommand):
+    nid = 'enable_repair_shop'
+    tag = Tags.GAME_VARS
+
+    desc = \
+        """
+Enables or disables repair shop. You will also need the Constant
+checked to see the repair shop in base/preps. Defaults to True.
         """
 
     keywords = ["Activated"]
@@ -1320,12 +1333,13 @@ A *CombatScript* can optionally be provided to ensure a pre-set outcome to the b
 *PositiveInteger* can be set to determine the number of rounds the combat will go on for. Defaults to 1. Useful for arena combats (set to 20+).
 The *arena* flag should be set when you want to allow the player to be able to press B and leave the combat between rounds. It also sets the combat background to the arena.
 The *force_animation* and *force_no_animation* flags tell the engine whether to ignore the player's settings when choosing to display a combat animation. Useful for arena combats.
+The *immediate* flag will cause the combat to happen as quickly as possible, often instantaneously. Use when you want the effects of combat to happen without the player waiting to see it.
         """
 
     keywords = ["Unit", "Position"]
     optional_keywords = ["CombatScript", "Ability", "Rounds"]
     keyword_types = ["Unit", "Position", "CombatScript", "Ability", "PositiveInteger"]
-    _flags = ["arena", "force_animation", "force_no_animation"]
+    _flags = ["arena", "force_animation", "force_no_animation", "immediate"]
 
 class SetName(EventCommand):
     nid = 'set_name'
@@ -1337,6 +1351,18 @@ Sets *Unit*'s name to *String*. This is permanent.
         """
 
     keywords = ["Unit", "String"]
+
+class SetVariant(EventCommand):
+    nid = 'set_variant'
+    tag = Tags.MODIFY_UNIT_PROPERTIES
+
+    desc = \
+        """
+Sets *Unit*'s variant to *String*. This is permanent. If *String* is not supplied, sets variant to None
+        """
+
+    keywords = ["Unit"]
+    optional_keywords = ["String"]
 
 class SetCurrentHP(EventCommand):
     nid = 'set_current_hp'
@@ -1386,8 +1412,8 @@ vars that are persisted across events.
 If the flag `increment_mode` is supplied, this will add the value to the existing value instead instead of setting it.
 Please try to avoid using `increment_mode` with non-numerical fields. That would erase your field and then nobody will be happy.
         """
-    keywords = ["Unit", "Key", "Value"]
-    keyword_types = ['Unit', 'UnitField', 'String']
+    keywords = ["GlobalUnit", "Key", "Value"]
+    keyword_types = ['GlobalUnit', 'UnitField', 'String']
     _flags = ['increment_mode']
 
 class SetUnitNote(EventCommand):
@@ -1484,7 +1510,8 @@ Be extremely careful with this function. The new NID *must* be unique across eve
 Otherwise extremely undefined behavior can occur.
 """
 
-    keywords = ['Unit', 'Nid', 'Name']
+    keywords = ['Unit', 'Nid']
+    optional_keywords = ['Name']
     keyword_types = ['Unit', 'Nid', 'String']
 
 class AddGroup(EventCommand):
@@ -1941,6 +1968,7 @@ Sets *GlobalUnit*'s weapon experience in the given *WeaponType* to *WholeNumber*
 
 class GiveSkill(EventCommand):
     nid = 'give_skill'
+    nickname = 'add_skill'
     tag = Tags.MODIFY_UNIT_PROPERTIES
 
     desc = \
@@ -2195,12 +2223,26 @@ class SetModeAutolevels(EventCommand):
     desc = \
         """
 Changes the number of additional levels that enemy units gain from the difficulty mode setting. This can be used to grant a higher number of bonus levels to enemies later in the game to maintain a resonable difficulty curve. *Level* specifies the number of levels to be granted. If the *hidden* flag is set, enemy units will still gain the effects of the indicated level-ups, but their actual level is not incremented. In other words, the units get more powerful but remains at the same level. If the *boss* flag is included, this will only affect units with the "Boss" tag.
+Cannot be undone by the turnwheel.
         """
 
     keywords = ["Level"]
     keyword_types = ["Integer"]
     # Whether to actually change the unit's level
     _flags = ["hidden", "boss"]
+
+class SetModeRNG(EventCommand):
+    nid = 'set_mode_rng'
+    tag = Tags.GAME_VARS
+
+    desc = \
+        """
+Changes the RNG type used by the game.
+Cannot be undone by the turnwheel.
+        """
+
+    keywords = ["rng"]
+    keyword_types = ["RNGType"]
 
 class Promote(EventCommand):
     nid = 'promote'
@@ -2764,7 +2806,7 @@ via hitting the back button, and the event will go on as normal.
 
     keywords = ['Nid', 'Title', 'Choices']
     optional_keywords = ['RowWidth', 'Orientation', 'Alignment', 'BG', 'EventNid', 'EntryType', 'Dimensions', 'TextAlign']
-    keyword_types = ['GeneralVar', 'String', 'EvaluableString', 'Width', 'Orientation', 'Align', 'Sprite', 'Event', 'TableEntryType', 'Size', 'HAlign']
+    keyword_types = ['GeneralVar', 'String', 'EvaluableString', 'Width', 'Orientation', 'AlignOrPosition', 'Sprite', 'Event', 'TableEntryType', 'Size', 'HAlign']
     _flags = ['persist', 'expression', 'no_bg', 'no_cursor', 'arrows', 'no_arrows', 'scroll_bar', 'no_scroll_bar', 'backable']
 
 class Unchoice(EventCommand):
@@ -3453,7 +3495,8 @@ FORBIDDEN_PYTHON_COMMANDS: List[EventCommand] = [Comment, If, Elif, Else,
 FORBIDDEN_PYTHON_COMMAND_NIDS: List[str] = [cmd.nid for cmd in FORBIDDEN_PYTHON_COMMANDS] + [cmd.nickname for cmd in FORBIDDEN_PYTHON_COMMANDS]
 def get_all_event_commands(version: EventVersion) -> Dict[NID, Type[EventCommand]]:
     if version == EventVersion.EVENT:
-        return {nid: command_t for nid, command_t in ALL_EVENT_COMMANDS.items() if nid not in ['say']}
+        commands = {nid: command_t for nid, command_t in ALL_EVENT_COMMANDS.items() if nid not in ['say']}
+        return commands
     elif version == EventVersion.PYEV1:
         commands = {}
         for nid, command_t in ALL_EVENT_COMMANDS.items():

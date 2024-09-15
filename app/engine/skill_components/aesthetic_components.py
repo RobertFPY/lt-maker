@@ -24,6 +24,17 @@ class UnitAnim(SkillComponent):
     def should_draw_anim(self, unit, skill):
         return self.value
 
+class UnitTint(SkillComponent):
+    nid = 'unit_tint'
+    desc = "Displays a tint on the unit"
+    tag = SkillTags.AESTHETIC
+
+    expose = ComponentType.Color3
+
+    def unit_sprite_flicker_tint(self, unit, skill) -> tuple:
+        # Color, Period, Width, Add Tint or Subtract Tint
+        return (self.value, 0, 0, True)
+
 class UnitFlickeringTint(SkillComponent):
     nid = 'unit_flickering_tint'
     desc = "Displays a flickering tint on the unit"
@@ -32,7 +43,8 @@ class UnitFlickeringTint(SkillComponent):
     expose = ComponentType.Color3
 
     def unit_sprite_flicker_tint(self, unit, skill) -> tuple:
-        return (self.value, 900, 300)
+        # Color, Period, Width, Add Tint or Subtract Tint
+        return (self.value, 900, 300, True)
 
 class UpkeepAnimation(SkillComponent):
     nid = 'upkeep_animation'
@@ -124,7 +136,7 @@ class AlternateBattleAnim(SkillComponent):
 
 class ChangeVariant(SkillComponent):
     nid = 'change_variant'
-    desc = "Change the unit's variant"
+    desc = "Change the unit's variant. Does not work well with conditions."
     tag = SkillTags.AESTHETIC
 
     expose = ComponentType.String

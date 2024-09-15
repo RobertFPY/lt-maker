@@ -87,8 +87,13 @@ class Event():
         self.prev_state = None
         self.state = 'processing'
 
+        # For overworld cinematic map reload
+        self._prev_game_boundary = None
+        self._prev_board = None
+
         self.turnwheel_flag = 0  # Whether to enter the turnwheel state after this event is finished
         self.battle_save_flag = 0  # Whether to enter the battle save state after this event is finished
+        self.end_turn_flag = 0  # Whether to end the turn as this event finishes
 
         self.wait_time: int = 0
 
@@ -505,7 +510,7 @@ class Event():
             elif placement == 'stack':
                 return position
             elif placement == 'closest':
-                position = self.game.target_system.get_nearest_open_tile(unit, position)
+                position = self.game.target_system.get_closest_reachable_tile(unit, position)
                 if not position:
                     self.logger.warning("Somehow wasn't able to find a nearby open tile")
                     return None
@@ -609,7 +614,7 @@ class Event():
     def _apply_growth_changes(self, unit, growth_changes):
         action.do(action.ApplyGrowthChanges(unit, growth_changes))
 
-    def _parse_pos(self, pos: str | Point, is_float=False):
+    def _parse_pos(self, pos: str | Point, is_float=False) -> Optional[Point]:
         if isinstance(pos, tuple):
             return pos
         position = None
@@ -696,12 +701,12 @@ class Event():
             try:
                 val = self._eval_expr(self.text_evaluator._evaluate_all(func_as_str), False)
                 if isinstance(val, list):
-                    return val or ['']
+                    return val or []
                 else:
                     return [self._object_to_str(val)]
             except Exception as e:
                 self.logger.error("Failed to evaluate expression %s with error %s", func_as_str, str(e))
-                return [""]
+                return []
         return try_eval_str
 
     def _get_rows_of_table(self, rows: TableRows, expression: bool = False) -> Callable[[], List[str]] | List[str]:
@@ -719,4 +724,4 @@ class Event():
             data = [self._object_to_str(s) for s in rows]
         else: # is a callable function
             data = rows
-        return data or ['']
+        return data or []

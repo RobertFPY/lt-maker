@@ -14,6 +14,7 @@ class SourceType(Enum):
     PERSONAL = ('personal', False, True)
     FATIGUE = ('fatigue', False, True)
     GLOBAL = ('global', False, False)
+    MULTISKILL = ('multi_skill', False, False)
     DEFAULT = ('default', True, True)
 
     def __init__(self, nid, displaceable, removable):

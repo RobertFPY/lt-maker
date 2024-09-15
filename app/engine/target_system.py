@@ -72,7 +72,7 @@ class TargetSystem():
                 sphere.add((dx, -dy))
         return sphere
 
-    def get_nearest_open_tile(self, unit: UnitObject, position: Pos) -> Optional[Pos]:
+    def get_nearest_open_tile(self, unit: UnitObject, position: Pos, check_for_valid_path: bool = False) -> Optional[Pos]:
         """Given a unit and their position, determines the nearest tile without a unit on it.
 
         The nearest tile must be weakly traversable by the unit and not have a unit on it or in the process of moving to it.
@@ -81,6 +81,7 @@ class TargetSystem():
         Args:
             unit (UnitObject): This unit's movement capabilities are used for determining valid tiles.
             position (Pos): Where to start looking for a nearby open tile.
+            check_for_valid_path (bool): Whether to check for a valid path to the position for the unit.
 
         Returns:
             The nearest tile without a unit on it.
@@ -92,12 +93,23 @@ class TargetSystem():
                 magn = _abs(x)
                 n1 = position[0] + x, position[1] + r - magn
                 n2 = position[0] + x, position[1] - r + magn
-                if movement_funcs.check_weakly_traversable(unit, n1) and not self.game.board.get_unit(n1) and not self.game.movement.check_if_occupied_in_future(n1):
+                if movement_funcs.check_weakly_traversable(unit, n1) \
+                        and not self.game.board.get_unit(n1) \
+                        and not self.game.movement.check_if_occupied_in_future(n1) \
+                        and (not check_for_valid_path or not unit.position or self.game.path_system.get_path(unit, n1)):
                     return n1
-                elif movement_funcs.check_weakly_traversable(unit, n2) and not self.game.board.get_unit(n2) and not self.game.movement.check_if_occupied_in_future(n2):
+                elif movement_funcs.check_weakly_traversable(unit, n2) \
+                        and not self.game.board.get_unit(n2) \
+                        and not self.game.movement.check_if_occupied_in_future(n2) \
+                        and (not check_for_valid_path or not unit.position or self.game.path_system.get_path(unit, n2)):
                     return n2
             r += 1
         return None
+
+    def get_closest_reachable_tile(self, unit: UnitObject, position: Pos) -> Optional[Pos]:
+        """Identical to self.get_nearest_open_tile, except it alsqo checks that the unit can find a valid path to the position
+        """
+        return self.get_nearest_open_tile(unit, position, check_for_valid_path=True)
 
     def distance_to_closest_enemy(self, unit: UnitObject, pos: Optional[Pos] = None) -> int:
         """Returns the distance in tiles to the closest enemy.
@@ -192,6 +204,7 @@ class TargetSystem():
         manhattan_restriction = item_system.range_restrict(unit, item)
         if max_range >= 99:
             attacks = self.game.board.get_all_positions_in_bounds()
+            attacks = attacks - self.get_shell({unit.position}, set(range(0, min(item_range, default=0))), self.game.board.bounds)
             if manhattan_restriction:
                 x, y = unit.position
                 attacks = {(a, b) for (a, b) in attacks if (a - x, b - y) in manhattan_restriction}
@@ -244,6 +257,7 @@ class TargetSystem():
             manhattan_restriction = item_system.range_restrict(unit, item)
             if max_range >= 99:
                 item_attacks = self.game.board.get_all_positions_in_bounds()
+                item_attacks = item_attacks - self.get_shell({unit.position}, set(range(0, min(item_range, default=0))), self.game.board.bounds)
                 if manhattan_restriction:
                     attacks = set()
                     for move in moves:

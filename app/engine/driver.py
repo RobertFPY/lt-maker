@@ -9,9 +9,18 @@ from app.utilities import file_utils
 
 from app.constants import WINWIDTH, WINHEIGHT, VERSION, FPS
 from app.engine import engine
-from app.data.database.database import DB
 
 import app.engine.config as cf
+
+_profile = "LT_PROFILE" in os.environ
+_default_profile_threshold = 0
+_profile_threshold = _default_profile_threshold
+if "LT_PROFILE_THRESHOLD" in os.environ:
+    try:
+        _profile_threshold = float(os.environ["LT_PROFILE_THRESHOLD"])
+    except ValueError:
+        _profile = False
+        print(f'could not parse {os.environ["LT_PROFILE_THRESHOLD"]} as float')
 
 def start(title, from_editor=False):
     if from_editor:
@@ -38,8 +47,6 @@ def start(title, from_editor=False):
     engine.update_time()
     engine.set_title(title + ' - v' + VERSION)
     print("Version: %s" % VERSION)
-    if DB.game_flags.has_fatal_errors and not from_editor:
-        raise Exception("Fatal errors detected in game. If you are the developer, please validate and then save your game data before proceeding. Aborting launch.")
 
 screenshot = False
 def save_screenshot(raw_events: list, surf):
@@ -92,7 +99,6 @@ def run(game):
     get_sound_thread().set_sfx_volume(cf.SETTINGS['sound_volume'])
 
     surf = engine.create_surface((WINWIDTH, WINHEIGHT))
-    # import time
     clock = engine.Clock()
     fps_records = collections.deque(maxlen=FPS)
     inp = get_input_manager()
@@ -102,7 +108,8 @@ def run(game):
     _soft_reset_start_time: int = None  # UTC time.time()
     SOFT_RESET_TIME = 3  # seconds
     while True:
-        # start = time.time_ns()
+        start = time.perf_counter_ns()
+
         engine.update_time()
         fps_records.append(engine.get_delta())
         # print(engine.get_delta())
@@ -163,10 +170,14 @@ def run(game):
         save_screenshot(raw_events, surf)
 
         engine.update_display()
-        # end = time.time_ns()
-        # milliseconds_elapsed = (end - start)/1e6
-        # if milliseconds_elapsed > 10:
-        #     print("Engine took too long: %f" % milliseconds_elapsed)
+
+        end = time.perf_counter_ns()
+        ms_elapsed = (end - start) / 1e6
+        if _profile and ms_elapsed > _profile_threshold:
+            if _profile_threshold != _default_profile_threshold:
+                print(f"Engine took longer than {_profile_threshold}ms: {ms_elapsed}", flush=True)
+            else:
+                print(f"Engine took: {ms_elapsed}", flush=True)
 
         game.playtime += clock.tick()
 

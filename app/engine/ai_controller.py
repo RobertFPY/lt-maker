@@ -215,7 +215,7 @@ class AIController():
 
     def get_true_valid_moves(self) -> Collection[Point]:
         # Guard AI
-        if self.behaviour.view_range == -1 and not game.ai_group_active(self.unit.ai_group):
+        if self.behaviour and self.behaviour.view_range == -1 and not game.ai_group_active(self.unit.ai_group):
             return {self.unit.position}
         else:
             valid_moves = game.path_system.get_valid_moves(self.unit)
@@ -585,7 +585,8 @@ class PrimaryAI():
             target_damage *= 0.3
             target_accuracy *= 0.3
 
-        num_attacks = combat_calcs.outspeed(self.unit, main_target, item, target_weapon, "attack", (0, 0))
+        num_attacks = combat_calcs.compute_attack_phases(self.unit, main_target, item, target_weapon, "attack", (0, 0))
+        num_attacks *= combat_calcs.compute_multiattacks(self.unit, main_target, item, "attack", (0, 0))
         first_strike = lethality * accuracy if lethality >= 1 else 0
 
         if num_attacks > 1 and target_damage >= 1:
@@ -657,7 +658,6 @@ def get_targets(unit, behaviour) -> List[Point]:
         all_targets = [u.position for u in game.units if u.position and skill_system.check_ally(unit, u)]
     elif behaviour.target == 'Event':
         target_spec = behaviour.target_spec
-        all_targets = []
         for region in game.level.regions:
             try:
                 if region.region_type == RegionType.EVENT and region.sub_nid == target_spec and (not region.condition or evaluate.evaluate(region.condition, unit, local_args={'region': region})):
@@ -671,6 +671,12 @@ def get_targets(unit, behaviour) -> List[Point]:
                 all_targets = [unit.starting_position]
         else:
             all_targets = [tuple(behaviour.target_spec)]
+    elif behaviour.target == 'Terrain':
+        target_spec = behaviour.target_spec
+        for position in game.board.get_all_positions_in_bounds():
+            if game.tilemap.get_terrain(position) == target_spec:
+                all_targets.append(position)
+
     if behaviour.target in ('Unit', 'Enemy', 'Ally'):
         all_targets = handle_unit_spec(all_targets, behaviour)
 
@@ -774,6 +780,8 @@ class SecondaryAI():
             adj_good_enough = False
         elif self.behaviour.target == 'Position' and not game.board.get_unit(goal_pos):
             adj_good_enough = False  # Don't move adjacent if it's not necessary
+        elif self.behaviour.target == 'Terrain':
+            adj_good_enough = False
         else:
             adj_good_enough = True
 

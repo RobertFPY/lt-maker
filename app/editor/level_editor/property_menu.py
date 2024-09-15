@@ -5,14 +5,16 @@ from app.data.database.database import DB
 from app.editor import timer
 from app.editor.custom_widgets import PartyBox, UnitBox
 from app.editor.sound_editor import sound_tab
+from app.editor.tag_widget import TagDialog
 from app.editor.tile_editor import tile_tab
 from app.editor.unit_editor import new_unit_tab
 from app.extensions.custom_gui import (PropertyBox, PropertyCheckBox, QHLine,
                                        SimpleDialog)
+from app.extensions.multi_select_combo_box import MultiSelectComboBox
 from app.utilities import str_utils
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (QCheckBox, QLabel, QLineEdit, QMessageBox,
-                             QPushButton, QVBoxLayout, QWidget)
+                             QPushButton, QVBoxLayout, QWidget, QDialog)
 
 
 class MusicDialog(SimpleDialog):
@@ -134,6 +136,17 @@ class PropertiesMenu(QWidget):
         form.addWidget(self.overworld_box)
         self.overworld_box.hide()
 
+        # Tag stuff
+        self.tag_box = PropertyBox(_("Level Tags"), MultiSelectComboBox, self)
+        self.tag_box.edit.setPlaceholderText(_("No tag"))
+        self.tag_box.edit.addItems(DB.tags.keys())
+        self.tag_box.edit.updated.connect(self.tags_changed)
+        form.addWidget(self.tag_box)
+
+        self.tag_box.add_button(QPushButton('...'))
+        self.tag_box.button.setMaximumWidth(40)
+        self.tag_box.button.clicked.connect(self.access_tags)
+
         # Free roam stuff
         self.free_roam_box = PropertyCheckBox("Free Roam?", QCheckBox, self)
         self.free_roam_box.edit.stateChanged.connect(self.free_roam_changed)
@@ -172,6 +185,11 @@ class PropertiesMenu(QWidget):
         else:
             self.party_box.edit.setCurrentIndex(0)
             self.party_changed()
+
+        tags = current.tags.copy()
+        self.tag_box.edit.clear()
+        self.tag_box.edit.addItems(DB.tags.keys())
+        self.tag_box.edit.setCurrentTexts(tags)
 
         # Handle roaming
         if DB.units:
@@ -286,3 +304,16 @@ class PropertiesMenu(QWidget):
     def unit_changed(self):
         self.current.roam_unit = self.unit_box.edit.currentText()
         self.unit_box.edit.setValue(self.current.roam_unit)
+
+    def access_tags(self):
+        dlg = TagDialog.create(self)
+        result = dlg.exec_()
+        if result == QDialog.Accepted:
+            self.tag_box.edit.clear()
+            self.tag_box.edit.addItems(DB.tags.keys())
+            self.tag_box.edit.setCurrentTexts(self.current.tags)
+        else:
+            pass
+
+    def tags_changed(self):
+        self.current.tags = self.tag_box.edit.currentText()

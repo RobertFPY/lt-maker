@@ -7,8 +7,8 @@ import pickle
 from PyQt5.QtWidgets import QSplitter, QFrame, QVBoxLayout, \
     QWidget, QGroupBox, QFormLayout, QSpinBox, QFileDialog, \
     QMessageBox, QStyle, QHBoxLayout, QPushButton, QLineEdit, \
-    QLabel, QToolButton, QInputDialog
-from PyQt5.QtCore import Qt
+    QLabel, QToolButton, QInputDialog, QCheckBox
+from PyQt5.QtCore import Qt, QByteArray
 from PyQt5.QtGui import QImage, QPixmap, QIcon, QPainter
 
 from app.constants import WINWIDTH, WINHEIGHT
@@ -26,6 +26,7 @@ from app.editor.combat_animation_editor.frame_selector import FrameSelector
 from app.editor.combat_animation_editor.combat_animation_model import palette_swap
 from app.editor.file_manager.project_file_backend import DEFAULT_PROJECT
 import app.editor.combat_animation_editor.combat_animation_imports as combat_animation_imports
+import app.editor.combat_animation_editor.combat_animation_export as combat_animation_export
 from app.extensions.custom_gui import ComboBox
 
 import app.editor.utilities as editor_utilities
@@ -58,6 +59,8 @@ class CombatAnimProperties(QWidget):
         # for combat_anim in self._data:
         #     populate_anim_pixmaps(combat_anim)
 
+        self.settings = MainSettingsController()
+
         self.control_setup(current)
 
         self.info_form = QFormLayout()
@@ -66,7 +69,6 @@ class CombatAnimProperties(QWidget):
         self.nid_box.textChanged.connect(self.nid_changed)
         self.nid_box.editingFinished.connect(self.nid_done_editing)
 
-        self.settings = MainSettingsController()
         theme = dark_theme.get_theme()
         icon_folder = theme.icon_dir()
 
@@ -80,7 +82,7 @@ class CombatAnimProperties(QWidget):
         self.build_frames()
         self.set_layout()
 
-    def save_state(self) -> str:
+    def save_state(self) -> list[QByteArray]:
         return [self.main_splitter.saveState(), self.right_splitter.saveState()]
 
     def restore_state(self, state):
@@ -102,9 +104,18 @@ class CombatAnimProperties(QWidget):
         self.under_frame_nid = None
         self.custom_frame_offset = None
 
+        anim_marker_path = os.path.join("app", "editor", "combat_animation_editor", "assets")
+        self.anim_background = QImage(WINWIDTH, WINHEIGHT, QImage.Format_ARGB32)
+        self.anim_background.load(os.path.join(anim_marker_path, "combat-markers.png"))
+
         self.anim_view = IconView(self)
         self.anim_view.static_size = True
         self.anim_view.setSceneRect(0, 0, WINWIDTH, WINHEIGHT)
+
+        self.anim_background_check = QCheckBox(self)
+        self.anim_background_check.setText("Use default background")
+        self.anim_background_check.setChecked(self.settings.get_default_anim_background())
+        self.anim_background_check.stateChanged.connect(self.on_anim_background_changed)
 
         self.palette_menu = PaletteMenu(self)
         self.timeline_menu = TimelineMenu(self)
@@ -201,12 +212,16 @@ class CombatAnimProperties(QWidget):
         self.frame_group_box.setTitle("Image Frames")
         frame_layout = QVBoxLayout()
         self.frame_group_box.setLayout(frame_layout)
-        self.import_from_lt_button = QPushButton("Import Legacy Weapon Animation...")
+
+        self.import_from_lt_button = QPushButton("Import Legacy Weapon Anim...")
         self.import_from_lt_button.clicked.connect(self.import_legacy)
-        self.import_from_gba_button = QPushButton("Import GBA Weapon Animation...")
+        self.import_from_gba_button = QPushButton("Import GBA Weapon Anim...")
         self.import_from_gba_button.clicked.connect(self.import_gba)
         self.import_png_button = QPushButton("View Frames...")
         self.import_png_button.clicked.connect(self.select_frame)
+
+        self.export_from_lt_button = QPushButton("Export as Legacy Anim...")
+        self.export_from_lt_button.clicked.connect(self.export_legacy)
 
         self.import_anim_button = QPushButton("Import...")
         self.import_anim_button.clicked.connect(self.import_anim)
@@ -215,12 +230,15 @@ class CombatAnimProperties(QWidget):
 
         self.window.left_frame.layout().addWidget(self.import_anim_button, 3, 0)
         self.window.left_frame.layout().addWidget(self.export_anim_button, 3, 1)
+        self.window.left_frame.layout().addWidget(self.export_from_lt_button, 4, 0, 1, 2)
+
         frame_layout.addWidget(self.import_from_lt_button)
         frame_layout.addWidget(self.import_from_gba_button)
         frame_layout.addWidget(self.import_png_button)
 
     def set_layout(self):
         self.view_section.addWidget(self.anim_view)
+        self.view_section.addWidget(self.anim_background_check)
         self.view_section.addLayout(self.button_section)
         self.view_section.addLayout(self.info_form)
         self.view_section.addWidget(self.frame_group_box)
@@ -248,6 +266,9 @@ class CombatAnimProperties(QWidget):
 
     def tick(self):
         self.draw_frame()
+
+    def on_anim_background_changed(self, val):
+        self.settings.set_default_anim_background(bool(val))
 
     def play(self):
         self.playing = True
@@ -467,7 +488,7 @@ class CombatAnimProperties(QWidget):
             self.timeline_menu.clear_pose()
             self.has_pose(False)
 
-    def get_available_pose_types(self, weapon_anim) -> float:
+    def get_available_pose_types(self, weapon_anim) -> list[str]:
         items = [_ for _ in combat_anims.required_poses] + ['Critical']
         items.append("Custom")
         for pose_nid in weapon_anim.poses.keys():
@@ -475,16 +496,16 @@ class CombatAnimProperties(QWidget):
                 items.remove(pose_nid)
         return items
 
-    def make_pose(self, weapon_anim) -> str:
+    def make_pose(self, weapon_anim) -> str | None:
         items = self.get_available_pose_types(weapon_anim)
 
         new_nid, ok = QInputDialog.getItem(self, "New Pose", "Select Pose", items, 0, False)
         if not new_nid or not ok:
-            return
+            return None
         if new_nid == "Custom":
             new_nid, ok = QInputDialog.getText(self, "Custom Pose", "Enter New Name for Pose: ")
             if not new_nid or not ok:
-                return
+                return None
             new_nid = str_utils.get_next_name(new_nid, self.current.weapon_anims.keys())
         return new_nid
 
@@ -572,6 +593,32 @@ class CombatAnimProperties(QWidget):
             self.set_current(self.current)
             if self.current.weapon_anims:
                 self.weapon_box.setValue(self.current.weapon_anims[-1].nid)
+
+    def export_legacy(self):
+        # Ask user for location
+        if not self.current:
+            return
+        starting_path = self.settings.get_last_open_path()
+        fn_dir = QFileDialog.getExistingDirectory(
+            self, "Export Combat Animation as Legacy", starting_path)
+        if not fn_dir:
+            return
+        self.settings.set_last_open_path(fn_dir)
+        combat_anim = self.current
+        # Create folder at location named {combat_anim.nid}.ltlegacyanim
+        folder_name = f'{combat_anim.nid}.ltlegacyanim'
+        path = os.path.join(fn_dir, folder_name)
+        if not os.path.exists(path):
+            os.mkdir(path)
+
+        # Do cleanup steps to make sure the animation is fully populated and accessible to exporter
+        populate_anim_pixmaps(combat_anim)
+        # RESOURCES.combat_anims.save_image(path, combat_anim, temp=True)
+        # Now actally export
+        for weapon_anim in combat_anim.weapon_anims:
+            combat_animation_export.export_to_legacy(weapon_anim, combat_anim, path)
+        # Print done export! Export to %s complete!
+        QMessageBox.information(self, "Export Complete", f"Legacy export of combat animation {combat_anim.nid} to {path} complete!")
 
     def import_gba(self):
         starting_path = self.settings.get_last_open_path()
@@ -756,8 +803,11 @@ class CombatAnimProperties(QWidget):
     def set_anim_view(self, actor_im, offset, under_actor_im, under_offset):
         offset_x, offset_y = offset
         under_offset_x, under_offset_y = under_offset
-        base_image = QImage(WINWIDTH, WINHEIGHT, QImage.Format_ARGB32)
-        base_image.fill(editor_utilities.qCOLORKEY)
+        if self.anim_background_check.isChecked():
+            base_image = QImage(WINWIDTH, WINHEIGHT, QImage.Format_ARGB32)
+            base_image.fill(editor_utilities.qCOLORKEY)
+        else:
+            base_image = QImage(self.anim_background)
         if actor_im or under_actor_im:
             painter = QPainter()
             painter.begin(base_image)

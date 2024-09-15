@@ -8,7 +8,7 @@ import re
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type
 
 from app.data.database.database import Database
-from app.engine.fonts import FONT
+from app.data.database.difficulty_modes import RNGOption
 from app.utilities.class_utils import recursive_subclasses
 from app.utilities.enums import HAlignment, VAlignment
 from app.events import event_commands
@@ -26,6 +26,8 @@ class Validator():
     # generally True, but false in case of commands such as change_objective
     # that set a string that supports being evaluated elsewhere (and therefore must not be pre-emptively evaluated here)
     can_preprocess = True
+    # Whether to include the generic words in the current event that match the given text in the valid_entries list
+    include_generic_completions = False
 
     def __init__(self, db: Optional[Database] = None, resources: Optional[Resources] = None):
         self._db = db or Database()
@@ -410,8 +412,9 @@ class Sound(Validator):
         return valids
 
 class PhaseMusic(OptionValidator):
-    valid = ['player_phase', 'enemy_phase', 'other_phase', 'enemy2_phase',
-             'player_battle', 'enemy_battle', 'other_battle', 'enemy2_battle']
+    @property
+    def valid(self) -> List[str]:
+        return self._db.music_keys
 
 class SpecialMusicType(OptionValidator):
     valid = ['title_screen', 'promotion', 'class_change', 'game_over']
@@ -594,7 +597,7 @@ class IllegalCharacterList(SequenceValidator):
         return valids
 
 class DialogVariant(Validator):
-    built_in = ["thought_bubble", "noir", "hint", "narration", "narration_top", "cinematic", "clear", "boss_convo_left", "boss_convo_right"]
+    built_in = ["thought_bubble", "noir", "hint", "narration", "narration_top", "cinematic", "clear", "boss_convo_left", "boss_convo_right", "overworld_narration"]
 
     def validate(self, text, level):
         slots = self.built_in.copy()
@@ -629,6 +632,8 @@ class PointList(SequenceValidator):
         return float(x), float(y)
 
 class Speaker(Validator):
+    include_generic_completions = True
+
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
         predefined_variants = self._db.events.inspector.find_all_calls_of_command(event_commands.SpeakStyle())
         slots = [(None, style) for style in set([variant.parameters['Style'] for variant in predefined_variants.values()])]
@@ -646,6 +651,7 @@ class Panorama(Validator):
 
 class Width(Integer):
     desc = "is measured in pixels"
+
 class Speed(Integer):
     desc = "is measured in milliseconds"
 
@@ -1372,6 +1378,14 @@ class DifficultyMode(Validator):
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
         valids = [(difficulty.name, difficulty.nid) for difficulty in self._db.difficulty_modes.values()]
         return valids
+
+class RNGType(OptionValidator):
+    valid = [r.value for r in RNGOption]
+
+    def validate(self, text, level):
+        if text in self.valid:
+            return text
+        return None
 
 class SaveSlot(Validator):
     desc = 'accepts an integer for the save slot, or "suspend" for the suspend slot'

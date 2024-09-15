@@ -1,5 +1,5 @@
 import sys
-from typing import Tuple
+from typing import Tuple, TypeAlias
 from enum import Enum
 
 import pygame
@@ -8,6 +8,7 @@ import pygame.time
 
 from app.constants import WINWIDTH, WINHEIGHT, FPS
 from app.engine import config as cf
+from app.utilities import utils
 
 import logging
 
@@ -110,7 +111,7 @@ class BlendMode(Enum):
             return pygame.BLEND_RGB_MULT
         return 0
 
-Surface = pygame.Surface
+Surface: TypeAlias = pygame.Surface
 
 def blit(dest, source, pos=(0, 0), mask=None, blend=0):
     dest.blit(source, pos, mask, blend)
@@ -138,13 +139,35 @@ def copy_surface(surf):
 def save_surface(surf, fn):
     pygame.image.save(surf, fn)
 
-def subsurface(surf, rect) -> pygame.Surface:
-    x, y, width, height = rect
-    twidth = max(0, min(surf.get_width() - x, width))
-    theight = max(0, min(surf.get_height() - y, height))
-    tx = max(0, x)
-    ty = max(0, y)
-    return surf.subsurface(tx, ty, twidth, theight)
+_empty_surf: Surface = None
+def empty_surf() -> Surface:
+    global _empty_surf
+    if not _empty_surf:
+        _empty_surf = create_surface((0, 0), True)
+    return _empty_surf
+
+def bound_subsurface(surf_size: Tuple[int, int], rect: Tuple[int, int, int, int]) -> Tuple[int, int, int, int]:
+    surf_width, surf_height = surf_size
+    lx, ly, width, height = rect
+    rx = lx + width
+    ry = ly + height
+    # sanity clamp
+    lx = utils.clamp(lx, 0, surf_width)
+    ly = utils.clamp(ly, 0, surf_height)
+    rx = utils.clamp(rx, 0, surf_width)
+    ry = utils.clamp(ry, 0, surf_height)
+    if rx < lx:
+        rx, lx = lx, rx
+    if ry < ly:
+        ry, ly = ly, ry
+    return lx, ly, rx - lx, ry - ly
+
+def subsurface(surf: Surface, rect: Tuple[int, int, int, int]) -> Surface:
+    rect = bound_subsurface(surf.get_size(), rect)
+    _, _, twidth, theight = rect
+    if twidth == 0 or theight == 0:
+        return empty_surf()
+    return surf.subsurface(rect)
 
 def image_load(fn, convert=False, convert_alpha=False):
     image = pygame.image.load(fn)

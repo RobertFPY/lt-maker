@@ -20,10 +20,11 @@ from app.engine.state import MapState
 from app.engine.game_state import game
 from app.engine import menus, base_surf, background, text_funcs, \
     image_mods, gui, icons, prep, record_book, unit_sprite, action, \
-    engine
+    engine, equations
 from app.engine.fluid_scroll import FluidScroll
 from app.engine.graphics.text.text_renderer import render_text
 
+from app.utilities.utils import linspace
 from app.utilities.enums import HAlignment
 import app.engine.config as cf
 from app.events import triggers
@@ -128,6 +129,7 @@ class BaseMainState(State):
         return 'repeat'
 
     def begin(self):
+        self.fluid.reset_on_change_state()
         base_music = game.game_vars.get('_base_music')
         if base_music:
             get_sound_thread().fade_in(base_music)
@@ -271,15 +273,17 @@ class BaseConvosChildState(State):
         ignore = [game.base_convos[event_nid] for event_nid in self.options]
 
         selection = game.memory['option_owner']
-        topleft = game.memory['option_menu']
+        topleft_menu = game.memory['option_menu']
 
-        self.menu = menus.Choice(selection, self.options, topleft)
+        self.menu = menus.Choice(selection, self.options, topleft_menu)
+        self.menu.set_limit(5)
         self.menu.set_ignore(ignore)
 
     def begin(self):
         if not game.base_convos:
             game.state.back()
             return 'repeat'
+        self.fluid.reset_on_change_state()
         self.options = [event_nid for event_nid in game.base_convos.keys()]
         ignore = [game.base_convos[event_nid] for event_nid in self.options]
         self.menu.update_options(self.options)
@@ -423,9 +427,12 @@ class SupportDisplay():
 
     def move_left(self, first_push=True) -> bool:
         self.rank_idx -= 1
-        if self.rank_idx < 0 and first_push:
-            self.rank_idx = 0
-            return False
+        if self.rank_idx < 0:
+            if first_push:
+                self.rank_idx = 0
+                return False
+            else:
+                self.rank_idx = 0
         return True
 
     def move_right(self, first_push=True) -> bool:
@@ -585,6 +592,7 @@ class BaseSupportsState(State):
         return 'repeat'
 
     def begin(self):
+        self.fluid.reset_on_change_state()
         base_music = game.game_vars.get('_base_music')
         if base_music:
             get_sound_thread().fade_in(base_music)
@@ -708,6 +716,9 @@ class BaseCodexChildState(State):
 
         self.menu = menus.Choice(selection, options, topleft)
 
+    def begin(self):
+        self.fluid.reset_on_change_state()
+
     def take_input(self, event):
         first_push = self.fluid.update()
         directions = self.fluid.get_directions()
@@ -784,12 +795,9 @@ class LoreDisplay():
         self.page_num = 0
         self.dialogs.clear()
         for idx, line in enumerate(text):
-            dlg = dialog.Dialog(text[idx], num_lines=8, draw_cursor=False)
+            dlg = dialog.Dialog(text[idx], font_type="text", font_color="white", num_lines=8, draw_cursor=False)
             dlg.position = self.topleft[0], self.topleft[1] + 12
             dlg.text_width = WINWIDTH - 100
-            dlg.font = FONT['text']
-            dlg.font_type = 'text'
-            dlg.font_color = 'white'
             dlg.reformat()
             self.dialogs.append(dlg)
         self.num_pages = len(text)
@@ -888,6 +896,9 @@ class BaseLibraryState(State):
 
         game.state.change('transition_in')
         return 'repeat'
+
+    def begin(self):
+        self.fluid.reset_on_change_state()
 
     def take_input(self, event):
         first_push = self.fluid.update()
@@ -1016,6 +1027,9 @@ class BaseRecordsState(State):
 
         game.state.change('transition_in')
         return 'repeat'
+
+    def begin(self):
+        self.fluid.reset_on_change_state()
 
     def take_input(self, event):
         first_push = self.fluid.update()
@@ -1263,17 +1277,43 @@ class BaseBEXPAllocateState(State):
         self.bg = game.memory['base_bg']
 
         # Sets up variables, needed for display and calculations
-        self.current_bexp = int(game.get_bexp())
+        self.original_bexp = int(game.get_bexp())
         self.new_bexp = int(game.get_bexp())
-        self.current_exp = int(self.unit.exp)
+        self.original_exp = int(self.unit.exp)
         self.new_exp = int(self.unit.exp)
-        # This is Radiant Dawn's formula, can be adjusted per user's needs.
-        # Note that this does take tier zero into account. A level 5 fighter who promoted from Journeyman would be treated as level 15.
-        self.determine_needed_bexp(int(self.unit.get_internal_level()))
+        
+        self.determine_needed_bexp(self.unit)
 
-    def determine_needed_bexp(self, level):
-        self.bexp_needed = 50 * level + 50
-        self.exp_increment = max(int(self.bexp_needed / 100), 1)  # always at least one bonus exp required to be spent
+    def begin(self):
+        self.fluid.reset_on_change_state()
+
+    def determine_needed_bexp(self, unit):
+        necessary_exp = equations.parser.get('BONUS_EXP', unit)  # The amount of EXP needed to get to the next level
+        if necessary_exp > 0:
+            self.bexp_needed = max(1, int(necessary_exp))
+        else:
+            # This is Radiant Dawn's formula as a default
+            self.bexp_needed = max(1, 50 * int(self.unit.get_internal_level()) + 50)
+
+    def get_bexp_cost_for_an_experience_point(self, current_exp: int) -> Tuple[int, int]:
+        """Takes in the current exp of the unit as the input
+        Effectively does a linear interpolation between the range [0, 1, 2, 3, ..., 100] (the valid exp values)
+        and the range [0, N, N2, ..., self.bexp_needed], where N is self.bexp_needed divided by 100.
+
+        This enables us to figure out, for something like needing 120 bexp to gain 100 exp, at which points we 
+        will need to take out 2 BEXP for one EXP point, instead of the usual 1 point.
+        """
+        # Numbers from 0 to bexp_needed, with 101 values
+        bexp_values = linspace(0, self.bexp_needed, 101)
+        bexp_cost = int(bexp_values[current_exp + 1]) - int(bexp_values[current_exp])
+        if self.bexp_needed >= 100:
+            exp_gain = 1
+        else:  # bexp_needed is less than 100
+            # Numbers from 0 to 100, with bexp_needed+1 values
+            exp_values = linspace(0, 100, self.bexp_needed + 1)
+            idx = int(current_exp * self.bexp_needed / 100)
+            exp_gain = int(exp_values[idx + 1]) - int(exp_values[idx])
+        return max(bexp_cost, 1), max(exp_gain, 1)
 
     # Player input is handled here
     def take_input(self, event):
@@ -1282,68 +1322,80 @@ class BaseBEXPAllocateState(State):
 
         # Down resets values to their starting values
         if 'DOWN' in directions:
-            if self.new_exp > self.current_exp:
+            if self.new_exp > self.original_exp:
                 get_sound_thread().play_sfx('Select 5')
-                self.new_bexp = self.current_bexp
-                self.new_exp = self.current_exp
+                self.new_bexp = self.original_bexp
+                self.new_exp = self.original_exp
             elif first_push:
                 get_sound_thread().play_sfx('Error')
         # Right increments by 1 EXP
         elif 'RIGHT' in directions:
-            if self.new_exp < 100 and self.new_bexp > 0 and self.new_bexp >= self.exp_increment:
+            if self.new_exp < 100:
+                bexp_cost, exp_gain = self.get_bexp_cost_for_an_experience_point(self.new_exp)
+            else:
+                bexp_cost, exp_gain = 0, 0
+            # If we aren't at 100 exp and we have at least than bexp_cost bexp 
+            if self.new_exp + exp_gain <= 100 and self.new_bexp >= bexp_cost:
                 get_sound_thread().play_sfx('Select 5')
-                self.new_exp += 1
-                self.new_bexp -= self.exp_increment
+                self.new_exp += exp_gain
+                self.new_bexp -= bexp_cost
             elif first_push:
                 get_sound_thread().play_sfx('Error')
         # Left decrements by 1 EXP
         elif 'LEFT' in directions:
-            get_sound_thread().play_sfx('Select 5')
-            if self.new_exp > self.current_exp:
-                self.new_exp -= 1
-                self.new_bexp += self.exp_increment
+            # If we've gained at least some exp from bonus exp
+            if self.new_exp > self.original_exp:
+                # Go back to the original value
+                bexp_cost, exp_gain = self.get_bexp_cost_for_an_experience_point(self.new_exp - 1)
+                get_sound_thread().play_sfx('Select 5')
+                self.new_exp -= exp_gain
+                self.new_bexp += bexp_cost
+            elif first_push:
+                get_sound_thread().play_sfx('Error')
         # Up attempts to get us to 100 EXP, or the highest amount possible if 100 cannot be reached.
         elif 'UP' in directions:
             get_sound_thread().play_sfx('Select 5')
-            if self.new_exp < 100 and self.new_bexp > self.exp_increment:
-                amount_needed = (100 - self.new_exp) * self.exp_increment
-                if self.new_bexp >= amount_needed:
-                    self.new_bexp -= amount_needed
-                    self.new_exp = 100
-                else:
-                    self.new_exp += int(self.new_bexp / self.exp_increment)
-                    self.new_bexp = self.new_bexp % self.exp_increment
+            if self.new_exp < 100:
+                bexp_cost, exp_gain = self.get_bexp_cost_for_an_experience_point(self.new_exp)
+                while self.new_exp + exp_gain <= 100 and self.new_bexp >= bexp_cost:
+                    self.new_exp += exp_gain
+                    self.new_bexp -= bexp_cost
+                    if self.new_exp < 100:
+                        bexp_cost, exp_gain = self.get_bexp_cost_for_an_experience_point(self.new_exp)
+                    else:
+                        break
 
         # Allocates EXP, performs level up, and sets values as needed
         if event == 'SELECT':
-            if self.new_exp > self.current_exp:
+            if self.new_exp > self.original_exp:
                 get_sound_thread().play_sfx('Select 1')
-                exp_to_gain = self.new_exp - self.current_exp
+                exp_to_gain = self.new_exp - self.original_exp
+                # Whether to only gain 3 stats on bonus exp gain
                 if DB.constants.value('rd_bexp_lvl'):
                     game.memory['exp_method'] = 'Bexp'
                 game.exp_instance.append((self.unit, exp_to_gain, None, 'init'))
-                game.state.change('exp')
+                game.state.change('bonus_exp')
                 if self.new_exp == 100:
-                    self.current_exp = 0
+                    self.original_exp = 0
                     self.new_exp = 0
-                    self.determine_needed_bexp(int(self.unit.get_internal_level() + 1))
+                    self.determine_needed_bexp(self.unit)
                 else:
-                    self.current_exp = self.new_exp
-                self.current_bexp = self.new_bexp
-                game.set_bexp(self.current_bexp)
+                    self.original_exp = self.new_exp
+                self.original_bexp = self.new_bexp
+                game.set_bexp(self.new_bexp)
 
             # Resets values to starting values and goes back to previous menu
         elif event == 'BACK':
             get_sound_thread().play_sfx('Select 4')
-            self.new_bexp = self.current_exp
-            self.new_bexp = self.current_bexp
+            self.new_bexp = self.original_exp
+            self.new_bexp = self.original_bexp
             game.state.change('transition_pop')
 
     def draw(self, surf):
         if self.bg:
             self.bg.draw(surf)
         self.menu.draw(surf)
-        menus.draw_unit_bexp(surf, (6, 72), self.unit, self.new_exp, self.new_bexp, self.current_bexp,
+        menus.draw_unit_bexp(surf, (6, 72), self.unit, self.new_exp, self.new_bexp, self.original_bexp,
                              include_face=True, include_top=True, shimmer=2)
         return surf
 
@@ -1367,6 +1419,9 @@ class BaseAchievementState(State):
 
         game.state.change('transition_in')
         return 'repeat'
+
+    def begin(self):
+        self.fluid.reset_on_change_state()
 
     def take_input(self, event):
         first_push = self.fluid.update()
@@ -1438,6 +1493,7 @@ class BaseSoundRoomState(State):
         return 'repeat'
 
     def begin(self):
+        self.fluid.reset_on_change_state()
         get_sound_thread().fade_clear()
         self.playing = False
 

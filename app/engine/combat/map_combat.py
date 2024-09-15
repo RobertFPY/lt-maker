@@ -167,7 +167,7 @@ class MapCombat(SimpleCombat):
                 elif self.get_from_playback('attacker_partner_phase'):
                     self.attacker.strike_partner.sprite.change_state(
                         'combat_anim')
-                else:
+                elif self.attacker.position:
                     self.attacker.sprite.change_state('combat_anim')
                 sound_brushes = self.get_from_playback('cast_sound')
                 for brush in sound_brushes:
@@ -206,7 +206,7 @@ class MapCombat(SimpleCombat):
                         self.attacker.strike_partner.sprite.state == 'combat_anim':
                     self.attacker.strike_partner.sprite.change_state(
                         'combat_attacker')
-                else:
+                elif self.attacker.position:
                     self.attacker.sprite.change_state('combat_attacker')
                 self._end_phase()
                 self.state_machine.setup_next_state()

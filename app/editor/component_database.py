@@ -6,7 +6,7 @@ from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QColor, QIcon, QPalette
 from PyQt5.QtWidgets import (QApplication, QDoubleSpinBox, QHBoxLayout,
                              QItemDelegate, QLabel, QLineEdit, QListWidgetItem,
-                             QSpinBox, QToolButton, QVBoxLayout, QWidget)
+                             QSpinBox, QToolButton, QVBoxLayout, QWidget, QPushButton)
 
 from app.data.database.components import ComponentType
 from app.data.database.database import DB

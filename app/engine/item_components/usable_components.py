@@ -162,6 +162,16 @@ class UsesOptions(ItemComponent):
     def one_loss_per_combat(self) -> bool:
         return self.value.get('one_loss_per_combat', False)
 
+class NoAlertOnBreak(ItemComponent):
+    nid = 'no_alert_on_break'
+    desc = "Item will not display 'X broke!' when it runs out of uses."
+    tag = ItemTags.USES
+
+    expose = ComponentType.Bool
+
+    def alerts_when_broken(self, unit, item):
+        return False
+
 class HPCost(ItemComponent):
     nid = 'hp_cost'
     desc = "Item subtracts the specified amount of HP upon use. If the subtraction would kill the unit the item becomes unusable."
@@ -343,8 +353,14 @@ class Locked(ItemComponent):
     desc = 'Item cannot be taken or dropped from a units inventory. However, the trade command can be used to rearrange its position, and event commands can remove the item.'
     tag = ItemTags.USES
 
-    def locked(self, unit, item) -> bool:
-        return True
+    def tradeable(self, unit, item) -> bool:
+        return False
+
+    def storeable(self, unit, item) -> bool:
+        return False
+
+    def discardable(self, unit, item) -> bool:
+        return False
 
     def unstealable(self, unit, item) -> bool:
         return True
@@ -356,6 +372,14 @@ class Unstealable(ItemComponent):
 
     def unstealable(self, unit, item) -> bool:
         return True
+
+class Undiscardable(ItemComponent):
+    nid = 'undiscardable'
+    desc = 'Item cannot be discarded'
+    tag = ItemTags.USES
+
+    def discardable(self, unit, item) -> bool:
+        return False
 
 class EvalAvailable(ItemComponent):
     nid = 'eval_available'

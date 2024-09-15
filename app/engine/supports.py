@@ -1,7 +1,9 @@
 from dataclasses import dataclass
-from typing import Dict
+from typing import Dict, List
 
 from app.data.database.database import DB
+from app.data.database.supports import SupportRankRequirementList, SupportRank
+from app.data.database.supports import SupportPair as SupportPrefab
 
 from app.utilities import utils
 
@@ -16,13 +18,13 @@ class SupportPair():
     """
     Keeps track of necessary values for each support pair
     """
-    def __init__(self, nid):
-        self.nid = nid
-        self.points = 0
-        self.locked_ranks = []
-        self.unlocked_ranks = []
-        self.points_gained_this_chapter = 0
-        self.ranks_gained_this_chapter = 0
+    def __init__(self, nid: NID):
+        self.nid: NID = nid
+        self.points: int = 0
+        self.locked_ranks: List[NID] = []
+        self.unlocked_ranks: List[NID] = []
+        self.points_gained_this_chapter: int = 0
+        self.ranks_gained_this_chapter: int = 0
 
     @property
     def unit1(self):
@@ -32,7 +34,7 @@ class SupportPair():
     def unit2(self):
         return self.nid.split(' | ')[1]
 
-    def increment_points(self, inc):
+    def increment_points(self, inc: int):
         point_limit = DB.support_constants.value('point_limit_per_chapter')
         rank_limit = DB.support_constants.value('rank_limit_per_chapter')
         support_prefab = DB.support_pairs.get(self.nid)
@@ -53,13 +55,17 @@ class SupportPair():
         self.ranks_gained_this_chapter = 0
 
     def can_support(self) -> bool:
-        support_prefab = DB.support_pairs.get(self.nid)
-        reqs = support_prefab.requirements
+        support_prefab: SupportPrefab = DB.support_pairs.get(self.nid)
+        reqs: SupportRankRequirementList = support_prefab.requirements
+        highest_rank: SupportRank = DB.support_ranks[-1]
         if self.locked_ranks and game.supports.check_rank_limit(self) and game.supports.check_ally_limit(self):
             for rank in self.locked_ranks:
-                for bonus in reqs:
-                    if bonus.support_rank == rank and (not bonus.gate or game.game_vars.get(bonus.gate)):
-                        return True
+                # Check if this would be a "2nd" highest rank
+                if (rank != highest_rank.nid or game.supports.check_highest_rank_limit(self)):
+                    for bonus in reqs:
+                        # Check if there's a gate on the rank
+                        if bonus.support_rank == rank and (not bonus.gate or game.game_vars.get(bonus.gate)):
+                            return True
         return False
 
     def save(self):
@@ -163,16 +169,22 @@ class SupportController():
 
     def check_rank_limit(self, support_pair: SupportPair) -> bool:
         """
-        Return False if either of the units is already at their limit
+        Return False if either of the units is already at their rank limit
         """
         rank_limit = DB.support_constants.value('rank_limit')
-        highest_rank_limit = DB.support_constants.value('highest_rank_limit')
         rank1 = self.get_num_ranks(support_pair.unit1)
         rank2 = self.get_num_ranks(support_pair.unit2)
-        highest_rank1 = self.get_num_highest_ranks(support_pair.unit1)
-        highest_rank2 = self.get_num_highest_ranks(support_pair.unit2)
         if rank_limit and (rank1 >= rank_limit or rank2 >= rank_limit):
             return False
+        return True
+
+    def check_highest_rank_limit(self, support_pair: SupportPair) -> bool:
+        """
+        Return False if either of the units is already at their highest rank limit
+        """
+        highest_rank_limit = DB.support_constants.value('highest_rank_limit')
+        highest_rank1 = self.get_num_highest_ranks(support_pair.unit1)
+        highest_rank2 = self.get_num_highest_ranks(support_pair.unit2)
         if highest_rank_limit and (highest_rank1 >= highest_rank_limit or highest_rank2 >= highest_rank_limit):
             return False
         return True
@@ -200,7 +212,7 @@ class SupportController():
 
     def get_num_highest_ranks(self, unit_nid: str) -> int:
         highest_rank = DB.support_ranks[-1]
-        return len([pair for pair in self.get_pairs(unit_nid) if highest_rank in pair.unlocked_ranks])
+        return len([pair for pair in self.get_pairs(unit_nid) if highest_rank.nid in pair.unlocked_ranks])
 
     def get_num_allies(self, unit_nid: str) -> int:
         return len([pair for pair in self.get_pairs(unit_nid) if pair.unlocked_ranks])

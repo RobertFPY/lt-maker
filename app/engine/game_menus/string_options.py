@@ -10,7 +10,7 @@ from app.engine.graphics.text.text_renderer import (anchor_align, render_text,
                                                     text_width)
 from app.sprites import SPRITES
 from app.utilities.enums import HAlignment
-from app.utilities.typing import NID, Protocol
+from app.utilities.typing import NID
 
 T = TypeVar('T')
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Callable, List, Optional, Tuple
 from collections import OrderedDict
+from enum import Enum
 
 from app.constants import TILEWIDTH, TILEHEIGHT, WINWIDTH, WINHEIGHT, TILEX
 from app.data.database.database import DB
@@ -22,7 +23,7 @@ from app.engine import engine, action, menus, image_mods, \
     text_funcs, equations, evaluate, supports
 from app.engine.combat import interaction
 from app.engine.selection_helper import SelectionHelper
-from app.engine.abilities import ABILITIES, PRIMARY_ABILITIES, OTHER_ABILITIES
+from app.engine.abilities import ABILITIES, PRIMARY_ABILITIES, OTHER_ABILITIES, TradeAbility, SupplyAbility
 from app.engine.input_manager import get_input_manager
 from app.engine.fluid_scroll import FluidScroll
 import threading
@@ -274,6 +275,7 @@ class FreeState(MapState):
             game.state.change('free_roam')
             return 'repeat'
 
+        game.cursor.fluid.reset_on_change_state()
         game.cursor.show()
         game.boundary.show()
         for unit in game.get_all_units():
@@ -480,6 +482,7 @@ class OptionMenuState(MapState):
             return 'repeat'
         else:
             game.memory['next_state'] = None
+        self.fluid.reset_on_change_state()
 
     def take_input(self, event):
         first_push = self.fluid.update()
@@ -700,6 +703,7 @@ class MoveState(MapState):
                     cur_unit.wait()
             else:
                 cur_unit.sprite.change_state('normal')
+            game.events.trigger(triggers.UnitDeselect(cur_unit, cur_unit.position))
 
         elif event == 'SELECT':
             if game.cursor.position == cur_unit.position:
@@ -837,6 +841,7 @@ class MenuState(MapState):
                 return 'repeat'
         # Play this here because there's a gap in sound while unit is moving
         get_sound_thread().play_sfx('Select 2')
+        self.fluid.reset_on_change_state()
         game.cursor.hide()
         self.cur_unit = game.cursor.cur_unit
         if not self.cur_unit or not self.cur_unit.position:
@@ -875,7 +880,7 @@ class MenuState(MapState):
                     # No duplicates
                     if truth and region.sub_nid not in options:
                         options.append(region.sub_nid)
-                        info_descs.append(None)  # Could add actual descriptions later, somehow
+                        info_descs.append(region.sub_nid + '_desc')
                         self.valid_regions.append(region)
                 except:
                     logging.error("Region condition {%s} could not be evaluated" % region.condition)
@@ -1113,6 +1118,7 @@ class ItemState(MapState):
         self.menu.set_limit(8)
 
     def begin(self):
+        self.fluid.reset_on_change_state()
         game.cursor.hide()
         self.menu.update_options(self._get_options())
         self.item_desc_panel = ui_view.ItemDescriptionPanel(self.cur_unit, self.menu.get_current())
@@ -1197,6 +1203,7 @@ class SubItemChildState(MapState):
         self.menu.set_limit(4)
 
     def begin(self):
+        self.fluid.reset_on_change_state()
         game.cursor.hide()
         options = self._get_options(self.parent_item, self.cur_unit)
         self.menu.update_options(options)
@@ -1275,6 +1282,7 @@ class ItemChildState(MapState):
                 interaction.start_combat(self.cur_unit, self.cur_unit.position, game.memory.get('item'))
                 return 'repeat'
 
+        self.fluid.reset_on_change_state()
         self.item = self.parent_menu.get_current()
         item = self.item
         self.cur_unit: UnitObject = game.cursor.cur_unit
@@ -1288,10 +1296,14 @@ class ItemChildState(MapState):
                 options.append("Expand")
             if item_funcs.can_use(self.cur_unit, item) and not self.cur_unit.has_attacked:
                 options.append("Use")
-            if not item_system.locked(self.cur_unit, item) and item in self.cur_unit.items:
-                if game.game_vars.get('_convoy'):
+            if TradeAbility.targets(self.cur_unit) and item_system.tradeable(self.cur_unit, item):
+                options.append('Trade')
+            if item in self.cur_unit.items:
+                if item_system.storeable(self.cur_unit, item) and game.game_vars.get('_convoy') and DB.constants.value("long_range_storage"):
                     options.append('Storage')
-                else:
+                elif item_system.storeable(self.cur_unit, item) and game.game_vars.get('_convoy') and SupplyAbility.targets(self.cur_unit):
+                    options.append('Storage')
+                elif item_system.discardable(self.cur_unit, item):
                     options.append('Discard')
             if not options:
                 options.append('Nothing')
@@ -1360,16 +1372,22 @@ class ItemChildState(MapState):
                     game.state.back()
                     game.state.back()
                     game.state.back()
+
             elif selection == 'Expand':
                 game.memory['parent_menu'] = self.menu
                 game.memory['selected_item'] = self.item
                 game.state.change('subitem_child')
+
             elif selection == 'Storage' or selection == 'Discard':
                 game.memory['option_owner'] = selection
                 game.memory['option_item'] = item
                 game.memory['option_unit'] = self.cur_unit
                 game.memory['option_menu'] = self.menu
                 game.state.change('option_child')
+
+            elif selection == 'Trade':
+                game.memory['ability'] = TradeAbility
+                game.state.change('targeting')
 
     def update(self):
         super().update()
@@ -1384,46 +1402,74 @@ class ItemDiscardState(MapState):
     menu = None
     pennant = None
 
+    class ItemDiscardMode(Enum):
+        DISCARD = 1
+        STORAGE = 2
+
     def start(self):
         game.cursor.hide()
         self.cur_unit = game.memory['item_discard_current_unit']
+
+        if game.game_vars.get('_convoy') and DB.constants.value("long_range_storage"):
+            self.mode = self.ItemDiscardMode.STORAGE
+        elif game.game_vars.get('_convoy') and SupplyAbility.targets(self.cur_unit):
+            self.mode = self.ItemDiscardMode.STORAGE
+        else:
+            self.mode = self.ItemDiscardMode.DISCARD
+
         options = self.cur_unit.items
         self.menu = menus.Choice(self.cur_unit, options)
-        ignore = [bool(item_system.locked(self.cur_unit, item)) for item in options]
+        ignore = self._get_locked(options)
         self.menu.set_ignore(ignore)
         self.menu.set_limit(8)
 
-        if game.game_vars.get('_convoy'):
+        if self.mode == self.ItemDiscardMode.STORAGE:
             self.pennant = banner.Pennant('Choose item to send to storage')
         else:
             self.pennant = banner.Pennant('Choose item to discard')
 
+    def _get_locked(self, options: List[ItemObject]) -> List[bool]:
+        """
+        Returns a list of booleans, one for each item, that determines whether the item is locked to the unit
+        and cannot be discarded or stored at the moment
+        """
+        if self.mode == self.ItemDiscardMode.STORAGE:
+            locked = [not bool(item_system.storeable(self.cur_unit, item)) for item in options]
+        else:
+            locked = [not bool(item_system.discardable(self.cur_unit, item)) for item in options]
+        return locked
+
     def begin(self):
-        if self.check_locked_inventory():
+        if self._check_locked_inventory():
             game.state.back()
             game.state.change('alert')
             return 'repeat'
-        self.menu.update_options(self.cur_unit.items)
-        ignore = [bool(item_system.locked(self.cur_unit, item)) for item in self.cur_unit.items]
+
+        self.fluid.reset_on_change_state()
+        options = self.cur_unit.items
+        self.menu.update_options(options)
+        ignore = self._get_locked(options)
         self.menu.set_ignore(ignore)
         # Don't need to do this if we are under items
         if not item_funcs.too_much_in_inventory(self.cur_unit):
             game.state.back()
             return 'repeat'
 
-    def check_locked_inventory(self) -> bool:
-        locked_items = [item for item in self.cur_unit.items if item_system.locked(self.cur_unit, item) and not item_system.is_accessory(self.cur_unit, item)]
+    def _check_locked_inventory(self) -> bool:
+        locked = self._get_locked(self.cur_unit.items)
+        locked_items = [item for idx, item in enumerate(self.cur_unit.items) if locked[idx] and not item_system.is_accessory(self.cur_unit, item)]
+
         if len(locked_items) > item_funcs.get_num_items(self.cur_unit):
-            if game.game_vars.get('_convoy'):
+            if self.mode == self.ItemDiscardMode.STORAGE:
                 game.alerts.append(banner.SentToConvoy(locked_items[-1]))
                 action.do(action.StoreItem(self.cur_unit, locked_items[-1]))
             else:
                 game.alerts.append(banner.LostItem(locked_items[-1]))
                 action.do(action.RemoveItem(self.cur_unit, locked_items[-1]))
             return True
-        locked_accessories = [item for item in self.cur_unit.items if item_system.locked(self.cur_unit, item) and item_system.is_accessory(self.cur_unit, item)]
+        locked_accessories = [item for idx, item in enumerate(self.cur_unit.items) if locked[idx] and item_system.is_accessory(self.cur_unit, item)]
         if len(locked_accessories) > item_funcs.get_num_accessories(self.cur_unit):
-            if game.game_vars.get('_convoy'):
+            if self.mode == self.ItemDiscardMode.STORAGE:
                 game.alerts.append(banner.SentToConvoy(locked_accessories[-1]))
                 action.do(action.StoreItem(self.cur_unit, locked_accessories[-1]))
             else:
@@ -1450,7 +1496,7 @@ class ItemDiscardState(MapState):
         elif event == 'SELECT':
             get_sound_thread().play_sfx('Select 1')
             selection = self.menu.get_current()
-            owner = 'Storage' if game.game_vars.get('_convoy') else 'Discard'
+            owner = 'Storage' if self.mode == self.ItemDiscardMode.STORAGE else 'Discard'
             game.memory['option_owner'] = owner
             game.memory['option_item'] = selection
             game.memory['option_unit'] = self.cur_unit
@@ -1494,6 +1540,7 @@ class WeaponChoiceState(MapState):
         self.options = self.get_options(self.cur_unit)
 
     def begin(self):
+        self.fluid.reset_on_change_state()
         game.cursor.hide()
         self.cur_unit = game.cursor.cur_unit
         self.cur_unit.sprite.change_state('chosen')
@@ -1704,6 +1751,7 @@ class CombatArtChoiceState(MapState):
             return
 
     def begin(self):
+        self.fluid.reset_on_change_state()
         game.cursor.hide()
         self.cur_unit = game.cursor.cur_unit
         self.cur_unit.sprite.change_state('chosen')
@@ -1780,6 +1828,7 @@ class TargetingState(MapState):
         self.traveler_mode = False  # Should we be targeting the travelers?
 
     def begin(self):
+        self.fluid.reset_on_change_state()
         game.cursor.combat_show()
         self.cur_unit.sprite.change_state('chosen')
 
@@ -1956,6 +2005,7 @@ class CombatTargetingState(MapState):
         game.cursor.set_pos(closest_pos)
 
         # Sets dual strike variables and chooses attacker dual strike
+        self.attacker_assist = None
         self.find_strike_partners(closest_pos)
 
         # Reset these
@@ -1978,6 +2028,7 @@ class CombatTargetingState(MapState):
             self.pennant = banner.Pennant('Press START to confirm targets.')
 
     def begin(self):
+        self.fluid.reset_on_change_state()
         game.cursor.combat_show()
         if self._process_next_target_asap:
             self._process_next_target_asap = False
@@ -2027,7 +2078,7 @@ class CombatTargetingState(MapState):
                 else:
                     targets.append(t[0])
                 target_counter += num_targets
-        else: # Guaranteed to be len(1) since it's not a sequence item
+        else:  # Guaranteed to be len(1) since it's not a sequence item
             main_item = self.item
             if len(self.prev_targets) > 1:
                 targets = [self.prev_targets]
@@ -2114,7 +2165,7 @@ class CombatTargetingState(MapState):
                 game.ui_view.reset_info()
                 self.display_single_attack()
             # Switch chosen pairup with AUX
-            elif len(adj_allies) > 1 and self.num_targets == 1:
+            elif self.attacker_assist and len(adj_allies) > 1 and self.num_targets == 1:
                 i = adj_allies.index(self.attacker_assist)
                 # Hardset attacker
                 self.attacker_assist = adj_allies[(i + 1) % len(adj_allies)]
@@ -2211,6 +2262,7 @@ class ItemTargetingState(State):
         # self.menu.set_ignore(ignore)
 
     def begin(self):
+        self.fluid.reset_on_change_state()
         game.cursor.hide()
 
     def take_input(self, event):
@@ -2494,18 +2546,41 @@ class ShopState(State):
         self.shop_id = game.memory['shop_id']
         self.unit = game.memory['current_unit']
         self.flavor = game.memory['shop_flavor']
+
+        def apply_flavor(string: str) -> str:
+            if (string % self.flavor) in DB.translations:
+                return string % self.flavor
+            else:
+                return string % 'shop'
+
         if self.flavor:
             self.portrait = SPRITES.get('%s_portrait' % self.flavor)
-            self.opening_message = '%s_opener' % self.flavor
-            self.buy_message = '%s_buy' % self.flavor
-            self.back_message = '%s_back' % self.flavor
-            self.leave_message = '%s_leave' % self.flavor
+            self.opening_message = apply_flavor('%s_opener')
+            self.buy_message = apply_flavor('%s_buy')
+            self.back_message = apply_flavor('%s_back')
+            self.leave_message = apply_flavor('%s_leave')
+            self.buy_again_message = apply_flavor('%s_buy_again')
+            self.convoy_message = apply_flavor('%s_convoy')
+            self.no_stock_message = apply_flavor('%s_no_stock')
+            self.no_money_message = apply_flavor('%s_no_money')
+            self.max_inventory_message = apply_flavor('%s_max_inventory')
+            self.sell_again_message = apply_flavor('%s_sell_again')
+            self.again_message = apply_flavor('%s_again')
+            self.no_value_message = apply_flavor('%s_no_value')
         else:
             self.portrait = SPRITES.get('armory_portrait')
             self.opening_message = 'armory_opener'
             self.buy_message = 'armory_buy'
             self.back_message = 'armory_back'
             self.leave_message = 'armory_leave'
+            self.buy_again_message = 'shop_buy_again'
+            self.convoy_message = 'shop_convoy'
+            self.no_stock_message = 'shop_no_stock'
+            self.no_money_message = 'shop_no_money'
+            self.max_inventory_message = 'shop_max_inventory'
+            self.sell_again_message = 'shop_sell_again'
+            self.again_message = 'shop_again'
+            self.no_value_message = 'shop_no_value'
 
         items = game.memory['shop_items']
         self.stock = game.memory.get('shop_stock', None)
@@ -2543,6 +2618,9 @@ class ShopState(State):
         game.state.change('transition_in')
         return 'repeat'
 
+    def begin(self):
+        self.fluid.reset_on_change_state()
+
     def get_dialog(self, text):
         d = dialog.Dialog(text_funcs.translate(text))
         d.position = (60, 8)
@@ -2550,6 +2628,7 @@ class ShopState(State):
         d.width = d.text_width + 16
         d.font = FONT['convo-white']
         d.font_color = 'white'
+        d.reformat()
         return d
 
     def update_options(self):
@@ -2609,24 +2688,24 @@ class ShopState(State):
                         game.register_item(new_item)
                         if not item_funcs.inventory_full(self.unit, new_item):
                             action.do(action.GiveItem(self.unit, new_item))
-                            self.current_msg = self.get_dialog('shop_buy_again')
+                            self.current_msg = self.get_dialog(self.buy_again_message)
                         elif game.game_vars.get('_convoy'):
                             action.do(action.PutItemInConvoy(new_item))
-                            self.current_msg = self.get_dialog('shop_convoy')
+                            self.current_msg = self.get_dialog(self.convoy_message)
 
                     # How it could fail
                     elif self.buy_menu.get_stock() == 0:
                         # We don't have any more of this in stock
                         get_sound_thread().play_sfx('Select 4')
-                        self.current_msg = self.get_dialog('shop_no_stock')
+                        self.current_msg = self.get_dialog(self.no_stock_message)
                     elif game.get_money() - value < 0:
                         # You don't have enough money
                         get_sound_thread().play_sfx('Select 4')
-                        self.current_msg = self.get_dialog('shop_no_money')
+                        self.current_msg = self.get_dialog(self.no_money_message)
                     else:
                         # No inventory space
                         get_sound_thread().play_sfx('Select 4')
-                        self.current_msg = self.get_dialog('shop_max')
+                        self.current_msg = self.get_dialog(self.max_inventory_message)
 
             elif self.state == 'sell':
                 item = self.sell_menu.get_current()
@@ -2639,12 +2718,12 @@ class ShopState(State):
                         action.do(action.UpdateRecords('money', (game.current_party, value)))
                         self.money_counter_disp.start(value)
                         action.do(action.RemoveItem(self.unit, item))
-                        self.current_msg = self.get_dialog('shop_sell_again')
+                        self.current_msg = self.get_dialog(self.sell_again_message)
                         self.update_options()
                     else:
                         # No value, can't be sold
                         get_sound_thread().play_sfx('Select 4')
-                        self.current_msg = self.get_dialog('shop_no_value')
+                        self.current_msg = self.get_dialog(self.no_value_message)
                 else:
                     # You didn't choose anything to sell
                     get_sound_thread().play_sfx('Select 4')
@@ -2677,7 +2756,7 @@ class ShopState(State):
                     self.state = 'choice'
                     self.menu.set_takes_input(False)
                     self.menu = self.choice_menu
-                    self.current_msg = self.get_dialog('shop_again')
+                    self.current_msg = self.get_dialog(self.again_message)
 
         elif event == 'INFO':
             if self.state == 'buy' or self.state == 'sell':
@@ -2740,9 +2819,20 @@ class RepairShopState(ShopState):
 
         self.unit = game.memory['current_unit']
 
-        self.portrait = SPRITES.get('armory_portrait')
-        self.opening_message = 'repair_opener'
-        self.buy_message = 'repair_buy'
+        def apply_flavor(string: str) -> str:
+            if (string % 'repair') in DB.translations:
+                return string % 'repair'
+            else:
+                return string % 'shop'
+
+        if 'repair_portrait' in SPRITES:
+            self.portrait = SPRITES.get('repair_portrait')
+        else:
+            self.portrait = SPRITES.get('armory_portrait')
+        self.opening_message = apply_flavor('%s_opener')
+        self.buy_message = apply_flavor('%s_buy')
+        self.no_money_message = apply_flavor('%s_no_money')
+        self.again_message = apply_flavor('%s_again')
 
         items = self.unit.items[:]
         topleft = (44, WINHEIGHT - 16 * 5 - 8 - 4)
@@ -2763,6 +2853,9 @@ class RepairShopState(ShopState):
         self.update_options()
         game.state.change('transition_in')
         return 'repeat'
+
+    def begin(self):
+        self.fluid.reset_on_change_state()
 
     def update_options(self):
         ignore = [not item_funcs.can_repair(self.unit, item) for item in self.unit.items]
@@ -2798,7 +2891,7 @@ class RepairShopState(ShopState):
                     else:
                         # You don't have enough money
                         get_sound_thread().play_sfx('Select 4')
-                        self.current_msg = self.get_dialog('shop_no_money')
+                        self.current_msg = self.get_dialog(self.no_money_message)
                 else:
                     # Item doesn't have a repair cost
                     get_sound_thread().play_sfx('Select 4')
@@ -2812,7 +2905,7 @@ class RepairShopState(ShopState):
                 get_sound_thread().play_sfx('Info Out')
             else:
                 get_sound_thread().play_sfx('Select 4')
-                self.current_msg = self.get_dialog('shop_again')
+                self.current_msg = self.get_dialog(self.again_message)
                 game.state.change('transition_pop')
 
         elif event == 'INFO':
@@ -2836,6 +2929,7 @@ class UnlockSelectState(MapState):
         self.menu = menus.Choice(self.cur_unit, options)
 
     def begin(self):
+        self.fluid.reset_on_change_state()
         game.cursor.hide()
         self.item_desc_panel = ui_view.ItemDescriptionPanel(self.cur_unit, self.menu.get_current())
 

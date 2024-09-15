@@ -441,8 +441,8 @@ class EventProperties(QWidget):
 
     def show_commands(self):
         # Modeless dialog
-        if not self.show_commands_dialog:
-            self.show_commands_dialog = ShowCommandsDialog(self, self.current.is_python_event())
+        # if not self.show_commands_dialog:
+        self.show_commands_dialog = ShowCommandsDialog(self, self.current.version() == EventVersion.PYEV1)
         # self.show_commands_dialog.setAttribute(Qt.WA_ShowWithoutActivating, True)
         # self.show_commands_dialog.setWindowFlags(self.show_commands_dialog.windowFlags() | Qt.WindowDoesNotAcceptFocus)
         self.show_commands_dialog.show()

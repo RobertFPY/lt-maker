@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import (QApplication, QDialog, QFrame,
 
 from app.editor.base_database_gui import CollectionModel
 from app.events import event_commands, event_validators
-from app.events.python_eventing.utils import FORBIDDEN_PYTHON_COMMAND_NIDS
+from app.events.event_version import EventVersion
 
 def bold(s: str):
     return f'**{s}**'
@@ -105,9 +105,13 @@ class ShowCommandsDialog(QDialog):
         self.window = parent
         self.is_python = is_python
 
-        self.commands = event_commands.get_commands()
+        # self.commands = event_commands.get_commands()
+        # if is_python:
+        #     self.commands = [command for command in self.commands if command.nid not in FORBIDDEN_PYTHON_COMMAND_NIDS]
         if is_python:
-            self.commands = [command for command in self.commands if command.nid not in FORBIDDEN_PYTHON_COMMAND_NIDS]
+            self.commands = event_commands.get_all_event_commands(EventVersion.PYEV1).values()
+        else:
+            self.commands = event_commands.get_all_event_commands(EventVersion.EVENT).values()
         self.categories = [category.value for category in event_commands.Tags]
         self._data = []
         for category in self.categories:
@@ -186,23 +190,15 @@ class EventCommandModel(CollectionModel):
         super().__init__(data, window)
         self.categories = categories
 
-    def get_text(self, command) -> str:
-        full_text = command.nid + ';'.join(command.keywords) + ';'.join(command.optional_keywords) + \
-            ';'.join(command.flags) + ':' + str(command.desc)
-        return full_text
-
     def data(self, index, role):
         if not index.isValid():
             return None
         if role == Qt.DisplayRole:
             command = self._data[index.row()]
             if command in self.categories:
-                category = command
-                # We want to include the header if any of it's children are counted
-                return '-'.join([self.get_text(command).lower() for command in self._data if command not in self.categories and command.tag == category])
+                return command
             else:
-                return self.get_text(command).lower()
-
+                return command.nid
 
 class CommandDelegate(QStyledItemDelegate):
     def __init__(self, data, parent=None, is_python=False):
@@ -263,4 +259,4 @@ class CommandDelegate(QStyledItemDelegate):
             painter.drawText(left, top + font_height, command)
             font.setPointSize(prev_size)
             painter.setFont(font)
-            painter.drawLine(left, top + 1.25 * font_height, right, top + 1.25 * font_height)
+            painter.drawLine(left, int(top + 1.25 * font_height), right, int(top + 1.25 * font_height))

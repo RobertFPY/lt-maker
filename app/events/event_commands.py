@@ -3482,9 +3482,6 @@ def restore_command(dat) -> EventCommand:
 
 evaluables = ('Expression', 'String', 'StringList', 'PointList', 'Nid', 'Text')
 
-EVENT_COMMANDS: Dict[NID, Type[EventCommand]] = {
-    command.nid: command for command in EventCommand.__subclasses__()
-}
 ALL_EVENT_COMMANDS: Dict[NID, Type[EventCommand]] = {
     command.nid: command for command in EventCommand.__subclasses__()
 }
@@ -3498,13 +3495,11 @@ FORBIDDEN_PYTHON_COMMANDS: List[EventCommand] = [Comment, If, Elif, Else,
 FORBIDDEN_PYTHON_COMMAND_NIDS: List[str] = [cmd.nid for cmd in FORBIDDEN_PYTHON_COMMANDS] + [cmd.nickname for cmd in FORBIDDEN_PYTHON_COMMANDS]
 def get_all_event_commands(version: EventVersion) -> Dict[NID, Type[EventCommand]]:
     if version == EventVersion.EVENT:
-        commands = {nid: command_t for nid, command_t in EVENT_COMMANDS.items() if nid not in ['say']}
-        for command in commands:
-            print(command)
+        commands = {nid: command_t for nid, command_t in ALL_EVENT_COMMANDS.items() if nid not in ['say']}
         return commands
     elif version == EventVersion.PYEV1:
         commands = {}
-        for nid, command_t in EVENT_COMMANDS.items():
+        for nid, command_t in ALL_EVENT_COMMANDS.items():
             if not command_t.tag in [Tags.HIDDEN, Tags.FLOW_CONTROL]:
                 if not command_t.nid in FORBIDDEN_PYTHON_COMMAND_NIDS:
                     commands[nid] = command_t

@@ -109,9 +109,18 @@ class ShowCommandsDialog(QDialog):
         # if is_python:
         #     self.commands = [command for command in self.commands if command.nid not in FORBIDDEN_PYTHON_COMMAND_NIDS]
         if is_python:
-            self.commands = event_commands.get_all_event_commands(EventVersion.PYEV1).values()
+            commands = event_commands.get_all_event_commands(EventVersion.PYEV1).values()
         else:
-            self.commands = event_commands.get_all_event_commands(EventVersion.EVENT).values()
+            commands = event_commands.get_all_event_commands(EventVersion.EVENT).values()
+
+        # Remove duplicates from nicknames
+        self.commands = []
+        already_seen = set()
+        for command in commands:
+            if command not in already_seen:
+                self.commands.append(command)
+            already_seen.add(command)
+
         self.categories = [category.value for category in event_commands.Tags]
         self._data = []
         for category in self.categories:

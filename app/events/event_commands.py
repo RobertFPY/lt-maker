@@ -3495,7 +3495,8 @@ FORBIDDEN_PYTHON_COMMANDS: List[EventCommand] = [Comment, If, Elif, Else,
 FORBIDDEN_PYTHON_COMMAND_NIDS: List[str] = [cmd.nid for cmd in FORBIDDEN_PYTHON_COMMANDS] + [cmd.nickname for cmd in FORBIDDEN_PYTHON_COMMANDS]
 def get_all_event_commands(version: EventVersion) -> Dict[NID, Type[EventCommand]]:
     if version == EventVersion.EVENT:
-        return {nid: command_t for nid, command_t in ALL_EVENT_COMMANDS.items() if nid not in ['say']}
+        commands = {nid: command_t for nid, command_t in ALL_EVENT_COMMANDS.items() if nid not in ['say']}
+        return commands
     elif version == EventVersion.PYEV1:
         commands = {}
         for nid, command_t in ALL_EVENT_COMMANDS.items():

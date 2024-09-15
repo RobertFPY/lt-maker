@@ -3505,6 +3505,7 @@ def get_all_event_commands(version: EventVersion) -> Dict[NID, Type[EventCommand
                     commands[nid] = command_t
         commands['wait'] = Wait
         commands['finish'] = Finish
+        commands['end_skip'] = EndSkip
         return commands
 
 @dataclass

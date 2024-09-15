@@ -1,4 +1,5 @@
 from __future__ import annotations
+from functools import lru_cache
 
 from typing import TYPE_CHECKING
 
@@ -94,10 +95,6 @@ class Defaults():
         return 0
 
     @staticmethod
-    def canto_movement(unit, unit2) -> int:
-        return unit.movement_left
-
-    @staticmethod
     def limit_maximum_range(unit, item) -> int:
         return 1000
 
@@ -165,6 +162,7 @@ class Defaults():
     def thracia_critical_multiplier_formula(unit) -> str:
         return 'THRACIA_CRIT'
 
+@lru_cache(65535)
 def condition(skill, unit: UnitObject, item=None) -> bool:
     if not item:
         item = unit.equipped_weapon
@@ -256,15 +254,17 @@ def should_draw_anim(unit) -> list:
 def additional_tags(unit) -> set:
     new_tags = set()
     for skill in unit.skills:
-        if skill.has_tags and skill.has_tags.value and condition(skill, unit):
-            new_tags = new_tags | set(skill.has_tags.value)
+        for component in skill.components:
+            if component.defines('additional_tags'):
+                if component.ignore_conditional or condition(skill, unit):
+                    new_tags = new_tags | set(component.additional_tags(unit, skill))
     return new_tags
 
-def before_crit(actions, playback, attacker, item, defender, mode, attack_info) -> bool:
+def before_crit(actions, playback, attacker, item, defender, item2, mode, attack_info) -> bool:
     for skill in attacker.skills:
         for component in skill.components:
             if component.defines('before_crit'):
-                component.before_crit(actions, playback, attacker, item, defender, mode, attack_info)
+                component.before_crit(actions, playback, attacker, item, defender, item2, mode, attack_info)
 
 def on_end_chapter(unit, skill):
     for component in skill.components:
@@ -384,11 +384,13 @@ def ai_priority_multiplier(unit) -> float:
     for skill in unit.skills:
         for component in skill.components:
             if component.defines('ai_priority_multiplier'):
-                ai_priority_multiplier *= component.ai_priority_multiplier(unit)
+                if component.ignore_conditional or condition(skill, unit):
+                    ai_priority_multiplier *= component.ai_priority_multiplier(unit)
     return ai_priority_multiplier
 
 def get_combat_arts(unit):
-    from app.engine import action, item_funcs, target_system
+    from app.engine import action, item_funcs
+    from app.engine.game_state import game
     combat_arts = {}
     unit_skills = unit.skills[:]
     for skill in unit_skills:
@@ -410,7 +412,7 @@ def get_combat_arts(unit):
                 # activate_combat_art(unit, skill)
                 act = action.AddSkill(unit, skill.combat_art.value)
                 act.do()
-                targets = target_system.get_valid_targets(unit, weapon)
+                targets = game.target_system.get_valid_targets(unit, weapon)
                 act.reverse()
                 # deactivate_combat_art(unit, skill)
                 if targets:

@@ -98,6 +98,12 @@ class ItemObject():
     def __repr__(self):
         return "Item: %s %s" % (self.nid, self.uid)
 
+    def __hash__(self):
+        return hash(self.uid)
+
+    def __eq__(self, other: ItemObject) -> bool:
+        return isinstance(other, ItemObject) and self.uid == other.uid
+
     def save(self):
         serial_dict = {}
         serial_dict['uid'] = self.uid

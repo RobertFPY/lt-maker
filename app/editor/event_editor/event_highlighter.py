@@ -34,10 +34,8 @@ class EventSyntaxRuleHighlighter():
         comment_match = QRegularExpression("#[^\n]*")
         comment_format = self.create_text_format(syntax_colors.comment_color, italic=True)
 
-        self.rules: List[Rule] = [
-            Rule(function_match, function_format),
-            Rule(comment_match, comment_format)
-        ]
+        self.func_rule = Rule(function_match, function_format)
+        self.comment_rule = Rule(comment_match, comment_format)
 
         self.lint_format = QTextCharFormat()
         self.lint_format.setUnderlineStyle(QTextCharFormat.SpellCheckUnderline)
@@ -55,11 +53,12 @@ class EventSyntaxRuleHighlighter():
 
     def match_line(self, line: str) -> List[LineToFormat]:
         format_lines: List[LineToFormat] = []
-        for rule in self.rules:
-            match_iterator = rule.pattern.globalMatch(line)
-            while match_iterator.hasNext():
-                match = match_iterator.next()
-                format_lines.append(LineToFormat(match.capturedStart(), match.capturedLength(), rule._format))
+
+        match_iterator = self.func_rule.pattern.globalMatch(line)
+        while match_iterator.hasNext():
+            match = match_iterator.next()
+            format_lines.append(LineToFormat(match.capturedStart(), match.capturedLength(), self.func_rule._format))
+
         as_tokens = event_commands.get_command_arguments(line)
         # speak formatting
         command_type = event_commands.determine_command_type(as_tokens[0].string.strip())
@@ -96,6 +95,13 @@ class EventSyntaxRuleHighlighter():
                 if brace_mode > 0:
                     format_lines.append(LineToFormat(special_start, idx - special_start + 1, self.special_text_format))
                     brace_mode -= 1
+
+        # Comment rule goes last because it must have the highest precedence -- it overwrites everything else
+        match_iterator = self.comment_rule.pattern.globalMatch(line)
+        while match_iterator.hasNext():
+            match = match_iterator.next()
+            format_lines.append(LineToFormat(match.capturedStart(), match.capturedLength(), self.comment_rule._format))
+
         return format_lines
 
     def validate_tokens(self, line: str) -> str | List[int]:
@@ -108,6 +114,9 @@ class EventSyntaxRuleHighlighter():
                         return 'all'
                 broken_args = []
                 for keyword, value in parameters.items():
+                    # if empty and optional keyword, don't need to highlight
+                    if not value and keyword in command.optional_keywords:
+                        continue
                     validator = command.get_validator_from_keyword(keyword)
                     level = DB.levels.get(self.window.current.level_nid if self.window.current else None)
                     text = event_validators.validate(validator, value, level, DB, RESOURCES)
@@ -132,4 +141,6 @@ class EventHighlighter(QSyntaxHighlighter):
     def highlightBlock(self, text: str):
         to_format = self.event_syntax_formatter.match_line(text)
         for piece_to_format in to_format:
+            if piece_to_format.length == 0:
+                piece_to_format.length = 1
             self.setFormat(piece_to_format.start, piece_to_format.length, piece_to_format._format)

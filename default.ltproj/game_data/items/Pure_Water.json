@@ -1,6 +1,6 @@
 [
     {
-        "nid": "Pure Water",
+        "nid": "Pure_Water",
         "name": "Pure Water",
         "desc": "Temporarily raises resistance.",
         "icon_nid": "Consumable",
@@ -27,13 +27,10 @@
             ],
             [
                 "uses_options",
-                [
-                    [
-                        "LoseUsesOnMiss (T/F)",
-                        "F",
-                        "Lose uses even on miss"
-                    ]
-                ]
+                {
+                    "lose_uses_on_miss": false,
+                    "one_loss_per_combat": false
+                }
             ],
             [
                 "map_hit_add_blend",
@@ -45,7 +42,7 @@
             ],
             [
                 "status_on_hit",
-                "Resist+"
+                "ResistPlus"
             ]
         ]
     }

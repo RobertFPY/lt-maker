@@ -83,6 +83,23 @@ class MapSprite():
             engine.set_colorkey(img, COLORKEY, rleaccel=True)
         return imgs
 
+    def create_image(self, state, stationary=False):
+        image = self.__dict__.get(state)  # This is roughly 2x as fast as getattr, but getattr is safer
+        image = self.select_frame(image, state, stationary)
+        return image
+
+    def select_frame(self, image, state, stationary=False):
+        if stationary:
+            return image[0].copy()
+        elif state == 'passive' or state == 'gray':
+            return image[ANIMATION_COUNTERS.passive_sprite_counter.count].copy()
+        elif state == 'active':
+            return image[ANIMATION_COUNTERS.active_sprite_counter.count].copy()
+        elif state == 'combat_anim':
+            return image[ANIMATION_COUNTERS.fast_move_sprite_counter.count].copy()
+        else:
+            return image[ANIMATION_COUNTERS.move_sprite_counter.count].copy()
+
 def load_map_sprite(unit: UnitObject | UnitPrefab, team='player'):
     klass = DB.classes.get(unit.klass)
     nid = klass.map_sprite_nid
@@ -155,6 +172,7 @@ class UnitSprite():
     def reset(self):
         self.offset = [0, 0]
         ANIMATION_COUNTERS.attack_movement_counter.reset()
+        self._roam_position = None
 
     def get_round_fake_pos(self):
         if self._fake_position:
@@ -170,7 +188,7 @@ class UnitSprite():
                 anim = Animation(anim, (-16, -16), loop=loop, contingent=contingent)
             else:
                 return
-        if anim.nid in self.animations.keys():
+        if anim.nid in self.animations:
             return False
         self.animations[anim.nid] = anim
         return True
@@ -429,27 +447,14 @@ class UnitSprite():
             elif self.transition_state == 'swoosh_move':
                 self.set_transition('swoosh_in')
 
-    def select_frame(self, image, state):
-        if self.unit.is_dying:
-            return image[0].copy()
-        elif state == 'passive' or state == 'gray':
-            return image[ANIMATION_COUNTERS.passive_sprite_counter.count].copy()
-        elif state == 'active':
-            return image[ANIMATION_COUNTERS.active_sprite_counter.count].copy()
-        elif state == 'combat_anim':
-            return image[ANIMATION_COUNTERS.fast_move_sprite_counter.count].copy()
-        else:
-            return image[ANIMATION_COUNTERS.move_sprite_counter.count].copy()
-
-    def create_image(self, state):
+    def create_image(self, state, stationary=False):
+        stationary = stationary or self.unit.is_dying
         if not self.map_sprite:  # This shouldn't happen, but if it does...
             res = RESOURCES.map_sprites[0]
             self.map_sprite = MapSprite(res, self.unit.team)
         if self.transition_state == 'swoosh_in':
             state = 'down'
-        image = self.map_sprite.__dict__.get(state)  # This is roughly 2x as fast as getattr, but getattr is safer
-        image = self.select_frame(image, state)
-        return image
+        return self.map_sprite.create_image(state, stationary)
 
     def get_topleft(self, cull_rect):
         if self._fake_position:
@@ -502,6 +507,7 @@ class UnitSprite():
                 top -= extra_height
             image = image_mods.make_translucent(image.convert_alpha(), progress)
 
+        # Flickering the unit a specific color, like flash white during a map combat hit
         for flicker in self.flicker[:]:
             starting_time, total_time, color, direction, fade_out = flicker
             if engine.get_time() >= starting_time:
@@ -516,9 +522,11 @@ class UnitSprite():
                 elif direction == 'sub':
                     image = image_mods.sub_tint(image.convert_alpha(), color)
 
+        # Color a unit red if they are highlighted by the boundary
         if not self.flicker and game.boundary.draw_flag and self.unit.nid in game.boundary.displaying_units:
             image = image_mods.change_color(image.convert_alpha(), (60, 0, 0))
 
+        # Turnwheel tint of unit sprite
         if game.action_log.hovered_unit is self.unit:
             length = 200
             if not (current_time // length) % 2:
@@ -531,14 +539,19 @@ class UnitSprite():
 
         flicker_tint = skill_system.unit_sprite_flicker_tint(self.unit)
         for idx, tint in enumerate(flicker_tint):
-            color, period, width = tint
-            offset = idx * period / len(flicker_tint)
-            diff = utils.model_wave(current_time + offset, period, width)
-            diff = utils.clamp(diff, 0, 1)
-            color = tuple([int(c * diff) for c in color])
-            image = image_mods.add_tint(image.convert_alpha(), color)
-
-        # Each image has (self.image.get_width() - 32)//2 buggers on the
+            color, period, width, add = tint
+            # Modify the color by the wave
+            if period > 0 and width > 0:
+                offset = idx * period / len(flicker_tint)
+                diff = utils.model_wave(current_time + offset, period, width)
+                diff = utils.clamp(diff, 0, 1)
+                color = tuple([int(c * diff) for c in color])
+            if add:
+                image = image_mods.add_tint(image.convert_alpha(), color)
+            else:
+                image = image_mods.sub_tint(image.convert_alpha(), color)
+                
+        # Each image has (self.image.get_width() - 32)//2 pixels on the
         # left and right of it, to handle any off tile spriting
         topleft = left - max(0, (image.get_width() - 16)//2), top - 24
 
@@ -547,16 +560,11 @@ class UnitSprite():
             partner_image = partner.sprite.create_image(self.image_state)
             partner_image = partner_image.convert_alpha()
             surf.blit(partner_image, (topleft[0] + 3, topleft[1] - 3))
-            # This make gray is probably slow...
-            gray_version = image_mods.make_gray(partner_image)
-            translucent_gray = image_mods.make_translucent(gray_version, 0.25)
-            surf.blit(translucent_gray, (topleft[0] + 3, topleft[1] - 3))
             surf.blit(image, (topleft[0] - 3, topleft[1] + 3))
         else:
             surf.blit(image, topleft)
 
         # Draw animations
-
         valid_anims: list = skill_system.should_draw_anim(self.unit)
         for animation in self.animations.values():
             if not animation.contingent or animation.nid in valid_anims:
@@ -604,7 +612,7 @@ class UnitSprite():
             markers.append('interact')
         if cur_unit.team == 'player':
             for item in item_funcs.get_all_items(self.unit):
-                markers += item_system.target_icon(cur_unit, item, self.unit)
+                markers += item_system.target_icon(self.unit, item, cur_unit)
             markers += skill_system.target_icon(cur_unit, self.unit)
         markers = [SPRITES.get('marker_%s' % marker) for marker in markers if marker]
         markers = [_ for _ in markers if _]  # Only include non-None
@@ -653,5 +661,10 @@ class UnitSprite():
             rescue_icon = SPRITES.get('rescue_icon_%s' % team_color, 'rescue_icon_green')
             topleft = (left - 8, top - 8)
             surf.blit(rescue_icon, topleft)
+
+        if any((i.droppable for i in self.unit.items)):
+            droppable_icon = SPRITES.get('droppable_icon')
+            topleft = (left - 8, top - 8)
+            surf.blit(droppable_icon, topleft)
 
         return surf

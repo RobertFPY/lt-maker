@@ -1,6 +1,6 @@
 from app.data.resources.base_catalog import ManifestCatalog
 
-class Portrait():
+class PortraitPrefab():
     def __init__(self, nid, full_path=None, pix=None):
         self.nid = nid
         self.full_path = full_path
@@ -30,7 +30,7 @@ class Portrait():
         self.info_offset = int(s_dict.get('info_offset', 0))
         return self
 
-class PortraitCatalog(ManifestCatalog[Portrait]):
+class PortraitCatalog(ManifestCatalog[PortraitPrefab]):
     manifest = 'portraits.json'
     title = 'portraits'
-    datatype = Portrait
+    datatype = PortraitPrefab

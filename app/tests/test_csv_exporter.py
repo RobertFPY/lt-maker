@@ -49,8 +49,8 @@ Lord,Eirika_Lord,16,4,2,8,9,0,3,5,5,0,0,90,45,22,40,45,40,15,0,0,20,0,True,False
         dmp = csv.item_db_to_csv(item_db)
         self.assertEqual(dmp,
 """NAME,NID,HIT,CRIT,DAMAGE,WEAPON_TYPE,WEAPON_RANK,WEIGHT,USES,MIN_RANGE,MAX_RANGE,VALUE
-Iron Sword,Iron Sword,90,0,5,Sword,E,5,46,1,1,460
-Slim Sword,Slim Sword,100,5,3,Sword,E,2,30,1,1,480
+Iron Sword,Iron_Sword,90,0,5,Sword,E,5,46,1,1,460
+Slim Sword,Slim_Sword,100,5,3,Sword,E,2,30,1,1,480
 """)
 
     def test_update_unit_from_csv(self):

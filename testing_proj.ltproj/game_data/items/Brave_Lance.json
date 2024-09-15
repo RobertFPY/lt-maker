@@ -1,6 +1,6 @@
 [
     {
-        "nid": "Brave Lance",
+        "nid": "Brave_Lance",
         "name": "Brave Lance",
         "desc": "Allows two consecutive hits.",
         "icon_nid": "Lance",
@@ -43,13 +43,10 @@
             ],
             [
                 "uses_options",
-                [
-                    [
-                        "LoseUsesOnMiss (T/F)",
-                        "F",
-                        "Lose uses even on miss"
-                    ]
-                ]
+                {
+                    "lose_uses_on_miss": false,
+                    "one_loss_per_combat": false
+                }
             ],
             [
                 "brave",

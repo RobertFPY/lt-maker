@@ -78,7 +78,7 @@ class TileSetEditor(QDialog):
 
         desktop = QDesktopWidget()
         main_screen_size = desktop.availableGeometry(desktop.primaryScreen())
-        default_size = main_screen_size.width()*0.7, main_screen_size.height()*0.7
+        default_size = int(main_screen_size.width()*0.7), int(main_screen_size.height()*0.7)
         self.resize(*default_size)
 
         self.current: TileSet = current

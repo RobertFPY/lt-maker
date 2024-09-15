@@ -8,6 +8,7 @@ from app.engine.fonts import FONT
 from app.engine.input_manager import get_input_manager
 
 from app.engine import engine, image_mods, icons
+from app.engine.graphics.text.text_renderer import render_text, text_width
 
 class DamageNumber():
     time_bounce = 400
@@ -83,9 +84,9 @@ class SkillIcon():
         self.right = right
         self.center = center
         self.small = small
-        self.font = FONT['text']
+        self.font = 'text'
         self.text = self.skill.name
-        self.text_width = self.font.width(self.text)
+        self.text_width = text_width(self.font, self.text)
         icon = icons.get_icon(self.skill)
         if icon:
             if self.small:
@@ -93,22 +94,22 @@ class SkillIcon():
             else:
                 self.surf = engine.create_surface((self.text_width + 22, 32), transparent=True)
                 if self.center:
-                    self.font.blit(self.text, self.surf, (10, 0))
+                    render_text(self.surf, [self.font], [self.text], None, topleft=(10, 0))
                     self.surf.blit(icon, (self.text_width//2 + 4, 16))
                 elif self.right:
-                    self.font.blit(self.text, self.surf, (20, 0))
+                    render_text(self.surf, [self.font], [self.text], None, topleft=(20, 0))
                     self.surf.blit(icon, (0, 0))
                 else:
-                    self.font.blit(self.text, self.surf, (0, 0))
+                    render_text(self.surf, [self.font], [self.text], None, topleft=(0, 0))
                     self.surf.blit(icon, (self.text_width + 4, 0))
         else:
             self.surf = engine.create_surface((self.text_width + 22, 16), transparent=True)
             if self.center:
-                self.font.blit(self.text, self.surf, (10, 0))
+                render_text(self.surf, [self.font], [self.text], None, topleft=(10, 0))
             elif self.right:
-                self.font.blit(self.text, self.surf, (20, 0))
+                render_text(self.surf, [self.font], [self.text], None, topleft=(20, 0))
             else:
-                self.font.blit(self.text, self.surf, (0, 0))
+                render_text(self.surf, [self.font], [self.text], None, topleft=(0, 0))
 
         self.image = self.surf
 
@@ -116,8 +117,9 @@ class SkillIcon():
         self.done: bool = False
         self.state = 'in'
 
-        self.fade_time = 300 if self.small else 400
-        self.hold_time = 700 if self.small else 1100
+        self.fade_in_time = 300 if self.small else 400
+        self.hold_time = 500 if self.small else 700
+        self.fade_out_time = 100 if self.small else 150
 
         self.left_pos = 0
 
@@ -126,22 +128,23 @@ class SkillIcon():
 
         if self.state == 'in':
             self.left_pos = 10 * math.exp(-current_time/250) * math.sin(current_time/25)
-            transparency = 1 - utils.clamp(current_time/200, 0, 1)
+            transparency = 1 - utils.clamp(current_time/int(self.fade_in_time * .66), 0, 1)
             self.image = image_mods.make_translucent(self.surf, transparency)
-            if current_time > self.fade_time:
+            if current_time > self.fade_in_time:
                 self.state = 'hold'
                 self.left_pos = 0
 
         elif self.state == 'hold':
+            state_time = current_time - self.fade_in_time
             self.image = self.surf
-            if current_time > self.hold_time:
+            if state_time > self.hold_time:
                 self.state = 'out'
 
         elif self.state == 'out':
-            state_time = current_time - self.hold_time
-            transparency = utils.clamp(state_time/300, 0, 1)
+            state_time = current_time - self.hold_time - self.fade_in_time
+            transparency = utils.clamp(state_time/self.fade_out_time, 0, 1)
             self.image = image_mods.make_translucent(self.surf, transparency)
-            if state_time > self.fade_time:
+            if state_time > self.fade_out_time:
                 self.done = True
 
     def draw(self, surf, pos=None):

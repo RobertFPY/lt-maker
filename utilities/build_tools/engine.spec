@@ -1,20 +1,41 @@
 # -*- mode: python -*-
-import sys
+from pathlib import Path
+import sys, os
+
 
 block_cipher = None
 
-name = sys.argv[3]
+name = sys.argv[1]
 project = name + '.ltproj'
 
-a = Analysis(['run_engine.py'],
+root = Path('../../')
+def path(orig_path: str):
+    if os.path.isabs(orig_path):
+        return orig_path
+    return root / orig_path
+
+# this is a really stupid way to do IPC
+# we pass in a "tag" from the editor, and use this "tag"
+# to print out log messages formatted like `tag: 100`
+# which we use on the editor side to parse the logs
+# to read the progress messages.
+progress_sentinel_message = sys.argv[2]
+def log_progress(pct: int):
+    print(progress_sentinel_message + str(pct), flush=True)
+
+# Also need to pass custom icon in, since options are disabled when we use a spec file (...why?)
+icon_path = sys.argv[3]
+
+log_progress(20)
+a = Analysis([path('run_engine.py')],
              pathex=['.'],
              binaries=[],
-             datas=[('saves/save_storage.txt', 'saves'),
-                    ('resources', 'resources'),
-                    ('sprites', 'sprites'),
-                    (project, project),
-                    ('favicon.ico', '.'),
-                    ('app', 'app')],
+             datas=[(path('saves/save_storage.txt'), 'saves'),
+                    (path('resources'), 'resources'),
+                    (path('sprites'), 'sprites'),
+                    (project, os.path.basename(project)),
+                    (path('favicon.ico'), '.'),
+                    (path('app'), 'app')],
              hiddenimports=[],
              hookspath=[],
              runtime_hooks=[],
@@ -22,25 +43,10 @@ a = Analysis(['run_engine.py'],
              win_no_prefer_redirects=False,
              win_private_assemblies=False,
              cipher=block_cipher)
+log_progress(20)
 pyz = PYZ(a.pure, a.zipped_data,
              cipher=block_cipher)
-
-Key = ['mkl','libopenblas']
-
-def remove_from_list(input, keys):
-    outlist = []
-    for item in input:
-        name, _, _ = item
-        flag = 0
-        for key_word in keys:
-            if name.find(key_word) > -1:
-                flag = 1
-        if flag != 1:
-            outlist.append(item)
-    return outlist
-
-# a.binaries = remove_from_list(a.binaries, Key)
-
+log_progress(40)
 exe = EXE(pyz,
           a.scripts,
           exclude_binaries=True,
@@ -48,8 +54,10 @@ exe = EXE(pyz,
           debug=False,
           strip=False,
           upx=True,
-          console=True,
-          icon='favicon.ico' )
+          console=False,
+          icon=path(icon_path),
+          contents_directory='.' )
+log_progress(60)
 coll = COLLECT(exe,
                a.binaries,
                a.zipfiles,
@@ -57,3 +65,4 @@ coll = COLLECT(exe,
                strip=False,
                upx=True,
                name=name)
+log_progress(80)

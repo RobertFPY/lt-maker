@@ -1,11 +1,9 @@
 import logging
 
-import app.engine.config as cf
 from app.data.database.database import DB
-from app.engine.dialog_log import DialogLogState
 from app.engine.game_state import game
-from app.engine.sound import get_sound_thread
 from app.engine.state import State
+from app.engine import action
 from app.events import triggers
 
 
@@ -18,8 +16,13 @@ class EventState(State):
     def begin(self):
         logging.debug("Begin Event State")
         self.game_over: bool = False  # Whether we've called for a game over
+        self.previous_turnwheel_lock = False  # Whether the game is currently in a turnwheel locked state (enemy turn, for instance)
         if not self.event:
             self.event = game.events.get()
+            self.previous_turnwheel_lock = game.action_log.get_last_lock()
+            # Only lock if we actually need to...
+            if not self.previous_turnwheel_lock:
+                action.do(action.LockTurnwheel(True))
             if self.event and self.event.trigger and self.event.trigger.nid == 'on_turnwheel':
                 game.action_log.stop_recording()
             if self.event and game.cursor:
@@ -58,7 +61,7 @@ class EventState(State):
         current_level_nid = game.level.nid
         game.memory['_prev_level_nid'] = current_level_nid
         current_level_index = DB.levels.index(game.level.nid)
-        should_go_to_overworld = DB.levels.get(game.level.nid).go_to_overworld and DB.constants.value('overworld')
+        should_go_to_overworld = DB.levels.get(game.level.nid).go_to_overworld and DB.constants.value('overworld') and game.game_vars.get('_goto_level') is None
         game.memory['_skip_save'] = game.level_vars.get('_skip_save', False)
         game.clean_up()
         if current_level_index < len(DB.levels) - 1 or game.game_vars.get('_goto_level') is not None:
@@ -110,6 +113,9 @@ class EventState(State):
         logging.debug("Ending Event")
         if self.event and self.event.trigger and self.event.trigger.nid == 'on_turnwheel':
             game.action_log.start_recording()
+        # Only unlock if we are allowed to...
+        if not self.previous_turnwheel_lock:
+            action.do(action.LockTurnwheel(False))
         game.events.end(self.event)
         if game.level_vars.get('_win_game') or self.is_handling_end_event:
             logging.info("Player Wins!")
@@ -119,7 +125,7 @@ class EventState(State):
             if game.level_vars.get('_level_end_triggered'):
                 self.level_end()
             else:
-                did_trigger = game.events.trigger(triggers.LevelEnd())
+                did_trigger = game.events.trigger(triggers.LevelEnd(), game.level.nid)
                 if did_trigger:
                     game.level_vars['_level_end_triggered'] = True
                 else:
@@ -154,7 +160,20 @@ class EventState(State):
                 game.memory['force_turnwheel'] = True
             else:
                 game.memory['force_turnwheel'] = False
+            game.memory['event_turnwheel'] = True
             self.event.turnwheel_flag = False
+
+        elif self.event.end_turn_flag:
+            game.state.back()
+            game.events.clear()  # Ending the turn FORCIBLY removes all events off the stack
+            if game.phase.get_next() == 'player':
+                game.state.change('turn_change')
+                game.state.change('status_endstep')
+            else:
+                game.state.change('turn_change')
+                game.state.change('status_endstep')
+                game.state.change('ai')
+                game.ui_view.remove_unit_display()
 
         else:
             game.state.back()

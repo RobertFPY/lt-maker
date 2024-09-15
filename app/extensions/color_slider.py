@@ -103,7 +103,7 @@ class ColorSlider(QWidget):
     def drawPointer(self, painter: QPainter):
         self.correct_pointer()
 
-        self.pointer_y = self.height() / 2
+        self.pointer_y = self.height() // 2
 
         pen = QPen(self.pointer_border_color, self.pointer_border)
         painter.setPen(pen)
@@ -114,8 +114,8 @@ class ColorSlider(QWidget):
         pen.setCapStyle(Qt.FlatCap)
         painter.setPen(pen)
 
-        painter.drawLine(self.pointer_x, self.slider_y, self.pointer_x, self.pointer_y - self.pointer_r - self.pointer_border / 2)
-        painter.drawLine(self.pointer_x, self.slider_y + self.slider_height, self.pointer_x, self.pointer_y + self.pointer_r + self.pointer_border / 2)
+        painter.drawLine(self.pointer_x, self.slider_y, self.pointer_x, self.pointer_y - self.pointer_r - self.pointer_border // 2)
+        painter.drawLine(self.pointer_x, self.slider_y + self.slider_height, self.pointer_x, self.pointer_y + self.pointer_r + self.pointer_border // 2)
 
     def drawBorder(self, painter: QPainter):
         rect = QRectF(self.slider_x, self.slider_y, self.slider_width, self.slider_height)

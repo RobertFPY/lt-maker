@@ -1,4 +1,5 @@
 from __future__ import annotations
+from enum import Enum
 from app.data.database.items import ItemPrefab
 from app.data.database.levels import LevelPrefab
 from app.data.database.skills import SkillPrefab
@@ -7,12 +8,12 @@ import re
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type
 
 from app.data.database.database import Database
-from app.editor.event_editor.event_inspector import EventInspectorEngine
-from app.engine.fonts import FONT
+from app.data.database.difficulty_modes import RNGOption
+from app.utilities.class_utils import recursive_subclasses
 from app.utilities.enums import HAlignment, VAlignment
 from app.events import event_commands
 from app.events.screen_positions import horizontal_screen_positions, vertical_screen_positions
-from app.data.resources.resources import Resources
+from app.data.resources.resources import RESOURCES, Resources
 from app.sprites import SPRITES
 from app.utilities import str_utils
 from app.utilities.enums import Alignments
@@ -21,8 +22,14 @@ from app.events.regions import RegionType as RegionTypeEnum
 
 class Validator():
     desc = ""
+    # whether or not this type supports `{eval:}` and `{var:}`, etc.
+    # generally True, but false in case of commands such as change_objective
+    # that set a string that supports being evaluated elsewhere (and therefore must not be pre-emptively evaluated here)
+    can_preprocess = True
+    # Whether to include the generic words in the current event that match the given text in the valid_entries list
+    include_generic_completions = False
 
-    def __init__(self, db: Optional[Database]=None, resources: Optional[Resources]=None):
+    def __init__(self, db: Optional[Database] = None, resources: Optional[Resources] = None):
         self._db = db or Database()
         self._resources = resources or Resources()
 
@@ -41,6 +48,39 @@ class Validator():
     def convert(self, text: str):
         return text
 
+class SequenceValidator(Validator):
+    delim = ','
+    as_type = list
+
+    def convert_element(self, element: str):
+        return element
+
+    def convert(self, text: str):
+        return self.as_type([self.convert_element(t.strip()) for t in text.split(self.delim)])
+
+class DictValidator(Validator):
+    delim = ','
+
+    def validate(self, text, level):
+        s_l = text.split(',')
+        if len(s_l) % 2 != 0:  # Must be divisible by 2
+            return None
+        return text
+
+    def convert_key(self, key: str):
+        return key
+
+    def convert_val(self, val: str):
+        return val
+
+    def convert(self, text: str):
+        spl = [t.strip() for t in text.split(self.delim)]
+        keys = spl[::2]
+        vals = spl[1::2]
+        if len(keys) != len(vals):
+            return {}
+        return {self.convert_key(k): self.convert_val(v) for k, v in zip(keys, vals)}
+
 class OptionValidator(Validator):
     valid: List[str] = []
 
@@ -55,6 +95,17 @@ class OptionValidator(Validator):
 
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
         return [(None, option) for option in self.valid]
+
+class EnumValidator(OptionValidator):
+    enum_type: Type[Enum]
+
+    @property
+    def valid(self) -> List[str]:
+        return [e.value for e in self.enum_type]
+
+    def convert(self, text: str):
+        if text:
+            return self.enum_type(text)
 
 class EvalValidator(Validator):
     """exists as a special subclass of validators"""
@@ -71,9 +122,6 @@ class EvalValidator(Validator):
 class RawDataValidator(EvalValidator):
     desc = "must be a correct reference to raw data"
     tags = ['d', 'data']
-
-    def validate(self, text, level):
-        return text
 
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
         if not text:
@@ -116,9 +164,6 @@ class UnitFieldValidator(EvalValidator):
     desc = "must be a correct reference to fields on units"
     tags = ['f', 'field']
 
-    def validate(self, text, level):
-        return text
-
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
         text = self.process_arg_text(text)
         nlevel = text.count('.')
@@ -152,12 +197,9 @@ class VarValidator(EvalValidator):
     desc = "must be a correct reference to an existing game_var or level_var"
     tags = ['v', 'var']
 
-    def validate(self, text, level):
-        return text
-
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
         vars_in_level = set(self._db.game_var_slots.keys())
-        vars_in_level = vars_in_level | EventInspectorEngine(self._db.events).find_all_variables_in_level(level)
+        vars_in_level = vars_in_level | self._db.events.inspector.find_all_variables_in_level(level)
         return [(None, var_name) for var_name in vars_in_level]
 
 class SkillAttrValidator(EvalValidator):
@@ -226,9 +268,6 @@ class ItemAttrValidator(EvalValidator):
 class UnitField(Validator):
     desc = "can be nid of any unit field, including new ones"
 
-    def validate(self, text, level):
-        return text
-
     def valid_entries(self, level: NID, text: str) -> List[Tuple[Optional[str], NID]]:
         all_keys = set()
         for unit in self._db.units:
@@ -238,23 +277,17 @@ class UnitField(Validator):
 class Achievement(Validator):
     desc = "can be any nid of an achievement"
 
-    def validate(self, text, level):
-        return text
-
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
-        achs = EventInspectorEngine(self._db.events).find_all_calls_of_command(event_commands.CreateAchievement())
+        achs = self._db.events.inspector.find_all_calls_of_command(event_commands.CreateAchievement())
         slots = [(None, command.parameters['Nid']) for command in achs.values()]
         return slots
 
 class GeneralVar(Validator):
     desc = "can be any nid"
 
-    def validate(self, text, level):
-        return text
-
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
         vars_in_level = set(self._db.game_var_slots.keys())
-        vars_in_level = vars_in_level | EventInspectorEngine(self._db.events).find_all_variables_in_level(level)
+        vars_in_level = vars_in_level | self._db.events.inspector.find_all_variables_in_level(level)
         return [(None, var_name) for var_name in vars_in_level]
 
 class EventFunction(Validator):
@@ -267,7 +300,7 @@ class EventFunction(Validator):
         return None
 
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
-        valids = [(None, command.nid) for command in event_commands.get_commands()]
+        valids = [(None, command.nid) for command in event_commands.get_commands() if command.tag not in (event_commands.Tags.HIDDEN,)]
         return valids
 
 class Expression(Validator):
@@ -286,6 +319,9 @@ class Integer(Validator):
             return int(text)
         return None
 
+    def convert(self, text: str):
+        return int(text)
+
 class Float(Validator):
     desc = "Any number with a decimal"
 
@@ -297,7 +333,7 @@ class Float(Validator):
     def convert(self, text: str):
         return float(text)
 
-class PositiveInteger(Validator):
+class PositiveInteger(Integer):
     desc = "must be a positive whole number"
 
     def validate(self, text, level):
@@ -305,7 +341,7 @@ class PositiveInteger(Validator):
             return int(text)
         return None
 
-class IntegerList(Validator):
+class IntegerList(SequenceValidator):
     desc = "must be a comma-delimited list of integers (ie, `5,7,12`)"
 
     def validate(self, text, level):
@@ -315,7 +351,20 @@ class IntegerList(Validator):
                 return None
         return text
 
-class WholeNumber(Validator):
+    def convert_element(self, element: str):
+        return int(element)
+
+class BoolList(SequenceValidator):
+    desc = "a list of truthy or falsy values delimited by commas. E.g. `True, False, True`"
+
+    def validate(self, text, level):
+        as_list = text.split(',')
+        return all([t in Bool.valid for t in as_list])
+
+    def convert_element(self, element: str):
+        return Bool().convert(element)
+
+class WholeNumber(Integer):
     desc = "must be a whole number"
 
     def validate(self, text, level):
@@ -323,24 +372,26 @@ class WholeNumber(Validator):
             return int(text)
         return None
 
+    def convert(self, text: str):
+        return int(text)
+
+class Time(Integer):
+    desc = "indicates a duration"
+class Volume(Float):
+    desc = "A number between greater than 0 (0 is muted, 1 is current volume)"
+
 class String(Validator):
     """
     Any string will do
     """
     pass
 
-class Time(Validator):
-    def validate(self, text, level):
-        if str_utils.is_int(text):
-            return int(text)
-        return None
-
-    def convert(self, text: str) -> int:
-        return int(text)
+class EvaluableString(Validator):
+    can_preprocess = False
 
 class Music(Validator):
     def validate(self, text, level):
-        if text in self._resources.music.keys():
+        if text in self._resources.music:
             return text
         elif text == 'None':
             return text
@@ -352,7 +403,7 @@ class Music(Validator):
 
 class Sound(Validator):
     def validate(self, text, level):
-        if text in self._resources.sfx.keys():
+        if text in self._resources.sfx:
             return text
         return None
 
@@ -361,26 +412,16 @@ class Sound(Validator):
         return valids
 
 class PhaseMusic(OptionValidator):
-    valid = ['player_phase', 'enemy_phase', 'other_phase', 'enemy2_phase',
-             'player_battle', 'enemy_battle', 'other_battle', 'enemy2_battle']
+    @property
+    def valid(self) -> List[str]:
+        return self._db.music_keys
 
 class SpecialMusicType(OptionValidator):
     valid = ['title_screen', 'promotion', 'class_change', 'game_over']
 
-class Volume(Validator):
-    desc = "A number between greater than 0 (0 is muted, 1 is current volume)"
-
-    def validate(self, text, level):
-        if str_utils.is_float(text) and float(text) >= 0:
-            return float(text)
-        return None
-
-    def convert(self, text: str) -> float:
-        return float(text)
-
 class PortraitNid(Validator):
     def validate(self, text, level):
-        if text in self._resources.portraits.keys():
+        if text in self._resources.portraits:
             return text
         return None
 
@@ -392,9 +433,9 @@ class Portrait(Validator):
     desc = "can be a unit's nid, a portrait's nid, or one of (`{unit}`, `{unit1}`, `{unit2}`)."
 
     def validate(self, text, level):
-        if text in self._db.units.keys():
+        if text in self._db.units:
             return text
-        elif text in self._resources.portraits.keys():
+        elif text in self._resources.portraits:
             return text
         elif text in ('{unit}', '{unit1}', '{unit2}'):
             return text
@@ -410,7 +451,7 @@ class Portrait(Validator):
 
 class Affinity(Validator):
     def validate(self, affinity, level):
-        if affinity in self._db.affinities.keys():
+        if affinity in self._db.affinities:
             return affinity
         return None
 
@@ -420,7 +461,7 @@ class Affinity(Validator):
 
 class AI(Validator):
     def validate(self, text, level):
-        if text in self._db.ai.keys():
+        if text in self._db.ai:
             return text
         return None
 
@@ -430,7 +471,7 @@ class AI(Validator):
 
 class Team(Validator):
     def validate(self, text, level):
-        if text in self._db.teams.keys():
+        if text in self._db.teams:
             return text
         return None
 
@@ -440,7 +481,7 @@ class Team(Validator):
 
 class Tag(Validator):
     def validate(self, text, level):
-        if text in self._db.tags.keys():
+        if text in self._db.tags:
             return text
         return None
 
@@ -448,40 +489,7 @@ class Tag(Validator):
         valids = [(None, tag.nid) for tag in self._db.tags.values()]
         return valids
 
-class TagList(Validator):
-    desc = "must be a comma-delimited list of tags (ie, `Armor,Dragon,Boss`)"
-
-    def validate(self, text, level):
-        tex = text.split(',')
-        for t in tex:
-            if t not in self._db.tags.keys():
-                return None
-        return text
-
-    def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
-        valids = [(None, tag.nid) for tag in self._db.tags.values()]
-        return valids
-
-class TextPosition(Validator):
-    valid_positions = ['center']
-
-    desc = """
-Determines position to place text. Supports either pixels (`x,y`) or the `center` position.
-"""
-
-    def validate(self, text, level):
-        if text in self.valid_positions:
-            return text
-        elif text and ',' in text and len(text.split(',')) == 2 and all(str_utils.is_int(t) for t in text.split(',')):
-            return text
-        return None
-
-    def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
-        valids = [(None, option) for option in self.valid_positions]
-        return valids
-
-
-class ScreenPosition(Validator):
+class ScreenPosition(SequenceValidator):
     desc = """
 Determines where to add the portrait to the screen.
 Available options are (`OffscreenLeft`,
@@ -493,6 +501,7 @@ Can combine horizontal and vertical positions like so: `Left,Bottom`.
 If the portrait is placed on the left side of the screen to start,
 it will be facing right, and vice versa.
 """
+    as_type = tuple
 
     def validate(self, text: str, level: Optional[NID]):
         if text in horizontal_screen_positions:
@@ -519,19 +528,45 @@ it will be facing right, and vice versa.
         valids += [(None, option) for option in vertical_screen_positions]
         return valids
 
+    def convert_element(self, element: str):
+        element = element.replace('(', '').replace(')', '')
+        if str_utils.is_int(element):
+            return int(element)
+        return element
+
 class Slide(OptionValidator):
     valid = ["normal", "left", "right"]
 
-class Font(OptionValidator):
-    valid = list(FONT.keys())
+class Font(Validator):
+    def validate(self, text, level):
+        if text in RESOURCES.fonts:
+            return text
+
+    def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
+        return [(None, option) for option in RESOURCES.fonts.keys()]
+
+class FontColor(Validator):
+    def validate(self, text, level):
+        if text in RESOURCES.fonts.get('convo').palettes:
+            return text
+
+    # Must be done this way to delay grabbing what is valid until we've loaded in our resources
+    def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
+        return [(None, option) for option in RESOURCES.fonts.get('convo').palettes.keys()]
 
 class Direction(OptionValidator):
     valid = ["open", "close"]
 
+from app.utilities.enums import Orientation as o
 class Orientation(OptionValidator):
     valid = ["h", "horiz", "horizontal", "v", "vert", "vertical"]
 
-class ExpressionList(Validator):
+    def convert(self, text: str):
+        if text in self.valid[:3]:
+            return o.HORIZONTAL
+        return o.VERTICAL
+
+class ExpressionList(SequenceValidator):
     valid_expressions = ["NoSmile", "Smile", "NormalBlink", "CloseEyes", "HalfCloseEyes", "OpenEyes", "OpenMouth"]
     desc = "expects a comma-delimited list of expressions. Valid expressions are: (`NoSmile`, `Smile`, `NormalBlink`, `CloseEyes`, `HalfCloseEyes`, `OpenEyes`, `OpenMouth`). Example: `Smile,CloseEyes`"
 
@@ -546,7 +581,7 @@ class ExpressionList(Validator):
         valids = [(None, option) for option in self.valid_expressions]
         return valids
 
-class IllegalCharacterList(Validator):
+class IllegalCharacterList(SequenceValidator):
     valid_sets = ["uppercase", "lowercase", "uppercase_UTF8", "lowercase_UTF8", "numbers_and_punctuation"]
     desc = "expects a comma-delimited list of character sets to ban. Valid options are: ('uppercase', 'lowercase', 'uppercase_UTF8', 'lowercase_UTF8', 'numbers_and_punctuation'). Example: `uppercase,lowercase`"
 
@@ -562,11 +597,11 @@ class IllegalCharacterList(Validator):
         return valids
 
 class DialogVariant(Validator):
-    built_in = ["thought_bubble", "noir", "hint", "narration", "narration_top", "cinematic", "clear"]
+    built_in = ["thought_bubble", "noir", "hint", "narration", "narration_top", "cinematic", "clear", "boss_convo_left", "boss_convo_right", "overworld_narration"]
 
     def validate(self, text, level):
         slots = self.built_in.copy()
-        predefined_variants = EventInspectorEngine(self._db.events).find_all_calls_of_command(event_commands.SpeakStyle())
+        predefined_variants = self._db.events.inspector.find_all_calls_of_command(event_commands.SpeakStyle())
         slots += list(set([variant.parameters['Style'] for variant in predefined_variants.values()]))
         if text in slots:
             return text
@@ -574,35 +609,16 @@ class DialogVariant(Validator):
 
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
         slots = [(None, style) for style in self.built_in]
-        text = text.split(',')
-        predefined_variants = EventInspectorEngine(self._db.events).find_all_calls_of_command(event_commands.SpeakStyle())
-        slots += [(None, style) for style in list(set([variant.parameters['Style'] for variant in predefined_variants.values()]))]
+        predefined_variants = self._db.events.inspector.find_all_calls_of_command(event_commands.SpeakStyle())
+        slots += [(None, style) for style in set([variant.parameters['Style'] for variant in predefined_variants.values()])]
         return slots
 
-class StringList(Validator):
+class StringList(SequenceValidator):
     desc = "must be delimited by commas. For example: `Water,Earth,Fire,Air`"
 
-    def validate(self, text, level):
-        text = text.split(',')
-        return text
-
-class DashList(Validator):
-    desc = "similar to a StringList, but delimited by dashes. For example: `Water-Earth-Fire-Air`"
-
-    def validate(self, text, level):
-        try:
-            self.convert(text)
-            return text
-        except:
-            pass
-        return None
-
-    def convert(self, text: str) -> List:
-        return text.split('-')
-
-class PointList(Validator):
+class PointList(SequenceValidator):
     desc = "A list of points separated by dashes. E.g. (1, 1)-(3.5, 3)-(24,-6)"
-    decimal_converter = re.compile(r'[^\d.]+')
+    delim = '-'
 
     def validate(self, value, level):
         if isinstance(value, list):
@@ -610,26 +626,22 @@ class PointList(Validator):
                 return value
         return None
 
-    def convert(self, text: str) -> List[Point]:
-        try:
-            text.replace(' ', '')
-            tlist = text.split(')-(')
-            parsed_list = []
-            for pstring in tlist:
-                coords = pstring.split(',')
-                x = float(self.decimal_converter.sub('', coords[0]))
-                y = float(self.decimal_converter.sub('', coords[1]))
-                parsed_list.append((x, y))
-            return parsed_list
-        except:
-            return text
+    def convert_element(self, element: str):
+        element = element.replace('(', '').replace(')', '')
+        x, y = element.split(',')
+        return float(x), float(y)
 
 class Speaker(Validator):
-    pass  # Any text will do
+    include_generic_completions = True
+
+    def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
+        predefined_variants = self._db.events.inspector.find_all_calls_of_command(event_commands.SpeakStyle())
+        slots = [(None, style) for style in set([variant.parameters['Style'] for variant in predefined_variants.values()])]
+        return []
 
 class Panorama(Validator):
     def validate(self, text, level):
-        if text in self._resources.panoramas.keys():
+        if text in self._resources.panoramas:
             return text
         return None
 
@@ -637,37 +649,29 @@ class Panorama(Validator):
         valids = [(None, pan.nid) for pan in self._resources.panoramas.values()]
         return valids
 
-class Width(Validator):
+class Width(Integer):
     desc = "is measured in pixels"
 
-    def validate(self, text, level):
-        if str_utils.is_int(text):
-            return 8 * round(int(text) / 8)
-        return None
-
-class Speed(Validator):
+class Speed(Integer):
     desc = "is measured in milliseconds"
 
-    def validate(self, text, level):
-        if str_utils.is_int(text) and int(text) > 0:
-            return text
-        return None
-
-class Color3(Validator):
+class Color3(IntegerList):
     desc = "uses 0-255 for color channels. Example: `128,160,136`"
 
     def validate(self, text, level):
-        if ',' not in text:
+        as_list = self.convert(text)
+        if len(as_list) != 3:
             return None
-        text = text.split(',')
-        if len(text) != 3:
-            return None
-        if all(str_utils.is_int(t) and 0 <= int(t) <= 255 for t in text):
+        if all(str_utils.is_int(t) and 0 <= int(t) <= 255 for t in as_list):
             return text
         return None
 
 class Bool(OptionValidator):
     valid = ['t', 'true', '1', 'y', 'yes', 'f', 'false', '0', 'n', 'no']
+
+    def convert(self, text: str):
+        true_values = self.valid[:5]
+        return text.lower() in true_values
 
 class ShopFlavor(Validator):
     # Any string will do
@@ -686,7 +690,7 @@ class Chapter(Validator):
     desc = "accepts a chapter's nid."
 
     def validate(self, text, level):
-        if text in self._db.levels.keys():
+        if text in self._db.levels:
             return text
         return None
 
@@ -707,14 +711,12 @@ class Position(Validator):
         text = text.split(',')
         if len(text) == 1:
             text = text[0]
-            if level and text in level.units.keys():
+            if level and text in level.units:
                 return text
             elif text in ('{unit}', '{unit1}', '{unit2}', '{position}'):
                 return text
-            elif text in self.valid_overworld_nids().values():
-                return text
             if level and level.regions:
-                if text in level.regions.keys():
+                if text in level.regions:
                     return text
             return None
         if len(text) > 2:
@@ -740,28 +742,18 @@ class Position(Validator):
             valids.append((None, "{unit1}"))
             valids.append((None, "{unit2}"))
             valids.append((None, "{position}"))
-            for pair in self.valid_overworld_nids().items():
-                valids.append(pair)
             for region in level_prefab.regions.values():
                 valids.append((None, region.nid))
             return valids
+        return []
+
+    def convert(self, text: str):
+        if ',' in text:
+            return tuple([int(i) for i in text.split(',')])
         else:
-            valids = []
-            for pair in self.valid_overworld_nids().items():
-                valids.append(pair)
-            return valids
+            return text
 
-    def valid_overworld_nids(self) -> Dict[str, NID]:
-        # list of all valid nids in overworld
-        nids = {}
-        for overworld in self._db.overworlds.values():
-            node_nids = {node.name: node.nid for node in overworld.overworld_nodes.values()}
-            nids.update(node_nids)
-        party_nids = {party.name: party.nid for party in self._db.parties.values()}
-        nids.update(party_nids)
-        return nids
-
-class FloatPosition(Position, Validator):
+class FloatPosition(Validator):
     desc = """accepts a valid `(x, y)` position, but also allows fractional positions,
     such as (1.5, 2.6). You use a unit's nid to use their position.
     Alternatively, you can use one of (`{unit}`, `{unit1}`, `{unit2}`, `{position}`)"""
@@ -770,11 +762,9 @@ class FloatPosition(Position, Validator):
         text = text.split(',')
         if len(text) == 1:
             text = text[0]
-            if level and text in level.units.keys():
+            if level and text in level.units:
                 return text
             elif text in ('{unit}', '{unit1}', '{unit2}', '{position}'):
-                return text
-            elif text in self.valid_overworld_nids().values():
                 return text
             return None
         if len(text) > 2:
@@ -792,25 +782,33 @@ class FloatPosition(Position, Validator):
         else:
             return text
 
-class PositionOffset(Validator):
+    def convert(self, text: str):
+        if ',' in text:
+            x = tuple([float(i.replace('(', '').replace(')', '')) for i in text.split(',')])
+            return x
+        else:
+            return text
+
+class PositionOffset(IntegerList):
     desc = "accepts a valid `(x, y)` position offset."
 
     def validate(self, text, level):
-        text = text.split(',')
-        if len(text) != 2:
+        as_list = self.convert(text)
+        if len(as_list) != 2:
             return None
-        if not all(str_utils.is_int(t) for t in text):
+        if not all(str_utils.is_int(t) for t in as_list):
             return None
         return text
 
-class Size(Validator):
+class Size(IntegerList):
     desc = "must be in the format `x,y`. Example: `64,32`"
+    as_type = tuple
 
     def validate(self, text, level):
-        text = text.split(',')
-        if len(text) > 2:
+        as_list = self.convert(text)
+        if len(as_list) != 2:
             return None
-        if not all(str_utils.is_int(t) and int(t) > 0 for t in text):
+        if not all(str_utils.is_int(t) for t in as_list):
             return None
         return text
 
@@ -883,7 +881,7 @@ class StartingGroup(Validator):
 
 class UniqueUnit(Validator):
     def validate(self, text, level):
-        if text in self._db.units.keys():
+        if text in self._db.units:
             return text
         return None
 
@@ -899,7 +897,7 @@ class GlobalUnit(Validator):
             nids = [u.nid for u in level.units]
             if text in nids:
                 return text
-        if text in self._db.units.keys():
+        if text in self._db.units:
             return text
         elif text in ('{unit}', '{unit1}', '{unit2}'):
             return True
@@ -922,7 +920,7 @@ class GlobalUnitOrConvoy(Validator):
                 return text
         if text.lower() == 'convoy':
             return text
-        elif text in self._db.units.keys():
+        elif text in self._db.units:
             return text
         elif text in ('{unit}', '{unit1}', '{unit2}'):
             return True
@@ -939,17 +937,16 @@ class GlobalUnitOrConvoy(Validator):
 class Region(Validator):
     desc = "accepts a region nid."
 
-    def validate(self, text, level):
-        return text
-
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
         valids = []
         level_obj = self._db.levels.get(level)
         if level_obj:
             valids = [(None, region.nid) for region in level_obj.regions]
         return valids
+
 class AnimationType(OptionValidator):
     valid = ['north', 'east', 'west', 'south', 'fade']
+
 class CardinalDirection(OptionValidator):
     valid = ['north', 'east', 'west', 'south']
 
@@ -971,8 +968,14 @@ class RegionType(OptionValidator):
 class Weather(OptionValidator):
     valid = ["rain", "sand", "snow", "fire", "light", "purple", "dark", "smoke", "night", "sunset", "event_tile", "switch_tile"]
 
-class Align(OptionValidator):
-    valid = [align.value for align in Alignments]
+class Align(EnumValidator):
+    enum_type = Alignments
+
+class HAlign(EnumValidator):
+    enum_type = HAlignment
+
+class VAlign(EnumValidator):
+    enum_type = VAlignment
 
 class AlignOrPosition(OptionValidator):
     valid = [align.value for align in Alignments]
@@ -984,21 +987,21 @@ class AlignOrPosition(OptionValidator):
             return text
         return None
 
-class HAlign(OptionValidator):
-    valid = [align.value for align in HAlignment]
-
-class VAlign(OptionValidator):
-    valid = [align.value for align in VAlignment]
+    def convert(self, text: str):
+        if ',' in text:
+            x, y = text.split(',')
+            return int(x), int(y)
+        return Alignments(text)
 
 class GrowthMethod(OptionValidator):
     valid = ["random", "fixed", "dynamic"]
 
-class CombatScript(Validator):
+class CombatScript(SequenceValidator):
     valid_commands = ['hit1', 'hit2', 'crit1', 'crit2', 'miss1', 'miss2', '--', 'end']
     desc = "specifies the order and type of actions in combat. Valid actions: (`hit1`, `hit2`, `crit1`, `crit2`, `miss1`, `miss2`, `--`, `end`)."
 
     def validate(self, text, level):
-        commands = text.split(',')
+        commands = self.convert(text)
         if all(command.lower() in self.valid_commands for command in commands):
             return text
         return None
@@ -1009,9 +1012,9 @@ class CombatScript(Validator):
 
 class Ability(Validator):
     def validate(self, text, level):
-        if text in self._db.items.keys():
+        if text in self._db.items:
             return text
-        elif text in self._db.skills.keys():
+        elif text in self._db.skills:
             return text
         return None
 
@@ -1024,7 +1027,7 @@ class Item(Validator):
     desc = "accepts an item's nid or uid."
 
     def validate(self, text, level):
-        if text in self._db.items.keys():
+        if text in self._db.items:
             return text
         return None
 
@@ -1032,12 +1035,12 @@ class Item(Validator):
         valids = [(item.name, item.nid) for item in self._db.items.values()]
         return valids
 
-class ItemList(Validator):
+class ItemList(SequenceValidator):
     desc = "accepts a comma-delimited list of item nids. Example: `Iron Sword,Iron Lance,Iron Bow`"
 
     def validate(self, text, level):
-        items = text.split(',')
-        if all(item in self._db.items.keys() for item in items):
+        items = self.convert(text)
+        if all(item in self._db.items for item in items):
             return text
         return None
 
@@ -1050,7 +1053,7 @@ class ItemComponent(Validator):
 
     def validate(self, text, level):
         from app.engine import item_component_access as ICA
-        if text in ICA.get_item_components().keys():
+        if text in ICA.get_item_components():
             return text
         return None
 
@@ -1064,7 +1067,7 @@ class SkillComponent(Validator):
 
     def validate(self, text, level):
         from app.engine import skill_component_access as SCA
-        if text in SCA.get_skill_components().keys():
+        if text in SCA.get_skill_components():
             return text
         return None
 
@@ -1073,7 +1076,7 @@ class SkillComponent(Validator):
         valids = [(None, component.nid) for component in SCA.get_skill_components()]
         return valids
 
-class StatList(Validator):
+class StatList(DictValidator):
     desc = "accepts a comma-delimited list of pairs of stat nids and stat changes. For example, `STR,2,SPD,-3`."
 
     def validate(self, text, level):
@@ -1083,43 +1086,39 @@ class StatList(Validator):
         for idx in range(len(s_l)//2):
             stat_nid = s_l[idx*2]
             stat_value = s_l[idx*2 + 1]
-            if stat_nid not in self._db.stats.keys():
+            if stat_nid not in self._db.stats:
                 return None
             elif not str_utils.is_int(stat_value):
                 return None
         return text
 
+    def convert_val(self, val: str):
+        return int(val)
+
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
         valids = [(None, stat.nid) for stat in self._db.stats.values()]
         return valids
 
-class KlassList(Validator):
+class KlassList(SequenceValidator):
     desc = "accepts a comma-delimited list of klass nids."
 
     def validate(self, text, level):
-        s_l = text.split(',')
-
+        s_l = self.convert(text)
         for entry in s_l:
-            if entry not in self._db.classes.keys():
+            if entry not in self._db.classes:
                 return None
         return text
 
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
-        valids = [(None, klass.nid) for klass in self._db.classes.values()]
+        valids = [(klass.name, klass.nid) for klass in self._db.classes.values()]
         return valids
 
-class ArgList(Validator):
+class ArgList(DictValidator):
     desc = "accepts a comma-delimited list of pairs of keywords and values. For example, `Color,Purple,Animal,Dog`."
-
-    def validate(self, text, level):
-        s_l = text.split(',')
-        if len(s_l)%2 != 0:  # Must be divisible by 2
-            return None
-        return text
 
 class Skill(Validator):
     def validate(self, text, level):
-        if text in self._db.skills.keys():
+        if text in self._db.skills:
             return text
         return None
 
@@ -1144,7 +1143,7 @@ class Party(Validator):
     desc = "accepts the nid of an existing Party"
 
     def validate(self, text, level):
-        if text in self._db.parties.keys():
+        if text in self._db.parties:
             return text
         return None
 
@@ -1154,7 +1153,7 @@ class Party(Validator):
 
 class Faction(Validator):
     def validate(self, text, level):
-        if text in self._db.factions.keys():
+        if text in self._db.factions:
             return text
         return None
 
@@ -1164,7 +1163,7 @@ class Faction(Validator):
 
 class Klass(Validator):
     def validate(self, text, level):
-        if text in self._db.classes.keys():
+        if text in self._db.classes:
             return text
         return None
 
@@ -1174,7 +1173,7 @@ class Klass(Validator):
 
 class Lore(Validator):
     def validate(self, text, level):
-        if text in self._db.lore.keys():
+        if text in self._db.lore:
             return text
         return None
 
@@ -1184,7 +1183,7 @@ class Lore(Validator):
 
 class WeaponType(Validator):
     def validate(self, text, level):
-        if text in self._db.weapons.keys():
+        if text in self._db.weapons:
             return text
         return None
 
@@ -1194,7 +1193,7 @@ class WeaponType(Validator):
 
 class SupportRank(Validator):
     def validate(self, text, level):
-        if text in self._db.support_ranks.keys():
+        if text in self._db.support_ranks:
             return text
         return None
 
@@ -1206,7 +1205,7 @@ class Layer(Validator):
     def validate(self, text, level):
         if level:
             tilemap_prefab = self._resources.tilemaps.get(level.tilemap)
-            if text in tilemap_prefab.layers.keys():
+            if text in tilemap_prefab.layers:
                 return text
         return None
 
@@ -1223,7 +1222,7 @@ class LayerTransition(OptionValidator):
 
 class MapAnim(Validator):
     def validate(self, text, level):
-        if text in self._resources.animations.keys():
+        if text in self._resources.animations:
             return text
         return None
 
@@ -1233,7 +1232,7 @@ class MapAnim(Validator):
 
 class Tilemap(Validator):
     def validate(self, text, level):
-        if text in self._resources.tilemaps.keys():
+        if text in self._resources.tilemaps:
             return text
         return None
 
@@ -1337,9 +1336,6 @@ class OverworldNodeMenuOption(Validator):
 class OverworldEntity(Validator):
     desc = "accepts the nid of an overworld entity. By default, all parties have associated overworld entities."
 
-    def validate(self, text, level):
-        return text
-
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
         valids = [(party.name, party.nid) for party in self._db.parties.values()]
         return valids
@@ -1348,19 +1344,19 @@ class Sprite(Validator):
     desc = 'accepts the filename of any sprite resource in the project.'
 
     def validate(self, text: NID, level: NID):
-        if text in SPRITES.keys():
+        if text in SPRITES:
             return text
         return None
 
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
-        valids = [(sprite_name, sprite_name) for sprite_name in SPRITES.keys()]
+        valids = [(sprite_name, sprite_name) for sprite_name in SPRITES]
         return valids
 
 class MaybeSprite(Validator):
     desc = 'accepts the name of any sprite resource in the project, or None'
 
     def validate(self, text: NID, level: NID):
-        if text in SPRITES.keys():
+        if text in SPRITES:
             return text
         if text == 'None':
             return text
@@ -1375,7 +1371,7 @@ class DifficultyMode(Validator):
     desc = 'accepts the nid of a difficulty mode.'
 
     def validate(self, text, level):
-        if text in self._db.difficulty_modes.keys():
+        if text in self._db.difficulty_modes:
             return text
         return None
 
@@ -1383,39 +1379,51 @@ class DifficultyMode(Validator):
         valids = [(difficulty.name, difficulty.nid) for difficulty in self._db.difficulty_modes.values()]
         return valids
 
-validators: Dict[str, Type[Validator]]= {validator.__name__: validator for validator in Validator.__subclasses__()}
-option_validators: Dict[str, Type[OptionValidator]] = {validator.__name__: validator for validator in OptionValidator.__subclasses__()}
-eval_validators: Dict[str, Type[EvalValidator]] = {}
+class RNGType(OptionValidator):
+    valid = [r.value for r in RNGOption]
+
+    def validate(self, text, level):
+        if text in self.valid:
+            return text
+        return None
+
+class SaveSlot(Validator):
+    desc = 'accepts an integer for the save slot, or "suspend" for the suspend slot'
+
+    def validate(self, text, level: NID):
+        if text.lower() == 'suspend':
+            return text
+        if str_utils.is_int(text) and int(text) < self._db.constants.value('num_save_slots'):
+            return text
+        return None
+
+    def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
+        valids = [(None, str(i)) for i in range(self._db.constants.value('num_save_slots'))]
+        valids.append((None, "suspend"))
+        return valids
+
+validators: Dict[str, Type[Validator]] = {validator.__name__: validator for validator in recursive_subclasses(Validator)}
 for validator in EvalValidator.__subclasses__():
     for tag in validator.tags:
-        eval_validators[tag] = validator
+        validators[tag] = validator
 
-def validate(var_type, text, level, db: Database = None, resources: Resources = None):
-    if text and text[0] == '{' and text[-1] == '}': # eval validator
-        validator = eval_validators.get(var_type)
-        if validator:
-            v = validator(db, resources)
-            return v.validate(text, level)
+def validate(var_type: str, text: str, level: NID, db: Database = None, resources: Resources = None):
+    if not var_type:
+        return text
+    var_type = str_utils.remove_prefix(var_type, '*')
     validator = validators.get(var_type)
-    if validator:
-        v = validator(db, resources)
-        return v.validate(text, level)
-    validator = option_validators.get(var_type)
     if validator:
         v = validator(db, resources)
         return v.validate(text, level)
     else:
         return text
 
-def convert(var_type, text):
-    if not text:
+def convert(var_type: str, text: str):
+    if not var_type or not text:
         return None
+    var_type = str_utils.remove_prefix(var_type, '*')
     try:
         validator = validators.get(var_type)
-        if validator:
-            v = validator()
-            return v.convert(text)
-        validator = option_validators.get(var_type)
         if validator:
             v = validator()
             return v.convert(text)
@@ -1424,11 +1432,8 @@ def convert(var_type, text):
     except:
         return text
 
-def get(keyword) -> Type[Validator]:
-    if keyword in validators:
-        return validators[keyword]
-    elif keyword in option_validators:
-        return option_validators[keyword]
-    elif keyword in eval_validators:
-        return eval_validators[keyword]
-    return None
+def get(keyword: str) -> Type[Validator]:
+    if not keyword:
+        return None
+    keyword = str_utils.remove_prefix(keyword, '*')
+    return validators.get(keyword, None)

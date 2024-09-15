@@ -47,7 +47,7 @@ class ClassDatabase(DatabaseTab):
         window.exec_()
 
 # Testing
-# Run "python -m app.editor.unit_editor.unit_tab" from main directory
+# Run "python -m app.editor.class_editor.class_tab" from main directory
 if __name__ == '__main__':
     import sys
     app = QApplication(sys.argv)

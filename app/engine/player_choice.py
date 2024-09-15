@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from typing import List, Tuple
 
@@ -56,6 +58,9 @@ class PlayerChoiceState(MapState):
         self.info_flag = False
         self.create_help_boxes(values)
 
+    def begin(self):
+        self.fluid.reset_on_change_state()
+
     def process_data(self, data: List[str]) -> Tuple[List[str], List[str]]:
         data = list(map(str, data))
         values = []
@@ -71,10 +76,13 @@ class PlayerChoiceState(MapState):
                 display_values.append(spl[1])
         return values, display_values
 
-    def create_help_boxes(self, options_list: List[NID]):
+    def create_help_boxes(self, options_list: List[NID | int]):
         self.help_boxes = []
-        if self.data_type == 'type_base_item':
-            items = item_funcs.create_items(None, options_list)
+        if self.data_type in ('type_base_item', 'type_game_item'):
+            if self.data_type == 'type_base_item':
+                items = item_funcs.create_items(None, options_list)
+            else:
+                items = [game.get_item(int(uid)) for uid in options_list]
             for item in items:
                 if item_system.is_weapon(None, item) or item_system.is_spell(None, item):
                     self.help_boxes.append(help_menu.ItemHelpDialog(item))
@@ -135,12 +143,23 @@ class PlayerChoiceState(MapState):
             return 'repeat'
 
         elif event == 'INFO':
-            if self.info_flag:
-                get_sound_thread().play_sfx('Info Out')
-                self.info_flag = False
-            elif self.help_boxes:
-                get_sound_thread().play_sfx('Info In')
-                self.info_flag = True
+            if self.data_type == 'type_unit':
+                unit = game.get_unit(self.menu.get_selected())
+                if not unit:
+                    get_sound_thread().play_sfx('Error')
+                else:
+                    all_units = [game.get_unit(unid) for unid in self._resolved_data if game.get_unit(unid)]
+                    game.memory['scroll_units'] = all_units
+                    game.memory['current_unit'] = unit
+                    game.memory['next_state'] = 'info_menu'
+                    game.state.change('transition_to')
+            else:
+                if self.info_flag:
+                    get_sound_thread().play_sfx('Info Out')
+                    self.info_flag = False
+                elif self.help_boxes:
+                    get_sound_thread().play_sfx('Info In')
+                    self.info_flag = True
 
         selection = self.menu.get_selected()
         game.game_vars[self.nid + '_choice_hover'] = selection
@@ -160,6 +179,8 @@ class PlayerChoiceState(MapState):
             return 'repeat'
 
     def draw(self, surf):
+        if not self.started:
+            return
         draw_mode = CursorDrawMode.NO_DRAW
         if not self.no_cursor:
             draw_mode = CursorDrawMode.DRAW if game.state.current_state(
@@ -173,8 +194,11 @@ class PlayerChoiceState(MapState):
             if not help_box:
                 pass
             else:
-                half = len(self.help_boxes) / 2
-                help_box.draw(
-                    surf, (WINWIDTH//4, int(WINHEIGHT//2 + (idx - half) * 16)))
+                topleft = self.menu.get_topleft_of_idx(idx)
+                if topleft[0] < WINWIDTH // 2:
+                    help_box.draw(surf, (topleft[0] - 4, topleft[1] + 16))
+                else:
+                    width, _ = self.menu._get_pixel_size()
+                    help_box.draw(surf, (topleft[0] + width, topleft[1] + 16), right=True)
 
         return surf

@@ -1,5 +1,6 @@
 import os, shutil, glob, re
 from datetime import datetime
+from typing import Optional
 import threading
 
 try:
@@ -15,7 +16,6 @@ from app.engine.objects.item import ItemObject
 from app.engine.objects.skill import SkillObject
 
 import logging
-logger = logging.getLogger(__name__)
 
 SAVE_THREAD = None
 
@@ -67,7 +67,7 @@ def dict_print(d):
         if isinstance(v, dict):
             dict_print(v)
         else:
-            s = "{0} : {1}".format(k, v)
+            s = "{0} : {1} ({2})".format(k, v, type(v))
             print(s)
             logging.error(s)
 
@@ -80,7 +80,7 @@ def save_io(s_dict, meta_dict, old_slot, slot, force_loc=None, name=None):
         save_loc = 'saves/' + GAME_NID() + '-' + str(slot) + '.p'
     meta_loc = save_loc + 'meta'
 
-    logger.info("Saving to %s", save_loc)
+    logging.info("Saving to %s", save_loc)
 
     with open(save_loc, 'wb') as fp:
         # pickle.dump(s_dict, fp, -1)
@@ -88,8 +88,20 @@ def save_io(s_dict, meta_dict, old_slot, slot, force_loc=None, name=None):
             pickle.dump(s_dict, fp)
         except TypeError as e:
             # There's a surface somewhere in the dictionary of things to save...
+            logging.error(e)
             dict_print(s_dict)
             print(e)
+            for k, v in s_dict.items():
+                try:
+                    pickle.dumps(v)
+                except TypeError as e2:
+                    logging.error(e2)
+                    print(e2)
+                    logging.error("The offending object is in %s" % k)
+                    print("The offending object is in %s" % k)
+                    logging.error(v)
+                    print(v)
+
     with open(meta_loc, 'wb') as fp:
         pickle.dump(meta_dict, fp)
 
@@ -201,6 +213,29 @@ def get_all_saves():
 def remove_suspend():
     if not cf.SETTINGS['debug'] and os.path.exists(SUSPEND_LOC):
         os.remove(SUSPEND_LOC)
+
+def delete_suspend():
+    if os.path.exists(SUSPEND_LOC):
+        os.remove(SUSPEND_LOC)
+
+def delete_save(game_state, num: Optional[int] = None):
+    """
+    If num is not provided, deletes current save
+    """
+    if game_state.current_save_slot is not None:
+        num = game_state.current_save_slot
+    if num is None:
+        logging.error("delete_save: num not provided and no current save slot")
+        return
+    meta_fn = 'saves/' + GAME_NID() + '-' + str(num) + '.pmeta'
+    save_fn = 'saves/' + GAME_NID() + '-' + str(num) + '.p'
+    r_save_fn = 'saves/' + GAME_NID() + '-restart' + str(num) + '.p'
+    if os.path.exists(meta_fn):
+        os.remove(meta_fn)
+    if os.path.exists(save_fn):
+        os.remove(save_fn)
+    if os.path.exists(r_save_fn):
+        os.remove(r_save_fn)
 
 def get_save_title(save_slots):
     options = [save_slot.get_name() for save_slot in save_slots]

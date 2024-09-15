@@ -160,10 +160,10 @@ class LostOnEndCombat2(SkillComponent):
             self.value.update(value)
         self.marked_for_delete = False
 
-    def cleanup_combat_unconditional(self, playback, unit, item, target, mode):
+    def cleanup_combat_unconditional(self, playback, unit, item, target, item2, mode):
         self.marked_for_delete = True
 
-    def post_combat_unconditional(self, playback, unit, item, target, mode):
+    def post_combat_unconditional(self, playback, unit, item, target, item2, mode):
         if not self.marked_for_delete:
             return
         from app.engine import skill_system
@@ -197,7 +197,7 @@ class LostOnKill(SkillComponent):
     desc = "Remove after getting a kill"
     tag = SkillTags.TIME
 
-    def post_combat_unconditional(self, playback, unit, item, target, mode):
+    def post_combat_unconditional(self, playback, unit, item, target, item2, mode):
         if target and target.get_hp() <= 0:
             action.do(action.RemoveSkill(unit, self.skill))
 
@@ -225,3 +225,15 @@ class EventOnRemove(SkillComponent):
         event_prefab = DB.events.get_from_nid(self.value)
         if event_prefab:
             game.events.trigger_specific_event(event_prefab.nid, unit)
+
+class UpkeepEvent(SkillComponent):
+    nid = 'upkeep_event'
+    desc = "Triggers the designated event at upkeep"
+    tag = SkillTags.TIME
+    author = 'Lord_Tweed'
+
+    expose = ComponentType.Event
+    value = ''
+
+    def on_upkeep(self, actions, playback, unit):
+        game.events.trigger_specific_event(self.value, unit, None, unit.position, local_args={})

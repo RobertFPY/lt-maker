@@ -8,7 +8,7 @@ import app.data.database.ai as ai
 from app.data.database.database import DB
 
 from app.extensions.custom_gui import PropertyBox, ComboBox, PropertyCheckBox
-from app.editor.custom_widgets import ClassBox, UnitBox, TeamBox, FactionBox, PartyBox
+from app.editor.custom_widgets import ClassBox, UnitBox, TeamBox, FactionBox, PartyBox, TerrainBox
 from app.editor.lib.components.validated_line_edit import NidLineEdit
 from app.utilities import str_utils
 
@@ -126,11 +126,11 @@ class UnitSpecification(QWidget):
 
     def set_current(self, target_spec):
         self.except_check_box.setChecked(bool(self.window.current.invert_targeting))
-        if target_spec:
+        try:
             self.box1.setValue(str(target_spec[0]))
             self.unit_spec_changed(recurse=False)
             self.box2.currentWidget().setValue(target_spec[1])
-        else:
+        except Exception:  # Target spec is not compatible
             self.box1.setValue("All")
             self.unit_spec_changed(recurse=False)
             self.except_check_box.setEnabled(False)
@@ -240,6 +240,28 @@ class PositionSpecification(QWidget):
             self.x_spinbox.setValue(0)
             self.y_spinbox.setValue(0)
 
+class TerrainSpecification(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.window = parent
+
+        self.layout = QHBoxLayout()
+        self.box = TerrainBox(self)
+        self.box.edit.currentIndexChanged.connect(self.spec_changed)
+
+        self.layout.addWidget(self.box)
+        self.setLayout(self.layout)
+
+    def spec_changed(self, index):
+        terrain = DB.terrain[index]
+        self.window.current.target_spec = terrain.nid
+
+    def set_current(self, target_spec):
+        try:
+            self.box.setValue(target_spec)
+        except: # spec isn't compatible
+            pass
+
 class BehaviourBox(QGroupBox):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -270,6 +292,8 @@ class BehaviourBox(QGroupBox):
                 target_spec = PositionSpecification(self)
             elif target == "Event":
                 target_spec = EventSpecification(self)
+            elif target == "Terrain":
+                target_spec = TerrainSpecification(self)
             elif target == "Time":
                 target_spec = WaitSpecification(self)
             self.target_spec.addWidget(target_spec)
@@ -359,6 +383,10 @@ class BehaviourBox(QGroupBox):
 
         if self.current.action in ('Move_to', 'Move_away_from'):
             self.target.setEnabled(True)
+            # Disable Time Option
+            model = self.target.model()
+            time = model.item(ai.AI_TargetTypes.index('Time'))
+            time.setEnabled(False)
             if self.current.target != "Time":
                 self.target.setValue(self.current.target)
             else:
@@ -384,6 +412,10 @@ class BehaviourBox(QGroupBox):
             target_spec = self.target_spec.currentWidget()
             target_spec.set_current(self.current.target_spec)
         elif self.current.action == 'Wait':
+            # Enable Time Option
+            model = self.target.model()
+            time = model.item(ai.AI_TargetTypes.index('Time'))
+            time.setEnabled(True)
             self.target.setEnabled(False)
             self.target.setValue('Time')
             target_spec = self.target_spec.currentWidget()

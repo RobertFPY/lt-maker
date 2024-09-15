@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Optional
 
 from app.data.database.database import DB
-from app.engine import help_menu, text_funcs
+from app.engine import help_menu, text_funcs, image_mods
 from app.engine.game_menus.string_options import BaseOption
 from app.engine.game_state import game
 from app.engine.graphics.text.text_renderer import (anchor_align, render_text,
@@ -17,11 +17,13 @@ from app.utilities.typing import NID
 
 class MapSpriteOptionUtils():
     @staticmethod
-    def draw_map_sprite(surf, sprite: UnitSprite, x: int, y: int, active=False):
+    def draw_map_sprite(surf, sprite: UnitSprite, x: int, y: int, active=False, stationary=False, darkened_icon=False):
         if active:
-            map_sprite = sprite.create_image('active')
+            map_sprite = sprite.create_image('active', stationary)
         else:
-            map_sprite = sprite.create_image('passive')
+            map_sprite = sprite.create_image('passive', stationary)
+        if darkened_icon:
+            map_sprite = image_mods.make_black_colorkey(map_sprite, 1.0)
         surf.blit(map_sprite, (x - 20, y - 24 - 1))
 
 
@@ -64,7 +66,7 @@ class BasicUnitOption(BaseOption[UnitObject]):
     def get_color(self):
         if self.get_ignore():
             return 'grey'
-        return 'white'
+        return self._color
 
     @staticmethod
     def is_oversize():
@@ -76,7 +78,7 @@ class BasicUnitOption(BaseOption[UnitObject]):
                 self._value.desc, name=self._value.name)
         return self._help_box
 
-    def draw_option(self, surf, x, y, active=False):
+    def draw_option(self, surf, x, y, active=False, stationary=False, darkened_icon=False):
         display_text = self._disp_value or self._value.name
         font = self._font
         if text_width(font, display_text) > self.width() - 20:
@@ -84,7 +86,7 @@ class BasicUnitOption(BaseOption[UnitObject]):
         blit_loc = anchor_align(x, self.width(), self._align, (20, 5)), y
         color = self.get_color()
         MapSpriteOptionUtils.draw_map_sprite(
-            surf, self._value.sprite, x, y, active)
+            surf, self._value.sprite, x, y, active, stationary, darkened_icon)
         render_text(surf, [font], [display_text], [color], blit_loc)
 
     def draw(self, surf, x, y):

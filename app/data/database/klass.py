@@ -1,5 +1,6 @@
+import copy
 from dataclasses import dataclass
-from typing import Dict
+from typing import Dict, List
 
 from app.utilities.data import Data, Prefab
 from app.data.database.weapons import WexpGain
@@ -43,7 +44,7 @@ class Klass(Prefab):
     def get_stat_lists(self):
         return [self.bases, self.growths, self.promotion, self.growth_bonus, self.max_stats]
 
-    def get_skills(self):
+    def get_skills(self) -> List[NID]:
         return [skill[1] for skill in self.learned_skills]
 
     def replace_skill_nid(self, old_nid, new_nid):
@@ -56,7 +57,7 @@ class Klass(Prefab):
 
     def save_attr(self, name, value):
         if name in ('bases', 'growths', 'growth_bonus', 'promotion', 'max_stats', 'fields', 'tags'):
-            return value.copy()  # So we don't make a copy
+            return copy.deepcopy(value)  # So we don't make a copy
         elif name == 'learned_skills':
             return [val.copy() for val in value]  # So we don't make a copy
         elif name == 'wexp_gain':

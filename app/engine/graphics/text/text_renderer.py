@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import re
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 from app.engine import engine
 from app.engine.fonts import FONT
 from app.engine.icons import draw_icon_by_alias
+from app.engine.graphics.text.styled_text_parser import parse_styled_text
 from app.utilities.enums import HAlignment
 from app.utilities.typing import NID
 
@@ -20,7 +21,7 @@ def anchor_align(x: int, width: int, align: HAlignment, padding: Tuple[int, int]
     given a specific box. For example, supposing the text box is
     this wide:
 
-    A -------- B -------- C
+    padding[0] - A -------- B -------- C - padding[1]
 
     This will return A for left align, B for center align, and C for right align.
     Padding allows this to be offset.
@@ -54,7 +55,7 @@ def rendered_text_width(fonts: List[NID], texts: List[str]) -> int:
     base_font = fonts[-1]
     font_history_stack = []
     total_width = 0
-    while(text_stack):
+    while text_stack:
         curr_text = text_stack.pop()
         curr_font = font_stack.pop()
         # process text for tags and push them onto stack for later processing
@@ -142,8 +143,8 @@ def remove_tags(text_block: List[str]) -> List[str]:
         new_text_block.append(new_line)
     return new_text_block
 
-def render_text(surf: engine.Surface, fonts: List[NID], texts: List[str], 
-                colors: List[NID | None], topleft: Tuple[int, int], 
+def render_text(surf: engine.Surface, fonts: List[NID], texts: List[str],
+                colors: List[Optional[NID]], topleft: Tuple[int, int],
                 align: HAlignment = HAlignment.LEFT) -> engine.Surface:
     """An enhanced text render layer wrapper around BmpFont.
     Supports multiple fonts and multiple text sections, as well as
@@ -184,7 +185,7 @@ def render_text(surf: engine.Surface, fonts: List[NID], texts: List[str],
 
     base_font = fonts[-1]
     font_history_stack = []
-    while(text_stack):
+    while text_stack:
         curr_text = text_stack.pop()
         curr_font = font_stack.pop()
         curr_color = color_stack.pop() if color_stack else None
@@ -193,7 +194,7 @@ def render_text(surf: engine.Surface, fonts: List[NID], texts: List[str],
         if any_tags:
             tag_start, tag_end = any_tags.span()
             tag_font = any_tags.group().strip("<>")
-            if tag_font == '/':
+            if '/' in tag_font:
                 tag_font, tag_color = font_history_stack.pop() if font_history_stack else (base_font, None)
             else:
                 if tag_font in FONT or tag_font == 'icon':
@@ -214,3 +215,25 @@ def render_text(surf: engine.Surface, fonts: List[NID], texts: List[str],
             draw_icon_by_alias(surf, curr_text.strip(), (tx, ty))
             tx += 16
     return surf
+
+def render_styled_text(text: str,
+                       default_font: NID,
+                       default_color: Optional[NID],
+                       surf: engine.Surface,
+                       topleft: Tuple[int, int],
+                       align: HAlignment = HAlignment.LEFT) -> engine.Surface:
+    """Render a styled text string statically (no dynamic time-dependent animations)
+
+    Args:
+        text (str): Styled text to render.
+        default_font (NID): Default font to render text with.
+        default_color (Optional[NID]): Default color to render text with, if None then default color of default_font is used.
+        surf (engine.Surface): Surface to draw on.
+        topleft (Tuple[int, int]): Where to start drawing on surf.
+        align (HAlignment, optional): Text alignment. Defaults to HAlignment.LEFT.
+
+    Returns:
+        engine.Surface: Surface with styled text drawn on it.
+    """
+    tagged_text = parse_styled_text(text, default_font, default_color)
+    return tagged_text.draw(surf, topleft, align)

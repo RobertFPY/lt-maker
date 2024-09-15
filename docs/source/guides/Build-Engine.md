@@ -5,7 +5,7 @@ If you want to be able to distribute an executable to others for release and pla
 
 ## Non-Python Process
 
-If you are working with an executable version of the editor, follow this process. 
+If you are working with an executable version of the editor, follow this process.
 
 You can download the current version of the standalone engine from here: https://gitlab.com/rainlash/lt-maker/-/jobs/artifacts/release/download?job=build_engine (Download will start automatically!)
 
@@ -15,23 +15,11 @@ Unzip the download, stick your `.ltproj` file in the folder `lt_engine/lt_engine
 
 ## Python Process
 
-If are working with the Python version of the **Lex Talionis** engine, follow this process.
+If are working with the Python version of the **Lex Talionis** engine, the process is much simpler.
 
-First, make sure that you have everything installed from the [Python Installation](PyInstall) guide, including PyInstaller.
+Open your project in the editor. Under the `File` menu, click `Build Project`. This will ask you where to place the build, and will then build the project in that location.
 
-Next, go to your `/saves/config.ini` file and set debug to 0. Make sure it says `debug=0` at the top. This will remove the debug menu and some other small things from your game that you probably don't want the player to have access to.
-
-Make sure that your .ltproj folder is located directly in the `lt-maker` directory. For instance, I put my `lion_throne.ltproj` folder right next to the other folders, like `app`, `saves`, `sprites`, etc.
-
-Now from **Git Bash** in the `lt-maker` directory, run:
-
-`./utilities/build_tools/engine_build.sh lion_throne`
-
-You should replace `lion_throne` with the name of your own project file. If your project file is called `blazing_sword.ltproj`, use `blazing_sword`.
-
-If bash gives you an error like "cannot locate file", try running `chmod 777 ./utilities/build_tools/engine_build.sh`, and then try again.
-
-It may take several minutes to build the engine. You should see some text appear on the terminal, and then `Done` should appear.
+Afterwards, it will open the build folder.
 
 ## Complete!
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 from app.data.database.item_components import ItemComponent
 from app.data.database.supports import SupportPair
+from app.engine.objects.tilemap import TileMapObject
 from app.utilities.typing import NID
 
 import functools
@@ -23,9 +24,28 @@ from app.engine.objects.unit import UnitObject
 from app.engine.objects.region import RegionObject
 from app.engine import engine
 from app.utilities import utils, static_random
+from app.engine.source_type import SourceType
 
+def alters_game_state(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        func(*args, **kwargs)
+        game.on_alter_game_state()
+    return wrapper
+
+def wrap_do_exec_reverse(_cls):
+    for func in ['do', 'execute', 'reverse']:
+      setattr(_cls, func, alters_game_state(getattr(_cls, func)))
+    def wrapper():
+        return _cls()
+    return wrapper
 
 class Action():
+    persist_through_menu_cancel = False
+
+    def __init_subclass__(cls, **kwargs):
+        return wrap_do_exec_reverse(_cls=cls)
+
     def __init__(self):
         pass
 
@@ -42,7 +62,7 @@ class Action():
         pass
 
     def __repr__(self):
-        s = "action.%s: " % self.__class__.__name__
+        s = "%s: " % self.__class__.__name__
         for attr in self.__dict__.items():
             name, value = attr
             s += '%s: %s, ' % (name, value)
@@ -101,14 +121,18 @@ class Action():
             setattr(self, name, self.restore_obj(value))
         return self
 
+def recalc_unit(unit):
+    unit.autoequip()
+    if unit.position and game.tilemap and game.boundary:
+        game.boundary.recalculate_unit(unit)
+
 def recalculate_unit(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         func(*args, **kwargs)
         self = args[0]
-        self.unit.autoequip()
-        if self.unit.position and game.tilemap and game.boundary:
-            game.boundary.recalculate_unit(self.unit)
+        recalc_unit(self.unit)
+
     return wrapper
 
 def recalculate_unit_sprite(func):
@@ -150,7 +174,6 @@ class Move(Action):
     def do(self):
         if self.path is None:
             self.path = game.cursor.path[:]
-        game.boundary.frozen = True
         game.movement.begin_move(self.unit, self.path, self.event, self.follow, speed=self.speed)
 
     def execute(self):
@@ -280,6 +303,27 @@ class FadeMove(SimpleMove):
         game.arrive(self.unit)
         self.update_fow_action.do()
 
+class PutUnitDown(Action):
+    def __init__(self, unit, test=False):
+        self.unit = unit
+        self.test = test
+
+    def do(self):
+        game.arrive(self.unit, self.test)
+
+    def reverse(self):
+        game.leave(self.unit, self.test)
+
+class PickUnitUp(Action):
+    def __init__(self, unit, test=False):
+        self.unit = unit
+        self.test = test
+
+    def do(self):
+        game.leave(self.unit, self.test)
+
+    def reverse(self):
+        game.arrive(self.unit, self.test)
 
 class ArriveOnMap(Action):
     def __init__(self, unit, pos):
@@ -293,7 +337,6 @@ class ArriveOnMap(Action):
     def reverse(self):
         game.leave(self.unit)
         self.place_on_map.reverse()
-
 
 class WarpIn(ArriveOnMap):
     def do(self):
@@ -411,12 +454,18 @@ class RemoveFromMap(Action):
         self.update_fow_action = UpdateFogOfWar(self.unit)
 
     def do(self):
+        # In case the unit is currently still moving
+        if game.movement.is_moving(self.unit):
+            game.movement.stop(self.unit)
+            self.unit.sprite.reset()
+
         self.unit.position = None
         self.update_fow_action.do()
 
     def reverse(self):
         self.update_fow_action.reverse()
         self.unit.position = self.old_pos
+        self.unit.sprite.change_state('normal')
         if self.unit.position:
             self.unit.previous_position = self.unit.position
 
@@ -681,8 +730,8 @@ class Rescue(Action):
         self.rescuee.position = None
         self.unit.has_rescued = True
 
-        if not skill_system.ignore_rescue_penalty(self.unit) and 'Rescue' in DB.skills.keys():
-            self.subactions.append(AddSkill(self.unit, 'Rescue'))
+        if not skill_system.ignore_rescue_penalty(self.unit) and 'Rescue' in DB.skills:
+            self.subactions.append(AddSkill(self.unit, 'Rescue', source=self.rescuee.nid, source_type=SourceType.TRAVELER))
 
         for action in self.subactions:
             action.do()
@@ -715,7 +764,11 @@ class Drop(Action):
         self.unit = unit
         self.droppee = droppee
         self.pos = pos
-        self.droppee_wait_action = Wait(self.droppee)
+        if self.droppee.team == game.phase.get_current():
+            # Only "wait" units that are in our phase
+            self.droppee_wait_action = Wait(self.droppee)
+        else:
+            self.droppee_wait_action = None
         self.subactions = []
 
     def do(self):
@@ -723,12 +776,13 @@ class Drop(Action):
         self.droppee.position = self.pos
         game.arrive(self.droppee)
         self.droppee.sprite.change_state('normal')
-        self.droppee_wait_action.do()
+        if self.droppee_wait_action:
+            self.droppee_wait_action.do()
 
         self.unit.traveler = None
         self.unit.has_dropped = True
 
-        self.subactions.append(RemoveSkill(self.unit, "Rescue"))
+        self.subactions.append(RemoveSkill(self.unit, "Rescue", source=self.droppee.nid, source_type=SourceType.TRAVELER))
         for action in self.subactions:
             action.do()
 
@@ -741,7 +795,8 @@ class Drop(Action):
         self.droppee.position = self.pos
         game.arrive(self.droppee)
         self.droppee.sprite.change_state('normal')
-        self.droppee_wait_action.execute()
+        if self.droppee_wait_action:
+            self.droppee_wait_action.execute()
 
         for action in self.subactions:
             action.execute()
@@ -752,7 +807,8 @@ class Drop(Action):
     def reverse(self):
         self.unit.traveler = self.droppee.nid
 
-        self.droppee_wait_action.reverse()
+        if self.droppee_wait_action:
+            self.droppee_wait_action.reverse()
         game.leave(self.droppee)
         self.droppee.position = None
         self.unit.has_dropped = False
@@ -771,11 +827,11 @@ class Give(Action):
         self.subactions.clear()
 
         self.other.traveler = self.unit.traveler
-        if not skill_system.ignore_rescue_penalty(self.other) and 'Rescue' in DB.skills.keys():
-            self.subactions.append(AddSkill(self.other, 'Rescue'))
+        if not skill_system.ignore_rescue_penalty(self.other) and 'Rescue' in DB.skills:
+            self.subactions.append(AddSkill(self.other, 'Rescue', source=self.other.traveler, source_type=SourceType.TRAVELER))
 
         self.unit.traveler = None
-        self.subactions.append(RemoveSkill(self.unit, "Rescue"))
+        self.subactions.append(RemoveSkill(self.unit, "Rescue", source=self.other.traveler, source_type=SourceType.TRAVELER))
 
         self.unit.has_given = True
 
@@ -801,11 +857,11 @@ class Take(Action):
         self.subactions.clear()
 
         self.unit.traveler = self.other.traveler
-        if not skill_system.ignore_rescue_penalty(self.unit) and 'Rescue' in DB.skills.keys():
-            self.subactions.append(AddSkill(self.unit, 'Rescue'))
+        if not skill_system.ignore_rescue_penalty(self.unit) and 'Rescue' in DB.skills:
+            self.subactions.append(AddSkill(self.unit, 'Rescue', source=self.unit.traveler, source_type=SourceType.TRAVELER))
 
         self.other.traveler = None
-        self.subactions.append(RemoveSkill(self.other, "Rescue"))
+        self.subactions.append(RemoveSkill(self.other, "Rescue", source=self.unit.traveler, source_type=SourceType.TRAVELER))
 
         self.unit.has_taken = True
 
@@ -896,8 +952,6 @@ class SwitchPaired(Action):
         self.follower = follower
         self.pos = leader.position
         self.orig_guard_gauge = leader.get_guard_gauge()
-        self.update_fow_leader = UpdateFogOfWar(self.leader)
-        self.update_fow_follower = UpdateFogOfWar(self.follower)
 
     def do(self):
         self.leader.traveler = None
@@ -913,8 +967,6 @@ class SwitchPaired(Action):
         self.leader.position = None
         self.follower.position = self.pos
         game.arrive(self.follower)
-        self.update_fow_leader.do()
-        self.update_fow_follower.do()
         # What is this if statement doing?
         if not self.follower.lead_unit:
             self.follower.has_moved = True
@@ -930,8 +982,6 @@ class SwitchPaired(Action):
         skill_system.on_separate(self.leader, self.follower)
         skill_system.on_pairup(self.follower, self.leader)
 
-        self.update_fow_leader.reverse()
-        self.update_fow_follower.reverse()
         game.leave(self.follower)
         self.follower.position = None
         self.leader.position = self.pos
@@ -943,10 +993,11 @@ class SwitchPaired(Action):
 
 # This is shamelessly copied from Drop, but I've kept it separate in case a madlad wants Rescue and Pair Up
 class Separate(Action):
-    def __init__(self, unit, droppee, pos):
+    def __init__(self, unit, droppee, pos, with_wait=True):
         self.unit = unit
         self.droppee = droppee
         self.pos = pos
+        self.with_wait = with_wait
         self.droppee_wait_action = Wait(self.droppee)
         self.old_gauge = self.unit.get_guard_gauge()
 
@@ -954,7 +1005,8 @@ class Separate(Action):
         self.droppee.position = self.pos
         game.arrive(self.droppee)
         self.droppee.sprite.change_state('normal')
-        self.droppee_wait_action.do()
+        if self.with_wait:
+            self.droppee_wait_action.do()
 
         self.unit.traveler = None
         self.unit.has_dropped = True
@@ -976,7 +1028,8 @@ class Separate(Action):
         self.droppee.position = self.pos
         game.arrive(self.droppee)
         self.droppee.sprite.change_state('normal')
-        self.droppee_wait_action.execute()
+        if self.with_wait:
+            self.droppee_wait_action.execute()
 
         self.unit.traveler = None
         self.unit.has_dropped = True
@@ -989,7 +1042,8 @@ class Separate(Action):
     def reverse(self):
         self.unit.traveler = self.droppee.nid
 
-        self.droppee_wait_action.reverse()
+        if self.with_wait:
+            self.droppee_wait_action.reverse()
         game.leave(self.droppee)
         self.droppee.position = None
         self.unit.has_dropped = False
@@ -1003,16 +1057,20 @@ class Separate(Action):
         self.droppee.set_guard_gauge(0)
 
 class RemovePartner(Action):
-    '''Removes the unit's partner but does nothing else'''
+    '''Removes the unit's partner and the rescue status if applicable'''
     def __init__(self, unit):
         self.unit = unit
         self.partner = self.unit.traveler
+        self.status_action = \
+            RemoveSkill(self.unit, "Rescue", source=self.partner, source_type=SourceType.TRAVELER)
 
     def do(self):
         self.unit.traveler = None
+        self.status_action.do()
 
     def reverse(self):
         self.unit.traveler = self.partner
+        self.status_action.reverse()
 
 class IncGauge(Action):
     def __init__(self, unit, amount):
@@ -1268,6 +1326,8 @@ class SetDroppable(Action):
         self.item.droppable = self.was_droppable
 
 class StoreItem(Action):
+    persist_through_menu_cancel = True
+
     def __init__(self, unit, item):
         self.unit = unit
         self.item = item
@@ -1294,6 +1354,8 @@ class RemoveItem(StoreItem):
 
 
 class EquipItem(Action):
+    persist_through_menu_cancel = True
+
     def __init__(self, unit, item):
         self.unit = unit
         self.item = item
@@ -1339,6 +1401,7 @@ class BringToTopItem(Action):
     """
     Assumes item is in inventory
     """
+    persist_through_menu_cancel = True
 
     def __init__(self, unit, item):
         self.unit = unit
@@ -1361,8 +1424,6 @@ class TradeItem(Action):
         self.item_index1 = unit1.items.index(item1) if item1 else DB.constants.total_items() - 1
         self.item_index2 = unit2.items.index(item2) if item2 else DB.constants.total_items() - 1
 
-        self.subactions = []
-
     def swap(self, unit1, unit2, item1, item2, item_index1, item_index2):
         # Do the swap
         if item1:
@@ -1372,48 +1433,17 @@ class TradeItem(Action):
             unit2.remove_item(item2)
             unit1.insert_item(item_index1, item2)
 
-    def equip_items(self, unit):
-        all_items = item_funcs.get_all_items(unit)
-        for item in all_items:
-            if not item_system.is_accessory(unit, item):
-                if unit.can_equip(item):
-                    self.subactions.append(EquipItem(unit, item))
-                    break
-        for item in all_items:
-            if item_system.is_accessory(unit, item):
-                if unit.can_equip(item):
-                    self.subactions.append(EquipItem(unit, item))
-                    break
-        # keep accessories sorted after items
-        self.items = sorted(unit.items, key=lambda item: item_system.is_accessory(unit, item))
-
     def do(self):
-        self.subactions.clear()
-
         self.swap(self.unit1, self.unit2, self.item1, self.item2, self.item_index1, self.item_index2)
 
-        self.equip_items(self.unit1)
-        self.equip_items(self.unit2)
-
-        for act in self.subactions:
-            act.do()
-
-        if self.unit1.position and game.tilemap and game.boundary:
-            game.boundary.recalculate_unit(self.unit1)
-        if self.unit2.position and game.tilemap and game.boundary:
-            game.boundary.recalculate_unit(self.unit2)
+        recalc_unit(self.unit1)
+        recalc_unit(self.unit2)
 
     def reverse(self):
         self.swap(self.unit1, self.unit2, self.item2, self.item1, self.item_index2, self.item_index1)
 
-        for act in self.subactions:
-            act.reverse()
-
-        if self.unit1.position and game.tilemap and game.boundary:
-            game.boundary.recalculate_unit(self.unit1)
-        if self.unit2.position and game.tilemap and game.boundary:
-            game.boundary.recalculate_unit(self.unit2)
-
+        recalc_unit(self.unit1)
+        recalc_unit(self.unit2)
 
 class RepairItem(Action):
     def __init__(self, item):
@@ -1544,7 +1574,7 @@ class ModifyItemComponent(Action):
         self.property_name: Optional[NID] = None
         self.prev_component_value = None
         self.component_value = None
-        if self.component_nid in self.item.components.keys():
+        if self.component_nid in self.item.components:
             component = self.item.components.get(self.component_nid)
             # @TODO(mag): add validation for this with the cool new validators
             if isinstance(component.value, dict):
@@ -1558,7 +1588,7 @@ class ModifyItemComponent(Action):
                 self.component_value = self.prev_component_value + new_component_value
 
     def do(self):
-        if self.component_nid in self.item.components.keys():
+        if self.component_nid in self.item.components:
             component = self.item.components.get(self.component_nid)
             if self.property_name and isinstance(component.value, dict):
                 component.value[self.property_name] = self.component_value
@@ -1566,7 +1596,7 @@ class ModifyItemComponent(Action):
                 component.value = self.component_value
 
     def reverse(self):
-        if self.component_nid in self.item.components.keys():
+        if self.component_nid in self.item.components:
             component = self.item.components.get(self.component_nid)
             if self.property_name and isinstance(self.component.value, dict):
                 component.value[self.property_name] = self.prev_component_value
@@ -1582,7 +1612,7 @@ class RemoveItemComponent(Action):
 
     def do(self):
         self._did_remove = False
-        if self.component_nid in self.item.components.keys():
+        if self.component_nid in self.item.components:
             component = self.item.components.get(self.component_nid)
             self.component_value = component.value
             self.item.components.remove_key(self.component_nid)
@@ -1636,7 +1666,7 @@ class ModifySkillComponent(Action):
         self.property_name: Optional[NID] = None
         self.prev_component_value = None
         self.component_value = None
-        if self.component_nid in self.skill.components.keys():
+        if self.component_nid in self.skill.components:
             component = self.skill.components.get(self.component_nid)
             if isinstance(component.value, dict):
                 self.property_name = component_property
@@ -1649,7 +1679,7 @@ class ModifySkillComponent(Action):
                 self.component_value = self.prev_component_value + new_component_value
 
     def do(self):
-        if self.component_nid in self.skill.components.keys():
+        if self.component_nid in self.skill.components:
             component = self.skill.components.get(self.component_nid)
             if self.property_name and isinstance(component.value, dict):
                 component.value[self.property_name] = self.component_value
@@ -1657,7 +1687,7 @@ class ModifySkillComponent(Action):
                 component.value = self.component_value
 
     def reverse(self):
-        if self.component_nid in self.skill.components.keys():
+        if self.component_nid in self.skill.components:
             component = self.skill.components.get(self.component_nid)
             if self.property_name and isinstance(self.component.value, dict):
                 component.value[self.property_name] = self.prev_component_value
@@ -1673,7 +1703,7 @@ class RemoveSkillComponent(Action):
 
     def do(self):
         self._did_remove = False
-        if self.component_nid in self.skill.components.keys():
+        if self.component_nid in self.skill.components:
             component = self.skill.components.get(self.component_nid)
             self.component_value = component.value
             self.skill.components.remove_key(self.component_nid)
@@ -1708,6 +1738,29 @@ class SetObjData(Action):
         if self.keyword in self.obj.data:
             self.obj.data[self.keyword] = self.old_value
 
+class SetItemOwner(Action):
+    def __init__(self, obj: ItemObject, nid: NID):
+        self.obj = obj
+        self.new_nid = nid
+        self.old_nid = self.obj.owner_nid
+
+    def do(self):
+        self.obj.change_owner(self.new_nid)
+
+    def reverse(self):
+        self.obj.change_owner(self.old_nid)
+
+class SetSkillOwner(Action):
+    def __init__(self, obj: SkillObject, nid: NID):
+        self.obj = obj
+        self.new_nid = nid
+        self.old_nid = self.obj.owner_nid
+
+    def do(self):
+        self.obj.owner_nid = self.new_nid
+
+    def reverse(self):
+        self.obj.owner_nid = self.old_nid
 
 class GainMoney(Action):
     def __init__(self, party_nid, money):
@@ -1802,9 +1855,10 @@ class AutoLevel(Action):
         self.old_hp = self.unit.get_hp()
         self.old_mana = self.unit.get_mana()
         self.growth_method = growth_method
+        self.stat_changes = {}
 
     def do(self):
-        unit_funcs.auto_level(self.unit, self.unit.get_internal_level(), self.diff, self.growth_method)
+        self.stat_changes = unit_funcs.auto_level(self.unit, self.unit.get_internal_level(), self.diff, self.growth_method)
 
     def reverse(self):
         self.unit.stats = self.old_stats
@@ -1890,6 +1944,7 @@ class Promote(Action):
         current_stats = self.unit.stats
         new_klass_maxes = DB.classes.get(self.new_klass).max_stats
         new_klass_bases = DB.classes.get(self.new_klass).bases
+        old_klass_bases = DB.classes.get(self.old_klass).bases
 
         self.stat_changes = {nid: 0 for nid in DB.stats.keys()}
         for stat_nid in DB.stats.keys():
@@ -1898,6 +1953,11 @@ class Promote(Action):
                 self.stat_changes[stat_nid] = new_klass_bases.get(stat_nid, 0) - current_stats[stat_nid]
             elif stat_value == -98:  # Use the new klass base only if it's bigger
                 self.stat_changes[stat_nid] = max(0, new_klass_bases.get(stat_nid, 0) - current_stats[stat_nid])
+            elif stat_value == -97: # Subtract the old klass base from the new klass base
+                change = new_klass_bases.get(stat_nid, 0) - old_klass_bases.get(stat_nid, 0)
+                current_stat = current_stats.get(stat_nid)
+                new_value = utils.clamp(change, -current_stat, new_klass_maxes.get(stat_nid, 0) + unit.stat_cap_modifiers.get(stat_nid, 0) - current_stat)
+                self.stat_changes[stat_nid] = new_value
             else:
                 max_gain_possible = new_klass_maxes.get(stat_nid, 0) + unit.stat_cap_modifiers.get(stat_nid, 0) - current_stats[stat_nid]
                 self.stat_changes[stat_nid] = min(stat_value, max_gain_possible)
@@ -2130,6 +2190,20 @@ class SetName(Action):
     def reverse(self):
         self.unit.name = self.old_name
 
+class SetVariant(Action):
+    def __init__(self, unit, new_variant):
+        self.unit = unit
+        self.new_variant = new_variant
+        self.old_variant = self.unit.variant
+
+    def do(self):
+        self.unit.variant = self.new_variant
+        self.unit.sprite.load_sprites()
+
+    def reverse(self):
+        self.unit.variant = self.old_variant
+        self.unit.sprite.load_sprites()
+
 class SetNid(Action):
     """Changes the NID of a UnitObject.
 
@@ -2217,16 +2291,16 @@ class ChangeFatigue(Action):
         self.unit.set_fatigue(self.old_fatigue + self.num)
 
         if game.game_vars.get('_fatigue') == 2:
-            if 'Fatigued' in DB.skills.keys():
+            if 'Fatigued' in DB.skills:
                 if self.unit.get_fatigue() >= self.unit.get_max_fatigue():
-                    self.subactions.append(AddSkill(self.unit, 'Fatigued'))
+                    self.subactions.append(AddSkill(self.unit, 'Fatigued', source='game', source_type=SourceType.FATIGUE))
                 elif 'Fatigued' in [skill.nid for skill in self.unit.skills]:
-                    self.subactions.append(RemoveSkill(self.unit, 'Fatigued'))
-            if 'Rested' in DB.skills.keys():
+                    self.subactions.append(RemoveSkill(self.unit, 'Fatigued', source='game', source_type=SourceType.FATIGUE))
+            if 'Rested' in DB.skills:
                 if self.unit.get_fatigue() < self.unit.get_max_fatigue():
-                    self.subactions.append(AddSkill(self.unit, 'Rested'))
+                    self.subactions.append(AddSkill(self.unit, 'Rested', source='game', source_type=SourceType.FATIGUE))
                 elif 'Rested' in [skill.nid for skill in self.unit.skills]:
-                    self.subactions.append(RemoveSkill(self.unit, 'Rested'))
+                    self.subactions.append(RemoveSkill(self.unit, 'Rested', source='game', source_type=SourceType.FATIGUE))
 
         for action in self.subactions:
             action.do()
@@ -2253,6 +2327,53 @@ class ChangeField(Action):
 
     def reverse(self):
         self.unit.set_field(self.key, self.old_value)
+
+class SetUnitNote(Action):
+    def __init__(self, unit: UnitObject, key: str, value: str):
+        self.unit = unit
+        self.key = key
+        self.value = value
+        categories = [cat for cat, note in self.unit.notes]
+        if key in categories:
+            self.idx = categories.index(key)
+            self.old_note = self.unit.notes[self.idx]
+        else:
+            self.idx = None
+            self.old_note = None
+
+    def do(self):
+        if self.idx is not None:
+            self.unit.notes.pop(self.idx)
+            self.unit.notes.insert((self.key, self.value))
+        else:
+            self.unit.notes.append((self.key, self.value))
+
+    def reverse(self):
+        if self.old_note:
+            self.unit.notes.pop(self.idx)
+            self.unit.notes.insert(self.old_note)
+        else:
+            self.unit.notes.pop()
+
+class RemoveUnitNote(Action):
+    def __init__(self, unit: UnitObject, key: str):
+        self.unit = unit
+        self.key = key
+        categories = [cat for cat, note in self.unit.notes]
+        if key in categories:
+            self.deletion_idx = categories.index(key)
+            self.old_note = self.unit.notes[self.deletion_idx]
+        else:
+            self.deletion_idx = None
+            self.old_note = None
+
+    def do(self):
+        if self.deletion_idx is not None:
+            self.unit.notes.pop(self.deletion_idx)
+
+    def reverse(self):
+        if self.old_note:
+            self.unit.notes.insert(self.deletion_idx, self.old_note)
 
 class Die(Action):
     def __init__(self, unit):
@@ -2545,7 +2666,6 @@ class ChangeFaction(Action):
         self.unit.name = self.old_name
         self.unit.desc = self.old_desc
 
-
 class ChangeTeam(Action):
     def __init__(self, unit, team):
         self.unit = unit
@@ -2623,10 +2743,10 @@ class ChangeAffinity(Action):
         self.unit = unit
         self.old_affinity = unit.affinity
         self.new_affinity = affinity
-        
+
     def do(self):
         self.unit.affinity = self.new_affinity
-    
+
     def reverse(self):
         self.unit.affinity = self.old_affinity
 
@@ -2841,12 +2961,12 @@ class RemoveRegion(Action):
 
     def do(self):
         self.subactions.clear()
-        if self.region.nid in game.level.regions.keys():
+        if self.region.nid in game.level.regions:
             # Remember to remove the status from the unit
             if self.region.region_type == RegionType.STATUS:
                 for unit in game.units:
                     if unit.position and self.region.contains(unit.position):
-                        self.subactions.append(RemoveSkill(unit, self.region.sub_nid))
+                        self.subactions.append(RemoveSkill(unit, self.region.sub_nid, source=self.region.nid, source_type=SourceType.REGION))
 
             # Update fog of war if appropriate
             elif self.region.region_type == RegionType.FOG:
@@ -2970,7 +3090,7 @@ class ShowLayer(Action):
         else:
             layer.show()
         _arrive(layer)
-        game.board.reset_grid(game.level.tilemap)
+        game.board.reset_tile_grids(game.level.tilemap)
         game.boundary.reset()
 
     def execute(self):
@@ -2979,7 +3099,7 @@ class ShowLayer(Action):
         layer.quick_show()
         game.level.tilemap.reset()
         _arrive(layer)
-        game.board.reset_grid(game.level.tilemap)
+        game.board.reset_tile_grids(game.level.tilemap)
         game.boundary.reset()
 
     def reverse(self):
@@ -2988,7 +3108,7 @@ class ShowLayer(Action):
         layer.quick_hide()
         game.level.tilemap.reset()
         _arrive(layer)
-        game.board.reset_grid(game.level.tilemap)
+        game.board.reset_tile_grids(game.level.tilemap)
         game.boundary.reset()
 
 
@@ -3006,7 +3126,7 @@ class HideLayer(Action):
         else:
             layer.hide()
         _arrive(layer)
-        game.board.reset_grid(game.level.tilemap)
+        game.board.reset_tile_grids(game.level.tilemap)
         game.boundary.reset()
 
     def execute(self):
@@ -3015,7 +3135,7 @@ class HideLayer(Action):
         layer.quick_hide()
         game.level.tilemap.reset()
         _arrive(layer)
-        game.board.reset_grid(game.level.tilemap)
+        game.board.reset_tile_grids(game.level.tilemap)
         game.boundary.reset()
 
     def reverse(self):
@@ -3024,19 +3144,26 @@ class HideLayer(Action):
         layer.quick_show()
         game.level.tilemap.reset()
         _arrive(layer)
-        game.board.reset_grid(game.level.tilemap)
+        game.board.reset_tile_grids(game.level.tilemap)
         game.boundary.reset()
 
 class ChangeBGTileMap(Action):
-    def __init__(self, new_tilemap):
-        self.new_tilemap = new_tilemap
-        self.old_tilemap = game.bg_tilemap
+    def __init__(self, new_tilemap_nid):
+        self.new_tilemap_nid = new_tilemap_nid
+        self.old_tilemap_nid = game.bg_tilemap.nid if game.bg_tilemap else None
 
     def do(self):
-        game.level.bg_tilemap = self.new_tilemap
+        tilemap_prefab = RESOURCES.tilemaps.get(self.new_tilemap_nid)
+        game.level.bg_tilemap = TileMapObject.from_prefab(tilemap_prefab)
 
     def reverse(self):
-        game.level.bg_tilemap = self.old_tilemap
+        if self.old_tilemap_nid:
+            tilemap_prefab = RESOURCES.tilemaps.get(self.old_tilemap_nid)
+            game.level.bg_tilemap = TileMapObject.from_prefab(tilemap_prefab)
+        else:
+            game.level.bg_tilemap = None
+
+        
 
 class AddWeather(Action):
     def __init__(self, weather_nid, position):
@@ -3165,7 +3292,7 @@ class RemoveAnimFromUnit(Action):
         self.did_remove = False
 
     def do(self):
-        if self.nid in self.unit.sprite.animations.keys():
+        if self.nid in self.unit.sprite.animations:
             self.speed_mult = self.unit.sprite.animations[self.nid].speed_adj
         self.did_remove = self.unit.sprite.remove_animation(self.nid)
 
@@ -3293,7 +3420,7 @@ class MoveInInitiative(Action):
         game.initiative.insert_at(self.unit, self.old_idx)
 
 class AddSkill(Action):
-    def __init__(self, unit, skill, initiator=None):
+    def __init__(self, unit, skill, initiator=None, source=None, source_type=SourceType.DEFAULT):
         self.unit = unit
         self.initiator = initiator
         # Check if we just passed in the skill nid to create
@@ -3308,17 +3435,33 @@ class AddSkill(Action):
             if skill_obj.uid not in game.skill_registry:
                 game.register_skill(skill_obj)
         self.skill_obj: SkillObject = skill_obj
+        self.source = source
+        self.source_type = source_type
+        self.subactions = []
         self.reset_action = ResetUnitVars(self.unit)
+
+        self.did_something = False
 
     @recalculate_unit
     def do(self):
+        self.subactions.clear()
         if not self.skill_obj:
             return
+        logging.debug("AddSkill.do: Adding Skill %s to %s", self.skill_obj, self.unit)
+
+        popped_skill_obj = self.unit.add_skill(self.skill_obj, self.source, self.source_type, test=True)
+        # Skill failed to add due to not displacing another skill and itself being displaceable
+        if popped_skill_obj and popped_skill_obj == self.skill_obj:
+            logging.info("Skill %s could not be added as no instance could be displaced" % self.skill_obj.nid)
+            return
+        if popped_skill_obj:
+            logging.info("Skill %s is at max stacks, removing oldest displaceable instance" % self.skill_obj.nid)
+            self.subactions.append(RemoveSkill(self.unit, popped_skill_obj))
 
         # Actually add skill
         skill_system.before_add(self.unit, self.skill_obj)
         self.skill_obj.owner_nid = self.unit.nid
-        self.unit.add_skill(self.skill_obj)
+        self.unit.add_skill(self.skill_obj, self.source, self.source_type)
 
         if self.skill_obj.aura and self.skill_obj in self.unit.all_skills and \
                 self.unit.position and game.board and game.tilemap:
@@ -3328,18 +3471,27 @@ class AddSkill(Action):
 
         skill_system.after_add(self.unit, self.skill_obj)
 
+        for action in self.subactions:
+            action.execute()
+
+        self.did_something = True
+
         # Handle affects movement
         self.reset_action.execute()
 
     @recalculate_unit
     def reverse(self):
+        if not self.did_something:
+            return
         self.reset_action.reverse()
         if not self.skill_obj:
             return
+
+        logging.debug("AddSkill.reverse: Removing Skill %s from %s", self.skill_obj, self.unit)
         if self.skill_obj in self.unit.all_skills:
             # Actually remove skill
             skill_system.before_remove(self.unit, self.skill_obj)
-            self.unit.remove_skill(self.skill_obj)
+            self.unit.remove_skill(self.skill_obj, self.source, self.source_type)
             self.skill_obj.owner_nid = None
 
             if self.skill_obj.aura and self.unit.position and game.board and game.tilemap:
@@ -3351,22 +3503,32 @@ class AddSkill(Action):
         else:
             logging.error("Skill %s not in %s's skills", self.skill_obj.nid, self.unit)
 
+        # Return displaced skills
+        for action in self.subactions:
+            action.reverse()
+
 class RemoveSkill(Action):
-    def __init__(self, unit, skill, count=-1):
+    def __init__(self, unit, skill, count=-1, source=None, source_type=SourceType.DEFAULT):
         self.unit = unit
         self.skill = skill  # Skill obj or skill nid str
         self.removed_skills = []
         self.count = count
+        self.source = source
+        self.source_type = source_type
         self.old_owner_nid = None
         self.reset_action = ResetUnitVars(self.unit)
 
     def _remove_skill(self, skill, true_remove):
+        if not self.unit.remove_skill(skill, self.source, self.source_type, test=True):
+            logging.warning("No removable instance of Skill %s in %s's skills", self.skill, self.unit)
+            return False
+
         skill_system.before_remove(self.unit, skill)
         if true_remove:
             skill_system.before_true_remove(self.unit, skill)
         skill.owner_nid = None
-        self.removed_skills.append(skill)
-        self.unit.remove_skill(skill)
+        removed_source, removed_source_type = self.unit.remove_skill(skill, self.source, self.source_type)
+        self.removed_skills.append((skill, removed_source, removed_source_type))
 
         if skill.aura and self.unit.position and game.board and game.tilemap:
             game.boundary.unregister_unit_auras(self.unit)
@@ -3377,21 +3539,25 @@ class RemoveSkill(Action):
         if true_remove:
             skill_system.after_true_remove(self.unit, skill)
 
+        return True
+
     def _remove(self, true_remove=True):
         self.removed_skills.clear()
         to_remove = self.count
         if isinstance(self.skill, str):
             for skill in self.unit.all_skills[:]:
                 if skill.nid == self.skill and to_remove != 0:
-                    self._remove_skill(skill, true_remove)
-                    to_remove -= 1
+                    removed = self._remove_skill(skill, true_remove)
+                    if removed:
+                        to_remove -= 1
             if to_remove > 0:
-                logging.warning("%d instances of Skill %s not found in %s's skills", to_remove, self.skill, self.unit)
+                logging.warning("%d removable instances of Skill %s not found in %s's skills", to_remove, self.skill, self.unit)
         else:
             if self.skill in self.unit.all_skills:
                 self._remove_skill(self.skill, true_remove)
             else:
                 logging.warning("Skill %s not in %s's skills", self.skill.nid, self.unit)
+
 
         # Handle affects movement
         self.reset_action.execute()
@@ -3409,16 +3575,16 @@ class RemoveSkill(Action):
     @recalculate_unit
     def reverse(self):
         self.reset_action.reverse()
-        for skill in self.removed_skills:
+        for skill, source, source_type in self.removed_skills:
             skill_system.before_add(self.unit, skill)
             skill.owner_nid = self.unit.nid
-            self.unit.add_skill(skill)
+            self.unit.add_skill(skill, source, source_type)
 
             if skill.aura and self.unit.position and game.board and game.tilemap:
                 game.boundary.unregister_unit_auras(self.unit)
                 aura_funcs.propagate_aura(self.unit, skill, game)
                 game.boundary.register_unit_auras(self.unit)
-                
+
             skill_system.after_add(self.unit, skill)
 
 

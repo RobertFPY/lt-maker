@@ -1,5 +1,4 @@
 from app.data.database.varslot import VarSlot, VarSlotCatalog
-from app.editor.event_editor.event_inspector import EventInspectorEngine
 from app.data.database.database import DB
 
 from app.extensions.list_dialogs import MultiAttrListDialog
@@ -18,6 +17,12 @@ class GameVarSlotMultiModel(MultiAttrListModel):
         new_slot.occurrences = '[]'
         return new_slot
 
+    def duplicate(self, idx):
+        idx = super().duplicate(idx)
+        copy = self._data[idx.row()]
+        copy.occurrences = '[]'
+        return idx
+
     def on_attr_changed(self, data, attr, old_value, new_value):
         if attr == 'nid':
             original = DB.game_var_slots.get(data.nid)
@@ -33,12 +38,11 @@ class GameVarSlotDialog(MultiAttrListDialog):
     def create(cls, parent=None):
         def deletion_func(model, index):
             return True
-        event_inspector = EventInspectorEngine(DB.events)
         # copying because we're augmenting the data
         copy = VarSlotCatalog()
         for var in DB.game_var_slots:
             copied_slot = VarSlot(var.nid, var.desc)
-            occurrences = event_inspector.find_all_occurrences_of_symbol(var.nid)
+            occurrences = DB.events.inspector.find_all_occurrences_of_symbol(var.nid)
             copied_slot.occurrences = '[' + '], ['.join(list(occurrences)) + ']'
             copy.append(copied_slot)
         dlg = cls(copy, "Game Var Slots", ("nid", "desc", "occurrences"), GameVarSlotMultiModel, (deletion_func, None, deletion_func), [], parent)

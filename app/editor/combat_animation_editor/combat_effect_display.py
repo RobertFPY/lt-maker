@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from app import dark_theme
 from app.editor.lib.components.validated_line_edit import NidLineEdit
 import os, glob
@@ -7,6 +9,9 @@ from PyQt5.QtWidgets import QVBoxLayout, \
     QWidget, QGroupBox, QFormLayout, QFileDialog, \
     QPushButton, QLineEdit, QInputDialog, QMessageBox
 from PyQt5.QtGui import QImage, QPixmap, QPainter
+
+from typing import Set
+from app.utilities.typing import NID
 
 from app.constants import WINWIDTH, WINHEIGHT
 from app.data.resources import combat_anims
@@ -18,7 +23,9 @@ from app.editor import timer
 
 from app.editor.combat_animation_editor.frame_selector import FrameSelector
 from app.editor.combat_animation_editor.combat_animation_display import CombatAnimProperties
+from app.editor.file_manager.project_file_backend import DEFAULT_PROJECT
 import app.editor.combat_animation_editor.combat_animation_imports as combat_animation_imports
+import app.editor.combat_animation_editor.combat_animation_export as combat_animation_export
 
 import app.editor.utilities as editor_utilities
 from app.utilities import str_utils
@@ -46,6 +53,8 @@ class CombatEffectProperties(CombatAnimProperties):
         # for effect_anim in self._data:
         #     populate_effect_pixmaps(effect_anim)
 
+        self.settings = MainSettingsController()
+
         self.control_setup(current)
         self.test_combat_button.setEnabled(False)
 
@@ -55,7 +64,6 @@ class CombatEffectProperties(CombatAnimProperties):
         self.nid_box.textChanged.connect(self.nid_changed)
         self.nid_box.editingFinished.connect(self.nid_done_editing)
 
-        self.settings = MainSettingsController()
         theme = dark_theme.get_theme()
         icon_folder = theme.icon_dir()
 
@@ -73,12 +81,12 @@ class CombatEffectProperties(CombatAnimProperties):
                 for pose in weapon_anim.poses:
                     for command in pose.timeline:
                         if command.has_effect() and command.value[0] == old_nid:
-                            command.value = (new_nid,)
+                            command.value = (new_nid,) + tuple(command.value[1:])
         for effect_anim in RESOURCES.combat_effects:
             for pose in effect_anim.poses:
                 for command in pose.timeline:
                     if command.has_effect() and command.value[0] == old_nid:
-                        command.value = (new_nid,)
+                        command.value = (new_nid,) + tuple(command.value[1:])
 
     def build_frames(self):
         self.frame_group_box = QGroupBox()
@@ -87,6 +95,8 @@ class CombatEffectProperties(CombatAnimProperties):
         self.frame_group_box.setLayout(frame_layout)
         self.import_from_lt_button = QPushButton("Import Legacy Effect...")
         self.import_from_lt_button.clicked.connect(self.import_legacy)
+        self.export_to_lt_button = QPushButton("Export as Legacy Effect...")
+        self.export_to_lt_button.clicked.connect(self.export_legacy)
         self.import_png_button = QPushButton("View Frames...")
         self.import_png_button.clicked.connect(self.select_frame)
 
@@ -97,7 +107,8 @@ class CombatEffectProperties(CombatAnimProperties):
 
         self.window.left_frame.layout().addWidget(self.import_effect_button, 3, 0)
         self.window.left_frame.layout().addWidget(self.export_effect_button, 3, 1)
-        self.window.left_frame.layout().addWidget(self.import_from_lt_button, 4, 0, 1, 2)
+        self.window.left_frame.layout().addWidget(self.import_from_lt_button, 4, 0,)
+        self.window.left_frame.layout().addWidget(self.export_to_lt_button, 4, 1)
         frame_layout.addWidget(self.import_png_button)
 
     def pose_changed(self, idx):
@@ -179,6 +190,21 @@ class CombatEffectProperties(CombatAnimProperties):
         """
         return self.current
 
+    def get_child_effects(self) -> Set[NID]:
+        """
+        Returns the nids of all effects this effect calls upon
+        And always includes themselves
+        Does not recurse; only checks one layer deep
+        """
+        effects = {self.current.nid}
+        for pose in self.current.poses:
+            for command in pose.timeline:
+                if command.has_effect():
+                    effect_nid = command.value[0]
+                    if effect_nid:
+                        effects.add(effect_nid)
+        return effects
+
     def import_legacy(self):
         starting_path = self.settings.get_last_open_path()
         fns, ok = QFileDialog.getOpenFileNames(self.window, "Select Legacy Effect Script Files", starting_path, "Script Files (*-Script.txt);;All Files (*)")
@@ -190,15 +216,49 @@ class CombatEffectProperties(CombatAnimProperties):
             self.settings.set_last_open_path(parent_dir)
         self.window.update_list()
 
+    def export_legacy(self):
+        # Ask user for location
+        if not self.current:
+            return
+        starting_path = self.settings.get_last_open_path()
+        fn_dir = QFileDialog.getExistingDirectory(
+            self, "Export Combat Effect as Legacy", starting_path)
+        if not fn_dir:
+            return
+        self.settings.set_last_open_path(fn_dir)
+        combat_effect = self.current
+        # Create folder at location named {combat_anim.nid}.ltlegacyeffect
+        folder_name = f'{combat_effect.nid}.ltlegacyeffect'
+        path = os.path.join(fn_dir, folder_name)
+        if not os.path.exists(path):
+            os.mkdir(path)
+
+        # Determine which effects are used as subeffects here
+        effects = self.get_child_effects()
+
+        # For each effect and subeffect:
+        for effect_nid in effects:
+            print("Exporting %s" % effect_nid)
+            effect = RESOURCES.combat_effects.get(effect_nid)
+            if not effect:
+                continue
+            populate_effect_pixmaps(effect)
+            # Gather reference to images for this effect
+            # if effect.pixmap:  # Some effects don't have pixmaps of their own
+                # RESOURCES.combat_effects.save_image(path, effect, temp=True)
+            # Now actually export
+            combat_animation_export.export_to_legacy(effect, effect, path)
+
+        # Print done export! Export to %s complete!
+        QMessageBox.information(self, "Export Complete", "Export of effect to %s complete!" % path)
+
     def select_frame(self):
-        # if not self.current.frames:
-        #     QMessageBox.critical(self, "Frame Error", "%s has no associated frames!" % self.current.nid)
-        #     return
         if not self.current.palettes:
             QMessageBox.critical(self, "Palette Error", "%s has no associated palettes!" % self.current.nid)
             return
         dlg = FrameSelector(self.current, self.current, self)
         dlg.exec_()
+        self.palette_menu.update_palettes()
 
     def set_current(self, current):
         self.stop()
@@ -292,13 +352,7 @@ class CombatEffectProperties(CombatAnimProperties):
         if not os.path.exists(path):
             os.mkdir(path)
         # Determine which effects are used as subeffects here
-        effects = {self.current.nid}
-        for pose in self.current.poses:
-            for command in pose.timeline:
-                if command.has_effect():
-                    effect_nid = command.value[0]
-                    if effect_nid:
-                        effects.add(effect_nid)
+        effects = self.get_child_effects()
         # For each effect and subeffect:
         for effect_nid in effects:
             print("Exporting %s" % effect_nid)
@@ -384,17 +438,21 @@ class CombatEffectProperties(CombatAnimProperties):
     def test_combat(self):
         if self.current:
             current_pose_nid = self.pose_box.currentText()
-            if 'Attack' in self.current.poses.keys():
-                pass
-            else:
-                print("Missing Attack pose!")
-                return
 
             # Find a combat animation with this pose and "spell empty" in it's pose
             combat_anim, weapon_anim = self.find_appropriate_combat_anim(current_pose_nid)
             if not weapon_anim:
                 print("Couldn't find a usable weapon anim")
                 return None
+    
+            proj_dir = self.settings.get_current_project()
+            if not proj_dir or os.path.basename(proj_dir) == DEFAULT_PROJECT:
+                pass
+            else:
+                # Make sure to save beforehand so that we use the modified effect when testing
+                resource_dir = os.path.join(proj_dir, 'resources')
+                data_dir = os.path.join(resource_dir, 'combat_effects')
+                RESOURCES.combat_effects.save(data_dir)
 
             left_palette_name, left_palette, right_palette_name, right_palette = self.get_test_palettes(combat_anim)
 

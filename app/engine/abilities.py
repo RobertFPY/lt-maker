@@ -1,5 +1,5 @@
 from app.data.database.database import DB
-from app.engine import target_system, skill_system, action, equations
+from app.engine import skill_system, action, equations
 from app.engine.movement import movement_funcs
 from app.engine.game_state import game
 from app.events import triggers
@@ -24,11 +24,11 @@ class AttackAbility(Ability):
     def targets(unit) -> set:
         if unit.has_attacked:
             return set()
-        return target_system.get_all_weapon_targets(unit)
+        return game.target_system.get_all_weapon_targets(unit)
 
     @staticmethod
     def highlights(unit) -> bool:
-        valid_attacks = target_system.get_possible_attacks(unit, {unit.position})
+        valid_attacks = game.target_system.get_all_attackable_positions_weapons(unit, {unit.position})
         game.highlight.display_possible_attacks(valid_attacks)
         return bool(valid_attacks)
 
@@ -39,11 +39,11 @@ class SpellAbility(Ability):
     def targets(unit) -> set:
         if unit.has_attacked:
             return set()
-        return target_system.get_all_spell_targets(unit)
+        return game.target_system.get_all_spell_targets(unit)
 
     @staticmethod
     def highlights(unit) -> bool:
-        valid_attacks = target_system.get_possible_spell_attacks(unit, {unit.position})
+        valid_attacks = game.target_system.get_all_attackable_positions_spells(unit, {unit.position})
         game.highlight.display_possible_spell_attacks(valid_attacks)
         return bool(valid_attacks)
 
@@ -52,7 +52,7 @@ class TalkAbility(Ability):
 
     @staticmethod
     def targets(unit) -> set:
-        adj_units = target_system.get_adj_units(unit)
+        adj_units = game.target_system.get_adj_units(unit)
         return set([u.position for u in adj_units if (unit.nid, u.nid) in game.talk_options])
 
     @staticmethod
@@ -73,7 +73,7 @@ class SupportAbility(Ability):
     @staticmethod
     def targets(unit) -> set:
         if game.game_vars.get('_supports') and DB.support_constants.value('combat_convos'):
-            adj_units = target_system.get_adj_units(unit)
+            adj_units = game.target_system.get_adj_units(unit)
             units = set()
             for u in adj_units:
                 for prefab in DB.support_pairs.get_pairs(unit.nid, u.nid):
@@ -106,7 +106,7 @@ class DropAbility(Ability):
             return set()
         if unit.traveler and not unit.has_attacked and not unit.has_rescued:
             good_pos = set()
-            adj_positions = target_system.get_adjacent_positions(unit.position)
+            adj_positions = game.target_system.get_adjacent_positions(unit.position)
             u = game.get_unit(unit.traveler)
             for adj_pos in adj_positions:
                 if not game.board.get_unit(adj_pos) and movement_funcs.check_weakly_traversable(u, adj_pos):
@@ -134,7 +134,7 @@ class RescueAbility(Ability):
         if DB.constants.value('pairup'):
             return set()
         if not unit.traveler and not unit.has_attacked and not unit.has_given and not unit.has_dropped:
-            adj_allies = target_system.get_adj_allies(unit)
+            adj_allies = game.target_system.get_adj_allies(unit)
             return set([u.position for u in adj_allies if not u.traveler and
                         equations.parser.rescue_aid(unit) >= equations.parser.rescue_weight(u)])
 
@@ -158,7 +158,7 @@ class TakeAbility(Ability):
         if DB.constants.value('pairup'):
             return set()
         if not unit.traveler and not unit.has_attacked and not unit.has_given and not unit.has_dropped:
-            adj_allies = target_system.get_adj_allies(unit)
+            adj_allies = game.target_system.get_adj_allies(unit)
             return set([u.position for u in adj_allies if u.traveler and
                         equations.parser.rescue_aid(unit) >= equations.parser.rescue_weight(game.get_unit(u.traveler))])
 
@@ -178,7 +178,7 @@ class GiveAbility(Ability):
         if DB.constants.value('pairup'):
             return set()
         if unit.traveler and not unit.has_attacked and (not unit.has_taken or DB.constants.value('give_and_take')) and not unit.has_rescued:
-            adj_allies = target_system.get_adj_allies(unit)
+            adj_allies = game.target_system.get_adj_allies(unit)
             return set([u.position for u in adj_allies if not u.traveler and
                         equations.parser.rescue_aid(u) >= equations.parser.rescue_weight(game.get_unit(unit.traveler))])
 
@@ -201,7 +201,7 @@ class PairUpAbility(Ability):
         if unit.traveler:
             return set()
 
-        adj_allies = target_system.get_adj_allies(unit)
+        adj_allies = game.target_system.get_adj_allies(unit)
         adj = set([u.position for u in adj_allies if unit.team == u.team and not u.traveler])
         return adj
 
@@ -220,7 +220,7 @@ class SeparateAbility(Ability):
     def targets(unit) -> set:
         if DB.constants.value('pairup') and unit.traveler and not unit.has_attacked:
             good_pos = set()
-            adj_positions = target_system.get_adjacent_positions(unit.position)
+            adj_positions = game.target_system.get_adjacent_positions(unit.position)
             u = game.get_unit(unit.traveler)
             for adj_pos in adj_positions:
                 if not game.board.get_unit(adj_pos) and movement_funcs.check_traversable(u, adj_pos):
@@ -260,7 +260,7 @@ class TransferAbility(Ability):
     @staticmethod
     def targets(unit) -> set:
         if DB.constants.value('pairup') and not unit.has_given:
-            adj_allies = target_system.get_adj_allies(unit)
+            adj_allies = game.target_system.get_adj_allies(unit)
             adj = set([u.position for u in adj_allies if unit.team == u.team and (u.traveler or unit.traveler)])
             return adj
         return set()
@@ -288,7 +288,7 @@ class SupplyAbility(Ability):
     @staticmethod
     def targets(unit) -> set:
         if game.game_vars.get('_convoy'):
-            adj_allies = target_system.get_adj_allies(unit)
+            adj_allies = game.target_system.get_adj_allies(unit)
             if 'Convoy' in unit.tags:
                 return {unit.position}
             elif any(['AdjConvoy' in ally.tags and ally.team == unit.team for ally in adj_allies]):
@@ -304,7 +304,7 @@ class TradeAbility(Ability):
         if not DB.constants.value('trade'):
             return set()
 
-        adj_units = target_system.get_adj_units(unit)
+        adj_units = game.target_system.get_adj_units(unit)
         adj = set([u.position for u in adj_units if skill_system.can_trade(unit, u)])
         if unit.traveler and skill_system.can_trade(unit, game.get_unit(unit.traveler)):
             adj.add(unit.position)

@@ -2,14 +2,14 @@ from PyQt5.QtWidgets import QStyle
 from PyQt5.QtCore import Qt
 
 from app.utilities import str_utils
-from app.utilities.data import Data
 from app.data.database.database import DB
 
-from app.extensions.custom_gui import DeletionDialog, PropertyBox, ComboBox
+from app.extensions.custom_gui import DeletionTab, DeletionDialog, PropertyBox, ComboBox
 from app.extensions.list_dialogs import MultiAttrListDialog
 from app.extensions.list_models import MultiAttrListModel
 
-from app.data.database import equations, level_units, item_components, components
+from app.data.database import equations, item_components, skill_components
+from app.data.database.components import ComponentType, swap_values
 
 import logging
 
@@ -81,19 +81,29 @@ class EquationMultiModel(MultiAttrListModel):
 
     def delete(self, idx):
         element = self._data[idx]
-        affected_items = item_components.get_items_using(components.ComponentType.Equation, element.nid, DB)
+        affected_items = item_components.get_items_using(ComponentType.Equation, element.nid, DB)
+        affected_skills = skill_components.get_skills_using(ComponentType.Equation, element.nid, DB)
+        deletion_tabs = []
         if affected_items:
-            affected = Data(affected_items)
             from app.editor.item_editor.item_model import ItemModel
             model = ItemModel
             msg = "Deleting Equation <b>%s</b> would affect these items" % element.nid
+            deletion_tabs.append(DeletionTab(affected_items, model, msg, "Items"))
+        if affected_skills:
+            from app.editor.skill_editor.skill_model import SkillModel
+            model = SkillModel
+            msg = "Deleting Equation <b>%s</b> would affect these skills" % element.nid
+            deletion_tabs.append(DeletionTab(affected_skills, model, msg, "Skills"))
+
+        if deletion_tabs:
             combo_box = PropertyBox("Equation", ComboBox, self.window)
             objs = [eq for eq in DB.equations if eq.nid != element.nid]
             combo_box.edit.addItems([eq.nid for eq in objs])
-            obj_idx, ok = DeletionDialog.get_simple_swap(affected, model, msg, combo_box)
+            obj_idx, ok = DeletionDialog.get_simple_swap(deletion_tabs, combo_box)
             if ok:
                 swap = objs[obj_idx]
-                item_components.swap_values(affected_items, components.ComponentType.Equation, element.nid, swap.nid)
+                swap_values(affected_items, ComponentType.Equation, element.nid, swap.nid)
+                swap_values(affected_skills, ComponentType.Equation, element.nid, swap.nid)
             else:
                 return
         super().delete(idx)
@@ -108,8 +118,10 @@ class EquationMultiModel(MultiAttrListModel):
     def on_attr_changed(self, data, attr, old_value, new_value):
         if attr == 'nid':
             self._data.update_nid(data, new_value)
-            affected_items = item_components.get_items_using(components.ComponentType.Equation, old_value, DB)
-            item_components.swap_values(affected_items, components.ComponentType.Equation, old_value, new_value)
+            affected_items = item_components.get_items_using(ComponentType.Equation, old_value, DB)
+            swap_values(affected_items, ComponentType.Equation, old_value, new_value)
+            affected_skills = skill_components.get_skills_using(ComponentType.Equation, old_value, DB)
+            swap_values(affected_skills, ComponentType.Equation, old_value, new_value)
 
 class EquationDialog(MultiAttrListDialog):
     locked_vars = {"HIT", "AVOID", "CRIT_HIT", "CRIT_AVOID",

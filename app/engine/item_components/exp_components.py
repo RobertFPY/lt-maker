@@ -11,7 +11,7 @@ from app.utilities import utils
 def determine_all_defenders(playback: list, attacker) -> set:
     # Returns defenders that were hit
     marks = [mark for mark in playback if mark.nid == 'mark_hit']
-    marks += [mark for mark in playback if mark.nid =='mark_crit']
+    marks += [mark for mark in playback if mark.nid == 'mark_crit']
     marks = [mark for mark in marks if mark.attacker == attacker]
     damage_marks = [mark for mark in playback if mark.nid == 'damage_hit']
     damage_marks = [mark for mark in damage_marks if mark.attacker == attacker and skill_system.check_enemy(attacker, mark.defender)]
@@ -168,7 +168,7 @@ class Fatigue(ItemComponent):
     expose = ComponentType.Int
     value = 1
 
-    def end_combat(self, playback, unit, item, target, mode):
+    def end_combat(self, playback, unit, item, target, item2, mode):
         if mode != 'attack':
             return
         marks = [mark for mark in playback if mark.nid.startswith('mark') and mark.attacker is unit and mark.item is item]

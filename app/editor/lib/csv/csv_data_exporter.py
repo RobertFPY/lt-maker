@@ -3,6 +3,7 @@ import logging
 from typing import List
 from app.data.database.components import ComponentType, convert_type_from_string
 from app.data.database.database import Database
+from app.data.resources.resources import Resources
 from app.data.database.items import ItemCatalog, ItemPrefab
 from app.data.database.klass import ClassCatalog
 from app.data.database.units import UnitCatalog, UnitPrefab
@@ -94,8 +95,8 @@ def klass_db_to_csv(klass_db: ClassCatalog):
         ss += ','.join([str(dat) for dat in data]) + '\n'
     return ss
 
-def dump_as_csv(db: Database):
-    db_validator = DatabaseValidatorEngine(db)
+def dump_as_csv(db: Database, resources: Resources):
+    db_validator = DatabaseValidatorEngine(db, resources)
     db_validator.repair()
     # csv dump functions
     dump = []
@@ -122,7 +123,7 @@ def update_db_with_unit_csv(db: Database, unit_csv_str):
             continue
         name = unit_data[0]
         nid = unit_data[1]
-        if nid in db.units.keys():
+        if nid in db.units:
             curr_unit = db.units.get(nid)
         else:
             curr_unit = UnitPrefab(nid, name)
@@ -137,7 +138,7 @@ def update_db_with_unit_csv(db: Database, unit_csv_str):
             elif '_growth' in headers[i]:
                 growth_stat_name = headers[i].replace('_growth', '')
                 curr_unit.growths[growth_stat_name] = int(unit_data[i])
-            elif headers[i] in db.weapons.keys(): # wrank
+            elif headers[i] in db.weapons: # wrank
                 weapon = headers[i]
                 rank = int(unit_data[i])
                 if rank > 0:
@@ -148,12 +149,12 @@ def update_db_with_unit_csv(db: Database, unit_csv_str):
 
 def validate_type(db: Database, expose_type: ComponentType, value: str):
     if expose_type == ComponentType.WeaponType:
-        if value in db.weapons.keys():
+        if value in db.weapons:
             return True
         else:
             return False
     elif expose_type == ComponentType.WeaponRank:
-        if value in db.weapon_ranks.keys():
+        if value in db.weapon_ranks:
             return True
         else:
             return False
@@ -169,7 +170,7 @@ def update_db_with_item_csv(db: Database, item_csv_str):
             continue
         name = item_data[0]
         nid = item_data[1]
-        if nid in db.items.keys():
+        if nid in db.items:
             curr_item = db.items.get(nid)
         else:
             curr_item = ItemPrefab(nid, name, "")

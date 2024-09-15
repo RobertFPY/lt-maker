@@ -1,13 +1,18 @@
+import json
+from pathlib import Path
 import os, sys
 
 from app.constants import VERSION
+from app.data.metadata import Metadata
 from app.data.resources.resources import RESOURCES
 from app.data.database.database import DB
+from app.data.serialization.dataclass_serialization import dataclass_from_dict
 from app.engine import engine
 from app.engine import config as cf
 from app.engine import driver
 from app.engine import game_state
 from app.engine.codegen import source_generator
+from app.utilities.system_info import is_editor_engine_built_version
 
 def main(name: str = 'testing_proj'):
     # Translation currently unused within engine proper
@@ -16,6 +21,9 @@ def main(name: str = 'testing_proj'):
     # init_locale()
     if not os.path.exists(name + '.ltproj'):
         raise ValueError("Could not locate LT project %s" % (name + '.ltproj'))
+    metadata = dataclass_from_dict(Metadata, json.loads(Path(name + '.ltproj', 'metadata.json').read_text()))
+    if metadata.has_fatal_errors:
+        raise ValueError("Fatal errors detected in game. If you are the developer, please validate and then save your game data before proceeding. Aborting launch.")
     RESOURCES.load(name + '.ltproj')
     DB.load(name + '.ltproj')
     title = DB.constants.value('title')
@@ -26,6 +34,9 @@ def main(name: str = 'testing_proj'):
 def test_play(name: str = 'testing_proj'):
     if not os.path.exists(name + '.ltproj'):
         raise ValueError("Could not locate LT project %s" % (name + '.ltproj'))
+    metadata = dataclass_from_dict(Metadata, json.loads(Path(name + '.ltproj', 'metadata.json').read_text()))
+    if metadata.has_fatal_errors:
+        raise ValueError("Fatal errors detected in game. If you are the developer, please validate and then save your game data before proceeding. Aborting launch.")
     RESOURCES.load(name + '.ltproj')
     DB.load(name + '.ltproj')
     title = DB.constants.value('title')
@@ -61,18 +72,18 @@ if __name__ == '__main__':
         engine.terminate()
 
     # compile necessary files
-    if not hasattr(sys, 'frozen'):
+    if not is_editor_engine_built_version():
         source_generator.generate_all()
 
     try:
         find_and_run_project()
         # main('lion_throne')
-        # test_play('lion_throne')
         # test_play('sacred_stones')
     except Exception as e:
         logging.exception(e)
         inform_error()
-        print('*** Lex Talionis Engine Version %s ***' % VERSION)
+        pyver = f'{sys.version_info.major}.{sys.version_info.minor}'
+        print(f'*** Lex Talionis Engine Version {VERSION} on Python {pyver} ***')
         print('Main Crash {0}'.format(str(e)))
 
         # Now print exception to screen

@@ -1,5 +1,4 @@
 from __future__ import annotations
-import dataclasses
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional, Tuple
 
@@ -15,11 +14,7 @@ from app.utilities.typing import NID
 @dataclass()
 class EventTrigger():
     """
-    The description of the trigger and where it happens. This is a template
-    for the docstring.
-
-        some_var_name: the description of the var.
-        some_other_var_name: the description of the other var.
+    A trigger called sometime during the engine that allows the user to execute events.
     """
     nid: ClassVar[NID]
 
@@ -77,7 +72,7 @@ class LevelSelect(EventTrigger):
     Occurs when an overworld entity is about to issue a move to the node
     containing the next level. Because of implementation detail, when
     this event occurs, it supersedes any queued moves. Therefore, the
-    entity will _not move_ to the selected node. Any events that use
+    entity will *not move* to the selected node. Any events that use
     this trigger should include a scripted move if movement is desired.
     """
     nid: ClassVar[NID] = 'level_select'
@@ -85,10 +80,10 @@ class LevelSelect(EventTrigger):
 @dataclass(init=True)
 class PhaseChange(EventTrigger):
     """
-    Occurs whenever the phase changes. Check `team` to figure out whose phase it is now.
+    Occurs whenever the phase changes.
     """
     nid: ClassVar[NID] = 'phase_change'
-    team: NID
+    team: NID #: contains the NID of the team of the new phase
 
 @dataclass(init=True)
 class TurnChange(EventTrigger):
@@ -125,164 +120,136 @@ class OnRegionInteract(EventTrigger):
     Occurs when a unit interacts with an event region.
     All event region type events (like Shop, Armory, Visit, etc.)
     follow this trigger's format.
-
-        unit1: the unit that is interacting.
-        position: the position of the unit.
-        region: the event region.
     """
     nid: ClassVar[NID] = 'on_region_interact'
-    unit1: UnitObject
-    position: Tuple[int, int]
-    region: RegionObject
+    unit1: UnitObject  #: the unit that is interacting
+    position: Tuple[int, int]  #: the position of the unit.
+    region: RegionObject  #: the event region.
+
+@dataclass(init=True)
+class CombatDeath(EventTrigger):
+    """
+    Occurs during combat when any unit dies, including generics.
+    If triggered, will delay the death animation of unit1 until
+    after the attack animation of unit2 finishes.
+    """
+    nid: ClassVar[NID] = 'combat_death'
+    unit1: UnitObject  #: the unit that died.
+    unit2: Optional[UnitObject]  #: the unit that killed them (can be None).
+    position: Tuple[int, int]  #: the position they died at.
 
 @dataclass(init=True)
 class UnitDeath(EventTrigger):
     """
-    Occurs when any unit dies, including generics.
-
-        unit1: the unit that died.
-        unit2: the unit that killed them (can be None).
-        position: the position they died at.
+    Occurs after combat when any unit dies, including generics.
     """
     nid: ClassVar[NID] = 'unit_death'
-    unit1: UnitObject
-    unit2: UnitObject
-    position: Tuple[int, int]
+    unit1: UnitObject  #: the unit that died.
+    unit2: Optional[UnitObject]  #: the unit that killed them (can be None).
+    position: Tuple[int, int]  #: the position they died at.
 
 @dataclass(init=True)
 class UnitWait(EventTrigger):
     """
     Occurs when any unit waits.
-
-        unit1: the unit that waited.
-        position: the position they waited at.
-        region: region under the unit (can be None)
-        actively_chosen: boolean for whether the player actively selected Wait
     """
     nid: ClassVar[NID] = 'unit_wait'
-    unit1: UnitObject
-    position: Tuple[int, int]
-    region: Optional[RegionObject]
-    actively_chosen: bool
+    unit1: UnitObject  #: the unit that waited.
+    position: Tuple[int, int]  #: the position they waited at.
+    region: Optional[RegionObject]  #: region under the unit (can be None)
+    actively_chosen: bool  #: boolean for whether the player actively selected Wait
 
 @dataclass(init=True)
 class UnitSelect(EventTrigger):
     """
     Occurs when a unit is selected by the cursor.
-
-        unit1: the unit that was selected.
-        position: the position they were selected at.
     """
     nid: ClassVar[NID] = 'unit_select'
     unit1: UnitObject
-    position: Tuple[int, int]
+    position: Tuple[int, int]  #: the position they were selected at.
+
+@dataclass(init=True)
+class UnitDeselect(EventTrigger):
+    """
+    Occurs when a unit selected by the cursor is deselected.
+    """
+    nid: ClassVar[NID] = 'unit_deselect'
+    unit1: UnitObject
+    position: Tuple[int, int] #: the position they were deselected at.
 
 @dataclass(init=True)
 class UnitLevelUp(EventTrigger):
     """
-    Occurs whenever a unit reaches the level stat screen.
-
-        unit1: the unit that gained/lost stats.
-        stat_changes: a dict containing their stat changes.
-        source: One of ('exp_gain', 'stat_change', 'class_change', 'promote') describing how the unit got to this screen.
+    Occurs whenever a unit levels up.
     """
     nid: ClassVar[NID] = 'unit_level_up'
-    unit1: UnitObject
-    stat_changes: Dict[NID, int]
-    source: str
+    unit1: UnitObject #: the unit that changed their level.
+    stat_changes: Dict[NID, int] #: a dict containing their stat changes.
+    source: str #: One of ('exp_gain', 'stat_change', 'class_change', 'promote', 'event') describing how the unit got to this point.
 
 @dataclass(init=True)
 class DuringUnitLevelUp(EventTrigger):
     """
     Occurs during a unit's level-up screen, immediately after stat changes are granted. This event is useful for implementing level-up quotes.
-
-        unit1: the unit that gained/lost stats.
-        stat_changes: a dict containing their stat changes.
-        source: One of ('exp_gain', 'stat_change', 'class_change', 'promote') describing how the unit got to this screen.
     """
     nid: ClassVar[NID] = 'during_unit_level_up'
-    unit1: UnitObject
-    stat_changes: Dict[NID, int]
-    source: str
+    unit1: UnitObject #: the unit that gained/lost stats.
+    stat_changes: Dict[NID, int] #: a dict containing their stat changes.
+    source: str #: One of ('exp_gain', 'stat_change', 'class_change', 'promote') describing how the unit got to this screen.
 
 @dataclass(init=True)
 class CombatStart(EventTrigger):
     """
     Occurs when non-scripted combat is begun between any two units. Useful for boss quotes.
-
-        unit1: the unit who initiated combat.
-        unit2: the target of the combat (can be None).
-        item: the item/ability used by unit1.
-        position: the position of the unit1.
-        is_animation_combat: a boolean denoting whether or not we are in an actual animation or merely a map animation.
     """
     nid: ClassVar[NID] = 'combat_start'
-    unit1: UnitObject
-    unit2: UnitObject
-    position: Tuple[int, int]
-    item: ItemObject
-    is_animation_combat: bool
+    unit1: UnitObject #: the unit who initiated combat.
+    unit2: UnitObject #: the target of the combat (can be None).
+    position: Tuple[int, int] #: contains the position of unit1.
+    item: ItemObject #: the item/ability used by unit1.
+    is_animation_combat: bool #: a boolean denoting whether or not we are in an actual animation or merely a map animation.
 
 @dataclass(init=True)
 class CombatEnd(EventTrigger):
     """
     This trigger fires at the end of combat. Useful for checking win or loss conditions.
-
-        unit1: the unit who initiated combat.
-        unit2: the target of the combat (can be None).
-        item: the item/ability used by unit1.
-        position: contains the position of unit1.
-        playback: a list of the playback brushes from the combat.
     """
     nid: ClassVar[NID] = 'combat_end'
-    unit1: UnitObject
-    unit2: UnitObject
-    position: Tuple[int, int]
-    item: ItemObject
-    playback: List[PlaybackBrush]
+    unit1: UnitObject #: the unit who initiated combat.
+    unit2: UnitObject #: the target of the combat (can be None).
+    position: Tuple[int, int] #: contains the position of unit1.
+    item: ItemObject #: the item/ability used by unit1.
+    playback: List[PlaybackBrush] #: a list of the playback brushes from the combat.
 
 @dataclass(init=True)
 class OnTalk(EventTrigger):
     """
     This trigger fires when two units "Talk" to one another.
-
-        unit1: the unit who is the talk initiator.
-        unit2: the unit who is the talk receiver.
-        position: the position of unit1 (is None if triggered during free roam)
     """
     nid: ClassVar[NID] = 'on_talk'
-    unit1: UnitObject
-    unit2: UnitObject
-    position: Tuple[int, int]
+    unit1: UnitObject #: the unit who is the talk initiator.
+    unit2: UnitObject #: the unit who is the talk receiver.
+    position: Tuple[int, int] #: the position of unit1 (is None if triggered during free roam)
 
 @dataclass(init=True)
 class OnSupport(EventTrigger):
     """
     This trigger fires when two units "Support" to one another.
-
-        unit1: the unit who is the support initiator.
-        unit2: the unit who is the support receiver.
-        position: the position of unit1 (could be None, for instance during Base).
-        support_rank_nid: contains the nid of the support rank (e.g. `A`, `B`, `C`, or `S`)
-        is_replay: whether or not this is just a replay of the support convo from the base menu.
     """
     nid: ClassVar[NID] = 'on_support'
-    unit1: UnitObject
-    unit2: UnitObject
-    position: Tuple[int, int]
-    support_rank_nid: NID
-    is_replay: bool
+    unit1: UnitObject #: the unit who is the support initiator.
+    unit2: UnitObject #: the unit who is the support receiver.
+    position: Tuple[int, int] #: the position of unit1 (could be None, for instance during Base).
+    support_rank_nid: NID #: contains the nid of the support rank (e.g. `A`, `B`, `C`, or `S`)
+    is_replay: bool #: whether or not this is just a replay of the support convo from the base menu.
 
 @dataclass(init=True)
 class OnBaseConvo(EventTrigger):
     """
     This trigger fires when the player selects a base conversation to view.
-
-        base_convo: contains the name of the base conversation.
-        unit: DEPRECATED, contains the name of the base conversation.
     """
     nid: ClassVar[NID] = 'on_base_convo'
-    base_convo: NID
+    base_convo: NID #: contains the name of the base conversation.
     unit: NID  # DEPRECATED - Just a copy of the base_convo
 
 @dataclass(init=True)
@@ -302,7 +269,7 @@ class OnBaseStart(EventTrigger):
 @dataclass(init=True)
 class OnTurnwheel(EventTrigger):
     """
-    Occurs after the turnwheel is used. Events that happen within are 
+    Occurs after the turnwheel is used. Events that happen within are
     not recorded within the turnwheel and therefore will not be reversed
     upon turnwheel activation.
     """
@@ -326,12 +293,10 @@ class OnStartup(EventTrigger):
 class TimeRegionComplete(EventTrigger):
     """
     Occurs when a time region runs out of time and would be removed.
-        position: the position of the region that has run out of time.
-        region: the region that has run out of time.
     """
     nid: ClassVar[NID] = 'time_region_complete'
-    position: Tuple[int, int]
-    region: RegionObject
+    position: Tuple[int, int] #: the position of the region that has run out of time.
+    region: RegionObject #: the region that has run out of time.
 
 @dataclass(init=True)
 class OnOverworldNodeSelect(EventTrigger):
@@ -340,102 +305,61 @@ class OnOverworldNodeSelect(EventTrigger):
     (which may or may not contain the next level, or
     any level at all). Because of implementation detail,
     when this event occurs, it supersedes any queued moves.
-    Therefore, the entity will _not move_ to the selected node.
+    Therefore, the entity will *not move* to the selected node.
     Any events that use this trigger should include a scripted move
     if movement is desired.
-
-        entity_nid: Contains the id of entity that will issue a move.
-        node_nid: Contains the id of the node.
     """
     nid: ClassVar[NID] = 'on_overworld_node_select'
-    entity_nid: NID
-    node_nid: NID
+    entity_nid: NID #: Contains the id of entity that will issue a move.
+    node_nid: NID #: Contains the id of the node.
 
 @dataclass(init=True)
 class RoamPressStart(EventTrigger):
     """
     Occurs when the `start` key is pressed in Free Roam.
-
-        unit1: The current roam unit.
-        unit2: the closest nearby other unit.
     """
     nid: ClassVar[NID] = 'roam_press_start'
-    unit1: UnitObject
-    unit2: UnitObject
+    unit1: UnitObject #: The current roam unit.
+    unit2: UnitObject #: the closest nearby other unit.
 
 @dataclass(init=True)
 class RoamPressInfo(EventTrigger):
     """
     Occurs when the `info` key is pressed in Free Roam.
-
-        unit1: The current roam unit.
-        unit2: the closest nearby other unit.
     """
     nid: ClassVar[NID] = 'roam_press_info'
-    unit1: UnitObject
-    unit2: UnitObject
+    unit1: UnitObject #: The current roam unit.
+    unit2: UnitObject #: the closest nearby other unit.
 
 @dataclass(init=True)
 class RoamPressAux(EventTrigger):
     """
     Occurs when the `aux` key is pressed in Free Roam.
-
-        unit1: The current roam unit.
-        unit2: the closest nearby other unit.
     """
     nid: ClassVar[NID] = 'roam_press_aux'
-    unit1: UnitObject
-    unit2: UnitObject
+    unit1: UnitObject #: The current roam unit.
+    unit2: UnitObject #: the closest nearby other unit.
 
 @dataclass(init=True)
 class RoamingInterrupt(EventTrigger):
     """
     Occurs when the player enters an `interrupt` region on the map.
-
-        unit1: The current roam unit.
-        position: The position of the current roam unit
-        region: The region that was triggered.
     """
     nid: ClassVar[NID] = 'roaming_interrupt'
-    unit1: UnitObject
-    position: Tuple[int, int]
-    region: RegionObject
+    unit1: UnitObject #: The current roam unit.
+    position: Tuple[int, int] #: The position of the current roam unit
+    region: RegionObject #: The region that was triggered.
 
 @dataclass(init=True)
 class RegionTrigger(EventTrigger):
     """
     Special trigger. This trigger has a custom nid, and will be created whenever you make an interactable
     event region.
-
-        nid: the nid of the region
-        unit1: The unit triggering the region
-        position: The position of the unit triggering the region
-        region: the name of the region that was triggered
-        item: the item used to trigger this region (used with unlock staves and keys)
     """
-    nid: NID
-    unit1: UnitObject
-    position: Tuple[int, int]
-    region: RegionObject
-    item: ItemObject = None
+    nid: NID #: the nid of the region event
+    unit1: UnitObject #: The unit triggering the region
+    position: Tuple[int, int] #: The position of the unit triggering the region
+    region: RegionObject #: the name of the region that was triggered
+    item: ItemObject = None #: the item used to trigger this region (used with unlock staves and keys)
 
 ALL_TRIGGERS = [tclass for tclass in EventTrigger.__subclasses__() if hasattr(tclass, 'nid') and tclass is not GenericTrigger]
-
-# _TRIGGER_NAME_MAP = {trigger.nid: trigger for trigger in ALL_TRIGGERS if hasattr(trigger, 'nid')}
-
-# def get_trigger(trigger_nid: str):
-#   return _TRIGGER_NAME_MAP[trigger_nid]
-
-def assert_triggers_are_documented():
-    documented_triggers = ALL_TRIGGERS.copy()
-    documented_triggers.append(RegionTrigger)
-    for trigger in documented_triggers:
-        doc = trigger.__doc__
-        if doc.startswith(trigger.__name__ + "("):
-            raise NotImplementedError("EventTrigger %s does not have documentation in triggers.py" % trigger.__name__)
-        for field in dataclasses.fields(trigger):
-            name = field.name
-            if name not in doc:
-                raise NotImplementedError("Doc for field %s missing from docstring for EventTrigger %s" % (name, trigger.__name__))
-
-assert_triggers_are_documented()

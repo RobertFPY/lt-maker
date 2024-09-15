@@ -20,7 +20,7 @@ from app.engine.overworld.overworld_map_sprites import (OverworldNodeSprite,
                                                         OverworldRoadSprite,
                                                         OverworldUnitSprite)
 from app.engine.unit_sound import UnitSound
-from app.data.resources.sounds import Song
+from app.data.resources.sounds import SongPrefab
 from app.utilities.typing import NID, Point
 from .overworld_entity import OverworldEntityObject
 
@@ -140,7 +140,7 @@ class OverworldObject():
                                                                             # "is_objective", indicating whether or not this node is the next objective (and whether or not to fly the little flag
                                                                             # on top of it) Could be useful for other properties in the future.
         # not saved since it's just a property
-        self._music: Song = None # filename of overworld music file
+        self._music: SongPrefab = None # filename of overworld music file
 
     @property
     def nid(self) -> NID:
@@ -151,7 +151,7 @@ class OverworldObject():
         return self.prefab.name
 
     @property
-    def music(self) -> Song:
+    def music(self) -> SongPrefab:
         if not self._music:
             self._music = RESOURCES.music.get(self.prefab.music)
         return self._music

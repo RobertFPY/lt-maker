@@ -139,7 +139,9 @@ def store_item(item, unit):
     action.do(action.StoreItem(unit, item))
 
 def trade_items(convoy_item, unit_item, unit):
-    if convoy_item.owner_nid:
+    if not convoy_item:
+        store_item(unit_item, unit)
+    elif convoy_item.owner_nid:
         new_unit = game.get_unit(convoy_item.owner_nid)
         action.do(action.TradeItem(unit, new_unit, unit_item, convoy_item))
     else:

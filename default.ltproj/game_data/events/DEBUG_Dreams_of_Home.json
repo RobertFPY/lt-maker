@@ -4,33 +4,13 @@
         "trigger": "on_base_convo",
         "level_nid": "DEBUG",
         "condition": "unit == 'Dreams of Home'",
-        "commands": [
-            [
-                "multi_add_portrait",
-                [
-                    "Eirika",
-                    "Left",
-                    "Seth",
-                    "Right"
-                ]
-            ],
-            [
-                "speak",
-                [
-                    "Eirika",
-                    "I miss home"
-                ]
-            ],
-            [
-                "multi_remove_portrait",
-                [
-                    "Eirika",
-                    "Seth"
-                ]
-            ]
-        ],
+        "commands": [],
         "only_once": false,
         "priority": 20,
-        "source": ""
+        "_source": [
+            "multi_add_portrait;Eirika;Left;Seth;Right",
+            "speak;Eirika;I miss home",
+            "multi_remove_portrait;Eirika;Seth"
+        ]
     }
 ]

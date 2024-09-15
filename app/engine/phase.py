@@ -87,9 +87,9 @@ class PhaseController():
             self.current = (self.current + 1) % len(DB.teams)
 
     def _team_int(self, team: str) -> int:
-        if team in DB.teams.keys():
+        if team in DB.teams:
             return DB.teams.index(team)
-        return 1 # 1 is used instead of zero so that it will default to an AI turn
+        return 1  # 1 is used instead of zero so that it will default to an AI turn
 
     def next(self):
         self.previous = self.current
@@ -132,7 +132,9 @@ class PhaseIn():
 
     def begin(self):
         self.starting_time = engine.get_time()
-        get_sound_thread().play_sfx('Next Turn')
+        team = DB.teams.get(self.name)
+        phase_change_sound_effect = team.phase_change_sound_effect or 'Next Turn'
+        get_sound_thread().play_sfx(phase_change_sound_effect)
         if self.name == 'player':
             if cf.SETTINGS['autocursor']:
                 game.cursor.autocursor()

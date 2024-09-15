@@ -1,6 +1,6 @@
 [
     {
-        "nid": "Demon Light",
+        "nid": "Demon_Light",
         "name": "Demon Light",
         "desc": "",
         "icon_nid": "Neutral",
@@ -39,7 +39,7 @@
             ],
             [
                 "status_on_equip",
-                "Demon Light"
+                "Demon_Light"
             ],
             [
                 "wexp",

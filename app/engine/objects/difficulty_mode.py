@@ -1,13 +1,14 @@
 from __future__ import annotations
 from app.utilities.typing import NID
-from app.data.database.difficulty_modes import DifficultyModePrefab, GrowthOption, PermadeathOption
+from app.data.database.difficulty_modes import DifficultyModePrefab, GrowthOption, PermadeathOption, RNGOption
 from app.utilities.data import Prefab
 
 class DifficultyModeObject(Prefab):
-    def __init__(self, nid: NID = None, permadeath: bool = None, growths: GrowthOption = None):
+    def __init__(self, nid: NID = None, permadeath: bool = None, growths: GrowthOption = None, rng_mode: RNGOption = None):
         self.nid: NID = nid
         self.permadeath: bool = permadeath
         self.growths: GrowthOption = growths
+        self.rng_mode: RNGOption = rng_mode
         self.enemy_autolevels: int = 0
         self.enemy_truelevels: int = 0
         self.boss_autolevels: int = 0
@@ -17,6 +18,7 @@ class DifficultyModeObject(Prefab):
         return {'nid': self.nid,
                 'permadeath': self.permadeath,
                 'growths': self.growths,
+                'rng_mode': self.rng_mode,
                 'enemy_autolevels': self.enemy_autolevels,
                 'enemy_truelevels': self.enemy_truelevels,
                 'boss_autolevels': self.boss_autolevels,
@@ -25,7 +27,7 @@ class DifficultyModeObject(Prefab):
 
     @classmethod
     def restore(cls, s_dict):
-        difficulty_mode = cls(s_dict['nid'], s_dict['permadeath'], s_dict['growths'])
+        difficulty_mode = cls(s_dict['nid'], s_dict['permadeath'], s_dict['growths'], s_dict.get('rng_mode'))
         difficulty_mode.enemy_autolevels = s_dict.get('enemy_autolevels', 0)
         difficulty_mode.enemy_truelevels = s_dict.get('enemy_truelevels', 0)
         difficulty_mode.boss_autolevels = s_dict.get('boss_autolevels', 0)
@@ -38,4 +40,5 @@ class DifficultyModeObject(Prefab):
         difficulty_mode.nid = prefab.nid
         difficulty_mode.permadeath = prefab.permadeath_choice == PermadeathOption.CLASSIC
         difficulty_mode.growths = prefab.growths_choice
+        difficulty_mode.rng_mode = prefab.rng_choice
         return difficulty_mode

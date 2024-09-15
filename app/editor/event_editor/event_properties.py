@@ -1,6 +1,7 @@
 from __future__ import annotations
-from enum import Enum
+from typing import Optional
 
+from enum import Enum
 import functools
 import logging
 import math
@@ -18,8 +19,8 @@ from PyQt5.QtWidgets import (QAbstractItemView, QAction, QApplication,
                              QSpinBox, QSplitter, QStyle, QStyledItemDelegate,
                              QTextEdit, QToolBar, QVBoxLayout, QWidget)
 from app.editor.event_editor.commands_dialog import ShowCommandsDialog
+from app.editor.event_editor.event_function_hinter import EventScriptFunctionHinter, PythonFunctionHinter
 from app.editor.event_editor.event_text_editor import EventTextEditor
-from app.editor.event_editor.utils import EditorLanguageMode
 
 import app.editor.game_actions.game_actions as GAME_ACTIONS
 from app import dark_theme
@@ -38,6 +39,7 @@ from app.editor.map_view import SimpleMapView
 from app.editor.settings import MainSettingsController
 from app.events import event_commands, event_validators
 from app.events.event_prefab import EventPrefab
+from app.events.event_version import EventVersion
 from app.events.mock_event import IfStatementStrategy
 from app.events.regions import RegionType
 from app.events.triggers import ALL_TRIGGERS
@@ -141,6 +143,7 @@ class EventCollection(QWidget):
         self.toolbar.addAction(self.delete_action)
 
     def delete(self):
+        self.window.right_frame.name_done_editing()  # Necessary for handling deletion right after you change the name if you don't click off
         current_index = self.view.currentIndex()
         model_index = self.name_filtered_model.mapToSource(self.level_filtered_model.mapToSource(current_index))
         row = current_index.row()
@@ -296,15 +299,17 @@ class EventProperties(QWidget):
         self.window = parent
         self._data = self.window._data
 
+        self.settings = MainSettingsController()
         self.current = current
-        self.language_mode = EditorLanguageMode.UNSET
+        self.version = None
 
         self.text_box = EventTextEditor(self)
         self.text_box.textChanged.connect(self.text_changed)
+        self.find_and_replace_window = find_and_replace.Find(self)
 
-        self.find_action = QAction("Find...", self, shortcut="Ctrl+F", triggered=find_and_replace.Find(self).show)
-        self.replace_action = QAction("Replace...", self, shortcut="Ctrl+H", triggered=find_and_replace.Find(self).show)
-        self.replace_all_action = QAction("Replace all...", self, shortcut="Ctrl+Shift+H", triggered=find_and_replace.Find(self).show)
+        self.find_action = QAction("Find...", self, shortcut="Ctrl+F", triggered=self.show_find_and_replace)
+        self.replace_action = QAction("Replace...", self, shortcut="Ctrl+H", triggered=self.show_find_and_replace)
+        self.replace_all_action = QAction("Replace all...", self, shortcut="Ctrl+Shift+H", triggered=self.show_find_and_replace)
         self.addAction(self.find_action)
         self.addAction(self.replace_action)
         self.addAction(self.replace_all_action)
@@ -312,7 +317,7 @@ class EventProperties(QWidget):
         # Text setup
         self.cursor = self.text_box.textCursor()
         self.code_font = QFont()
-        self.code_font.setFamily("Courier")
+        self.code_font.setFamily(self.settings.get_code_font())
         self.code_font.setFixedPitch(True)
         self.code_font.setPointSize(10)
         self.text_box.setFont(self.code_font)
@@ -371,7 +376,6 @@ class EventProperties(QWidget):
         self.show_map_button = QPushButton("Show Map")
         self.show_map_button.clicked.connect(self.show_map)
         bottom_section.addWidget(self.show_map_button)
-        self.show_map_button.setEnabled(False)
 
         self.show_commands_dialog = None
         self.show_commands_button = QPushButton("Show Commands")
@@ -383,8 +387,12 @@ class EventProperties(QWidget):
         test_menu.addAction(QAction("with If Statements always True", self, triggered=functools.partial(self.test_event, IfStatementStrategy.ALWAYS_TRUE)))
         test_menu.addAction(QAction("with If Statements always False", self, triggered=functools.partial(self.test_event, IfStatementStrategy.ALWAYS_FALSE)))
         self.test_event_button.setMenu(test_menu)
-        # self.test_event_button.clicked.connect(self.test_event)
         bottom_section.addWidget(self.test_event_button)
+
+        self.test_python_event_button = QPushButton("Test Python Event")
+        self.test_python_event_button.clicked.connect(self.test_python_event)
+        bottom_section.addWidget(self.test_python_event_button)
+        self.set_test_event_button_visible()
 
     def setEnabled(self, val):
         super().setEnabled(val)
@@ -418,7 +426,7 @@ class EventProperties(QWidget):
     def show_map(self):
         # Modeless dialog
         if not self.show_map_dialog:
-            current_level = DB.levels.get(self.current.level_nid)
+            current_level: Optional[LevelPrefab] = DB.levels.get(self.current.level_nid)
             self.show_map_dialog = ShowMapDialog(current_level, self)
         self.show_map_dialog.setAttribute(Qt.WA_ShowWithoutActivating, True)
         # self.show_map_dialog.setWindowFlags(self.show_map_dialog.windowFlags() | Qt.WindowDoesNotAcceptFocus)
@@ -446,12 +454,30 @@ class EventProperties(QWidget):
             self.show_commands_dialog.done(0)
             self.show_commands_dialog = None
 
+    def show_find_and_replace(self):
+        if not self.find_and_replace_window:
+            self.find_and_replace_window = find_and_replace.Find(self)
+        self.find_and_replace_window.show()
+        self.find_and_replace_window.raise_()
+
+    def close_find_and_replace(self):
+        if self.find_and_replace_window:
+            self.find_and_replace_window.done(0)
+            self.find_and_replace_window = None
+
     def test_event(self, strategy):
         if self.current:
-            commands = self.current.commands
-            cursor_position = 0
+            # If not debug_point_line_number default to 0 (the start)
+            command_pointer = (self.text_box.debug_point_line_number or 1) - 1
             timer.get_timer().stop()
-            GAME_ACTIONS.test_event(commands, cursor_position, strategy)
+            GAME_ACTIONS.test_event(self.current, command_pointer, strategy)
+            timer.get_timer().start()
+
+    def test_python_event(self):
+        if self.current:
+            command_pointer = 0
+            timer.get_timer().stop()
+            GAME_ACTIONS.test_event(self.current, command_pointer)
             timer.get_timer().start()
 
     def name_changed(self, text):
@@ -483,17 +509,11 @@ class EventProperties(QWidget):
         if idx == 0:
             self.current.level_nid = None
             self.name_done_editing()
-            self.show_map_button.setEnabled(False)
             if self.level_filter_box.edit.currentText() != "All":
                 self.level_filter_box.edit.setValue("Global")
         else:
             self.current.level_nid = DB.levels[idx - 1].nid
             self.name_done_editing()
-            current_level = DB.levels.get(self.current.level_nid)
-            if current_level.tilemap:
-                self.show_map_button.setEnabled(True)
-            else:
-                self.show_map_button.setEnabled(False)
             if self.level_filter_box.edit.currentText() != "All":
                 self.level_filter_box.edit.setValue(self.current.level_nid)
 
@@ -516,30 +536,31 @@ class EventProperties(QWidget):
         self.current.priority = value
 
     def text_changed(self):
-        self.current.commands.clear()
-        lines = []
-        for doc_idx in range(self.text_box.document().blockCount()):
-            line = self.text_box.document().findBlockByNumber(doc_idx).text().strip()
-            lines.append(line)
-        for line in lines:
-            command, error_loc = event_commands.parse_text_to_command(line)
-            if command:
-                self.current.commands.append(command)
-        self.current.source = self.text_box.document().toPlainText()
-        self.set_editor_language(EditorLanguageMode.PYTHON if self.current.is_python_event() else EditorLanguageMode.EVENT)
+        self.current.source = self.text_box.document().toRawText()
+        # reset cached event info
+        DB.events.inspector.clear_cache(self.current.nid)
+        self.set_editor_language(self.current.version())
+        self.set_test_event_button_visible()
 
-    def set_editor_language(self, lang: EditorLanguageMode):
-        if lang == self.language_mode:
+    def set_test_event_button_visible(self):
+        if self.current and self.current.version() != EventVersion.EVENT:
+            self.test_event_button.hide()
+            self.test_python_event_button.show()
+        else:
+            self.test_event_button.show()
+            self.test_python_event_button.hide()
+
+    def set_editor_language(self, version: EventVersion):
+        if version == self.version:
             return
-        self.language_mode = lang
-        if lang == EditorLanguageMode.PYTHON:
+        self.version = version
+        self.text_box.set_completer_version(self.version)
+        if version != EventVersion.EVENT:
             self.highlighter = PythonHighlighter(self.text_box.document())
-            self.text_box.set_completer(event_autocompleter.PythonEventScriptCompleter())
-            self.text_box.set_function_hinter(None)
+            self.text_box.set_function_hinter(PythonFunctionHinter)
         else:
             self.highlighter = EventHighlighter(self.text_box.document(), self)
-            self.text_box.set_completer(event_autocompleter.EventScriptCompleter())
-            self.text_box.set_function_hinter(event_autocompleter.EventScriptFunctionHinter)
+            self.text_box.set_function_hinter(EventScriptFunctionHinter)
 
     def set_current(self, current: EventPrefab):
         self.current = current
@@ -559,33 +580,23 @@ class EventProperties(QWidget):
         self.only_once_box.edit.setChecked(bool(current.only_once))
         self.priority_box.edit.setValue(current.priority)
 
-        if not self.current.is_python_event():
-            # Convert text
-            text = ''
-            num_tabs = 0
-            for command in current.commands:
-                if command:
-                    if command.nid in ('else', 'elif', 'end', 'endf'):
-                        num_tabs -= 1
-                    text += '    ' * num_tabs
-                    text += command.to_plain_text()
-                    text += '\n'
-                    if command.nid in ('if', 'elif', 'else', 'for'):
-                        num_tabs += 1
-                else:
-                    logging.warning("NoneType in current.commands")
-            self.text_box.setPlainText(text)
-            self.set_editor_language(EditorLanguageMode.EVENT)
+        if self.current.version() == EventVersion.EVENT:
+            if not self.current.source:
+                self.current.source = '\n'.join([str(cmd) for cmd in self.current.commands])
+            self.text_box.setPlainText(self.current.source)
+            self.set_editor_language(self.current.version())
         else:
             self.text_box.setPlainText(self.current.source)
-            self.set_editor_language(EditorLanguageMode.PYTHON)
+            self.set_editor_language(self.current.version())
+        self.set_test_event_button_visible()
 
     def hideEvent(self, event):
         self.close_map()
         self.close_commands()
+        self.close_find_and_replace()
 
 class ShowMapDialog(QDialog):
-    def __init__(self, current_level: LevelPrefab, parent=None):
+    def __init__(self, current_level: Optional[LevelPrefab], parent=None):
         super().__init__(parent)
         self.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
         self.setWindowTitle("Level Map View")
@@ -596,11 +607,19 @@ class ShowMapDialog(QDialog):
         self.map_selector.edit.activated.connect(self.select_current)
         if self.current_level and self.current_level.tilemap:
             self.map_selector.edit.setCurrentIndex(self.map_selector.edit.findText(self.current_level.tilemap))
+        else:
+            self.map_selector.edit.setCurrentIndex(0)
 
         self.map_view = SimpleMapView(self)
         self.map_view.position_clicked.connect(self.position_clicked)
         self.map_view.position_moved.connect(self.position_moved)
-        self.map_view.set_current_level(self.current_level)
+        if self.current_level:
+            self.map_view.set_current_level(self.current_level)
+        else:
+            tilemap_nid = self.map_selector.edit.currentText()
+            tilemap = RESOURCES.tilemaps.get(tilemap_nid)
+            if tilemap:
+                self.map_view.set_current_map(tilemap)
 
         self.position_edit = QLineEdit(self)
         self.position_edit.setAlignment(Qt.AlignRight)
@@ -616,7 +635,7 @@ class ShowMapDialog(QDialog):
 
     def select_current(self):
         tilemap_nid = self.map_selector.edit.currentText()
-        if tilemap_nid == self.current_level.tilemap:
+        if self.current_level and tilemap_nid == self.current_level.tilemap:
             self.map_view.set_current_level(self.current_level)
         else:
             tilemap = RESOURCES.tilemaps.get(tilemap_nid)
@@ -628,6 +647,9 @@ class ShowMapDialog(QDialog):
 
     def position_moved(self, x, y):
         if x >= 0 and y >= 0:
+            if not self.current_level:
+                self.position_edit.setText("%d,%d" % (x, y))
+                return
             unit_name = None
             for unit in self.current_level.units:
                 if unit.starting_position and unit.starting_position[0] == x and unit.starting_position[1] == y:
@@ -643,12 +665,13 @@ class ShowMapDialog(QDialog):
     def update(self):
         self.map_view.update_view()
 
-    def set_current(self, current):
+    def set_current(self, current: Optional[LevelPrefab]):
         self.current_level = current
-        self.map_view.set_current_level(self.current_level)
-        tilemap = RESOURCES.tilemaps.get(self.current_level.tilemap)
-        if tilemap:
-            self.map_view.set_current_map(tilemap)
+        if self.current_level:
+            self.map_view.set_current_level(self.current_level)
+            tilemap = RESOURCES.tilemaps.get(self.current_level.tilemap)
+            if tilemap:
+                self.map_view.set_current_map(tilemap)
 
     def closeEvent(self, event):
         self.window.show_map_dialog = None

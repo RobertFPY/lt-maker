@@ -24,6 +24,17 @@ class UnitAnim(SkillComponent):
     def should_draw_anim(self, unit, skill):
         return self.value
 
+class UnitTint(SkillComponent):
+    nid = 'unit_tint'
+    desc = "Displays a tint on the unit"
+    tag = SkillTags.AESTHETIC
+
+    expose = ComponentType.Color3
+
+    def unit_sprite_flicker_tint(self, unit, skill) -> tuple:
+        # Color, Period, Width, Add Tint or Subtract Tint
+        return (self.value, 0, 0, True)
+
 class UnitFlickeringTint(SkillComponent):
     nid = 'unit_flickering_tint'
     desc = "Displays a flickering tint on the unit"
@@ -32,7 +43,8 @@ class UnitFlickeringTint(SkillComponent):
     expose = ComponentType.Color3
 
     def unit_sprite_flicker_tint(self, unit, skill) -> tuple:
-        return (self.value, 900, 300)
+        # Color, Period, Width, Add Tint or Subtract Tint
+        return (self.value, 900, 300, True)
 
 class UpkeepAnimation(SkillComponent):
     nid = 'upkeep_animation'
@@ -79,18 +91,17 @@ class StealIcon(SkillComponent):
     desc = "Displays icon above units with stealable items"
     tag = SkillTags.AESTHETIC
 
-    def target_icon(self, unit, target) -> str:
-        # Unit has item that can be stolen
-        if skill_system.check_enemy(unit, target):
-            attack = equations.parser.steal_atk(unit)
-            defense = equations.parser.steal_def(target)
+    def target_icon(self, hovered_unit, icon_unit) -> str:
+        if skill_system.check_enemy(hovered_unit, icon_unit):
+            attack = equations.parser.steal_atk(hovered_unit)
+            defense = equations.parser.steal_def(icon_unit)
             if attack >= defense:
-                for def_item in target.items:
-                    if self._item_restrict(unit, target, def_item):
+                for def_item in icon_unit.items:
+                    if self._can_steal(hovered_unit, icon_unit, def_item):
                         return 'steal'
         return None
 
-    def _item_restrict(self, unit, defender, def_item) -> bool:
+    def _can_steal(self, unit, defender, def_item) -> bool:
         if item_system.unstealable(defender, def_item):
             return False
         if item_funcs.inventory_full(unit, def_item):
@@ -102,7 +113,7 @@ class StealIcon(SkillComponent):
 class GBAStealIcon(StealIcon):
     nid = 'gba_steal_icon'
 
-    def _item_restrict(self, unit, defender, def_item) -> bool:
+    def _can_steal(self, unit, defender, def_item) -> bool:
         if item_system.unstealable(defender, def_item):
             return False
         if item_funcs.inventory_full(unit, def_item):
@@ -119,13 +130,13 @@ class AlternateBattleAnim(SkillComponent):
     expose = ComponentType.String
     value = 'Critical'
 
-    def after_strike(self, actions, playback, unit, item, target, mode, attack_info, strike):
+    def after_strike(self, actions, playback, unit, item, target, item2, mode, attack_info, strike):
         if strike != Strike.MISS:
             playback.append(pb.AlternateBattlePose(self.value))
 
 class ChangeVariant(SkillComponent):
     nid = 'change_variant'
-    desc = "Change the unit's variant"
+    desc = "Change the unit's variant. Does not work well with conditions."
     tag = SkillTags.AESTHETIC
 
     expose = ComponentType.String
@@ -161,7 +172,7 @@ class MapCastAnim(SkillComponent):
 
     expose = ComponentType.MapAnimation
 
-    def start_combat(self, playback, unit, item, target, mode):
+    def start_combat(self, playback, unit, item, target, item2, mode):
         playback.append(pb.CastAnim(self.value))
 
 class BattleAnimMusic(SkillComponent):
@@ -172,5 +183,5 @@ class BattleAnimMusic(SkillComponent):
     expose = ComponentType.Music
     value = None
 
-    def battle_music(self, playback, unit, item, target, mode):
+    def battle_music(self, playback, unit, item, target, item2, mode):
         return self.value

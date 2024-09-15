@@ -1,6 +1,6 @@
 [
     {
-        "nid": "Iron Blade",
+        "nid": "Iron_Blade",
         "name": "Iron Blade",
         "desc": "",
         "icon_nid": "Sword",
@@ -43,13 +43,10 @@
             ],
             [
                 "uses_options",
-                [
-                    [
-                        "LoseUsesOnMiss (T/F)",
-                        "F",
-                        "Lose uses even on miss"
-                    ]
-                ]
+                {
+                    "lose_uses_on_miss": false,
+                    "one_loss_per_combat": false
+                }
             ],
             [
                 "weight",

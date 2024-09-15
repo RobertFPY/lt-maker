@@ -2,12 +2,9 @@ from PyQt5.QtCore import Qt
 
 from app.data.database.database import DB
 
-from app.extensions.custom_gui import DeletionDialog
+from app.extensions.custom_gui import DeletionTab, DeletionDialog
 from app.editor.custom_widgets import PartyBox
 from app.editor.base_database_gui import DragDropCollectionModel
-
-from app.data.database import parties
-from app.utilities import str_utils
 
 class PartyModel(DragDropCollectionModel):
     def data(self, index, role):
@@ -31,7 +28,8 @@ class PartyModel(DragDropCollectionModel):
             from app.editor.global_editor.level_menu import LevelModel
             model = LevelModel
             msg = "Deleting Party <b>%s</b> would affect this level" % nid
-            swap, ok = DeletionDialog.get_swap(affected_levels, model, msg, PartyBox(self.window, exclude=party), self.window)
+            deletion_tab = DeletionTab(affected_levels, model, msg, "Levels")
+            swap, ok = DeletionDialog.get_swap([deletion_tab], PartyBox(self.window, exclude=party), self.window)
             if ok:
                 self.on_nid_changed(nid, swap.nid)
             else:

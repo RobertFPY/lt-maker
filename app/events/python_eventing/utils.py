@@ -1,12 +1,13 @@
-from typing import Any, Dict, List, Optional, Set, Tuple, Type
+from typing import Any, Dict, Generator, List, Optional, Set, Tuple, Type
+
+from app.events.event_structs import EventCommandTokens
+from app.utilities.str_utils import SHIFT_NEWLINE
 
 from .. import event_commands
-    
-EVENT_INSTANCE = "EC"
 
-FORBIDDEN_PYTHON_COMMANDS: List[event_commands.EventCommand] = [event_commands.Comment, event_commands.If, event_commands.Elif, event_commands.Else,
-                                                                event_commands.End, event_commands.For, event_commands.Endf, event_commands.LoopUnits]
-FORBIDDEN_PYTHON_COMMAND_NIDS: List[str] = [cmd.nid for cmd in FORBIDDEN_PYTHON_COMMANDS] + [cmd.nickname for cmd in FORBIDDEN_PYTHON_COMMANDS]
+EVENT_INSTANCE = "EC"
+EVENT_GEN_NAME = "_lt_event_gen"
+
 SAVE_COMMANDS: List[event_commands.EventCommand] = [event_commands.BattleSave, event_commands.Prep, event_commands.Base]
 SAVE_COMMAND_NIDS: Set[str] = set([cmd.nid for cmd in SAVE_COMMANDS] + [cmd.nickname for cmd in SAVE_COMMANDS])
 EVENT_CALL_COMMANDS: List[event_commands.EventCommand] = [event_commands.TriggerScript, event_commands.TriggerScriptWithArgs]
@@ -24,3 +25,14 @@ class ResumeCheck():
         if line_no == self.line_no:
             self.catching_up = False
         return is_catching_up
+
+def to_py_event_command(tokens: EventCommandTokens) -> Tuple[str, int]:
+    """returns command text, and indent"""
+    command = tokens.command()
+    args = ','.join(tokens.args()).replace(SHIFT_NEWLINE, ' ')
+    # flags are always strings
+    flags = ','.join([f'"{flag}"' for flag in tokens.flags()])
+    return "%s(%s).set_flags(%s)" % (command, args, flags), tokens.start_idx
+
+def create_null_event() -> Generator:
+    yield DO_NOT_EXECUTE_SENTINEL, None

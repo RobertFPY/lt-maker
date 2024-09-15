@@ -6,7 +6,7 @@ from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QColor, QIcon, QPalette
 from PyQt5.QtWidgets import (QApplication, QDoubleSpinBox, QHBoxLayout,
                              QItemDelegate, QLabel, QLineEdit, QListWidgetItem,
-                             QSpinBox, QToolButton, QVBoxLayout, QWidget)
+                             QSpinBox, QToolButton, QVBoxLayout, QWidget, QPushButton)
 
 from app.data.database.components import ComponentType
 from app.data.database.database import DB
@@ -187,7 +187,10 @@ class DropDownItemComponent(BoolItemComponent):
         self.editor.addItems(self.options)
         if not self._data.value:
             self._data.value = self.options[0]
-        self.editor.setCurrentIndex(self.options.index(self._data.value))
+        if self._data.value in self.options:
+            self.editor.setCurrentIndex(self.options.index(self._data.value))
+        else:
+            self.editor.setCurrentIndex(0)
         self.editor.currentIndexChanged.connect(self.on_value_changed)
         hbox.addWidget(self.editor)
 

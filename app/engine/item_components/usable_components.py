@@ -27,14 +27,14 @@ class Uses(ItemComponent):
     def is_broken(self, unit, item) -> bool:
         return item.data['uses'] <= 0
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         if item.uses_options.one_loss_per_combat():
             self._did_something = True
         else:
             actions.append(action.SetObjData(item, 'uses', item.data['uses'] - 1))
             actions.append(action.UpdateRecords('item_use', (unit.nid, item.nid)))
 
-    def on_miss(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_miss(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         if item.uses_options.lose_uses_on_miss():
             if item.uses_options.one_loss_per_combat():
                 self._did_something = True
@@ -53,10 +53,7 @@ class Uses(ItemComponent):
                 if item in other_unit.items:
                     action.do(action.RemoveItem(other_unit, item))
 
-    def broken_alert(self, unit, item):
-        return self.is_broken(unit, item)
-
-    def end_combat(self, playback, unit, item, target, mode):
+    def end_combat(self, playback, unit, item, target, item2, mode):
         if self._did_something and 'uses' in item.data:
             action.do(action.SetObjData(item, 'uses', item.data['uses'] - 1))
             action.do(action.UpdateRecords('item_use', (unit.nid, item.nid)))
@@ -92,17 +89,17 @@ class ChapterUses(ItemComponent):
     def available(self, unit, item) -> bool:
         return item.data['c_uses'] > 0
 
-    def is_broken(self, unit, item) -> bool:
+    def is_unusable(self, unit, item) -> bool:
         return item.data['c_uses'] <= 0
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         if item.uses_options.one_loss_per_combat():
             self._did_something = True
         else:
             actions.append(action.SetObjData(item, 'c_uses', item.data['c_uses'] - 1))
             actions.append(action.UpdateRecords('item_use', (unit.nid, item.nid)))
 
-    def on_miss(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_miss(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         if item.uses_options.lose_uses_on_miss():
             if item.uses_options.one_loss_per_combat():
                 self._did_something = True
@@ -110,16 +107,13 @@ class ChapterUses(ItemComponent):
                 actions.append(action.SetObjData(item, 'c_uses', item.data['c_uses'] - 1))
                 actions.append(action.UpdateRecords('item_use', (unit.nid, item.nid)))
 
-    def on_broken(self, unit, item):
+    def on_unusable(self, unit, item):
         if unit.equipped_weapon is item:
             action.do(action.UnequipItem(unit, item))
         elif unit.equipped_accessory is item:
             action.do(action.UnequipItem(unit, item))
 
-    def broken_alert(self, unit, item):
-        return self.is_broken(unit, item)
-
-    def end_combat(self, playback, unit, item, target, mode):
+    def end_combat(self, playback, unit, item, target, item2, mode):
         if self._did_something and 'c_uses' in item.data:
             action.do(action.SetObjData(item, 'c_uses', item.data['c_uses'] - 1))
             action.do(action.UpdateRecords('item_use', (unit.nid, item.nid)))
@@ -141,25 +135,41 @@ class UsesOptions(ItemComponent):
     desc = 'Additional options for uses'
     tag = ItemTags.HIDDEN
 
-    expose = (ComponentType.MultipleOptions)
+    expose = ComponentType.NewMultipleOptions
 
-    value = [
-        ['LoseUsesOnMiss (T/F)', 'F', 'Lose uses even on miss'],
-        ['OneLossPerCombat (T/F)', 'F', "Doubling doesn't cost extra uses"]
-    ]
+    options = {
+        'lose_uses_on_miss': ComponentType.Bool,
+        'one_loss_per_combat': ComponentType.Bool
+    }
 
-    @property
-    def values(self) -> Dict[str, str]:
-        return {value[0]: value[1] for value in self.value}
+    def __init__(self, value=None):
+        self.value = {
+            'lose_uses_on_miss': False,
+            'one_loss_per_combat': False
+        }
+        if value and isinstance(value, dict):
+            self.value.update(value)
+        else: # value is a list from the old multiple options
+            try:
+                self.value['lose_uses_on_miss'] = value[0][1] == 'T'
+                self.value['one_loss_per_combat'] = value[1][1] == 'T'
+            except:
+                pass
 
     def lose_uses_on_miss(self) -> bool:
-        if self.values['LoseUsesOnMiss (T/F)'] == 'F':
-            return False
-        return True
+        return self.value.get('lose_uses_on_miss', False)
 
     def one_loss_per_combat(self) -> bool:
-        if self.values.get('OneLossPerCombat (T/F)', 'F') == 'T':
-            return True
+        return self.value.get('one_loss_per_combat', False)
+
+class NoAlertOnBreak(ItemComponent):
+    nid = 'no_alert_on_break'
+    desc = "Item will not display 'X broke!' when it runs out of uses."
+    tag = ItemTags.USES
+
+    expose = ComponentType.Bool
+
+    def alerts_when_broken(self, unit, item):
         return False
 
 class HPCost(ItemComponent):
@@ -175,16 +185,11 @@ class HPCost(ItemComponent):
     def available(self, unit, item) -> bool:
         return unit.get_hp() > self.value
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
-        self._did_something = True
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
+        action.do(action.ChangeHP(unit, -self.value))
 
-    def on_miss(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
-        self._did_something = True
-
-    def end_combat(self, playback, unit, item, target, mode):
-        if self._did_something:
-            action.do(action.ChangeHP(unit, -self.value))
-        self._did_something = False
+    def on_miss(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
+        action.do(action.ChangeHP(unit, -self.value))
 
     def reverse_use(self, unit, item):
         action.do(action.ChangeHP(unit, self.value))
@@ -202,25 +207,22 @@ class ManaCost(ItemComponent):
     def available(self, unit, item) -> bool:
         return unit.get_mana() >= self.value
 
-    def is_broken(self, unit, item) -> bool:
+    def is_unusable(self, unit, item) -> bool:
         return unit.get_mana() < self.value
 
-    def on_broken(self, unit, item) -> bool:
+    def on_unusable(self, unit, item) -> bool:
         if unit.equipped_weapon is item:
             action.do(action.UnequipItem(unit, item))
         elif unit.equipped_accessory is item:
             action.do(action.UnequipItem(unit, item))
 
-    def broken_alert(self, unit, item):
-        return False
-
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         self._did_something = True
 
-    def on_miss(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_miss(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         self._did_something = True
 
-    def end_combat(self, playback, unit, item, target, mode):
+    def end_combat(self, playback, unit, item, target, item2, mode):
         if self._did_something:
             action.do(action.ChangeMana(unit, -self.value))
         self._did_something = False
@@ -248,7 +250,7 @@ class EvalManaCost(ItemComponent):
     def available(self, unit, item) -> bool:
         return unit.get_mana() >= self._check_value(unit, item)
 
-    def start_combat(self, playback, unit, item, target, mode):
+    def start_combat(self, playback, unit, item, target, item2, mode):
         value = self._check_value(unit, item)
         action.do(action.ChangeMana(unit, -value))
 
@@ -264,24 +266,25 @@ class Cooldown(ItemComponent):
     expose = ComponentType.Int
     value = 1
 
+    _used_in_combat = False
+
     def init(self, item):
         item.data['cooldown'] = 0
         item.data['starting_cooldown'] = self.value
-        self._used_in_combat = False
 
     def available(self, unit, item) -> bool:
         return item.data['cooldown'] == 0
 
-    def is_broken(self, unit, item) -> bool:
+    def is_unusable(self, unit, item) -> bool:
         return item.data['cooldown'] != 0
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         self._used_in_combat = True
 
-    def on_miss(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_miss(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         self._used_in_combat = True
 
-    def end_combat(self, playback, unit, item, target, mode):
+    def end_combat(self, playback, unit, item, target, item2, mode):
         if self._used_in_combat:
             action.do(action.SetObjData(item, 'cooldown', self.value))
             self._used_in_combat = False
@@ -289,14 +292,11 @@ class Cooldown(ItemComponent):
     def reverse_use(self, unit, item):
         action.do(action.SetObjData(item, 'cooldown', 0))
 
-    def on_broken(self, unit, item):
+    def on_unusable(self, unit, item):
         if unit.equipped_weapon is item:
             action.do(action.UnequipItem(unit, item))
         elif unit.equipped_accessory is item:
             action.do(action.UnequipItem(unit, item))
-
-    def broken_alert(self, unit, item):
-        return False
 
     def on_upkeep(self, actions, playback, unit, item):
         if item.data['cooldown'] > 0:
@@ -353,8 +353,14 @@ class Locked(ItemComponent):
     desc = 'Item cannot be taken or dropped from a units inventory. However, the trade command can be used to rearrange its position, and event commands can remove the item.'
     tag = ItemTags.USES
 
-    def locked(self, unit, item) -> bool:
-        return True
+    def tradeable(self, unit, item) -> bool:
+        return False
+
+    def storeable(self, unit, item) -> bool:
+        return False
+
+    def discardable(self, unit, item) -> bool:
+        return False
 
     def unstealable(self, unit, item) -> bool:
         return True
@@ -366,6 +372,14 @@ class Unstealable(ItemComponent):
 
     def unstealable(self, unit, item) -> bool:
         return True
+
+class Undiscardable(ItemComponent):
+    nid = 'undiscardable'
+    desc = 'Item cannot be discarded'
+    tag = ItemTags.USES
+
+    def discardable(self, unit, item) -> bool:
+        return False
 
 class EvalAvailable(ItemComponent):
     nid = 'eval_available'

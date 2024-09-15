@@ -6,7 +6,9 @@ import math
 import sys
 from collections import Counter
 from operator import add, sub
-from typing import Tuple
+from typing import Collection, Iterable, List, Optional, Tuple
+
+from app.utilities.typing import Point
 
 
 def frames_to_ms(num_frames: float) -> int:
@@ -66,6 +68,18 @@ def process_terms(terms):
         return 0
     return sum(float(val * weight) for weight, val in terms) / weight_sum
 
+def linspace(start: float, stop: float, num: float, endpoint: bool = True) -> List[float]:
+    """
+    Mocks numpy's linspace function. 
+    Returns a list of size num starting at start and stopping at stop.
+    If endpoint is false, do not include stop in the list returned.
+    """
+    if endpoint:
+        step = (stop - start) / (num - 1)
+    else:
+        step = (stop - start) / num
+    return [start + (step * i) for i in range(num)]
+
 """Vector Tuple Math
 """
 def dot_product(a: tuple, b: tuple) -> float:
@@ -102,9 +116,7 @@ def strhash(s: str) -> int:
     """
     Converts a string to a corresponding integer
     """
-    h = hashlib.md5(s.encode('utf-8'))
-    h = int(h.hexdigest(), base=16)
-    return h
+    return int(hashlib.md5(s.encode('utf-8')).hexdigest(), base=16)
 
 def hash_to_color(h: int) -> tuple:
     hue = h % 359
@@ -132,23 +144,25 @@ def hsv2rgb(h: float, s: float, v: float) -> tuple:
 def rgb2hsv(r: int, g: int, b: int) -> tuple:
     return tuple(colorsys.rgb_to_hsv(r, g, b))
 
-def round_pos(pos: Tuple[float, float]) -> Tuple[int, int]:
+def round_pos(pos: Tuple[float, ...]) -> Tuple[int, ...]:
     """
     # Convert position to integer form
     """
-    return (int(round(pos[0])), int(round(pos[1])))
+    return tuple(int(round(p)) for p in pos)
 
-def average_pos(pos_list: list, as_int=False) -> tuple:
-    avg_x, avg_y = 0, 0
-    for x, y in pos_list:
-        avg_x += x
-        avg_y += y
-    avg_x /= len(pos_list)
-    avg_y /= len(pos_list)
+def diff_to_floor(d: float):
+    return d - math.floor(d)
+
+def diff_to_ceil(d: float):
+    return abs(d - math.ceil(d))
+
+def average_pos(pos_list: Collection[Tuple[float, ...]], as_int=False) -> Tuple[float | int, ...]:
+    """Calculate the average position of a list of positions"""
+    avg_pos = tuple([(sum(i) / len(pos_list)) for i in zip(*pos_list)])
     if as_int:
-        return (int(math.round(avg_x)), int(math.round(avg_y)))
+        return round_pos(avg_pos)
     else:
-        return (avg_x, avg_y)
+        return tuple(avg_pos)
 
 def farthest_away_pos(pos: tuple, valid_moves: set, enemy_pos: set):
     if valid_moves and enemy_pos:
@@ -159,25 +173,20 @@ def farthest_away_pos(pos: tuple, valid_moves: set, enemy_pos: set):
     else:
         return None
 
-def smart_farthest_away_pos(position, valid_moves: set, enemy_pos: set):
+def smart_farthest_away_pos(position: Point, valid_moves: Collection[Point], enemy_pos: Collection[Tuple[Point, int]]) -> Optional[Point]:
     # Figure out avg position of enemies
-    if valid_moves and enemy_pos:
-        avg_x, avg_y = 0, 0
-        for pos, mag in enemy_pos:
-            diff_x = position[0] - pos[0]
-            diff_y = position[1] - pos[1]
-            diff_x /= mag
-            diff_y /= mag
-            avg_x += diff_x
-            avg_y += diff_y
-        avg_x /= len(enemy_pos)
-        avg_y /= len(enemy_pos)
-        # Now have vector pointing away from average enemy position
-        # I want the dot product between that vector and the vector of each possible move
-        # The highest dot product is the best
-        return sorted(valid_moves, key=lambda move: dot_product((move[0] - position[0], move[1] - position[1]), (avg_x, avg_y)))[-1]
-    else:
+    if not valid_moves or not enemy_pos:
         return None
+    avg_x, avg_y = 0.0, 0.0
+    for pos, mag in enemy_pos:
+        avg_x += (position[0] - pos[0]) / mag
+        avg_y += (position[1] - pos[1]) / mag
+    avg_x /= len(enemy_pos)
+    avg_y /= len(enemy_pos)
+    # Now have vector pointing away from average enemy position
+    # I want the dot product between that vector and the vector of each possible move
+    # The highest dot product is the best
+    return sorted(valid_moves, key=lambda move: dot_product((move[0] - position[0], move[1] - position[1]), (avg_x, avg_y)))[-1]
 
 def raytrace(pos1: tuple, pos2: tuple) -> list:
     """
@@ -221,17 +230,18 @@ def is_windows() -> bool:
 
 # Testing
 if __name__ == '__main__':
-    c = Counter()
+    pass
+    # c = Counter()
     # import time
     # orig_time = time.time_ns()
-    with open('../../../english_corpus.txt') as corpus:
-        for line in corpus:
-            i = strhash(line)
-            b = i % 359
-            c[b] += 1
-    for n in range(1000000):
-        i = strhash(str(n))
-        b = i % 359
-        c[b] += 1
+    # with open('../../../english_corpus.txt') as corpus:
+    #     for line in corpus:
+    #         i = strhash(line)
+    #         b = i % 359
+    #         c[b] += 1
+    # for n in range(1000000):
+    #     i = strhash(str(n))
+    #     b = i % 359
+    #     c[b] += 1
     # print((time.time_ns() - orig_time)/1e6)
-    print(sorted(c.items()))
+    # print(sorted(c.items()))

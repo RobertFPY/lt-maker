@@ -106,7 +106,7 @@ class LTNestedList(QWidget):
 
         self.new_item_button = QPushButton("Create New")
         self.new_item_button.clicked.connect(lambda: self.new(self.tree_widget.selectedIndexes()[0] if self.tree_widget.selectedIndexes() else None,
-                                                     self.tree_widget.selectedItems()[0] if self.tree_widget.selectedItems() else None))
+                                             self.tree_widget.selectedItems()[0] if self.tree_widget.selectedItems() else None))
         layout.addWidget(self.new_item_button)
         self.setLayout(layout)
 

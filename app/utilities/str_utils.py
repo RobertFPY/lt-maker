@@ -1,5 +1,13 @@
 import functools
 import re
+from typing import Dict, List
+
+
+RAW_NEWLINE = '\u2029'
+SHIFT_NEWLINE = '\u2028'
+
+def convert_raw_text_newlines(s: str) -> str:
+    return s.replace('\u2029', '\n')
 
 def get_next_name(name, names, infix='_'):
     if name not in names:
@@ -44,16 +52,16 @@ def find_last_number(s: str):
         return int(last_number[-1])
     return None
 
-def get_prefix(s: str):
-    last_number = re.findall(r'\d+', s)
-    if last_number:
-        idx = re.search(r'\d+', s).span(0)[0]
+def get_prefix(s: str) -> str:
+    matches = re.search(r'\d+', s)
+    if matches:
+        idx = matches.span(0)[0]
         return s[:idx]
     else:
         idx = s.index('.')
         return s[:idx]
 
-def intify(s: str) -> list:
+def intify(s: str) -> List[int]:
     vals = s.split(',')
     return [int(i) for i in vals]
 
@@ -171,6 +179,11 @@ def matched_block_expr(s: str, opener: str, closer: str):
             curr += character
     return all_strs
 
+def remove_prefix(text: str, prefix: str):
+    if text.startswith(prefix):
+        return text[len(prefix):]
+    return text
+
 def remove_all_matched(s: str, opener: str, closer: str):
     """
     usage: `{d:{eval:f}.{eval:y}.` becomes `{d:..` - useful for determining which level of a nested eval we're in
@@ -184,6 +197,19 @@ def remove_all_matched(s: str, opener: str, closer: str):
     while n:
         s, n = re.subn(rstr, '', s)  # remove non-nested/flat balanced parts
     return s
+
+
+_MIRRORED_BRACKETS: Dict[str, str] = {
+    '[': ']',
+    '{': '}',
+    '(': ')',
+}
+for k, v in _MIRRORED_BRACKETS.copy().items():
+    _MIRRORED_BRACKETS[v] = k
+
+def mirror_bracket(c: str) -> str:
+    """Return the mirrored bracket of c, or c if it is not a bracket."""
+    return _MIRRORED_BRACKETS.get(c, c)
 
 if __name__ == '__main__':
     # print(camel_to_snake("Direction"))

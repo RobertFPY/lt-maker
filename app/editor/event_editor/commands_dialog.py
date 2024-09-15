@@ -1,49 +1,15 @@
 from __future__ import annotations
-from enum import Enum
 
-import functools
-import logging
-import math
-import os
-import re
+from PyQt5.QtCore import QSize, QSortFilterProxyModel, Qt
+from PyQt5.QtGui import QFontMetrics, QPalette
+from PyQt5.QtWidgets import (QApplication, QDialog, QFrame,
+                             QHBoxLayout, QLineEdit, QListView,
+                             QSplitter, QStyle, QStyledItemDelegate,
+                             QTextEdit, QVBoxLayout)
 
-from PyQt5.QtCore import QRect, QSize, QSortFilterProxyModel, Qt, pyqtSignal
-from PyQt5.QtGui import (QFont, QFontMetrics, QIcon, QPainter, QPalette,
-                         QTextCursor)
-from PyQt5.QtWidgets import (QAbstractItemView, QAction, QApplication,
-                             QCheckBox, QCompleter, QDialog, QFrame,
-                             QGridLayout, QHBoxLayout, QHeaderView, QLabel,
-                             QLineEdit, QListView, QMenu, QMessageBox,
-                             QPlainTextEdit, QPushButton, QSizePolicy,
-                             QSpinBox, QSplitter, QStyle, QStyledItemDelegate,
-                             QTextEdit, QToolBar, QVBoxLayout, QWidget)
-from app.editor.event_editor.event_text_editor import EventTextEditor
-
-import app.editor.game_actions.game_actions as GAME_ACTIONS
-from app import dark_theme
-from app.data.database.database import DB
-from app.data.database.levels import LevelPrefab
-from app.data.resources.resources import RESOURCES
-from app.editor import table_model, timer
 from app.editor.base_database_gui import CollectionModel
-from app.editor.custom_widgets import TilemapBox
-from app.editor.event_editor import event_autocompleter, find_and_replace
-from app.editor.event_editor.event_highlighter import EventHighlighter
-from app.editor.event_editor.py_syntax import PythonHighlighter
-from app.editor.lib.components.validated_line_edit import \
-    NoParentheticalLineEdit
-from app.editor.map_view import SimpleMapView
-from app.editor.settings import MainSettingsController
 from app.events import event_commands, event_validators
-from app.events.event_prefab import EventPrefab
-from app.events.mock_event import IfStatementStrategy
 from app.events.python_eventing.utils import FORBIDDEN_PYTHON_COMMAND_NIDS
-from app.events.regions import RegionType
-from app.events.triggers import ALL_TRIGGERS
-from app.extensions.custom_gui import (ComboBox, PropertyBox, PropertyCheckBox,
-                                       QHLine, TableView)
-from app.extensions.markdown2 import Markdown
-from app.utilities import str_utils
 
 def bold(s: str):
     return f'**{s}**'
@@ -220,15 +186,23 @@ class EventCommandModel(CollectionModel):
         super().__init__(data, window)
         self.categories = categories
 
+    def get_text(self, command) -> str:
+        full_text = command.nid + ';'.join(command.keywords) + ';'.join(command.optional_keywords) + \
+            ';'.join(command.flags) + ':' + str(command.desc)
+        return full_text
+
     def data(self, index, role):
         if not index.isValid():
             return None
         if role == Qt.DisplayRole:
             command = self._data[index.row()]
             if command in self.categories:
-                return command
+                category = command
+                # We want to include the header if any of it's children are counted
+                return '-'.join([self.get_text(command).lower() for command in self._data if command not in self.categories and command.tag == category])
             else:
-                return command.nid
+                return self.get_text(command).lower()
+
 
 class CommandDelegate(QStyledItemDelegate):
     def __init__(self, data, parent=None, is_python=False):

@@ -1,10 +1,11 @@
+from app.engine.objects.unit import UnitObject
 from app.utilities.typing import Color3, NID, Point
 from typing import Dict, Tuple
 from app.constants import TILEWIDTH, TILEHEIGHT
 
 from app.data.database.database import DB
 from app.engine.sprites import SPRITES
-from app.engine import engine, target_system, equations, image_mods, aura_funcs
+from app.engine import engine, equations, image_mods, aura_funcs
 from app.engine.game_state import game
 
 class BoundaryInterface():
@@ -127,20 +128,19 @@ class BoundaryInterface():
         self.should_reset_aura_surf = True
 
     def _add_unit(self, unit):
-        valid_moves = target_system.get_valid_moves(unit, force=True)
-
+        valid_moves = game.path_system.get_valid_moves(unit, force=True)
         if DB.constants.value('zero_move') and unit.get_ai() and not game.ai_group_active(unit.ai_group):
             ai_prefab = DB.ai.get(unit.get_ai())
             guard = ai_prefab.guard_ai()
             if guard:
                 valid_moves = {unit.position}
 
-        valid_attacks = target_system.get_possible_attacks(unit, valid_moves)
-        valid_spells = target_system.get_possible_spell_attacks(unit, valid_moves)
+        valid_attacks = game.target_system.get_all_attackable_positions_weapons(unit, valid_moves, force=True)
+        valid_spells = game.target_system.get_all_attackable_positions_spells(unit, valid_moves, force=True)
         self._set(valid_attacks, 'attack', unit.nid)
         self._set(valid_spells, 'spell', unit.nid)
 
-        area_of_influence = target_system.find_manhattan_spheres(set(range(1, equations.parser.movement(unit) + 1)), *unit.position)
+        area_of_influence = game.target_system.find_manhattan_spheres(set(range(1, equations.parser.movement(unit) + 1)), *unit.position)
         area_of_influence = {pos for pos in area_of_influence if game.board.check_bounds(pos)}
         self._set(area_of_influence, 'movement', unit.nid)
 
@@ -154,7 +154,7 @@ class BoundaryInterface():
                 # del self.dictionaries[mode][unit.nid]
         self.reset_surf()
 
-    def recalculate_unit(self, unit):
+    def recalculate_unit(self, unit: UnitObject):
         if unit.team in self.enemy_teams:
             self._remove_unit(unit)
             if unit.position:
@@ -228,7 +228,7 @@ class BoundaryInterface():
             self.aura_surf = engine.create_surface(full_size, transparent=True)
             # draw permanent auras
             for aura_origin, aura_radius, aura_color in self.registered_auras.values():
-                tiles_to_color = target_system.find_manhattan_spheres(set(range(1, aura_radius + 1)), *aura_origin)
+                tiles_to_color = game.target_system.find_manhattan_spheres(set(range(1, aura_radius + 1)), *aura_origin)
                 tiles_to_color.add(aura_origin)
                 for x, y in tiles_to_color:
                     image = self.get_color_square(aura_color)
@@ -277,7 +277,7 @@ class BoundaryInterface():
                         # Only make boundaries within game board bounds
                         if not game.board.check_bounds((x, y)):
                             continue
-                        
+
                         cell = new_grid[x * self.height + y]
                         if cell:
                             # Determine whether this tile should have a red display

@@ -1,27 +1,35 @@
 from __future__ import annotations
+import functools
 
 import json
 import logging
 import os
+from pathlib import Path
 import shutil
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+import traceback
+from typing import Dict, List, Optional, TYPE_CHECKING
 
 from PyQt5.QtCore import QDir, Qt
 from PyQt5.QtWidgets import QFileDialog, QMessageBox, QProgressDialog, QVBoxLayout, QLabel, QDialogButtonBox, QCheckBox
 
 from app.constants import VERSION
 from app.data.database.database import DB, Database
-from app.data.resources.resources import RESOURCES
-from app.data.validation.db_validation import validate_all
+from app.data.resources.resources import RESOURCES, Resources
+from app.data.serialization.dataclass_serialization import dataclass_from_dict
+from app.data.serialization.versions import CURRENT_SERIALIZATION_VERSION
+from app.data.validation.db_validation import DBChecker
 from app.editor import timer
 from app.editor.error_viewer import show_error_report
+from app.editor.file_manager.file_manager import FileManager
+from app.data.metadata import Metadata
 from app.editor.file_manager.project_initializer import ProjectInitializer
 from app.editor.lib.csv import csv_data_exporter, text_data_exporter
 from app.editor.recent_project_dialog import choose_recent_project
 from app.editor.settings import MainSettingsController
 from app.extensions.custom_gui import SimpleDialog
 from app.utilities import exceptions
+import app.utilities.platformdirs as appdirs
 
 if TYPE_CHECKING:
     from app.editor.main_editor import MainEditor
@@ -59,6 +67,7 @@ class FatalErrorDialog(SimpleDialog):
 
     def open_error_viewer(self):
         self.main_window_ref._error_window_ref = show_error_report()
+        self.close()
 
 class ProjectFileBackend():
     def __init__(self, parent, app_state_manager):
@@ -66,6 +75,10 @@ class ProjectFileBackend():
         self.app_state_manager = app_state_manager
         self.settings = MainSettingsController()
         self.current_proj = self.settings.get_current_project()
+        self.file_manager = FileManager(self.current_proj)
+        self.is_saving = False
+
+        self.metadata: Metadata = dataclass_from_dict(Metadata, self.file_manager.load_json(Path('metadata.json')))
 
         self.save_progress = QProgressDialog(
             "Saving project to %s" % self.current_proj, None, 0, 100, self.parent)
@@ -116,14 +129,47 @@ class ProjectFileBackend():
                 return False
         return True
 
+    def save_mutex(func):
+        @functools.wraps(func)
+        def wrapper(self, *args, **kwargs):
+            # If we're currently saving, we don't want to save again! So gate operations in the save mutex!
+            if not self.is_saving:
+                # If we're saving the game, we want to ensure autosave doesn't show up and mess with our stuff! Stop it.
+                timer.get_timer().autosave_timer.stop()
+                self.is_saving = True
+
+                # ... Then, actually save.
+                result = func(self, *args, *kwargs)
+                self.is_saving = False
+
+                # ... Then start it again! Problem solved! (except this resets the timer, but close enough)
+                timer.get_timer().autosave_timer.start()
+                return result
+        return wrapper
+
+    @save_mutex
     def save(self, new=False) -> bool:
+        # make sure no errors in DB exist
+        # if we make a mistake in validation,
+        # we should allow the save so
+        # the user can make a game
+        try:
+            checker = DBChecker(DB, RESOURCES)
+            checker.repair()
+            any_errors = checker.validate_for_errors()
+            self.metadata.has_fatal_errors = bool(any_errors)
+        except Exception as e:
+            QMessageBox.warning(self.parent, "Validation warning", "Validation failed with error. Please send this message to the devs.\nYour save will continue as normal.\nException:\n" + traceback.format_exc())
+            self.metadata.has_fatal_errors = False
+
         # Returns whether we successfully saved
         # check if we're editing default, if so, prompt to save as
-        if self.current_proj and os.path.basename(self.current_proj) == DEFAULT_PROJECT:
-            self.current_proj = None
-        if new or not self.current_proj:
-            starting_path = self.current_proj or QDir.currentPath()
-            fn, ok = QFileDialog.getSaveFileName(self.parent, "Save Project", starting_path,
+        if new or not self.current_proj or os.path.basename(self.current_proj) == DEFAULT_PROJECT:
+            if os.path.basename(self.current_proj) == DEFAULT_PROJECT:
+                starting_path = appdirs.user_documents_dir()
+            else:
+                starting_path = Path(self.current_proj or QDir.currentPath()).parent
+            fn, ok = QFileDialog.getSaveFileName(self.parent, "Save Project", str(starting_path),
                                                  "All Files (*)")
             if ok:
                 # Make sure you can't save as "autosave" or "default"
@@ -171,7 +217,7 @@ class ProjectFileBackend():
             self.save_progress.setValue(100)
             error_msg = QMessageBox()
             error_msg.setIcon(QMessageBox.Critical)
-            error_msg.setText("Editor was unable to save your project's %s. \nFree up memory in your hard drive or try saving somewhere else, \notherwise progress will be lost when the editor is closed. \nFor more detailed logs, please read debug.log.1 in the saves/ directory.\n\n" % section)
+            error_msg.setText("Editor was unable to save your project's %s. \nFree up memory in your hard drive or try saving somewhere else, \notherwise progress will be lost when the editor is closed. \nFor more detailed logs, please click View Logs in the Extra menu.\n\n" % section)
             error_msg.setWindowTitle("Serialization Error")
             error_msg.exec_()
 
@@ -180,11 +226,6 @@ class ProjectFileBackend():
             display_error("resources")
             return False
         self.save_progress.setValue(75)
-
-        # make sure no errors in DB exist
-        # any_errors = self.validate(DB)
-        any_errors = validate_all(DB, RESOURCES)
-        DB.game_flags.has_fatal_errors = False if not any_errors else True
 
         success = DB.serialize(self.current_proj)
         if not success:
@@ -223,7 +264,9 @@ class ProjectFileBackend():
             os.rename(self.tmp_proj, self.current_proj)
         self.save_progress.setValue(100)
 
-        if DB.game_flags.has_fatal_errors:
+        self.settings.append_or_bump_project(DB.constants.value('title') or os.path.basename(self.current_proj), self.current_proj)
+
+        if self.metadata.has_fatal_errors:
             self.display_fatal_errors()
 
         return True
@@ -258,11 +301,6 @@ class ProjectFileBackend():
                 return False
         return False
 
-    def auto_open_fallback(self):
-        self.current_proj = DEFAULT_PROJECT
-        self.settings.set_current_project(self.current_proj)
-        self.load()
-
     def auto_open(self, project_path: Optional[str] = None):
         path = project_path or self.settings.get_current_project()
         logging.info("Auto Open: %s" % path)
@@ -278,55 +316,30 @@ class ProjectFileBackend():
                     path, RESOURCES.get_custom_components_path()))
                 QMessageBox.warning(self.parent, "Load of project failed",
                                     "Failed to load project at %s due to syntax error. Likely there's a problem in your Custom Components file, located at %s. Exception:\n%s." % (path, RESOURCES.get_custom_components_path(), e))
-                logging.warning("falling back to %s" % DEFAULT_PROJECT)
-                self.auto_open_fallback()
                 return False
             except Exception as e:
                 logging.exception(e)
-                backup_project_name = path + '.lttmp'
-                corrupt_project_name = path + '.ltcorrupt'
                 logging.warning(
                     "Failed to load project at %s. Likely that project is corrupted.", path)
-                logging.warning(
-                    "the corrupt project will be stored at %s.", corrupt_project_name)
                 QMessageBox.warning(self.parent, "Load of project failed",
-                                    "Failed to load project at %s. Likely that project is corrupted.\nLoading from backup if available." % path)
-                logging.info(
-                    "Attempting load from backup project %s, which will be renamed to %s", backup_project_name, path)
-                if os.path.exists(backup_project_name):
-                    try:
-                        if os.path.exists(corrupt_project_name):
-                            shutil.rmtree(corrupt_project_name)
-                        shutil.copytree(path, corrupt_project_name)
-                        shutil.rmtree(path)
-                        shutil.copytree(backup_project_name, path)
-                        self.current_proj = path
-                        self.settings.set_current_project(self.current_proj)
-                        self.load()
-                        return True
-                    except Exception as e:
-                        logging.error(e)
-                        logging.warning(
-                            "failed to load project at %s.", backup_project_name)
-                else:
-                    logging.warning("no project found at %s",
-                                    backup_project_name)
-                logging.warning("falling back to %s" % DEFAULT_PROJECT)
-                self.auto_open_fallback()
+                                    "Failed to load project at %s with exception %s" % (path, str(e)))
                 return False
-        else:
-            logging.warning(
-                "path %s not found. Falling back to %s" % (path, DEFAULT_PROJECT))
-            self.auto_open_fallback()
-            return False
+        logging.warning(
+            "path %s not found. Falling back to %s" % (path, DEFAULT_PROJECT))
+        QMessageBox.warning(self.parent, "Load of project failed",
+                            "Failed to load project at %s - path doesn't exist" % path)
+        return False
 
     def load(self):
         if os.path.exists(self.current_proj):
+            self.file_manager = FileManager(self.current_proj)
+            self.metadata = dataclass_from_dict(Metadata, self.file_manager.load_json(Path('metadata.json')))
             RESOURCES.load(self.current_proj)
             DB.load(self.current_proj)
             self.settings.append_or_bump_project(
                 DB.constants.value('title') or os.path.basename(self.current_proj), self.current_proj)
 
+    @save_mutex
     def autosave(self):
         project_nid = DB.constants.value('game_nid').replace(' ', '_')
         autosave_path = os.path.abspath('autosave_%s.ltproj' % project_nid)
@@ -363,16 +376,21 @@ class ProjectFileBackend():
         self.autosave_progress.setValue(100)
 
     def save_metadata(self, save_dir):
+        self.metadata.date = str(datetime.now())
+        self.metadata.engine_version = VERSION
+        # always uses the current version to save. this is only required to select the deserializer on the load side
+        self.metadata.serialization_version = CURRENT_SERIALIZATION_VERSION
+        self.metadata.project = DB.constants.get('game_nid').value
+        self.metadata.as_chunks = self.settings.get_should_save_as_chunks()
         metadata_loc = os.path.join(save_dir, 'metadata.json')
-        metadata = {}
-        metadata['date'] = str(datetime.now())
-        metadata['version'] = VERSION
-        metadata['project'] = DB.constants.get('game_nid').value
         with open(metadata_loc, 'w') as serialize_file:
-            json.dump(metadata, serialize_file, indent=4)
+            json.dump(self.metadata.save(), serialize_file, indent=4)
 
-    def clean(self):
-        RESOURCES.clean(self.current_proj)
+    def get_unused_files(self) -> Dict[str, List[str]]:
+        return RESOURCES.get_unused_files(self.current_proj)
+
+    def clean(self, unused_files: Dict[str, List[str]]):
+        RESOURCES.clean(unused_files)
 
     def dump_csv(self, db: Database):
         starting_path = self.current_proj or QDir.currentPath()
@@ -380,7 +398,7 @@ class ProjectFileBackend():
             self.parent, "Choose dump location", starting_path)
         if fn:
             csv_direc = fn
-            for ttype, tstr in csv_data_exporter.dump_as_csv(db):
+            for ttype, tstr in csv_data_exporter.dump_as_csv(db, RESOURCES):
                 with open(os.path.join(csv_direc, ttype + '.csv'), 'w') as f:
                     f.write(tstr)
         else:

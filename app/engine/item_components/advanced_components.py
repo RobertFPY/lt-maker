@@ -60,7 +60,7 @@ class StoreUnit(ItemComponent):
     def init(self, item):
         self.item.data['stored_unit'] = None
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         if not skill_system.ignore_forced_movement(target):
             self.item.data['stored_unit'] = target.nid
             # actions.append(action.WarpOut(target))
@@ -76,7 +76,7 @@ class UnloadUnit(ItemComponent):
             return True
         return False
 
-    def on_hit(self, actions, playback, unit, item, target, target_pos, mode, attack_info):
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         if self.item.data.get('stored_unit'):
             rescuee = game.get_unit(self.item.data['stored_unit'])
             self.item.data['stored_unit'] = None

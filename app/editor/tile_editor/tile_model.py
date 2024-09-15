@@ -12,7 +12,7 @@ from app.utilities.data import Data
 from app.data.database.database import DB
 
 from app.editor.base_database_gui import ResourceCollectionModel
-from app.extensions.custom_gui import DeletionDialog
+from app.extensions.custom_gui import DeletionTab, DeletionDialog
 from app.editor.tilemap_editor import MapEditor
 from app.editor.settings import MainSettingsController
 
@@ -71,10 +71,10 @@ class TileSetModel(ResourceCollectionModel):
         nid = res.nid
         affected_tilemaps = [tilemap for tilemap in RESOURCES.tilemaps if nid in tilemap.tilesets]
         if affected_tilemaps:
-            affected = Data(affected_tilemaps)
             model = TileMapModel
             msg = "Deleting Tileset <b>%s</b> would affect these tilemaps." % nid
-            ok = DeletionDialog.inform(affected, model, msg, self.window)
+            deletion_tab = DeletionTab(affected_tilemaps, model, msg, "Tilemaps")
+            ok = DeletionDialog.inform([deletion_tab], self.window)
             if ok:
                 self.delete_tileset_from_tilemaps(nid)
             else:
@@ -165,11 +165,11 @@ class TileMapModel(ResourceCollectionModel):
         nid = res.nid
         affected_levels = [level for level in DB.levels if level.tilemap == nid]
         if affected_levels:
-            affected = Data(affected_levels)
             from app.editor.global_editor.level_menu import LevelModel
             model = LevelModel
             msg = "Deleting Tilemap <b>%s</b> would affect these levels." % nid
-            ok = DeletionDialog.inform(affected, model, msg, self.window)
+            deletion_tab = DeletionTab(affected_levels, model, msg, "Levels")
+            ok = DeletionDialog.inform([deletion_tab], self.window)
             if ok:
                 pass
             else:

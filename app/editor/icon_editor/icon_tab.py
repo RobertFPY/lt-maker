@@ -55,7 +55,7 @@ class IconTab(QWidget):
             self.icon_sheet_list = QListWidget()
             for i, icon_sheet in enumerate(data):
                 self.icon_sheet_list.insertItem(i, icon_sheet.nid)
-            self.icon_sheet_list.clicked.connect(self.on_icon_sheet_click)
+            self.icon_sheet_list.itemSelectionChanged.connect(self.on_icon_sheet_selection_changed)
             left_layout.addWidget(self.icon_sheet_list)
 
             self.layout.addLayout(left_layout, 0, 0, 1, 2)
@@ -72,7 +72,7 @@ class IconTab(QWidget):
         if initial_icon_nid and self.side_menu_enabled:
             self.model.setFilterRegularExpression(re.escape(initial_icon_nid))
 
-    def on_icon_sheet_click(self, index):
+    def on_icon_sheet_selection_changed(self):
         item = self.icon_sheet_list.currentItem()
         self.model.setFilterRegularExpression(re.escape(item.text()))
 
@@ -90,6 +90,7 @@ class IconTab(QWidget):
 
     def update_list(self):
         # self.model.dataChanged.emit(self.model.index(0), self.model.index(self.model.rowCount()))
+        self.full_model.layoutAboutToBeChanged.emit()
         self.full_model.layoutChanged.emit()
         if self.side_menu_enabled:
             self.icon_sheet_list.clear()
@@ -147,7 +148,7 @@ class Icon32Database(Icon16Database):
         collection_model = icon_model.Icon32Model
         deletion_criteria = None
 
-        dialog = cls(data, title, collection_model, parent)
+        dialog = cls(data, title, collection_model, parent, selected_icon_nid)
         return dialog
 
 class Icon80Database(Icon16Database):
@@ -159,10 +160,11 @@ class Icon80Database(Icon16Database):
         collection_model = icon_model.Icon80Model
         deletion_criteria = None
 
-        dialog = cls(data, title, collection_model, parent)
+        dialog = cls(data, title, collection_model, parent, selected_icon_nid)
         return dialog
 
 class MapIconDatabase(IconTab):
+    side_menu_enabled = False
     @classmethod
     def create(cls, parent=None):
         data = RESOURCES.map_icons

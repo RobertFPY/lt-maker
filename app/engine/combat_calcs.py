@@ -1,8 +1,10 @@
+from app.engine.combat_calcs_utils import resolve_defensive_formula, resolve_offensive_formula
 from app.engine.game_state import game
 from app.utilities import utils
 from app.data.database.database import DB
 from app.data.database import weapons
 from app.engine import equations, item_system, item_funcs, skill_system, line_of_sight
+from app.engine.combat.utils import resolve_weapon
 
 def get_weapon_rank_bonus(unit, item):
     weapon_type = item_system.weapon_type(unit, item)
@@ -22,7 +24,6 @@ def get_weapon_rank_bonus(unit, item):
     return best_combat_bonus
 
 def get_support_rank_bonus(unit, target=None):
-    from app.engine import target_system
     from app.engine.game_state import game
 
     if not unit.position:
@@ -47,7 +48,7 @@ def get_support_rank_bonus(unit, target=None):
             continue
         if target and target.position:
             # Unit and other unit can both attack target
-            if target.position in target_system.get_attacks(other_unit, force=True):
+            if target.position in game.target_system.get_attackable_positions(other_unit, force=True):
                 pass
             else:
                 continue
@@ -57,11 +58,11 @@ def get_support_rank_bonus(unit, target=None):
             continue
         highest_rank = pair.unlocked_ranks[-1]
         support_rank_bonus = game.supports.get_bonus(unit, other_unit, highest_rank)
-        bonuses.append((support_rank_bonus, other_unit))
+        bonuses.append((support_rank_bonus, other_unit, highest_rank))
     num_allies_allowed = DB.support_constants.value('bonus_ally_limit')
     if num_allies_allowed and len(bonuses) > num_allies_allowed:
         # Get the X highest bonuses
-        bonuses = sorted(bonuses, key=lambda x: DB.support_ranks.index(x[0].support_rank), reverse=True)
+        bonuses = sorted(bonuses, key=lambda x: DB.support_ranks.index(x[2]), reverse=True)
         bonuses = bonuses[:num_allies_allowed]
     allies = [_[1] for _ in bonuses]
     bonuses = [_[0] for _ in bonuses]
@@ -89,7 +90,7 @@ def compute_advantage(unit1, unit2, item1, item2, advantage=True):
     # bonus is a CombatBonusList
     highest_requirement_met = -1
     new_adv = None
-    for adv in bonus:  
+    for adv in bonus:
         if adv.weapon_type == 'All' or adv.weapon_type == item2_weapontype:
             if adv.weapon_rank == 'All':
                 new_adv = weapons.CombatBonus.copy(adv)
@@ -104,7 +105,6 @@ def compute_advantage(unit1, unit2, item1, item2, advantage=True):
     return new_adv
 
 def can_counterattack(attacker, aweapon, defender, dweapon) -> bool:
-    from app.engine import target_system
     if not dweapon:
         return False
     if not item_funcs.available(defender, dweapon):
@@ -116,10 +116,10 @@ def can_counterattack(attacker, aweapon, defender, dweapon) -> bool:
     if DB.constants.value('line_of_sight'):
         if not item_system.ignore_line_of_sight(defender, dweapon) and len(line_of_sight.line_of_sight([defender.position], [attacker.position], 99)) == 0:
             return False
-    
+
     if not attacker.position:
         return True
-    valid_targets = target_system.targets_in_range(defender, dweapon)
+    valid_targets = game.target_system.targets_in_range(defender, dweapon)
     if attacker.position in valid_targets:
         return True
     if skill_system.distant_counter(defender):
@@ -138,9 +138,11 @@ def accuracy(unit, item=None):
     if accuracy is None:
         return None
 
-    equation = item_system.accuracy_formula(unit, item)
-    if equation == 'HIT':
-        equation = skill_system.accuracy_formula(unit)
+    equation = resolve_offensive_formula(
+        unit, item,
+        item_system.accuracy_formula, skill_system.accuracy_formula,
+        item_system.accuracy_formula_override, skill_system.accuracy_formula_override,
+        skill_system.Defaults.accuracy_formula)
     accuracy += equations.parser.get(equation, unit)
 
     weapon_rank_bonus = get_weapon_rank_bonus(unit, item)
@@ -162,13 +164,16 @@ def accuracy(unit, item=None):
     return accuracy
 
 def avoid(unit, item, item_to_avoid=None):
-    if not item_to_avoid:
-        equation = skill_system.avoid_formula(unit)
-    else:
-        equation = item_system.avoid_formula(unit, item_to_avoid)
-        if equation == 'AVOID':
-            equation = skill_system.avoid_formula(unit)
+    equation = resolve_defensive_formula(
+        unit, item, None, item_to_avoid,
+        item_system.avoid_formula, skill_system.avoid_formula,
+        item_system.avoid_formula_override, skill_system.avoid_formula_override,
+        skill_system.Defaults.avoid_formula)
     avoid = equations.parser.get(equation, unit)
+
+    weapon_rank_bonus = get_weapon_rank_bonus(unit, item)
+    if weapon_rank_bonus:
+        avoid += int(weapon_rank_bonus.avoid)
 
     support_rank_bonuses, support_allies = get_support_rank_bonus(unit)
     for bonus in support_rank_bonuses:
@@ -186,7 +191,7 @@ def avoid(unit, item, item_to_avoid=None):
 
 def crit_accuracy(unit, item=None):
     if not item:
-        item = item.get_weapon()
+        item = unit.get_weapon()
     if not item:
         return None
 
@@ -194,9 +199,11 @@ def crit_accuracy(unit, item=None):
     if crit_accuracy is None:
         return None
 
-    equation = item_system.crit_accuracy_formula(unit, item)
-    if equation == 'CRIT_HIT':
-        equation = skill_system.crit_accuracy_formula(unit)
+    equation = resolve_offensive_formula(
+        unit, item,
+        item_system.crit_accuracy_formula, skill_system.crit_accuracy_formula,
+        item_system.crit_accuracy_formula_override, skill_system.crit_accuracy_formula_override,
+        skill_system.Defaults.crit_accuracy_formula)
     crit_accuracy += equations.parser.get(equation, unit)
 
     weapon_rank_bonus = get_weapon_rank_bonus(unit, item)
@@ -214,13 +221,16 @@ def crit_accuracy(unit, item=None):
     return crit_accuracy
 
 def crit_avoid(unit, item, item_to_avoid=None):
-    if not item_to_avoid:
-        equation = skill_system.crit_avoid_formula(unit)
-    else:
-        equation = item_system.crit_avoid_formula(unit, item_to_avoid)
-        if equation == 'CRIT_AVOID':
-            equation = skill_system.crit_avoid_formula(unit)
+    equation = resolve_defensive_formula(
+        unit, item, None, item_to_avoid,
+        item_system.crit_avoid_formula, skill_system.crit_avoid_formula,
+        item_system.crit_avoid_formula_override, skill_system.crit_avoid_formula_override,
+        skill_system.Defaults.crit_avoid_formula)
     avoid = equations.parser.get(equation, unit)
+
+    weapon_rank_bonus = get_weapon_rank_bonus(unit, item)
+    if weapon_rank_bonus:
+        avoid += int(weapon_rank_bonus.dodge)
 
     support_rank_bonuses, support_allies = get_support_rank_bonus(unit)
     for bonus in support_rank_bonuses:
@@ -242,9 +252,11 @@ def damage(unit, item=None):
     if might is None:
         return None
 
-    equation = item_system.damage_formula(unit, item)
-    if equation == 'DAMAGE':
-        equation = skill_system.damage_formula(unit)
+    equation = resolve_offensive_formula(
+        unit, item,
+        item_system.damage_formula, skill_system.damage_formula,
+        item_system.damage_formula_override, skill_system.damage_formula_override,
+        skill_system.Defaults.damage_formula)
     might += equations.parser.get(equation, unit)
 
     weapon_rank_bonus = get_weapon_rank_bonus(unit, item)
@@ -262,13 +274,17 @@ def damage(unit, item=None):
     return might
 
 def defense(atk_unit, def_unit, item, item_to_avoid=None):
-    if not item_to_avoid:
-        equation = skill_system.resist_formula(def_unit)
-    else:
-        equation = item_system.resist_formula(atk_unit, item_to_avoid)
-        if equation == 'DEFENSE':
-            equation = skill_system.resist_formula(def_unit)
+    equation = resolve_defensive_formula(
+        def_unit, item, atk_unit, item_to_avoid,
+        item_system.resist_formula, skill_system.resist_formula,
+        item_system.resist_formula_override, skill_system.resist_formula_override,
+        skill_system.Defaults.resist_formula
+    )
     res = equations.parser.get(equation, def_unit)
+
+    weapon_rank_bonus = get_weapon_rank_bonus(def_unit, item)
+    if weapon_rank_bonus:
+        res += int(weapon_rank_bonus.resist)
 
     support_rank_bonuses, support_allies = get_support_rank_bonus(def_unit)
     for bonus in support_rank_bonuses:
@@ -286,9 +302,12 @@ def attack_speed(unit, item=None):
     if not item:
         return defense_speed(unit, item)
 
-    equation = item_system.attack_speed_formula(unit, item)
-    if equation == 'ATTACK_SPEED':
-        equation = skill_system.attack_speed_formula(unit)
+    equation = resolve_offensive_formula(
+        unit, item,
+        item_system.attack_speed_formula, skill_system.attack_speed_formula,
+        item_system.attack_speed_formula_override, skill_system.attack_speed_formula_override,
+        skill_system.Defaults.attack_speed_formula
+    )
     attack_speed = equations.parser.get(equation, unit)
 
     weapon_rank_bonus = get_weapon_rank_bonus(unit, item)
@@ -302,8 +321,6 @@ def attack_speed(unit, item=None):
 
     attack_speed += item_system.modify_attack_speed(unit, item)
     attack_speed += skill_system.modify_attack_speed(unit, item)
-    # TODO
-    # Support bonus
 
     if not DB.constants.value('allow_negative_as') and attack_speed < 0:
         attack_speed = 0
@@ -311,13 +328,17 @@ def attack_speed(unit, item=None):
     return attack_speed
 
 def defense_speed(unit, item, item_to_avoid=None):
-    if not item_to_avoid:
-        equation = skill_system.defense_speed_formula(unit)
-    else:
-        equation = item_system.defense_speed_formula(unit, item_to_avoid)
-        if equation == 'DEFENSE_SPEED':
-            equation = skill_system.defense_speed_formula(unit)
+    equation = resolve_defensive_formula(
+        unit, item, None, item_to_avoid,
+        item_system.defense_speed_formula, skill_system.defense_speed_formula,
+        item_system.defense_speed_formula_override, skill_system.defense_speed_formula_override,
+        skill_system.Defaults.defense_speed_formula
+    )
     speed = equations.parser.get(equation, unit)
+
+    weapon_rank_bonus = get_weapon_rank_bonus(unit, item)
+    if weapon_rank_bonus:
+        speed += int(weapon_rank_bonus.defense_speed)
 
     support_rank_bonuses, support_allies = get_support_rank_bonus(unit)
     for bonus in support_rank_bonuses:
@@ -330,7 +351,7 @@ def defense_speed(unit, item, item_to_avoid=None):
 
     if not DB.constants.value('allow_negative_as') and speed < 0:
         speed = 0
-        
+
     return speed
 
 def compute_hit(unit, target, item, def_item, mode, attack_info):
@@ -342,7 +363,7 @@ def compute_hit(unit, target, item, def_item, mode, attack_info):
         return 10000
 
     # Handles things like effective accuracy
-    hit += item_system.dynamic_accuracy(unit, item, target, mode, attack_info, hit)
+    hit += item_system.dynamic_accuracy(unit, item, target, resolve_weapon(target), mode, attack_info, hit)
 
     # Weapon Triangle
     triangle_bonus = 0
@@ -376,8 +397,8 @@ def compute_hit(unit, target, item, def_item, mode, attack_info):
 
     hit -= avoid(target, def_item, item)
 
-    hit += skill_system.dynamic_accuracy(unit, item, target, mode, attack_info, hit)
-    hit -= skill_system.dynamic_avoid(target, item, unit, mode, attack_info, hit)
+    hit += skill_system.dynamic_accuracy(unit, item, target, resolve_weapon(target), mode, attack_info, hit)
+    hit -= skill_system.dynamic_avoid(target, resolve_weapon(target), unit, item, mode, attack_info, hit)
 
     return utils.clamp(hit, 0, 100)
 
@@ -390,7 +411,7 @@ def compute_crit(unit, target, item, def_item, mode, attack_info):
         return None
 
     # Handles things like effective accuracy
-    crit += item_system.dynamic_crit_accuracy(unit, item, target, mode, attack_info, crit)
+    crit += item_system.dynamic_crit_accuracy(unit, item, target, resolve_weapon(target), mode, attack_info, crit)
 
     # Weapon Triangle
     triangle_bonus = 0
@@ -424,10 +445,10 @@ def compute_crit(unit, target, item, def_item, mode, attack_info):
 
     crit -= crit_avoid(target, def_item, item)
 
-    crit += skill_system.dynamic_crit_accuracy(unit, item, target, mode, attack_info, crit)
-    crit -= skill_system.dynamic_crit_avoid(target, item, unit, mode, attack_info, crit)
+    crit += skill_system.dynamic_crit_accuracy(unit, item, target, resolve_weapon(target), mode, attack_info, crit)
+    crit -= skill_system.dynamic_crit_avoid(target, resolve_weapon(target), unit, item, mode, attack_info, crit)
 
-    crit *= skill_system.crit_multiplier(unit, item, target, mode, attack_info, crit)
+    crit *= skill_system.crit_multiplier(unit, item, target, resolve_weapon(target), mode, attack_info, crit)
     crit = int(crit)
 
     return utils.clamp(crit, 0, 100)
@@ -441,8 +462,8 @@ def compute_damage(unit, target, item, def_item, mode, attack_info, crit=False, 
         return None
 
     # Handles things like effective damage
-    might += item_system.dynamic_damage(unit, item, target, mode, attack_info, might)
-    might += skill_system.dynamic_damage(unit, item, target, mode, attack_info, might)
+    might += item_system.dynamic_damage(unit, item, target, def_item, mode, attack_info, might)
+    might += skill_system.dynamic_damage(unit, item, target, def_item, mode, attack_info, might)
 
     # Weapon Triangle
     triangle_bonus = 0
@@ -477,7 +498,7 @@ def compute_damage(unit, target, item, def_item, mode, attack_info, crit=False, 
     total_might = might
 
     might -= defense(unit, target, def_item, item)
-    might -= skill_system.dynamic_resist(target, item, unit, mode, attack_info, might)
+    might -= skill_system.dynamic_resist(target, resolve_weapon(target), unit, item, mode, attack_info, might)
 
     if assist:
         might //= 2
@@ -494,6 +515,8 @@ def compute_damage(unit, target, item, def_item, mode, attack_info, crit=False, 
         # Add damage
         equation = skill_system.critical_addition_formula(unit)
         crit_add = equations.parser.get(equation, unit)
+        crit_add += item_system.modify_crit_damage(unit, item)
+        crit_add += skill_system.modify_crit_damage(unit, item)
         might += crit_add
 
         # Thracia Crit
@@ -502,8 +525,8 @@ def compute_damage(unit, target, item, def_item, mode, attack_info, crit=False, 
         if thracia_crit:
             might += total_might * thracia_crit
 
-    might *= skill_system.damage_multiplier(unit, item, target, mode, attack_info, might)
-    might *= skill_system.resist_multiplier(target, item, unit, mode, attack_info, might)
+    might *= skill_system.damage_multiplier(unit, item, target, resolve_weapon(target), mode, attack_info, might)
+    might *= skill_system.resist_multiplier(target, resolve_weapon(target), unit, item, mode, attack_info, might)
 
     return int(max(DB.constants.get('min_damage').value, might))
 
@@ -514,7 +537,7 @@ def compute_true_speed(unit, target, item, def_item, mode, attack_info) -> int:
     speed = attack_speed(unit, item)
 
     # Handles things like effective damage
-    speed += item_system.dynamic_attack_speed(unit, item, target, mode, attack_info, speed)
+    speed += item_system.dynamic_attack_speed(unit, item, target, resolve_weapon(target), mode, attack_info, speed)
 
     # Weapon Triangle
     triangle_bonus = 0
@@ -548,28 +571,43 @@ def compute_true_speed(unit, target, item, def_item, mode, attack_info) -> int:
 
     speed -= defense_speed(target, def_item, item)
 
-    speed += skill_system.dynamic_attack_speed(unit, item, target, mode, attack_info, speed)
-    speed -= skill_system.dynamic_defense_speed(target, item, unit, mode, attack_info, speed)
+    speed += skill_system.dynamic_attack_speed(unit, item, target, resolve_weapon(target), mode, attack_info, speed)
+    speed -= skill_system.dynamic_defense_speed(target, resolve_weapon(target), unit, item, mode, attack_info, speed)
     return speed
 
-def outspeed(unit, target, item, def_item, mode, attack_info) -> bool:
+def outspeed(unit, target, item, def_item, mode, attack_info) -> int:
     if not item:
-        return 1
+        return 0
     if not item_system.can_double(unit, item):
-        return 1
+        return 0
     if skill_system.no_double(unit):
-        return 1
+        return 0
+    if mode == 'defense' and not (DB.constants.value('def_double') or skill_system.def_double(target)):
+        return 0
 
     speed = compute_true_speed(unit, target, item, def_item, mode, attack_info)
 
-    return 2 if speed >= equations.parser.speed_to_double(unit) else 1
+    return 1 if speed >= equations.parser.speed_to_double(unit) else 0
+
+def compute_attack_phases(unit, target, item, def_item, mode, attack_info) -> int:
+    num_attacks = 1
+    if not item:
+        return 0
+
+    num_attacks += item_system.dynamic_attacks(unit, item, target, resolve_weapon(target), mode, attack_info, num_attacks)
+    num_attacks += skill_system.dynamic_attacks(unit, item, target, resolve_weapon(target), mode, attack_info, num_attacks)
+    # Only bother calculating whether we outspeed when there is a target
+    if target:
+        num_attacks += outspeed(unit, target, item, def_item, mode, attack_info)
+
+    return num_attacks
 
 def compute_multiattacks(unit, target, item, mode, attack_info):
     if not item:
         return None
 
     num_attacks = 1
-    num_attacks += item_system.dynamic_multiattacks(unit, item, target, mode, attack_info, num_attacks)
-    num_attacks += skill_system.dynamic_multiattacks(unit, item, target, mode, attack_info, num_attacks)
+    num_attacks += item_system.dynamic_multiattacks(unit, item, target, resolve_weapon(target), mode, attack_info, num_attacks)
+    num_attacks += skill_system.dynamic_multiattacks(unit, item, target, resolve_weapon(target), mode, attack_info, num_attacks)
 
     return num_attacks

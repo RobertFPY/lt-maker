@@ -11,6 +11,7 @@ from PyQt5.QtGui import QIcon
 
 from app import autoupdate, dark_theme
 
+from app.editor.file_manager.project_builder.project_builder import LTProjectBuilder
 from app.editor.settings import MainSettingsController
 
 from app.constants import VERSION
@@ -23,6 +24,7 @@ from app.editor.lib.components.menubar import MenuBar
 from app.editor.lib.components.toolbar import Toolbar
 from app.editor.preferences import PreferencesDialog
 from app.editor.save_viewer import SaveViewer
+from app.editor.file_manager.unused_resources_dialog import UnusedResourcesDialog
 
 # Application State
 from app.editor.lib.state_editor.editor_state_manager import EditorStateManager
@@ -40,7 +42,7 @@ from app.editor.overworld_editor.overworld_editor import OverworldEditor
 import app.editor.game_actions.game_actions as GAME_ACTIONS
 
 # Databases
-from app.editor.unit_editor.unit_tab import UnitDatabase
+from app.editor.unit_editor.new_unit_tab import NewUnitDatabase
 from app.editor.team_editor.team_tab import TeamDatabase
 from app.editor.faction_editor.faction_tab import FactionDatabase
 from app.editor.party_editor.party_tab import PartyDatabase
@@ -72,6 +74,7 @@ from app.editor.portrait_editor.portrait_tab import PortraitDatabase
 from app.editor.panorama_editor.panorama_tab import PanoramaDatabase
 from app.editor.map_sprite_editor.map_sprite_tab import MapSpriteDatabase
 from app.editor.map_animation_editor.map_animation_tab import MapAnimationDatabase
+from app.utilities.system_info import is_editor_engine_built_version
 
 __version__ = VERSION
 
@@ -81,7 +84,7 @@ class MainEditor(QMainWindow):
         self.app_state_manager.subscribe_to_key(
             MainEditor.__name__, 'main_editor_mode', self.render_editor)
 
-    def __init__(self, project_path: Optional[str] = None):
+    def __init__(self, project_path: str):
         super().__init__()
         self.window_title = _('LT Maker')
         self.setWindowTitle(self.window_title)
@@ -91,7 +94,7 @@ class MainEditor(QMainWindow):
         main_screen_size = desktop.availableGeometry(desktop.primaryScreen())
 
         # Use setFixedSize to make it permanent and unchangeable
-        default_size = main_screen_size.width()*0.7, main_screen_size.height()*0.7
+        default_size = int(main_screen_size.width()*0.7), int(main_screen_size.height()*0.7)
         self.resize(*default_size)
 
         geometry = self.settings.component_controller.get_geometry(
@@ -108,6 +111,8 @@ class MainEditor(QMainWindow):
         self.project_save_load_handler = ProjectFileBackend(
             self,
             self.app_state_manager)
+
+        self.project_builder = LTProjectBuilder(self.project_save_load_handler)
 
         # initialize possible editors and put them in the stack
         self.global_editor = GlobalEditor(self.app_state_manager)
@@ -190,7 +195,6 @@ class MainEditor(QMainWindow):
                                 shortcut="Ctrl+S", triggered=self.save)
         self.save_as_act = QAction(
             _("Save Project As..."), self, shortcut="Ctrl+Shift+S", triggered=self.save_as)
-        # self.build_act = QAction(QIcon(), "Build Project...", self, shortcut="Ctrl+B", triggered=self.build_project)
         self.quit_act = QAction(
             _("&Quit"), self, shortcut="Ctrl+Q", triggered=self.close)
 
@@ -198,6 +202,9 @@ class MainEditor(QMainWindow):
             "Dump CSV data", self, triggered=lambda: self.project_save_load_handler.dump_csv(DB))
         self.dump_script = QAction(
             "Dump script", self, triggered=lambda: self.project_save_load_handler.dump_script(DB))
+
+        self.build_project = QAction(
+            "Build project", self, triggered=lambda: self.project_builder.build(self.project_save_load_handler.current_proj))
 
         self.preferences_act = QAction(
             _("&Preferences..."), self, triggered=self.edit_preferences)
@@ -224,7 +231,7 @@ class MainEditor(QMainWindow):
         #     "Preload Units...", self, triggered=self.edit_preload_units)
 
         # Database actions
-        database_actions = {_("Units"): UnitDatabase.edit,
+        database_actions = {_("Units"): NewUnitDatabase.edit,
                             _("Teams"): TeamDatabase.edit,
                             _("Factions"): FactionDatabase.edit,
                             _("Parties"): PartyDatabase.edit,
@@ -290,6 +297,8 @@ class MainEditor(QMainWindow):
         file_menu.addAction(self.save_as_act)
         file_menu.addAction(self.dump_csv)
         file_menu.addAction(self.dump_script)
+        if not is_editor_engine_built_version():
+            file_menu.addAction(self.build_project)
         file_menu.addSeparator()
         file_menu.addAction(self.quit_act)
 
@@ -420,7 +429,7 @@ class MainEditor(QMainWindow):
         self.test_full_act.setEnabled(True)
 
     def test_play_load(self):
-        saved_games = GAME_ACTIONS.get_saved_games()
+        saved_games = GAME_ACTIONS.get_preloaded_games()
         if saved_games:
             save_loc = SaveViewer.get(saved_games, self)
             if not save_loc:
@@ -478,7 +487,8 @@ class MainEditor(QMainWindow):
             self._open()
 
     def auto_open(self, project_path: Optional[str]):
-        self.project_save_load_handler.auto_open(project_path)
+        if not self.project_save_load_handler.auto_open(project_path):
+            self.project_save_load_handler.auto_open(DEFAULT_PROJECT)
         self._open()
 
     def _save(self):
@@ -501,7 +511,17 @@ class MainEditor(QMainWindow):
     def remove_unused_resources(self):
         # Need to save first before cleaning
         if self.project_save_load_handler.save():
-            self.project_save_load_handler.clean()
+            unused_resources = self.project_save_load_handler.get_unused_files()
+            # Don't bother if we have no unused resources
+            if not any(fns for fns in unused_resources.values()):
+                QMessageBox.information(
+                    self, "Unused Resources", "No unused resources found!")
+                return
+            # Let the user confirm they want to remove these resources
+            ok = UnusedResourcesDialog.get(unused_resources, self)
+            if not ok:
+                return
+            self.project_save_load_handler.clean(unused_resources)
             current_proj = self.settings.get_current_project()
             self.status_bar.showMessage(
                 'All unused resources removed from %s' % current_proj)
@@ -587,7 +607,7 @@ class MainEditor(QMainWindow):
 
     def check_for_updates(self):
         # Only check for updates in frozen version
-        if hasattr(sys, 'frozen') or True:
+        if is_editor_engine_built_version():
             if autoupdate.check_for_update():
                 link = r"https://gitlab.com/rainlash/lt-maker/-/releases/permalink/latest/downloads/lex_talionis_maker"
                 QMessageBox.information(self, "Update Available", "A new update to LT-maker is available!\n"
@@ -614,6 +634,6 @@ class MainEditor(QMainWindow):
 if __name__ == '__main__':
     import sys
     app = QApplication(sys.argv)
-    window = MainEditor()
+    window = MainEditor('default.ltproj')
     window.show()
     app.exec_()

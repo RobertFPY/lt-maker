@@ -6,8 +6,23 @@ from typing import List, Optional
 from app.utilities.typing import NID
 
 class PartyObject(Prefab):
-    def __init__(self, nid: str, name: str, leader_nid: str, party_prep_manage_sort_order: Optional[List[NID]]=None,
-                    money: int=0, convoy: Optional[List[int]]=None, bexp: int=0):
+    def __init__(self, nid: NID, name: str, leader_nid: NID, party_prep_manage_sort_order: Optional[List[NID]]=None,
+                 money: int = 0, convoy: Optional[List[int]] = None, bexp: int = 0):
+        """Representation of a party of units. Unless you have a multi-party game, game.party will generally return
+        the information you need for your party of units.
+
+        `my_money_value = game.party.money`
+        
+        Distinguishes units who belong in a single party from one another and separates their convoy, money, and bexp.
+        
+        Args:
+            nid (NID): Unique ID for the party
+            name (str): Name of the party
+            leader_nid (NID): Unit NID of the leader of the party
+            money (int): How much money the party has
+            convoy (Optional[List[int]], optional): List of items the party's convoy contains
+            bexp (int, optional): How much bonus experience the party has access to
+        """
         self.nid = nid
         self.name = name
         self.leader_nid = leader_nid

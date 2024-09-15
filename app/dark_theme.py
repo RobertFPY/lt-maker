@@ -75,6 +75,7 @@ class PythonSyntaxHighlightingPalette():
     comment: QColor
     numbers: QColor
     command: QColor
+    flag: QColor
 
 class QLightPalette(QPalette):
     """Dark palette for a Qt application meant to be used with the Fusion theme."""
@@ -158,6 +159,8 @@ class QLightPalette(QPalette):
 
     def python_syntax_highlighting(self) -> PythonSyntaxHighlightingPalette:
         palette = PythonSyntaxHighlightingPalette()
+        # from https://github.com/enkia/tokyo-night-vscode-theme
+        # Tokyo Night Light
         palette.keyword = QColor('#8c4351')
         palette.alt_keyword = QColor('#5a4a78')
         palette.brace = QColor('#8f5e15')
@@ -168,6 +171,7 @@ class QLightPalette(QPalette):
         palette.comment = QColor('#9699a3')
         palette.numbers = QColor('#965027')
         palette.command = QColor('#166775')
+        palette.flag = QColor("#634f30")
         return palette
 
 class QDarkPalette(QLightPalette):
@@ -217,6 +221,8 @@ class QDarkPalette(QLightPalette):
 
     def python_syntax_highlighting(self) -> PythonSyntaxHighlightingPalette:
         palette = PythonSyntaxHighlightingPalette()
+        # from https://github.com/enkia/tokyo-night-vscode-theme
+        # Tokyo Night
         palette.keyword = QColor('#f7768e')
         palette.alt_keyword = QColor('#bb9af7')
         palette.brace = QColor('#e0af68')
@@ -227,6 +233,7 @@ class QDarkPalette(QLightPalette):
         palette.comment = QColor('#565f89')
         palette.numbers = QColor('#ff9e64')
         palette.command = QColor('#2ac3de')
+        palette.flag = QColor('#a9b1d6')
         return palette
 
 class QDiscordPalette(QDarkPalette):

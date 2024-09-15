@@ -38,7 +38,7 @@
                 false
             ],
             [
-                "Knight Crest",
+                "Knight_Crest",
                 true
             ]
         ],
@@ -93,7 +93,7 @@
         },
         "alternate_classes": [],
         "portrait_nid": "VigardeHealthy",
-        "affinity": null,
+        "affinity": "None",
         "fields": []
     }
 ]

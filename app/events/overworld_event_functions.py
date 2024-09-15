@@ -24,8 +24,8 @@ def overworld_cinematic(self: Event, overworld_nid=None, flags=None):
             self.logger.error('No overworlds in the DB - why are you calling the overworld command?')
             return
     # save level state
-    self.prev_game_boundary = game.boundary
-    self.prev_board = game.board
+    self._prev_game_boundary = game.boundary
+    self._prev_board = game.board
 
     # Remove all units from the map
     # But remember their original positions for later
@@ -89,6 +89,9 @@ def overworld_move_unit(self: Event, overworld_entity: NID, overworld_location: 
 
     # function
     entity = game.overworld_controller.entities.get(entity_nid, None)
+    if not entity:
+        self.logger.error("%s: Could not find an entity with nid %s", 'overworld_move_unit', entity_nid)
+        return
     if not entity.display_position:
         self.logger.error("%s: Attempting to move entity %s with no position - is it on the overworld?", 'overworld_move_unit', entity_nid)
         return
@@ -150,7 +153,7 @@ def overworld_move_unit(self: Event, overworld_entity: NID, overworld_location: 
     if follow:
         game.camera.do_slow_pan(1000)
         game.camera.set_center(entity.display_position[0], entity.display_position[1])
-    if 'overworld_movement' not in self.should_update.keys(): # queue continuous update function if not exists
+    if 'overworld_movement' not in self.should_update: # queue continuous update function if not exists
         def update_movement(should_skip: bool):
             if should_skip:
                 self.overworld_movement_manager.finish_all_movement()
@@ -215,14 +218,14 @@ def create_overworld_entity(self: Event, nid, unit=None, team=None, flags=None):
     if 'delete' in flags:
         game.overworld_controller.delete_entity(nid)
         return
-    if nid in game.overworld_controller.entities.keys():
+    if nid in game.overworld_controller.entities:
         self.logger.error('%s: Entity with nid %s already exists', 'create_overworld_entity', nid)
         return
     if unit:
-        if unit not in DB.units.keys():
+        if unit not in DB.units:
             self.logger.error('%s: No such unit with nid %s', 'create_overworld_entity', unit)
             return
-        if team not in DB.teams.keys():
+        if team not in DB.teams:
             team = 'player'
         new_entity = OverworldEntityObject.from_unit_prefab(nid, None, unit, team)
         game.overworld_controller.add_entity(new_entity)
@@ -293,14 +296,12 @@ def narrate(self: Event, speaker, string, flags=None):
         self.state = 'blocked'
 
 def set_overworld_menu_option_enabled(self: Event, overworld_node_nid: NID, overworld_node_menu_option: NID, setting: bool, flags=None):
-    val = (setting.lower() in self.true_vals)
     overworld = self.game.overworld_controller
-    overworld.toggle_menu_option_enabled(overworld_node_nid, overworld_node_menu_option, val)
+    overworld.toggle_menu_option_enabled(overworld_node_nid, overworld_node_menu_option, setting)
 
 def set_overworld_menu_option_visible(self: Event, overworld_node_nid: NID, overworld_node_menu_option: NID, setting: bool, flags=None):
-    val = (setting.lower() in self.true_vals)
     overworld = self.game.overworld_controller
-    overworld.toggle_menu_option_visible(overworld_node_nid, overworld_node_menu_option, val)
+    overworld.toggle_menu_option_visible(overworld_node_nid, overworld_node_menu_option, setting)
 
 def enter_level_from_overworld(self: Event, level_nid: str, flags=None):
     game.overworld_controller.next_level = level_nid

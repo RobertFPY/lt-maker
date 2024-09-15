@@ -4,13 +4,14 @@ from app.data.database.components import ComponentType
 
 from app.engine import action
 
+import logging
 
 class LostOnEndCombat(SkillComponent):
     nid = 'lost_on_end_combat'
     desc = "Remove after combat"
     tag = SkillTags.DEPRECATED
 
-    expose = (ComponentType.MultipleOptions)
+    expose = ComponentType.MultipleOptions
 
     value = [
             ["LostOnSelf (T/F)", "T",
@@ -25,7 +26,7 @@ class LostOnEndCombat(SkillComponent):
     def values(self) -> Dict[str, str]:
         return {value[0]: value[1] for value in self.value}
 
-    def post_combat_unconditional(self, playback, unit, item, target, mode):
+    def post_combat_unconditional(self, playback, unit, item, target, item2, mode):
         from app.engine import skill_system
         remove_skill = False
         if self.values.get('LostOnSelf (T/F)', 'T') == 'T':
@@ -72,3 +73,22 @@ class CombatArtModifyMaxRange(SkillComponent):
 
     def combat_art_modify_max_range(self, unit) -> int:
         return self.value
+
+
+class EvalMaximumRange(SkillComponent):
+    nid = 'eval_range'
+    desc = "Gives +X range to the maximum solved using evaluate"
+    tag = SkillTags.DEPRECATED
+
+    expose = ComponentType.String
+
+    def modify_maximum_range(self, unit, item):
+        from app.engine import evaluate
+        try:
+            return int(evaluate.evaluate(self.value, unit, local_args={'item': item}))
+        except:
+            logging.error("Couldn't evaluate %s conditional" % self.value)
+        return 0
+
+    def has_dynamic_range(sellf, unit):
+        return True

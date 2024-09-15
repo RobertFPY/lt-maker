@@ -1,6 +1,6 @@
 [
     {
-        "nid": "Guiding Ring",
+        "nid": "Guiding_Ring",
         "name": "Guiding Ring",
         "desc": "Promotes magic-using classes.",
         "icon_nid": "Boosters",
@@ -23,13 +23,10 @@
             ],
             [
                 "uses_options",
-                [
-                    [
-                        "LoseUsesOnMiss (T/F)",
-                        "F",
-                        "Lose uses even on miss"
-                    ]
-                ]
+                {
+                    "lose_uses_on_miss": false,
+                    "one_loss_per_combat": false
+                }
             ],
             [
                 "usable_in_base",
@@ -54,7 +51,7 @@
                 ]
             ],
             [
-                "eval_target_restrict",
+                "eval_target_restrict_2",
                 "unit.level >= 10"
             ]
         ]

@@ -161,6 +161,8 @@ class BattleAnimation():
         colors = self.current_palette.colors
         conversion_dict = {(0, coord[0], coord[1]): (color[0], color[1], color[2]) for coord, color in colors.items()}
         for frame in self.anim_prefab.frames:
+            if not frame.image:  
+                frame.image = engine.subsurface(self.anim_prefab.image, frame.rect)
             converted_image = image_mods.color_convert(engine.copy_surface(frame.image), conversion_dict)
             self.image_directory[frame.nid] = converted_image
 
@@ -779,7 +781,7 @@ class BattleAnimation():
             self.screen_dodge_counter -= 1
             image = self.screen_dodge_image
             # done
-            if self.screen_dodge_color <= 0:
+            if self.screen_dodge_counter <= 0:
                 self.screen_dodge_color = None
                 self.screen_dodge_counter = 0
                 self.screen_dodge_image = None
@@ -855,7 +857,7 @@ def get_battle_anim(unit, item, distance=1, klass=None, default_variant=False, a
             weapon_type = "Neutral"
         magic = item_funcs.is_magic(unit, item, distance)
         ranged = item_funcs.is_ranged(unit, item)
-        if item.nid in res.weapon_anims.keys():
+        if item.nid in res.weapon_anims:
             weapon_anim_nid = item.nid
             if magic:
                 weapon_anim_nid = "Magic" + weapon_anim_nid
@@ -870,7 +872,7 @@ def get_battle_anim(unit, item, distance=1, klass=None, default_variant=False, a
                 weapon_anim_nid = "Ranged" + weapon_type
         else:
             weapon_anim_nid = weapon_type
-        if magic and weapon_anim_nid not in res.weapon_anims.keys():
+        if magic and weapon_anim_nid not in res.weapon_anims:
             weapon_anim_nid = 'MagicGeneric'
 
     weapon_anim = res.weapon_anims.get(weapon_anim_nid)
@@ -881,17 +883,24 @@ def get_battle_anim(unit, item, distance=1, klass=None, default_variant=False, a
         return None
 
     # Check spell effects
+    # Sanity check to make sure we have a valid spell to use in this animation
+    # we don't want to start a battle animation that asks for a spell animation and then not have the 
+    # right spell animation to use.
     for pose in weapon_anim.poses:
         script = pose.timeline
         for command in script:
             if command.nid == 'spell':
                 if command.value[0]:
                     effect = command.value[0]
+                elif not item:
+                    logging.warning("Could not find item to use for spell animation in weapon anim %s", weapon_anim_nid)
+                    return None
                 elif unit and item_system.effect_animation(unit, item):
                     effect = item_system.effect_animation(unit, item)
                 else:
                     effect = item.nid
-                if effect not in RESOURCES.combat_effects.keys():
+
+                if effect not in RESOURCES.combat_effects:
                     logging.warning("Could not find spell animation for effect %s in weapon anim %s", effect, weapon_anim_nid)
                     return None
 

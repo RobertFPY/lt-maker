@@ -12,9 +12,11 @@ from app.engine import (combat_calcs, equations, item_funcs, item_system,
 from app.engine.objects.difficulty_mode import DifficultyModeObject
 from app.engine.objects.item import ItemObject
 from app.engine.objects.skill import SkillObject
+from app.engine.source_type import SourceType
 from app.utilities import utils
 from app.utilities.data import Prefab
 from app.utilities.typing import NID
+from typing import Union
 
 if TYPE_CHECKING:
     from app.engine.unit_sound import UnitSound
@@ -22,71 +24,97 @@ if TYPE_CHECKING:
 
 import logging
 
+@dataclass
+class UnitSkill():
+    """Structure used to store each skill that a unit has.
+
+    A UnitSkill objects combines a SkillObject with a source of where the skill
+    came from and what kind of entity gave the skill to the unit.
+    """
+
+    skill_obj: SkillObject
+    source: Union[str, tuple, int]
+    source_type: tuple
+
+    def __init__(self, skill_obj, source=None, source_type=SourceType.DEFAULT):
+        self.skill_obj = skill_obj
+        self.source = source
+        self.source_type = source_type
+
+    def get(self):
+        return self.skill_obj
+
 # Main unit object used by engine
 @dataclass
 class UnitObject(Prefab):
-    nid: NID
-    prefab_nid: NID = None
-    generic: bool = False
-    persistent: bool = True
-    ai: str = None
-    ai_group: NID = None
-    roam_ai: str = None
-    faction: NID = None
-    team: NID = "player"
-    portrait_nid: NID = None
-    affinity: NID = None
+    """A unit. The entities that can move around on the map, attack, be attacked, etc.
+
+    Units have name IDs (or NIDs) that uniquely identify them.
+    The remaining attributes and methods of UnitObjects are described below.
+    """
+
+    nid: NID  #: Unique identifier
+    prefab_nid: NID = None  #: NID of this unit's prefab (usually the same as it's *nid*)
+    generic: bool = False  #: Whether the unit is a generic
+    persistent: bool = True  #: If unit is persistent, unit will not be removed between levels. Generic units start off without persistence.
+    ai: NID = None  #: NID of this unit's base combat AI (skills might modify this)
+    ai_group: NID = None  # All units in the same AI group will be notified of an enemy entering their range and activate
+    roam_ai: NID = None  #: NID of this unit's base roaming AI (skills might modify this)
+    faction: NID = None  # NID of the unit's faction. Usually only for generic units
+    team: NID = "player"  # NID of the unit's team
+    portrait_nid: NID = None  # NID of the unit's current portrait
+    affinity: NID = None  # NID of the unit's affinity
     notes: List[Tuple[str, str]] = field(default_factory=list)
     _fields: Dict[str, str] = field(default_factory=dict)
-    klass: NID = None
-    variant: str = None
+    klass: NID = None  # NID of the unit's current class
+    variant: str = None  # Determines which map and combat animations will be used (Example: Use `Female` to use the map animation ending with `Female` instead of the default)
 
-    name: str = None
-    desc: str = None
+    name: str = None  # This unit's name. Usually only used by non-generic units. Generic units use their faction's name.
+    desc: str = None  # This unit's description. Usually only used by non-generic units. Generic units use their faction's description.
     _tags: List[str] = field(default_factory=list)
-    party: NID = None
-    level: int = 1
-    exp: int = 0
-    stats: Dict[NID, int] = field(default_factory=dict)
-    growths: Dict[NID, int] = field(default_factory=dict)
-    growth_points: Dict[NID, int] = field(default_factory=dict)
-    stat_cap_modifiers: Dict[NID, int] = field(default_factory=dict)
-    wexp: Dict[NID, int] = field(default_factory=dict)
+    party: NID = None  # NID of the unit's party
+    level: int = 1  # The unit's level
+    exp: int = 0  # The unit's current exp (out of 100)
+    stats: Dict[NID, int] = field(default_factory=dict)  #: Current stats without bonuses
+    growths: Dict[NID, int] = field(default_factory=dict)  #: Current growths without bonuses
+    growth_points: Dict[NID, int] = field(default_factory=dict)  #: Used for Fixed and Dynamic leveling. Do not modify directly
+    stat_cap_modifiers: Dict[NID, int] = field(default_factory=dict)  #: Personal stat cap modifiers
+    wexp: Dict[NID, int] = field(default_factory=dict)  # Current wexp in each weapon type
 
-    position: Tuple[int, int] = None
-    starting_position: Tuple[int, int] = None
-    previous_position: Tuple[int, int] = None
+    position: Tuple[int, int] = None  #: Current position on the map
+    starting_position: Tuple[int, int] = None  #: Where the unit was placed on the map in the editor
+    previous_position: Tuple[int, int] = None  #: Where the unit started their turn
     current_hp: int = 0
     current_mana: int = 0
     current_fatigue: int = 0
     _movement_left: int = 0
     current_guard_gauge: int = 0
 
-    traveler: NID = None
-    strike_partner: UnitObject = None
-    lead_unit: bool = False
+    traveler: NID = None  #: Paired up unit when pair-up is active, otherwise rescued unit.
+    strike_partner: UnitObject = None  #: Set to attack stance partner during combat
+    lead_unit: bool = False  #: Is the unit the lead unit in the pairup?
     built_guard: bool = False
 
-    dead: bool = False
-    is_dying: bool = False
+    dead: bool = False  #: Is the unit dead?
+    is_dying: bool = False  #: Is the unit in the process of dying? (likely not dead yet)
     _finished: bool = False
     _has_attacked: bool = False
     _has_traded: bool = False
     _has_moved: bool = False
 
-    items: List[ItemObject] = field(default_factory=list)
+    items: List[ItemObject] = field(default_factory=list)  #: List of ItemObjects currently held by the unit
     equipped_weapon: ItemObject = None
     equipped_accessory: ItemObject = None
 
-    _skills: List[SkillObject] = field(default_factory=list)
+    _skills: List[UnitSkill] = field(default_factory=list)
     _visible_skills_cache: List[SkillObject] = field(default_factory=list)
 
-    has_rescued: bool = False
-    has_taken: bool = False
-    has_given: bool = False
-    has_dropped: bool = False
+    has_rescued: bool = False  #: Has the unit *rescued* someone this phase?
+    has_taken: bool = False  #: Has the unit *taken* someone this phase?
+    has_given: bool = False  #: Has the unit *given* someone this phase?
+    has_dropped: bool = False  #: Has the unit *dropped* someone this phase?
 
-    has_run_ai: bool = False
+    has_run_ai: bool = False  #: Has the unit run their AI this phase?
 
     _sprite = None
     _sound = None
@@ -99,13 +127,13 @@ class UnitObject(Prefab):
             return super().__getattr__(attr)
         elif self.nid:
             prefab = DB.units.get(self.prefab_nid)
-            if prefab:
+            if prefab and hasattr(prefab, attr):
                 return getattr(prefab, attr)
         # not in prefab, so...
         raise AttributeError('UnitObject has no attribute %s' % attr)
 
     @classmethod
-    def from_prefab(cls, prefab: UniqueUnit | GenericUnit | UnitPrefab, current_mode: DifficultyModeObject = None, new_nid=None):
+    def from_prefab(cls, prefab: UniqueUnit | GenericUnit | UnitPrefab, current_mode: DifficultyModeObject = None, new_nid=None) -> UnitObject:
         new_nid = new_nid or prefab.nid
         self = cls(new_nid)
         is_level_unit = not isinstance(prefab, UnitPrefab)
@@ -159,8 +187,8 @@ class UnitObject(Prefab):
             self.stat_cap_modifiers = {stat_nid: 0 for stat_nid in DB.stats.keys()}
             weapon_gain = klass_obj.wexp_gain
             self.wexp = {
-                weapon_nid: 
-                utils.clamp(weapon_gain.get(weapon_nid, DB.weapons.default(DB)).wexp_gain, 0, unit_funcs.get_weapon_cap(self, weapon_nid)) 
+                weapon_nid:
+                utils.clamp(weapon_gain.get(weapon_nid, DB.weapons.default(DB)).wexp_gain, 0, unit_funcs.get_weapon_cap(self, weapon_nid))
                 for weapon_nid in DB.weapons.keys()
             }
         else:
@@ -176,8 +204,8 @@ class UnitObject(Prefab):
             self.stat_cap_modifiers = {stat_nid: stat_cap_modifiers.get(stat_nid, 0) for stat_nid in DB.stats.keys()}
             weapon_gain = prefab.wexp_gain
             self.wexp = {
-                weapon_nid: 
-                utils.clamp(weapon_gain.get(weapon_nid, DB.weapons.default(DB)).wexp_gain, 0, unit_funcs.get_weapon_cap(self, weapon_nid)) 
+                weapon_nid:
+                utils.clamp(weapon_gain.get(weapon_nid, DB.weapons.default(DB)).wexp_gain, 0, unit_funcs.get_weapon_cap(self, weapon_nid))
                 for weapon_nid in DB.weapons.keys()
             }
 
@@ -235,17 +263,21 @@ class UnitObject(Prefab):
             # Handle skills
             all_skills = []
             global_skills = unit_funcs.get_global_skills(self)
-            all_skills += global_skills
+            for s in global_skills:
+                all_skills.append(UnitSkill(s, 'game', SourceType.GLOBAL))
             personal_skills = unit_funcs.get_personal_skills(self, prefab)
-            all_skills += personal_skills
+            for s in personal_skills:
+                all_skills.append(UnitSkill(s, self.nid, SourceType.PERSONAL))
             class_skills = unit_funcs.get_starting_skills(self)
-            all_skills += class_skills
+            for s in class_skills:
+                all_skills.append(UnitSkill(s, self.klass, SourceType.KLASS))
             if self.generic:
                 generic_skills = item_funcs.create_skills(self, prefab.starting_skills)
-                all_skills += generic_skills
-            for skill in all_skills:
-                skill_system.before_add(self, skill)
-                self._skills.append(skill)
+                for s in generic_skills:
+                    all_skills.append(UnitSkill(s, self.nid, SourceType.PERSONAL))
+            for s in all_skills:
+                skill_system.before_add(self, s.get())
+                self._skills.append(s)
 
         klass = DB.classes.get(self.klass)
         if klass.tier == 0:
@@ -293,8 +325,8 @@ class UnitObject(Prefab):
                 self.level += current_mode.boss_truelevels
 
         # equip items and skill after initialization
-        for skill in self._skills:
-            skill_system.after_add(self, skill)
+        for s in self._skills:
+            skill_system.after_add(self, s.get())
         self._visible_skills_cache.clear()
 
         # -- Equipped Items
@@ -306,28 +338,52 @@ class UnitObject(Prefab):
 
         return self
 
-    def get_max_hp(self):
+    def get_max_hp(self) -> int:
+        """
+        Returns:
+            Unit's maximum HP
+        """
         return equations.parser.hitpoints(self)
 
-    def get_hp(self):
+    def get_hp(self) -> int:
+        """
+        Returns:
+            Unit's current HP
+        """
         return self.current_hp
 
-    def set_hp(self, val):
+    def set_hp(self, val: int):
         self.current_hp = int(utils.clamp(val, 0, equations.parser.hitpoints(self)))
 
     def get_max_mana(self):
+        """
+        Returns:
+            Unit's maximum mana
+        """
         return equations.parser.get_mana(self)
 
     def get_mana(self) -> int:
+        """
+        Returns:
+            Unit's current mana
+        """
         return self.current_mana
 
     def set_mana(self, val):
         self.current_mana = int(utils.clamp(val, 0, equations.parser.get_mana(self)))
 
     def get_max_fatigue(self):
+        """
+        Returns:
+            Fatigue value at which the unit counts as *fatigued*
+        """
         return equations.parser.max_fatigue(self)
 
     def get_fatigue(self):
+        """
+        Returns:
+            Unit's current fatigue
+        """
         return self.current_fatigue
 
     def set_fatigue(self, val):
@@ -359,29 +415,71 @@ class UnitObject(Prefab):
         self._fields[key] = value
 
     def get_exp(self) -> int:
+        """
+        Returns:
+            Unit's current experience points
+        """
         return self.exp
 
     def set_exp(self, val: int) -> int:
         self.exp = int(utils.clamp(val, 0, 100))
 
-    def add_skill(self, skill_obj):
-        self._skills.append(skill_obj)
-        self._visible_skills_cache.clear()
-
-    def remove_skill(self, skill_obj):
-        self._skills.remove(skill_obj)
-        self._visible_skills_cache.clear()
-
-    @property
-    def all_skills(self):
-        return self._skills
-
-    @property
-    def skills(self):
+    def add_skill(self, skill, source=None, source_type=SourceType.DEFAULT, test=False):
         """
-        # Returns a list of the actionable skills
-        # that aren't being shadowed by other more recently added skills
-        # Has a cache that is reset when a skill is added or removed from _skills
+        # Adds skill to the UnitSkill list while checking if the skill already exists/stack is full
+        # If so, removes the oldest displaceable skill and returns it
+        # If no existing skill is displaceable AND the new skill is displaceable, returns the new skill back
+        # Only actually adds the new skill on test=False
+        """
+        popped_skill = None
+        stack_value = skill.stack.value if skill.stack else 1
+        # Checks if we already have the max allowable number of the skill
+        if item_funcs.num_stacks(self, skill.nid) >= stack_value:
+            # Gets all skills of the same ID that can be displaced
+            displaceable_skills = [s.skill_obj for s in self._skills if s.skill_obj.nid == skill.nid and s.source_type.displaceable]
+            if len(displaceable_skills) == 0 and source_type.displaceable:
+                popped_skill = skill
+            # Returns back the input skill only if it can't be added
+            if len(displaceable_skills) > 0:
+                popped_skill = displaceable_skills[0]
+        if not test:
+            self._skills.append(UnitSkill(skill, source, source_type))
+            self._visible_skills_cache.clear()
+        return popped_skill
+
+    def remove_skill(self, skill, source, source_type=SourceType.DEFAULT, test=False):
+        """
+        # Removes the given skill and returns it along with its source and source type
+        # If the given skill cannot be removed, returns nothing
+        # Only actually removes the skill on test=False
+        """
+        removed_skill_info = None
+        to_remove = None
+        for s in self._skills:
+            same_source = s.source == source and s.source_type == source_type
+            if s.skill_obj.uid == skill.uid and \
+                    (s.source_type.removable or same_source):
+                removed_skill_info = (s.source, s.source_type)
+                to_remove = s
+        if not test and to_remove:
+            self._skills.remove(to_remove)
+            self._visible_skills_cache.clear()
+        return removed_skill_info
+
+    @property
+    def all_skills(self) -> List[SkillObject]:
+        return [s.get() for s in self._skills]
+
+    @property
+    def skills(self) -> List[SkillObject]:
+        """Returns a list of the unit's current skills.
+
+        Units keep track of all skills the unit has received, even when they would be duplicates.
+        This method returns only those actionable skills that aren't being shadowed by other more recently added skills with the same nid
+        Utilizes a cache that is reset when a skill is added or removed from self._skills
+
+        Returns:
+            A List of SkillObjects
         """
         if self._visible_skills_cache:
             return self._visible_skills_cache
@@ -389,7 +487,7 @@ class UnitObject(Prefab):
         skills = []
         skill_nids = set()
         # reversed so that more recently added skills take priority
-        for skill in reversed(self._skills):
+        for skill in reversed([s.get() for s in self._skills]):
             if skill.stack:
                 if sum([s.nid == skill.nid for s in skills]) >= skill.stack.value:
                     pass
@@ -405,8 +503,18 @@ class UnitObject(Prefab):
         skills = list(reversed(skills)) # Reverse back to correct direction
         self._visible_skills_cache = skills
         return skills
-    
+
     def stat_bonus(self, stat_nid: NID) -> int:
+        """Given a stat NID, determines the unit's bonus for that stat.
+
+        Stat bonuses can come from skills or their currently equipped items.
+
+        Args:
+            stat_nid (NID): The NID of the stat in question.
+
+        Returns:
+            The unit's bonus stats for that stat.
+        """
         bonus = skill_system.stat_change(self, stat_nid)
         weapon = self.equipped_weapon
         if weapon:
@@ -420,7 +528,7 @@ class UnitObject(Prefab):
         bonus = skill_system.subtle_stat_change(self, stat_nid)
         return bonus
 
-    def stat_contribution(self, stat_nid: NID) -> list:
+    def stat_contribution(self, stat_nid: NID) -> dict:
         contribution = skill_system.stat_change_contribution(self, stat_nid)
         weapon = self.equipped_weapon
         if weapon:
@@ -431,34 +539,63 @@ class UnitObject(Prefab):
         return contribution
 
     def get_stat(self, stat_nid: NID) -> int:
+        """Given a stat NID, determines the unit's total stat for that stat (base + bonus)
+
+        Args:
+            stat_nid (NID): The NID of the stat in question.
+
+        Returns:
+            The unit's total stat for that stat.
+        """
         return self.stats.get(stat_nid, 0) + self.stat_bonus(stat_nid)
 
     def growth_bonus(self, stat_nid: NID) -> int:
         return skill_system.growth_change(self, stat_nid)
 
     def get_growth(self, stat_nid: NID) -> int:
+        """Given a stat NID, determines the unit's total growth percentage for that stat (base + bonus)
+
+        Args:
+            stat_nid (NID): The NID of the stat in question.
+
+        Returns:
+            The unit's total growth percentage for that stat.
+        """
         return self.growths.get(stat_nid, 0) + self.growth_bonus(stat_nid)
 
     def get_stat_cap(self, stat_nid: NID) -> int:
+        """Given a stat NID, determines the unit's stat cap for that stat.
+
+        Determined by adding together the unit's class's stat cap for that stat plus their personal stat cap modifier.
+
+        Args:
+            stat_nid (NID): The NID of the stat in question.
+
+        Returns:
+            The unit's stat cap for that stat.
+        """
         return DB.classes.get(self.klass).max_stats.get(stat_nid, 30) + self.stat_cap_modifiers.get(stat_nid, 0)
 
     def get_damage_with_current_weapon(self) -> int:
+        """Returns the unit's base might while wielding their currently equipped weapon"""
         if self.get_weapon():
             return combat_calcs.damage(self, self.get_weapon())
         else:
             return 0
 
     def get_accuracy_with_current_weapon(self) -> int:
+        """Returns the unit's base hit rate while wielding their currently equipped weapon"""
         if self.get_weapon():
             return combat_calcs.accuracy(self, self.get_weapon())
         else:
             return 0
 
     def get_avoid_with_current_weapon(self) -> int:
+        """Returns the unit's base avoid while wielding their currently equipped weapon"""
         return combat_calcs.avoid(self, self.get_weapon())
 
     @property
-    def sprite(self):
+    def sprite(self) -> "unit_sprite.UnitSprite":
         if not self._sprite:
             from app.engine import unit_sprite
             self._sprite = unit_sprite.UnitSprite(self)
@@ -474,42 +611,54 @@ class UnitObject(Prefab):
         return None
 
     @property
-    def sound(self):
+    def sound(self) -> "unit_sound.UnitSound":
         if not self._sound:
             from app.engine import unit_sound
             self._sound = unit_sound.UnitSound(self)
         return self._sound
 
     @property
-    def tags(self):
+    def tags(self) -> List[str]:
+        """Returns all tags this unit has.
+
+        Gathers tags from the unit itself, its current class, and any additional tags given by the unit's skills.
+        Never includes any duplicates.
+
+        Returns:
+            A List of Tags (strs)
+        """
         return set(self._tags) | set(DB.classes.get(self.klass).tags) | skill_system.additional_tags(self)
 
-    def get_ai(self):
+    def get_ai(self) -> NID:
+        """Returns the NID of the unit's current combat AI."""
         return skill_system.change_ai(self)
 
-    def get_roam_ai(self):
+    def get_roam_ai(self) -> NID:
+        """Returns the NID of the unit's current roaming AI."""
         return skill_system.change_roam_ai(self)
 
     @property
-    def accessories(self):
+    def accessories(self) -> List[ItemObject]:
+        """Returns a list of all accessories in the unit's inventory"""
         return [item for item in self.items if item_system.is_accessory(self, item)]
 
     @property
-    def nonaccessories(self):
+    def nonaccessories(self) -> List[ItemObject]:
+        """Returns a list of all non-accessory items in the unit's inventory"""
         return [item for item in self.items if not item_system.is_accessory(self, item)]
 
     @property
-    def movement_left(self):
+    def movement_left(self) -> int:
         if not self.has_moved:
             return equations.parser.movement(self)
         else:
             return self._movement_left
 
     @movement_left.setter
-    def movement_left(self, val):
+    def movement_left(self, val: int):
         self._movement_left = val
 
-    def consume_movement(self, val):
+    def consume_movement(self, val: int):
         self._movement_left -= val
 
     def calculate_needed_wexp_from_items(self):
@@ -523,23 +672,36 @@ class UnitObject(Prefab):
     def can_unlock(self, region) -> bool:
         return unit_funcs.can_unlock(self, region)
 
-    def get_skill(self, nid: NID):
+    def get_skill(self, nid: NID) -> Optional[SkillObject]:
+        """Given a skill's NID or UID, return that skill if found in the unit's list of skills.
+
+        Returns the most recently added skill with the given NID if multiple skills with the same NID are present.
+
+        Args:
+            nid (NID): NID of skill to return. Can also be the skill's UID.
+
+        Returns:
+            The SkillObject, if found. Otherwise returns None.
+        """
         skills = [skill for skill in reversed(self.all_skills) if skill.nid == nid or skill.uid == nid]
         if skills:
             return skills[0]
         return None
 
     def get_weapon(self) -> Optional[ItemObject]:
+        """Returns the currently equipped weapon of the unit"""
         return self.equipped_weapon
 
     def get_accessory(self) -> Optional[ItemObject]:
+        """Returns the currently equipped accessory of the unit"""
         return self.equipped_accessory
 
     def can_equip(self, item: ItemObject) -> bool:
+        """Return True if the unit can equip *item*"""
         return item_system.equippable(self, item) and item_funcs.available(self, item)
 
     def autoequip(self):
-        logging.debug("Autoequipping")
+        logging.debug("Autoequipping...")
         all_items = item_funcs.get_all_items(self)
         # Do an an initial check that the weapon is still good
         if self.equipped_weapon and not self.can_equip(self.equipped_weapon):
@@ -601,6 +763,7 @@ class UnitObject(Prefab):
             self.items.insert(0, item)
 
     def insert_item(self, index, item):
+        logging.debug("Unit insert_item %s at %s" % (item, index))
         if item in self.items:
             self.items.remove(item)
             self.items.insert(index, item)
@@ -614,6 +777,7 @@ class UnitObject(Prefab):
     def remove_item(self, item):
         # Remove item before we unequip, so that the autoequip does not
         # re-equip the item
+        logging.debug("Unit remove_item %s" % item)
         self.items.remove(item)
         if self.equipped_weapon is item or self.equipped_accessory is item:
             self.unequip(item)
@@ -628,6 +792,14 @@ class UnitObject(Prefab):
         item_system.on_remove_item(self, item)
 
     def get_internal_level(self) -> int:
+        """Returns the unit's internal level
+
+        Calculated by summing all the max levels of the classes that this unit's class promoted from.
+        Can be negative if the unit is tier 0 (trainee).
+
+        Returns:
+            int: The unit's internal level.
+        """
         klass = DB.classes.get(self.klass)
         if klass.tier == 0:
             return self.level - klass.max_level
@@ -748,7 +920,7 @@ class UnitObject(Prefab):
                   'wexp': self.wexp,
                   'portrait_nid': self.portrait_nid,
                   'affinity': self.affinity,
-                  'skills': [skill.uid for skill in self._skills],
+                  'skills': [(skill_info.skill_obj.uid, skill_info.source, skill_info.source_type) for skill_info in self._skills],
                   'notes': self.notes,
                   'current_hp': self.current_hp,
                   'current_mana': self.current_mana,
@@ -809,8 +981,8 @@ class UnitObject(Prefab):
         self.equipped_weapon = None
         self.equipped_accessory = None
 
-        self._skills = [game.get_skill(skill_uid) for skill_uid in s_dict['skills']]
-        self._skills = [s for s in self._skills if s]
+        self._skills = [UnitSkill(game.get_skill(skill_uid), source, source_type) for skill_uid, source, source_type in s_dict['skills']]
+        self._skills = [s for s in self._skills if s.get()]
 
         self.current_hp = s_dict['current_hp']
         self.current_mana = s_dict['current_mana']
@@ -852,11 +1024,14 @@ class UnitObject(Prefab):
         self.current_move = None  # Holds the move action the unit last used
         # Maybe move to movement manager?
 
-        for skill in self._skills:
-            skill_system.after_add_from_restore(self, skill)
+        for s in self._skills:
+            skill_system.after_add_from_restore(self, s.get())
         self._visible_skills_cache.clear()
 
         return self
 
     def __hash__(self):
         return hash(self.nid)
+
+    def __eq__(self, other: UnitObject) -> bool:
+        return isinstance(other, UnitObject) and self.nid == other.nid

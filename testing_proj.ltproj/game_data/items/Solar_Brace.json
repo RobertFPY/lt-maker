@@ -1,6 +1,6 @@
 [
     {
-        "nid": "Solar Brace",
+        "nid": "Solar_Brace",
         "name": "Solar Brace",
         "desc": "Promotes Ephraim.",
         "icon_nid": "Boosters",
@@ -23,21 +23,14 @@
             ],
             [
                 "uses_options",
-                [
-                    [
-                        "LoseUsesOnMiss (T/F)",
-                        "F",
-                        "Lose uses even on miss"
-                    ]
-                ]
+                {
+                    "lose_uses_on_miss": false,
+                    "one_loss_per_combat": false
+                }
             ],
             [
                 "usable_in_base",
                 null
-            ],
-            [
-                "eval_target_restrict",
-                "unit.level >= 10"
             ],
             [
                 "promote",
@@ -48,6 +41,10 @@
                 [
                     "Eirika_Lord"
                 ]
+            ],
+            [
+                "eval_target_restrict_2",
+                "unit.level >= 10"
             ]
         ]
     }

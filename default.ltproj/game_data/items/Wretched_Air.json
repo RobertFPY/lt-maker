@@ -1,6 +1,6 @@
 [
     {
-        "nid": "Wretched Air",
+        "nid": "Wretched_Air",
         "name": "Wretched Air",
         "desc": "Ignore's enemy defence.",
         "icon_nid": "Neutral",
@@ -35,7 +35,7 @@
             ],
             [
                 "status_on_equip",
-                "Wretched Air"
+                "Wretched_Air"
             ],
             [
                 "wexp",

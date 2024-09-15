@@ -326,14 +326,17 @@ class ClassStatAveragesModel(VirtualListModel):
         self.window = parent
         self._columns = self._headers = columns
         self.current = current
-        self._rows = [1] + list(range(5, current.max_level, 5)) + [current.max_level]
+        self._rows = self._get_level_range(current.max_level)
+
+    def _get_level_range(self, max_level, all_levels: bool = False):
+        if all_levels:
+            return list(range(1, max_level + 1))
+        else:
+            return [1] + list(range(5, max_level, 5)) + [max_level]
 
     def set_current(self, current, all_levels=False):
         self.current = current
-        if not all_levels:
-            self._rows = [1] + list(range(5, current.max_level, 5)) + [current.max_level]
-        else:
-            self._rows = list(range(1, current.max_level + 1))
+        self._rows = self._get_level_range(current.max_level, all_levels)
         self.layoutChanged.emit()
 
     def determine_average(self, obj, stat_nid, level_ups):
@@ -344,16 +347,18 @@ class ClassStatAveragesModel(VirtualListModel):
             else:
                 level_ups += 0
         stat_base = obj.bases.get(stat_nid, 0)
+        growth_bonus = obj.growth_bonus.get(stat_nid, 0)
         stat_growth = obj.growths.get(stat_nid, 0)
         stat_max = obj.max_stats.get(stat_nid, DB.stats.get(stat_nid).maximum)
+        total_growth = stat_growth + growth_bonus
 
-        average = int(stat_base + 0.5 + (stat_growth/100) * level_ups)
+        average = int(stat_base + 0.5 + (total_growth/100) * level_ups)
 
-        while stat_growth > 100:
-            stat_growth -= 100
+        while total_growth > 100:
+            total_growth -= 100
             stat_base += level_ups
-        quantile10 = Binomial.quantile(.1, level_ups, stat_growth/100) + stat_base
-        quantile90 = Binomial.quantile(.9, level_ups, stat_growth/100) + stat_base
+        quantile10 = Binomial.quantile(.1, level_ups, total_growth/100) + stat_base
+        quantile90 = Binomial.quantile(.9, level_ups, total_growth/100) + stat_base
         return stat_max, average, quantile10, quantile90
 
     def update_column_header(self, columns):
@@ -413,25 +418,7 @@ class GenericStatAveragesModel(ClassStatAveragesModel):
 
     def determine_average(self, obj, stat_nid, level_ups):
         klass = DB.classes.get(obj.klass)
-        if klass.tier > 1:
-            if klass.promotes_from:
-                prev_klass = DB.classes.get(klass.promotes_from)
-                level_ups += prev_klass.max_level
-            else:
-                level_ups += 0
-        stat_base = klass.bases.get(stat_nid, 0)
-        stat_growth = klass.growths.get(stat_nid, 0)
-        stat_max = klass.max_stats.get(stat_nid, DB.stats.get(stat_nid).maximum)
-
-        average = int(stat_base + 0.5 + (stat_growth/100) * level_ups)
-
-        # average = quantile(.5, level_ups, stat_growth/100) + stat_base
-        while stat_growth > 100:
-            stat_growth -= 100
-            stat_base += level_ups
-        quantile10 = Binomial.quantile(.1, level_ups, stat_growth/100) + stat_base
-        quantile90 = Binomial.quantile(.9, level_ups, stat_growth/100) + stat_base
-        return stat_max, average, quantile10, quantile90
+        return super().determine_average(klass, stat_nid, level_ups)
 
 class UnitStatAveragesModel(ClassStatAveragesModel):
     def __init__(self, columns, current, parent=None):
@@ -445,22 +432,29 @@ class UnitStatAveragesModel(ClassStatAveragesModel):
         klass = DB.classes.get(self.current.klass)
         max_level = klass.max_level
         self._rows = []
-        if not all_levels:
-            level_range = [1] + list(range(5, max_level, 5)) + [max_level]
-        else:
-            level_range = list(range(1, max_level+1))
+        level_range = self._get_level_range(max_level, all_levels)
         for i in level_range:
             self._rows.append((klass.nid, i, i))
-        true_levels = 0
-        while klass.promotion_options(DB):
-            true_levels += max_level
-            klass = DB.classes.get(klass.promotion_options(DB)[0])
+
+        # Determine all possible promotion options for this unit and place them on the rows
+        promotion_options = klass.promotion_options(DB)
+        true_levels = [klass.max_level for _ in promotion_options]
+        while promotion_options:
+            next_klass_nid = promotion_options.pop(0)
+            klass = DB.classes.get(next_klass_nid)
+            current_true_level = true_levels.pop(0)
             if klass:
                 max_level = klass.max_level
+                level_range = self._get_level_range(max_level, all_levels)
                 for i in level_range:
-                    self._rows.append((klass.nid, i, i + true_levels))
-            else:
-                return
+                    self._rows.append((klass.nid, i, i + current_true_level))
+                # Now for the next iteration
+                # recalculate the promotion options and insert them in
+                next_options = klass.promotion_options(DB)
+                if next_options:
+                    for option in reversed(next_options):
+                        true_levels.insert(0, current_true_level + max_level)
+                        promotion_options.insert(0, option)
 
     def set_current(self, current, all_levels=False):
         self.current = current
@@ -478,29 +472,37 @@ class UnitStatAveragesModel(ClassStatAveragesModel):
         elif orientation == Qt.Horizontal:
             return self._columns[idx]
 
-    def determine_average(self, obj, stat_nid, level_ups):
-        stat_base = obj.bases.get(stat_nid, 0)
-        stat_growth = obj.growths.get(stat_nid, 0)
+    def determine_average(self, obj, stat_nid, level_ups, klass_nid):
         stat_cap_modifier = obj.stat_cap_modifiers.get(stat_nid, 0)
-        if DB.constants.value('unit_stats_as_bonus'):
-            klass = DB.classes.get(obj.klass)
-            stat_base += klass.bases.get(stat_nid, 0)
-            stat_growth += klass.growths.get(stat_nid, 0)
+
         average = 0.5
         quantile10 = 0
         quantile90 = 0
-        classes = [obj.klass]
+
+        # Figure out how to get to new klass
         base_klass = DB.classes.get(obj.klass)
-        turns_into = base_klass.promotion_options(DB)
-        while turns_into:
-            classes.append(turns_into[0])
-            new_klass = DB.classes.get(turns_into[0])
-            turns_into = new_klass.promotion_options(DB)
+        path = []
+        to_explore = [([], k) for k in base_klass.promotion_options(DB)]
+        while to_explore:
+            path, klass = to_explore.pop()
+            if klass == klass_nid:
+                break
+            path.append(klass)
+            to_explore.extend([(path, k) for k in DB.classes.get(klass).promotion_options(DB)])
+        classes = [obj.klass] + path + [klass_nid]
 
         for idx, klass in enumerate(classes):
+            klass = DB.classes.get(klass)
+
+            stat_base = obj.bases.get(stat_nid, 0)
+            stat_growth = obj.growths.get(stat_nid, 0)
+            if DB.constants.value('unit_stats_as_bonus'):
+                stat_base += klass.bases.get(stat_nid, 0)
+                stat_growth += klass.growths.get(stat_nid, 0)
+
             if idx != 0:
                 level_ups -= 1  # Costs one level to move up a class
-            klass = DB.classes.get(klass)
+            
             stat_max = klass.max_stats.get(stat_nid, DB.stats.get(stat_nid).maximum)
             stat_max += stat_cap_modifier
             if idx == 0:
@@ -513,7 +515,8 @@ class UnitStatAveragesModel(ClassStatAveragesModel):
                 promotion_bonus = klass.promotion.get(stat_nid, 0)
                 if promotion_bonus in (-99, -98):
                     prev_klass = classes[idx - 1]
-                    promotion_bonus = klass.bases.get(stat_nid, 0) - DB.classes.get(prev_klass).bases.get(stat_nid, 0)
+                    promotion_bonus = klass.bases.get(stat_nid, 0) \
+                        - DB.classes.get(prev_klass).bases.get(stat_nid, 0)
             else:
                 promotion_bonus = stat_base
             growth = (stat_growth + growth_bonus)/100
@@ -531,7 +534,7 @@ class UnitStatAveragesModel(ClassStatAveragesModel):
         base_level = self.current.level
         nid, level, true_level = self._rows[index.row()]
         stat_nid = self._columns[index.column()]
-        vals = self.determine_average(self.current, stat_nid, max(0, true_level - base_level))
+        vals = self.determine_average(self.current, stat_nid, max(0, true_level - base_level), nid)
         avg = vals[self.average_idx]
         maxim = vals[0]
         return maxim, avg

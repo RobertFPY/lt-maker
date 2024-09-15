@@ -2,6 +2,7 @@ import functools
 from enum import Enum
 from typing import (Callable, Dict, Generic, List, Optional, Tuple, Type,
                     TypeVar)
+from typing_extensions import Protocol
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFontMetrics, QIcon
@@ -20,7 +21,7 @@ from app.editor.settings import MainSettingsController
 from app.extensions.custom_gui import PropertyBox, QHLine
 from app.extensions.qhelpmenu import QHelpMenu
 from app.utilities.data import Data
-from app.utilities.typing import NID, Protocol
+from app.utilities.typing import NID
 
 class HasComponents(Protocol):
     nid: NID
@@ -38,9 +39,9 @@ class NewComponentProperties(QWidget, Generic[T]):
     get_templates = None
     get_tags: Callable[[], List[Enum]]
 
-    def __init__(self, parent, current: Optional[T]=None,
-                 attempt_change_nid: Optional[Callable[[NID, NID], bool]]=None,
-                 on_icon_change: Optional[Callable]=None):
+    def __init__(self, parent, current: Optional[T] = None,
+                 attempt_change_nid: Optional[Callable[[NID, NID], bool]] = None,
+                 on_icon_change: Optional[Callable] = None):
         super().__init__(parent)
         self.attempt_change_nid = attempt_change_nid
         self.on_icon_change = on_icon_change
@@ -209,14 +210,14 @@ class NewComponentProperties(QWidget, Generic[T]):
     def add_component(self, component_class):
         if self.current:
             component = component_class(component_class.value)
-            if component.nid in self.current.components.keys():
+            if component.nid in self.current.components:
                 QMessageBox.warning(self, 'Warning', '%s component already present' % component.class_name())
             else:
                 self.current.components.append(component)
                 self.add_component_widget(component)
                 # Add other components that this should be paired with
                 for pair in component.paired_with:
-                    if pair not in self.current.components.keys():
+                    if pair not in self.current.components:
                         self.add_component(self.get_components().get(pair))
 
     def add_component_widget(self, component):
@@ -230,7 +231,7 @@ class NewComponentProperties(QWidget, Generic[T]):
             self.current.components.delete(data)
             # Remove all paired components
             for pair in data.paired_with:
-                if pair in self.current.components.keys():
+                if pair in self.current.components:
                     idx = self.component_list.index_list.index(pair)
                     item = self.component_list.item(idx)
                     component_widget = self.component_list.itemWidget(item)

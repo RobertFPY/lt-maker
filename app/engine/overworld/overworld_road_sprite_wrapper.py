@@ -50,7 +50,7 @@ class OverworldRoadSpriteWrapper():
         return self.road_sprite is not None
 
     def rotate(self, sprite: Surface, angle: float) -> Surface:
-        return engine.transform_rotate(sprite, 90)
+        return engine.transform_rotate(sprite, angle)
 
     def draw(self, pos: Point, sprite: Surface, draw_engine: Surface):
         surf: Surface = draw_engine
@@ -87,7 +87,7 @@ class OverworldRoadSpriteWrapper():
 
     def _draw_straight(self, draw_engine, tile_pos: Point, direction: Direction):
         left, top = tile_pos[0] * TILEWIDTH, tile_pos[1] * TILEHEIGHT
-        off_x, off_y = TILEWIDTH / 2, TILEHEIGHT / 2
+        off_x, off_y = TILEWIDTH // 2, TILEHEIGHT // 2
         # quadrants oriented like cartesian plane
         q1 = (left + off_x, top)
         q2 = (left, top)
@@ -110,7 +110,7 @@ class OverworldRoadSpriteWrapper():
     def _draw_diagonal(self, draw_engine, tile_pos: Point, direction: Direction, is_vertical_right_angle: bool = False):
         # shorthand
         left, top = tile_pos[0] * TILEWIDTH, tile_pos[1] * TILEHEIGHT
-        off_x, off_y = TILEWIDTH / 2, TILEHEIGHT / 2
+        off_x, off_y = TILEWIDTH // 2, TILEHEIGHT // 2
         # quadrants oriented like cartesian plane
         q1 = (left + off_x, top)
         q2 = (left, top)
@@ -148,8 +148,8 @@ class OverworldRoadSpriteWrapper():
                 self.draw((x - off_x, y), self.rotate(self.diag_corner, 180), draw_engine)
         else:
             if quadrant in [q1, q3]:
-                self.draw((x, y - off_y), self.rotate(self.diag_corner, 270), draw_engine)
-                self.draw((x, y + off_y), self.rotate(self.diag_corner, 90), draw_engine)
+                self.draw((x, y - off_y), self.rotate(self.diag_corner, 90), draw_engine)
+                self.draw((x, y + off_y), self.rotate(self.diag_corner, 270), draw_engine)
             else:
                 self.draw((x, y - off_y), self.rotate(self.diag_corner, 0), draw_engine)
                 self.draw((x, y + off_y), self.rotate(self.diag_corner, 180), draw_engine)
@@ -157,7 +157,7 @@ class OverworldRoadSpriteWrapper():
     def _draw_turn(self, draw_engine: Surface, tile_pos: Point, directions: List[Direction]):
         # shorthand
         left, top = tile_pos[0] * TILEWIDTH, tile_pos[1] * TILEHEIGHT
-        off_x, off_y = TILEWIDTH / 2, TILEHEIGHT / 2
+        off_x, off_y = TILEWIDTH // 2, TILEHEIGHT // 2
         # quadrants oriented like cartesian plane
         q1 = (left + off_x, top)
         q2 = (left, top)
@@ -166,7 +166,7 @@ class OverworldRoadSpriteWrapper():
 
         if Direction.UP in directions:
             if Direction.LEFT in directions: # up left
-                self.draw(q2, self.rotate(self.right_angle, 90), draw_engine)
+                self.draw(q2, self.rotate(self.right_angle, 270), draw_engine)
                 self.draw(q3, self.hbot, draw_engine)
                 self.draw(q1, self.vright, draw_engine)
             else: # up right

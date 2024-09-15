@@ -7,23 +7,23 @@ class Node():
         reachable - is cell reachable? is not a wall?
         cost - how many movement points to reach
         """
-        self.reachable = reachable
-        self.cost = cost
-        self.x = x
-        self.y = y
+        self.reachable: bool = reachable
+        self.cost: float = cost
+        self.x: int = x
+        self.y: int = y
         self.reset()
 
     def reset(self):
-        self.parent = None
-        self.g = 0
-        self.h = 0
-        self.f = 0
-        self.true_f = 0
+        self.parent: Node = None
+        self.g: float = 0  # True distance to starting position (takes into account movement costs)
+        self.h: float = 0  # Approximate distance to goal position (only Euclidean/Manhattan)
+        self.f: float = 0  # Final heuristic (g + h)
+        self.true_f: float = 0  # f but does not include minor adjustment for preferring a straight line path
 
-    def __gt__(self, n):
+    def __gt__(self, n) -> bool:
         return self.cost > n
 
-    def __lt__(self, n):
+    def __lt__(self, n) -> bool:
         return self.cost < n
 
     def __repr__(self):

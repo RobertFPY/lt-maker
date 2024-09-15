@@ -1,4 +1,4 @@
-import os, math
+import os
 
 from app import autoupdate
 
@@ -74,7 +74,7 @@ class TitleStartState(State):
             game.sweep()
             game.events.trigger(triggers.OnTitleScreen())
             # On startup occurs before on title_screen
-            game.events.trigger(triggers.OnStartup()) 
+            game.events.trigger(triggers.OnStartup())
             game.memory['title_intro_already_played'] = True
 
         get_sound_thread().clear()
@@ -149,6 +149,9 @@ class TitleMainState(State):
         self.menu = menus.Main(options, "title_menu_dark")
         game.state.change('transition_in')
         return 'repeat'
+
+    def begin(self):
+        self.fluid.reset_on_change_state()
 
     def take_input(self, event):
         first_push = self.fluid.update()
@@ -291,7 +294,7 @@ class TitleModeState(State):
         shimmer = SPRITES.get('menu_shimmer2')
         self.label.blit(shimmer, (95 - shimmer.get_width(), 83 - shimmer.get_height()))
         self.label = image_mods.make_translucent(self.label, .1)
-        
+
         self.available_difficulties = [difficulty for difficulty in DB.difficulty_modes if (not difficulty.start_locked or RECORDS.check_difficulty_unlocked(difficulty.nid))]
 
     def begin(self):
@@ -334,6 +337,7 @@ class TitleModeState(State):
                 game.state.change('transition_to')
 
         self.update_dialog()
+        self.fluid.reset_on_change_state()
 
         return 'repeat'
 
@@ -347,6 +351,7 @@ class TitleModeState(State):
             self.dialog.font = FONT['text']
             self.dialog.font_type = 'text'
             self.dialog.font_color = 'white'
+            self.dialog.reformat()
 
     def take_input(self, event):
         first_push = self.fluid.update()
@@ -463,6 +468,9 @@ class TitleLoadState(State):
         self.menu = menus.ChapterSelect(options, colors)
         most_recent = self.save_slots.index(max(self.save_slots, key=lambda x: x.realtime))
         self.menu.move_to(most_recent)
+
+    def begin(self):
+        self.fluid.reset_on_change_state()
 
     def take_input(self, event):
         # Only take input in normal state
@@ -599,7 +607,7 @@ def build_new_game(slot: int):
 
     game.state.clear()
     game.current_save_slot = slot
-    
+
     if DB.constants.value('overworld_start'):
         game.state.change('overworld')
         game.state.process_temp_state()
@@ -742,6 +750,7 @@ class TitleExtrasState(TitleLoadState):
         self.menu = menus.Main(options, 'title_menu_dark')
 
     def begin(self):
+        super().begin()
         # If we came back from the credits event, fade in
         if game.state.prev_state == 'event':
             game.state.change('transition_in')
@@ -894,6 +903,10 @@ class TitleSaveState(State):
 
         game.state.change('transition_in')
         return 'repeat'
+
+    def begin(self):
+        if self.fluid:
+            self.fluid.reset_on_change_state()
 
     def go_to_next_level(self, make_save=True):
         current_state = game.state.state[-1]

@@ -58,7 +58,7 @@ class Parser():
         else:
             return 0
 
-    def max_fatigue(self, unit):
+    def get_max_fatigue(self, unit):
         if hasattr(self, 'max_fatigue'):
             return self.max_fatigue(unit)
         else:

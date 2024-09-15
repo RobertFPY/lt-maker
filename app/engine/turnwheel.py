@@ -1,14 +1,19 @@
+import math
 import logging
 from dataclasses import dataclass
+
+from app.data.resources.resources import RESOURCES
 
 import app.engine.action as Action
 from app.constants import WINHEIGHT, WINWIDTH
 from app.engine import base_surf, engine, gui, image_mods
 from app.engine.background import SpriteBackground
+from app.engine.battle_animation import BattleAnimation
 from app.engine.fonts import FONT
 from app.engine.graphics.text.text_renderer import render_text
 from app.engine.game_state import game
 from app.engine.input_manager import get_input_manager
+from app.engine import particles
 from app.engine.sound import get_sound_thread
 from app.engine.sprites import SPRITES
 from app.engine.state import MapState
@@ -43,12 +48,12 @@ class ActionLog():
         self.unique_moves = []
 
     def append(self, action):
-        logging.debug("Add Action %d: %s", self.action_index + 1, action.__class__.__name__)
+        logging.debug("Add Action %d: %s", self.action_index + 1, action)
         self.actions.append(action)
         self.action_index += 1
 
     def remove(self, action):
-        logging.debug("Remove Action %d: %s", self.action_index, action.__class__.__name__)
+        logging.debug("Remove Action %d: %s", self.action_index, action)
         self.actions.remove(action)
         self.action_index -= 1
 
@@ -57,13 +62,11 @@ class ActionLog():
         Reverses and removes action and all actions that happened after it
         (except Equip action)
         """
-        logging.debug("Hard Remove Action %d: %s", self.action_index, action.__class__.__name__)
+        logging.debug("Hard Remove Action %d: %s", self.action_index, action)
         idx = self.actions.index(action)
         for act in reversed(self.actions[idx:]):
-            if act.__class__.__name__ == 'EquipItem':
-                logging.debug("Not going to reverse or remove the EquipItem action")
-            elif act.__class__.__name__ == 'BringToTopItem':
-                logging.debug("Not going to reverse or remove the BringToTopItem action")
+            if act.persist_through_menu_cancel:
+                logging.debug("Not going to reverse or remove the " + act.__class__.__name__ + " action")
             else:
                 act.reverse()
                 self.actions.remove(act)
@@ -135,7 +138,20 @@ class ActionLog():
                     current_move = None
                 self.unique_moves.append(('Lock', action_index, action.lock))
 
+        # Finalize an existing move if it was never ended by any other special
+        # action (usually would be ended by a Wait or death of the unit)
+        # But sometimes is not
+        if current_move:
+            finalize(current_move)
+            current_move = None
+
         # Handles having extra actions off the right of the action log
+        # Imagine you finish up a unit A's move, they wait. Then you 
+        # fiddle with the equipped item of unit B. When you turnwheel
+        # back from that point, the Equipped item of unit B better 
+        # be back to the previous point it was during Unit A's move, otherwise
+        # you have screwed up the timeline. This handles those extra
+        # actions at the end of the timeline not associated with a move
         if self.unique_moves:
             last_move = self.unique_moves[-1]
             last_action_index = len(self.actions) - 1
@@ -307,7 +323,7 @@ class ActionLog():
         while not self.at_far_future():
             self.run_action_forward()
 
-    def get_last_lock(self):
+    def get_last_lock(self) -> bool:
         cur_index = self.action_index
         while cur_index > self.first_free_action:
             cur_index -= 1
@@ -376,7 +392,7 @@ class ActionLog():
     @classmethod
     def restore(cls, serial):
         self = cls()
-        if len(serial) == 2: # deprecated
+        if len(serial) == 2:  # deprecated
             actions, first_free_action = serial
             record = 0
         else:
@@ -457,11 +473,14 @@ class TurnwheelDisplay():
 
 class TurnwheelState(MapState):
     def begin(self):
+        self.fluid.reset_on_change_state()
         # Remember who gets resurrected
         game.level_vars['_resurrect'] = set()
         # Whether the player MUST move the turnwheel back
         self.force = game.memory.get('force_turnwheel', False)
+        self.activated_by_player = not game.memory.get('event_turnwheel', False)
         game.memory['force_turnwheel'] = False
+        game.memory['event_turnwheel'] = False
         game.game_vars['turnwheel_starting_turn'] = game.turncount
 
         self.mouse_indicator = gui.MouseIndicator()
@@ -471,8 +490,11 @@ class TurnwheelState(MapState):
                 game.death.force_death(unit)
 
         game.action_log.stop_recording()
+        get_sound_thread().play_sfx('TurnwheelIn2')
 
         # Lower volume
+        self.normal_volume = get_sound_thread().get_music_volume()
+        get_sound_thread().set_music_volume(self.normal_volume/2)
 
         self.bg = SpriteBackground(SPRITES.get('focus_fade'), fade=True)
         turnwheel_desc = game.action_log.set_up()
@@ -485,7 +507,7 @@ class TurnwheelState(MapState):
         self.darken_background = 0
         self.target_dark = 0
         self.end_effect = None
-        self.particles = []
+        self.warp_particles = None
 
         self.last_direction = 'FORWARD'
 
@@ -531,6 +553,7 @@ class TurnwheelState(MapState):
             if self.check_mouse_position():
                 pass
             elif game.action_log.can_use():
+                get_sound_thread().play_sfx('TurnwheelOut')
                 game.action_log.finalize()
                 self.transition_out = 60
                 self.display.fade_out()
@@ -575,8 +598,29 @@ class TurnwheelState(MapState):
         self.bg.fade_out()
 
     def turnwheel_effect(self):
-        pass
         # Add effect and warp flowers
+        effect = RESOURCES.combat_effects.get('TurnwheelFlash')
+        if effect and effect.palettes:
+            # Determine effect's palette
+            palette_name, palette_nid = effect.palettes[0]
+            palette = RESOURCES.combat_palettes.get(palette_nid)
+            if palette:
+                self.end_effect = \
+                    BattleAnimation.get_effect_anim(effect, palette_name, palette, None, None)
+                self.end_effect.pair(self, None, True, False)
+                self.end_effect.start_anim('Attack')
+        self.initiate_warp_flowers()
+
+    def initiate_warp_flowers(self):
+        pos = (WINWIDTH // 2, WINHEIGHT // 2)
+        self.warp_particles = \
+            particles.SimpleParticleSystem('warp_flower', particles.WarpFlower, pos, (-1, -1, -1, -1), 0)
+        angle_frac = math.pi / 8
+        for idx, speed in enumerate((0.5, 1.0, 2.0, 2.5, 3.5, 4.0)):
+            for num in range(0, 16):
+                angle = num * angle_frac + (angle_frac / 2 if idx == 0 else 0)
+                new_particle = particles.WarpFlower().reset(pos, speed, angle)
+                self.warp_particles.particles.append(new_particle)
 
     def update(self):
         super().update()
@@ -584,7 +628,7 @@ class TurnwheelState(MapState):
         if self.transition_out > 0:
             self.transition_out -= 1
             if self.transition_out <= 0:
-                if game.phase.get_current() == 'player':
+                if self.activated_by_player:
                     game.state.back()
                     game.state.back()
                 else:
@@ -600,8 +644,10 @@ class TurnwheelState(MapState):
                     game.events.trigger(triggers.OnTurnwheel())
 
         # Update animations
-        # if self.end_effect:
-        #     self.end_effect.update()
+        if self.warp_particles:
+            self.warp_particles.update()
+        if self.end_effect:
+            self.end_effect.update()
 
     def darken(self):
         self.target_dark += 4
@@ -627,10 +673,16 @@ class TurnwheelState(MapState):
 
         self.mouse_indicator.draw(surf)
 
+        if self.warp_particles:
+            self.warp_particles.draw(surf)
+        if self.end_effect:
+            self.end_effect.draw(surf)
+
         # Draw animation
         return surf
 
     def end(self):
         game.boundary.reset()
+        get_sound_thread().set_music_volume(self.normal_volume)
         # Set recording back
         game.action_log.start_recording()

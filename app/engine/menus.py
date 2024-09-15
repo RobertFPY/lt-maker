@@ -1,3 +1,6 @@
+from __future__ import annotations
+from typing import List
+
 import math, string
 
 from app.constants import TILEX, WINWIDTH, WINHEIGHT
@@ -771,10 +774,10 @@ class Trade(Simple):
         full_items2 = self.get_items(self.partner)
 
         self.menu1 = Choice(self.owner, full_items1, (11, 68))
-        self.menu1.set_limit(DB.constants.total_items())
+        self.menu1.set_limit(min(5, DB.constants.total_items()))
         self.menu1.set_hard_limit(True)  # Makes hard limit
         self.menu2 = Choice(self.partner, full_items2, (125, 68))
-        self.menu2.set_limit(DB.constants.total_items())
+        self.menu2.set_limit(min(5, DB.constants.total_items()))
         self.menu2.set_hard_limit(True)  # Makes hard limit
         self.menu2.set_cursor(0)
 
@@ -1030,7 +1033,7 @@ class Table(Simple):
             return
         self.current_index = idx
         row, col = self._true_coords(self.current_index)
-        self.scroll = utils.clamp(self.scroll, row - self.rows + 1, row + self.rows - 1)
+        self.scroll = utils.clamp(self.scroll, row - self.rows + 1, row)
         # If we did scroll
         return scroll != self.scroll
 
@@ -1961,6 +1964,9 @@ class KeyboardMenu(Table):
         for idx, option in enumerate(options):
             option = menu_options.SingleCharacterOption(idx, option)
             self.options.append(option)
+
+    def all_legal_characters(self) -> List[str]:
+        return [option.get() for option in self.options]
 
     def updateName(self, character):
         if character == 'back':

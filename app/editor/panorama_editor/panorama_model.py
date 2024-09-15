@@ -63,7 +63,6 @@ class PanoramaModel(ResourceCollectionModel):
         starting_path = settings.get_last_open_path()
         fns, ok = QFileDialog.getOpenFileNames(self.window, "Add Movie (Select First Image)", starting_path, "PNG Files (*.png);;All Files(*)")
         new_panorama = None
-        zero_error = False
         if ok:
             for fn in fns:
                 if fn.endswith('.png'):
@@ -74,10 +73,9 @@ class PanoramaModel(ResourceCollectionModel):
                         ims = glob.glob(movie_prefix + '*' + '.png')
                         ims = sorted(ims, key=lambda x: str_utils.find_last_number(x[:-4]))
                         full_path = movie_prefix + '.png'
-                    elif not zero_error:
+                    else:
                         QMessageBox.critical(self.window, "Warning!", "Select first image of movie only (image0.png)!")
-                        zero_error = True
-                        continue
+                        return
                     pixs = [QPixmap(im) for im in ims]
                     movie_prefix = str_utils.get_next_name(movie_prefix, [d.nid for d in RESOURCES.panoramas])
                     if all(pix.width() >= WINWIDTH and pix.height() >= WINHEIGHT for pix in pixs):

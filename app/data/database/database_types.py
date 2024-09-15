@@ -1,6 +1,6 @@
-from enum import IntEnum
+from enum import Enum
 
-class DatabaseType(IntEnum):
+class DatabaseType(Enum):
   CONSTANTS = 1
   TEAMS = 2
   STATS = 3

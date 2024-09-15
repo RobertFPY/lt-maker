@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import QPushButton, QLineEdit, QComboBox, \
     QVBoxLayout, QHBoxLayout, QMessageBox, QApplication, QCheckBox
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QIcon, QBrush, QColor, QFontMetrics
+from app.events.event_prefab import EventInspectorEngine
 
 from app.utilities import str_utils
 from app.utilities.data import Data
@@ -19,11 +20,10 @@ from app.editor.custom_widgets import CustomQtRoles, UnitBox, ClassBox, \
     TeamBox, FactionBox, AIBox, ObjBox, RoamAIBox
 from app.editor.class_editor import class_model
 from app.editor.item_editor import item_model
-from app.editor.unit_editor import unit_tab
+from app.editor.unit_editor import new_unit_tab
 from app.editor.faction_editor import faction_model
 from app.editor.stat_widget import StatAverageDialog, GenericStatAveragesModel
 from app.editor.item_list_widget import ItemListWidget
-from app.editor.event_editor.event_inspector import EventInspectorEngine
 from app.editor.lib.components.validated_line_edit import NidLineEdit
 from app.events.event_commands import ChangeRoaming
 
@@ -129,7 +129,7 @@ class UnitPainterMenu(QWidget):
     def load_unit(self):
         unit, ok = LoadUnitDialog.get_unit(self)
         if ok:
-            if unit.nid in self._data.keys():
+            if unit.nid in self._data:
                 QMessageBox.critical(
                     self, "Error!", "%s already present in level!" % unit.nid)
             else:
@@ -195,7 +195,7 @@ class LevelUnitModel(DragDropCollectionModel):
         elif role == Qt.DecorationRole:
             unit = self._data[index.row()]
             # Don't draw any units which have been deleted in editor
-            if not unit.generic and unit.nid not in DB.units.keys():
+            if not unit.generic and unit.nid not in DB.units:
                 return None
             klass_nid = unit.klass
             num = timer.get_timer().passive_counter.count
@@ -279,7 +279,7 @@ class InventoryDelegate(QStyledItemDelegate):
         if not unit:
             return None
         # Don't draw any units which have been deleted in editor
-        if not unit.generic and unit.nid not in DB.units.keys():
+        if not unit.generic and unit.nid not in DB.units:
             return None
 
         # Draw faction, if applicable
@@ -357,7 +357,7 @@ class LoadUnitDialog(Dialog):
         self.window = parent
         self.view = None
 
-        self.event_inspector = EventInspectorEngine(DB.events)
+        self.event_inspector: EventInspectorEngine = DB.events.inspector
 
         layout = QVBoxLayout()
         self.setLayout(layout)
@@ -450,14 +450,14 @@ class LoadUnitDialog(Dialog):
         # if it's an already existing ai group
         """
         ai_group = self.ai_group_box.edit.currentText()
-        if ai_group in self.window.current_level.ai_groups.keys():
+        if ai_group in self.window.current_level.ai_groups:
             threshold = self.window.current_level.ai_groups.get(ai_group).trigger_threshold
             self.ai_group_threshold_box.edit.setValue(threshold)
 
     def check_ai_group(self):
         ai_group = self.ai_group_box.edit.currentText()
         threshold = int(self.ai_group_threshold_box.edit.value())
-        if ai_group in self.window.current_level.ai_groups.keys():
+        if ai_group in self.window.current_level.ai_groups:
             self.window.current_level.ai_groups.get(ai_group).trigger_threshold = threshold
         else:
             self.window.current_level.ai_groups.append(AIGroup(ai_group, threshold))
@@ -483,11 +483,22 @@ class LoadUnitDialog(Dialog):
         self.current.roam_ai = self.roam_ai_box.edit.currentText()
 
     def access_units(self):
-        unit, ok = unit_tab.get(self.current.nid)
+        unit, ok = new_unit_tab.get(self.current.nid)
         if ok:
-            self.nid_changed(unit.nid)
+            self.unit_box.edit.setValue(unit.nid)
 
     def nid_changed(self, nid):
+        # Don't bother if already identical
+        if nid == self.current.nid:
+            return
+
+        # If nid already in level
+        if nid in self.window.current_level.units.keys():
+            self.unit_box.edit.setValue(self.current.nid)
+            QMessageBox.warning(self.window, 'Warning',
+                                'Unit ID %s already in use' % nid)
+            return
+
         old_nid = self.current.nid
         self.current.nid = nid
         self.current.prefab = DB.units.get(nid)
@@ -708,14 +719,14 @@ class GenericUnitDialog(Dialog):
         # if it's an already existing ai group
         """
         ai_group = self.ai_group_box.edit.currentText()
-        if ai_group in self.window.current_level.ai_groups.keys():
+        if ai_group in self.window.current_level.ai_groups:
             threshold = self.window.current_level.ai_groups.get(ai_group).trigger_threshold
             self.ai_group_threshold_box.edit.setValue(threshold)
 
     def check_ai_group(self):
         ai_group = self.ai_group_box.edit.currentText()
         threshold = int(self.ai_group_threshold_box.edit.value())
-        if ai_group in self.window.current_level.ai_groups.keys():
+        if ai_group in self.window.current_level.ai_groups:
             self.window.current_level.ai_groups.get(ai_group).trigger_threshold = threshold
         else:
             self.window.current_level.ai_groups.append(AIGroup(ai_group, threshold))

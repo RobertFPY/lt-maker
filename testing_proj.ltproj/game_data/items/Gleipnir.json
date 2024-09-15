@@ -47,13 +47,10 @@
             ],
             [
                 "uses_options",
-                [
-                    [
-                        "LoseUsesOnMiss (T/F)",
-                        "F",
-                        "Lose uses even on miss"
-                    ]
-                ]
+                {
+                    "lose_uses_on_miss": false,
+                    "one_loss_per_combat": false
+                }
             ],
             [
                 "weight",
@@ -65,7 +62,7 @@
             ],
             [
                 "status_on_equip",
-                "Skill +5"
+                "Skill_Plus5"
             ],
             [
                 "wexp",

@@ -22,7 +22,7 @@ class Timer(QWidget):
 
         self.autosave_timer = QTimer()
         autosave_time = MainSettingsController().get_autosave_time(5)
-        self.autosave_timer.setInterval(autosave_time * 60 * 1000)
+        self.autosave_timer.setInterval(int(autosave_time * 60 * 1000))
         self.autosave_timer.start()
 
         self.passive_counter = counters.generic3counter(frames2ms(32), frames2ms(4))

@@ -1,6 +1,6 @@
 [
     {
-        "nid": "Poison Axe",
+        "nid": "Poison_Axe",
         "name": "Poison Axe",
         "desc": "Poisons on contact",
         "icon_nid": "Axe",
@@ -43,13 +43,10 @@
             ],
             [
                 "uses_options",
-                [
-                    [
-                        "LoseUsesOnMiss (T/F)",
-                        "F",
-                        "Lose uses even on miss"
-                    ]
-                ]
+                {
+                    "lose_uses_on_miss": false,
+                    "one_loss_per_combat": false
+                }
             ],
             [
                 "weight",

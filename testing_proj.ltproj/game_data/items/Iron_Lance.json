@@ -1,6 +1,6 @@
 [
     {
-        "nid": "Iron Lance",
+        "nid": "Iron_Lance",
         "name": "Iron Lance",
         "desc": "",
         "icon_nid": "Lance",
@@ -63,13 +63,10 @@
             ],
             [
                 "uses_options",
-                [
-                    [
-                        "LoseUsesOnMiss (T/F)",
-                        "F",
-                        "Lose uses even on miss"
-                    ]
-                ]
+                {
+                    "lose_uses_on_miss": false,
+                    "one_loss_per_combat": false
+                }
             ]
         ]
     }

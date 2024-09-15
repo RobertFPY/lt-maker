@@ -116,9 +116,9 @@ class ItemSkillComponentTests(unittest.TestCase):
         mock_item = MagicMock()
         mock_target = MagicMock()
         mock_info = MagicMock()
-        self._test_skill_hook_with_components([], lambda unit: skill_system.dynamic_damage(unit, mock_item, mock_target, 'attack', mock_info, 1), 0)
-        self._test_skill_hook_with_components([DynamicDamage("1"), DynamicDamage("2")], lambda unit: skill_system.dynamic_damage(unit, mock_item, mock_target, 'attack', mock_info, 1), 3)
-        self._test_skill_hook_with_components([DynamicDamage("2"), DynamicDamage("1")], lambda unit: skill_system.dynamic_damage(unit, mock_item, mock_target, 'attack', mock_info, 1), 3)
+        self._test_skill_hook_with_components([], lambda unit: skill_system.dynamic_damage(unit, mock_item, mock_target, mock_item, 'attack', mock_info, 1), 0)
+        self._test_skill_hook_with_components([DynamicDamage("1"), DynamicDamage("2")], lambda unit: skill_system.dynamic_damage(unit, mock_item, mock_target, mock_item, 'attack', mock_info, 1), 3)
+        self._test_skill_hook_with_components([DynamicDamage("2"), DynamicDamage("1")], lambda unit: skill_system.dynamic_damage(unit, mock_item, mock_target, mock_item, 'attack', mock_info, 1), 3)
         
     def test_skill_hooks_multiply(self):
         from app.engine import skill_system
@@ -126,9 +126,9 @@ class ItemSkillComponentTests(unittest.TestCase):
         mock_target = MagicMock()
         mock_info = MagicMock()
         mock_mode = MagicMock()
-        self._test_skill_hook_with_components([], lambda unit: skill_system.damage_multiplier(unit, mock_item, mock_target, mock_mode, mock_info, 0), 1)
-        self._test_skill_hook_with_components([DamageMultiplier(3.0), DamageMultiplier(1.5)], lambda unit: skill_system.damage_multiplier(unit, mock_item, mock_target, mock_mode, mock_info, 0), 4.5)
-        self._test_skill_hook_with_components([DamageMultiplier(-2), DamageMultiplier(1.5)], lambda unit: skill_system.damage_multiplier(unit, mock_item, mock_target, mock_mode, mock_info, 0), -3)
+        self._test_skill_hook_with_components([], lambda unit: skill_system.damage_multiplier(unit, mock_item, mock_target, mock_item, mock_mode, mock_info, 0), 1)
+        self._test_skill_hook_with_components([DamageMultiplier(3.0), DamageMultiplier(1.5)], lambda unit: skill_system.damage_multiplier(unit, mock_item, mock_target, mock_item, mock_mode, mock_info, 0), 4.5)
+        self._test_skill_hook_with_components([DamageMultiplier(-2), DamageMultiplier(1.5)], lambda unit: skill_system.damage_multiplier(unit, mock_item, mock_target, mock_item, mock_mode, mock_info, 0), -3)
         
     def test_skill_hooks_unique_default_target(self):
         from app.engine import skill_system
@@ -143,8 +143,8 @@ class ItemSkillComponentTests(unittest.TestCase):
         mock_item = MagicMock()
         mock_target = MagicMock()
         mock_mode = MagicMock()
-        self._test_skill_hook_with_components([], lambda unit: skill_system.battle_music(mock_playback, unit, mock_item, mock_target, mock_mode), None)
-        self._test_skill_hook_with_components([BattleAnimMusic('FillerBong'), BattleAnimMusic('FillerSong')], lambda unit: skill_system.battle_music(mock_playback, unit, mock_item, mock_target, mock_mode), 'FillerSong')
+        self._test_skill_hook_with_components([], lambda unit: skill_system.battle_music(mock_playback, unit, mock_item, mock_target, mock_item, mock_mode), None)
+        self._test_skill_hook_with_components([BattleAnimMusic('FillerBong'), BattleAnimMusic('FillerSong')], lambda unit: skill_system.battle_music(mock_playback, unit, mock_item, mock_target, mock_item, mock_mode), 'FillerSong')
         
     def test_skill_hooks_unique_event(self):
         from app.engine import skill_system
@@ -174,10 +174,10 @@ class ItemSkillComponentTests(unittest.TestCase):
         self._test_skill_hook_with_components([mock_component_1, mock_component_2], lambda unit: skill_system.on_death(unit), None)
         self._test_skill_hook_with_components([mock_component_1, mock_component_2], lambda unit: skill_system.on_add_item(unit, mock_arg), None)
         self._test_skill_hook_with_components([mock_component_1, mock_component_2], lambda unit: skill_system.on_upkeep(mock_arg, mock_arg, unit), None)
-        self._test_skill_hook_with_components([mock_component_1, mock_component_2], lambda unit: skill_system.start_sub_combat(mock_arg, mock_arg, unit, mock_arg, mock_arg, mock_arg, mock_arg), None)
-        self._test_skill_hook_with_components([mock_component_1, mock_component_2], lambda unit: skill_system.after_strike(mock_arg, mock_arg, unit, mock_arg, mock_arg, mock_arg, mock_arg, mock_arg), None)
+        self._test_skill_hook_with_components([mock_component_1, mock_component_2], lambda unit: skill_system.start_sub_combat(mock_arg, mock_arg, unit, mock_arg, mock_arg, mock_arg, mock_arg, mock_arg), None)
+        self._test_skill_hook_with_components([mock_component_1, mock_component_2], lambda unit: skill_system.after_strike(mock_arg, mock_arg, unit, mock_arg, mock_arg, mock_arg, mock_arg, mock_arg, mock_arg), None)
         # has unconditional
-        self._test_skill_hook_with_components([mock_component_1, mock_component_2, mock_component_3], lambda unit: skill_system.start_combat(mock_arg, unit, mock_arg, mock_arg, mock_arg), None)
+        self._test_skill_hook_with_components([mock_component_1, mock_component_2, mock_component_3], lambda unit: skill_system.start_combat(mock_arg, unit, mock_arg, mock_arg, mock_arg, mock_arg), None)
         self.assertTrue(mock_component_1.on_death.called)
         self.assertTrue(mock_component_2.on_death.called)
         self.assertTrue(mock_component_1.on_add_item.called)
@@ -230,13 +230,13 @@ class ItemSkillComponentTests(unittest.TestCase):
         self._test_skill_hook_with_components([mock_on_end_chapter], lambda unit: skill_system.on_end_chapter(unit, mock_on_end_chapter_skill), None)
         self._test_skill_hook_with_components([mock_on_upkeep], lambda unit: skill_system.on_upkeep(mock_arg, mock_arg, unit), None)
         self._test_skill_hook_with_components([mock_on_endstep], lambda unit: skill_system.on_endstep(mock_arg, mock_arg, unit), None)
-        self._test_skill_hook_with_components([mock_start_combat], lambda unit: skill_system.start_combat(mock_arg, unit, mock_arg, mock_arg, mock_arg), None)
-        self._test_skill_hook_with_components([mock_cleanup_combat], lambda unit: skill_system.cleanup_combat(mock_arg, unit, mock_arg, mock_arg, mock_arg), None)
-        self._test_skill_hook_with_components([mock_end_combat], lambda unit: skill_system.end_combat(mock_arg, unit, mock_arg, mock_arg, mock_arg), None)
-        self._test_skill_hook_with_components([mock_pre_combat], lambda unit: skill_system.pre_combat(mock_arg, unit, mock_arg, mock_arg, mock_arg), None)
-        self._test_skill_hook_with_components([mock_post_combat], lambda unit: skill_system.post_combat(mock_arg, unit, mock_arg, mock_arg, mock_arg), None)
-        self._test_skill_hook_with_components([mock_test_on], lambda unit: skill_system.test_on(mock_arg, unit, mock_arg, mock_arg, mock_arg), None)
-        self._test_skill_hook_with_components([mock_test_off], lambda unit: skill_system.test_off(mock_arg, unit, mock_arg, mock_arg, mock_arg), None)
+        self._test_skill_hook_with_components([mock_start_combat], lambda unit: skill_system.start_combat(mock_arg, unit, mock_arg, mock_arg, mock_arg, mock_arg), None)
+        self._test_skill_hook_with_components([mock_cleanup_combat], lambda unit: skill_system.cleanup_combat(mock_arg, unit, mock_arg, mock_arg, mock_arg, mock_arg), None)
+        self._test_skill_hook_with_components([mock_end_combat], lambda unit: skill_system.end_combat(mock_arg, unit, mock_arg, mock_arg, mock_arg, mock_arg), None)
+        self._test_skill_hook_with_components([mock_pre_combat], lambda unit: skill_system.pre_combat(mock_arg, unit, mock_arg, mock_arg, mock_arg, mock_arg), None)
+        self._test_skill_hook_with_components([mock_post_combat], lambda unit: skill_system.post_combat(mock_arg, unit, mock_arg, mock_arg, mock_arg, mock_arg), None)
+        self._test_skill_hook_with_components([mock_test_on], lambda unit: skill_system.test_on(mock_arg, unit, mock_arg, mock_arg, mock_arg, mock_arg), None)
+        self._test_skill_hook_with_components([mock_test_off], lambda unit: skill_system.test_off(mock_arg, unit, mock_arg, mock_arg, mock_arg, mock_arg), None)
         self.assertTrue(mock_on_end_chapter.on_end_chapter_unconditional.called)
         self.assertTrue(mock_on_upkeep.on_upkeep_unconditional.called)
         self.assertTrue(mock_on_endstep.on_endstep_unconditional.called)
@@ -318,8 +318,8 @@ class ItemSkillComponentTests(unittest.TestCase):
         mock_item.parent_item = mock_parent
         self.assertEqual(None, item_system.on_end_chapter(mock_arg, mock_item))
         self.assertEqual(None, item_system.on_upkeep(mock_arg, mock_arg, mock_arg, mock_item))
-        self.assertEqual(None, item_system.start_combat(mock_arg, mock_arg, mock_item, mock_arg, mock_arg))
-        self.assertEqual(None, item_system.battle_music(mock_arg, mock_item, mock_arg, mock_arg))
+        self.assertEqual(None, item_system.start_combat(mock_arg, mock_arg, mock_item, mock_arg, mock_arg, mock_arg))
+        self.assertEqual(None, item_system.battle_music(mock_arg, mock_item, mock_arg, mock_arg, mock_arg))
         self.assertTrue(mock_component_1.on_end_chapter.called)
         self.assertTrue(mock_component_2.on_end_chapter.called)
         self.assertTrue(mock_component_1.on_upkeep.called)

@@ -2,7 +2,7 @@ from typing import Set, Tuple
 from app.data.database.skill_components import SkillComponent, SkillTags
 from app.data.database.components import ComponentType
 
-from app.engine import equations, target_system, action
+from app.engine import equations, action
 from app.engine.game_state import game
 from app.engine.movement import movement_funcs
 from app.engine.objects.unit import UnitObject
@@ -13,6 +13,9 @@ class Canto(SkillComponent):
     nid = 'canto'
     desc = "Unit can move again after certain actions"
     tag = SkillTags.MOVEMENT
+
+    def canto_movement(self, unit, unit2) -> int:
+        return unit.movement_left
 
     def has_canto(self, unit, unit2) -> bool:
         """
@@ -25,6 +28,9 @@ class CantoPlus(SkillComponent):
     desc = "Unit can move again even after attacking"
     tag = SkillTags.MOVEMENT
 
+    def canto_movement(self, unit, unit2) -> int:
+        return unit.movement_left
+
     def has_canto(self, unit, unit2) -> bool:
         return True
 
@@ -33,17 +39,20 @@ class CantoSharp(SkillComponent):
     desc = "Unit can move and attack in either order"
     tag = SkillTags.MOVEMENT
 
+    def canto_movement(self, unit, unit2) -> int:
+        return unit.movement_left
+
     def has_canto(self, unit, unit2) -> bool:
         return not unit.has_attacked or unit.movement_left >= equations.parser.movement(unit)
-        
+
 class Canter(SkillComponent):
     nid = 'canter'
     desc = "Unit can move a specified number of spaces after any action"
     tag = SkillTags.MOVEMENT
-    
+
     expose = ComponentType.Int
     value = 2
-    
+
     def canto_movement(self, unit, unit2) -> int:
         return self.value
 
@@ -51,7 +60,7 @@ class Canter(SkillComponent):
         """
         Can move again after any action, has exactly the number of movement that was determined in the component
         """
-        return True        
+        return True
 
 class MovementType(SkillComponent):
     nid = 'movement_type'
@@ -141,7 +150,11 @@ class SpecificWitchWarp(SkillComponent):
             else:
                 continue
             if partner_pos:
-                positions += [pos for pos in target_system.get_adjacent_positions(partner_pos) if movement_funcs.check_weakly_traversable(unit, pos) and not game.board.get_unit(pos)]
+                positions += [
+                    pos for pos in game.target_system.get_adjacent_positions(partner_pos)
+                    if movement_funcs.check_weakly_traversable(unit, pos) and
+                    not game.board.get_unit(pos)
+                ]
         return positions
 
 class WitchWarpExpression(SkillComponent):
@@ -159,7 +172,11 @@ class WitchWarpExpression(SkillComponent):
             if target.position:
                 try:
                     if evaluate.evaluate(self.value, target, unit, target.position):
-                        positions += target_system.get_adjacent_positions(target.position)
+                        positions += [
+                            pos for pos in game.target_system.get_adjacent_positions(target.position)
+                            if movement_funcs.check_weakly_traversable(unit, pos) and
+                            not game.board.get_unit(pos)
+                        ]
                 except Exception as e:
                     logging.error("Could not evaluate %s (%s)", self.value, e)
                     return positions
@@ -170,7 +187,7 @@ class Galeforce(SkillComponent):
     desc = "After killing an enemy on player phase, unit can move again."
     tag = SkillTags.MOVEMENT
 
-    def end_combat(self, playback, unit, item, target, mode):
+    def end_combat(self, playback, unit, item, target, item2, mode):
         mark_playbacks = [p for p in playback if p.nid in ('mark_miss', 'mark_hit', 'mark_crit')]
         if target and target.get_hp() <= 0 and \
                 any(p.main_attacker is unit for p in mark_playbacks):  # Unit is overall attacker

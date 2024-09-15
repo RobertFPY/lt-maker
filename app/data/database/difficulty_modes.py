@@ -18,6 +18,7 @@ class RNGOption(str, Enum):
     CLASSIC = 'Classic'
     TRUE_HIT = 'True Hit'
     TRUE_HIT_PLUS = 'True Hit Plus'
+    FATES_HIT = 'Fates Hit'
     GRANDMASTER = 'Grandmaster'
 
 @dataclass
@@ -91,6 +92,12 @@ class DifficultyModePrefab(Prefab):
             return self.boss_autolevels
         else:
             return self.enemy_autolevels
+
+    def save_attr(self, name, value):
+        if name in ("player_bases", "enemy_bases", "boss_bases", "player_growths", "enemy_growths", "boss_growths"):
+            return {k: v for (k, v) in getattr(self, name).items()}
+        else:
+            return super().save_attr(name, value)
 
 class DifficultyModeCatalog(Data[DifficultyModePrefab]):
     datatype = DifficultyModePrefab

@@ -7,7 +7,7 @@ from app.data.database.database import DB
 from app.data.database import supports
 
 from app.editor.custom_widgets import AffinityBox
-from app.extensions.custom_gui import DeletionDialog
+from app.extensions.custom_gui import DeletionTab, DeletionDialog
 from app.editor.base_database_gui import DragDropCollectionModel
 
 from app.utilities import str_utils
@@ -45,11 +45,11 @@ class AffinityModel(DragDropCollectionModel):
         nid = affinity.nid
         affected_units = [unit for unit in DB.units if unit.affinity == nid]
         if affected_units:
-            affected = Data(affected_units)
             from app.editor.unit_editor.unit_model import UnitModel
             model = UnitModel
-            msg = "Deleting Affinity <b>%s</b> would affect these objects." % nid
-            swap, ok = DeletionDialog.get_swap(affected, model, msg, AffinityBox(self.window, exclude=affinity), self.window)
+            msg = "Deleting Affinity <b>%s</b> would affect these units." % nid
+            deletion_tab = DeletionTab(affected_units, model, msg, "Units")
+            swap, ok = DeletionDialog.get_swap([deletion_tab], AffinityBox(self.window, exclude=affinity), self.window)
             if ok:
                 self.on_nid_changed(nid, swap.nid)
             else:

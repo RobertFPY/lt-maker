@@ -145,8 +145,20 @@ class TerrainBox(ObjBox):
             database = Data([d for d in DB.terrain if d is not exclude])
         super().__init__("Terrain Type", TerrainModel, database, parent, button)
 
+    def setValue(self, nid):
+        terrain = DB.terrain.get(nid)
+        self.edit.setValue(terrain.nid + " : " + terrain.name)
+
 class TilemapBox(ObjBox):
     def __init__(self, parent=None, button=False):
         from app.editor.tile_editor.tile_model import TileMapModel
         database = RESOURCES.tilemaps
         super().__init__("Tilemap", TileMapModel, database, parent, button)
+
+class PaletteBox(ObjBox):
+    def __init__(self, parent=None, button=False, exclude=None):
+        from app.editor.combat_animation_editor.palette_model import PaletteModel
+        database = RESOURCES.combat_palettes
+        if exclude:
+            database = Data([d for d in RESOURCES.combat_palettes if d is not exclude])
+        super().__init__("Palette", PaletteModel, database, parent, button)

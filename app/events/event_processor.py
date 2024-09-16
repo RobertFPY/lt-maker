@@ -188,7 +188,7 @@ class EventProcessor():
             elif command.nid == 'end':
                 self.command_pointer += 1
                 continue
-            elif command.nid in ('for'):
+            elif command.nid in ('for',):
                 if not self.iterator_stack or self.command_pointer != self.iterator_stack[-1].line:
                     self.iterator_stack.append(self._build_iterator(self.command_pointer, command))
                 else:
@@ -199,7 +199,7 @@ class EventProcessor():
                 else:
                     self.command_pointer += 1
                 continue
-            elif command.nid in ('endf'): # jump to iterator
+            elif command.nid in ('endf',): # jump to iterator
                 self.command_pointer = self.iterator_stack[-1].line
                 continue
 

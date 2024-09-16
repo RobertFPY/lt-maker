@@ -77,8 +77,10 @@ class ProjectFileBackend():
         self.current_proj = self.settings.get_current_project()
         self.file_manager = FileManager(self.current_proj)
         self.is_saving = False
-
-        self.metadata: Metadata = dataclass_from_dict(Metadata, self.file_manager.load_json(Path('metadata.json')))
+        try:
+            self.metadata: Metadata = dataclass_from_dict(Metadata, self.file_manager.load_json(Path('metadata.json')))
+        except Exception:
+            self.metadata = Metadata()
 
         self.save_progress = QProgressDialog(
             "Saving project to %s" % self.current_proj, None, 0, 100, self.parent)
@@ -333,7 +335,10 @@ class ProjectFileBackend():
     def load(self):
         if os.path.exists(self.current_proj):
             self.file_manager = FileManager(self.current_proj)
-            self.metadata = dataclass_from_dict(Metadata, self.file_manager.load_json(Path('metadata.json')))
+            try:
+                self.metadata = dataclass_from_dict(Metadata, self.file_manager.load_json(Path('metadata.json')))
+            except Exception:
+                self.metadata = Metadata()
             RESOURCES.load(self.current_proj)
             DB.load(self.current_proj)
             self.settings.append_or_bump_project(

@@ -129,6 +129,7 @@ def run(game):
             if time.time() - SOFT_RESET_TIME >= _soft_reset_start_time:
                 _soft_reset_start_time = None
                 _error_mode = False
+                game.memory.clear()
                 game.state.change('title_start')
                 game.state.update([], surf)
                 continue

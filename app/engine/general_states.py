@@ -1525,6 +1525,7 @@ class WeaponChoiceState(MapState):
     def get_options(self, unit) -> list:
         if game.memory.get('valid_weapons'):
             options = game.memory['valid_weapons']
+            game.memory['valid_weapons'] = None
         else:
             items = game.target_system.get_weapons(unit)
             # Skill straining
@@ -1589,7 +1590,6 @@ class WeaponChoiceState(MapState):
             # In case we are hovering over a not "true" equipped item
             if self.cur_unit.can_equip(self.current_equipped):
                 action.do(action.EquipItem(self.cur_unit, self.current_equipped))
-            game.memory['valid_weapons'] = None
             game.state.back()
 
         elif event == 'SELECT':
@@ -1661,6 +1661,7 @@ class SpellChoiceState(WeaponChoiceState):
     def get_options(self, unit) -> list:
         if game.memory.get('valid_spells'):
             options = game.memory['valid_spells']
+            game.memory['valid_spells'] = None
         else:
             items = game.target_system.get_spells(unit)
             # Skill straining
@@ -1694,7 +1695,6 @@ class SpellChoiceState(WeaponChoiceState):
 
         if event == 'BACK':
             get_sound_thread().play_sfx('Select 4')
-            game.memory['valid_spells'] = None
             game.state.back()
 
         elif event == 'SELECT':
@@ -1745,6 +1745,7 @@ class CombatArtChoiceState(MapState):
     def start(self):
         if game.memory.get('combat_arts'):
             self.combat_arts = game.memory['combat_arts']
+            game.memory['combat_arts'] = None
         else:
             logging.error('No available combat arts!')
             game.state.back()
@@ -1778,7 +1779,6 @@ class CombatArtChoiceState(MapState):
 
         if event == 'BACK':
             get_sound_thread().play_sfx('Select 4')
-            game.memory['combat_arts'] = None
             game.state.back()
 
         elif event == 'SELECT':

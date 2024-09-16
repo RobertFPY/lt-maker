@@ -706,7 +706,11 @@ class PrepManageState(State):
         elif event == 'START':
             get_sound_thread().play_sfx('Select 1')
             # convoy_funcs.optimize_all()
-            game.state.change('optimize_all_choice')
+            if game.game_vars.get('_convoy'):
+                game.state.change('optimize_all_choice')
+            else:
+                game.alerts.append(banner.Custom("Convoy not available"))
+                game.state.change('alert')
 
     def update(self):
         self.menu.update()

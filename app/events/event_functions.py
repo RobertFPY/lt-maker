@@ -1119,10 +1119,12 @@ def interact_unit(self: Event, unit, position, combat_script: Optional[List[str]
     else:
         if actor.get_weapon():
             item = actor.get_weapon()
+        elif any(item_funcs.available(actor, item) for item in items):
+            item = [item for item in items if item_funcs.available(actor, item)][0]
         elif items:
             item = items[0]
         else:
-            self.logger.error("interact_unit: Unit does not have item!")
+            self.logger.error("interact_unit: Unit does not have an item in their inventory!")
             return
 
     interaction.start_combat(

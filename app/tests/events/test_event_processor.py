@@ -91,12 +91,10 @@ class EventProcessorUnitTests(unittest.TestCase):
         # for
         eirika_for = processor.fetch_next_command()
         # expect to return a none when hitting an endf command
-        expect_none = processor.fetch_next_command()
         seth_for = processor.fetch_next_command()
         self.assertTrue(isinstance(eirika_for, event_commands.Speak))
         self.assertEqual(eirika_for.parameters['SpeakerOrStyle'], 'Eirika')
         self.assertEqual(eirika_for.parameters['Text'], "My name is Eirika.")
-        self.assertIsNone(expect_none)
         self.assertTrue(isinstance(seth_for, event_commands.Speak))
         self.assertEqual(seth_for.parameters['SpeakerOrStyle'], 'Seth')
         self.assertEqual(seth_for.parameters['Text'], "My name is Seth.")
@@ -132,3 +130,9 @@ class EventProcessorUnitTests(unittest.TestCase):
         self.assertTrue(isinstance(next_command, event_commands.Speak))
         self.assertEqual(next_command.parameters['SpeakerOrStyle'], 'Eirika')
         self.assertEqual(next_command.parameters['Text'], "My name is Eirika.")
+
+    def test_iterative_event_does_not_exceed_stack(self):
+        script_path = Path(__file__).parent / 'test_files' / 'processor' / 'empty_iteration.event'
+        processor = EventProcessor('long', script_path.read_text(), self.text_evaluator)
+        cmd = processor.fetch_next_command()
+        self.assertIsNone(cmd)

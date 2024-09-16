@@ -167,54 +167,52 @@ class EventProcessor():
             raise e
 
     def fetch_next_command(self) -> Optional[event_commands.EventCommand]:
-        if self.command_pointer >= len(self.commands):
-            return None
-        command = self.commands[self.command_pointer]
-        self.logger.debug("Processing Event Line: %s", str(command))
+        while self.command_pointer < len(self.commands):
+            command = self.commands[self.command_pointer]
+            self.logger.debug("Processing Event Line: %s", str(command))
 
-        # conditional and loop handling
-        if command.nid in ('if',):
-            truth = self._get_truth(command)
-            if truth:
-                self.command_pointer += 1
-            else:
-                self.command_pointer = self._jump_conditional(self.command_pointer)
-            return self.fetch_next_command()
-        elif command.nid in ('elif', 'else'):
-            # if we naturally navigate to elif/else,
-            # implies we finished an if and should skip to the end
-            # (because an if fails, we jump directly into the else)
-            self.command_pointer = self._find_end(self.command_pointer)
-            return self.fetch_next_command()
-        elif command.nid == 'end':
-            self.command_pointer += 1
-            return self.fetch_next_command()
-        elif command.nid in ('for'):
-            if not self.iterator_stack or self.command_pointer != self.iterator_stack[-1].line:
-                self.iterator_stack.append(self._build_iterator(self.command_pointer, command))
-            else:
-                self.iterator_stack[-1].iterator.next()
-            if self.iterator_stack[-1].iterator.empty():
-                self.iterator_stack.pop()
+            # conditional and loop handling
+            if command.nid in ('if',):
+                truth = self._get_truth(command)
+                if truth:
+                    self.command_pointer += 1
+                else:
+                    self.command_pointer = self._jump_conditional(self.command_pointer)
+                continue
+            elif command.nid in ('elif', 'else'):
+                # if we naturally navigate to elif/else,
+                # implies we finished an if and should skip to the end
+                # (because an if fails, we jump directly into the else)
                 self.command_pointer = self._find_end(self.command_pointer)
-            else:
+                continue
+            elif command.nid == 'end':
                 self.command_pointer += 1
-            return self.fetch_next_command()
-        elif command.nid in ('endf'): # jump to iterator
-            self.command_pointer = self.iterator_stack[-1].line
-            return None
+                continue
+            elif command.nid in ('for'):
+                if not self.iterator_stack or self.command_pointer != self.iterator_stack[-1].line:
+                    self.iterator_stack.append(self._build_iterator(self.command_pointer, command))
+                else:
+                    self.iterator_stack[-1].iterator.next()
+                if self.iterator_stack[-1].iterator.empty():
+                    self.iterator_stack.pop()
+                    self.command_pointer = self._find_end(self.command_pointer)
+                else:
+                    self.command_pointer += 1
+                continue
+            elif command.nid in ('endf'): # jump to iterator
+                self.command_pointer = self.iterator_stack[-1].line
+                continue
 
-        # ignore comments
-        if isinstance(command, event_commands.Comment):
+            # ignore comments
+            if isinstance(command, event_commands.Comment):
+                self.command_pointer += 1
+                continue
+
+            # normal command
             self.command_pointer += 1
-            return self.fetch_next_command()
-
-        # normal command
-        self.command_pointer += 1
-        # evaluate and process command
-        parameters, flags = event_commands.convert_parse(command, self._evaluate_all)
-        processed_command = command.__class__(parameters, flags, command.display_values)
-        return processed_command
+            # evaluate and process command
+            parameters, flags = event_commands.convert_parse(command, self._evaluate_all)
+            return command.__class__(parameters, flags, command.display_values)
 
     def finished(self):
         return self.command_pointer >= len(self.commands)

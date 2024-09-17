@@ -28,6 +28,7 @@ class HelpDialog():
 
         if not desc:
             desc = ''
+        desc = text_funcs.translate(desc)
         lines = self.build_lines(desc)
         num_lines = len(lines)
 
@@ -161,6 +162,7 @@ class StatDialog(HelpDialog):
         self.transition_in = False
         self.transition_out = 0
 
+        desc = text_funcs.translate(desc)
         self.plain_desc = desc
         self.bonuses = bonuses
 

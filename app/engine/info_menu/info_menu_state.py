@@ -438,10 +438,12 @@ class InfoMenuState(State):
         surf.blit(SPRITES.get('info_unit'), (8, 122))
 
         render_text(surf, ['text'], [self.unit.name], ['white'], (48, 80), HAlignment.CENTER)
-        self.info_graph.register((24, 80, 52, 24), self.unit.desc, 'all')
+        unit_desc = text_funcs.translate_and_text_evaluate(self.unit.desc, self=self.unit)
+        self.info_graph.register((24, 80, 52, 24), unit_desc, 'all')
         class_obj = DB.classes.get(self.unit.klass)
         render_text(surf, ['text'], [class_obj.name], ['white'], (8, 104))
-        self.info_graph.register((8, 104, 72, 16), class_obj.desc, 'all')
+        class_desc = text_funcs.translate_and_text_evaluate(class_obj.desc, self=class_obj, unit=self.unit)
+        self.info_graph.register((8, 104, 72, 16), class_desc, 'all')
         render_text(surf, ['text'], [str(self.unit.level)], ['blue'], (39, 120), HAlignment.RIGHT)
         desc = text_funcs.translate_and_text_evaluate('Level_desc')
         self.info_graph.register((8, 120, 30, 16), desc, 'all')
@@ -459,7 +461,8 @@ class InfoMenuState(State):
         affinity = DB.affinities.get(self.unit.affinity)
         if affinity:
             icons.draw_item(surf, affinity, (78, 81))
-            self.info_graph.register((76, 80, 16, 16), affinity.desc, 'all')
+            affinity_desc = text_funcs.translate_and_text_evaluate(affinity.desc)
+            self.info_graph.register((76, 80, 16, 16), affinity_desc, 'all')
         return surf
 
     def draw_top_arrows(self, surf):
@@ -827,20 +830,25 @@ class InfoMenuState(State):
         # Populate battle info
         surf.blit(SPRITES.get('equipment_logo'), (14, top + 4))
         render_text(surf, ['text'], [text_funcs.translate('Rng')], ['yellow'], (78, top))
-        desc = text_funcs.translate_and_text_evaluate('Rng_desc')
-        self.info_graph.register((96 + 78, top, 56, 16), 'Rng_desc', 'equipment')
+        rng_desc = text_funcs.translate_and_text_evaluate('Rng_desc')
+        self.info_graph.register((96 + 78, top, 56, 16), rng_desc, 'equipment')
         render_text(surf, ['text'], [text_funcs.translate('Atk')], ['yellow'], (22, top + 16))
-        self.info_graph.register((96 + 14, top + 16, 64, 16), 'Atk_desc', 'equipment')
+        atk_desc = text_funcs.translate_and_text_evaluate('Atk_desc')
+        self.info_graph.register((96 + 14, top + 16, 64, 16), atk_desc, 'equipment')
         render_text(surf, ['text'], [text_funcs.translate('Hit')], ['yellow'], (22, top + 32))
-        self.info_graph.register((96 + 14, top + 32, 64, 16), 'Hit_desc', 'equipment')
+        hit_desc = text_funcs.translate_and_text_evaluate('Hit_desc')
+        self.info_graph.register((96 + 14, top + 32, 64, 16), hit_desc, 'equipment')
         if DB.constants.value('crit'):
             render_text(surf, ['text'], [text_funcs.translate('Crit')], ['yellow'], (78, top + 16))
-            self.info_graph.register((96 + 78, top + 16, 56, 16), 'Crit_desc', 'equipment')
+            crit_desc = text_funcs.translate_and_text_evaluate('Crit_desc')
+            self.info_graph.register((96 + 78, top + 16, 56, 16), crit_desc, 'equipment')
         else:
             render_text(surf, ['text'], [text_funcs.translate('AS')], ['yellow'], (78, top + 16))
-            self.info_graph.register((96 + 78, top + 16, 56, 16), 'AS_desc', 'equipment')
+            AS_desc = text_funcs.translate_and_text_evaluate('AS_desc')
+            self.info_graph.register((96 + 78, top + 16, 56, 16), AS_desc, 'equipment')
         render_text(surf, ['text'], [text_funcs.translate('Avoid')], ['yellow'], (78, top + 32))
-        self.info_graph.register((96 + 78, top + 32, 56, 16), 'Avoid_desc', 'equipment')
+        avoid_desc = text_funcs.translate_and_text_evaluate('Avoid_desc')
+        self.info_graph.register((96 + 78, top + 32, 56, 16), avoid_desc, 'equipment')
 
         if weapon:
             rng = item_funcs.get_range_string(self.unit, weapon)
@@ -970,7 +978,8 @@ class InfoMenuState(State):
             affinity = DB.affinities.get(other_unit.affinity)
             if affinity:
                 icons.draw_item(surf, affinity, (x * width + 8, y * 16 + top))
-                self.info_graph.register((96 + x * width + 8, y * 16 + top, WINWIDTH - 120, 16), affinity.desc, 'support_skills')
+                affinity_desc = text_funcs.translate_and_text_evaluate(affinity.desc)
+                self.info_graph.register((96 + x * width + 8, y * 16 + top, WINWIDTH - 120, 16), affinity_desc, 'support_skills')
             render_text(surf, ['narrow'], [other_unit.name], [], (x * width + 22, y * 16 + top))
             highest_rank = pair.unlocked_ranks[-1]
             render_text(surf, ['text'], [highest_rank], ['yellow'], (x * width + surf.get_width()/2 - 2, y * 16 + top), HAlignment.RIGHT)

@@ -58,28 +58,28 @@ class UnitObject(Prefab):
     generic: bool = False  #: Whether the unit is a generic
     persistent: bool = True  #: If unit is persistent, unit will not be removed between levels. Generic units start off without persistence.
     ai: NID = None  #: NID of this unit's base combat AI (skills might modify this)
-    ai_group: NID = None  # All units in the same AI group will be notified of an enemy entering their range and activate
+    ai_group: NID = None  #: All units in the same AI group will be notified of an enemy entering their range and activate
     roam_ai: NID = None  #: NID of this unit's base roaming AI (skills might modify this)
-    faction: NID = None  # NID of the unit's faction. Usually only for generic units
-    team: NID = "player"  # NID of the unit's team
-    portrait_nid: NID = None  # NID of the unit's current portrait
-    affinity: NID = None  # NID of the unit's affinity
+    faction: NID = None  #: NID of the unit's faction. Usually only for generic units
+    team: NID = "player"  #: NID of the unit's team
+    portrait_nid: NID = None  #: NID of the unit's current portrait
+    affinity: NID = None  #: NID of the unit's affinity
     notes: List[Tuple[str, str]] = field(default_factory=list)
     _fields: Dict[str, str] = field(default_factory=dict)
-    klass: NID = None  # NID of the unit's current class
-    variant: str = None  # Determines which map and combat animations will be used (Example: Use `Female` to use the map animation ending with `Female` instead of the default)
+    klass: NID = None  #: NID of the unit's current class
+    variant: str = None  #: Determines which map and combat animations will be used (Example: Use `Female` to use the map animation ending with `Female` instead of the default)
 
-    name: str = None  # This unit's name. Usually only used by non-generic units. Generic units use their faction's name.
-    desc: str = None  # This unit's description. Usually only used by non-generic units. Generic units use their faction's description.
+    name: str = None  #: This unit's name. Usually only used by non-generic units. Generic units use their faction's name.
+    desc: str = None  #: This unit's description. Usually only used by non-generic units. Generic units use their faction's description.
     _tags: List[str] = field(default_factory=list)
-    party: NID = None  # NID of the unit's party
-    level: int = 1  # The unit's level
-    exp: int = 0  # The unit's current exp (out of 100)
+    party: NID = None  #: NID of the unit's party
+    level: int = 1  #: The unit's level
+    exp: int = 0  #: The unit's current exp (out of 100)
     stats: Dict[NID, int] = field(default_factory=dict)  #: Current stats without bonuses
     growths: Dict[NID, int] = field(default_factory=dict)  #: Current growths without bonuses
     growth_points: Dict[NID, int] = field(default_factory=dict)  #: Used for Fixed and Dynamic leveling. Do not modify directly
     stat_cap_modifiers: Dict[NID, int] = field(default_factory=dict)  #: Personal stat cap modifiers
-    wexp: Dict[NID, int] = field(default_factory=dict)  # Current wexp in each weapon type
+    wexp: Dict[NID, int] = field(default_factory=dict)  #: Current wexp in each weapon type
 
     position: Tuple[int, int] = None  #: Current position on the map
     starting_position: Tuple[int, int] = None  #: Where the unit was placed on the map in the editor

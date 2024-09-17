@@ -10,6 +10,29 @@ def translate(string):
     return string
 
 
+def text_evaluate(string, local_args=None):
+    import logging
+    from app.engine.game_state import game
+    from app.engine.text_evaluator import TextEvaluator
+    result = TextEvaluator(logging.getLogger(), game,
+                           local_args=local_args)._evaluate_all(string)
+    return result
+
+
+def translate_and_text_evaluate(string, unit=None, self=None, local_args=None):
+    local_args = {} if local_args is None else local_args
+    if unit is not None:
+        local_args['unit'] = unit
+    if self is not None:
+        local_args['self'] = self
+    # evaluate first in case translate includes anything evaluable
+    string = text_evaluate(string, local_args=local_args)
+    # try to fetch translation
+    string = translate(string)
+    # then evaluate again in case translation includes anything evaluable
+    return text_evaluate(string, local_args=local_args)
+
+
 def get_max_width(font_name, text_list):
     return max(text_width(font_name, t) for t in text_list)
 

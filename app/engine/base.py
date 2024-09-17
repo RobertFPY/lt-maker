@@ -791,11 +791,11 @@ class LoreDisplay():
             return  # No need to update
 
         self.lore = DB.lore.get(lore_nid)
-        text = self.lore.text.split('\n')
+        text = text_funcs.translate_and_text_evaluate(self.lore.text, self=self.lore).split('\n')
         self.page_num = 0
         self.dialogs.clear()
-        for idx, line in enumerate(text):
-            dlg = dialog.Dialog(text[idx], font_type="text", font_color="white", num_lines=8, draw_cursor=False)
+        for line in text:
+            dlg = dialog.Dialog(line, font_type="text", font_color="white", num_lines=8, draw_cursor=False)
             dlg.position = self.topleft[0], self.topleft[1] + 12
             dlg.text_width = WINWIDTH - 100
             dlg.reformat()

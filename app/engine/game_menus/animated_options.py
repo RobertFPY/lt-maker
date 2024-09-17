@@ -74,8 +74,8 @@ class BasicUnitOption(BaseOption[UnitObject]):
 
     def get_help_box(self):
         if not self._help_box:
-            self._help_box = help_menu.HelpDialog(
-                self._value.desc, name=self._value.name)
+            text = text_funcs.translate_and_text_evaluate(self._value.desc, self=self._value)
+            self._help_box = help_menu.HelpDialog(text, name=self._value.name)
         return self._help_box
 
     def draw_option(self, surf, x, y, active=False, stationary=False, darkened_icon=False):
@@ -132,8 +132,8 @@ class BasicKlassOption(BaseOption[str]):
     def get_help_box(self):
         db_class = DB.classes.get(self._value)
         if not self._help_box and db_class:
-            self._help_box = help_menu.HelpDialog(
-                db_class.desc, name=db_class.name)
+            text = text_funcs.translate_and_text_evaluate(db_class.desc, self=db_class)
+            self._help_box = help_menu.HelpDialog(text, name=db_class.name)
         return self._help_box
 
     def draw_option(self, surf, x, y, active=False):

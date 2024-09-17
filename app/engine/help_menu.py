@@ -8,7 +8,7 @@ from app.engine import (base_surf, engine, icons, item_funcs,
 from app.engine.fonts import FONT
 from app.engine.game_state import game
 from app.engine.graphics.text.text_renderer import (fix_tags, font_height, render_text,
-                                                    text_width, remove_tags)
+                                                    text_width)
 from app.engine.sprites import SPRITES
 from app.utilities import utils
 from app.utilities.enums import HAlignment
@@ -28,7 +28,6 @@ class HelpDialog():
 
         if not desc:
             desc = ''
-        desc = text_funcs.translate(desc)
         lines = self.build_lines(desc)
         num_lines = len(lines)
 
@@ -162,7 +161,6 @@ class StatDialog(HelpDialog):
         self.transition_in = False
         self.transition_out = 0
 
-        desc = text_funcs.translate(desc)
         self.plain_desc = desc
         self.bonuses = bonuses
 
@@ -249,8 +247,13 @@ class ItemHelpDialog(HelpDialog):
 
         self.vals = [weapon_rank, rng, weight, might, hit, crit]
 
+        desc = self.item.desc
         if self.item.desc:
-            self.build_lines(self.item.desc, 144)
+            desc = text_funcs.translate_and_text_evaluate(
+                self.item.desc,
+                unit=self.unit,
+                self=self.item)
+            self.build_lines(desc, 144)
         else:
             self.lines = []
 
@@ -261,7 +264,7 @@ class ItemHelpDialog(HelpDialog):
         else:
             height = 32 + font_height(self.font) * len(self.lines)
 
-        self.create_dialog(self.item.desc)
+        self.create_dialog(desc)
 
         self.help_surf = base_surf.create_base_surf(160, height, 'help_bg_base')
         self.h_surf = engine.create_surface((160, height + 3), transparent=True)
@@ -281,7 +284,6 @@ class ItemHelpDialog(HelpDialog):
     def build_lines(self, desc, width):
         if not desc:
             desc = ''
-        desc = text_funcs.translate(desc)
         # Hard set num lines if desc is very short
         if '\n' in desc:
             lines = desc.splitlines()

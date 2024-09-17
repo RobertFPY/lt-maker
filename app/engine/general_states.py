@@ -2622,7 +2622,8 @@ class ShopState(State):
         self.fluid.reset_on_change_state()
 
     def get_dialog(self, text):
-        d = dialog.Dialog(text_funcs.translate(text))
+        text = text_funcs.translate_and_text_evaluate(text, self=self)
+        d = dialog.Dialog(text)
         d.position = (60, 8)
         d.text_width = WINWIDTH - 80
         d.width = d.text_width + 16

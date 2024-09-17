@@ -443,11 +443,14 @@ class InfoMenuState(State):
         render_text(surf, ['text'], [class_obj.name], ['white'], (8, 104))
         self.info_graph.register((8, 104, 72, 16), class_obj.desc, 'all')
         render_text(surf, ['text'], [str(self.unit.level)], ['blue'], (39, 120), HAlignment.RIGHT)
-        self.info_graph.register((8, 120, 30, 16), 'Level_desc', 'all')
+        desc = text_funcs.translate_and_text_evaluate('Level_desc')
+        self.info_graph.register((8, 120, 30, 16), desc, 'all')
         render_text(surf, ['text'], [str(self.unit.exp)], ['blue'], (63, 120), HAlignment.RIGHT)
-        self.info_graph.register((38, 120, 30, 16), 'Exp_desc', 'all')
+        desc = text_funcs.translate_and_text_evaluate('Exp_desc')
+        self.info_graph.register((38, 120, 30, 16), desc, 'all')
         render_text(surf, ['text'], [str(self.unit.get_hp())], ['blue'], (39, 136), HAlignment.RIGHT)
-        self.info_graph.register((8, 136, 72, 16), 'HP_desc', 'all')
+        desc = text_funcs.translate_and_text_evaluate('HP_desc')
+        self.info_graph.register((8, 136, 72, 16), desc, 'all')
         max_hp = equations.parser.hitpoints(self.unit)
         render_text(surf, ['text'], [str(max_hp)], ['blue'], (63, 136), HAlignment.RIGHT)
         # Blit the white status platform
@@ -585,7 +588,7 @@ class InfoMenuState(State):
                 base_value += subtle_stat_bonus
                 contribution = self.unit.stat_contribution(stat_nid)
                 contribution['Base Value'] = base_value
-            desc_text = curr_stat.desc
+            desc_text = text_funcs.translate_and_text_evaluate(curr_stat.desc, self=curr_stat)
             help_box = help_menu.StatDialog(desc_text or ('%s_desc' % stat_nid), contribution)
             self.info_graph.register((96 + 8, 16 * idx + 24, 64, 16), help_box, state, first=(idx == 0))
 
@@ -610,7 +613,7 @@ class InfoMenuState(State):
                 base_value += subtle_stat_bonus
                 contribution = self.unit.stat_contribution(stat_nid)
                 contribution['Base Value'] = base_value
-            desc_text = curr_stat.desc
+            desc_text = text_funcs.translate_and_text_evaluate(curr_stat.desc, self=curr_stat)
             help_box = help_menu.StatDialog(desc_text or ('%s_desc' % stat_nid), contribution)
             self.info_graph.register((96 + 72, 16 * idx + 24, 64, 16), help_box, state)
 
@@ -641,7 +644,8 @@ class InfoMenuState(State):
                 else:
                     render_text(surf, ['text'], ['--'], ['blue'], (96, 16 * true_idx + 24))
                 render_text(surf, ['text'], [text_funcs.translate('Trv')], ['yellow'], (72, 16 * true_idx + 24))
-                self.info_graph.register((96 + 72, 16 * true_idx + 24, 64, 16), 'Trv_desc', state)
+                desc = text_funcs.translate_and_text_evaluate('Trv_desc')
+                self.info_graph.register((96 + 72, 16 * true_idx + 24, 64, 16), desc, state)
 
             elif stat == 'AID':
                 if growths:
@@ -650,7 +654,8 @@ class InfoMenuState(State):
                     if DB.stats.get('HP').growth_colors and self.unit.team == 'player':
                         color = self.growth_colors(unit_funcs.growth_rate(self.unit, 'HP'))
                     render_text(surf, ['text'], [text_funcs.translate('HP')], [color], (72, 16 * true_idx + 24))
-                    self.info_graph.register((96 + 72, 16 * true_idx + 24, 64, 16), 'HP_desc', state)
+                    desc = text_funcs.translate_and_text_evaluate('HP_desc')
+                    self.info_graph.register((96 + 72, 16 * true_idx + 24, 64, 16), desc, state)
                 else:
                     aid = equations.parser.rescue_aid(self.unit)
                     render_text(surf, ['text'], [str(aid)], ['blue'], (111, 16 * true_idx + 24), HAlignment.RIGHT)
@@ -671,25 +676,29 @@ class InfoMenuState(State):
                             aid_surf = engine.subsurface(SPRITES.get('aid_icons'), (0, 0, 16, 16))
                     surf.blit(aid_surf, (112, 16 * true_idx + 24))
                     render_text(surf, ['text'], [text_funcs.translate('Aid')], ['yellow'], (72, 16 * true_idx + 24))
-                    self.info_graph.register((96 + 72, 16 * true_idx + 24, 64, 16), 'Aid_desc', state)
+                    desc = text_funcs.translate_and_text_evaluate('Aid_desc')
+                    self.info_graph.register((96 + 72, 16 * true_idx + 24, 64, 16), desc, state)
 
             elif stat == 'RAT':
                 rat = str(equations.parser.rating(self.unit))
                 render_text(surf, ['text'], [rat], ['blue'], (111, 16 * true_idx + 24), HAlignment.RIGHT)
                 render_text(surf, ['text'], [text_funcs.translate('Rat')], ['yellow'], (72, 16 * true_idx + 24))
-                self.info_graph.register((96 + 72, 16 * true_idx + 24, 64, 16), 'Rating_desc', state)
+                desc = text_funcs.translate_and_text_evaluate('Rating_desc')
+                self.info_graph.register((96 + 72, 16 * true_idx + 24, 64, 16), desc, state)
 
             elif stat == 'MANA':
                 mana = str(self.unit.current_mana)
                 render_text(surf, ['text'], [mana], ['blue'], (111, 16 * true_idx + 24), HAlignment.RIGHT)
                 render_text(surf, ['text'], [text_funcs.translate('MANA')], ['yellow'], (72, 16 * true_idx + 24))
-                self.info_graph.register((96 + 72, 16 * true_idx + 24, 64, 16), 'MANA_desc', state)
+                desc = text_funcs.translate_and_text_evaluate('MANA_desc')
+                self.info_graph.register((96 + 72, 16 * true_idx + 24, 64, 16), desc, state)
 
             elif stat == 'GAUGE':
                 gge = str(self.unit.get_guard_gauge())
                 render_text(surf, ['text'], [gge], ['blue'], (111, 16 * true_idx + 24), HAlignment.RIGHT)
                 render_text(surf, ['text'], [text_funcs.translate('GAUGE')], ['yellow'], (72, 16 * true_idx + 24))
-                self.info_graph.register((96 + 72, 16 * true_idx + 24, 64, 16), 'GAUGE_desc', state)
+                desc = text_funcs.translate_and_text_evaluate('GAUGE_desc')
+                self.info_graph.register((96 + 72, 16 * true_idx + 24, 64, 16), desc, state)
 
             elif stat == 'TALK':
                 if (len([talk for talk in game.talk_options if talk[0] == self.unit.nid]) != 0):
@@ -698,11 +707,13 @@ class InfoMenuState(State):
                 else:
                     render_text(surf, ['text'], ['--'], ['blue'], (98, 16 * true_idx + 24))
                 render_text(surf, ['text'], [text_funcs.translate('Talk')], ['yellow'], (72, 16 * true_idx + 24))
-                self.info_graph.register((96 + 72, 16 * true_idx + 24, 64, 16), 'Talk_desc', state)
+                desc = text_funcs.translate_and_text_evaluate('Talk_desc')
+                self.info_graph.register((96 + 72, 16 * true_idx + 24, 64, 16), desc, state)
 
             elif stat == 'LEAD':
                 render_text(surf, ['text'], [text_funcs.translate('Lead')], ['yellow'], (72, 16 * true_idx + 24))
-                self.info_graph.register((96 + 72, 16 * true_idx + 24, 64, 16), 'Lead_desc', state)
+                desc = text_funcs.translate_and_text_evaluate('Lead_desc')
+                self.info_graph.register((96 + 72, 16 * true_idx + 24, 64, 16), desc, state)
 
                 if growths:
                     icons.draw_growth(surf, 'LEAD', self.unit, (111, 16 * true_idx + 24))
@@ -816,6 +827,7 @@ class InfoMenuState(State):
         # Populate battle info
         surf.blit(SPRITES.get('equipment_logo'), (14, top + 4))
         render_text(surf, ['text'], [text_funcs.translate('Rng')], ['yellow'], (78, top))
+        desc = text_funcs.translate_and_text_evaluate('Rng_desc')
         self.info_graph.register((96 + 78, top, 56, 16), 'Rng_desc', 'equipment')
         render_text(surf, ['text'], [text_funcs.translate('Atk')], ['yellow'], (22, top + 16))
         self.info_graph.register((96 + 14, top + 16, 64, 16), 'Atk_desc', 'equipment')
@@ -880,7 +892,11 @@ class InfoMenuState(State):
                 charge = ' %d / %d' % (skill.data['charge'], skill.data['total_charge'])
             else:
                 charge = ''
-            self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 28, 16, 16), help_menu.HelpDialog(skill.desc, name=skill.name + charge), 'support_skills')
+            text = text_funcs.translate_and_text_evaluate(
+                skill.desc,
+                unit=game.get_unit(skill.owner_nid),
+                self=skill)
+            self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 28, 16, 16), help_menu.HelpDialog(text, name=skill.name + charge), 'support_skills')
 
         return surf
 
@@ -910,12 +926,16 @@ class InfoMenuState(State):
                 charge = ' %d / %d' % (skill.data['charge'], skill.data['total_charge'])
             else:
                 charge = ''
+            text = text_funcs.translate_and_text_evaluate(
+                skill.desc,
+                unit=game.get_unit(skill.owner_nid),
+                self=skill)
             if self._extra_stat_row:
-                self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 22, 16, 16), help_menu.HelpDialog(skill.desc, name=skill.name + charge), 'personal_data')
-                self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 22, 16, 16), help_menu.HelpDialog(skill.desc, name=skill.name + charge), 'growths')
+                self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 22, 16, 16), help_menu.HelpDialog(text, name=skill.name + charge), 'personal_data')
+                self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 22, 16, 16), help_menu.HelpDialog(text, name=skill.name + charge), 'growths')
             else:
-                self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 32, 16, 16), help_menu.HelpDialog(skill.desc, name=skill.name + charge), 'personal_data')
-                self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 32, 16, 16), help_menu.HelpDialog(skill.desc, name=skill.name + charge), 'growths')
+                self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 32, 16, 16), help_menu.HelpDialog(text, name=skill.name + charge), 'personal_data')
+                self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 32, 16, 16), help_menu.HelpDialog(text, name=skill.name + charge), 'growths')
 
         return surf
 

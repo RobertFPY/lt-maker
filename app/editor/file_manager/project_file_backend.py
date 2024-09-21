@@ -334,13 +334,14 @@ class ProjectFileBackend():
 
     def load(self):
         if os.path.exists(self.current_proj):
-            self.file_manager = FileManager(self.current_proj)
+            curr_proj_path = Path(self.current_proj)
+            self.file_manager = FileManager(curr_proj_path)
             try:
                 self.metadata = dataclass_from_dict(Metadata, self.file_manager.load_json(Path('metadata.json')))
             except Exception:
                 self.metadata = Metadata()
             RESOURCES.load(self.current_proj)
-            DB.load(self.current_proj)
+            DB.load(curr_proj_path, self.metadata.serialization_version)
             self.settings.append_or_bump_project(
                 DB.constants.value('title') or os.path.basename(self.current_proj), self.current_proj)
 

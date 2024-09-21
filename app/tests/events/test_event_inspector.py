@@ -1,12 +1,13 @@
 import unittest
 
+from app.data.serialization.versions import CURRENT_SERIALIZATION_VERSION
 from app.events.event_commands import GiveItem
 
 class EventInspectorTests(unittest.TestCase):
     def setUp(self):
         from app.data.database.database import Database
         self.db = Database()
-        self.db.load('testing_proj.ltproj')
+        self.db.load('testing_proj.ltproj', CURRENT_SERIALIZATION_VERSION)
         self.event_inspector = self.db.events.inspector
 
     def tearDown(self) -> None:

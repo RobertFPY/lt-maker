@@ -513,7 +513,7 @@ class ConstantDatabase(DatabaseTab):
         misc_exp_section.setLayout(misc_exp_layout)
         misc_exp_widget = MiscExperienceWidget(self._data, self)
         misc_exp_layout.addWidget(misc_exp_widget)
-        
+
         exp_layout.addWidget(exp_section)
         exp_layout.addWidget(misc_exp_section)
         self.left_tab_bar.addTab(exp_frame, "Exp")
@@ -611,7 +611,8 @@ if __name__ == '__main__':
 
     from PyQt5.QtWidgets import QApplication
     app = QApplication(sys.argv)
-    DB.load('default.ltproj')
+    from app.data.serialization.versions import CURRENT_SERIALIZATION_VERSION
+    DB.load('default.ltproj', CURRENT_SERIALIZATION_VERSION)
     window = SingleDatabaseEditor(ConstantDatabase)
     window.show()
     app.exec_()

@@ -153,7 +153,8 @@ if __name__ == '__main__':
     from app.editor.lib.state_editor.editor_state_manager import EditorStateManager
     app = QApplication(sys.argv)
     RESOURCES.load('default.ltproj')
-    DB.load('default.ltproj')
+    from app.data.serialization.versions import CURRENT_SERIALIZATION_VERSION
+    DB.load('default.ltproj', CURRENT_SERIALIZATION_VERSION)
     window = GlobalEditor(EditorStateManager())
     window.show()
     app.exec_()

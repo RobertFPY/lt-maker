@@ -5,13 +5,14 @@ from app.data.database.items import ItemCatalog
 from app.data.database.klass import ClassCatalog
 from app.data.database.units import UnitCatalog
 
+from app.data.serialization.versions import CURRENT_SERIALIZATION_VERSION
 import app.editor.lib.csv.csv_data_exporter as csv
 
 class CsvExporterTests(unittest.TestCase):
     def setUp(self):
         from app.data.database.database import Database
         self.db = Database()
-        self.db.load('testing_proj.ltproj')
+        self.db.load('testing_proj.ltproj', CURRENT_SERIALIZATION_VERSION)
 
     def tearDown(self) -> None:
         pass

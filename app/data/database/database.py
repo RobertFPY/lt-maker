@@ -14,6 +14,7 @@ from app.data.database import (ai, constants, difficulty_modes, equations,
                                minimap, overworld, parties,
                                raw_data, skills, stats, supports, tags, teams,
                                terrain, translations, units, varslot, weapons)
+from app.data.serialization import disk_loader
 from app.events import event_prefab
 from app.utilities.data_order import parse_order_keys_file
 from app.utilities.serialization import load_json, save_json
@@ -79,26 +80,6 @@ class Database(object):
             keys.append("%s_battle" % team.nid)
         keys.append("boss_battle")
         return keys
-
-    def json_load(self, data_dir: str, key: str) -> Dict | List:
-        data_path = Path(data_dir, key)
-        if data_path.exists(): # data type is a directory, browse within
-            data_fnames = os.listdir(data_path)
-            ordering = []
-            if '.orderkeys' in data_fnames:
-                ordering = parse_order_keys_file(Path(data_dir, key, '.orderkeys'))
-            data_fnames: List[Path] = [Path(data_dir, key, fname) for fname in data_fnames if fname.endswith('.json')]
-            data_fnames = sorted(data_fnames, key=lambda fname: ordering.index(fname.stem) if fname.stem in ordering else 99999)
-            full_data = []
-            for fname in data_fnames:
-                full_data += load_json(fname)
-            return full_data
-        else:   # data type is a singular file
-            save_loc = Path(data_dir, key + '.json')
-            if not save_loc.exists():
-                logging.warning("%s does not exist!", save_loc)
-                return None
-            return load_json(save_loc)
 
     # === Saving and loading important data functions ===
     def restore(self, save_obj):
@@ -178,21 +159,16 @@ class Database(object):
         logging.info("Done serializing!")
         return True
 
-    def load(self, proj_dir):
+    def load(self, proj_dir: Path | str, version: int):
+        proj_dir = Path(proj_dir)
         self.current_proj_dir = proj_dir
-        data_dir = Path(proj_dir, 'game_data')
+        data_dir = proj_dir / 'game_data'
         logging.info("Deserializing data from %s..." % data_dir)
 
         import time
         start = time.perf_counter() * 1000
 
-        save_obj = {}
-        for key in self.save_data_types:
-            save_obj[key] = self.json_load(data_dir, key)
-            # Load any of the categories we need
-            if Path(data_dir, key + CATEGORY_SUFFIX + '.json').exists():
-                save_obj[key + CATEGORY_SUFFIX] = self.json_load(data_dir, key + CATEGORY_SUFFIX)
-
+        save_obj = disk_loader.load(data_dir, version)
         self.restore(save_obj)
 
         # TODO -- This is a shitty fix that should be superseded

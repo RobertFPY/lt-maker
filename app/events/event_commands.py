@@ -3063,6 +3063,26 @@ Opens the trade screen for the two given units, allowing the player to trade ite
     keywords = ['Unit1', 'Unit2']
     keyword_types = ['Unit', 'Unit']
 
+class OpenBexpMenu(EventCommand):
+    nid = 'open_bexp_menu'
+    tag = Tags.MISCELLANEOUS
+
+    desc = \
+        """
+Displays bonus experience menu. The *Panorama* and *Music* keywords specify the background image and the music track that will be played.
+
+Optional args:
+* *Panorama* the panorama that will be used as background.
+* *Music* specify which music track will play for the menu.
+
+1. *immediate* flag skips the transition between screens
+        """
+    
+    optional_keywords = ['Panorama', 'Music']
+    keyword_types = ['Panorama', 'Music']
+
+    _flags = ["immediate"]
+
 class ShowMinimap(EventCommand):
     nid = 'show_minimap'
     tag = Tags.MISCELLANEOUS

@@ -1193,6 +1193,9 @@ class BaseBEXPSelectState(prep.PrepManageState):
                 DB.classes.get(unit.klass).turns_into and 'NoAutoPromote' not in unit.tags
             ignore.append(unit.level >= DB.classes.get(unit.klass).max_level and not auto_promote)
         self.menu.set_ignore(ignore)
+        base_music = game.game_vars.get('_bexp_menu_music')
+        if base_music:
+            get_sound_thread().fade_in(base_music)
         super().begin()
 
     def create_quick_disp(self):

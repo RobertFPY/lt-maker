@@ -47,6 +47,8 @@ manually, since it is set by the `base` event command.
 
 `_base_music` **Music (str)** Set this music as the background music in the base screen. You don't normally need to set this manually, since it is set by the `base` event command.
 
+`_bexp_menu_music` **Music (str)** Set this music as the background music in the bonus experience menu. You don't normally need to set this manually, since it is set by the `open_bexp_menu` event command.
+
 `_phase_music_fade_ms` **int** Number of milliseconds the phase music will take to fade in. Defaults to 400 ms.
 
 `_last_choice` **str** Always holds the most recent choice made by the player from using the `choice` event command.

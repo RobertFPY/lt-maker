@@ -3261,6 +3261,21 @@ def open_trade(self: Event, unit1, unit2, flags=None):
     self.game.memory['next_state'] = 'combat_trade'
     self.game.state.change('transition_to')
 
+def open_bexp_menu(self: Event, panorama = "default_background", music: SongPrefab | SongObject | NID = None, flags=None):
+    bg = background.create_background(panorama, False)
+    self.game.memory['base_bg'] = bg
+
+    music_nid = self._resolve_nid(music)
+    if music_nid:
+        action.do(action.SetGameVar('_bexp_menu_music', music_nid))
+
+    self.state = "paused"
+    if 'immediate' in flags:
+        self.game.state.change('base_bexp_select')
+    else:
+        self.game.memory['next_state'] = 'base_bexp_select'
+        self.game.state.change('transition_to')
+
 def show_minimap(self: Event, flags=None):
     cursor_was_hidden = False
     if self.game.cursor.is_hidden():

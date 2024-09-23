@@ -116,10 +116,12 @@ class CombatBonusDelegate(QStyledItemDelegate):
         elif index.column() == self.type_column:
             editor = ComboBox(parent)
             for weapon_type in DB.weapons:
-                x, y = weapon_type.icon_index
                 pixmap = weapon_model.get_pixmap(weapon_type)
                 icon = QIcon(pixmap) if pixmap else None
-                editor.addItem(icon, weapon_type.nid)
+                if icon:
+                    editor.addItem(icon, weapon_type.nid)
+                else:
+                    editor.addItem(weapon_type.nid)
             return editor
         else:
             return super().createEditor(parent, option, index)

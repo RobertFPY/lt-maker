@@ -102,6 +102,8 @@ class WeaponTypeBox(ObjBox):
         if exclude:
             database = Data([d for d in DB.weapons if d is not exclude])
         super().__init__("Weapon Type", WeaponModel, database, parent, button)
+        self.edit.setIconSize(QSize(16, 16))
+        self.edit.view().setUniformItemSizes(True)
 
 class PartyBox(ObjBox):
     def __init__(self, parent=None, button=False, exclude=None):

@@ -438,20 +438,20 @@ class InfoMenuState(State):
         surf.blit(SPRITES.get('info_unit'), (8, 122))
 
         render_text(surf, ['text'], [self.unit.name], ['white'], (48, 80), HAlignment.CENTER)
-        unit_desc = text_funcs.translate_and_text_evaluate(self.unit.desc, self=self.unit)
+        unit_desc = text_funcs.translate_and_text_evaluate(self.unit.desc, self=self.unit, unit=self.unit)
         self.info_graph.register((24, 80, 52, 24), unit_desc, 'all')
         class_obj = DB.classes.get(self.unit.klass)
         render_text(surf, ['text'], [class_obj.name], ['white'], (8, 104))
         class_desc = text_funcs.translate_and_text_evaluate(class_obj.desc, self=class_obj, unit=self.unit)
         self.info_graph.register((8, 104, 72, 16), class_desc, 'all')
         render_text(surf, ['text'], [str(self.unit.level)], ['blue'], (39, 120), HAlignment.RIGHT)
-        desc = text_funcs.translate_and_text_evaluate('Level_desc')
+        desc = text_funcs.translate_and_text_evaluate('Level_desc', unit=self.unit)
         self.info_graph.register((8, 120, 30, 16), desc, 'all')
         render_text(surf, ['text'], [str(self.unit.exp)], ['blue'], (63, 120), HAlignment.RIGHT)
-        desc = text_funcs.translate_and_text_evaluate('Exp_desc')
+        desc = text_funcs.translate_and_text_evaluate('Exp_desc', unit=self.unit)
         self.info_graph.register((38, 120, 30, 16), desc, 'all')
         render_text(surf, ['text'], [str(self.unit.get_hp())], ['blue'], (39, 136), HAlignment.RIGHT)
-        desc = text_funcs.translate_and_text_evaluate('HP_desc')
+        desc = text_funcs.translate_and_text_evaluate('HP_desc', unit=self.unit)
         self.info_graph.register((8, 136, 72, 16), desc, 'all')
         max_hp = equations.parser.hitpoints(self.unit)
         render_text(surf, ['text'], [str(max_hp)], ['blue'], (63, 136), HAlignment.RIGHT)
@@ -461,7 +461,7 @@ class InfoMenuState(State):
         affinity = DB.affinities.get(self.unit.affinity)
         if affinity:
             icons.draw_item(surf, affinity, (78, 81))
-            affinity_desc = text_funcs.translate_and_text_evaluate(affinity.desc)
+            affinity_desc = text_funcs.translate_and_text_evaluate(affinity.desc, self=affinity, unit=self.unit)
             self.info_graph.register((76, 80, 16, 16), affinity_desc, 'all')
         return surf
 
@@ -591,7 +591,7 @@ class InfoMenuState(State):
                 base_value += subtle_stat_bonus
                 contribution = self.unit.stat_contribution(stat_nid)
                 contribution['Base Value'] = base_value
-            desc_text = text_funcs.translate_and_text_evaluate(curr_stat.desc, self=curr_stat)
+            desc_text = text_funcs.translate_and_text_evaluate(curr_stat.desc, self=curr_stat, unit=self.unit)
             help_box = help_menu.StatDialog(desc_text or ('%s_desc' % stat_nid), contribution)
             self.info_graph.register((96 + 8, 16 * idx + 24, 64, 16), help_box, state, first=(idx == 0))
 
@@ -616,7 +616,7 @@ class InfoMenuState(State):
                 base_value += subtle_stat_bonus
                 contribution = self.unit.stat_contribution(stat_nid)
                 contribution['Base Value'] = base_value
-            desc_text = text_funcs.translate_and_text_evaluate(curr_stat.desc, self=curr_stat)
+            desc_text = text_funcs.translate_and_text_evaluate(curr_stat.desc, self=curr_stat, unit=self.unit)
             help_box = help_menu.StatDialog(desc_text or ('%s_desc' % stat_nid), contribution)
             self.info_graph.register((96 + 72, 16 * idx + 24, 64, 16), help_box, state)
 
@@ -647,7 +647,7 @@ class InfoMenuState(State):
                 else:
                     render_text(surf, ['text'], ['--'], ['blue'], (96, 16 * true_idx + 24))
                 render_text(surf, ['text'], [text_funcs.translate('Trv')], ['yellow'], (72, 16 * true_idx + 24))
-                desc = text_funcs.translate_and_text_evaluate('Trv_desc')
+                desc = text_funcs.translate_and_text_evaluate('Trv_desc', unit=self.unit)
                 self.info_graph.register((96 + 72, 16 * true_idx + 24, 64, 16), desc, state)
 
             elif stat == 'AID':
@@ -657,7 +657,7 @@ class InfoMenuState(State):
                     if DB.stats.get('HP').growth_colors and self.unit.team == 'player':
                         color = self.growth_colors(unit_funcs.growth_rate(self.unit, 'HP'))
                     render_text(surf, ['text'], [text_funcs.translate('HP')], [color], (72, 16 * true_idx + 24))
-                    desc = text_funcs.translate_and_text_evaluate('HP_desc')
+                    desc = text_funcs.translate_and_text_evaluate('HP_desc', unit=self.unit)
                     self.info_graph.register((96 + 72, 16 * true_idx + 24, 64, 16), desc, state)
                 else:
                     aid = equations.parser.rescue_aid(self.unit)
@@ -679,28 +679,28 @@ class InfoMenuState(State):
                             aid_surf = engine.subsurface(SPRITES.get('aid_icons'), (0, 0, 16, 16))
                     surf.blit(aid_surf, (112, 16 * true_idx + 24))
                     render_text(surf, ['text'], [text_funcs.translate('Aid')], ['yellow'], (72, 16 * true_idx + 24))
-                    desc = text_funcs.translate_and_text_evaluate('Aid_desc')
+                    desc = text_funcs.translate_and_text_evaluate('Aid_desc', unit=self.unit)
                     self.info_graph.register((96 + 72, 16 * true_idx + 24, 64, 16), desc, state)
 
             elif stat == 'RAT':
                 rat = str(equations.parser.rating(self.unit))
                 render_text(surf, ['text'], [rat], ['blue'], (111, 16 * true_idx + 24), HAlignment.RIGHT)
                 render_text(surf, ['text'], [text_funcs.translate('Rat')], ['yellow'], (72, 16 * true_idx + 24))
-                desc = text_funcs.translate_and_text_evaluate('Rating_desc')
+                desc = text_funcs.translate_and_text_evaluate('Rating_desc', unit=self.unit)
                 self.info_graph.register((96 + 72, 16 * true_idx + 24, 64, 16), desc, state)
 
             elif stat == 'MANA':
                 mana = str(self.unit.current_mana)
                 render_text(surf, ['text'], [mana], ['blue'], (111, 16 * true_idx + 24), HAlignment.RIGHT)
                 render_text(surf, ['text'], [text_funcs.translate('MANA')], ['yellow'], (72, 16 * true_idx + 24))
-                desc = text_funcs.translate_and_text_evaluate('MANA_desc')
+                desc = text_funcs.translate_and_text_evaluate('MANA_desc', unit=self.unit)
                 self.info_graph.register((96 + 72, 16 * true_idx + 24, 64, 16), desc, state)
 
             elif stat == 'GAUGE':
                 gge = str(self.unit.get_guard_gauge())
                 render_text(surf, ['text'], [gge], ['blue'], (111, 16 * true_idx + 24), HAlignment.RIGHT)
                 render_text(surf, ['text'], [text_funcs.translate('GAUGE')], ['yellow'], (72, 16 * true_idx + 24))
-                desc = text_funcs.translate_and_text_evaluate('GAUGE_desc')
+                desc = text_funcs.translate_and_text_evaluate('GAUGE_desc', unit=self.unit)
                 self.info_graph.register((96 + 72, 16 * true_idx + 24, 64, 16), desc, state)
 
             elif stat == 'TALK':
@@ -710,12 +710,12 @@ class InfoMenuState(State):
                 else:
                     render_text(surf, ['text'], ['--'], ['blue'], (98, 16 * true_idx + 24))
                 render_text(surf, ['text'], [text_funcs.translate('Talk')], ['yellow'], (72, 16 * true_idx + 24))
-                desc = text_funcs.translate_and_text_evaluate('Talk_desc')
+                desc = text_funcs.translate_and_text_evaluate('Talk_desc', unit=self.unit)
                 self.info_graph.register((96 + 72, 16 * true_idx + 24, 64, 16), desc, state)
 
             elif stat == 'LEAD':
                 render_text(surf, ['text'], [text_funcs.translate('Lead')], ['yellow'], (72, 16 * true_idx + 24))
-                desc = text_funcs.translate_and_text_evaluate('Lead_desc')
+                desc = text_funcs.translate_and_text_evaluate('Lead_desc', unit=self.unit)
                 self.info_graph.register((96 + 72, 16 * true_idx + 24, 64, 16), desc, state)
 
                 if growths:
@@ -830,24 +830,24 @@ class InfoMenuState(State):
         # Populate battle info
         surf.blit(SPRITES.get('equipment_logo'), (14, top + 4))
         render_text(surf, ['text'], [text_funcs.translate('Rng')], ['yellow'], (78, top))
-        rng_desc = text_funcs.translate_and_text_evaluate('Rng_desc')
+        rng_desc = text_funcs.translate_and_text_evaluate('Rng_desc', unit=self.unit)
         self.info_graph.register((96 + 78, top, 56, 16), rng_desc, 'equipment')
         render_text(surf, ['text'], [text_funcs.translate('Atk')], ['yellow'], (22, top + 16))
-        atk_desc = text_funcs.translate_and_text_evaluate('Atk_desc')
+        atk_desc = text_funcs.translate_and_text_evaluate('Atk_desc', unit=self.unit)
         self.info_graph.register((96 + 14, top + 16, 64, 16), atk_desc, 'equipment')
         render_text(surf, ['text'], [text_funcs.translate('Hit')], ['yellow'], (22, top + 32))
-        hit_desc = text_funcs.translate_and_text_evaluate('Hit_desc')
+        hit_desc = text_funcs.translate_and_text_evaluate('Hit_desc', unit=self.unit)
         self.info_graph.register((96 + 14, top + 32, 64, 16), hit_desc, 'equipment')
         if DB.constants.value('crit'):
             render_text(surf, ['text'], [text_funcs.translate('Crit')], ['yellow'], (78, top + 16))
-            crit_desc = text_funcs.translate_and_text_evaluate('Crit_desc')
+            crit_desc = text_funcs.translate_and_text_evaluate('Crit_desc', unit=self.unit)
             self.info_graph.register((96 + 78, top + 16, 56, 16), crit_desc, 'equipment')
         else:
             render_text(surf, ['text'], [text_funcs.translate('AS')], ['yellow'], (78, top + 16))
-            AS_desc = text_funcs.translate_and_text_evaluate('AS_desc')
+            AS_desc = text_funcs.translate_and_text_evaluate('AS_desc', unit=self.unit)
             self.info_graph.register((96 + 78, top + 16, 56, 16), AS_desc, 'equipment')
         render_text(surf, ['text'], [text_funcs.translate('Avoid')], ['yellow'], (78, top + 32))
-        avoid_desc = text_funcs.translate_and_text_evaluate('Avoid_desc')
+        avoid_desc = text_funcs.translate_and_text_evaluate('Avoid_desc', unit=self.unit)
         self.info_graph.register((96 + 78, top + 32, 56, 16), avoid_desc, 'equipment')
 
         if weapon:
@@ -978,7 +978,7 @@ class InfoMenuState(State):
             affinity = DB.affinities.get(other_unit.affinity)
             if affinity:
                 icons.draw_item(surf, affinity, (x * width + 8, y * 16 + top))
-                affinity_desc = text_funcs.translate_and_text_evaluate(affinity.desc)
+                affinity_desc = text_funcs.translate_and_text_evaluate(affinity.desc, unit=self.unit)
                 self.info_graph.register((96 + x * width + 8, y * 16 + top, WINWIDTH - 120, 16), affinity_desc, 'support_skills')
             render_text(surf, ['narrow'], [other_unit.name], [], (x * width + 22, y * 16 + top))
             highest_rank = pair.unlocked_ranks[-1]

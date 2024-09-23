@@ -310,8 +310,10 @@ class BattleAnimation():
             child_effect.pair(self.owner, self.partner_anim, right, self.at_range, parent=parent)
             if pose:
                 child_effect.start_anim(pose)
-            else:
+            elif self.current_pose in child_effect.poses:
                 child_effect.start_anim(self.current_pose)
+            elif 'Attack' in child_effect.poses:
+                child_effect.start_anim("Attack")
             return child_effect
         return None
 

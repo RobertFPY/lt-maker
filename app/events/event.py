@@ -354,6 +354,8 @@ class Event():
             self.state = 'processing'
         self.transition_state = None
         self.hurry_up()
+        for portrait in self.portraits.values():
+            portrait.stop_talking()
         self.text_boxes.clear()
         # Remove all nidless boxes (location card, credits)
         # Keep the nidded boxes (textbox, table)

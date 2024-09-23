@@ -1,6 +1,7 @@
 import unittest
 from unittest.mock import MagicMock, patch, PropertyMock
 
+from app.data.serialization.versions import CURRENT_SERIALIZATION_VERSION
 from app.engine.game_board import GameBoard
 from app.engine.target_system import TargetSystem
 from app.engine.objects.unit import UnitObject
@@ -18,7 +19,7 @@ class PathSystemTests(unittest.TestCase):
 
     def setUp(self):
         from app.data.database.database import DB
-        DB.load('testing_proj.ltproj')
+        DB.load('testing_proj.ltproj', CURRENT_SERIALIZATION_VERSION)
         self.game = get_mock_game()
         self.game.target_system = TargetSystem(game=self.game)
         self.path_system = PathSystem(game=self.game)
@@ -67,7 +68,7 @@ class PathSystemTests(unittest.TestCase):
             movement_instance = movement_mock.return_value
             movement_instance.method.return_value = 5
             movement_left_mock.return_value = 5
-            
+
             # Test AStar
             path = self.path_system.get_path(self.player_unit, goal)
             self.assertGreater(len(path), 0, 'path is empty')

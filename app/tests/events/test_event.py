@@ -1,3 +1,4 @@
+from app.data.serialization.versions import CURRENT_SERIALIZATION_VERSION
 from app.events.event_prefab import EventPrefab
 from app.events.speak_style import SpeakStyle, SpeakStyleLibrary
 from app.events.triggers import GenericTrigger
@@ -16,7 +17,7 @@ class EventUnitTests(unittest.TestCase):
         from app.data.database.database import DB
         from app.data.resources.resources import RESOURCES
         source_generator.event_command_codegen()
-        DB.load('testing_proj.ltproj')
+        DB.load('testing_proj.ltproj', CURRENT_SERIALIZATION_VERSION)
         RESOURCES.load('testing_proj.ltproj')
         self.patchers = self.initialize_patchers()
         for patcher in self.patchers:

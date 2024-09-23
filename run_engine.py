@@ -12,6 +12,7 @@ from app.engine import config as cf
 from app.engine import driver
 from app.engine import game_state
 from app.engine.codegen import source_generator
+from app.data.serialization.versions import CURRENT_SERIALIZATION_VERSION
 from app.utilities.system_info import is_editor_engine_built_version
 
 def main(name: str = 'testing_proj'):
@@ -25,7 +26,7 @@ def main(name: str = 'testing_proj'):
     if metadata.has_fatal_errors:
         raise ValueError("Fatal errors detected in game. If you are the developer, please validate and then save your game data before proceeding. Aborting launch.")
     RESOURCES.load(name + '.ltproj')
-    DB.load(name + '.ltproj')
+    DB.load(name + '.ltproj', CURRENT_SERIALIZATION_VERSION)
     title = DB.constants.value('title')
     driver.start(title)
     game = game_state.start_game()
@@ -38,7 +39,7 @@ def test_play(name: str = 'testing_proj'):
     if metadata.has_fatal_errors:
         raise ValueError("Fatal errors detected in game. If you are the developer, please validate and then save your game data before proceeding. Aborting launch.")
     RESOURCES.load(name + '.ltproj')
-    DB.load(name + '.ltproj')
+    DB.load(name + '.ltproj', CURRENT_SERIALIZATION_VERSION)
     title = DB.constants.value('title')
     driver.start(title, from_editor=True)
     if 'DEBUG' in DB.levels:

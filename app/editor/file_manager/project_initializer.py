@@ -5,6 +5,7 @@ from PyQt5.QtCore import QDir
 from PyQt5.QtWidgets import QFileDialog
 
 from app.data.database.database import Database
+from app.data.serialization.versions import CURRENT_SERIALIZATION_VERSION
 from app.editor.new_game_dialog import NewGameDialog
 
 
@@ -39,7 +40,7 @@ class ProjectInitializer():
     def initialize_new_project_files(self, nid, title, path):
         shutil.copytree(QDir.currentPath() + '/' + 'default.ltproj', path)
         new_project_db = Database()
-        new_project_db.load(path)
+        new_project_db.load(path, CURRENT_SERIALIZATION_VERSION)
         new_project_db.constants.get('game_nid').set_value(nid)
         new_project_db.constants.get('title').set_value(title)
         new_project_db.serialize(path)

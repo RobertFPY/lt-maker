@@ -48,6 +48,10 @@
         "desc": "Tracks NID of music in preps. Does not need to be set manually."
     },
     {
+        "nid": "_bexp_music",
+        "desc": "Tracks NID of music in bexp menu. Does not need to be set manually."
+    },
+    {
         "nid": "_base_market",
         "desc": "Player can access market from base screen when True. (Default False)"
     },

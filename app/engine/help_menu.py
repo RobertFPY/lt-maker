@@ -8,12 +8,12 @@ from app.engine import (base_surf, engine, icons, item_funcs,
 from app.engine.fonts import FONT
 from app.engine.game_state import game
 from app.engine.graphics.text.text_renderer import (fix_tags, font_height, render_text,
-                                                    text_width, remove_tags)
+                                                    text_width)
 from app.engine.sprites import SPRITES
 from app.utilities import utils
 from app.utilities.enums import HAlignment
 from app.utilities.typing import NID
-
+
 MAX_TEXT_WIDTH = WINWIDTH - 40
 
 class HelpDialog():
@@ -249,8 +249,13 @@ class ItemHelpDialog(HelpDialog):
 
         self.vals = [weapon_rank, rng, weight, might, hit, crit]
 
+        desc = self.item.desc
         if self.item.desc:
-            self.build_lines(self.item.desc, 144)
+            desc = text_funcs.translate_and_text_evaluate(
+                self.item.desc,
+                unit=self.unit,
+                self=self.item)
+            self.build_lines(desc, 144)
         else:
             self.lines = []
 
@@ -261,7 +266,7 @@ class ItemHelpDialog(HelpDialog):
         else:
             height = 32 + font_height(self.font) * len(self.lines)
 
-        self.create_dialog(self.item.desc)
+        self.create_dialog(desc)
 
         self.help_surf = base_surf.create_base_surf(160, height, 'help_bg_base')
         self.h_surf = engine.create_surface((160, height + 3), transparent=True)
@@ -281,7 +286,6 @@ class ItemHelpDialog(HelpDialog):
     def build_lines(self, desc, width):
         if not desc:
             desc = ''
-        desc = text_funcs.translate(desc)
         # Hard set num lines if desc is very short
         if '\n' in desc:
             lines = desc.splitlines()
@@ -326,9 +330,7 @@ class ItemHelpDialog(HelpDialog):
             self.dlg.draw(help_surf)
 
         surf = self.final_draw(surf, self.top_left(pos, right), time, help_surf)
-        return surf
-class SkillHelpDialog(HelpDialog):
-
+        return surfclass SkillHelpDialog(HelpDialog):
     def __init__(self, desc, name=False):
         self.name = name
         self.last_time = self.start_time = 0
@@ -340,25 +342,23 @@ class ItemHelpDialog(HelpDialog):
         
         if not desc:
             desc = ''
-        desc = text_funcs.translate(desc)
+        desc = text_funcs.translate_and_text_evaluate(desc)
         lines = self.build_lines(desc)
         num_lines = len(lines)
-
         self.create_dialog(desc)
-
         if num_lines == 1:
             self.bg_sprite = 'skill_info_small'
         elif num_lines == 3:
-            self.bg_sprite = 'skill_info_large'        elif num_lines == 4:
-            self.bg_sprite = 'skill_info_xlarge'        elif num_lines == 5:
+            self.bg_sprite = 'skill_info_large'
+        elif num_lines == 4:
+            self.bg_sprite = 'skill_info_xlarge'
+        elif num_lines == 5:
             self.bg_sprite = 'skill_info_xxlarge'
-
         #height = font_height(self.font) * num_lines + 16
         height = SPRITES.get(self.bg_sprite).get_height()
         width = SPRITES.get(self.bg_sprite).get_width()
         self.help_surf = base_surf.create_base_surf(width, height, self.bg_sprite)
         self.h_surf = engine.create_surface((self.panel_width, height + 3), transparent=True)
-
     def find_num_lines(self, desc: str) -> int:
         '''Returns the number of lines in the description'''
         # Split on \n, then go through each element in the list
@@ -370,7 +370,6 @@ class ItemHelpDialog(HelpDialog):
             desc_length = text_width(self.font, line)
             total_lines += desc_length // (self.panel_width - 18)            
         return total_lines
-
     def build_lines(self, desc: str) -> List[str]:
         # Hard set num lines if desc is very short
         if '\n' in desc:
@@ -385,7 +384,6 @@ class ItemHelpDialog(HelpDialog):
             lines = text_funcs.split(self.font, desc, num, self.panel_width)
         lines = fix_tags(lines)
         return lines
-
     def create_dialog(self, desc):
         from app.engine import dialog
         desc = desc.replace('\n', '{br}')
@@ -396,7 +394,6 @@ class ItemHelpDialog(HelpDialog):
              dialog.Dialog.from_style(game.speak_styles.get('__default_help'), desc,
                                       width = self.panel_width)
         self.dlg.position = (0, (16 if self.name else 0))
-
     def draw(self, surf, pos, right=False):
         time = engine.get_time()
         if time > self.last_time + 1000:  # If it's been at least a second since last update
@@ -405,13 +402,11 @@ class ItemHelpDialog(HelpDialog):
             self.transition_out = 0
             self.create_dialog(self.dlg.plain_text)
         self.last_time = time
-
         help_surf = engine.copy_surface(self.help_surf)
         if self.name:
             #render_text(help_surf, [self.font], [self.name], [game.speak_styles.get('__default_help').font_color], (8, 8))
             render_text(help_surf, ['bconvo'], [self.name], ['brown'], (10, 8))
         self.dlg.update()
         self.dlg.draw(help_surf)
-
         surf = self.final_draw(surf, self.top_left(pos, right), time, help_surf)
         return surf

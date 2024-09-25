@@ -1,6 +1,6 @@
 from app.data.database.components import Component
 from app.data.database.database import DB
-from app.engine.game_state import GameState
+from app.engine.game_state import GameState, game
 from app.engine import evaluate
 import re
 from typing import Dict, List, Tuple

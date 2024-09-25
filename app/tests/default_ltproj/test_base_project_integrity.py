@@ -3,6 +3,7 @@ import unittest
 from unittest.mock import MagicMock
 from app.data.database.database import DB
 from app.data.resources.resources import RESOURCES
+from app.data.serialization.versions import CURRENT_SERIALIZATION_VERSION
 from app.data.validation.db_validation import DBChecker
 
 from app.engine.text_evaluator import TextEvaluator
@@ -17,7 +18,7 @@ class BaseProjectIntegrityTests(unittest.TestCase):
         logging.disable(logging.NOTSET)
 
     def testDefaultProjectNoWarningsOrErrors(self):
-        DB.load('default.ltproj')
+        DB.load('default.ltproj', CURRENT_SERIALIZATION_VERSION)
         RESOURCES.load('default.ltproj')
         checker = DBChecker(DB, RESOURCES)
         warnings = checker.validate_for_warnings()
@@ -28,7 +29,7 @@ class BaseProjectIntegrityTests(unittest.TestCase):
         self.assertTrue(len(errors) == 0, str(errors))
 
     def testTestingProjectNoWarningsOrErrors(self):
-        DB.load('testing_proj.ltproj')
+        DB.load('testing_proj.ltproj', CURRENT_SERIALIZATION_VERSION)
         RESOURCES.load('testing_proj.ltproj')
         checker = DBChecker(DB, RESOURCES)
         warnings = checker.validate_for_warnings()

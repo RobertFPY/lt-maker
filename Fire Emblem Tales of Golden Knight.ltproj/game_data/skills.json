@@ -6429,17 +6429,8 @@
                 "mode == 'defense' and utils.calculate_distance(unit.position, target.position) > 1"
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "DEF",
-                        2
-                    ],
-                    [
-                        "RES",
-                        2
-                    ]
-                ]
+                "resist",
+                2
             ]
         ]
     },
@@ -6470,17 +6461,8 @@
                 "mode == 'defense' and utils.calculate_distance(unit.position, target.position) > 1"
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "DEF",
-                        4
-                    ],
-                    [
-                        "RES",
-                        4
-                    ]
-                ]
+                "resist",
+                4
             ]
         ]
     },
@@ -6511,17 +6493,8 @@
                 "mode == 'defense' and utils.calculate_distance(unit.position, target.position) > 1"
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "DEF",
-                        6
-                    ],
-                    [
-                        "RES",
-                        6
-                    ]
-                ]
+                "resist",
+                6
             ]
         ]
     },
@@ -6552,17 +6525,8 @@
                 "mode == 'defense' and utils.calculate_distance(unit.position, target.position) > 1"
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "DEF",
-                        10
-                    ],
-                    [
-                        "RES",
-                        10
-                    ]
-                ]
+                "resist",
+                10
             ]
         ]
     },
@@ -6593,17 +6557,8 @@
                 "mode == 'defense' and utils.calculate_distance(unit.position, target.position) == 1"
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "DEF",
-                        2
-                    ],
-                    [
-                        "RES",
-                        2
-                    ]
-                ]
+                "resist",
+                2
             ]
         ]
     },
@@ -6634,17 +6589,8 @@
                 "mode == 'defense' and utils.calculate_distance(unit.position, target.position) == 1"
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "DEF",
-                        4
-                    ],
-                    [
-                        "RES",
-                        4
-                    ]
-                ]
+                "resist",
+                4
             ]
         ]
     },
@@ -6675,17 +6621,8 @@
                 "mode == 'defense' and utils.calculate_distance(unit.position, target.position) == 1"
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "DEF",
-                        6
-                    ],
-                    [
-                        "RES",
-                        6
-                    ]
-                ]
+                "resist",
+                6
             ]
         ]
     },
@@ -6716,17 +6653,8 @@
                 "mode == 'defense' and utils.calculate_distance(unit.position, target.position) == 1"
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "DEF",
-                        10
-                    ],
-                    [
-                        "RES",
-                        10
-                    ]
-                ]
+                "resist",
+                10
             ]
         ]
     },
@@ -6894,20 +6822,15 @@
             ],
             [
                 "combat_condition_slota",
-                "mode == 'attack'"
+                "mode == 'attack' and not item_funcs.is_magic(target, target.get_weapon())"
             ],
             [
                 "priority",
                 0
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "DEF",
-                        2
-                    ]
-                ]
+                "resist",
+                2
             ]
         ]
     },
@@ -6931,20 +6854,15 @@
             ],
             [
                 "combat_condition_slota",
-                "mode == 'attack'"
+                "mode == 'attack' and not item_funcs.is_magic(target, target.get_weapon())"
             ],
             [
                 "priority",
                 1
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "DEF",
-                        4
-                    ]
-                ]
+                "resist",
+                4
             ]
         ]
     },
@@ -6968,20 +6886,15 @@
             ],
             [
                 "combat_condition_slota",
-                "mode == 'attack'"
+                "mode == 'attack' and not item_funcs.is_magic(target, target.get_weapon())"
             ],
             [
                 "priority",
                 2
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "DEF",
-                        6
-                    ]
-                ]
+                "resist",
+                6
             ]
         ]
     },
@@ -7005,20 +6918,15 @@
             ],
             [
                 "combat_condition_slota",
-                "mode == 'attack'"
+                "mode == 'attack' and not item_funcs.is_magic(target, target.get_weapon())"
             ],
             [
                 "priority",
                 3
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "DEF",
-                        10
-                    ]
-                ]
+                "resist",
+                10
             ]
         ]
     },
@@ -7042,20 +6950,15 @@
             ],
             [
                 "combat_condition_slota",
-                "mode == 'attack'"
+                "mode == 'attack' and item_funcs.is_magic(target, target.get_weapon())"
             ],
             [
                 "priority",
                 0
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "RES",
-                        2
-                    ]
-                ]
+                "resist",
+                2
             ]
         ]
     },
@@ -7079,20 +6982,15 @@
             ],
             [
                 "combat_condition_slota",
-                "mode == 'attack'"
+                "mode == 'attack' and item_funcs.is_magic(target, target.get_weapon())"
             ],
             [
                 "priority",
                 1
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "RES",
-                        4
-                    ]
-                ]
+                "resist",
+                4
             ]
         ]
     },
@@ -7116,20 +7014,15 @@
             ],
             [
                 "combat_condition_slota",
-                "mode == 'attack'"
+                "mode == 'attack' and item_funcs.is_magic(target, target.get_weapon())"
             ],
             [
                 "priority",
                 2
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "RES",
-                        6
-                    ]
-                ]
+                "resist",
+                6
             ]
         ]
     },
@@ -7153,20 +7046,15 @@
             ],
             [
                 "combat_condition_slota",
-                "mode == 'attack'"
+                "mode == 'attack' and item_funcs.is_magic(target, target.get_weapon())"
             ],
             [
                 "priority",
                 3
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "RES",
-                        10
-                    ]
-                ]
+                "resist",
+                10
             ]
         ]
     },
@@ -7197,13 +7085,12 @@
                 0
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "SPD",
-                        2
-                    ]
-                ]
+                "attack_speed",
+                2
+            ],
+            [
+                "defense_speed",
+                2
             ]
         ]
     },
@@ -7234,13 +7121,12 @@
                 1
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "SPD",
-                        4
-                    ]
-                ]
+                "attack_speed",
+                4
+            ],
+            [
+                "defense_speed",
+                4
             ]
         ]
     },
@@ -7271,13 +7157,12 @@
                 2
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "SPD",
-                        6
-                    ]
-                ]
+                "attack_speed",
+                6
+            ],
+            [
+                "defense_speed",
+                6
             ]
         ]
     },
@@ -7308,13 +7193,12 @@
                 3
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "SPD",
-                        10
-                    ]
-                ]
+                "attack_speed",
+                10
+            ],
+            [
+                "defense_speed",
+                10
             ]
         ]
     },
@@ -8137,13 +8021,12 @@
                 "unit.get_hp() > (target.get_hp() + 3)"
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "SPD",
-                        2
-                    ]
-                ]
+                "attack_speed",
+                2
+            ],
+            [
+                "defense_speed",
+                2
             ]
         ]
     },
@@ -8174,13 +8057,12 @@
                 "unit.get_hp() > (target.get_hp() + 3)"
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "SPD",
-                        4
-                    ]
-                ]
+                "attack_speed",
+                4
+            ],
+            [
+                "defense_speed",
+                4
             ]
         ]
     },
@@ -8211,13 +8093,12 @@
                 "unit.get_hp() > (target.get_hp() + 3)"
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "SPD",
-                        6
-                    ]
-                ]
+                "attack_speed",
+                6
+            ],
+            [
+                "defense_speed",
+                6
             ]
         ]
     },
@@ -8245,16 +8126,11 @@
             ],
             [
                 "combat_condition_slota",
-                "unit.get_hp() > (target.get_hp() + 3)"
+                "unit.get_hp() > (target.get_hp() + 3) and not item_funcs.is_magic(target, target.get_weapon())"
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "DEF",
-                        2
-                    ]
-                ]
+                "resist",
+                2
             ]
         ]
     },
@@ -8282,16 +8158,11 @@
             ],
             [
                 "combat_condition_slota",
-                "unit.get_hp() > (target.get_hp() + 3)"
+                "unit.get_hp() > (target.get_hp() + 3) and not item_funcs.is_magic(target, target.get_weapon())"
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "DEF",
-                        4
-                    ]
-                ]
+                "resist",
+                4
             ]
         ]
     },
@@ -8319,16 +8190,11 @@
             ],
             [
                 "combat_condition_slota",
-                "unit.get_hp() > (target.get_hp() + 3)"
+                "unit.get_hp() > (target.get_hp() + 3) and not item_funcs.is_magic(target, target.get_weapon())"
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "DEF",
-                        6
-                    ]
-                ]
+                "resist",
+                6
             ]
         ]
     },
@@ -8356,16 +8222,11 @@
             ],
             [
                 "combat_condition_slota",
-                "unit.get_hp() > (target.get_hp() + 3)"
+                "unit.get_hp() > (target.get_hp() + 3) and item_funcs.is_magic(target, target.get_weapon())"
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "RES",
-                        2
-                    ]
-                ]
+                "resist",
+                2
             ]
         ]
     },
@@ -8393,16 +8254,11 @@
             ],
             [
                 "combat_condition_slota",
-                "unit.get_hp() > (target.get_hp() + 3)"
+                "unit.get_hp() > (target.get_hp() + 3) and item_funcs.is_magic(target, target.get_weapon())"
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "RES",
-                        4
-                    ]
-                ]
+                "resist",
+                4
             ]
         ]
     },
@@ -8430,16 +8286,11 @@
             ],
             [
                 "combat_condition_slota",
-                "unit.get_hp() > (target.get_hp() + 3)"
+                "unit.get_hp() > (target.get_hp() + 3) and item_funcs.is_magic(target, target.get_weapon())"
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "RES",
-                        6
-                    ]
-                ]
+                "resist",
+                6
             ]
         ]
     },
@@ -8602,13 +8453,12 @@
                 "mode == 'defense'"
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "SPD",
-                        2
-                    ]
-                ]
+                "attack_speed",
+                2
+            ],
+            [
+                "defense_speed",
+                2
             ]
         ]
     },
@@ -8639,13 +8489,12 @@
                 "mode == 'defense'"
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "SPD",
-                        4
-                    ]
-                ]
+                "attack_speed",
+                4
+            ],
+            [
+                "defense_speed",
+                4
             ]
         ]
     },
@@ -8676,13 +8525,12 @@
                 "mode == 'defense'"
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "SPD",
-                        6
-                    ]
-                ]
+                "attack_speed",
+                6
+            ],
+            [
+                "defense_speed",
+                6
             ]
         ]
     },
@@ -8717,13 +8565,12 @@
                 20
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "SPD",
-                        6
-                    ]
-                ]
+                "attack_speed",
+                6
+            ],
+            [
+                "defense_speed",
+                6
             ]
         ]
     },
@@ -8751,16 +8598,11 @@
             ],
             [
                 "combat_condition_slota",
-                "mode == 'defense'"
+                "mode == 'defense' and item_funcs.is_magic(target, target.get_weapon())"
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "RES",
-                        2
-                    ]
-                ]
+                "resist",
+                2
             ]
         ]
     },
@@ -8788,16 +8630,11 @@
             ],
             [
                 "combat_condition_slota",
-                "mode == 'defense'"
+                "mode == 'defense' and item_funcs.is_magic(target, target.get_weapon())"
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "RES",
-                        4
-                    ]
-                ]
+                "resist",
+                4
             ]
         ]
     },
@@ -8825,16 +8662,11 @@
             ],
             [
                 "combat_condition_slota",
-                "mode == 'defense'"
+                "mode == 'defense' and item_funcs.is_magic(target, target.get_weapon())"
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "RES",
-                        6
-                    ]
-                ]
+                "resist",
+                6
             ]
         ]
     },
@@ -8862,20 +8694,15 @@
             ],
             [
                 "combat_condition_slota",
-                "mode == 'defense'"
+                "mode == 'defense' and item_funcs.is_magic(target, target.get_weapon())"
             ],
             [
                 "crit",
                 20
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "RES",
-                        6
-                    ]
-                ]
+                "resist",
+                6
             ]
         ]
     },
@@ -8903,16 +8730,11 @@
             ],
             [
                 "combat_condition_slota",
-                "mode == 'defense'"
+                "mode == 'defense' and not item_funcs.is_magic(target, target.get_weapon())"
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "DEF",
-                        2
-                    ]
-                ]
+                "resist",
+                2
             ]
         ]
     },
@@ -8940,16 +8762,11 @@
             ],
             [
                 "combat_condition_slota",
-                "mode == 'defense'"
+                "mode == 'defense' and not item_funcs.is_magic(target, target.get_weapon())"
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "DEF",
-                        4
-                    ]
-                ]
+                "resist",
+                4
             ]
         ]
     },
@@ -8977,16 +8794,11 @@
             ],
             [
                 "combat_condition_slota",
-                "mode == 'defense'"
+                "mode == 'defense' and not item_funcs.is_magic(target, target.get_weapon())"
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "DEF",
-                        6
-                    ]
-                ]
+                "resist",
+                6
             ]
         ]
     },
@@ -9014,20 +8826,15 @@
             ],
             [
                 "combat_condition_slota",
-                "mode == 'defense'"
+                "mode == 'defense' and not item_funcs.is_magic(target, target.get_weapon())"
             ],
             [
                 "crit",
                 20
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "DEF",
-                        6
-                    ]
-                ]
+                "resist",
+                6
             ]
         ]
     },
@@ -9062,13 +8869,12 @@
                 3
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "SPD",
-                        3
-                    ]
-                ]
+                "attack_speed",
+                3
+            ],
+            [
+                "defense_speed",
+                3
             ]
         ]
     },
@@ -9103,13 +8909,12 @@
                 4
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "SPD",
-                        4
-                    ]
-                ]
+                "attack_speed",
+                4
+            ],
+            [
+                "defense_speed",
+                4
             ]
         ]
     },
@@ -9144,13 +8949,12 @@
                 5
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "SPD",
-                        5
-                    ]
-                ]
+                "attack_speed",
+                5
+            ],
+            [
+                "defense_speed",
+                5
             ]
         ]
     },
@@ -9185,13 +8989,12 @@
                 7
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "SPD",
-                        7
-                    ]
-                ]
+                "attack_speed",
+                7
+            ],
+            [
+                "defense_speed",
+                7
             ]
         ]
     },
@@ -9226,13 +9029,8 @@
                 3
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "DEF",
-                        3
-                    ]
-                ]
+                "dynamic_resist",
+                "3 if not item_funcs.is_magic(target, target.get_weapon()) else 0"
             ]
         ]
     },
@@ -9267,13 +9065,8 @@
                 4
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "DEF",
-                        4
-                    ]
-                ]
+                "dynamic_resist",
+                "4 if not item_funcs.is_magic(target, target.get_weapon()) else 0"
             ]
         ]
     },
@@ -9308,13 +9101,8 @@
                 5
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "DEF",
-                        5
-                    ]
-                ]
+                "dynamic_resist",
+                "5 if not item_funcs.is_magic(target, target.get_weapon()) else 0"
             ]
         ]
     },
@@ -9349,13 +9137,8 @@
                 7
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "DEF",
-                        7
-                    ]
-                ]
+                "dynamic_resist",
+                "7 if not item_funcs.is_magic(target, target.get_weapon()) else 0"
             ]
         ]
     },
@@ -9390,13 +9173,8 @@
                 3
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "RES",
-                        3
-                    ]
-                ]
+                "dynamic_resist",
+                "3 if item_funcs.is_magic(target, target.get_weapon()) else 0"
             ]
         ]
     },
@@ -9431,13 +9209,8 @@
                 4
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "RES",
-                        4
-                    ]
-                ]
+                "dynamic_resist",
+                "4 if item_funcs.is_magic(target, target.get_weapon()) else 0"
             ]
         ]
     },
@@ -9472,13 +9245,8 @@
                 5
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "RES",
-                        5
-                    ]
-                ]
+                "dynamic_resist",
+                "5 if item_funcs.is_magic(target, target.get_weapon()) else 0"
             ]
         ]
     },
@@ -9513,13 +9281,8 @@
                 7
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "RES",
-                        7
-                    ]
-                ]
+                "dynamic_resist",
+                "7 if item_funcs.is_magic(target, target.get_weapon()) else 0"
             ]
         ]
     },
@@ -9550,17 +9313,8 @@
                 "len(get_allies_within_distance(unit, 1)) > 1"
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "DEF",
-                        3
-                    ],
-                    [
-                        "RES",
-                        3
-                    ]
-                ]
+                "resist",
+                3
             ]
         ]
     },
@@ -9591,17 +9345,8 @@
                 "len(get_allies_within_distance(unit, 1)) > 1"
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "DEF",
-                        4
-                    ],
-                    [
-                        "RES",
-                        4
-                    ]
-                ]
+                "resist",
+                4
             ]
         ]
     },
@@ -9632,17 +9377,8 @@
                 "len(get_allies_within_distance(unit, 1)) > 1"
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "DEF",
-                        5
-                    ],
-                    [
-                        "RES",
-                        5
-                    ]
-                ]
+                "resist",
+                5
             ]
         ]
     },
@@ -9673,17 +9409,8 @@
                 "len(get_allies_within_distance(unit, 2)) > 1"
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "DEF",
-                        7
-                    ],
-                    [
-                        "RES",
-                        7
-                    ]
-                ]
+                "resist",
+                7
             ]
         ]
     },
@@ -9718,13 +9445,12 @@
                 2
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "SPD",
-                        2
-                    ]
-                ]
+                "attack_speed",
+                2
+            ],
+            [
+                "defense_speed",
+                2
             ]
         ]
     },
@@ -9759,13 +9485,12 @@
                 4
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "SPD",
-                        4
-                    ]
-                ]
+                "attack_speed",
+                4
+            ],
+            [
+                "defense_speed",
+                4
             ]
         ]
     },
@@ -9800,13 +9525,12 @@
                 6
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "SPD",
-                        6
-                    ]
-                ]
+                "attack_speed",
+                6
+            ],
+            [
+                "defense_speed",
+                6
             ]
         ]
     },
@@ -9841,13 +9565,8 @@
                 2
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "DEF",
-                        2
-                    ]
-                ]
+                "dynamic_resist",
+                "2 if not item_funcs.is_magic(target, target.get_weapon()) else 0"
             ]
         ]
     },
@@ -9882,13 +9601,8 @@
                 4
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "DEF",
-                        4
-                    ]
-                ]
+                "dynamic_resist",
+                "4 if not item_funcs.is_magic(target, target.get_weapon()) else 0"
             ]
         ]
     },
@@ -9923,13 +9637,8 @@
                 6
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "DEF",
-                        6
-                    ]
-                ]
+                "dynamic_resist",
+                "6 if not item_funcs.is_magic(target, target.get_weapon()) else 0"
             ]
         ]
     },
@@ -9964,13 +9673,8 @@
                 2
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "RES",
-                        2
-                    ]
-                ]
+                "dynamic_resist",
+                "2 if item_funcs.is_magic(target, target.get_weapon()) else 0"
             ]
         ]
     },
@@ -10005,13 +9709,8 @@
                 4
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "RES",
-                        4
-                    ]
-                ]
+                "dynamic_resist",
+                "4 if item_funcs.is_magic(target, target.get_weapon()) else 0"
             ]
         ]
     },
@@ -10046,13 +9745,8 @@
                 6
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "RES",
-                        6
-                    ]
-                ]
+                "dynamic_resist",
+                "6 if item_funcs.is_magic(target, target.get_weapon()) else 0"
             ]
         ]
     },
@@ -10083,17 +9777,8 @@
                 "len(get_allies_within_distance(unit, 1)) == 1"
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "DEF",
-                        2
-                    ],
-                    [
-                        "RES",
-                        2
-                    ]
-                ]
+                "dynamic_resist",
+                "2"
             ]
         ]
     },
@@ -10124,17 +9809,8 @@
                 "len(get_allies_within_distance(unit, 1)) == 1"
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "DEF",
-                        4
-                    ],
-                    [
-                        "RES",
-                        4
-                    ]
-                ]
+                "dynamic_resist",
+                "4"
             ]
         ]
     },
@@ -10165,17 +9841,8 @@
                 "len(get_allies_within_distance(unit, 1)) == 1"
             ],
             [
-                "stat_change",
-                [
-                    [
-                        "DEF",
-                        6
-                    ],
-                    [
-                        "RES",
-                        6
-                    ]
-                ]
+                "dynamic_resist",
+                "6"
             ]
         ]
     },
@@ -11912,12 +11579,6 @@
             [
                 "dynamic_attacks",
                 "1"
-            ],
-            [
-                "self_nihil",
-                [
-                    "Wrathfull_Staff_T4_2"
-                ]
             ]
         ]
     },
@@ -11954,12 +11615,6 @@
             [
                 "dynamic_attacks",
                 "1"
-            ],
-            [
-                "self_nihil",
-                [
-                    "Wrathfull_Staff_T4_2"
-                ]
             ]
         ]
     },
@@ -11996,12 +11651,6 @@
             [
                 "dynamic_attacks",
                 "1"
-            ],
-            [
-                "self_nihil",
-                [
-                    "Wrathfull_Staff_T4_2"
-                ]
             ]
         ]
     },
@@ -12038,12 +11687,6 @@
             [
                 "dynamic_attacks",
                 "1"
-            ],
-            [
-                "self_nihil",
-                [
-                    "Wrathfull_Staff_T4_2"
-                ]
             ]
         ]
     },
@@ -12182,55 +11825,16 @@
                 "mode == 'defense' and unit.get_hp() > unit.get_max_hp()*0.5"
             ],
             [
-                "multi_skill",
-                [
-                    "Quick_Riposte_T4_Effect_1",
-                    "Quick_Riposte_T4_Effect_2"
-                ]
-            ]
-        ]
-    },
-    {
-        "nid": "Quick_Riposte_T4_Effect_1",
-        "name": "Quick Riposte+",
-        "desc": "If User's HP is above 50% and Foe initiates combat, reduce 25% damage of Foe's first strike and User makes graduateed follow-up attack.",
-        "icon_nid": "CustomSkill",
-        "icon_index": [
-            4,
-            6
-        ],
-        "components": [
+                "desperation",
+                null
+            ],
             [
                 "dynamic_attacks",
                 "1"
             ],
             [
-                "desperation",
-                null
-            ],
-            [
-                "hidden",
-                null
-            ]
-        ]
-    },
-    {
-        "nid": "Quick_Riposte_T4_Effect_2",
-        "name": "Quick Riposte+",
-        "desc": "If User's HP is above 50% and Foe initiates combat, reduce 25% damage of Foe's first strike and User makes graduateed follow-up attack.",
-        "icon_nid": "CustomSkill",
-        "icon_index": [
-            4,
-            6
-        ],
-        "components": [
-            [
                 "resist_first_strike",
                 0.75
-            ],
-            [
-                "hidden",
-                null
             ]
         ]
     },
@@ -12405,11 +12009,16 @@
                 "unit.get_hp() == unit.get_max_hp() and mode == 'defense'"
             ],
             [
-                "multi_skill",
-                [
-                    "Dragons_Ire_Effect_1",
-                    "Dragons_Ire_Effect_2"
-                ]
+                "desperation",
+                null
+            ],
+            [
+                "dynamic_attacks",
+                "1"
+            ],
+            [
+                "NEGATE_cannot_double",
+                null
             ]
         ]
     },
@@ -12440,11 +12049,16 @@
                 "unit.get_hp() > unit.get_max_hp() * 0.75 and mode == 'defense'"
             ],
             [
-                "multi_skill",
-                [
-                    "Dragons_Ire_Effect_1",
-                    "Dragons_Ire_Effect_2"
-                ]
+                "desperation",
+                null
+            ],
+            [
+                "dynamic_attacks",
+                "1"
+            ],
+            [
+                "NEGATE_cannot_double",
+                null
             ]
         ]
     },
@@ -12475,11 +12089,16 @@
                 "unit.get_hp() > unit.get_max_hp() * 0.5 and mode == 'defense'"
             ],
             [
-                "multi_skill",
-                [
-                    "Dragons_Ire_Effect_1",
-                    "Dragons_Ire_Effect_2"
-                ]
+                "desperation",
+                null
+            ],
+            [
+                "dynamic_attacks",
+                "1"
+            ],
+            [
+                "NEGATE_cannot_double",
+                null
             ]
         ]
     },
@@ -12510,25 +12129,6 @@
                 "unit.get_hp() > unit.get_max_hp() * 0.25 and mode == 'defense'"
             ],
             [
-                "multi_skill",
-                [
-                    "Dragons_Ire_Effect_1",
-                    "Dragons_Ire_Effect_2"
-                ]
-            ]
-        ]
-    },
-    {
-        "nid": "Dragons_Ire_Effect_1",
-        "name": "Dragon's Ire",
-        "desc": "User makes graduateed follow-up attack.",
-        "icon_nid": "CustomSkill",
-        "icon_index": [
-            6,
-            6
-        ],
-        "components": [
-            [
                 "desperation",
                 null
             ],
@@ -12537,27 +12137,7 @@
                 "1"
             ],
             [
-                "hidden",
-                null
-            ]
-        ]
-    },
-    {
-        "nid": "Dragons_Ire_Effect_2",
-        "name": "Dragon's Ire",
-        "desc": "Neatralizes effects that prevent User from making follow-up attack",
-        "icon_nid": "CustomSkill",
-        "icon_index": [
-            6,
-            6
-        ],
-        "components": [
-            [
                 "NEGATE_cannot_double",
-                null
-            ],
-            [
-                "hidden",
                 null
             ]
         ]
@@ -13721,11 +13301,16 @@
                 null
             ],
             [
-                "multi_skill",
-                [
-                    "Breaker_Effect_1",
-                    "Breaker_Effect_2"
-                ]
+                "desperation",
+                null
+            ],
+            [
+                "dynamic_attacks",
+                "1"
+            ],
+            [
+                "Target_cannot_double",
+                null
             ]
         ]
     },
@@ -13756,11 +13341,16 @@
                 null
             ],
             [
-                "multi_skill",
-                [
-                    "Breaker_Effect_1",
-                    "Breaker_Effect_2"
-                ]
+                "desperation",
+                null
+            ],
+            [
+                "dynamic_attacks",
+                "1"
+            ],
+            [
+                "Target_cannot_double",
+                null
             ]
         ]
     },
@@ -13791,11 +13381,16 @@
                 null
             ],
             [
-                "multi_skill",
-                [
-                    "Breaker_Effect_1",
-                    "Breaker_Effect_2"
-                ]
+                "desperation",
+                null
+            ],
+            [
+                "dynamic_attacks",
+                "1"
+            ],
+            [
+                "Target_cannot_double",
+                null
             ]
         ]
     },
@@ -13826,11 +13421,16 @@
                 null
             ],
             [
-                "multi_skill",
-                [
-                    "Breaker_Effect_1",
-                    "Breaker_Effect_2"
-                ]
+                "desperation",
+                null
+            ],
+            [
+                "dynamic_attacks",
+                "1"
+            ],
+            [
+                "Target_cannot_double",
+                null
             ]
         ]
     },
@@ -13861,11 +13461,16 @@
                 null
             ],
             [
-                "multi_skill",
-                [
-                    "Breaker_Effect_1",
-                    "Breaker_Effect_2"
-                ]
+                "desperation",
+                null
+            ],
+            [
+                "dynamic_attacks",
+                "1"
+            ],
+            [
+                "Target_cannot_double",
+                null
             ]
         ]
     },
@@ -13896,11 +13501,16 @@
                 null
             ],
             [
-                "multi_skill",
-                [
-                    "Breaker_Effect_1",
-                    "Breaker_Effect_2"
-                ]
+                "desperation",
+                null
+            ],
+            [
+                "dynamic_attacks",
+                "1"
+            ],
+            [
+                "Target_cannot_double",
+                null
             ]
         ]
     },
@@ -13931,11 +13541,16 @@
                 null
             ],
             [
-                "multi_skill",
-                [
-                    "Breaker_Effect_1",
-                    "Breaker_Effect_2"
-                ]
+                "desperation",
+                null
+            ],
+            [
+                "dynamic_attacks",
+                "1"
+            ],
+            [
+                "Target_cannot_double",
+                null
             ]
         ]
     },
@@ -13966,11 +13581,16 @@
                 null
             ],
             [
-                "multi_skill",
-                [
-                    "Breaker_Effect_1",
-                    "Breaker_Effect_2"
-                ]
+                "desperation",
+                null
+            ],
+            [
+                "dynamic_attacks",
+                "1"
+            ],
+            [
+                "Target_cannot_double",
+                null
             ]
         ]
     },
@@ -14001,11 +13621,16 @@
                 null
             ],
             [
-                "multi_skill",
-                [
-                    "Breaker_Effect_1",
-                    "Breaker_Effect_2"
-                ]
+                "desperation",
+                null
+            ],
+            [
+                "dynamic_attacks",
+                "1"
+            ],
+            [
+                "Target_cannot_double",
+                null
             ]
         ]
     },
@@ -14036,11 +13661,16 @@
                 null
             ],
             [
-                "multi_skill",
-                [
-                    "Breaker_Effect_1",
-                    "Breaker_Effect_2"
-                ]
+                "desperation",
+                null
+            ],
+            [
+                "dynamic_attacks",
+                "1"
+            ],
+            [
+                "Target_cannot_double",
+                null
             ]
         ]
     },
@@ -14071,11 +13701,16 @@
                 null
             ],
             [
-                "multi_skill",
-                [
-                    "Breaker_Effect_1",
-                    "Breaker_Effect_2"
-                ]
+                "desperation",
+                null
+            ],
+            [
+                "dynamic_attacks",
+                "1"
+            ],
+            [
+                "Target_cannot_double",
+                null
             ]
         ]
     },
@@ -14106,11 +13741,16 @@
                 null
             ],
             [
-                "multi_skill",
-                [
-                    "Breaker_Effect_1",
-                    "Breaker_Effect_2"
-                ]
+                "desperation",
+                null
+            ],
+            [
+                "dynamic_attacks",
+                "1"
+            ],
+            [
+                "Target_cannot_double",
+                null
             ]
         ]
     },
@@ -14141,11 +13781,16 @@
                 null
             ],
             [
-                "multi_skill",
-                [
-                    "Breaker_Effect_1",
-                    "Breaker_Effect_2"
-                ]
+                "desperation",
+                null
+            ],
+            [
+                "dynamic_attacks",
+                "1"
+            ],
+            [
+                "Target_cannot_double",
+                null
             ]
         ]
     },
@@ -14176,11 +13821,16 @@
                 null
             ],
             [
-                "multi_skill",
-                [
-                    "Breaker_Effect_1",
-                    "Breaker_Effect_2"
-                ]
+                "desperation",
+                null
+            ],
+            [
+                "dynamic_attacks",
+                "1"
+            ],
+            [
+                "Target_cannot_double",
+                null
             ]
         ]
     },
@@ -14211,11 +13861,16 @@
                 null
             ],
             [
-                "multi_skill",
-                [
-                    "Breaker_Effect_1",
-                    "Breaker_Effect_2"
-                ]
+                "desperation",
+                null
+            ],
+            [
+                "dynamic_attacks",
+                "1"
+            ],
+            [
+                "Target_cannot_double",
+                null
             ]
         ]
     },
@@ -14246,11 +13901,16 @@
                 null
             ],
             [
-                "multi_skill",
-                [
-                    "Breaker_Effect_1",
-                    "Breaker_Effect_2"
-                ]
+                "desperation",
+                null
+            ],
+            [
+                "dynamic_attacks",
+                "1"
+            ],
+            [
+                "Target_cannot_double",
+                null
             ]
         ]
     },
@@ -14281,11 +13941,16 @@
                 null
             ],
             [
-                "multi_skill",
-                [
-                    "Breaker_Effect_1",
-                    "Breaker_Effect_2"
-                ]
+                "desperation",
+                null
+            ],
+            [
+                "dynamic_attacks",
+                "1"
+            ],
+            [
+                "Target_cannot_double",
+                null
             ]
         ]
     },
@@ -14316,51 +13981,12 @@
                 null
             ],
             [
-                "multi_skill",
-                [
-                    "Breaker_Effect_1",
-                    "Breaker_Effect_2"
-                ]
-            ]
-        ]
-    },
-    {
-        "nid": "Breaker_Effect_1",
-        "name": "Breaker Effect",
-        "desc": "User makes graduateed follow-up attack and Foe cannot make follow-up attack.",
-        "icon_nid": "All_Skills",
-        "icon_index": [
-            7,
-            28
-        ],
-        "components": [
-            [
-                "dynamic_attacks",
-                "1"
-            ],
-            [
                 "desperation",
                 null
             ],
             [
-                "hidden",
-                null
-            ]
-        ]
-    },
-    {
-        "nid": "Breaker_Effect_2",
-        "name": "Breaker Effect",
-        "desc": "User makes graduateed follow-up attack and Foe cannot make follow-up attack.",
-        "icon_nid": "All_Skills",
-        "icon_index": [
-            7,
-            28
-        ],
-        "components": [
-            [
-                "hidden",
-                null
+                "dynamic_attacks",
+                "1"
             ],
             [
                 "Target_cannot_double",
@@ -19039,13 +18665,34 @@
     {
         "nid": "Lull_Atk_Spd_T1",
         "name": "Lull Atk/Spd 1",
-        "desc": "",
-        "icon_nid": null,
+        "desc": "Inflicts -3 to Speed and Strength/Magic on Foe and neutralizes Foe's bonus to Strength/Magic and Speed during combat.",
+        "icon_nid": "Skills",
         "icon_index": [
             0,
             0
         ],
-        "components": []
+        "components": [
+            [
+                "class_skill",
+                null
+            ],
+            [
+                "slotb_skill",
+                null
+            ],
+            [
+                "priority",
+                0
+            ],
+            [
+                "combat_condition_slotb",
+                "True"
+            ],
+            [
+                "resist",
+                3
+            ]
+        ]
     },
     {
         "nid": "Poison_Strike_T1",

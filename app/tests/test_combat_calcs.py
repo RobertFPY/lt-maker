@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Tuple
+from app.data.serialization.versions import CURRENT_SERIALIZATION_VERSION
 from app.utilities import utils
 import unittest
 from unittest.mock import MagicMock, Mock, patch, call
@@ -44,7 +45,7 @@ def _ignore_los(_, item: MockItem):
 class CombatCalcTests(unittest.TestCase):
     def setUp(self):
         from app.data.database.database import DB
-        DB.load('testing_proj.ltproj')
+        DB.load('testing_proj.ltproj', CURRENT_SERIALIZATION_VERSION)
         DB.constants.get('line_of_sight').set_value(False)
         self.attacker = MockUnit(position=(0, 0))
         self.defender = MockUnit(position=(0, 1))
@@ -68,13 +69,13 @@ class CombatCalcTests(unittest.TestCase):
         self.defender = MockUnit(position=(0, 1))
         self.aweapon = MockItem()
         self.dweapon = MockItem()
-    
+
     def is_attacker_in_range(self, a: MockUnit, b: MockItem):
         dist = utils.calculate_distance(self.attacker.position, self.defender.position)
         if dist >= self.dweapon.min_range and dist <= self.dweapon.max_range:
             return [self.attacker.position]
         return []
-    
+
     def does_defender_have_los_on_attacker(self, a, b, c):
         if self.attacker.can_be_seen:
             return [self.attacker.position]
@@ -89,7 +90,7 @@ class CombatCalcTests(unittest.TestCase):
         game.target_system = MagicMock()
         game.target_system.targets_in_range = self.is_attacker_in_range
         self.assertEqual(can_counterattack(self.attacker, self.aweapon, self.defender, self.dweapon), should_counter, msg)
-    
+
     """
     Tests begin here
     """

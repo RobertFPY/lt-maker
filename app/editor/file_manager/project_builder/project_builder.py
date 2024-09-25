@@ -57,7 +57,7 @@ class LTProjectBuilder():
                                 "Cannot build project without saving! Please save the project "
                                 "before attempting to build.")
             return False
-        if DB.game_flags.has_fatal_errors:
+        if self.proj_file_manager.metadata.has_fatal_errors:
             QMessageBox.warning(None, "Cannot build project",
                                 "Cannot build project with fatal errors! Please fix the errors "
                                 "before attempting to build.")
@@ -108,7 +108,7 @@ class LTProjectBuilder():
         exe_kwargs: List[str] = []
         exe_kwargs.append(dist_cmd)
         exe_kwargs.append(work_cmd)
-        icon_cmd = '--icon=%s' % path_to_icon
+        icon_cmd = '--icon="%s"' % path_to_icon
         exe_kwargs.append(icon_cmd)
 
         exe_kwargstr = ' '.join(exe_kwargs)

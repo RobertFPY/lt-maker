@@ -41,7 +41,7 @@ from app.events.utils import TableRows
 from app.sprites import SPRITES
 from app.utilities import str_utils, utils
 from app.utilities.enums import Alignments, HAlignment, Orientation, VAlignment
-from app.utilities.type_checking import check_valid_type
+from app.utilities.type_checking import is_primitive_or_primitive_collection
 from app.utilities.typing import NID, Point
 from app.engine.source_type import SourceType
 
@@ -566,7 +566,7 @@ def screen_shake_end(self: Event, flags=None):
 
 def game_var(self: Event, nid, expression, flags=None):
     val = self._eval_expr(expression, 'from_python' in flags)
-    if check_valid_type(val):
+    if is_primitive_or_primitive_collection(val):
         action.do(action.SetGameVar(nid, val))
     else:
         self.logger.error("game_var: %s is not a valid variable", val)
@@ -574,7 +574,7 @@ def game_var(self: Event, nid, expression, flags=None):
 def inc_game_var(self: Event, nid, expression=None, flags=None):
     if expression:
         val = self._eval_expr(expression, 'from_python' in flags)
-        if check_valid_type(val):
+        if is_primitive_or_primitive_collection(val):
             action.do(action.SetGameVar(nid, self.game.game_vars.get(nid, 0) + val))
         else:
             self.logger.error("inc_game_var: %s is not a valid variable", val)
@@ -583,7 +583,7 @@ def inc_game_var(self: Event, nid, expression=None, flags=None):
 
 def level_var(self: Event, nid, expression, flags=None):
     val = self._eval_expr(expression, 'from_python' in flags)
-    if check_valid_type(val):
+    if is_primitive_or_primitive_collection(val):
         action.do(action.SetLevelVar(nid, val))
     else:
         self.logger.error("level_var: %s is not a valid variable", val)
@@ -591,7 +591,7 @@ def level_var(self: Event, nid, expression, flags=None):
 def inc_level_var(self: Event, nid, expression=None, flags=None):
     if expression:
         val = self._eval_expr(expression, 'from_python' in flags)
-        if check_valid_type(val):
+        if is_primitive_or_primitive_collection(val):
             action.do(action.SetLevelVar(nid, self.game.level_vars.get(nid, 0) + val))
         else:
             self.logger.error("inc_level_var: %s is not a valid variable", val)
@@ -606,6 +606,9 @@ def set_next_chapter(self: Event, chapter, flags=None):
 
 def enable_convoy(self: Event, activated: bool, flags=None):
     action.do(action.SetGameVar("_convoy", activated))
+    
+def enable_repair_shop(self: Event, activated: bool, flags=None):
+    action.do(action.SetGameVar("_repair_shop", activated))
 
 def enable_supports(self: Event, activated: bool, flags=None):
     action.do(action.SetGameVar("_supports", activated))
@@ -1128,10 +1131,12 @@ def interact_unit(self: Event, unit, position, combat_script: Optional[List[str]
     else:
         if actor.get_weapon():
             item = actor.get_weapon()
+        elif any(item_funcs.available(actor, item) for item in items):
+            item = [item for item in items if item_funcs.available(actor, item)][0]
         elif items:
             item = items[0]
         else:
-            self.logger.error("interact_unit: Unit does not have item!")
+            self.logger.error("interact_unit: Unit does not have an item in their inventory!")
             return
 
     interaction.start_combat(
@@ -1139,7 +1144,7 @@ def interact_unit(self: Event, unit, position, combat_script: Optional[List[str]
         arena='arena' in flags, force_animation='force_animation' in flags, force_no_animation='force_no_animation' in flags)
     self.state = "paused"
 
-def recruit_generic(self: Event, unit, nid, name, flags=None):
+def recruit_generic(self: Event, unit, nid, name=None, flags=None):
     new_unit = self._get_unit(unit)
     if not new_unit:
         self.logger.error("recruit_generic: Couldn't find unit %s" % unit)
@@ -1147,7 +1152,8 @@ def recruit_generic(self: Event, unit, nid, name, flags=None):
     unit = new_unit
     action.do(action.SetPersistent(unit))
     action.do(action.SetNid(unit, nid))
-    action.do(action.SetName(unit, name))
+    if name:
+        action.do(action.SetName(unit, name))
     for item in unit.items:
         action.do(action.SetItemOwner(item, nid))
     for skill in unit.all_skills:
@@ -3264,8 +3270,23 @@ def open_trade(self: Event, unit1, unit2, flags=None):
     self.game.memory['trade_partner'] = unit2_obj
 
     self.state = "paused"
-    self.game.memory['next_state'] = 'trade'
+    self.game.memory['next_state'] = 'combat_trade'
     self.game.state.change('transition_to')
+
+def open_bexp_menu(self: Event, panorama = "default_background", music: SongPrefab | SongObject | NID = None, flags=None):
+    bg = background.create_background(panorama, False)
+    self.game.memory['base_bg'] = bg
+
+    music_nid = self._resolve_nid(music)
+    if music_nid:
+        action.do(action.SetGameVar('_bexp_menu_music', music_nid))
+
+    self.state = "paused"
+    if 'immediate' in flags:
+        self.game.state.change('base_bexp_select')
+    else:
+        self.game.memory['next_state'] = 'base_bexp_select'
+        self.game.state.change('transition_to')
 
 def show_minimap(self: Event, flags=None):
     cursor_was_hidden = False

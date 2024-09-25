@@ -117,7 +117,8 @@ class ItemOptionUtils():
         render_text(surf, [uses_font], [uses_string_b], [
                     uses_color], uses_string_b_loc, HAlignment.RIGHT)
 
-    @staticmethod
+	
+    @staticmethod
     def draw_only_icon(surf, x, y, item: ItemObject, font: NID, color: NID, uses_color: NID,
                             width: int, align: HAlignment = HAlignment.LEFT,
                             disp_text: Optional[str] = None):
@@ -221,7 +222,11 @@ class BasicItemOption(BaseOption[Optional[ItemObject]]):
             if item_system.is_weapon(None, self._value) or item_system.is_spell(None, self._value):
                 self._help_box = help_menu.ItemHelpDialog(self._value)
             else:
-                self._help_box = help_menu.HelpDialog(self._value.desc)
+                text = text_funcs.translate_and_text_evaluate(
+                    self._value.desc,
+                    unit=game.get_unit(self._value.owner_nid),
+                    self=self._value)
+                self._help_box = help_menu.HelpDialog(text)
         return self._help_box
 
     def draw(self, surf, x, y):
@@ -250,7 +255,6 @@ class BasicItemOption(BaseOption[Optional[ItemObject]]):
         self._color = text_color
         self._font = font
         self._mode = mode
-
     @classmethod
     def from_nid(cls, idx, item_nid: NID, display_value: str | None = None, width: int = 0,
                  height: int = 0, ignore: bool = False, font: NID = 'text', text_color: Optional[NID] = None,
@@ -260,7 +264,6 @@ class BasicItemOption(BaseOption[Optional[ItemObject]]):
             raise ValueError("%s is not an item" % item_nid)
         as_item = ItemObject.from_prefab(item_prefab)
         return cls(idx, as_item, display_value, width, height, ignore, font, text_color, align, mode)
-
     @classmethod
     def from_uid(cls, idx, item_uid: int, display_value: str | None = None, width: int = 0,
                  height: int = 0, ignore: bool = False, font: NID = 'text', text_color: Optional[NID] = None,
@@ -269,27 +272,22 @@ class BasicItemOption(BaseOption[Optional[ItemObject]]):
         if not item_object:
             raise ValueError("%s is not a valid item uid" % item_uid)
         return cls(idx, item_object, display_value, width, height, ignore, font, text_color, align, mode)
-
     @classmethod
     def from_item(cls, idx, value: ItemObject, display_value: str | None = None, width: int = 0,
                   height: int = 0, ignore: bool = False, font: NID = 'text', text_color: Optional[NID] = None,
                   align: HAlignment = HAlignment.LEFT, mode: ItemOptionModes = ItemOptionModes.NO_USES):
         return cls(idx, value, display_value, width, height, ignore, font, text_color, align, mode)
-
     @classmethod
     def empty_option(cls, idx, display_value: str | None = "None", width: int = 0,
                      height: int = 0, ignore: bool = False, font: NID = 'text', text_color: Optional[NID] = None,
                      align: HAlignment = HAlignment.LEFT, mode: ItemOptionModes = ItemOptionModes.NO_USES):
         return cls(idx, None, display_value, width, height, ignore, font, text_color, align, mode)
-
     def width(self):
         return self._width or 104
-
     def set(self, val: Optional[ItemObject], disp_val: Optional[str] = None):
         self._value = val
         self._disp_value = text_funcs.translate(
             disp_val or (self._value.name if self._value else "None"))
-
     def get_color(self) -> Tuple[str, str]:
         if not self._value:
             return 'grey', 'grey'
@@ -311,15 +309,17 @@ class BasicItemOption(BaseOption[Optional[ItemObject]]):
             main_color = 'white'
             uses_color = 'blue'
         return main_color, uses_color
-
     def get_help_box(self):
         if not self._help_box and self._value:
             if item_system.is_weapon(None, self._value) or item_system.is_spell(None, self._value):
                 self._help_box = help_menu.ItemHelpDialog(self._value)
             else:
-                self._help_box = help_menu.HelpDialog(self._value.desc)
-        return self._help_box
-
+                text = text_funcs.translate_and_text_evaluate(
+                    self._value.desc,
+                    unit=game.get_unit(self._value.owner_nid),
+                    self=self._value)
+                self._help_box = help_menu.HelpDialog(text)
+        return self._help_box
     def draw(self, surf, x, y):
         main_color, uses_color = self.get_color()
         if not self._value:
@@ -333,9 +333,7 @@ class BasicItemOption(BaseOption[Optional[ItemObject]]):
                                            main_color, uses_color, self.width(), self._align, self._disp_value)
         elif self._mode == ItemOptionModes.FULL_USES:
             ItemOptionUtils.draw_only_icon(
-                surf, x, y, self._value, self._font, main_color, uses_color, self.width(), self._align, self._disp_value)
-
-
+                surf, x, y, self._value, self._font, main_color, uses_color, self.width(), self._align, self._disp_value)
 class BasicSkillOption(BaseOption[SkillObject]):
     def __init__(self, idx: int, skill: SkillObject, display_value: str | None = None,  width: int = 0,
                  height: int = 0, ignore: bool = False, font: NID = 'text', text_color: Optional[NID] = None,
@@ -386,8 +384,8 @@ class BasicSkillOption(BaseOption[SkillObject]):
 
     def get_help_box(self):
         if not self._help_box:
-            self._help_box = help_menu.HelpDialog(
-                self._value.desc, name=self._value.name)
+            text = text_funcs.translate_and_text_evaluate(self._value.desc, self=self._value)
+            self._help_box = help_menu.HelpDialog(text, name=self._value.name)
         return self._help_box
 
     def draw(self, surf, x, y):

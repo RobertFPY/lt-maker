@@ -3,7 +3,7 @@ from typing import Optional, Tuple
 
 import app.engine.skill_component_access as SCA
 from app.data.category import Categories, CategorizedCatalog
-from app.data.database.components import Component
+from app.data.database.skill_components import SkillComponent
 from app.utilities.data import Data, Prefab
 from app.utilities.typing import NID
 from app.utilities import str_utils
@@ -13,7 +13,7 @@ class SkillPrefab(Prefab):
     nid: str
     name: str
     desc: str
-    components: Data[Component]
+    components: Data[SkillComponent]
     icon_nid: Optional[NID]
     icon_index: Tuple[int, int]
 
@@ -25,9 +25,17 @@ class SkillPrefab(Prefab):
         self.icon_nid = icon_nid
         self.icon_index = icon_index
 
-        self.components = components or Data()
+        self.components = components or Data[SkillComponent]()
         for component_key, component_value in self.components.items():
             self.__dict__[component_key] = component_value
+
+    def add_component(self, component: SkillComponent):
+        self.components.append(component)
+        self.__dict__[component.nid] = component
+
+    def remove_component(self, component: SkillComponent):
+        self.components.delete(component)
+        del self.__dict__[component.nid]
 
     # If the attribute is not found
     def __getattr__(self, attr):

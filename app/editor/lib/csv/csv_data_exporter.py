@@ -205,5 +205,4 @@ def update_db_with_item_csv(db: Database, item_csv_str):
                     logging.error("invalid value type: %s, %s, %s", converted, str(expose_type), item_data)
                     continue
 
-                curr_item.components.append(new_component)
-                curr_item[new_component.nid] = new_component
+                curr_item.add_component(new_component)

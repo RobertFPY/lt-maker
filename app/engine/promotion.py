@@ -143,8 +143,9 @@ class PromotionChoiceState(State):
 
     def _get_desc(self):
         current_klass = self.class_options[self.menu.get_current_index()]
-        desc = DB.classes.get(current_klass).desc
-        d = dialog.Dialog(desc.replace('\n', '{br}'))
+        klass = DB.classes.get(current_klass)
+        text = text_funcs.translate_and_text_evaluate(klass.desc, self=klass)
+        d = dialog.Dialog(text.replace('\n', '{br}'))
         d.position = (6, 112)
         d.text_width = WINWIDTH - 28
         d.width = d.text_width + 16

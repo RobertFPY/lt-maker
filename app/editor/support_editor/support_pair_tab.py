@@ -42,7 +42,8 @@ if __name__ == '__main__':
     from PyQt5.QtWidgets import QApplication
     app = QApplication(sys.argv)
     RESOURCES.load('default.ltproj')
-    DB.load('default.ltproj')
+    from app.data.serialization.versions import CURRENT_SERIALIZATION_VERSION
+    DB.load('default.ltproj', CURRENT_SERIALIZATION_VERSION)
     window = SingleDatabaseEditor(SupportPairDatabase)
     window.show()
     app.exec_()

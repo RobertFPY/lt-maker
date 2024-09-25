@@ -21,6 +21,8 @@ from app.editor.component_editor_delegates import (AffinityDelegate,
 from app.editor.component_subcomponent_editors import get_editor_widget
 from app.editor.editor_constants import (DROP_DOWN_BUFFER, MAX_DROP_DOWN_WIDTH,
                                          MIN_DROP_DOWN_WIDTH)
+from app.editor.weapon_editor import weapon_model
+
 from app.extensions import list_models
 from app.extensions.color_icon import AlphaColorIcon, ColorIcon
 from app.extensions.custom_gui import ComboBox
@@ -262,7 +264,12 @@ class WeaponTypeItemComponent(BoolItemComponent):
     def create_editor(self, hbox):
         self.editor = ComboBox(self)
         for weapon_type in DB.weapons.values():
-            self.editor.addItem(weapon_type.nid)
+            pixmap = weapon_model.get_pixmap(weapon_type)
+            icon = QIcon(pixmap) if pixmap else None
+            if icon:
+                self.editor.addItem(icon, weapon_type.nid)
+            else:
+                self.editor.addItem(weapon_type.nid)
         width = utils.clamp(self.editor.minimumSizeHint().width(
         ) + DROP_DOWN_BUFFER, MIN_DROP_DOWN_WIDTH, MAX_DROP_DOWN_WIDTH)
         self.editor.setMaximumWidth(width)

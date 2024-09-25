@@ -130,7 +130,8 @@ if __name__ == '__main__':
     from PyQt5.QtWidgets import QApplication
     app = QApplication(sys.argv)
     from app.data.resources.resources import RESOURCES
-    DB.load('default.ltproj')
+    from app.data.serialization.versions import CURRENT_SERIALIZATION_VERSION
+    DB.load('default.ltproj', CURRENT_SERIALIZATION_VERSION)
     RESOURCES.load('default.ltproj')
     window = NewSkillDatabase(None, DB)
     window.show()

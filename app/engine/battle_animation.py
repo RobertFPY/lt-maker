@@ -310,8 +310,10 @@ class BattleAnimation():
             child_effect.pair(self.owner, self.partner_anim, right, self.at_range, parent=parent)
             if pose:
                 child_effect.start_anim(pose)
-            else:
+            elif self.current_pose in child_effect.poses:
                 child_effect.start_anim(self.current_pose)
+            elif 'Attack' in child_effect.poses:
+                child_effect.start_anim("Attack")
             return child_effect
         return None
 
@@ -819,8 +821,7 @@ def get_battle_anim(unit, item, distance=1, klass=None, default_variant=False, a
     # Some items never want to have a battle anim
     if item_system.force_map_anim(unit, item):
         return False
-    # Find the right combat animation
-    if item_system.change_animation(unit, item) != unit.klass:
+    # Find the right combat animation    if item_system.change_animation(unit, item) != unit.klass:
         class_obj = DB.classes.get(item_system.change_animation(unit, item))
     elif klass:
         class_obj = DB.classes.get(klass)
@@ -858,14 +859,8 @@ def get_battle_anim(unit, item, distance=1, klass=None, default_variant=False, a
         if not weapon_type:
             weapon_type = "Neutral"
         magic = item_funcs.is_magic(unit, item, distance)
-        ranged = item_funcs.is_ranged(unit, item)        # Added check for items with the same name but different nids (item variants).
-        if item.name in res.weapon_anims.keys():
-            weapon_anim_nid = item.name
-            if magic:
-                weapon_anim_nid = "Magic" + weapon_anim_nid
-            elif ranged and distance > 1:
-                weapon_anim_nid = "Ranged" + weapon_anim_nid
-        elif item.nid in res.weapon_anims.keys():
+        ranged = item_funcs.is_ranged(unit, item)
+        if item.nid in res.weapon_anims:
             weapon_anim_nid = item.nid
             if magic:
                 weapon_anim_nid = "Magic" + weapon_anim_nid

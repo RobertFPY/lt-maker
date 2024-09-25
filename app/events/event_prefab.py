@@ -58,6 +58,11 @@ class EventPrefab(Prefab):
             return EventVersion.EVENT
         return get_event_version(self._source[0])
 
+    def save(self):
+        as_dict = super().save()
+        as_dict['nid'] = self.nid
+        return as_dict
+
     def save_attr(self, name, value):
         if name == 'commands':
             value = []

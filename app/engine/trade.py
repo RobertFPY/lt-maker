@@ -167,7 +167,7 @@ class PrepTradeState(TradeState):
         return 'repeat'
 
     def back(self):
-        game.state.back()
+        game.state.change('transition_pop')
 
     def update(self):
         self.menu.update()

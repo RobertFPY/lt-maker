@@ -791,11 +791,11 @@ class LoreDisplay():
             return  # No need to update
 
         self.lore = DB.lore.get(lore_nid)
-        text = self.lore.text.split('\n')
+        text = text_funcs.translate_and_text_evaluate(self.lore.text, self=self.lore).split('\n')
         self.page_num = 0
         self.dialogs.clear()
-        for idx, line in enumerate(text):
-            dlg = dialog.Dialog(text[idx], font_type="text", font_color="white", num_lines=8, draw_cursor=False)
+        for line in text:
+            dlg = dialog.Dialog(line, font_type="text", font_color="white", num_lines=8, draw_cursor=False)
             dlg.position = self.topleft[0], self.topleft[1] + 12
             dlg.text_width = WINWIDTH - 100
             dlg.reformat()
@@ -1193,6 +1193,9 @@ class BaseBEXPSelectState(prep.PrepManageState):
                 DB.classes.get(unit.klass).turns_into and 'NoAutoPromote' not in unit.tags
             ignore.append(unit.level >= DB.classes.get(unit.klass).max_level and not auto_promote)
         self.menu.set_ignore(ignore)
+        base_music = game.game_vars.get('_bexp_menu_music')
+        if base_music:
+            get_sound_thread().fade_in(base_music)
         super().begin()
 
     def create_quick_disp(self):
@@ -1374,7 +1377,7 @@ class BaseBEXPAllocateState(State):
                 if DB.constants.value('rd_bexp_lvl'):
                     game.memory['exp_method'] = 'Bexp'
                 game.exp_instance.append((self.unit, exp_to_gain, None, 'init'))
-                game.state.change('exp')
+                game.state.change('bonus_exp')
                 if self.new_exp == 100:
                     self.original_exp = 0
                     self.new_exp = 0

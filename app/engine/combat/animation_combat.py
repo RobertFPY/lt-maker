@@ -1228,6 +1228,8 @@ class AnimationCombat(BaseCombat, MockCombat):
             if unit.get_hp() <= 0:
                 game.death.should_die(unit)
 
+        self.handle_records(self.full_playback, all_units)
+
         self._delay_death = self.combat_death_should_trigger(all_units)
 
     def clean_up1(self):
@@ -1241,8 +1243,6 @@ class AnimationCombat(BaseCombat, MockCombat):
         for unit in all_units:
             if unit.get_hp() > 0:
                 unit.sprite.change_state('normal')
-
-        self.handle_records(self.full_playback, all_units)
 
         self.cleanup_combat()
 

@@ -2,6 +2,7 @@ import functools
 from enum import Enum
 from typing import (Callable, Dict, Generic, List, Optional, Tuple, Type,
                     TypeVar)
+from typing_extensions import Protocol
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFontMetrics, QIcon
@@ -20,7 +21,7 @@ from app.editor.settings import MainSettingsController
 from app.extensions.custom_gui import PropertyBox, QHLine
 from app.extensions.qhelpmenu import QHelpMenu
 from app.utilities.data import Data
-from app.utilities.typing import NID, Protocol
+from app.utilities.typing import NID
 
 class HasComponents(Protocol):
     nid: NID
@@ -212,7 +213,7 @@ class NewComponentProperties(QWidget, Generic[T]):
             if component.nid in self.current.components:
                 QMessageBox.warning(self, 'Warning', '%s component already present' % component.class_name())
             else:
-                self.current.components.append(component)
+                self.current.add_component(component)
                 self.add_component_widget(component)
                 # Add other components that this should be paired with
                 for pair in component.paired_with:
@@ -227,7 +228,7 @@ class NewComponentProperties(QWidget, Generic[T]):
         if self.current:
             data = component_widget._data
             self.component_list.remove_component(component_widget)
-            self.current.components.delete(data)
+            self.current.remove_component(data)
             # Remove all paired components
             for pair in data.paired_with:
                 if pair in self.current.components:

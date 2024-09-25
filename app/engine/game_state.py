@@ -7,6 +7,7 @@ from collections import Counter
 from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Tuple
 
 from app.engine.query_engine import GameQueryEngine
+from app.utilities.primitive_counter import PrimitiveCounter
 
 if TYPE_CHECKING:
     from app.engine import (ai_controller, death,
@@ -90,8 +91,8 @@ class GameState():
         self.current_mode: DifficultyModeObject = None
 
         # global variable stores
-        self.game_vars: Counter = None
-        self.level_vars: Counter = None
+        self.game_vars: PrimitiveCounter = None
+        self.level_vars: PrimitiveCounter = None
         self.playtime: int = 0
         self.current_save_slot: int = None
 
@@ -153,7 +154,7 @@ class GameState():
         skill_system.reset_cache()
 
     def clear(self):
-        self.game_vars = Counter()
+        self.game_vars = PrimitiveCounter()
         self.memory = {}
 
         self.state = state_machine.StateMachine()
@@ -232,7 +233,7 @@ class GameState():
         from app.events import event_manager
         from app.engine.dialog_log import DialogLog
 
-        self.level_vars = Counter()
+        self.level_vars = PrimitiveCounter()
         self.turncount = 0
         self.talk_options = []
         self.base_convos = {}
@@ -439,9 +440,9 @@ class GameState():
         from app.events import event_manager, speak_style
 
         logging.info("Loading Game...")
-        self.game_vars = Counter(s_dict.get('game_vars', {}))
+        self.game_vars = PrimitiveCounter(s_dict.get('game_vars', {}))
         static_random.set_seed(self.game_vars.get('_random_seed', 0))
-        self.level_vars = Counter(s_dict.get('level_vars', {}))
+        self.level_vars = PrimitiveCounter(s_dict.get('level_vars', {}))
         mode_dict = s_dict.get('current_mode')
         if mode_dict:
             self.current_mode = DifficultyModeObject.restore(mode_dict)
@@ -1340,7 +1341,7 @@ class GameState():
         2. adding any auras from that the unit should be affected by to the the unit's skill list
         3. Adding any of the unit's own auras to other units
         4. Adding any status/skills that the terrain or regions on the map are giving
-        
+
         If "test" is True, some of these are skipped, such as adding the unit to
         the boundary manager and registering these actions with the action_log
         Set "test" to True when you are just testing what would happen by moving

@@ -361,6 +361,22 @@ def get_all_tradeable_items(unit: UnitObject) -> List[ItemObject]:
             items.append(item)
     return items
 
+def get_all_storeable_items(unit: UnitObject) -> List[ItemObject]:
+    """
+    Retrieves all storeable items possessed by a unit. Storeable items can be placed into the convoy
+
+    Args:
+        unit (UnitObject): The unit whose storeable items to retrieve.
+
+    Returns:
+        List[ItemObject]: A list of all storeable items possessed by the unit.
+    """
+    items = []
+    for item in unit.items:
+        if item_system.storeable(unit, item):
+            items.append(item)
+    return items
+
 def get_num_items(unit: UnitObject) -> int:
     """
     Retrieves the maximum number of non-accessories a unit can carry.

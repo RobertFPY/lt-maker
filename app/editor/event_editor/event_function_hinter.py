@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 from typing import Type
-from app.utilities.typing import Protocol
+from typing_extensions import Protocol
 from app.editor.event_editor.event_autocompleter import get_arg_name
 from app.editor.settings.main_settings_controller import MainSettingsController
 

@@ -48,7 +48,7 @@ class TagMultiModel(MultiAttrListModel):
                 klass.tags = [new_value if elem == old_value else elem for elem in klass.tags]
 
 class TagDialog(MultiAttrListDialog):
-    locked_vars = {'Lord', 'Boss', 'Required', 'Mounted', 'Flying', 'Armor', 'Dragon', 'AutoPromote', 
+    locked_vars = {'Lord', 'Boss', 'Required', 'Mounted', 'Flying', 'Armor', 'Dragon', 'AutoPromote',
                    'NoAutoPromote', 'Convoy', 'AdjConvoy', 'Tile', 'Blacklist', 'Protect'}
 
     @classmethod
@@ -65,7 +65,8 @@ if __name__ == '__main__':
     import sys
     from PyQt5.QtWidgets import QApplication
     app = QApplication(sys.argv)
-    DB.load('default.ltproj')
+    from app.data.serialization.versions import CURRENT_SERIALIZATION_VERSION
+    DB.load('default.ltproj', CURRENT_SERIALIZATION_VERSION)
     window = TagDialog.create()
     window.show()
     app.exec_()

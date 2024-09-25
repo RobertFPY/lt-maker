@@ -30,6 +30,14 @@ class ItemPrefab(Prefab):
         for component_key, component_value in self.components.items():
             self.__dict__[component_key] = component_value
 
+    def add_component(self, component: ItemComponent):
+        self.components.append(component)
+        self.__dict__[component.nid] = component
+
+    def remove_component(self, component: ItemComponent):
+        self.components.delete(component)
+        del self.__dict__[component.nid]
+
     # If the attribute is not found
     def __getattr__(self, attr):
         if attr.startswith('__') and attr.endswith('__'):

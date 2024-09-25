@@ -1,5 +1,6 @@
 import unittest
 
+from app.data.serialization.versions import CURRENT_SERIALIZATION_VERSION
 from app.utilities.data import Data
 from app.data.database.database import DB
 
@@ -21,7 +22,7 @@ class ObjectCreationUnitTests(unittest.TestCase):
     # Constants, Support Constants, and Minimap data don't have new information added to them by the user
     """
     def setUp(self):
-        DB.load('testing_proj.ltproj')
+        DB.load('testing_proj.ltproj', CURRENT_SERIALIZATION_VERSION)
 
     def _test_create_new(self, data: Data):
         """

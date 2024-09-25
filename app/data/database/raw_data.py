@@ -58,7 +58,8 @@ class RawDataPrefab(Prefab):
                         nid = str_utils.get_next_generic_nid("key", nids)
                         setattr(obj, 'nid', nid)
                 return lovalue
-        if name == 'oattrs':
+        elif name == 'oattrs':
+            value = value[:]
             if 'nid' not in value:
                 value = ['nid'] + value
             return value

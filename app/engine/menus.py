@@ -201,7 +201,7 @@ class Simple():
             for idx, option in enumerate(options):
                 option = menu_options.BasicOption(idx, option)
                 if info_descs:
-                    option.help_box = help_menu.HelpDialog(info_descs[idx])
+                    option.help_box = help_menu.HelpDialog(info_descs[idx], self=option)
                 self.options.append(option)
 
     def get_current(self):
@@ -1033,7 +1033,7 @@ class Table(Simple):
             return
         self.current_index = idx
         row, col = self._true_coords(self.current_index)
-        self.scroll = utils.clamp(self.scroll, row - self.rows + 1, row + self.rows - 1)
+        self.scroll = utils.clamp(self.scroll, row - self.rows + 1, row)
         # If we did scroll
         return scroll != self.scroll
 

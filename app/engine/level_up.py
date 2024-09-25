@@ -225,7 +225,7 @@ class ExpState(State):
                 self.stat_changes = unit_funcs.get_next_level_up(self.unit, self.unit.get_internal_level(), self.method)
                 action.do(action.GrowthPointChange(self.unit, old_growth_points, self.unit.growth_points))
                 action.do(action.IncLevel(self.unit))
-                action.do(action.ApplyStatChanges(self.unit, self.stat_changes, False))
+                action.do(action.ApplyStatChanges(self.unit, self.stat_changes, self.name == 'bonus_exp'))
                 action.do(action.UpdateRecords('level_gain', (self.unit.nid, self.unit.level, self.unit.klass)))
                 self.create_level_up_logo()
                 self.state.clear()
@@ -251,7 +251,7 @@ class ExpState(State):
                 self.stat_changes = {nid: -value for nid, value in stat_changes.items()}  # Make negative
                 action.do(action.GrowthPointChange(self.unit, old_growth_points, self.unit.growth_points))
                 action.do(action.SetLevel(self.unit, self.unit.level - 1))
-                action.do(action.ApplyStatChanges(self.unit, self.stat_changes, False))
+                action.do(action.ApplyStatChanges(self.unit, self.stat_changes, self.name == 'bonus_exp'))
                 self.create_level_up_logo()
                 self.state.clear()
                 self.state.change('level_up')

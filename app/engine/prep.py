@@ -7,7 +7,7 @@ from app.engine import action, background, banner, base_surf
 from app.engine import config as cf
 from app.engine import (convoy_funcs, engine, gui, image_mods,
                         item_funcs, item_system, menus, text_funcs,
-                        trade)
+                        trade, skill_system)
 from app.engine.background import SpriteBackground
 from app.engine.combat import interaction
 from app.engine.fluid_scroll import FluidScroll
@@ -706,7 +706,11 @@ class PrepManageState(State):
         elif event == 'START':
             get_sound_thread().play_sfx('Select 1')
             # convoy_funcs.optimize_all()
-            game.state.change('optimize_all_choice')
+            if game.game_vars.get('_convoy'):
+                game.state.change('optimize_all_choice')
+            else:
+                game.alerts.append(banner.Custom("Convoy not available"))
+                game.state.change('alert')
 
     def update(self):
         self.menu.update()
@@ -808,7 +812,9 @@ class PrepManageSelectState(State):
             if game.game_vars.get('_prep_market') and game.market_items:
                 ignore[5] = False
         if DB.constants.value('repair_shop'):
-            ignore[3] = not item_funcs.has_repair(self.unit)
+            ignore[3] = not game.game_vars.get('_repair_shop', True) or not item_funcs.has_repair(self.unit)
+        if skill_system.no_trade(self.unit):
+            ignore[0] = True
         return ignore
 
     def begin(self):
@@ -889,7 +895,8 @@ class PrepTradeSelectState(State):
         self.menu = game.memory['manage_menu']
         self.bg = game.memory['prep_bg']
         self.unit = game.memory['current_unit']
-        self.menu.set_fake_cursor(self.menu.current_index)
+        self.current_index = self.menu.current_index
+        self.menu.set_fake_cursor(self.current_index)
 
         if game.state.from_transition():
             game.state.change('transition_in')
@@ -918,10 +925,13 @@ class PrepTradeSelectState(State):
 
         if event == 'SELECT':
             unit2 = self.menu.get_current()
-            game.memory['unit1'] = self.unit
-            game.memory['unit2'] = unit2
-            game.memory['next_state'] = 'prep_trade'
-            game.state.change('transition_to')
+            if skill_system.no_trade(unit2):
+                get_sound_thread().play_sfx('Error')
+            else:
+                game.memory['unit1'] = self.unit
+                game.memory['unit2'] = unit2
+                game.memory['next_state'] = 'prep_trade'
+                game.state.change('transition_to')
 
         elif event == 'BACK':
             get_sound_thread().play_sfx('Select 4')

@@ -488,6 +488,17 @@ class LoadUnitDialog(Dialog):
             self.unit_box.edit.setValue(unit.nid)
 
     def nid_changed(self, nid):
+        # Don't bother if already identical
+        if nid == self.current.nid:
+            return
+
+        # If nid already in level
+        if nid in self.window.current_level.units.keys():
+            self.unit_box.edit.setValue(self.current.nid)
+            QMessageBox.warning(self.window, 'Warning',
+                                'Unit ID %s already in use' % nid)
+            return
+
         old_nid = self.current.nid
         self.current.nid = nid
         self.current.prefab = DB.units.get(nid)

@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import logging
 from typing import ClassVar, Dict, Generic, List, Optional, Tuple, Type, TypeVar
+from typing_extensions import Protocol
 
-from app.utilities.typing import NID, Protocol
+from app.utilities.typing import NID
 
 
 class HasNid(Protocol):
@@ -180,10 +181,6 @@ class Prefab():
         return self
 
     def restore_attr(self, name, value):
-        if isinstance(value, Data):
-            value = value.restore()
-        else:
-            value = value
         return value
 
     @classmethod

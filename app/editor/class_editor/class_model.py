@@ -19,9 +19,9 @@ from app.utilities.typing import NID
 
 def get_map_sprite_icon(klass_obj, num=0, current=False, team: NID = 'player', variant=None):
     res = None
-    if variant:
+    if variant and klass_obj.map_sprite_nid:
         res = RESOURCES.map_sprites.get(klass_obj.map_sprite_nid + variant)
-    if not variant or not res:
+    if klass_obj.map_sprite_nid and (not variant or not res):
         res = RESOURCES.map_sprites.get(klass_obj.map_sprite_nid)
     if not res:
         return None

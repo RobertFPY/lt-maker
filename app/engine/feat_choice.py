@@ -45,7 +45,11 @@ class SkillOption(menu_options.BasicOption):
         return main_color
 
     def get_help_box(self):
-        return help_menu.HelpDialog(self.skill.desc, name=self.skill.name)
+        text = text_funcs.translate_and_text_evaluate(
+            self.skill.desc,
+            unit=game.get_unit(self.skill.owner_nid),
+            self=self.skill)
+        return help_menu.HelpDialog(text, name=self.skill.name)
 
     def draw(self, surf, x, y):
         icon = icons.get_icon(self.skill)

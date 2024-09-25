@@ -162,9 +162,6 @@ class Defaults():
     def thracia_critical_multiplier_formula(unit) -> str:
         return 'THRACIA_CRIT'
 
-def reset_cache():
-    condition.cache_clear()
-
 @lru_cache(65535)
 def condition(skill, unit: UnitObject, item=None) -> bool:
     if not item:
@@ -443,7 +440,8 @@ def deactivate_all_combat_arts(unit):
     for skill in unit.skills:
         for component in skill.components:
             if component.defines('on_rescue'):
-                component.on_rescue(unit, leader)def on_give(unit, leader):
+                component.on_rescue(unit, leader)
+def on_give(unit, leader):
     for skill in unit.skills:
         for component in skill.components:
             if component.defines('on_give'):

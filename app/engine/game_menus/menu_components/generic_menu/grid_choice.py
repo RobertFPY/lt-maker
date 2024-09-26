@@ -355,8 +355,6 @@ class GridChoiceMenu():
 
     def _build_bg(self) -> engine.Surface:
         tw, th = self._get_pixel_size()
-        if self._should_draw_scrollbar:
-            tw += 16
         if self._bg_name:
             bg_surf = create_base_surf(tw, th, self._bg_name)
         else:  # No bg
@@ -543,7 +541,7 @@ class GridChoiceMenu():
             if total_height > self.num_rows():
                 x, y = options_top_left
                 y -= 3
-                x += self._get_pixel_size()[0] + 16
+                x += self._get_pixel_size()[0]
                 self.scroll_bar.draw(surf, (x, y), int(
                     self._scroll[1]), self.num_rows(), total_height, self._item_size[1])
 

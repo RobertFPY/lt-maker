@@ -60,17 +60,17 @@ class MusicCatalog(ManifestCatalog[SongPrefab]):
             # Full Path
             new_full_path = os.path.join(loc, song.nid + '.ogg')
             if os.path.abspath(song.full_path) != os.path.abspath(new_full_path):
-                shutil.copy(song.full_path, new_full_path)
+                self.make_copy(song.full_path, new_full_path)
                 song.set_full_path(new_full_path)
             # Battle Full Path
             new_full_path = os.path.join(loc, song.nid + '-battle.ogg')
             if song.battle_full_path and os.path.abspath(song.battle_full_path) != os.path.abspath(new_full_path):
-                shutil.copy(song.battle_full_path, new_full_path)
+                self.make_copy(song.battle_full_path, new_full_path)
                 song.set_battle_full_path(new_full_path)
             # Intro Full Path
             new_full_path = os.path.join(loc, song.nid + '-intro.ogg')
             if song.intro_full_path and os.path.abspath(song.intro_full_path) != os.path.abspath(new_full_path):
-                shutil.copy(song.intro_full_path, new_full_path)
+                self.make_copy(song.intro_full_path, new_full_path)
                 song.set_intro_full_path(new_full_path)
         self.dump(loc)
 

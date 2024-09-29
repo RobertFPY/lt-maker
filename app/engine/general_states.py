@@ -1418,7 +1418,7 @@ class ItemDiscardState(MapState):
         else:
             self.mode = self.ItemDiscardMode.DISCARD
 
-        options = [x for x in self.cur_unit.items if item_system.is_accessory(self.cur_unit, x) == self.drop_accessory]
+        options = self.cur_unit.items
         self.menu = menus.Choice(self.cur_unit, options)
         ignore = self._get_locked(options)
         self.menu.set_ignore(ignore)
@@ -1447,7 +1447,7 @@ class ItemDiscardState(MapState):
             return 'repeat'
 
         self.fluid.reset_on_change_state()
-        options = [x for x in self.cur_unit.items if item_system.is_accessory(self.cur_unit, x) == self.drop_accessory]
+        options = self.cur_unit.items
         self.menu.update_options(options)
         ignore = self._get_locked(options)
         self.menu.set_ignore(ignore)
@@ -1495,14 +1495,17 @@ class ItemDiscardState(MapState):
             get_sound_thread().play_sfx('Error')
 
         elif event == 'SELECT':
-            get_sound_thread().play_sfx('Select 1')
-            selection = self.menu.get_current()
-            owner = 'Storage' if self.mode == self.ItemDiscardMode.STORAGE else 'Discard'
-            game.memory['option_owner'] = owner
-            game.memory['option_item'] = selection
-            game.memory['option_unit'] = self.cur_unit
-            game.memory['option_menu'] = self.menu
-            game.state.change('option_child')
+            if self.drop_accessory != item_system.is_accessory(self.cur_unit, self.menu.get_current()):
+                get_sound_thread().play_sfx('Error')
+            else:
+                get_sound_thread().play_sfx('Select 1')
+                selection = self.menu.get_current()
+                owner = 'Storage' if self.mode == self.ItemDiscardMode.STORAGE else 'Discard'
+                game.memory['option_owner'] = owner
+                game.memory['option_item'] = selection
+                game.memory['option_unit'] = self.cur_unit
+                game.memory['option_menu'] = self.menu
+                game.state.change('option_child')
 
         elif event == 'INFO':
             self.menu.toggle_info()

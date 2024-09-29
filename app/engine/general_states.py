@@ -1409,6 +1409,7 @@ class ItemDiscardState(MapState):
     def start(self):
         game.cursor.hide()
         self.cur_unit = game.memory['item_discard_current_unit']
+        self.drop_accessory = game.memory['item_discard_drop_accessory']
 
         if game.game_vars.get('_convoy') and DB.constants.value("long_range_storage"):
             self.mode = self.ItemDiscardMode.STORAGE
@@ -1417,7 +1418,7 @@ class ItemDiscardState(MapState):
         else:
             self.mode = self.ItemDiscardMode.DISCARD
 
-        options = self.cur_unit.items
+        options = [x for x in self.cur_unit.items if item_system.is_accessory(self.cur_unit, x) == self.drop_accessory]
         self.menu = menus.Choice(self.cur_unit, options)
         ignore = self._get_locked(options)
         self.menu.set_ignore(ignore)
@@ -1446,7 +1447,7 @@ class ItemDiscardState(MapState):
             return 'repeat'
 
         self.fluid.reset_on_change_state()
-        options = self.cur_unit.items
+        options = [x for x in self.cur_unit.items if item_system.is_accessory(self.cur_unit, x) == self.drop_accessory]
         self.menu.update_options(options)
         ignore = self._get_locked(options)
         self.menu.set_ignore(ignore)

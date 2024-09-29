@@ -117,7 +117,7 @@ class Dialog:
         self.no_wait = False
 
         # A "plain_text" string consists of text, commands ("{}"), and tags ("<>").
-        # This text is immediately broken down into individiual characters (including the tags) except
+        # This text is immediately broken down into individual characters (including the tags) except
         # for the commands present (they are left intact).
         # These "text_commands" are then parsed a single element at a time during update
         # based on the drawing speed of the text box and added to "text_indices".

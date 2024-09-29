@@ -2717,7 +2717,12 @@ def arrange_formation(self: Event, flags=None):
     player_units = self.game.get_units_in_party()
     stuck_units = [unit for unit in player_units if unit.position and not self.game.check_for_region(unit.position, 'formation')]
     unstuck_units = [unit for unit in player_units if unit not in stuck_units and not self.game.check_for_region(unit.position, 'formation')]
+    # Don't include blacklisted units
     unstuck_units = [unit for unit in unstuck_units if 'Blacklist' not in unit.tags]
+    # Don't include rescued units
+    travelers = self.game.get_travelers()
+    unstuck_units = [unit for unit in unstuck_units if unit not in travelers]
+    # Don't include fatigued units
     if DB.constants.value('fatigue') and self.game.game_vars.get('_fatigue') == 1:
         unstuck_units = [unit for unit in unstuck_units if unit.get_fatigue() < unit.get_max_fatigue()]
     # Place required units first

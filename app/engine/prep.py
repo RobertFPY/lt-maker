@@ -459,17 +459,21 @@ class PrepFormationSelectState(MapState):
             if game.check_for_region(game.cursor.position, 'formation'):
                 get_sound_thread().play_sfx('FormationSelect')
                 # If hovered unit is not a player or is the current_unit
+                # Error
                 if hovered_unit and (hovered_unit.team != 'player' or hovered_unit is self.unit):
-                    pass
+                    get_sound_thread().play_sfx('Error')
                 # Else if duo unit
+                # Swap us
                 elif hovered_unit and hovered_unit.traveler:
                     swap_duo_unit(hovered_unit)
                 # Else if solo unit and can pair-up
+                # Give option between pair up and swap
                 elif hovered_unit and pair_up_valid:
                     game.memory['child_menu'] = menus.Choice(self.unit, ['Pair Up', 'Swap'])
                     game.state.change('prep_formation_menu')
-                # Else if solo unit but cannot pair-up
-                elif hovered_unit:
+                # Else if solo unit but cannot pair-up and I'm on the map
+                # Swap us
+                elif hovered_unit and self.unit.position:
                     old_unit_position = self.unit.position
                     old_hovered_unit_position = hovered_unit.position
                     action.do(action.PickUnitUp(self.unit))
@@ -477,7 +481,19 @@ class PrepFormationSelectState(MapState):
                     action.do(action.ArriveOnMap(self.unit, old_hovered_unit_position))
                     action.do(action.ArriveOnMap(hovered_unit, old_unit_position))
                     self.back()
+                # Else if solo unit but cannot pair-up and I'm not on the map
+                # Send solo unit to bench and put me there, unless solo unit is REQUIRED
+                elif hovered_unit:
+                    # Can't sendt the hovered unit back
+                    if 'Required' in hovered_unit.tags:
+                        get_sound_thread().play_sfx('Error')
+                    else:  # Send the hovered unit back
+                        action.do(action.Separate(game.get_rescuer(self.unit), self.unit, None, False))
+                        action.do(action.LeaveMap(hovered_unit))
+                        action.do(action.ArriveOnMap(self.unit, game.cursor.position))
+                        self.back()
                 # Else no unit
+                # Put me there
                 else:
                     if self.unit.position:
                         action.do(action.PickUnitUp(self.unit))

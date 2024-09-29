@@ -547,7 +547,7 @@ class UnitOption(BasicOption):
             elif DB.constants.value('fatigue') and game.game_vars.get('_fatigue') and \
                     self.unit.get_fatigue() >= self.unit.get_max_fatigue():
                 color = 'red'
-            elif not self.unit.position and not game.get_rescuer(self.unit):
+            elif not self.unit.position and not (game.get_rescuer(self.unit) and game.get_rescuer(self.unit).position):
                 color = 'grey'
             elif self.unit.position and (not game.check_for_region(self.unit.position, 'formation') or 'Required' in self.unit.tags):
                 color = 'green'

@@ -1554,8 +1554,7 @@ def move_item_between_convoys(self: Event, item, party1, party2, flags=None):
 
     item_id = item
     item_list = giver.items
-    item_list = [item_nid.strip() for item_nid in item_list]
-    inids = [item.nid for item in item_list]
+    inids = [item.nid.strip() for item in item_list]
     iuids = [item.uid for item in item_list]
     if (item_id not in inids) and (not str_utils.is_int(item_id) or not int(item_id) in iuids):
         self.logger.error("Couldn't find item with id %s" % item)

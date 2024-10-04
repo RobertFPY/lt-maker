@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import math
-from typing import Dict, List
+from typing import Any, Dict, List, Union
 
+from app.counters import AnimCounter, GenericEdgeCounter, generic3counter
 from app.data.database.units import UnitPrefab
+from app.data.resources import map_sprites
 from app.engine.game_counters import ANIMATION_COUNTERS
 
 from app.constants import TILEWIDTH, TILEHEIGHT, COLORKEY
@@ -26,8 +28,36 @@ from app.utilities.typing import NID, Color3
 
 import logging
 
+class SingleMapSprite():
+    frames: List[engine.Surface] = []
+    counter: AnimCounter = None
+
+    @classmethod
+    def create_looping_sprite(cls, frames: List[engine.Surface], counter: Any) -> SingleMapSprite:
+        """Create a sprite that loops on a (probably) shared counter"""
+        sprite = cls()
+        sprite.frames = frames
+        sprite.counter = counter
+        return sprite
+
+    @classmethod
+    def create_anim_sprite(cls, frames: List[engine.Surface], frame_timings: List[int]) -> SingleMapSprite:
+        """Create an animated sprite that only plays once"""
+        sprite = cls()
+        sprite.frames = frames
+        sprite.counter = GenericEdgeCounter(frame_timings)
+        return sprite
+
+    def get_frame(self) -> engine.Surface:
+        # lmao this is so dumb. we should be updating these counters on a clock
+        self.counter.update(engine.get_time())
+        return self.frames[self.counter.count].copy()
+
+    def get_stationary_frame(self) -> engine.Surface:
+        return self.frames[0].copy()
+
 class MapSprite():
-    def __init__(self, map_sprite, team):
+    def __init__(self, map_sprite: map_sprites.MapSprite, team):
         self.nid = map_sprite.nid
         self.team = team
         self.resource = map_sprite
@@ -38,17 +68,27 @@ class MapSprite():
         stand, move = self.convert_to_team_colors(map_sprite)
         engine.set_colorkey(stand, COLORKEY, rleaccel=True)
         engine.set_colorkey(move, COLORKEY, rleaccel=True)
-        self.passive = [engine.subsurface(stand, (num*64, 0, 64, 48)) for num in range(3)]
+        passive_frames = [engine.subsurface(stand, (num*64, 0, 64, 48)) for num in range(3)]
+        self.passive = SingleMapSprite.create_looping_sprite(passive_frames, ANIMATION_COUNTERS.passive_sprite_counter)
         if DB.constants.value('autogenerate_grey_map_sprites'):
-            gray_stand = map_sprite.standing_image.copy()
-            self.gray = self.create_gray([engine.subsurface(gray_stand, (num*64, 0, 64, 48)) for num in range(3)])
+            gray_frames = [frame.copy() for frame in passive_frames]
+            self.gray = SingleMapSprite.create_looping_sprite(self.create_gray(gray_frames), ANIMATION_COUNTERS.passive_sprite_counter)
         else:
-            self.gray = [engine.subsurface(stand, (num*64, 48, 64, 48)) for num in range(3)]
-        self.active = [engine.subsurface(stand, (num*64, 96, 64, 48)) for num in range(3)]
-        self.down = [engine.subsurface(move, (num*48, 0, 48, 40)) for num in range(4)]
-        self.left = [engine.subsurface(move, (num*48, 40, 48, 40)) for num in range(4)]
-        self.right = [engine.subsurface(move, (num*48, 80, 48, 40)) for num in range(4)]
-        self.up = [engine.subsurface(move, (num*48, 120, 48, 40)) for num in range(4)]
+            gray_frames = [engine.subsurface(stand, (num*64, 48, 64, 48)) for num in range(3)]
+            self.gray = SingleMapSprite.create_looping_sprite(gray_frames, ANIMATION_COUNTERS.passive_sprite_counter)
+        down_frames = [engine.subsurface(move, (num*48, 0, 48, 40)) for num in range(4)]
+        self.down = SingleMapSprite.create_looping_sprite(down_frames, ANIMATION_COUNTERS.move_sprite_counter)
+        left_frames = [engine.subsurface(move, (num*48, 40, 48, 40)) for num in range(4)]
+        self.left = SingleMapSprite.create_looping_sprite(left_frames, ANIMATION_COUNTERS.move_sprite_counter)
+        right_frames = [engine.subsurface(move, (num*48, 80, 48, 40)) for num in range(4)]
+        self.right = SingleMapSprite.create_looping_sprite(right_frames, ANIMATION_COUNTERS.move_sprite_counter)
+        up_frames = [engine.subsurface(move, (num*48, 120, 48, 40)) for num in range(4)]
+        self.up = SingleMapSprite.create_looping_sprite(up_frames, ANIMATION_COUNTERS.move_sprite_counter)
+
+        active_frames = [engine.subsurface(stand, (num*64, 96, 64, 48)) for num in range(3)]
+        self.active = SingleMapSprite.create_looping_sprite(active_frames, ANIMATION_COUNTERS.active_sprite_counter)
+        self.start_cast = SingleMapSprite.create_anim_sprite(active_frames, ANIMATION_COUNTERS.active_sprite_counter.to_edge_counter())
+        self.end_cast = SingleMapSprite.create_anim_sprite(reversed(active_frames), ANIMATION_COUNTERS.active_sprite_counter.to_edge_counter())
 
     def convert_to_team_colors(self, map_sprite):
         if self.team == 'black':
@@ -84,21 +124,8 @@ class MapSprite():
         return imgs
 
     def create_image(self, state, stationary=False):
-        image = self.__dict__.get(state)  # This is roughly 2x as fast as getattr, but getattr is safer
-        image = self.select_frame(image, state, stationary)
-        return image
-
-    def select_frame(self, image, state, stationary=False):
-        if stationary:
-            return image[0].copy()
-        elif state == 'passive' or state == 'gray':
-            return image[ANIMATION_COUNTERS.passive_sprite_counter.count].copy()
-        elif state == 'active':
-            return image[ANIMATION_COUNTERS.active_sprite_counter.count].copy()
-        elif state == 'combat_anim':
-            return image[ANIMATION_COUNTERS.fast_move_sprite_counter.count].copy()
-        else:
-            return image[ANIMATION_COUNTERS.move_sprite_counter.count].copy()
+        image: SingleMapSprite = self.__dict__.get(state)  # This is roughly 2x as fast as getattr, but getattr is safer
+        return image.get_stationary_frame() if stationary else image.get_frame()
 
 def load_map_sprite(unit: UnitObject | UnitPrefab, team='player'):
     klass = DB.classes.get(unit.klass)
@@ -145,6 +172,9 @@ class UnitSprite():
         self.map_sprite = load_map_sprite(self.unit, self.unit.team)
 
         self.health_bar = health_bar.MapHealthBar(self.unit)
+
+    def set_image_state(self, new_state: str):
+        self.image_state = new_state
 
     @property
     def position(self):
@@ -307,7 +337,7 @@ class UnitSprite():
             self.handle_net_position(self.net_position)
             self.reset()
         elif self.state in ('combat_active'):
-            self.image_state = 'active'
+            self.set_image_state('active')
         elif self.state == 'combat_defender':
             attacker = game.memory['current_combat'].attacker
             self.net_position = attacker.position[0] - self.unit.position[0], attacker.position[1] - self.unit.position[1]
@@ -331,7 +361,7 @@ class UnitSprite():
             self.net_position = pos
             self.handle_net_position(self.net_position)
         elif self.state == 'selected':
-            self.image_state = 'down'
+            self.set_image_state('down')
         elif self.state == 'normal':
             self.set_transition('normal')
 
@@ -339,16 +369,16 @@ class UnitSprite():
         self.net_position = pos
         if abs(pos[0]) >= abs(pos[1]):
             if pos[0] > 0:
-                self.image_state = 'right'
+                self.set_image_state('right')
             elif pos[0] < 0:
-                self.image_state = 'left'
+                self.set_image_state('left')
             else:
-                self.image_state = 'down'  # default
+                self.set_image_state('down')  # default
         else:
             if pos[1] < 0:
-                self.image_state = 'up'
+                self.set_image_state('up')
             else:
-                self.image_state = 'down'
+                self.set_image_state('down')
 
     def update(self):
         self.update_state()
@@ -371,16 +401,16 @@ class UnitSprite():
     def update_state(self):
         if self.state == 'normal':
             if self.unit.finished and not self.unit.is_dying:
-                self.image_state = 'gray'
+                self.set_image_state('gray')
             elif DB.constants.value('initiative') and game.initiative.get_current_unit() != self.unit \
                     and not game.is_roam() and self.unit.team == 'player':
-                self.image_state = 'gray'
+                self.set_image_state('gray')
             elif game.cursor.draw_state and game.cursor.position == self.unit.position and self.unit.team == 'player':
-                self.image_state = 'active'
+                self.set_image_state('active')
             elif game.is_roam() and game.get_roam_unit() == self.unit:
-                self.image_state = 'passive'
+                self.set_image_state('passive')
             else:
-                self.image_state = 'passive'
+                self.set_image_state('passive')
         elif self.state == 'combat_anim':
             self.offset[0] = utils.clamp(self.net_position[0], -1, 1) * ANIMATION_COUNTERS.attack_movement_counter.value()
             self.offset[1] = utils.clamp(self.net_position[1], -1, 1) * ANIMATION_COUNTERS.attack_movement_counter.value()
@@ -392,7 +422,7 @@ class UnitSprite():
             if self.net_position:
                 self.handle_net_position(self.net_position)
             else:
-                self.image_state = 'down'
+                self.set_image_state('down')
         elif self.state == 'moving':
             # next_position = game.movement.get_next_position(self.unit.nid)
             # if not next_position or not self.unit.position:
@@ -550,7 +580,7 @@ class UnitSprite():
                 image = image_mods.add_tint(image.convert_alpha(), color)
             else:
                 image = image_mods.sub_tint(image.convert_alpha(), color)
-                
+
         # Each image has (self.image.get_width() - 32)//2 pixels on the
         # left and right of it, to handle any off tile spriting
         topleft = left - max(0, (image.get_width() - 16)//2), top - 24

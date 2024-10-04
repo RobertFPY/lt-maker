@@ -1,9 +1,10 @@
 from __future__ import annotations
-from typing import Optional
+from typing import List, Optional
 
 from app.data.database.database import DB
 from app.engine import (action, banner, exp_funcs, item_system, skill_system,
                         supports)
+from app.engine.combat.playback import PlaybackBrush
 from app.engine.combat.solver import CombatPhaseSolver
 from app.engine.game_state import game
 from app.engine.objects.item import ItemObject
@@ -64,8 +65,8 @@ class SimpleCombat():
             self.defenders, self.splashes, self.target_positions,
             self.defender, self.def_item, script, total_rounds)
 
-        self.full_playback = []
-        self.playback = []
+        self.full_playback: List[PlaybackBrush] = []
+        self.playback: List[PlaybackBrush] = []
         self.actions = []
 
         self.start_combat()

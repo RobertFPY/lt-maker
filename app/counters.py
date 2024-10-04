@@ -1,4 +1,8 @@
+from __future__  import annotations
 # Helper global object for map sprite animations
+from typing import List, Union
+
+
 class generic3counter():
     def __init__(self, first_time=440, second_time=50, third_time=None):
         self.count = 0
@@ -7,7 +11,7 @@ class generic3counter():
         self.first_time = int(first_time)
         self.second_time = int(second_time)
         self.third_time = self.first_time if third_time is None else int(third_time)
-        
+
     def update(self, current_time):
         if self.count == 1 and current_time - self.last_update > self.second_time:
             self.increment()
@@ -42,6 +46,27 @@ class generic3counter():
         self.count = 0
         self.last_update = 0
         self.lastcount = 1
+
+    def to_edge_counter(self) -> GenericEdgeCounter:
+        return GenericEdgeCounter([self.first_time, self.second_time, self.third_time])
+
+class GenericEdgeCounter():
+    def __init__(self, times: List[int]):
+        self.count = 0
+        self.last_update = 0
+        self.times = times
+
+    def update(self, current_time):
+        if self.count < len(self.times):
+            if current_time - self.last_update > self.times[self.count]:
+                self.count += 1
+                self.last_update = current_time
+                return True
+        return False
+
+    def reset(self):
+        self.count = 0
+        self.last_update = 0
 
 class simplecounter():
     def __init__(self, times):
@@ -95,3 +120,6 @@ class arrow_counter():
 
     def pulse(self):
         self.increment = [1, 1, 1, 1, 1, 1, 1, 1, .5, .5, .5, .5, .25, .25, .25]
+
+
+AnimCounter = Union[generic3counter, simplecounter, movement_counter, arrow_counter, GenericEdgeCounter]

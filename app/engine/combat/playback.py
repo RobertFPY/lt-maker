@@ -1,9 +1,11 @@
+from __future__ import annotations
 from dataclasses import dataclass
-from typing import ClassVar, Tuple
+from typing import TYPE_CHECKING, ClassVar, Tuple
 
-from app.engine.objects.unit import UnitObject
-from app.engine.objects.item import ItemObject
-from app.engine.objects.skill import SkillObject
+if TYPE_CHECKING:
+    from app.engine.objects.unit import UnitObject
+    from app.engine.objects.item import ItemObject
+    from app.engine.objects.skill import SkillObject
 
 
 @dataclass

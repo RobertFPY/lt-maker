@@ -1,14 +1,17 @@
 from dataclasses import asdict, dataclass, field
 import os
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Set
+from typing_extensions import override
 
 from app.data.resources.base_catalog import ManifestCatalog
+from app.data.resources.resource_prefab import WithResources
 from app.data.serialization.dataclass_serialization import dataclass_from_dict
-from app.utilities.typing import Color4
+from app.utilities.data import Prefab
+from app.utilities.typing import Color4, NestedPrimitiveDict
 
 @dataclass
-class Font():
+class Font(WithResources, Prefab):
     nid: str                                                                             #: NID of the font.
     file_name: str = None                                                                #: Root path without file ending, e.g. `project.ltproj/resources/convo`.
     fallback_ttf: str = None                                                             #: name of the .ttf file (in this directory) to be used as a fallback if the main font cannot render anything
@@ -41,6 +44,17 @@ class Font():
             return palette[0]
         return None
 
+    @override
+    def set_full_path(self, path: str) -> None:
+        self.file_name = path
+
+    @override
+    def used_resources(self) -> Set[Path]:
+        paths = {Path(self.image_path()), Path(self.index_path())}
+        if self.ttf_path():
+            paths.add(Path(self.ttf_path()))
+        return paths
+
     def save(self):
         s_dict = asdict(self)
         del s_dict["file_name"]
@@ -56,37 +70,8 @@ class FontCatalog(ManifestCatalog[Font]):
     title = 'fonts'
     filetype = ''
 
-    def load(self, loc):
-        resource_dict = self.read_manifest(os.path.join(loc, self.manifest))
+    def load(self, loc, resource_dict: NestedPrimitiveDict):
+        super().load(loc, resource_dict)
         if len(resource_dict) == 0:
             self.load('default.ltproj/resources/fonts')
             return
-        for s_dict in resource_dict:
-            new_resource = self.datatype.restore(s_dict)
-            new_resource.file_name = os.path.join(loc, new_resource.nid)
-            self.append(new_resource)
-
-    def valid_files(self) -> set:
-        files = set()
-        for datum in self:
-            files.add(datum.nid + '.idx')
-            files.add(datum.nid + '.png')
-            files.add(datum.fallback_ttf)
-        if None in files:
-            files.remove(None)
-        return files
-
-    def save(self, loc):
-        for datum in self:
-            new_idx_path = os.path.join(loc, datum.nid + '.idx')
-            if os.path.abspath(datum.index_path()) != os.path.abspath(new_idx_path):
-                self.make_copy(datum.index_path(), new_idx_path)
-            new_image_path = os.path.join(loc, datum.nid + '.png')
-            if os.path.abspath(datum.image_path()) != os.path.abspath(new_image_path):
-                self.make_copy(datum.image_path(), new_image_path)
-            if datum.ttf_path():
-                new_ttf_path = os.path.join(loc, datum.fallback_ttf)
-                if os.path.abspath(datum.ttf_path()) != os.path.abspath(new_ttf_path):
-                    self.make_copy(datum.ttf_path(), new_ttf_path)
-            datum.file_name = os.path.join(loc, datum.nid)
-        self.dump(loc)

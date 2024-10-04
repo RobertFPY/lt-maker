@@ -1,59 +1,42 @@
 import os
+from pathlib import Path
 import shutil
 import filecmp
 import json
-from typing import List, Type, TypeVar
+from typing import List, Set, Type, TypeVar, Union
 
-from app.utilities.data import Data
+from app.data.resources.resource_prefab import WithResources
+from app.utilities.data import Data, Prefab
 
 import logging
 
-B = TypeVar('B')
-class BaseResourceCatalog(Data[B]):
-    def load(self, loc):
-        for root, dirs, files in os.walk(loc):
-            for name in files:
-                if name.endswith(self.filetype):
-                    full_path = os.path.join(root, name)
-                    nid = name[:-len(self.filetype)]
-                    new_resource = self.datatype(nid, full_path)
-                    self.append(new_resource)
+from app.utilities.typing import NestedPrimitiveDict
 
-M = TypeVar('M')
+M = TypeVar('M', bound=Union[WithResources, Prefab])
 class ManifestCatalog(Data[M]):
     filetype = '.png'
     manifest = None  # To be implemented
     title = ''  # To be implemented
     datatype: Type[M] = None  # To be implemented
-    multi_loc = None  # Can be implemented for distributed saving
 
-    def load(self, loc):
-        resource_dict = self.read_manifest(os.path.join(loc, self.manifest))
+    def load(self, loc, resource_dict: NestedPrimitiveDict):
         for s_dict in resource_dict:
-            new_resource = self.datatype.restore(s_dict)
+            new_resource: M = self.datatype.restore(s_dict)
             new_resource.set_full_path(os.path.join(loc, new_resource.nid + self.filetype))
             self.append(new_resource)
 
-    def read_manifest(self, fn: str) -> dict:
-        datum = {}
-        if os.path.exists(fn):
-            with open(fn) as load_file:
-                datum = json.load(load_file)
-        return datum
-
-    def dump(self, loc):
-        save = [datum.save() for datum in self]
-        save_loc = os.path.join(loc, self.manifest)
-        with open(save_loc, 'w') as serialize_file:
-            json.dump(save, serialize_file, indent=4)
-
-    def save(self, loc):
+    def save_resources(self, loc):
         for datum in self:
-            new_full_path = os.path.join(loc, datum.nid + self.filetype)
-            if os.path.abspath(datum.full_path) != os.path.abspath(new_full_path):
-                self.make_copy(datum.full_path, new_full_path)
-                datum.set_full_path(new_full_path)
-        self.dump(loc)
+            for resource in datum.used_resources():
+                if not resource:
+                    continue
+                new_full_path = os.path.join(loc, resource.name)
+                if os.path.abspath(resource) != os.path.abspath(new_full_path):
+                    try:
+                        self.make_copy(resource, new_full_path)
+                    except shutil.SameFileError: # windows filesystem doesn't distinguish between capitals
+                        os.rename(resource, new_full_path)
+            datum.set_full_path(os.path.join(loc, datum.nid + self.filetype))
 
     def make_copy(self, old_full_path, new_full_path):
         if os.path.exists(old_full_path):
@@ -64,15 +47,21 @@ class ManifestCatalog(Data[M]):
         else:
             logging.warning("%s does not exist" % old_full_path)
 
-    def valid_files(self) -> set:
-        return {datum.nid + self.filetype for datum in self}
+    def used_resources(self) -> Set[Path]:
+        resources = set()
+        for datum in self:
+            resources |= datum.used_resources()
+        return {r for r in resources if r}
 
     def get_unused_files(self, loc: str) -> List[str]:
         unused_files = []
-        valid_filenames = self.valid_files()
-        valid_filenames.add(self.manifest)  # also include the manifest file otherwise it would be deleted
-        valid_filenames.add(self.multi_loc)
+        used_files = self.used_resources()
+        # in the format of just the filename (e.g. 'test.png')
+        valid_filenames: str = {r.name for r in used_files}
+        valid_filenames.add(self.manifest)  # also include the manifest file ('manifest.json') otherwise it would be deleted
         for fn in os.listdir(loc):
+            if not Path(fn).suffix: # no filetype indicates directory, don't delete directories
+                continue
             if fn not in valid_filenames:
                 full_fn = os.path.normpath(os.path.join(loc, fn))
                 unused_files.append(full_fn)

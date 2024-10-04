@@ -18,7 +18,7 @@ class EventUnitTests(unittest.TestCase):
         from app.data.resources.resources import RESOURCES
         source_generator.event_command_codegen()
         DB.load('testing_proj.ltproj', CURRENT_SERIALIZATION_VERSION)
-        RESOURCES.load('testing_proj.ltproj')
+        RESOURCES.load('testing_proj.ltproj', CURRENT_SERIALIZATION_VERSION)
         self.patchers = self.initialize_patchers()
         for patcher in self.patchers:
             patcher.start()

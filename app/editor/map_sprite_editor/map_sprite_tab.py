@@ -42,7 +42,7 @@ if __name__ == '__main__':
     import sys
     from PyQt5.QtWidgets import QApplication
     app = QApplication(sys.argv)
-    RESOURCES.load('default.ltproj')
+    RESOURCES.load('default.ltproj', CURRENT_SERIALIZATION_VERSION)
     window = SingleResourceEditor(MapSpriteDatabase, ['map_sprites'])
     window.show()
     app.exec_()

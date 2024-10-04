@@ -226,7 +226,7 @@ if __name__ == '__main__':
 
     from PyQt5.QtWidgets import QApplication
     app = QApplication(sys.argv)
-    RESOURCES.load('default.ltproj')
+    RESOURCES.load('default.ltproj', CURRENT_SERIALIZATION_VERSION)
     # DB.load('default.ltproj')
     window = MultiResourceEditor((Icon16Database, Icon32Database, Icon80Database),
                                  ('icons16', 'icons32', 'icons80'))

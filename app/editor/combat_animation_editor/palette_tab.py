@@ -42,7 +42,8 @@ if __name__ == '__main__':
     from PyQt5.QtWidgets import QApplication
     from app.editor.combat_animation_editor.combat_animation_display import populate_anim_pixmaps
     app = QApplication(sys.argv)
-    RESOURCES.load('sacred_stones.ltproj')
+    from app.data.serialization.versions import CURRENT_SERIALIZATION_VERSION
+    RESOURCES.load('sacred_stones.ltproj', CURRENT_SERIALIZATION_VERSION)
     for anim in RESOURCES.combat_anims:
         populate_anim_pixmaps(anim)
     window = SingleResourceEditor(PaletteDatabase, ['combat_palettes'])

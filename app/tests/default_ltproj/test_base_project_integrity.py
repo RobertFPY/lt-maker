@@ -19,7 +19,7 @@ class BaseProjectIntegrityTests(unittest.TestCase):
 
     def testDefaultProjectNoWarningsOrErrors(self):
         DB.load('default.ltproj', CURRENT_SERIALIZATION_VERSION)
-        RESOURCES.load('default.ltproj')
+        RESOURCES.load('default.ltproj', CURRENT_SERIALIZATION_VERSION)
         checker = DBChecker(DB, RESOURCES)
         warnings = checker.validate_for_warnings()
         errors = checker.validate_for_errors()
@@ -30,7 +30,7 @@ class BaseProjectIntegrityTests(unittest.TestCase):
 
     def testTestingProjectNoWarningsOrErrors(self):
         DB.load('testing_proj.ltproj', CURRENT_SERIALIZATION_VERSION)
-        RESOURCES.load('testing_proj.ltproj')
+        RESOURCES.load('testing_proj.ltproj', CURRENT_SERIALIZATION_VERSION)
         checker = DBChecker(DB, RESOURCES)
         warnings = checker.validate_for_warnings()
         errors = checker.validate_for_errors()

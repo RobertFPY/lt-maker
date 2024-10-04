@@ -6,6 +6,7 @@ from PyQt5.QtCore import Qt
 from app.data.resources.resources import RESOURCES
 from app.data.database.database import DB
 
+from app.data.serialization.versions import CURRENT_SERIALIZATION_VERSION
 from app.editor.settings import MainSettingsController
 
 class SingleDatabaseEditor(QDialog):
@@ -217,7 +218,7 @@ class SingleResourceEditor(QDialog):
     def accept(self):
         current_proj = self.settings.get_current_project()
         # RESOURCES must be saved here because if we grabbed a file from somewhere else
-        # on our computer not under the project tree, we must transfer it under the project 
+        # on our computer not under the project tree, we must transfer it under the project
         # tree. The project does not and should not know the absolute path of every one of its
         # resources, just where the resources should be.
         if current_proj and current_proj != 'default.ltproj':
@@ -229,7 +230,7 @@ class SingleResourceEditor(QDialog):
     def reject(self):
         current_proj = self.settings.get_current_project()
         if current_proj:
-            RESOURCES.load(current_proj)
+            RESOURCES.load(current_proj, CURRENT_SERIALIZATION_VERSION)
         self.save_geometry()
         super().reject()
         self.close()

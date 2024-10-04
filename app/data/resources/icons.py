@@ -1,7 +1,11 @@
-from typing import Dict, Tuple
+from pathlib import Path
+from typing import Dict, Set, Tuple
+from typing_extensions import override
 from app.data.resources.base_catalog import ManifestCatalog
+from app.data.resources.resource_prefab import WithResources
+from app.utilities.data import Prefab
 
-class IconSheet():
+class IconSheet(WithResources, Prefab):
     def __init__(self, nid, full_path=None, subicon_dict = None):
         self.nid = nid
         self.full_path = full_path
@@ -20,8 +24,13 @@ class IconSheet():
     def get_alias(self, index):
         return self._index_to_name.get(index, None) or "%s %d, %d" % (self.nid, index[0], index[1])
 
+    @override
     def set_full_path(self, full_path):
         self.full_path = full_path
+
+    @override
+    def used_resources(self) -> Set[Path]:
+        return {Path(self.full_path)}
 
     def save(self):
         return {

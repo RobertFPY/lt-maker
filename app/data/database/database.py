@@ -168,7 +168,7 @@ class Database(object):
         import time
         start = time.perf_counter() * 1000
 
-        save_obj = disk_loader.load(data_dir, version)
+        save_obj = disk_loader.load_database(data_dir, version)
         self.restore(save_obj)
 
         # TODO -- This is a shitty fix that should be superseded

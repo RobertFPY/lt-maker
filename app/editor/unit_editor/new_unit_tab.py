@@ -118,7 +118,7 @@ if __name__ == '__main__':
     from app.data.resources.resources import RESOURCES
     from app.data.serialization.versions import CURRENT_SERIALIZATION_VERSION
     DB.load('default.ltproj', CURRENT_SERIALIZATION_VERSION)
-    RESOURCES.load('default.ltproj')
+    RESOURCES.load('default.ltproj', CURRENT_SERIALIZATION_VERSION)
     window = NewUnitDatabase(None, DB)
     window.show()
     app.exec_()

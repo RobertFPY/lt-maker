@@ -1,10 +1,16 @@
 import os
+from pathlib import Path
+from typing import Set
+from typing_extensions import override
 
 from app.data.resources.base_catalog import ManifestCatalog
 from app.data.resources import combat_commands
-from app.utilities.data import Data
+from app.data.resources.resource_prefab import WithResources
+from app.utilities.data import Data, Prefab
 
 import logging
+
+from app.utilities.typing import NID, NestedPrimitiveDict
 
 required_poses = ('Stand', 'Attack', 'Miss', 'Dodge')
 other_poses = ('RangedStand', 'RangedDodge', 'Critical')
@@ -50,7 +56,7 @@ class Frame():
         self.offset = tuple(self.offset)
         return self
 
-class WeaponAnimation():
+class WeaponAnimation(WithResources):
     def __init__(self, nid, full_path=None):
         self.nid = nid
         self.full_path = full_path
@@ -60,8 +66,13 @@ class WeaponAnimation():
         self.pixmap = None
         self.image = None
 
+    @override
     def set_full_path(self, full_path):
         self.full_path = full_path
+
+    @override
+    def used_resources(self) -> Set[Path]:
+        return {Path(self.full_path)}
 
     def save(self):
         s_dict = {}
@@ -79,7 +90,10 @@ class WeaponAnimation():
             self.poses.append(Pose.restore(pose_save))
         return self
 
-class CombatAnimation():
+class CombatAnimation(WithResources, Prefab):
+    nid: NID
+    weapon_anims: Data[WeaponAnimation]
+
     def __init__(self, nid):
         self.nid = nid
         self.weapon_anims = Data()
@@ -92,6 +106,16 @@ class CombatAnimation():
         s_dict['palettes'] = self.palettes[:]
         return s_dict
 
+    @override
+    def set_full_path(self, full_path):
+        for weapon_anim in self.weapon_anims:
+            short_path = "%s-%s.png" % (self.nid, weapon_anim.nid)
+            weapon_anim.set_full_path(str(Path(full_path).parent / short_path))
+
+    @override
+    def used_resources(self) -> Set[Path]:
+        return {Path(weapon_anim.full_path) for weapon_anim in self.weapon_anims}
+
     @classmethod
     def restore(cls, s_dict):
         self = cls(s_dict['nid'])
@@ -102,7 +126,7 @@ class CombatAnimation():
             self.weapon_anims.append(WeaponAnimation.restore(weapon_anim_save))
         return self
 
-class EffectAnimation():
+class EffectAnimation(WithResources, Prefab):
     def __init__(self, nid, full_path=None):
         self.nid = nid
         self.full_path = full_path
@@ -113,8 +137,13 @@ class EffectAnimation():
         self.pixmap = None
         self.image = None
 
+    @override
     def set_full_path(self, full_path):
         self.full_path = full_path
+
+    @override
+    def used_resources(self) -> Set[Path]:
+        return {Path(self.full_path)}
 
     def save(self):
         s_dict = {}
@@ -141,19 +170,10 @@ class CombatCatalog(ManifestCatalog):
     title = 'Combat Animations'
     datatype = CombatAnimation
 
-    def load(self, loc):
-        combat_dict = self.read_manifest(os.path.join(loc, self.manifest))
-        for s_dict in combat_dict:
-            new_combat_anim = CombatAnimation.restore(s_dict)
-            for weapon_anim in new_combat_anim.weapon_anims:
-                short_path = "%s-%s.png" % (new_combat_anim.nid, weapon_anim.nid)
-                weapon_anim.set_full_path(os.path.join(loc, short_path))
-            self.append(new_combat_anim)
-
     def save_image(self, loc, combat_anim, temp=False):
         for weapon_anim in combat_anim.weapon_anims:
             short_path = "%s-%s.png" % (combat_anim.nid, weapon_anim.nid)
-            new_full_path = os.path.join(loc, short_path)    
+            new_full_path = os.path.join(loc, short_path)
             if temp and weapon_anim.pixmap:
                 weapon_anim.pixmap.save(new_full_path, "PNG")
             elif not weapon_anim.full_path and weapon_anim.pixmap:
@@ -165,31 +185,14 @@ class CombatCatalog(ManifestCatalog):
                 self.make_copy(weapon_anim.full_path, new_full_path)
                 weapon_anim.set_full_path(new_full_path)
 
-    def save(self, loc):
+    def save_resources(self, loc):
         for combat_anim in self:
             self.save_image(loc, combat_anim)
-        self.dump(loc)
-
-    def valid_files(self) -> set:
-        valid_filenames = set()
-        for combat_anim in self:
-            for weapon_anim in combat_anim.weapon_anims:
-                short_path = "%s-%s.png" % (combat_anim.nid, weapon_anim.nid)
-                valid_filenames.add(short_path)
-        return valid_filenames
 
 class CombatEffectCatalog(ManifestCatalog):
     manifest = 'combat_effects.json'
     title = 'Combat Effects'
     datatype = EffectAnimation
-
-    def load(self, loc):
-        effect_dict = self.read_manifest(os.path.join(loc, self.manifest))
-        for s_dict in effect_dict:
-            new_effect_anim = EffectAnimation.restore(s_dict)
-            full_path = os.path.join(loc, new_effect_anim.nid + '.png')
-            new_effect_anim.set_full_path(full_path)
-            self.append(new_effect_anim)
 
     def save_image(self, loc, effect_anim, temp=False):
         new_full_path = os.path.join(loc, '%s.png' % effect_anim.nid)
@@ -205,15 +208,7 @@ class CombatEffectCatalog(ManifestCatalog):
             self.make_copy(effect_anim.full_path, new_full_path)
             effect_anim.set_full_path(new_full_path)
 
-    def save(self, loc):
+    def save_resources(self, loc):
         for effect_anim in self:
             if effect_anim.pixmap or effect_anim.full_path:  # Possible that no pixmap is associated with a simple control script
                 self.save_image(loc, effect_anim)
-        self.dump(loc)
-
-    def valid_files(self) -> set:
-        valid_filenames = set()
-        for effect_anim in self:
-            short_path = '%s.png' % effect_anim.nid
-            valid_filenames.add(short_path)
-        return valid_filenames

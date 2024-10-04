@@ -1,6 +1,11 @@
+from pathlib import Path
+from typing import Set
+from typing_extensions import override
 from app.data.resources.base_catalog import ManifestCatalog
+from app.data.resources.resource_prefab import WithResources
+from app.utilities.data import Prefab
 
-class PortraitPrefab():
+class PortraitPrefab(WithResources, Prefab):
     def __init__(self, nid, full_path=None, pix=None):
         self.nid = nid
         self.full_path = full_path
@@ -11,8 +16,13 @@ class PortraitPrefab():
         self.smiling_offset = [0, 0]
         self.info_offset = 0
 
+    @override
     def set_full_path(self, full_path):
         self.full_path = full_path
+
+    @override
+    def used_resources(self) -> Set[Path]:
+        return {Path(self.full_path)}
 
     def save(self):
         s_dict = {}

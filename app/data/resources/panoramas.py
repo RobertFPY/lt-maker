@@ -1,9 +1,14 @@
 import os
+from pathlib import Path
 import shutil
+from typing import Set
+from typing_extensions import override
 
 from app.data.resources.base_catalog import ManifestCatalog
+from app.data.resources.resource_prefab import WithResources
+from app.utilities.data import Prefab
 
-class Panorama():
+class Panorama(WithResources, Prefab):
     """
     A collection of background images
     """
@@ -16,8 +21,14 @@ class Panorama():
 
         # self.idx = 0
 
+    @override
     def set_full_path(self, full_path):
         self.full_path = full_path
+
+    @override
+    def used_resources(self) -> Set[Path]:
+        paths = self.get_all_paths()
+        return {Path(path) for path in paths}
 
     def get_all_paths(self):
         paths = []
@@ -41,26 +52,3 @@ class PanoramaCatalog(ManifestCatalog[Panorama]):
     manifest = 'panoramas.json'
     title = 'panoramas'
     datatype = Panorama
-
-    def save(self, loc):
-        for panorama in self:
-            new_full_path = os.path.join(loc, panorama.nid + '.png')
-            if os.path.abspath(panorama.full_path) != os.path.abspath(new_full_path):
-                if panorama.num_frames > 1:
-                    paths = panorama.get_all_paths()
-                    for idx, path in enumerate(paths):
-                        shutil.copy(path, new_full_path[:-4] + str(idx) + '.png')
-                else:
-                    shutil.copy(panorama.full_path, new_full_path)
-                panorama.set_full_path(new_full_path)
-        self.dump(loc)
-
-    def valid_files(self) -> set:
-        valid_filenames = set()
-        for panorama in self:
-            if panorama.num_frames > 1:
-                for idx in range(panorama.num_frames):
-                    valid_filenames.add(panorama.nid + str(idx) + '.png')
-            else:
-                valid_filenames.add(panorama.nid + '.png')
-        return valid_filenames

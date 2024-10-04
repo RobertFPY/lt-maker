@@ -5,13 +5,15 @@ import os
 from pathlib import Path
 
 def load_json(path: Path):
+    if not path.exists():
+       raise Exception("Path %s does not exist" % str(path))
     with path.open() as source:
         try:
             loaded = json.load(source)
         except Exception as e:
             raise Exception("Could not read %s" % str(path)) from e
         return loaded
-    
+
 def save_json(path: Path, value: str):
     temp_save_loc = path.parent / (path.name + ".tmp")
     with open(temp_save_loc, 'w') as serialize_file:

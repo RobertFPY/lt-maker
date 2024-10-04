@@ -55,7 +55,7 @@ if __name__ == '__main__':
     d = dark_theme.QDarkBGPalette()
     d.set_app(app)
     from app.data.resources.resources import RESOURCES
-    RESOURCES.load('default.ltproj')
+    RESOURCES.load('default.ltproj', CURRENT_SERIALIZATION_VERSION)
     from app.data.serialization.versions import CURRENT_SERIALIZATION_VERSION
     DB.load('default.ltproj', CURRENT_SERIALIZATION_VERSION)
     window = SingleDatabaseEditor(ClassDatabase)

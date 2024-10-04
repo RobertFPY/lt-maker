@@ -3,21 +3,45 @@ import os
 from pathlib import Path
 from typing import List
 from app.data.database import database
+from app.data.resources import resources
+from app.data.serialization.loaders.loader_base import LoaderBase
 from app.utilities.data_order import parse_order_keys_file
 from app.utilities.serialization import load_json
 from app.utilities.typing import NestedPrimitiveDict
 
-def load_as_dict(data_dir: Path) -> NestedPrimitiveDict:
+class Loader0(LoaderBase):
+    def load_database(self, data_dir: Path) -> NestedPrimitiveDict:
+        return _load_as_dict(data_dir)
+
+    def load_resources(self, resource_dir: Path) -> NestedPrimitiveDict:
+        as_dict = {}
+        for key in resources.Resources.save_data_types:
+            if key == 'combat_palettes': # special case
+                as_dict[key] = _json_load(resource_dir / key, 'palette_data')
+            elif key == 'tilemaps': # special case
+                as_dict[key] = _json_load(resource_dir / key, 'tilemap_data')
+            else:
+                as_dict[key] = _load_manifest_or_prefabs(resource_dir, key)
+        return as_dict
+
+def _load_manifest_or_prefabs(resource_dir: Path, key: str):
+    manifest_path = Path(resource_dir / key, key + '.json')
+    if manifest_path.exists():
+        return load_json(manifest_path)
+    else:
+        return _json_load(resource_dir, key)
+
+def _load_as_dict(data_dir: Path) -> NestedPrimitiveDict:
     as_dict = {}
     category_suffix = database.CATEGORY_SUFFIX
     for key in database.Database.save_data_types:
-        as_dict[key] = json_load(data_dir, key)
+        as_dict[key] = _json_load(data_dir, key)
         # Load any of the categories we need
         if Path(data_dir, key + category_suffix + '.json').exists():
-            as_dict[key + category_suffix] = json_load(data_dir, key + category_suffix)
+            as_dict[key + category_suffix] = _json_load(data_dir, key + category_suffix)
     return as_dict
 
-def json_load(data_dir: str, key: str):
+def _json_load(data_dir: str, key: str):
     data_path = Path(data_dir, key)
     if data_path.exists(): # data type is a directory, browse within
         data_fnames = os.listdir(data_path)

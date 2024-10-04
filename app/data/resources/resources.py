@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from pathlib import Path
+import pprint
+import re
 import shutil
 import os
 import traceback
@@ -7,6 +10,8 @@ import traceback
 from typing import Dict, List
 
 from app import sprites
+from app.data.resources.base_catalog import ManifestCatalog
+from app.data.serialization import disk_loader
 from app.utilities import exceptions
 from app.data.resources.fonts import FontCatalog
 from app.data.resources.icons import Icon16Catalog, Icon32Catalog, Icon80Catalog
@@ -22,10 +27,14 @@ from app.data.resources.combat_anims import CombatCatalog, CombatEffectCatalog
 
 import logging
 
+from app.utilities.serialization import save_json
+from app.utilities.typing import NestedPrimitiveDict
+
 class Resources():
     save_data_types = ("icons16", "icons32", "icons80", "portraits", "animations", "panoramas", "fonts",
                        "map_icons", "map_sprites", "combat_palettes", "combat_anims", "combat_effects", "music", "sfx",
                        "tilesets", "tilemaps")
+    save_as_chunks = ("combat_palettes", 'tilemaps')
     loose_file_types = ["custom_components", "custom_sprites", "system"]
 
     def __init__(self):
@@ -81,7 +90,7 @@ class Resources():
         self.music = MusicCatalog()
         self.sfx = SFXCatalog()
 
-    def load(self, proj_dir, specific=None):
+    def load(self, proj_dir, version: int, specific=None):
         self.main_folder = os.path.join(proj_dir, 'resources')
 
         # Load custom sprites for the UI
@@ -93,10 +102,11 @@ class Resources():
             save_data_types = specific
         else:
             save_data_types = self.save_data_types
+        resource_data = disk_loader.load_resources(Path(self.main_folder), version)
         for data_type in save_data_types:
             logging.info("Loading %s from %s..." % (data_type, self.main_folder))
             getattr(self, data_type).clear()  # Now always clears first
-            getattr(self, data_type).load(os.path.join(self.main_folder, data_type))
+            getattr(self, data_type).load(os.path.join(self.main_folder, data_type), resource_data.get(data_type, []))
 
         # load custom components
         self.load_components()
@@ -131,10 +141,19 @@ class Resources():
         if not os.path.exists(module_path):
             self.loaded_custom_components_path = None
 
+    def save_as_data(self, save_data_types) -> NestedPrimitiveDict:
+        to_save = {}
+        for data_type in save_data_types:
+            data: ManifestCatalog = getattr(self, data_type)
+            to_save[data_type] = data.save()
+        return to_save
+
     def save(self, proj_dir, specific=None, progress=None) -> bool:
         """
         # Returns whether it was successful in saving
         """
+        from app.editor.settings import MainSettingsController
+        main_settings = MainSettingsController()
         logging.info("Starting Resource Serialization for %s..." % proj_dir)
         import time
         start = time.time_ns()/1e6
@@ -152,13 +171,56 @@ class Resources():
             else:
                 save_data_types = self.save_data_types
                 should_save_loose_files = True
+            to_save = self.save_as_data(save_data_types)
+            # serialize manifest data
+            try:
+                for key, value in to_save.items():
+                    save_dir = Path(resource_dir, key)
+                    # if chunks, delete the old directory
+                    actual_save_dir = save_dir
+                    if key in self.save_as_chunks:
+                        if key == 'tilemaps':
+                            actual_save_dir = Path(save_dir, 'tilemap_data')
+                        elif key == 'combat_palettes':
+                            actual_save_dir = Path(save_dir, 'palette_data')
+                        if os.path.exists(actual_save_dir):
+                            shutil.rmtree(actual_save_dir)
+                    # divide save data into chunks based on key value
+                    if not os.path.exists(actual_save_dir):
+                        os.makedirs(actual_save_dir)
+                    if key in self.save_as_chunks and main_settings.get_should_save_as_chunks():
+                        orderkeys: List[str] = []
+                        for idx, subvalue in enumerate(value):
+                            # ordering
+                            if key == 'combat_palettes':
+                                name = subvalue[0]
+                            else:
+                                name = subvalue['nid']
+                            name = re.sub(r'[\\/*?:"<>|]', "", name)
+                            name = name.replace(' ', '_')
+                            orderkeys.append(name)
+                            save_loc = Path(actual_save_dir, name + '.json')
+                            # logging.info("Serializing %s to %s" % ('%s/%s.json' % (key, name), save_loc))
+                            save_json(save_loc, [subvalue])
+                        save_json(Path(actual_save_dir, '.orderkeys'), orderkeys)
+                    else:  # Save as a single file
+                        save_loc = Path(actual_save_dir, key + '.json')
+                        # logging.info("Serializing %s to %s" % (key, save_loc))
+                        save_json(save_loc, value)
+            except OSError as e:  # In case we ran out of memory
+                logging.error("Editor was unable to save your project. Free up memory in your hard drive or try saving somewhere else, otherwise progress will be lost when the editor is closed.")
+                logging.exception(e)
+                return False
+
+            # copy resources
             for idx, data_type in enumerate(save_data_types):
                 data_dir = os.path.join(resource_dir, data_type)
                 if not os.path.exists(data_dir):
                     os.mkdir(data_dir)
                 logging.info("Saving %s..." % data_type)
                 time1 = time.time_ns()/1e6
-                getattr(self, data_type).save(data_dir)
+                catalog: ManifestCatalog = getattr(self, data_type)
+                catalog.save_resources(data_dir)
                 time2 = time.time_ns()/1e6 - time1
                 logging.info("Time Taken: %s ms" % time2)
                 if progress:

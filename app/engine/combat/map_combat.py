@@ -37,6 +37,9 @@ class MapCombat(SimpleCombat):
 
         self.first_phase = True
 
+    def set_state(self, state: str):
+        self.state = state
+
     def skip(self):
         self._skip = True
         self.attacker.sprite.reset()
@@ -55,11 +58,11 @@ class MapCombat(SimpleCombat):
         if self.state == 'init':
             self.start_combat()
             self.start_event()
-            self.state = 'init_pause'
+            self.set_state('init_pause')
 
         elif self.state == 'init_pause':
             if self._skip or current_time > 200:
-                self.state = 'begin_phase'
+                self.set_state('begin_phase')
 
         # print("Map Combat %s" % self.state)
         elif self.state == 'begin_phase':
@@ -118,7 +121,7 @@ class MapCombat(SimpleCombat):
                     if self.defender.strike_partner:
                         self.defender.strike_partner.sprite.change_state(
                             'combat_defender')
-            self.state = 'red_cursor'
+            self.set_state('red_cursor')
 
         elif self.state == 'red_cursor':
             if self.defender:
@@ -131,7 +134,7 @@ class MapCombat(SimpleCombat):
             self.set_up_proc_animation('defense_proc')
             self.set_up_proc_animation('defense_hit_proc')
 
-            self.state = 'start_anim'
+            self.set_state('start_anim')
 
         elif self.state == 'start_anim':
             if self._skip or current_time > 400:
@@ -152,7 +155,7 @@ class MapCombat(SimpleCombat):
                         anim = MapAnimation(anim, brush.pos)
                         self.animations.append(anim)
 
-                self.state = 'sound'
+                self.set_state('sound')
 
         elif self.state == 'sound':
             if self._skip or current_time > 250:
@@ -173,7 +176,7 @@ class MapCombat(SimpleCombat):
                 for brush in sound_brushes:
                     get_sound_thread().play_sfx(brush.sound)
 
-                self.state = 'anim'
+                self.set_state('anim')
 
         elif self.state == 'anim':
             if self._skip or current_time > 83:
@@ -188,11 +191,11 @@ class MapCombat(SimpleCombat):
                                            for hp_bar in self.health_bars.values())
                 else:
                     self.hp_bar_time = 0
-                self.state = 'hp_bar_wait'
+                self.set_state('hp_bar_wait')
 
         elif self.state == 'hp_bar_wait':
             if self._skip or current_time > self.hp_bar_time:
-                self.state = 'end_phase'
+                self.set_state('end_phase')
 
         elif self.state == 'end_phase':
             if self._skip or current_time > 550:
@@ -210,7 +213,7 @@ class MapCombat(SimpleCombat):
                     self.attacker.sprite.change_state('combat_attacker')
                 self._end_phase()
                 self.state_machine.setup_next_state()
-                self.state = 'begin_phase'
+                self.set_state('begin_phase')
 
         if self.state != current_state:
             self.last_update = engine.get_time()

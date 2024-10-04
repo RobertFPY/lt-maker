@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import random
-from typing import TYPE_CHECKING, Set, Tuple, Any
+from typing import TYPE_CHECKING, List, Set, Tuple, Any
+import app.engine.combat.playback as pb
 
 from app.engine.component_system import utils
 
@@ -103,7 +104,7 @@ def available(unit: UnitObject, item: ItemObject) -> bool:
                     return False
     return True
 
-def exp(playback, unit: UnitObject, item: ItemObject):
+def exp(playback: List[pb.PlaybackBrush], unit: UnitObject, item: ItemObject):
     all_components = get_all_components(unit, item)
     val = 0
     for component in all_components:
@@ -295,7 +296,7 @@ def find_hp(actions, target):
             starting_hp += subaction.num
     return starting_hp
 
-def after_strike(actions, playback, unit: UnitObject, item: ItemObject, target: UnitObject, item2: ItemObject, mode, attack_info, strike):
+def after_strike(actions, playback: List[pb.PlaybackBrush], unit: UnitObject, item: ItemObject, target: UnitObject, item2: ItemObject, mode, attack_info, strike):
     all_components = get_all_components(unit, item)
     for component in all_components:
         if component.defines('after_strike'):
@@ -305,7 +306,7 @@ def after_strike(actions, playback, unit: UnitObject, item: ItemObject, target: 
             if component.defines('after_strike'):
                 component.after_strike(actions, playback, unit, item.parent_item, target, mode, attack_info, strike)
 
-def on_hit(actions, playback, unit: UnitObject, item: ItemObject, target: UnitObject, item2: ItemObject, target_pos, mode, attack_info, first_item: ItemObject):
+def on_hit(actions, playback: List[pb.PlaybackBrush], unit: UnitObject, item: ItemObject, target: UnitObject, item2: ItemObject, target_pos, mode, attack_info, first_item: ItemObject):
     all_components = get_all_components(unit, item)
     for component in all_components:
         if component.defines('on_hit'):
@@ -316,19 +317,19 @@ def on_hit(actions, playback, unit: UnitObject, item: ItemObject, target: UnitOb
                 component.on_hit(actions, playback, unit, item.parent_item, target, item2, target_pos, mode, attack_info)
 
     # Default playback
-    import app.engine.combat.playback as pb
-    if target and find_hp(actions, target) <= 0:
-        playback.append(pb.Shake(2))
-        if not any(brush.nid == 'hit_sound' for brush in playback):
-            playback.append(pb.HitSound('Final Hit'))
-    else:
-        playback.append(pb.Shake(1))
-        if not any(brush.nid == 'hit_sound' for brush in playback):
-            playback.append(pb.HitSound('Attack Hit ' + str(random.randint(1, 5))))
-    if target and not any(brush.nid in ('unit_tint_add', 'unit_tint_sub') for brush in playback):
-        playback.append(pb.UnitTintAdd(target, (255, 255, 255)))
+    if target and find_hp(actions, target) <= target.get_hp(): # only trigger these brushes if damage was net dealt
+        if target and find_hp(actions, target) <= 0:
+            playback.append(pb.Shake(2))
+            if not any(brush.nid == 'hit_sound' for brush in playback):
+                playback.append(pb.HitSound('Final Hit'))
+        else:
+            playback.append(pb.Shake(1))
+            if not any(brush.nid == 'hit_sound' for brush in playback):
+                playback.append(pb.HitSound('Attack Hit ' + str(random.randint(1, 5))))
+        if target and not any(brush.nid in ('unit_tint_add', 'unit_tint_sub') for brush in playback):
+            playback.append(pb.UnitTintAdd(target, (255, 255, 255)))
 
-def on_crit(actions, playback, unit: UnitObject, item: ItemObject, target: UnitObject, item2: ItemObject, target_pos, mode, attack_info, first_item: ItemObject):
+def on_crit(actions, playback: List[pb.PlaybackBrush], unit: UnitObject, item: ItemObject, target: UnitObject, item2: ItemObject, target_pos, mode, attack_info, first_item: ItemObject):
     all_components = get_all_components(unit, item)
     for component in all_components:
         if component.defines('on_crit'):
@@ -343,7 +344,6 @@ def on_crit(actions, playback, unit: UnitObject, item: ItemObject, target: UnitO
                 component.on_hit(actions, playback, unit, item.parent_item, target, item2, target_pos, mode, attack_info)
 
     # Default playback
-    import app.engine.combat.playback as pb
     playback.append(pb.Shake(3))
     if target:
         playback.append(pb.CritVibrate(target))
@@ -354,7 +354,7 @@ def on_crit(actions, playback, unit: UnitObject, item: ItemObject, target: UnitO
         if not any(brush.nid == 'crit_tint' for brush in playback):
             playback.append(pb.CritTint(target, (255, 255, 255)))
 
-def on_glancing_hit(actions, playback, unit: UnitObject, item: ItemObject, target: UnitObject, item2: ItemObject, target_pos, mode, attack_info, first_item: ItemObject):
+def on_glancing_hit(actions, playback: List[pb.PlaybackBrush], unit: UnitObject, item: ItemObject, target: UnitObject, item2: ItemObject, target_pos, mode, attack_info, first_item: ItemObject):
     all_components = get_all_components(unit, item)
     for component in all_components:
         if component.defines('on_glancing_hit'):
@@ -369,19 +369,19 @@ def on_glancing_hit(actions, playback, unit: UnitObject, item: ItemObject, targe
                 component.on_hit(actions, playback, unit, item.parent_item, target, item2, target_pos, mode, attack_info)
 
     # Default playback
-    import app.engine.combat.playback as pb
-    if target and find_hp(actions, target) <= 0:
-        playback.append(pb.Shake(2))
-        if not any(brush.nid == 'hit_sound' for brush in playback):
-            playback.append(pb.HitSound('Final Hit'))
-    else:
-        playback.append(pb.Shake(4))
-        if not any(brush.nid == 'hit_sound' for brush in playback):
-            playback.append(pb.HitSound('No Damage'))
-    if target and not any(brush.nid in ('unit_tint_add', 'unit_tint_sub') for brush in playback):
-        playback.append(pb.UnitTintAdd(target, (255, 255, 255)))
+    if target and find_hp(actions, target) <= target.get_hp(): # only trigger these brushes if damage was net dealt
+        if target and find_hp(actions, target) <= 0:
+            playback.append(pb.Shake(2))
+            if not any(brush.nid == 'hit_sound' for brush in playback):
+                playback.append(pb.HitSound('Final Hit'))
+        else:
+            playback.append(pb.Shake(4))
+            if not any(brush.nid == 'hit_sound' for brush in playback):
+                playback.append(pb.HitSound('No Damage'))
+        if target and not any(brush.nid in ('unit_tint_add', 'unit_tint_sub') for brush in playback):
+            playback.append(pb.UnitTintAdd(target, (255, 255, 255)))
 
-def on_miss(actions, playback, unit: UnitObject, item: ItemObject, target: UnitObject, item2: ItemObject, target_pos, mode, attack_info, first_item: ItemObject):
+def on_miss(actions, playback: List[pb.PlaybackBrush], unit: UnitObject, item: ItemObject, target: UnitObject, item2: ItemObject, target_pos, mode, attack_info, first_item: ItemObject):
     all_components = get_all_components(unit, item)
     for component in all_components:
         if component.defines('on_miss'):
@@ -392,7 +392,6 @@ def on_miss(actions, playback, unit: UnitObject, item: ItemObject, target: UnitO
                 component.on_miss(actions, playback, unit, item.parent_item, target, item2, target_pos, mode, attack_info)
 
     # Default playback
-    import app.engine.combat.playback as pb
     playback.append(pb.HitSound('Attack Miss 2'))
     playback.append(pb.HitAnim('MapMiss', target))
 

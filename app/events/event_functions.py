@@ -2947,6 +2947,8 @@ def textbox(self: Event, nid: str, text: str, box_position: Point | Alignments=N
     default_textbox_style = self.game.speak_styles['__default_text']
 
     if box_position:
+        if isinstance(box_position, str):
+            box_position = Alignments(box_position)
         position = box_position
     elif textbox_style and textbox_style.position:
         position = textbox_style.position

@@ -589,6 +589,8 @@ class EventProperties(QWidget):
             self.text_box.setPlainText(self.current.source)
             self.set_editor_language(self.current.version())
         self.set_test_event_button_visible()
+        # Reset red dot
+        self.text_box.debug_point_line_number = None
 
     def hideEvent(self, event):
         self.close_map()

@@ -2912,6 +2912,10 @@ def choice(self: Event, nid: NID, title: str, choices: TableRows, row_width: int
         scroll_bar = False
     backable = 'backable' in flags
 
+    # Automatically convert str to alignment
+    if isinstance(alignment, str):
+        alignment = Alignments(alignment)
+
     event_context = {
         'unit': self.unit,
         'unit2': self.unit2,

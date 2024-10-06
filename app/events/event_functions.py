@@ -606,7 +606,7 @@ def set_next_chapter(self: Event, chapter, flags=None):
 
 def enable_convoy(self: Event, activated: bool, flags=None):
     action.do(action.SetGameVar("_convoy", activated))
-    
+
 def enable_repair_shop(self: Event, activated: bool, flags=None):
     action.do(action.SetGameVar("_repair_shop", activated))
 
@@ -717,7 +717,7 @@ def change_tilemap(self: Event, tilemap, position_offset=None, load_tilemap=None
     reload_map = 'reload' in flags
     # For Overworld
     # just go back to the level
-    if reload_map and self.game.is_displaying_overworld():  
+    if reload_map and self.game.is_displaying_overworld():
         from app.engine import level_cursor, map_view
         from app.engine.movement import movement_system
         self.game.cursor = level_cursor.LevelCursor(self.game)
@@ -3026,6 +3026,12 @@ def textbox(self: Event, nid: str, text: str, box_position: Point | Alignments=N
             self.logger.error('textbox: %s is not a valid python expression' % text)
         textbox = dialog.DynamicDialogWrapper(
             expr, background=box_bg, position=position, width=box_width,
+            style_nid=style_nid, speed=speed,
+            font_color=fcolor, font_type=ftype, num_lines=lines,
+            draw_cursor=False, transparency=transparency)
+    elif callable(text):
+        textbox = dialog.DynamicDialogWrapper(
+            text, background=box_bg, position=position, width=box_width,
             style_nid=style_nid, speed=speed,
             font_color=fcolor, font_type=ftype, num_lines=lines,
             draw_cursor=False, transparency=transparency)

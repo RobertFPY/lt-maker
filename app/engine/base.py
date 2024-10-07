@@ -1,7 +1,6 @@
 import math
 import random
 from typing import List, Tuple
-from app.engine.game_counters import ANIMATION_COUNTERS
 from app.constants import WINWIDTH, WINHEIGHT
 from app.utilities import utils
 
@@ -472,7 +471,7 @@ class SupportDisplay():
                 elif DB.units.get(other_unit_nid):  # Not loaded into game yet
                     other_unit_prefab = DB.units.get(other_unit_nid)
                     map_sprite = unit_sprite.load_map_sprite(other_unit_prefab, 'black')
-                    image = map_sprite.passive[ANIMATION_COUNTERS.passive_sprite_counter.count].copy()
+                    image = map_sprite.passive.get_frame()
                     # name = other_unit_prefab.name
                     name = '---'
                     affinity = DB.affinities.get(other_unit_prefab.affinity)
@@ -1284,7 +1283,7 @@ class BaseBEXPAllocateState(State):
         self.new_bexp = int(game.get_bexp())
         self.original_exp = int(self.unit.exp)
         self.new_exp = int(self.unit.exp)
-        
+
         self.determine_needed_bexp(self.unit)
 
     def begin(self):
@@ -1303,7 +1302,7 @@ class BaseBEXPAllocateState(State):
         Effectively does a linear interpolation between the range [0, 1, 2, 3, ..., 100] (the valid exp values)
         and the range [0, N, N2, ..., self.bexp_needed], where N is self.bexp_needed divided by 100.
 
-        This enables us to figure out, for something like needing 120 bexp to gain 100 exp, at which points we 
+        This enables us to figure out, for something like needing 120 bexp to gain 100 exp, at which points we
         will need to take out 2 BEXP for one EXP point, instead of the usual 1 point.
         """
         # Numbers from 0 to bexp_needed, with 101 values
@@ -1337,7 +1336,7 @@ class BaseBEXPAllocateState(State):
                 bexp_cost, exp_gain = self.get_bexp_cost_for_an_experience_point(self.new_exp)
             else:
                 bexp_cost, exp_gain = 0, 0
-            # If we aren't at 100 exp and we have at least than bexp_cost bexp 
+            # If we aren't at 100 exp and we have at least than bexp_cost bexp
             if self.new_exp + exp_gain <= 100 and self.new_bexp >= bexp_cost:
                 get_sound_thread().play_sfx('Select 5')
                 self.new_exp += exp_gain

@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from app.data.database.klass import Klass
 from app.engine.game_counters import ANIMATION_COUNTERS
 from app.engine.objects.unit import UnitObject
-from app.engine.unit_sprite import MapSprite
+from app.engine.unit_sprite import MapSprite, SingleMapSprite
 from app.sprites import SPRITES
 
 if TYPE_CHECKING:
@@ -349,21 +349,12 @@ class OverworldUnitSprite():
             elif self.transition_state == 'warp_move':
                 self.set_transition('warp_in')
 
-    def select_frame(self, image, state):
-        if state == 'passive' or state == 'gray':
-            return image[ANIMATION_COUNTERS.passive_sprite_counter.count].copy()
-        elif state == 'active':
-            return image[ANIMATION_COUNTERS.active_sprite_counter.count].copy()
-        else:
-            return image[ANIMATION_COUNTERS.move_sprite_counter.count].copy()
-
     def create_image(self, state):
         if not self.map_sprite:  # This shouldn't happen, but if it does...
             res = RESOURCES.map_sprites[0]
             self.map_sprite = MapSprite(res, self.unit.team)
-        image = getattr(self.map_sprite, state)
-        image = self.select_frame(image, state)
-        return image
+        image: SingleMapSprite = getattr(self.map_sprite, state)
+        return image.get_frame()
 
     def get_topleft(self, cull_rect: Tuple[int, int, int, int]) -> Point:
         x, y = self.parent.display_position

@@ -696,10 +696,11 @@ class ChangeBackground(EventCommand):
 Changes the dialogue scene's background image to *Panorama*. If no *Panorama* is specified,
 the current background is removed without being replaced.
 Displayed portraits are also removed unless the *keep_portraits* flag is set.
+The *Scroll* flag determines whether the background image will move.
         """
 
     optional_keywords = ['Panorama']
-    _flags = ["keep_portraits"]
+    _flags = ["keep_portraits", "scroll"]
 
 class PauseBackground(EventCommand):
     nid = "pause_background"

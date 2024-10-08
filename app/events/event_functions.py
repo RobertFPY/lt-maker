@@ -437,13 +437,14 @@ def transition(self: Event, direction=None, speed=None, color3=None, panorama=No
 
 def change_background(self: Event, panorama=None, flags=None):
     flags = flags or set()
-    if panorama:
-        panorama = RESOURCES.panoramas.get(panorama)
-        if not panorama:
-            return
-        self.background = background.PanoramaBackground(panorama)
-    else:
+    if not panorama:
         self.background = None
+    elif RESOURCES.panoramas.get(panorama):
+        if 'scroll' in flags:
+            self.background = background.create_background(panorama, True)
+        else:
+            self.background = background.create_background(panorama, False)
+    
     if 'keep_portraits' in flags:
         pass
     else:

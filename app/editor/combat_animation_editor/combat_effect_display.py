@@ -452,7 +452,7 @@ class CombatEffectProperties(CombatAnimProperties):
                 # Make sure to save beforehand so that we use the modified effect when testing
                 resource_dir = os.path.join(proj_dir, 'resources')
                 data_dir = os.path.join(resource_dir, 'combat_effects')
-                RESOURCES.combat_effects.save(data_dir)
+                RESOURCES.combat_effects.save_resources(data_dir)
 
             left_palette_name, left_palette, right_palette_name, right_palette = self.get_test_palettes(combat_anim)
 

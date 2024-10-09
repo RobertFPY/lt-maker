@@ -22,7 +22,7 @@ class EventManager():
         if level_nid:
             event_source_nid = level_nid
         else:
-            if game.level_nid:
+            if game.level_nid and not game.is_displaying_overworld():
                 event_source_nid = game.level_nid
             else:
                 event_source_nid = None

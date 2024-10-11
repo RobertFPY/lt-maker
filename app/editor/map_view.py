@@ -94,7 +94,7 @@ class SimpleMapView(QGraphicsView):
         if pixmap:
             if opacity:
                 painter.setOpacity(0.33)
-            painter.drawImage(int(coord[0] * TILEWIDTH - 9),
+            painter.drawImage(int(coord[0] * TILEWIDTH - 8),
                               int(coord[1] * TILEHEIGHT - 8), pixmap.toImage())
             painter.setOpacity(1.0)
         else:

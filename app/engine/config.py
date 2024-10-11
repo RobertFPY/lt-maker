@@ -4,7 +4,7 @@ from collections import OrderedDict
 from app.utilities import str_utils
 
 def read_config_file():
-    lines = OrderedDict([('debug', 0),
+    lines = OrderedDict([('debug', 1),
                          ('random_seed', -1),
                          ('screen_size', 2),
                          ('fullscreen', 0),

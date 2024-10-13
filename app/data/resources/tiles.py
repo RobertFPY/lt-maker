@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 import re
 import shutil
-from typing import Dict, List, Set
+from typing import Dict, List, Optional, Set
 from typing_extensions import override
 
 from app.constants import AUTOTILE_FRAMES, TILEHEIGHT, TILEWIDTH, TILEX, TILEY
@@ -73,8 +73,8 @@ class TileMapPrefab(WithResources, Prefab):
         pass
 
     @override
-    def used_resources(self) -> Set[Path]:
-        return set()
+    def used_resources(self) -> List[Optional[Path]]:
+        return []
 
     def save(self):
         s_dict = {}
@@ -159,10 +159,9 @@ class TileSet(WithResources, Prefab):
         self.autotile_full_path = full_path
 
     @override
-    def used_resources(self) -> Set[Path]:
-        paths = {Path(self.full_path)}
-        if self.autotile_full_path:
-            paths.add(Path(self.autotile_full_path))
+    def used_resources(self) -> List[Optional[Path]]:
+        paths = [Path(self.full_path)]
+        paths.append(Path(self.autotile_full_path) if self.autotile_full_path else None)
         return paths
 
     def save(self):

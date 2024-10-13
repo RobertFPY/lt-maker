@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Set
+from typing import List, Optional, Set
 from typing_extensions import override
 
 from app.constants import FRAMERATE
@@ -26,8 +26,8 @@ class MapAnimation(WithResources, Prefab):
         self.full_path = full_path
 
     @override
-    def used_resources(self) -> Set[Path]:
-        return {Path(self.full_path)}
+    def used_resources(self) -> List[Optional[Path]]:
+        return [Path(self.full_path)]
 
     def save(self):
         s_dict = {}

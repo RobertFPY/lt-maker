@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 import re
 import shutil
-from typing import Dict, List, Set
+from typing import Dict, List, Optional, Set
 from typing_extensions import override
 from app.data.resources.resource_prefab import WithResources
 from app.utilities.data import Prefab
@@ -51,8 +51,8 @@ class Palette(Prefab, WithResources):
         pass
 
     @override
-    def used_resources(self) -> Set[Path]:
-        return set()
+    def used_resources(self) -> List[Optional[Path]]:
+        return []
 
     @classmethod
     def restore(cls, s):

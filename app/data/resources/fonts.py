@@ -49,10 +49,9 @@ class Font(WithResources, Prefab):
         self.file_name = path
 
     @override
-    def used_resources(self) -> Set[Path]:
-        paths = {Path(self.image_path()), Path(self.index_path())}
-        if self.ttf_path():
-            paths.add(Path(self.ttf_path()))
+    def used_resources(self) -> List[Optional[Path]]:
+        paths = [Path(self.image_path()), Path(self.index_path())]
+        paths.append(Path(self.ttf_path()) if self.ttf_path() else None)
         return paths
 
     def save(self):

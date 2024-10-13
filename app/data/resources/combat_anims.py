@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Set
+from typing import List, Optional, Set
 from typing_extensions import override
 
 from app.data.resources.base_catalog import ManifestCatalog
@@ -71,8 +71,8 @@ class WeaponAnimation(WithResources):
         self.full_path = full_path
 
     @override
-    def used_resources(self) -> Set[Path]:
-        return {Path(self.full_path)}
+    def used_resources(self) -> List[Optional[Path]]:
+        return [Path(self.full_path)]
 
     def save(self):
         s_dict = {}
@@ -113,8 +113,8 @@ class CombatAnimation(WithResources, Prefab):
             weapon_anim.set_full_path(str(Path(full_path).parent / short_path))
 
     @override
-    def used_resources(self) -> Set[Path]:
-        return {Path(weapon_anim.full_path) for weapon_anim in self.weapon_anims}
+    def used_resources(self) -> List[Optional[Path]]:
+        return [Path(weapon_anim.full_path) for weapon_anim in self.weapon_anims]
 
     @classmethod
     def restore(cls, s_dict):
@@ -142,8 +142,8 @@ class EffectAnimation(WithResources, Prefab):
         self.full_path = full_path
 
     @override
-    def used_resources(self) -> Set[Path]:
-        return {Path(self.full_path)}
+    def used_resources(self) -> List[Optional[Path]]:
+        return [Path(self.full_path)]
 
     def save(self):
         s_dict = {}

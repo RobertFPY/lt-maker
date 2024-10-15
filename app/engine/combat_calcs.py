@@ -528,7 +528,7 @@ def compute_damage(unit, target, item, def_item, mode, attack_info, crit=False, 
     might *= skill_system.damage_multiplier(unit, item, target, resolve_weapon(target), mode, attack_info, might)
     might *= skill_system.resist_multiplier(target, resolve_weapon(target), unit, item, mode, attack_info, might)
 
-    return int(max(DB.constants.get('min_damage').value, might))
+    return int(max(int(DB.constants.get('min_damage').value), might))
 
 def compute_assist_damage(unit, target, item, def_item, mode, attack_info, crit=False):
     return compute_damage(unit, target, item, def_item, mode, attack_info, crit, assist=True)

@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 import shutil
-from typing import Set
+from typing import List, Optional, Set
 from typing_extensions import override
 
 from app.data.resources.base_catalog import ManifestCatalog
@@ -26,9 +26,9 @@ class Panorama(WithResources, Prefab):
         self.full_path = full_path
 
     @override
-    def used_resources(self) -> Set[Path]:
+    def used_resources(self) -> List[Optional[Path]]:
         paths = self.get_all_paths()
-        return {Path(path) for path in paths}
+        return [Path(path) for path in paths]
 
     def get_all_paths(self):
         paths = []

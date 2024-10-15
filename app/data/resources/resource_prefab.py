@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Set
+from typing import List, Optional
 
 class WithResources(ABC):
     @abstractmethod
@@ -8,5 +8,5 @@ class WithResources(ABC):
         ...
 
     @abstractmethod
-    def used_resources(self) -> Set[Path]:
+    def used_resources(self) -> List[Optional[Path]]:
         ...

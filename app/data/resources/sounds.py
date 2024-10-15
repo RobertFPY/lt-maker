@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 import shutil
-from typing import Set
+from typing import List, Optional, Set
 from typing_extensions import override
 
 from app.data.resources.base_catalog import ManifestCatalog
@@ -41,12 +41,10 @@ class SongPrefab(HasNid, WithResources, Prefab):
             self.set_intro_full_path(str(parent_path / (self.nid + '-intro.ogg')))
 
     @override
-    def used_resources(self) -> Set[Path]:
-        paths = {Path(self.full_path)}
-        if self.intro_full_path:
-            paths.add(Path(self.intro_full_path))
-        if self.battle_full_path:
-            paths.add(Path(self.battle_full_path))
+    def used_resources(self) -> List[Optional[Path]]:
+        paths = [Path(self.full_path)]
+        paths.append(Path(self.intro_full_path) if self.intro_full_path else None)
+        paths.append(Path(self.battle_full_path) if self.battle_full_path else None)
         return paths
 
     @classmethod
@@ -74,8 +72,8 @@ class SFXPrefab(HasNid, WithResources, Prefab):
         self.full_path = full_path
 
     @override
-    def used_resources(self) -> Set[Path]:
-        return {Path(self.full_path)}
+    def used_resources(self) -> List[Optional[Path]]:
+        return [Path(self.full_path)]
 
     def save(self):
         return (self.nid, self.tag)

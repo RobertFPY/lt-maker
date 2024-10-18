@@ -202,6 +202,12 @@ class PrepPickUnitsState(State):
 
     def begin(self):
         self.fluid.reset_on_change_state()
+        # If come back from info menu
+        unit = game.memory.get('current_unit')
+        if unit and unit in self.units:
+            idx = self.units.index(unit)
+            self.menu.move_to(idx)
+        game.memory['current_unit'] = None
 
     def order_party(self):
         '''Run on exiting the prep menu. Saves the order for future levels with the party.

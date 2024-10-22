@@ -3,7 +3,7 @@ from __future__ import annotations
 from PyQt5 import QtGui
 from PyQt5.QtCore import Qt
 
-from typing import Dict
+from typing import Dict, Optional
 from app.utilities.typing import Color3
 
 from app.constants import COLORKEY
@@ -11,6 +11,7 @@ from app.data.resources.combat_palettes import Palette
 from app.data.resources.combat_anims import Frame
 
 qCOLORKEY = QtGui.qRgb(*COLORKEY)
+qEFFECT_COLORKEY = QtGui.qRgb(0, 0, 0)
 qAlpha = QtGui.qRgba(0, 0, 0, 0)
 
 def rgb_convert(conversion: Dict[Color3, Color3]) -> Dict[QtGui.qRgb, QtGui.qRgb]:
@@ -130,16 +131,17 @@ def convert_gba(image):
         image.setColor(i, QtGui.qRgb(*new_color))
     return image
 
-def get_bbox(image):
+def get_bbox(image, exclude_color: Optional[QtGui.qRgb] = None):
     min_x, max_x = image.width(), 0
     min_y, max_y = image.height(), 0
 
     # Assumes topleft color is exclude color
     # unless top right is qCOLORKEY, then uses qCOLORKEY
-    exclude_color = image.pixel(0, 0)
-    test_color = image.pixel(image.width() - 1, 0)
-    if test_color == qCOLORKEY:
-        exclude_color = qCOLORKEY
+    if not exclude_color:
+        exclude_color = image.pixel(0, 0)
+        test_color = image.pixel(image.width() - 1, 0)
+        if test_color == qCOLORKEY:
+            exclude_color = qCOLORKEY
 
     for x in range(image.width()):
         for y in range(image.height()):

@@ -100,7 +100,8 @@ class IntCommand(CombatCommand):
         hbox.addWidget(label)
 
         self.editor = QSpinBox(self)
-        self.editor.setMaximumWidth(40)
+        self.editor.setMaximumWidth(60)
+        self.editor.setAlignment(Qt.AlignRight)
         self.editor.setRange(0, 1024)
         self.editor.setValue(self._data.value[0])
         self.editor.valueChanged.connect(self.on_value_changed)

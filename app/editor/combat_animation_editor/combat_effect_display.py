@@ -24,8 +24,7 @@ from app.editor import timer
 from app.editor.combat_animation_editor.frame_selector import FrameSelector
 from app.editor.combat_animation_editor.combat_animation_display import CombatAnimProperties
 from app.editor.file_manager.project_file_backend import DEFAULT_PROJECT
-import app.editor.combat_animation_editor.combat_animation_imports as combat_animation_imports
-import app.editor.combat_animation_editor.combat_animation_export as combat_animation_export
+from app.editor.combat_animation_editor import combat_animation_imports, effect_animation_imports, combat_animation_export
 
 import app.editor.utilities as editor_utilities
 from app.utilities import str_utils
@@ -105,10 +104,14 @@ class CombatEffectProperties(CombatAnimProperties):
         self.export_effect_button = QPushButton("Export...")
         self.export_effect_button.clicked.connect(self.export_effect)
 
+        self.import_from_gba_button = QPushButton("Import from GBA...")
+        self.import_from_gba_button.clicked.connect(self.import_from_gba)
+
         self.window.left_frame.layout().addWidget(self.import_effect_button, 3, 0)
         self.window.left_frame.layout().addWidget(self.export_effect_button, 3, 1)
-        self.window.left_frame.layout().addWidget(self.import_from_lt_button, 4, 0,)
+        self.window.left_frame.layout().addWidget(self.import_from_lt_button, 4, 0)
         self.window.left_frame.layout().addWidget(self.export_to_lt_button, 4, 1)
+        self.window.left_frame.layout().addWidget(self.import_from_gba_button, 5, 0, 1, 2)
         frame_layout.addWidget(self.import_png_button)
 
     def pose_changed(self, idx):
@@ -204,6 +207,19 @@ class CombatEffectProperties(CombatAnimProperties):
                     if effect_nid:
                         effects.add(effect_nid)
         return effects
+
+    def import_from_gba(self):
+        starting_path = self.settings.get_last_open_path()
+        fn, ok = QFileDialog.getOpenFileName(self.window, "Select GBA Spell.txt File", starting_path, "Effect Files (Spell*.txt);;All Files (*)")
+        if ok and fn:
+            if fn.endswith('.txt'):
+                nid = str_utils.get_next_name("New Spell", RESOURCES.combat_effects.keys())
+                effect_animation_imports.import_effect_from_gba(fn, nid)
+            else:
+                QMessageBox.critical(self, "Invalid Filename", f"File {fn} must be named `Spell.txt`")
+        parent_dir = os.path.split(fn)[0]
+        self.settings.set_last_open_path(parent_dir)
+        self.window.update_list()
 
     def import_legacy(self):
         starting_path = self.settings.get_last_open_path()

@@ -632,6 +632,9 @@ class BattleAnimation():
             self.owner.darken()
         elif command.nid == 'lighten':
             self.owner.lighten()
+        elif command.nid == 'set_brightness':
+            brightness = int(values[0]) / 255
+            self.owner.set_brightness(brightness)
         elif command.nid == 'hit_spark':
             self.owner.hit_spark()
         elif command.nid == 'crit_spark':
@@ -655,12 +658,37 @@ class BattleAnimation():
                 child.end_loop()
 
     def draw(self, surf, shake=(0, 0), range_offset=0, pan_offset=0, y_offset=0):
+        """
+        Draw order for battle animations, assuming the right unit is attacking
+        Swap Left <-> Right for when the left unit is attacking.
+
+         -- Handled by BattleAnimation.draw_under
+        Left UnderEffect UnderFrame
+        Left UnderFrame
+        Left Effect UnderFrame
+        Right UnderEffect UnderFrame
+        Right UnderFrame
+        Right Effect UnderFrame
+         -- Handled by BattleAnimation.draw (this function)
+        Screen Flash
+        Left UnderEffect Frame
+        Left Frame
+        Left Effect Frame
+        Right UnderEffect Frame
+        Right Frame
+        Right Effect Frame
+         -- Handled by BattleAnimation.draw_over
+        Right OverFrame
+        Left OverFrame
+        """
+
         if self.state == 'inert':
             return
 
         # Screen flash
         if self.background and not self.blend:
             engine.blit(surf, self.background, (0, 0), None, engine.BLEND_RGB_ADD)
+            # engine.blit(surf, self.background, (0, 0))
 
         for child in self.under_child_effects:
             child.draw(surf, (0, 0), range_offset, pan_offset)
@@ -722,9 +750,18 @@ class BattleAnimation():
                 self.background_counter = 0
 
     def draw_under(self, surf, shake=(0, 0), range_offset=0, pan_offset=0):
-        if self.state != 'inert' and self.under_frame is not None:
+        if self.state == 'inert':
+            return
+
+        for child in self.under_child_effects:
+            child.draw_under(surf, (0, 0), range_offset, pan_offset)
+
+        if self.under_frame is not None:
             image, offset = self.get_image(self.under_frame, shake, range_offset, pan_offset, False)
             engine.blit(surf, image, offset, None, self.blend)
+
+        for child in self.child_effects:
+            child.draw_under(surf, (0, 0), range_offset, pan_offset)
 
     def draw_over(self, surf, shake=(0, 0), range_offset=0, pan_offset=0):
         if self.state != 'inert' and self.over_frame is not None:

@@ -143,7 +143,9 @@ class EffectAnimation(WithResources, Prefab):
 
     @override
     def used_resources(self) -> List[Optional[Path]]:
-        return [Path(self.full_path)]
+        if self.full_path:
+            return [Path(self.full_path)]
+        return []
 
     def save(self):
         s_dict = {}

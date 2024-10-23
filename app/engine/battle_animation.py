@@ -109,6 +109,7 @@ class BattleAnimation():
 
         # For drawing
         self.blend = 0
+        self.partial_blend = 0
         # Flash Frames
         self.foreground = None
         self.foreground_counter = 0
@@ -547,6 +548,8 @@ class BattleAnimation():
                 self.blend = engine.BLEND_RGB_ADD
             else:
                 self.blend = 0
+        elif command.nid == 'partial_blend':
+            self.partial_blend = int(values[0])
         elif command.nid == 'static':
             self.static = bool(values[0])
         elif command.nid == 'ignore_pan':
@@ -712,6 +715,7 @@ class BattleAnimation():
             # Self screen dodge
             image = self.handle_screen_dodge(image)
 
+            old_image = image.copy()
             if self.opacity != 255:
                 if self.blend:
                     image = image_mods.make_translucent_blend(image, 255 - self.opacity)
@@ -729,6 +733,13 @@ class BattleAnimation():
                 engine.blit(surf, old_bg, (0, 0), None, self.blend)
             else:
                 engine.blit(surf, image, offset, None, self.blend)
+            
+            # Handle situation where the image has a partial blend
+            # A partial blend is when the image should be drawn twice (above with a blend add)
+            # and then once with normal stamp (no blend) at a translucent opacity (to essentially make it darker)
+            if self.blend and self.partial_blend:
+                extra_image = image_mods.make_translucent(old_image.convert_alpha(), self.partial_blend/255.)
+                engine.blit(surf, extra_image, offset)
 
         # Handle children
         for child in self.child_effects:

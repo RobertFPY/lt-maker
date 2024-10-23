@@ -54,7 +54,8 @@ def parse_spell_txt(fn: str, pixmaps: Dict[str, QPixmap], foreground_effect_name
     current_counter = 0  # Keeps track of what frame the main controller effect should be on
     effect_start = None  # Keeps track of when the first frame is drawn
     has_panned = False
-    current_blend = False
+    current_blend: bool = False  # Keeps track of the current blend value for this effect so we don't duplicate commands
+    current_partial_blend: int = 0  # Keeps track of the current partial blend value for this effect so we don't duplicate commands
 
     # This creates six lists of commands
     global_hit_commands = []
@@ -152,8 +153,8 @@ def parse_spell_txt(fn: str, pixmaps: Dict[str, QPixmap], foreground_effect_name
             miss_background_commands.append(opacity_command)
 
             # handle blend
-            nonlocal current_blend
-            should_blend = (arg2 == 0x10)  # 0x10 means full blending, 0x00 means no blending
+            nonlocal current_blend, current_partial_blend
+            should_blend = (arg2 > 0x00)  # 0x10 means full blending, 0x00 means no blending, anything over 0x00 is partial blending
             # Only bother if blend has changed
             if current_blend != should_blend:
                 blend_command = combat_commands.parse_text('blend;1')
@@ -162,7 +163,20 @@ def parse_spell_txt(fn: str, pixmaps: Dict[str, QPixmap], foreground_effect_name
                 # add to ONLY the background
                 hit_background_commands.append(blend_command)
                 miss_background_commands.append(blend_command)
-            
+            # Partial blending section
+            # When blending is not exactly 0 or 1, we have to duplicate the frame draw and draw once with blending set to true
+            # and another with blending set to false, but have some opacity set to some in-between number.
+            if 0x00 < arg2 < 0x10:
+                value = int((arg2 / 0x10) * 255)
+            else:
+                value = 0
+            if current_partial_blend != value:
+                partial_blend_command = combat_commands.get_command('partial_blend')
+                partial_blend_command.value = (value, )
+                # add to ONLY the background
+                hit_background_commands.append(partial_blend_command)
+                miss_background_commands.append(partial_blend_command)
+
             duplicate_frame_commands()
         elif command_code == '2A':  # Whether maps 2 and 3 of the GBA screen should be visible
             # display_maps = (arg2 != 0)
@@ -246,8 +260,14 @@ def parse_spell_txt(fn: str, pixmaps: Dict[str, QPixmap], foreground_effect_name
                 background_pixmaps[background_image_name] = pixmaps[background_image_name]
 
             for im_name in (object_image_name, under_object_image_name, background_image_name):
-                if stretch_foreground and im_name not in empty_pixmaps and pixmaps[im_name].height() <= 120:
-                    stretch_these_pixmaps.add(im_name)
+                if stretch_foreground and im_name not in empty_pixmaps:
+                    if pixmaps[im_name].height() <= 120:
+                        stretch_these_pixmaps.add(im_name)
+                    else:  # Automatically crop the one's that are too big...
+                        pix = pixmaps[im_name]
+                        new_pix = pix.copy(0, 0, pix.width(), 80)
+                        pixmaps[im_name] = new_pix
+                        stretch_these_pixmaps.add(im_name)
 
             hit_object_commands.append(object_frame_command)
             miss_object_commands.append(object_frame_command)
@@ -328,6 +348,10 @@ def import_effect_from_gba(fn: str, effect_name: str):
         pix = pixmaps[pixmap_name]
         pix = stretch_vertically(pix)
         pixmaps[pixmap_name] = pix
+        if pixmap_name in object_pixmaps:
+            object_pixmaps[pixmap_name] = pix
+        if pixmap_name in background_pixmaps:
+            background_pixmaps[pixmap_name] = pix
 
     # Posify
     # Global Controller

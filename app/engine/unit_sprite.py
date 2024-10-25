@@ -71,7 +71,7 @@ class MapSprite():
         passive_frames = [engine.subsurface(stand, (num*64, 0, 64, 48)) for num in range(3)]
         self.passive = SingleMapSprite.create_looping_sprite(passive_frames, ANIMATION_COUNTERS.passive_sprite_counter)
         if DB.constants.value('autogenerate_grey_map_sprites'):
-            gray_frames = [frame.copy() for frame in passive_frames]
+            gray_frames = [engine.subsurface(stand, (num*64, 0, 64, 48)) for num in range(3)]
             self.gray = SingleMapSprite.create_looping_sprite(self.create_gray(gray_frames), ANIMATION_COUNTERS.passive_sprite_counter)
         else:
             gray_frames = [engine.subsurface(stand, (num*64, 48, 64, 48)) for num in range(3)]
@@ -90,6 +90,14 @@ class MapSprite():
         self.start_cast = SingleMapSprite.create_anim_sprite(active_frames, ANIMATION_COUNTERS.active_sprite_counter.to_edge_counter())
         self.end_cast = SingleMapSprite.create_anim_sprite(reversed(active_frames), ANIMATION_COUNTERS.active_sprite_counter.to_edge_counter())
 
+    def _get_team_palette(self):
+        team_obj = DB.teams.get(self.team)
+        palette_nid = team_obj.map_sprite_palette
+        palette = RESOURCES.combat_palettes.get(palette_nid)
+        if not palette:
+            logging.error("Unable to locate map sprite palette with nid %s" % palette_nid)
+        return palette
+
     def convert_to_team_colors(self, map_sprite):
         if self.team == 'black':
             palette = RESOURCES.combat_palettes.get('map_sprite_black')
@@ -98,13 +106,10 @@ class MapSprite():
             else:
                 colors: List[Color3] = default_palettes['map_sprite_black']
         else:
-            team_obj = DB.teams.get(self.team)
-            palette_nid = team_obj.map_sprite_palette
-            palette = RESOURCES.combat_palettes.get(palette_nid)
+            palette = self._get_team_palette()
             if palette:
                 colors: List[Color3] = palette.get_colors()
             else:
-                logging.error("Unable to locate map sprite palette with nid %s" % palette_nid)
                 colors: List[Color3] = default_palettes['map_sprite_black']
 
         conversion_dict = {a: b for a, b in zip(default_palettes['map_sprite_blue'], colors)}
@@ -112,12 +117,17 @@ class MapSprite():
             image_mods.color_convert(map_sprite.moving_image, conversion_dict)
 
     def create_gray(self, imgs):
+        """
+        Assumes imgs have already been converted to team colors
+        """
         palette = RESOURCES.combat_palettes.get('map_sprite_wait')
         if palette:
             colors: List[Color3] = palette.get_colors()
         else:
             colors: List[Color3] = default_palettes['map_sprite_wait']
-        conversion_dict = {a: b for a, b in zip(default_palettes['map_sprite_blue'], colors)}
+
+        current_palette = self._get_team_palette()
+        conversion_dict = {a: b for a, b in zip(current_palette.get_colors(), colors)}
         imgs = [image_mods.color_convert(img, conversion_dict) for img in imgs]
         for img in imgs:
             engine.set_colorkey(img, COLORKEY, rleaccel=True)

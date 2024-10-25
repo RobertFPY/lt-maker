@@ -38,16 +38,9 @@ Switching out the background is also a simple affair. Open up the Panoramas edit
 
 ## Attribution
 
-On the bottom left hand corner of the title screen is the attribution. You can change what it says from within your project's **game_data/translations.json** file.
+On the bottom left hand corner of the title screen is the attribution. You can change what it says in the Translations editor. Find the key `_attribution` and change the value to whatever you'd like the title screen to say, such as `created by you`. If the key does not exist in the translations editor, create a new Translation with the key first.
 
-```json
-    {
-        "nid": "_attribution",
-        "text": "created by you"
-    }
-```
-
-If it's not the last element in your json file, make sure you put a `,` at the end.
+![TranslationsEditor](images/TitleScreen/translation_editor.png)
 
 ## Complete!
 Now you can pull up the game and check out the new and improved title screen!

@@ -107,14 +107,14 @@ def parse_spell_txt(fn: str, pixmaps: Dict[str, QPixmap], foreground_effect_name
         if most_recent_object_frame_command:
             object_command = most_recent_object_frame_command.__class__.copy(most_recent_object_frame_command)
             object_command.value = (num_frames, *object_command.value[1:])
-            hit_object_commands.append(most_recent_object_frame_command)
-            miss_object_commands.append(most_recent_object_frame_command)
+            hit_object_commands.append(object_command)
+            miss_object_commands.append(object_command)
 
         if most_recent_background_frame_command:
             background_command = most_recent_background_frame_command.__class__.copy(most_recent_background_frame_command)
             background_command.value = (num_frames, *background_command.value[1:])
-            hit_background_commands.append(most_recent_background_frame_command)
-            miss_background_commands.append(most_recent_background_frame_command)
+            hit_background_commands.append(background_command)
+            miss_background_commands.append(background_command)
 
     def process_command(line: str):
         if len(line) == 3:  # Shorthand commands

@@ -3713,10 +3713,10 @@ def party_transfer(self: Event, party1, party2, fixed_units = None, party1_name 
         try:
             fixed_list = self._eval_expr(fixed_units, 'from_python' in flags)
         except Exception as e:
-            self.logger.error("party_split: %s: Could not evalute {%s}" % (e, fixed_units))
+            self.logger.error("party_transfer: %s: Could not evalute {%s}" % (e, fixed_units))
             return
         if not all((isinstance(unit_nid, str) or isinstance(unit_nid, UnitObject)) for unit_nid in fixed_list):
-            self.logger.error("loop_units: %s: could not evaluate to NID list {%s}" % ('loop_units', unit_list_str))
+            self.logger.error("party_transfer: could not evaluate to NID list %s" % fixed_list)
             return
     else:
         fixed_list = []

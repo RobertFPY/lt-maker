@@ -57,7 +57,7 @@ class SingleMapSprite():
         return self.frames[0].copy()
 
 class MapSprite():
-    def __init__(self, map_sprite: map_sprites.MapSprite, team):
+    def __init__(self, map_sprite: map_sprites.MapSprite, team: NID):
         self.nid = map_sprite.nid
         self.team = team
         self.resource = map_sprite
@@ -126,8 +126,13 @@ class MapSprite():
         else:
             colors: List[Color3] = default_palettes['map_sprite_wait']
 
-        current_palette = self._get_team_palette()
-        conversion_dict = {a: b for a, b in zip(current_palette.get_colors(), colors)}
+        # Handle the situation where team is "black"
+        if self.team == 'black':
+            new_colors: List[Color3] = default_palettes['map_sprite_black']
+        else:
+            current_palette = self._get_team_palette()
+            new_colors: List[Color3] = current_palette.get_colors()
+        conversion_dict: Dict[Color3, Color3] = {a: b for a, b in zip(new_colors, colors)}
         imgs = [image_mods.color_convert(img, conversion_dict) for img in imgs]
         for img in imgs:
             engine.set_colorkey(img, COLORKEY, rleaccel=True)

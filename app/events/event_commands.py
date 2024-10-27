@@ -3482,6 +3482,24 @@ class UnlockDifficulty(EventCommand):
     keywords = ['DifficultyMode']
     keyword_types = ['DifficultyMode']
 
+class PartyTransfer(EventCommand):
+    nid = 'party_transfer'
+    tag = Tags.MISCELLANEOUS
+
+    desc = \
+        """
+Presents the player with a menu in which they can move units between two parties.
+
+The *Party* entries are existing parties (the second can be empty but still must exist).
+*FixedUnits* is an optional Python expression that evaluates to a list of unit nids. This specifies units that are locked into their current party.
+*Party1Name* and *Party2Name* optionally display a title above either party on the menu.
+*Party1Limit* and *Party2Limit* set optional caps on the number of units in either party.
+        """
+
+    keywords = ["Party1","Party2"]
+    optional_keywords = ["FixedUnits","Party1Name","Party2Name","Party1Limit","Party2Limit"]
+    keyword_types = ["Party","Party","Expression","String","String","PositiveInteger","PositiveInteger"]
+
 def get_commands():
     return EventCommand.__subclasses__()
 

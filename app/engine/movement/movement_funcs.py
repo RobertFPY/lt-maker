@@ -7,7 +7,7 @@ from __future__ import annotations
 from typing import Tuple, TYPE_CHECKING
 
 from app.data.database.database import DB
-from app.engine import equations, skill_system
+from app.engine import equations, skill_system, evaluate
 from app.engine.game_state import game
 
 if TYPE_CHECKING:
@@ -63,7 +63,7 @@ def check_position(unit: UnitObject, new_position: Tuple[int, int],
     # Interruption regions take precedence, even over event movements
     # Only applies if there's not already a unit standing on the position
     if not game.board.get_unit(unit.position):
-        interrupted = check_region_interrupt(unit.position)
+        interrupted = check_region_interrupt(unit)
         if interrupted:
             return False
     # Event movement is nearly always valid
@@ -82,12 +82,13 @@ def check_position(unit: UnitObject, new_position: Tuple[int, int],
         else:  # Enemies
             return False
 
-def check_region_interrupt(pos: Tuple[int, int]):
+def check_region_interrupt(unit: UnitObject) -> List[RegionObject]:
     """
     # Checks if the position is in a region that interrupts.
-    # Returns region that would interrupt
+    # Returns regions that would interrupt, empty list if none
     """
+    interrupts: List[RegionObject] = []
     for region in game.level.regions:
-        if region.contains(pos) and region.interrupt_move:
-            return region
-    return False
+        if unit.position and region.contains(unit.position) and region.interrupt_move and evaluate.evaluate(region.condition, unit, local_args={'region': region}):
+            interrupts += [region]
+    return interrupts

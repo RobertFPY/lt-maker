@@ -79,7 +79,7 @@ class UnitPathMovementComponent(MovementComponent):
             if self.path:
                 self._handle_path()
             if not self.path:  # Path is empty, we are done
-                surprise = movement_funcs.check_region_interrupt(self.unit.position)
+                surprise = movement_funcs.check_region_interrupt(self.unit)
                 self.finish(surprise=surprise)
 
     def _handle_path(self):

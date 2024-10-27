@@ -83,7 +83,7 @@ class AIController():
         logging.info("AI Act!")
 
         change = False
-        if movement_funcs.check_region_interrupt(self.unit.position):
+        if movement_funcs.check_region_interrupt(self.unit):
             self.interrupt()
 
         if not self.move_ai_complete:

@@ -132,8 +132,8 @@ class FreeRoamState(MapState):
     def check_region_interrupt(self):
         if not self.roam_unit:
             return
-        region = movement_funcs.check_region_interrupt(self.roam_unit.position)
-        if region:
+        regions = movement_funcs.check_region_interrupt(self.roam_unit)
+        for region in regions:
             did_trigger = game.events.trigger(triggers.RoamingInterrupt(self.roam_unit, self.roam_unit.position, region))
             if did_trigger:
                 if region.only_once:

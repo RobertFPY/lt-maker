@@ -45,7 +45,7 @@ def log_interp(a: float, b: float, t: float, skew: float = 10) -> float:
     t = clamp(t, 0.0001, 1)
     skew = max(0.0001, skew)
     ratio = 1 + 1 / skew
-    return (b - a) * math.pow(ratio, -1/t + 1) + a
+    return clamp((b - a) * math.pow(ratio, -1/t + 1) + a, a, b)
 
 def tlog_interp(a: tuple, b: tuple, t: float, skew: float = 10) -> tuple:
     """exponential interpolation between two tuples
@@ -65,7 +65,8 @@ def tlog_interp(a: tuple, b: tuple, t: float, skew: float = 10) -> tuple:
 
 def cubic_easing(a: float, b: float, t: float) -> float:
     ratio = 4 * t * t * t if t < 0.5 else (1 - math.pow(-2 * t + 2, 3) / 2)
-    return (b - a) * ratio + a
+    eased = (b - a) * ratio + a
+    return clamp(eased, a, b)
 
 def tcubic_easing(a: tuple, b: tuple, t: float) -> tuple:
     ease_func = lambda t1, t2: cubic_easing(t1, t2, t)

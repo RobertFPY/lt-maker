@@ -599,13 +599,15 @@ class Wait(Action):
             region.reverse()
 
     def remove_interrupt_regions(self):
+        from app.engine.movement import movement_funcs
         regions_to_remove = []
-        for region in game.level.regions:
-            if self.unit.position and region.contains(self.unit.position) and region.interrupt_move:
-                if region.region_type == RegionType.EVENT:
-                    did_trigger = game.events.trigger(triggers.RegionTrigger(region.sub_nid, self.unit, self.unit.position, region))
-                if (region.region_type != RegionType.EVENT or did_trigger) and region.only_once:
-                    regions_to_remove.append(RemoveRegion(region))
+        for region in movement_funcs.check_region_interrupt(self.unit):
+            if region.region_type == RegionType.EVENT:
+                did_trigger = game.events.trigger(triggers.RegionTrigger(region.sub_nid, self.unit, self.unit.position, region))
+                if not did_trigger:
+                    did_trigger = game.events.trigger(triggers.OnRegionInteract(self.unit, self.unit.position, region))
+            if (region.region_type != RegionType.EVENT or did_trigger) and region.only_once:
+                regions_to_remove.append(RemoveRegion(region))
         return regions_to_remove
 
 

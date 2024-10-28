@@ -3,8 +3,8 @@ import os
 from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QListView, QDialog, \
     QPushButton, QFileDialog, QMessageBox, QGroupBox, QFormLayout, QSpinBox, \
     QCheckBox
-from PyQt5.QtCore import Qt, QDir
-from PyQt5.QtGui import QPixmap, QIcon, QImage, QPainter, QColor
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPixmap, QIcon, QImage, QPainter
 
 from app.constants import WINWIDTH, WINHEIGHT
 
@@ -17,7 +17,9 @@ from app.editor.settings import MainSettingsController
 from app.extensions.custom_gui import Dialog
 from app.editor.base_database_gui import ResourceCollectionModel
 from app.editor.icon_editor.icon_view import IconView
-from app.editor.combat_animation_editor import combat_animation_imports, combat_animation_model
+from app.editor.combat_animation_editor import combat_animation_model
+from app.editor.combat_animation_editor.animation_import_utils import update_anim_full_image
+
 import app.editor.utilities as editor_utilities
 
 class FrameModel(ResourceCollectionModel):
@@ -248,7 +250,7 @@ class FrameSelector(Dialog):
                 self.frames.append(new_frame)
                 self.set_current(new_frame)
 
-            combat_animation_imports.update_weapon_anim_full_image(self.weapon_anim)
+            update_anim_full_image(self.weapon_anim)
             self.model.layoutChanged.emit()
 
             parent_dir = os.path.split(fns[-1])[0]

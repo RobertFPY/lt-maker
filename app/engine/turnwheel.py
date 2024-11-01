@@ -24,7 +24,7 @@ class ActionLog():
     def __init__(self):
         self.actions = []
         self.action_index = -1  # Means no actions
-        self.first_free_action = -1
+        self._first_free_action = -1  # How far back can the turnwheel go back. This is the furthest back in time we are allowed to go
         self.locked = False
         # Whether the action log is currently recording
         # 0 means currently ON
@@ -91,7 +91,7 @@ class ActionLog():
         return action
 
     def at_far_past(self):
-        return not self.actions or self.action_index <= self.first_free_action
+        return not self.actions or self.action_index <= self._first_free_action
 
     def at_far_future(self):
         return not self.actions or self.action_index + 1 >= len(self.actions)
@@ -115,7 +115,7 @@ class ActionLog():
         self.unique_moves.clear()
         current_move = None
 
-        for action_index in range(max(0, self.first_free_action), len(self.actions)):
+        for action_index in range(max(0, self._first_free_action), len(self.actions)):
             action = self.actions[action_index]
             # Only regular moves, not CantoMove or other nonsense gets counted
             if type(action) == Action.Move or type(action) == Action.Teleport:
@@ -325,7 +325,7 @@ class ActionLog():
 
     def get_last_lock(self) -> bool:
         cur_index = self.action_index
-        while cur_index > self.first_free_action:
+        while cur_index > 0:
             cur_index -= 1
             cur_action = self.actions[cur_index]
             if isinstance(cur_action, Action.LockTurnwheel):
@@ -350,7 +350,7 @@ class ActionLog():
     def get_unit_turn(self, unit, wait_index):
         cur_index = wait_index
         text = []
-        while cur_index > self.first_free_action:
+        while cur_index > self._first_free_action:
             cur_index -= 1
             cur_action = self.actions[cur_index]
             if isinstance(cur_action, Action.Message):
@@ -367,7 +367,7 @@ class ActionLog():
 
     def set_first_free_action(self):
         logging.debug("*** First Free Action ***")
-        self.first_free_action = self.action_index
+        self._first_free_action = self.action_index
 
     def hover_on(self, unit):
         game.cursor.set_turnwheel_sprite()
@@ -387,7 +387,7 @@ class ActionLog():
         self.record -= 1
 
     def save(self):
-        return ([action.save() for action in self.actions], self.first_free_action, self.record)
+        return ([action.save() for action in self.actions], self._first_free_action, self.record)
 
     @classmethod
     def restore(cls, serial):
@@ -399,7 +399,7 @@ class ActionLog():
             actions, first_free_action, record = serial
         for name, action in actions:
             self.append(getattr(Action, name).restore(action))
-        self.first_free_action = first_free_action
+        self._first_free_action = first_free_action
         self.record = record
         return self
 

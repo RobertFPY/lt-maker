@@ -768,7 +768,7 @@ class BattleAnimation():
             child.draw_under(surf, (0, 0), range_offset, pan_offset)
 
         if self.under_frame is not None:
-            image, offset = self.get_image(self.under_frame, shake, range_offset, pan_offset, False)
+            image, offset = self.get_image(self.under_frame, shake, range_offset, pan_offset, self.static)
             engine.blit(surf, image, offset, None, self.blend)
 
         for child in self.child_effects:
@@ -776,7 +776,7 @@ class BattleAnimation():
 
     def draw_over(self, surf, shake=(0, 0), range_offset=0, pan_offset=0):
         if self.state != 'inert' and self.over_frame is not None:
-            image, offset = self.get_image(self.over_frame, shake, range_offset, pan_offset, False)
+            image, offset = self.get_image(self.over_frame, shake, range_offset, pan_offset, self.static)
             engine.blit(surf, image, offset, None, self.blend)
 
     def get_image(self, frame, shake, range_offset, pan_offset, static, y_offset=0) -> tuple:

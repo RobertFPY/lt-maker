@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import shlex
 import shutil
 import subprocess
 import time
@@ -16,8 +17,9 @@ from app.editor.file_manager.project_file_backend import DEFAULT_PROJECT, Projec
 from app.engine import config as cf
 from app.utilities import file_utils
 
-def execute(cmd):
-    popen = subprocess.Popen(cmd, stdout=subprocess.PIPE, universal_newlines=True)
+def execute(cmd: str):
+    args = shlex.split(cmd)
+    popen = subprocess.Popen(args, stdout=subprocess.PIPE, universal_newlines=True)
     for stdout_line in iter(popen.stdout.readline, ""):
         yield stdout_line
     popen.stdout.close()

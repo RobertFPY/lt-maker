@@ -9,11 +9,11 @@
         "priority": 20,
         "_source": [
             "sound;RefreshDance",
-            "map_anim;AOE_Mend;Ide (5)",
-            "reveal_overworld_node;Ide (5)",
+            "map_anim;AOE_Mend;5",
+            "reveal_overworld_node;5",
             "wait;500",
             "sound;Mend",
-            "reveal_overworld_road;Frelia Castle (2);Ide (5)"
+            "reveal_overworld_road;2;5"
         ]
     }
 ]

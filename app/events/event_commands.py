@@ -891,7 +891,7 @@ Activates or deactivates convoy access.
 
     keywords = ["Activated"]
     keyword_types = ['Bool']
-    
+
 class EnableRepairShop(EventCommand):
     nid = 'enable_repair_shop'
     tag = Tags.GAME_VARS
@@ -3078,7 +3078,7 @@ Optional args:
 
 1. *immediate* flag skips the transition between screens
         """
-    
+
     optional_keywords = ['Panorama', 'Music']
     keyword_types = ['Panorama', 'Music']
 
@@ -3335,7 +3335,7 @@ class OverworldMoveUnit(EventCommand):
 class RevealOverworldNode(EventCommand):
     nid = 'reveal_overworld_node'
     tag = Tags.OVERWORLD
-    desc = ('Reveals an overworld node on the map: moves the camera to the new location, plays the animation, and fades in the nodes.'
+    desc = ('Reveals an overworld node on the map by playing an animation, and fading in the node.'
             'By default, fades in via animation; use the *immediate* flag to skip this anim.')
 
     keywords = ['OverworldNodeNid']

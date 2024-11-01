@@ -3,6 +3,7 @@ from app.data.database.database import DB
 from app.data.database.levels import LevelCatalog
 from app.events.event_commands import EventCommand, Speak
 from app.events.event_prefab import EventCatalog
+from app.events.event_validators import Speaker
 from app.utilities.str_utils import SHIFT_NEWLINE
 from app.utilities.typing import NID
 from collections import defaultdict
@@ -31,7 +32,7 @@ def dump_script(event_db: EventCatalog, level_db: LevelCatalog=None) -> Dict[NID
             event_str = ""
             event_str += "Event: %s\n\n" % event_nid
             for line in event_commands:
-                speaker = line.parameters['Speaker']
+                speaker = line.parameters['SpeakerOrStyle']
                 text = line.parameters['Text']
                 if not speaker:
                     speaker = line.parameters.get('StyleNid', "")

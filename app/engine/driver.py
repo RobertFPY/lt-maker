@@ -35,6 +35,11 @@ def start(title, from_editor=False):
     from app.engine import fonts
     fonts.load_fonts()
 
+    from app.engine import battle_animation
+    # Clear out old battle animations that we might have tested with earlier,
+    # because they could have changed.
+    battle_animation.battle_anim_registry.clear()
+
     # Hack to get icon to show up in windows
     try:
         import ctypes

@@ -116,7 +116,7 @@ The item components in this dictionary are broken down by icon going from left t
 | **Regeneration** | Unit restores X% of max HP at the beginning of its phase/turn. |
 | **Mana Regeneration** | Unit restores X mana at the beginning of its phase/turn. |
 | **Upkeep Damage** | Unit takes X damage at the beginning of its phase/turn. Can be lethal. |
-| **Endstep Damage** | Unit takes X damage at the beginning of its phase/turn. Can be lethal. |
+| **Endstep Damage** | Unit takes X damage at the end of its phase/turn. Can be lethal. |
 | **GBAPoison** | Unit randomly takes 1 to X damage at the beginning of its phase/turn. Can be lethal. |
 | **Resist Status** | Other skills gained with a time component of duration 2 or greater have that duration decreased to 1 turn. |
 | **Immune Status** | Unit cannot acquire skills with the Negative component. |

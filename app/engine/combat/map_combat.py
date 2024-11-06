@@ -386,11 +386,11 @@ class MapCombat(SimpleCombat):
 
     def set_up_other_proc_icons(self):
         for skill in self.attacker.skills:
-            if skill_system.get_show_skill_icon(self.attacker, skill):
+            if skill_system.show_skill_icon(self.attacker, skill):
                 self.add_proc_icon(self.attacker, skill)
         if self.defender:
             for skill in self.defender.skills:
-                if skill_system.get_show_skill_icon(self.defender, skill):
+                if skill_system.show_skill_icon(self.defender, skill):
                     self.add_proc_icon(self.defender, skill)
 
     def add_proc_icon(self, unit, skill):

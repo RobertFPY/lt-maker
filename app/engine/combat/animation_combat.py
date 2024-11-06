@@ -878,7 +878,7 @@ class AnimationCombat(BaseCombat, MockCombat):
         Returns whether it added a proc icon
         """
         for skill in unit.skills:
-            if skill_system.get_show_skill_icon(unit, skill):
+            if skill_system.show_skill_icon(unit, skill):
                 if self.add_proc_icon(unit, skill):
                     return True
         return False

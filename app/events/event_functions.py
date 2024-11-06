@@ -2620,7 +2620,7 @@ def set_position(self: Event, position, flags=None):
     self.position = pos
     self.text_evaluator.position = pos
 
-def map_anim(self: Event, map_anim, float_position: Tuple[float, float] | NID, speed: float=1.0, flags=None):
+def map_anim(self: Event, map_anim, float_position: Tuple[float, float] | NID, speed: float = 1.0, flags=None):
     flags = flags or set()
     float_position = self._parse_pos(float_position, True)
     if not float_position:

@@ -358,6 +358,7 @@ def get_hide_skill_icon(unit, skill) -> bool:
 def get_show_skill_icon(unit, skill) -> bool:
     for component in skill.components:
         if component.defines('show_skill_icon') and \
+                (component.ignore_conditional or condition(skill, unit)) and \
                 component.show_skill_icon(unit):
             return True
     return False

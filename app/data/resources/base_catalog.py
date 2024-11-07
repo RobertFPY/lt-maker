@@ -48,7 +48,7 @@ class ManifestCatalog(Data[M]):
                 if os.path.abspath(resource) != os.path.abspath(new_full_path):
                     try:
                         self.make_copy(resource, new_full_path)
-                    except shutil.SameFileError: # windows filesystem doesn't distinguish between capitals
+                    except shutil.SameFileError:  # windows filesystem doesn't distinguish between capitals
                         os.rename(resource, new_full_path)
             datum.set_full_path(os.path.join(loc, datum.nid + self.filetype))
 

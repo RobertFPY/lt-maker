@@ -29,7 +29,7 @@ class MapSprite(WithResources, Prefab):
         return self.nid
 
     @override
-    def set_full_path(self, path: NID) -> None:
+    def set_full_path(self, path: str) -> None:
         parent_path = Path(path).parent
         self.set_stand_full_path(str(parent_path / (self.nid + '-stand.png')))
         self.set_move_full_path(str(parent_path / (self.nid + '-move.png')))
@@ -47,19 +47,3 @@ class MapSpriteCatalog(ManifestCatalog[MapSprite]):
     manifest = 'map_sprites.json'
     title = 'map sprites'
     datatype = MapSprite
-
-    def save_resources(self, loc):
-        for datum in self:
-            new_stand_full_path = os.path.join(loc, datum.nid + "-stand.png")
-            new_move_full_path = os.path.join(loc, datum.nid + "-move.png")
-            if os.path.abspath(datum.stand_full_path) != os.path.abspath(new_stand_full_path):
-                try:
-                    self.make_copy(datum.stand_full_path, new_stand_full_path)
-                except shutil.SameFileError:  # windows filesystem doesn't distinguish between capitals
-                    os.rename(datum.stand_full_path, new_stand_full_path)
-            if os.path.abspath(datum.move_full_path) != os.path.abspath(new_move_full_path):
-                try:
-                    self.make_copy(datum.move_full_path, new_move_full_path)
-                except shutil.SameFileError:  # windows filesystem doesn't distinguish between capitals
-                    os.rename(datum.move_full_path, new_move_full_path)
-        datum.set_full_path(os.path.join(loc, datum.nid + self.filetype))

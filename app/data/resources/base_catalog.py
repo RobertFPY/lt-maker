@@ -41,16 +41,17 @@ class ManifestCatalog(Data[M]):
 
     def save_resources(self, loc):
         for datum in self:
-            for resource in datum.used_resources():
-                if not resource:
-                    continue
-                new_full_path = os.path.join(loc, resource.name)
-                if os.path.abspath(resource) != os.path.abspath(new_full_path):
-                    try:
-                        self.make_copy(resource, new_full_path)
-                    except shutil.SameFileError:  # windows filesystem doesn't distinguish between capitals
-                        os.rename(resource, new_full_path)
+            original_resources = datum.used_resources()
             datum.set_full_path(os.path.join(loc, datum.nid + self.filetype))
+            new_resource_locs = datum.used_resources()
+            for old_loc, new_loc in zip(original_resources, new_resource_locs):
+                if not old_loc:
+                    continue
+                if os.path.abspath(old_loc) != os.path.abspath(new_loc):
+                    try:
+                        self.make_copy(old_loc, new_loc)
+                    except shutil.SameFileError:  # windows filesystem doesn't distinguish between capitals
+                        os.rename(old_loc, new_loc)
 
     def make_copy(self, old_full_path, new_full_path):
         if os.path.exists(old_full_path):

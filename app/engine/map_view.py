@@ -98,6 +98,8 @@ class MapView():
 
     def draw(self, camera_cull=None, subsurface_cull=None):
         game.tilemap.update()
+        if game.bg_tilemap:
+            game.bg_tilemap.update()
         # Camera Cull
         cull_rect = camera_cull
         shake = game.camera.get_shake()

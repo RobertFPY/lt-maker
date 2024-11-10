@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 from typing import Any, Dict, List, Union
 
-from app.counters import AnimCounter, GenericEdgeCounter, generic3counter
+from app.counters import GenericAnimCounter, GenericEdgeCounter
 from app.data.database.units import UnitPrefab
 from app.data.resources import map_sprites
 from app.engine.game_counters import ANIMATION_COUNTERS
@@ -30,7 +30,7 @@ import logging
 
 class SingleMapSprite():
     frames: List[engine.Surface] = []
-    counter: AnimCounter = None
+    counter: GenericAnimCounter = None
 
     @classmethod
     def create_looping_sprite(cls, frames: List[engine.Surface], counter: Any) -> SingleMapSprite:
@@ -49,8 +49,6 @@ class SingleMapSprite():
         return sprite
 
     def get_frame(self) -> engine.Surface:
-        # lmao this is so dumb. we should be updating these counters on a clock
-        self.counter.update(engine.get_time())
         return self.frames[self.counter.count].copy()
 
     def get_stationary_frame(self) -> engine.Surface:
@@ -87,8 +85,8 @@ class MapSprite():
 
         active_frames = [engine.subsurface(stand, (num*64, 96, 64, 48)) for num in range(3)]
         self.active = SingleMapSprite.create_looping_sprite(active_frames, ANIMATION_COUNTERS.active_sprite_counter)
-        self.start_cast = SingleMapSprite.create_anim_sprite(active_frames, ANIMATION_COUNTERS.active_sprite_counter.to_edge_counter())
-        self.end_cast = SingleMapSprite.create_anim_sprite(reversed(active_frames), ANIMATION_COUNTERS.active_sprite_counter.to_edge_counter())
+        # self.start_cast = SingleMapSprite.create_anim_sprite(active_frames, ANIMATION_COUNTERS.active_sprite_counter.to_edge_counter())
+        # self.end_cast = SingleMapSprite.create_anim_sprite(reversed(active_frames), ANIMATION_COUNTERS.active_sprite_counter.to_edge_counter())
 
     def _get_team_palette(self):
         team_obj = DB.teams.get(self.team)

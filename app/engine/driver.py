@@ -35,6 +35,12 @@ def start(title, from_editor=False):
     from app.engine import fonts
     fonts.load_fonts()
 
+    from app.engine import game_counters
+    # Reset the animation counters for a new engine start
+    # otherwise, the animation counters would be at a large number instead of 0
+    # if you already started the engine this session
+    game_counters.ANIMATION_COUNTERS.reset()
+
     from app.engine import battle_animation
     # Clear out old battle animations that we might have tested with earlier,
     # because they could have changed.

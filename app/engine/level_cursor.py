@@ -2,16 +2,16 @@ from enum import IntEnum
 import math
 from typing import Optional, Tuple
 
+from app.engine.game_counters import ANIMATION_COUNTERS
 from app.engine.objects.unit import UnitObject
 from app.constants import TILEHEIGHT, TILEWIDTH
-from app.counters import generic3counter
+from app.counters import GenericAnimCounter
 from app.data.database.database import DB
 from app.engine import engine, image_mods, skill_system
 from app.engine.cursor import BaseCursor
 from app.engine.game_state import GameState
 from app.engine.input_manager import get_input_manager
 from app.engine.sprites import SPRITES
-from app.utilities.utils import frames2ms
 from app.engine.engine import Surface
 
 import logging
@@ -27,7 +27,7 @@ class LevelCursor(BaseCursor):
     def __init__(self, game: GameState):
         super().__init__(camera=game.camera, game_board=game.board)
         # this is frame-accurate to GBA
-        self.cursor_counter = generic3counter(frames2ms(20), frames2ms(2), frames2ms(8))
+        self.cursor_counter = GenericAnimCounter.from_frames_back_and_forth([20, 2, 8], get_time=engine.get_time)
         self.game = game
         self.cur_unit = None
         self.path = []
@@ -229,7 +229,6 @@ class LevelCursor(BaseCursor):
         self._handle_move(directions)
 
     def get_image(self) -> Surface:
-        self.cursor_counter.update(engine.get_time())
         left = self.cursor_counter.count * TILEWIDTH * 2
         hovered_unit = self.get_hover()
         base_size = 32
@@ -265,7 +264,7 @@ class LevelCursor(BaseCursor):
                 surf = arrow.draw(surf, cull_rect)
 
             draw_unit_sprite = False
-            if self.cur_unit:    
+            if self.cur_unit:
                 if self.path and len(self.path) > 1 and \
                         self.position == self.path[0]:
                     draw_unit_sprite = True
@@ -310,6 +309,6 @@ class Arrow(object):
             image = self.image
 
         x, y = self.position
-        topleft = x * TILEWIDTH - cull_rect[0], y * TILEHEIGHT - cull_rect[1]        
+        topleft = x * TILEWIDTH - cull_rect[0], y * TILEHEIGHT - cull_rect[1]
         surf.blit(image, topleft)
         return surf

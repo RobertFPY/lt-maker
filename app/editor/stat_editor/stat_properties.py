@@ -4,6 +4,7 @@ from PyQt5.QtCore import Qt
 
 from app.data.database.database import DB
 
+from app.data.database.stats import StatPrefab
 from app.utilities import str_utils
 from app.extensions.custom_gui import PropertyBox, ComboBox, PropertyCheckBox
 from app.editor.lib.components.validated_line_edit import NidLineEdit
@@ -14,7 +15,7 @@ class StatTypeProperties(QWidget):
         self.window = parent
         self._data = self.window._data
 
-        self.current = current
+        self.current: StatPrefab = current
 
         name_section = QVBoxLayout()
 

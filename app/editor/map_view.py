@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import TYPE_CHECKING
 
 from app.constants import TILEHEIGHT, TILEWIDTH, WINHEIGHT, WINWIDTH
 from app.data.database.database import DB
@@ -15,6 +16,9 @@ from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QBrush, QColor, QPainter, QPixmap
 from PyQt5.QtWidgets import QGraphicsScene, QGraphicsView
 
+if TYPE_CHECKING:
+    from app.editor.level_editor.level_editor import LevelEditor
+
 class SimpleMapView(QGraphicsView):
     min_scale = 1
     max_scale = 4
@@ -28,7 +32,7 @@ class SimpleMapView(QGraphicsView):
 
     def __init__(self, window=None):
         super().__init__()
-        self.main_editor = window
+        self.main_editor: LevelEditor = window
         self.settings = MainSettingsController()
         self.scene = QGraphicsScene(self)
         self.setScene(self.scene)

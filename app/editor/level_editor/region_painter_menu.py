@@ -4,7 +4,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon, QColor, QPixmap
 
 from app.data.database.database import DB
-from app.events.regions import RegionType
+from app.events.regions import Region, RegionType
 
 from app.utilities import utils, str_utils
 from app.utilities.data import Data
@@ -106,7 +106,7 @@ class RegionMenu(QWidget):
                 self.map_view.center_on_pos(reg.center)
             self.modify_region_widget.set_current(reg)
 
-    def get_current(self):
+    def get_current(self) -> Region:
         for index in self.view.selectionModel().selectedIndexes():
             idx = index.row()
             if len(self._data) > 0 and idx < len(self._data):
@@ -219,7 +219,7 @@ class ModifyRegionWidget(QWidget):
         self.only_once_box = PropertyCheckBox("Only once?", QCheckBox, self)
         self.only_once_box.edit.stateChanged.connect(self.only_once_changed)
         layout.addWidget(self.only_once_box)
-        
+
         self.interrupt_move_box = PropertyCheckBox("Interrupts Movement?", QCheckBox, self)
         self.interrupt_move_box.edit.stateChanged.connect(self.interrupt_move_changed)
         layout.addWidget(self.interrupt_move_box)
@@ -301,7 +301,7 @@ class ModifyRegionWidget(QWidget):
 
     def only_once_changed(self, state):
         self.current.only_once = bool(state)
-        
+
     def interrupt_move_changed(self, state):
         self.current.interrupt_move = bool(state)
 

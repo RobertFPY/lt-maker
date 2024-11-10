@@ -24,6 +24,7 @@ from app.engine.objects.unit import UnitObject
 from app.engine.objects.region import RegionObject
 from app.engine import engine
 from app.utilities import utils, static_random
+from app.utilities.typing import Point
 from app.engine.source_type import SourceType
 
 def alters_game_state(func):
@@ -158,7 +159,7 @@ class Move(Action):
     """
 
     def __init__(self, unit, new_pos, path=None, event=False, follow=True, speed=0):
-        self.unit = unit
+        self.unit: UnitObject = unit
         self.old_pos = self.unit.position
         self.new_pos = new_pos
 
@@ -247,9 +248,9 @@ class ForcedMovement(SimpleMove):
 
 
 class Swap(Action):
-    def __init__(self, unit1, unit2):
-        self.unit1 = unit1
-        self.unit2 = unit2
+    def __init__(self, unit1: UnitObject, unit2: UnitObject):
+        self.unit1: UnitObject = unit1
+        self.unit2: UnitObject = unit2
         self.pos1 = unit1.position
         self.pos2 = unit2.position
         self.update_fow_action1 = UpdateFogOfWar(self.unit1)
@@ -376,9 +377,9 @@ class FadeIn(ArriveOnMap):
 
 
 class PlaceOnMap(Action):
-    def __init__(self, unit, pos):
-        self.unit = unit
-        self.pos = pos
+    def __init__(self, unit: UnitObject, pos: Point):
+        self.unit: UnitObject = unit
+        self.pos: Point = pos
         self.update_fow_action = UpdateFogOfWar(self.unit)
 
     def do(self):
@@ -995,9 +996,9 @@ class SwitchPaired(Action):
 
 # This is shamelessly copied from Drop, but I've kept it separate in case a madlad wants Rescue and Pair Up
 class Separate(Action):
-    def __init__(self, unit, droppee, pos, with_wait=True):
-        self.unit = unit
-        self.droppee = droppee
+    def __init__(self, unit: UnitObject, droppee: UnitObject, pos, with_wait=True):
+        self.unit: UnitObject = unit
+        self.droppee: UnitObject = droppee
         self.pos = pos
         self.with_wait = with_wait
         self.droppee_wait_action = Wait(self.droppee)
@@ -2669,8 +2670,8 @@ class ChangeFaction(Action):
         self.unit.desc = self.old_desc
 
 class ChangeTeam(Action):
-    def __init__(self, unit, team):
-        self.unit = unit
+    def __init__(self, unit: UnitObject, team):
+        self.unit: UnitObject = unit
         self.team = team
         self.old_team = self.unit.team
         self.action = Reset(self.unit)
@@ -3165,7 +3166,7 @@ class ChangeBGTileMap(Action):
         else:
             game.level.bg_tilemap = None
 
-        
+
 
 class AddWeather(Action):
     def __init__(self, weather_nid, position):

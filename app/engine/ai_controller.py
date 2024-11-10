@@ -8,6 +8,7 @@ from app.data.database.database import DB
 from app.engine import (action, combat_calcs, engine, equations, evaluate,
                         item_funcs, item_system, line_of_sight,
                         skill_system)
+from app.engine.objects.unit import UnitObject
 from app.engine.pathfinding import pathfinding
 from app.engine.combat import interaction
 from app.engine.game_state import game
@@ -342,10 +343,10 @@ class AIController():
         return SecondaryAI(self.unit, self.behaviour)
 
 class PrimaryAI():
-    def __init__(self, unit, valid_moves, behaviour):
+    def __init__(self, unit: UnitObject, valid_moves, behaviour):
         self.max_tp = 0
 
-        self.unit = unit
+        self.unit: UnitObject = unit
         self.orig_pos = self.unit.position
         self.orig_item = self.unit.items[0] if self.unit.items else None
         self.behaviour = behaviour

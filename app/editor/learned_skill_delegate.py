@@ -13,7 +13,7 @@ class LearnedSkillDelegate(QItemDelegate):
     def createEditor(self, parent, option, index):
         if index.column() == self.int_column:
             editor = QSpinBox(parent)
-            editor.setRange(1, 255)
+            editor.setRange(-255, 255)
             return editor
         elif index.column() == self.skill_column:
             editor = ComboBox(parent)

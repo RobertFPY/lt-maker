@@ -5,6 +5,7 @@ from PyQt5.QtCore import QTimer, pyqtSignal
 
 from app import constants
 from app import counters
+from app.counters import GenericAnimCounter
 from app.utilities.utils import frames2ms
 
 from app.editor.settings import MainSettingsController
@@ -25,15 +26,11 @@ class Timer(QWidget):
         self.autosave_timer.setInterval(int(autosave_time * 60 * 1000))
         self.autosave_timer.start()
 
-        self.passive_counter = counters.generic3counter(frames2ms(32), frames2ms(4))
-        self.active_counter = counters.generic3counter(frames2ms(13), frames2ms(6))
-        self.move_sprite_counter = counters.simplecounter((frames2ms(13), frames2ms(6), frames2ms(13), frames2ms(6)))
+        self.passive_counter = GenericAnimCounter.from_frames_back_and_forth([16, 2, 16], frame_duration=constants.FRAMERATE * 2, get_time=lambda: time.time() * 1000)
+        self.active_counter = GenericAnimCounter.from_frames_back_and_forth([10, 2, 10], frame_duration=constants.FRAMERATE * 2, get_time=lambda: time.time() * 1000)
+        self.move_sprite_counter = GenericAnimCounter.from_frames([6, 3, 6, 3], frame_duration=constants.FRAMERATE * 2, get_time=lambda: time.time() * 1000)
 
     def tick(self):
-        current_time = int(round(time.time() * 1000))
-        self.passive_counter.update(current_time)
-        self.active_counter.update(current_time)
-        self.move_sprite_counter.update(current_time)
         self.tick_elapsed.emit()
 
     def start(self):

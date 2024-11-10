@@ -1,82 +1,42 @@
-from app.utilities.utils import frames2ms
+from dataclasses import fields
+from typing import Dict, List, Optional
+from app.constants import FRAMERATE
+from app.utilities.utils import frames2ms, frames_to_ms
 from app.engine import engine
-from app.counters import generic3counter, movement_counter, simplecounter
+from app.counters import GenericAnimCounter, movement_counter
 
 class Counters():
+    anim_counters: Dict[str, GenericAnimCounter]
+
     def __init__(self):
+        self.passive_sprite_counter = GenericAnimCounter.from_frames_back_and_forth([32, 4, 32], get_time=engine.get_time)
+        self.active_sprite_counter = GenericAnimCounter.from_frames_back_and_forth([20, 4, 20], get_time=engine.get_time)
+        self.move_sprite_counter = GenericAnimCounter.from_frames([13, 6, 13, 6], get_time=engine.get_time)
+        self.fast_move_sprite_counter = GenericAnimCounter.from_frames([6, 3, 6, 3], get_time=engine.get_time)
+        self.arrow_counter = GenericAnimCounter.from_frames([16, 16, 16], get_time=engine.get_time)
+        self.x2_counter = GenericAnimCounter.from_frames([3] * 18, get_time=engine.get_time)
+        self.flag_counter = GenericAnimCounter.from_frames([15] * 4, get_time=engine.get_time)
+        self.fps6_360counter = GenericAnimCounter.from_frames([6] * 360, get_time=engine.get_time)
+        self.fps2_360counter = GenericAnimCounter.from_frames([2] * 360, get_time=engine.get_time)
         self.reset()
 
     def reset(self):
-        self._passive_sprite_counter = generic3counter(frames2ms(32), frames2ms(4))
-        self._active_sprite_counter = generic3counter(frames2ms(20), frames2ms(4))
-        self._move_sprite_counter = simplecounter((frames2ms(13), frames2ms(6), frames2ms(13), frames2ms(6)))
-        self._fast_move_sprite_counter = simplecounter((frames2ms(6), frames2ms(3), frames2ms(6), frames2ms(3)))
+        self.passive_sprite_counter.reset()
+        self.active_sprite_counter.reset()
+        self.move_sprite_counter.reset()
+        self.fast_move_sprite_counter.reset()
+        self.arrow_counter.reset()
+        self.x2_counter.reset()
+        self.flag_counter.reset()
+        self.fps6_360counter.reset()
+        self.fps2_360counter.reset()
         self._attack_movement_counter = movement_counter()
-        self._arrow_counter = simplecounter((frames2ms(16), frames2ms(16), frames2ms(16)))
-        self._x2_counter = simplecounter([frames2ms(3)] * 18)
-        self._flag_counter = simplecounter([frames2ms(15)] * 4)
-        self._fps6_360counter = simplecounter([frames2ms(6)] * 360)
-        self._fps2_360counter = simplecounter([frames2ms(2)] * 360)
-
-    @property
-    def passive_sprite_counter(self):
-        current_time = engine.get_time()
-        self._passive_sprite_counter.update(current_time)
-        return self._passive_sprite_counter
-
-    @property
-    def active_sprite_counter(self):
-        current_time = engine.get_time()
-        self._active_sprite_counter.update(current_time)
-        return self._active_sprite_counter
-
-    @property
-    def move_sprite_counter(self):
-        current_time = engine.get_time()
-        self._move_sprite_counter.update(current_time)
-        return self._move_sprite_counter
-
-    @property
-    def fast_move_sprite_counter(self):
-        current_time = engine.get_time()
-        self._fast_move_sprite_counter.update(current_time)
-        return self._fast_move_sprite_counter
 
     @property
     def attack_movement_counter(self):
         current_time = engine.get_time()
         self._attack_movement_counter.update(current_time)
         return self._attack_movement_counter
-
-    @property
-    def arrow_counter(self):
-        current_time = engine.get_time()
-        self._arrow_counter.update(current_time)
-        return self._arrow_counter
-
-    @property
-    def x2_counter(self):
-        current_time = engine.get_time()
-        self._x2_counter.update(current_time)
-        return self._x2_counter
-
-    @property
-    def flag_counter(self):
-        current_time = engine.get_time()
-        self._flag_counter.update(current_time)
-        return self._flag_counter
-
-    @property
-    def fps6_360counter(self):
-        current_time = engine.get_time()
-        self._fps6_360counter.update(current_time)
-        return self._fps6_360counter
-
-    @property
-    def fps2_360counter(self):
-        current_time = engine.get_time()
-        self._fps2_360counter.update(current_time)
-        return self._fps2_360counter
 
 
 ANIMATION_COUNTERS = Counters()

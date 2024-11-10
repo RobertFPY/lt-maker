@@ -1,6 +1,8 @@
 from __future__  import annotations
 # Helper global object for map sprite animations
-from typing import List, Union
+from typing import Callable, List, Union
+
+from app.constants import FRAMERATE
 
 
 class generic3counter():
@@ -50,6 +52,77 @@ class generic3counter():
     def to_edge_counter(self) -> GenericEdgeCounter:
         return GenericEdgeCounter([self.first_time, self.second_time, self.third_time])
 
+class GenericAnimCounter():
+    _count: int
+    _values: List[int]
+    _loop: bool = True
+    _frame_duration = FRAMERATE
+    _last_update = 0                    # should be divisible evenly by _frame_duration
+    _get_time: Callable[[], int] = None # source of current time
+
+    def __init__(self, values: List[int], loop: bool = True, frame_duration: int = FRAMERATE, get_time: Callable[[], int] = None):
+        self._count = 0
+        self._values = values
+        self._loop = loop
+        self._frame_duration = frame_duration
+        self._get_time = get_time
+
+    def get(self):
+        self.sync()
+        return self._values[self._count]
+
+    def sync(self):
+        if not self._get_time:
+            return
+        current_time = self._get_time()
+        dt = current_time - self._last_update
+        if dt >= self._frame_duration:
+            frames_elapsed = int(dt // self._frame_duration)
+            self._last_update = int((current_time // self._frame_duration) * self._frame_duration)
+            self._update(frames_elapsed)
+
+    def _update(self, steps):
+        if self._loop:
+            self._count = (self._count + steps) % len(self._values)
+        else:
+            if self._count < len(self._values) - 1:
+                self._count = min(self._count + steps, len(self._values) - 1)
+
+    def reset(self):
+        self._count = 0
+        self._last_update = 0
+
+    @staticmethod
+    def from_frames(frames: List[int], loop: bool = True, frame_duration: int = FRAMERATE, get_time: Callable[[], int] = None) -> GenericAnimCounter:
+        """
+        Create a GenericAnimCounter from a list of persisted frames.
+        For example, [20, 10, 30] would create a counter that returns 0 for 20 frames, 1 for 10 frames, and 2 for 30 frames.
+        """
+        frames_as_count = []
+        for i, frame in enumerate(frames):
+            frames_as_count.extend([i] * frame)
+        return GenericAnimCounter(frames_as_count, loop, frame_duration=frame_duration, get_time=get_time)
+
+    @staticmethod
+    def from_frames_back_and_forth(frames: List[int], loop: bool = True, frame_duration: int = FRAMERATE, get_time: Callable[[], int] = None) -> GenericAnimCounter:
+        """
+        Create a GenericAnimCounter from a list of persisted frames. Will loop backwards rather than resetting to the start.
+        For example, [20, 10, 30] would create a counter that returns 0 for 20 frames, 1 for 10 frames, 2 for 30 frames, 1 for 10 frames, then 0 for 20 frames again, etc.
+        """
+        frames_as_count = []
+        for i, frame in enumerate(frames):
+            frames_as_count.extend([i] * frame)
+        if(len(frames) > 2):
+            for i, frame in enumerate(reversed(frames[1:-1])):
+                frames_as_count.extend([len(frames) - i - 2] * frame)
+        return GenericAnimCounter(frames_as_count, loop, frame_duration=frame_duration, get_time=get_time)
+
+    @property
+    def count(self):
+        """stupid compatability getter, replace this with all haste"""
+        return self.get()
+
+
 class GenericEdgeCounter():
     def __init__(self, times: List[int]):
         self.count = 0
@@ -67,19 +140,6 @@ class GenericEdgeCounter():
     def reset(self):
         self.count = 0
         self.last_update = 0
-
-class simplecounter():
-    def __init__(self, times):
-        self.count = 0
-        self.times = times
-        self.last_update = 0
-
-    def update(self, current_time):
-        if current_time - self.last_update > self.times[self.count]:
-            self.count = (self.count + 1) % len(self.times)
-            self.last_update = current_time
-            return True
-        return False
 
 class movement_counter():
     def __init__(self):
@@ -120,6 +180,3 @@ class arrow_counter():
 
     def pulse(self):
         self.increment = [1, 1, 1, 1, 1, 1, 1, 1, .5, .5, .5, .5, .25, .25, .25]
-
-
-AnimCounter = Union[generic3counter, simplecounter, movement_counter, arrow_counter, GenericEdgeCounter]

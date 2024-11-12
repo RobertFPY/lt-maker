@@ -77,7 +77,7 @@ class UnitObject(Prefab):
     exp: int = 0  #: The unit's current exp (out of 100)
     stats: Dict[NID, int] = field(default_factory=dict)  #: Current stats without bonuses
     growths: Dict[NID, int] = field(default_factory=dict)  #: Current growths without bonuses
-    growth_points: Dict[NID, int] = field(default_factory=dict)  #: Used for Fixed and Dynamic leveling. Do not modify directly
+    growth_points: Dict[NID, int] = field(default_factory=dict)  #: Used for Dynamic leveling. Do not modify directly
     stat_cap_modifiers: Dict[NID, int] = field(default_factory=dict)  #: Personal stat cap modifiers
     wexp: Dict[NID, int] = field(default_factory=dict)  #: Current wexp in each weapon type
 
@@ -230,15 +230,7 @@ class UnitObject(Prefab):
 
         self.current_move = None
 
-        if is_level_unit:
-            method = unit_funcs.get_leveling_method(self)
-        else:
-            method = GrowthOption.FIXED
-
-        if method == GrowthOption.FIXED:
-            self.growth_points = {k: 50 for k in self.stats.keys()}
-        else:
-            self.growth_points = {k: 0 for k in self.stats.keys()}
+        self.growth_points = {k: 0 for k in self.stats.keys()}
 
         self.traveler = prefab.starting_traveler if is_level_unit else None  # Always a nid of a unit
         self.strike_partner = None

@@ -71,8 +71,8 @@ def get_support_rank_bonus(unit, target=None):
 def compute_advantage(unit1, unit2, item1, item2, advantage=True):
     if not item1 or not item2:
         return None
-    item1_weapontype = item_system.weapon_type(unit1, item1)
-    item2_weapontype = item_system.weapon_type(unit2, item2)
+    item1_weapontype = item_system.weapon_triangle_override(unit1, item1) or item_system.weapon_type(unit1, item1)
+    item2_weapontype = item_system.weapon_triangle_override(unit2, item2) or item_system.weapon_type(unit2, item2)
     if not item1_weapontype or not item2_weapontype:
         return None
     if item_system.ignore_weapon_advantage(unit1, item1) or \

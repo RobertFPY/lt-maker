@@ -79,6 +79,10 @@ class Defaults():
     def text_color(unit: UnitObject, item: ItemObject) -> str:
         return None
 
+    @staticmethod
+    def weapon_triangle_override(unit: UnitObject, item: ItemObject):
+        return None
+
 def get_all_components(unit: UnitObject, item: ItemObject) -> list:
     from app.engine import skill_system
     override_components = skill_system.item_override(unit, item)

@@ -62,6 +62,7 @@ ITEM_HOOKS: Dict[str, HookInfo] = {
     'minimum_range':                                   HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
     'maximum_range':                                   HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
     'weapon_type':                                     HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
+    'weapon_triangle_override':                        HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
     'weapon_rank':                                     HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
     'damage':                                          HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
     'hit':                                             HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),

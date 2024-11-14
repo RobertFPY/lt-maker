@@ -1964,6 +1964,16 @@ class Promote(Action):
             else:
                 max_gain_possible = new_klass_maxes.get(stat_nid, 0) + unit.stat_cap_modifiers.get(stat_nid, 0) - current_stats[stat_nid]
                 self.stat_changes[stat_nid] = min(stat_value, max_gain_possible)
+        
+        self.should_add_growths = DB.constants.value('unit_stats_as_bonus')
+        
+        if self.should_add_growths:
+            old_klass_growths = DB.classes.get(self.old_klass).growths
+            new_klass_growths = DB.classes.get(self.new_klass).growths
+            self.growth_changes = {nid: 0 for nid in DB.stats.keys()}
+            for stat_nid in self.growth_changes.keys():
+                change = new_klass_growths.get(stat_nid, 0) - old_klass_growths.get(stat_nid, 0)
+                self.growth_changes[stat_nid] = change
 
         wexp_gain = DB.classes.get(self.new_klass).wexp_gain
         self.new_wexp = {nid: 0 for nid in DB.weapons.keys()}
@@ -1989,6 +1999,9 @@ class Promote(Action):
             self.unit.level = 1
 
         unit_funcs.apply_stat_changes(self.unit, self.stat_changes)
+        
+        if self.should_add_growths:
+            unit_funcs.apply_growth_changes(self.unit, self.growth_changes)
 
     @recalculate_unit_sprite
     def reverse(self):
@@ -1998,6 +2011,11 @@ class Promote(Action):
 
         reverse_stat_changes = {k: -v for k, v in self.stat_changes.items()}
         unit_funcs.apply_stat_changes(self.unit, reverse_stat_changes)
+        
+        if self.should_add_growths:
+            reverse_growth_changes = {k: -v for k, v in self.growth_changes.items()}
+            unit_funcs.apply_growth_changes(self.unit, reverse_growth_changes)
+            
         self.unit.set_hp(self.current_hp)
         self.unit.set_mana(self.current_mana)
 
@@ -2021,13 +2039,23 @@ class ClassChange(Action):
         old_klass_bases = DB.classes.get(self.old_klass).bases
         new_klass_bases = DB.classes.get(self.new_klass).bases
         new_klass_maxes = DB.classes.get(self.new_klass).max_stats
-
+        
         self.stat_changes = {nid: 0 for nid in DB.stats.keys()}
         for stat_nid in self.stat_changes.keys():
             change = new_klass_bases.get(stat_nid, 0) - old_klass_bases.get(stat_nid, 0)
             current_stat = current_stats.get(stat_nid)
             new_value = utils.clamp(change, -current_stat, new_klass_maxes.get(stat_nid, 0) + unit.stat_cap_modifiers.get(stat_nid, 0) - current_stat)
             self.stat_changes[stat_nid] = new_value
+            
+        self.should_add_growths = DB.constants.value('unit_stats_as_bonus')
+        
+        if self.should_add_growths:
+            old_klass_growths = DB.classes.get(self.old_klass).growths
+            new_klass_growths = DB.classes.get(self.new_klass).growths
+            self.growth_changes = {nid: 0 for nid in DB.stats.keys()}
+            for stat_nid in self.growth_changes.keys():
+                change = new_klass_growths.get(stat_nid, 0) - old_klass_growths.get(stat_nid, 0)
+                self.growth_changes[stat_nid] = change
 
         wexp_gain = DB.classes.get(self.new_klass).wexp_gain
         self.new_wexp = {nid: 0 for nid in DB.weapons.keys()}
@@ -2053,7 +2081,10 @@ class ClassChange(Action):
             self.unit.level = 1
 
         unit_funcs.apply_stat_changes(self.unit, self.stat_changes)
-
+        
+        if self.should_add_growths:
+            unit_funcs.apply_growth_changes(self.unit, self.growth_changes)
+        
     @recalculate_unit_sprite
     def reverse(self):
         self.unit.klass = self.old_klass
@@ -2063,6 +2094,11 @@ class ClassChange(Action):
 
         reverse_stat_changes = {k: -v for k, v in self.stat_changes.items()}
         unit_funcs.apply_stat_changes(self.unit, reverse_stat_changes)
+        
+        if self.should_add_growths:
+            reverse_growth_changes = {k: -v for k, v in self.growth_changes.items()}
+            unit_funcs.apply_growth_changes(self.unit, reverse_growth_changes)
+            
         self.unit.set_hp(self.current_hp)
         self.unit.set_mana(self.current_mana)
 

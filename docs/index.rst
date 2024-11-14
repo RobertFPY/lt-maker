@@ -58,7 +58,7 @@ Welcome to lt-maker's documentation!
    source/appendix/Special-Commands-for-Dialogue-Formatting
    source/appendix/index
 
-   
+
 
 Indices and tables
 ==================

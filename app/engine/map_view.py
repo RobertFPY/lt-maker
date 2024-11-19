@@ -111,12 +111,12 @@ class MapView():
             # cull calculations
             bg_size = game.bg_tilemap.width * TILEWIDTH, game.bg_tilemap.height * TILEHEIGHT
             x, y = cull_rect[:2]
-            if x:
+            if x and (full_size[0] - WINWIDTH) > 0:
                 x_proportion = float(x) / (full_size[0] - WINWIDTH)
                 bg_x = x_proportion * (bg_size[0] - WINWIDTH)
             else:
                 bg_x = 0
-            if y:
+            if y and (full_size[1] - WINHEIGHT) > 0:
                 y_proportion = float(y) / (full_size[1] - WINHEIGHT)
                 bg_y = y_proportion * (bg_size[1] - WINHEIGHT)
             else:

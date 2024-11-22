@@ -41,3 +41,7 @@ Some events can be called by components. The most important ones are detailed he
 The debug screen calls a miniature event when you enter a command. That event has access to:
 > - **unit**: the unit under the cursor
 > - **position**: the position under the cursor
+
+The debug screen is accessible via the `debug` menu item (in the on-map option menu - the one which normally contains `UNITS`, `OPTIONS`, `END TURN`, etc.), if launching the game in debug mode.
+
+If not, the debug screen is still accessible via the same menu, but the player must enter the following code, using directional input keys, to open it: `UP, UP, DOWN, DOWN, LEFT, RIGHT, LEFT, RIGHT`.

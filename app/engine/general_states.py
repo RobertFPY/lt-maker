@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, List, Literal, Optional, Tuple
 from collections import OrderedDict
 from enum import Enum
 
@@ -361,9 +361,9 @@ class FreeState(MapState):
     def _select_next_available_unit(self):
         avail_units = [
             u for u in game.units
-            if u.team == 'player' 
-            and u.position 
-            and not u.finished 
+            if u.team == 'player'
+            and u.position
+            and not u.finished
             and skill_system.can_select(u)
             and 'Tile' not in u.tags]
 
@@ -401,6 +401,7 @@ def battle_save():
 
 class OptionMenuState(MapState):
     name = 'option_menu'
+    keypress_history: List[Literal['DOWN', 'UP', 'LEFT', 'RIGHT']] = []
 
     def _populate_options(self) -> Tuple[List[str], List[str], List[bool], List[Optional[str]]]:
         """
@@ -474,6 +475,7 @@ class OptionMenuState(MapState):
         self.menu = menus.Choice(None, options, info=info_desc)
         self.menu.set_limit(9)
         self.menu.set_ignore(ignore)
+        self.keypress_history = []
 
     def begin(self):
         if game.memory.get('next_state') in ('objective_menu', 'settings_menu', 'base_guide', 'unit_menu'):
@@ -487,6 +489,20 @@ class OptionMenuState(MapState):
     def take_input(self, event):
         first_push = self.fluid.update()
         directions = self.fluid.get_directions()
+
+        if first_push:
+            if 'DOWN' in directions:
+                self.keypress_history.append('DOWN')
+            elif 'UP' in directions:
+                self.keypress_history.append('UP')
+            elif 'LEFT' in directions:
+                self.keypress_history.append('LEFT')
+            elif 'RIGHT' in directions:
+                self.keypress_history.append('RIGHT')
+            self.keypress_history = self.keypress_history[-8:]
+            if self.keypress_history == ['UP', 'UP', 'DOWN', 'DOWN', 'LEFT', 'RIGHT', 'LEFT', 'RIGHT']:
+                get_sound_thread().play_sfx('Select 1')
+                game.state.change('debug')
 
         self.menu.handle_mouse()
         if 'DOWN' in directions:

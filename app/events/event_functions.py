@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ast
+import json
 import random
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
@@ -39,7 +40,7 @@ from app.events.screen_positions import parse_screen_position
 from app.events.speak_style import SpeakStyle
 from app.events.utils import TableRows
 from app.sprites import SPRITES
-from app.utilities import str_utils, utils
+from app.utilities import file_manager_utils, file_utils, str_utils, utils
 from app.utilities.enums import Alignments, HAlignment, Orientation, VAlignment
 from app.utilities.type_checking import is_primitive_or_primitive_collection
 from app.utilities.typing import NID, Point
@@ -444,7 +445,7 @@ def change_background(self: Event, panorama=None, flags=None):
             self.background = background.create_background(panorama, True)
         else:
             self.background = background.create_background(panorama, False)
-    
+
     if 'keep_portraits' in flags:
         pass
     else:
@@ -3724,3 +3725,12 @@ def party_transfer(self: Event, party1, party2, fixed_units = None, party1_name 
     self.game.memory['party_transfer'] = (top_party, bottom_party, fixed_list, top_party_name, bottom_party_name, top_party_limit, bottom_party_limit)
     self.game.state.change('party_transfer')
     self.state = 'paused'
+
+def dump_vars(self: Event, flags=None):
+    try:
+        app_data_fman = file_manager_utils.get_app_data_fman()
+        all_vars = {'level_vars': self.game.level_vars, 'game_vars': self.game.game_vars}
+        app_data_fman.save('_vars.json', json.dumps(all_vars), True)
+        file_utils.startfile(app_data_fman.get_path('_vars.json'))
+    except:
+        self.logger.error("dump_vars: Could not dump vars", exc_info=1)

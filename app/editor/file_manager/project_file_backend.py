@@ -21,7 +21,7 @@ from app.data.serialization.versions import CURRENT_SERIALIZATION_VERSION
 from app.data.validation.db_validation import DBChecker
 from app.editor import timer
 from app.editor.error_viewer import show_error_report
-from app.editor.file_manager.file_manager import FileManager
+from app.utilities.file_manager import FileManager
 from app.data.metadata import Metadata
 from app.editor.file_manager.project_initializer import ProjectInitializer
 from app.editor.lib.csv import csv_data_exporter, text_data_exporter

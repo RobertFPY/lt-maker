@@ -2449,6 +2449,15 @@ class ClearMarketItems(EventCommand):
 Removes all items from the list of purchaseable goods in the base's market.
         """
 
+class DumpVars(EventCommand):
+    nid = 'dump_vars'
+    tag = Tags.GAME_VARS
+
+    desc = \
+        """
+Prints all level and game variables to a file, then opens the file.
+        """
+
 class AddRegion(EventCommand):
     nid = 'add_region'
     tag = Tags.REGION

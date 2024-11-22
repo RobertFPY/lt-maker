@@ -141,7 +141,6 @@ class RescueAbility(Ability):
     @staticmethod
     def do(unit):
         u = game.board.get_unit(game.cursor.position)
-        action.do(action.Rescue(unit, u))
         if skill_system.has_canto(unit, u):
             action.do(action.HasTraded(unit))
             game.state.change('menu')
@@ -149,6 +148,9 @@ class RescueAbility(Ability):
             game.state.change('free')
             game.cursor.set_pos(unit.position)
             unit.wait()
+        # Actually Rescuing needs to be after the state changes above, so that if rescuing causes
+        # a state change, such as an event, that event will actually fire.
+        action.do(action.Rescue(unit, u))  
 
 class TakeAbility(Ability):
     name = 'Take'

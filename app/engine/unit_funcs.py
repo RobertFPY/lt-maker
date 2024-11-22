@@ -155,35 +155,27 @@ def _dynamic_levelup(unit, level) -> dict:
     for nid in DB.stats.keys():
         growth = growth_rate(unit, nid)
         if growth > 0:
-            start_growth = growth + unit.growth_points[nid]
-            if start_growth <= 0:
-                unit.growth_points[nid] += growth / 5.
+            free_stat_ups = growth // 100
+            stat_changes[nid] += free_stat_ups
+            new_growth = growth % 100
+            start_growth = new_growth + unit.growth_points[nid]
+            if rng.randint(0, 99) < int(start_growth):
+                stat_changes[nid] += 1
+                unit.growth_points[nid] -= (100 - new_growth) / variance
             else:
-                free_stat_ups = growth // 100
-                stat_changes[nid] += free_stat_ups
-                new_growth = growth % 100
-                start_growth = new_growth + unit.growth_points[nid]
-                if rng.randint(0, 99) < int(start_growth):
-                    stat_changes[nid] += 1
-                    unit.growth_points[nid] -= (100 - new_growth) / variance
-                else:
-                    unit.growth_points[nid] += new_growth / variance
+                unit.growth_points[nid] += new_growth / variance
 
         elif growth < 0 and DB.constants.value('negative_growths'):
             growth = -growth
-            start_growth = growth + unit.growth_points[nid]
-            if start_growth <= 0:
-                unit.growth_points[nid] += growth / 5.
+            free_stat_downs = growth // 100
+            stat_changes[nid] -= free_stat_downs
+            new_growth = growth % 100
+            start_growth = new_growth + unit.growth_points[nid]
+            if rng.randint(0, 99) < int(start_growth):
+                stat_changes[nid] -= 1
+                unit.growth_points[nid] -= (100 - new_growth) / variance
             else:
-                free_stat_downs = growth // 100
-                stat_changes[nid] -= free_stat_downs
-                new_growth = growth % 100
-                start_growth = new_growth + unit.growth_points[nid]
-                if rng.randint(0, 99) < int(start_growth):
-                    stat_changes[nid] -= 1
-                    unit.growth_points[nid] -= (100 - new_growth) / variance
-                else:
-                    unit.growth_points[nid] += new_growth / variance
+                unit.growth_points[nid] += new_growth / variance
 
     return stat_changes
 

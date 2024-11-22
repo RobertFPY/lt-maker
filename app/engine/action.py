@@ -123,9 +123,19 @@ class Action():
         return self
 
 def recalc_unit(unit):
+    # Currently Equipped Item may have changed
     unit.autoequip()
-    if unit.position and game.tilemap and game.boundary:
-        game.boundary.recalculate_unit(unit)
+    if unit.position and game.tilemap:
+        # Boundaries may have changed
+        if game.boundary:
+            game.boundary.recalculate_unit(unit)
+        # Fog of War Sight may have changed
+        if game.board:
+            fog_of_war_radius = game.board.get_fog_of_war_radius(unit.team)
+            sight_range = skill_system.sight_range(unit) + fog_of_war_radius
+            game.board.update_fow(unit.position, unit, sight_range)
+            if game.boundary:
+                game.boundary.reset_fog_of_war()
 
 def recalculate_unit(func):
     @functools.wraps(func)

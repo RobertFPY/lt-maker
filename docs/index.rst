@@ -23,8 +23,8 @@ Welcome to lt-maker's documentation!
    :maxdepth: 4
    :caption: Editor Guides:
 
-   source/editors/Var-Slots-Editor
-   source/editors/Supports
+   source/editors/Editors-Overview
+   source/editors/index
 
 
 .. toctree::
@@ -37,25 +37,22 @@ Welcome to lt-maker's documentation!
    :maxdepth: 2
    :caption: Guides:
 
+   source/guides/Guides-Overview
    source/guides/index
 
 .. toctree::
    :maxdepth: 2
    :caption: appendix:
 
-   source/appendix/Useful_Functions
-   source/appendix/Difficulty-Mode-Options
+   source/appendix/Text-Formatting-Commands
    source/appendix/Item-Component-Reference
    source/appendix/Skill-Component-Reference
-   source/appendix/Constants-Dictionary
    source/appendix/Special-Variables
-   source/appendix/Tags
-   source/appendix/trigger_reference
-   source/appendix/misc_reference
+   source/appendix/Special-Tags
+   source/appendix/trigger-reference
+   source/appendix/Random-Seed-Mechanics
    source/appendix/FAQ
    source/appendix/Contributing_to_the_LTWiki
-   source/appendix/Adding-Language-Support
-   source/appendix/Special-Commands-for-Dialogue-Formatting
    source/appendix/index
 
 

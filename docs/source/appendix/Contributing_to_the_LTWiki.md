@@ -1,6 +1,6 @@
 # Contributing to the LTWiki
 
-This page provides information and resources needed to edit the LTWiki. New contributors and those without Gitlab experience should view the [Beginner's Guide](#Beginner's-Guide) section, while those who want a cleaner workflow may be interested in the [Advanced Contributors](#Advanced-Contributors) section.
+This page provides information and resources needed to edit the LTWiki. New contributors and those without Gitlab experience should view the [Beginner's Guide](#beginners-guide) section, while those who want a cleaner workflow may be interested in the [Advanced Contributors](#advanced-contributors) section.
 
 Regardless, you'll need a [Gitlab Account](https://gitlab.com/users/sign_in) in order to make edits to the wiki.
 
@@ -58,14 +58,10 @@ If you're already a developer, then you should be generally aware of how to [for
 
 The LT documentation is kept within the repository, in the `docs/` folder. The following commands assumes that the cwd is inside `docs/`.
 
-### Dependencies
-
-You can install the requirements for local compilation using `pip install -r requirements.txt`.
-
-### Compilation
-
-Use the commands found in `instructions.md` to compile the documentation.
-
 ### Editing
 
 The documentation source can be found in `source/`.
+
+### Building Docs
+
+Instructions for how to do this can be found in the `DEV_README.md` file.

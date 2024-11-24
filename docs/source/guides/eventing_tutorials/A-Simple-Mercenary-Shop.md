@@ -1,3 +1,4 @@
+(Mercenary-Shop)=
 # A Simple Mercenary Shop Tutorial
 
 ## Problem Description

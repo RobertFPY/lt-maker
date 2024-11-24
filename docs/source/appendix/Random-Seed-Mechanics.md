@@ -1,4 +1,4 @@
-# Random-Seed-Mechanics
+# Random Seed Mechanics
 
 You may notice a number on the top right of the Objective menu:
 

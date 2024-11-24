@@ -100,9 +100,9 @@ class GameQueryEngine():
 
     def has_item(self, item, nid=None, team=None, tag=None, party=None) -> bool:
         """Check if any unit matching criteria has item.
-Example usage:
-* `has_item("Iron Sword", team="player")` will check if any player unit is holding an iron sword
-* `has_item("Sacred Stone", party='Eirika')` will check if Eirika's party has the item "Sacred Stone"
+        Example usage:
+        * `has_item("Iron Sword", team="player")` will check if any player unit is holding an iron sword
+        * `has_item("Sacred Stone", party='Eirika')` will check if Eirika's party has the item "Sacred Stone"
         Args:
             item: item to check
             nid (optional): use to check specific unit nid
@@ -269,10 +269,10 @@ Example usage:
 
     def get_units_in_region(self, region, nid=None, team=None, tag=None) -> List[UnitObject]:
         """returns all units matching the criteria in the given region
-Example usage:
-* `get_units_in_region('NorthReinforcements', team='player')` will return all player units in the region
-* `get_units_in_region('NorthReinforcements', nid='Eirika')` will return Eirika if Eirika is in the region
-* `get_units_in_region('NorthReinforcements')` will return all units in the region
+        Example usage:
+        * `get_units_in_region('NorthReinforcements', team='player')` will return all player units in the region
+        * `get_units_in_region('NorthReinforcements', nid='Eirika')` will return Eirika if Eirika is in the region
+        * `get_units_in_region('NorthReinforcements')` will return all units in the region
         Args:
             region: region in question
             nid (optional): used to match for NID
@@ -298,10 +298,10 @@ Example usage:
 
     def any_unit_in_region(self, region, nid=None, team=None, tag=None) -> bool:
         """checks if any unit matching the criteria is in the region
-Example usage:
-* `any_unit_in_region('NorthReinforcements', team='player')` will check if any player unit is in the region
-* `any_unit_in_region('NorthReinforcements', nid='Eirika')` will check if Eirika is in the region
-* `any_unit_in_region('NorthReinforcements')` will check if ANY unit is in the region
+        Example usage:
+        * `any_unit_in_region('NorthReinforcements', team='player')` will check if any player unit is in the region
+        * `any_unit_in_region('NorthReinforcements', nid='Eirika')` will check if Eirika is in the region
+        * `any_unit_in_region('NorthReinforcements')` will check if ANY unit is in the region
         Args:
             region: region in question
             nid (optional): used to match for NID

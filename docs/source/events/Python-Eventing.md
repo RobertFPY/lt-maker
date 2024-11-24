@@ -7,7 +7,7 @@ _last updated v0.1_
 
 While the event script can be written with the traditional Event Commands (as demonstrated in the [Event Commands Section](EventCommands)), the intrepid scripter can take advantage of Python syntax to achieve more sophisticated functionality. Rather than using a simplified custom syntax, the Python Eventing engine allows you to write scripts in fully integrated Python.
 
-# Why use Python Eventing?
+## Why use Python Eventing?
 
 For the casual user, there is no real advantage (or disadvantage) in doing so.
 
@@ -31,7 +31,7 @@ Ultimately, Python Eventing is a cleaner and more maintainable method of writing
 
 Python Eventing also gives you access to all standard Python functions, notably including list operations. You can sort lists, create lists, append to lists, and so forth, that are difficult to impossible to do in traditional event script.
 
-# Python Event Sample
+## Python Event Sample
 
 For the most part, there are only three things that one needs to know about Python Eventing.
 
@@ -41,7 +41,7 @@ For the most part, there are only three things that one needs to know about Pyth
 
 Here are some snippets that illustrate the appearance and syntax of Python Events.
 
-## Dialogue
+### Dialogue
 
 The following event snippet creates a SpeakStyle - a collection of formatting hints for a speak command. In this case, it indicates that the `eirika` style refers to a style using `Eirika` as the speaker, and has a text box 3 lines tall.
 
@@ -61,7 +61,7 @@ $say eirika "Four score and seven years ago"
 $remove_portrait eirika
 ```
 
-## For Loop
+### For Loop
 
 The following event snippet spawns 5 civilians near the unit `Bone`. For those familiar with Python, this is an ordinary for loop. It's important to note that you can put most normal event commands inside Python for loops as well.
 
@@ -72,7 +72,7 @@ for i in range(5):
     $add_unit str(i) "Bone" "immediate" "closest"
 ```
 
-## Variables
+### Variables
 
 The following event is an example of how you might use python variables to hold onto references to specific units and ease calculation. In normal event script, these would be crammed into single, dense, unreadable lines.
 

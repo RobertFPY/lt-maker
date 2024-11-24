@@ -15,8 +15,11 @@ from app.utilities.typing import NID
 class EventTrigger():
     """
     A trigger called sometime during the engine that allows the user to execute events.
+
+    :meta private: # Hide from Sphinx
     """
     nid: ClassVar[NID]
+    hidden: ClassVar[bool] = False #: Whether or not this trigger is selectable. True for deprecated and utility triggers.
 
     def to_args(self):
         return self.__dict__.copy()
@@ -25,8 +28,11 @@ class EventTrigger():
 class GenericTrigger(EventTrigger):
     """A generic trigger containing common fields. Use to trigger
     anonymous events.
+
+    :meta private: # Hide from Sphinx
     """
     nid: ClassVar[NID] = None
+    hidden: ClassVar[bool] = True
     unit1: UnitObject = None
     unit2: UnitObject = None
     position: Tuple[int, int] = None
@@ -357,9 +363,10 @@ class RegionTrigger(EventTrigger):
     event region.
     """
     nid: NID #: the nid of the region event
+    hidden: ClassVar[bool] = True
     unit1: UnitObject #: The unit triggering the region
     position: Tuple[int, int] #: The position of the unit triggering the region
     region: RegionObject #: the name of the region that was triggered
     item: ItemObject = None #: the item used to trigger this region (used with unlock staves and keys)
 
-ALL_TRIGGERS = [tclass for tclass in EventTrigger.__subclasses__() if hasattr(tclass, 'nid') and tclass is not GenericTrigger]
+ALL_TRIGGERS = [tclass for tclass in EventTrigger.__subclasses__() if (tclass is not EventTrigger and not tclass.hidden)]

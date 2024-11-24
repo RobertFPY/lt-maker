@@ -361,5 +361,69 @@ class RegionTrigger(EventTrigger):
     position: Tuple[int, int] #: The position of the unit triggering the region
     region: RegionObject #: the name of the region that was triggered
     item: ItemObject = None #: the item used to trigger this region (used with unlock staves and keys)
+    
+@dataclass(init=True)
+class EventOnHit(EventTrigger):
+    """
+    Plays before a hit, if the unit will hit with this item.
+
+    Note: trigger is used nowhere in the engine, but is used in the EventOnHit component.
+    """
+    unit1: UnitObject #: the unit bearing the item.
+    unit2: UnitObject #: the other unit in combat.
+    position: Tuple[int, int] #: the position of the unit bearing the item.
+    item: ItemObject #: the item/ability that the attacking unit is using.
+    target_pos: Tuple[int, int] #: the position of the other unit.
+    mode: str #: One of (`attack`, `defense`), depending on whether the bearer of the item is the one doing this attack, or the other unit is the one doing this attack.
+    attack_info: Tuple[int, int] #: The first element is the number of attacks that have occurred before this one. The second element is the number of subattacks (think brave attacks) that have occurred within this main attack.
+    
+@dataclass(init=True)
+class EventAfterCombat(EventTrigger):
+    """
+    Plays after combat where unit is using this item.
+
+    Note: trigger is used nowhere in the engine, but is used in the EventAfterCombatOnHit and EventAfterCombatEvenMiss component.
+    """
+    unit1: UnitObject #: the unit bearing the item.
+    unit2: UnitObject #: the other unit in combat.
+    position: Tuple[int, int] #: the position of the unit bearing the item.
+    item: ItemObject #: the item/ability that the attacking unit is using.
+    target_pos: Tuple[int, int] #: the position of the other unit.
+    mode: str #: One of (`attack`, `defense`), depending on whether the bearer of the skill/item is the one doing this attack, or the other unit is the one doing this attack.
+    
+@dataclass(init=True)
+class EventAfterInitiatedCombat(EventTrigger):
+    """
+    Plays after combat initiated by unit bearing this skill.
+
+    Note: trigger is used nowhere in the engine, but is used in the EventAfterInitiatedCombat component.
+    """
+    unit1: UnitObject #: the unit bearing the skill.
+    unit2: UnitObject #: the other unit in combat.
+    position: Tuple[int, int] #: the position of the unit bearing the skill.
+    item: ItemObject #: the item/ability that the attacking unit is using.
+    mode: str #: One of (`attack`, `defense`), depending on whether the bearer of the skill is the one doing this attack, or the other unit is the one doing this attack.
+    
+@dataclass(init=True)
+class EventOnRemove(EventTrigger):
+    """
+    Plays after skill is removed from a unit.
+
+    Note: trigger is used nowhere in the engine, but is used in the EventOnRemove component.
+    """
+    unit1: UnitObject #: the unit bearing the skill to be removed.
+    
+@dataclass(init=True)
+class UnlockStaff(EventTrigger):
+    """
+    Plays when an unlock staff unlocks a region.
+
+    Note: trigger is used nowhere in the engine, but is used in the UnlockStaff component.
+    """
+    unit1: UnitObject #: the unit that is unlocking.
+    position: Tuple[int, int] #: the position of the unlocking unit.
+    item: ItemObject #: the item/ability that the unlocking unit is using.
+    region: RegionObject #: the region being unlocked.
+
 
 ALL_TRIGGERS = [tclass for tclass in EventTrigger.__subclasses__() if hasattr(tclass, 'nid') and tclass is not GenericTrigger]

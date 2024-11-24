@@ -63,6 +63,9 @@ html_theme = 'sphinx_rtd_theme'
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
+# Allow anchors for up to h2
+myst_heading_anchors = 2
+
 def setup(app):
     app.add_css_file("theme_overrides.css")
     from custom_directives.document_constants import DocumentConstantsList

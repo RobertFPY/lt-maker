@@ -36,7 +36,8 @@ def alters_game_state(func):
 
 def wrap_do_exec_reverse(_cls):
     for func in ['do', 'execute', 'reverse']:
-      setattr(_cls, func, alters_game_state(getattr(_cls, func)))
+        setattr(_cls, func, alters_game_state(getattr(_cls, func)))
+        
     def wrapper():
         return _cls()
     return wrapper

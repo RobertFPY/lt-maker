@@ -7,8 +7,8 @@ from app.utilities.typing import NestedPrimitiveDict
 
 class FileManager():
     root: Path
-    def __init__(self, root_dir: Path):
-        self.root = root_dir
+    def __init__(self, root_dir: Path | str):
+        self.root = Path(root_dir)
 
     def exists(self, relative_path_to_file: Path) -> bool:
         '''Check if a file exists

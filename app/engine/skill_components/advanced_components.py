@@ -175,7 +175,7 @@ class ProcGainSkillForTurn(SkillComponent):
             actions.append(action.TriggerCharge(unit, self.skill))
             self._did_action = True
 
-    def on_endstep(self, actions, playback, unit):
+    def on_endstep_unconditional(self, actions, playback, unit):
         if self._did_action:
             actions.append(action.RemoveSkill(unit, self.value))
 

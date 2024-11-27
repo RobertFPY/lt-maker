@@ -10,3 +10,9 @@ def get_app_data_fman() -> FileManager:
     if not os.path.isdir(appdata_dir):
         os.makedirs(appdata_dir)
     return FileManager(appdata_dir)
+
+def get_lt_root_fman() -> FileManager:
+    '''Get the file manager for the game root directory'''
+    # in all cases, this points to the actual editor root.
+    # I'm not sure when it would not.
+    return FileManager('.')

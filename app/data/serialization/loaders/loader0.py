@@ -16,6 +16,8 @@ class Loader0(LoaderBase):
     def load_resources(self, resource_dir: Path) -> NestedPrimitiveDict:
         as_dict = {}
         for key in resources.Resources.save_data_types:
+            if not (resource_dir / key).exists():
+                raise FileNotFoundError(f"Resource directory {resource_dir / key} does not exist!\nPlease recover or copy from default.ltproj the missing directory.")
             if key == 'combat_palettes': # special case
                 as_dict[key] = _json_load(resource_dir / key, 'palette_data')
             elif key == 'tilemaps': # special case

@@ -141,8 +141,8 @@ class RecentProjectDialog(SimpleDialog):
 
 def choose_recent_project(load_only: bool = False, allow_auto_open: bool = False) -> Optional[str]:
     """
-    # str means go open that project at that path
-    # None means don't do anything (When you press X or close on the dialog)
+    str means go open that project at that path
+    None means don't do anything (When you press X or close on the dialog)
     """
     settings = MainSettingsController()
     recent_projects = settings.get_last_ten_projects()

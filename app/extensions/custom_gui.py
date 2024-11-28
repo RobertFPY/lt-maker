@@ -4,13 +4,13 @@ from typing import Any, Generic, List, Optional, Tuple, Type, TypeVar
 from dataclasses import dataclass
 
 from PyQt5.QtCore import QAbstractItemModel, QItemSelectionModel, QSize, Qt
+from PyQt5.QtWidgets import QMessageBox, QTextEdit
 from PyQt5.QtWidgets import (QAbstractItemView, QAction, QApplication,
                              QComboBox, QDialog, QDialogButtonBox, QFrame,
                              QHBoxLayout, QItemDelegate, QLabel, QLineEdit,
                              QListView, QMenu, QPushButton, QSizePolicy,
                              QSpinBox, QTableView, QTreeView, QVBoxLayout,
                              QWidget, QTabWidget)
-
 
 class SimpleDialog(QDialog):
     def __init__(self, parent=None):
@@ -21,7 +21,6 @@ class SimpleDialog(QDialog):
     def edit(cls, parent):
         dialog = cls(parent)
         dialog.exec_()
-
 class Dialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -34,7 +33,7 @@ class Dialog(QDialog):
 @dataclass
 class DeletionTab:
     """
-    Contains all the information needed to render a single tab in the 
+    Contains all the information needed to render a single tab in the
     DeletionDialog below
     """
     affected_items: List[Any]  # What prefabs will be affected by the deletion
@@ -74,7 +73,7 @@ class DeletionDialog(Dialog):
         self.layout.addWidget(self.buttonbox)
 
     @staticmethod
-    def get_swap(tabs: List[DeletionTab], swap_box: ComboBox, 
+    def get_swap(tabs: List[DeletionTab], swap_box: ComboBox,
                  parent=None) -> Tuple[Optional[Any], bool]:
         dialog = DeletionDialog(tabs, swap_box, parent)
         result = dialog.exec_()
@@ -85,7 +84,7 @@ class DeletionDialog(Dialog):
             return None, False
 
     @staticmethod
-    def get_simple_swap(tabs: List[DeletionTab], swap_box: ComboBox, 
+    def get_simple_swap(tabs: List[DeletionTab], swap_box: ComboBox,
                         parent=None) -> Tuple[Optional[int], bool]:
         dialog = DeletionDialog(tabs, swap_box, parent)
         result = dialog.exec_()

@@ -21,6 +21,7 @@ from app.data.serialization.versions import CURRENT_SERIALIZATION_VERSION
 from app.data.validation.db_validation import DBChecker
 from app.editor import timer
 from app.editor.error_viewer import show_error_report
+from app.extensions.message_box import show_warning_message
 from app.utilities.file_manager import FileManager
 from app.data.metadata import Metadata
 from app.editor.file_manager.project_initializer import ProjectInitializer
@@ -322,9 +323,8 @@ class ProjectFileBackend():
             except Exception as e:
                 logging.exception(e)
                 logging.warning(
-                    "Failed to load project at %s. Likely that project is corrupted.", path)
-                QMessageBox.warning(self.parent, "Load of project failed",
-                                    "Failed to load project at %s with exception %s" % (path, str(e)))
+                    "Failed to load project at %s.", path)
+                show_warning_message("Project load failed", "Failed to load project at %s" % path, detailed_text=str(e))
                 return False
         logging.warning(
             "path %s not found. Falling back to %s" % (path, DEFAULT_PROJECT))

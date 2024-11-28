@@ -68,9 +68,3 @@ class FontCatalog(ManifestCatalog[Font]):
     manifest = 'fonts.json'
     title = 'fonts'
     filetype = ''
-
-    def load(self, loc, resource_dict: NestedPrimitiveDict):
-        super().load(loc, resource_dict)
-        if len(resource_dict) == 0:
-            self.load('default.ltproj/resources/fonts')
-            return

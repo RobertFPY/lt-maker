@@ -43,6 +43,7 @@ from app.events.regions import RegionType
 from app.events import speak_style
 from app.engine import config as cf
 from app.engine import state_machine
+from app.engine.fog_of_war import FogOfWarType, FogOfWarLevelConfig
 from app.engine.roam.roam_info import RoamInfo
 from app.utilities import static_random
 from app.data.resources.resources import RESOURCES
@@ -370,11 +371,13 @@ class GameState():
         for skill in unit.all_skills:
             self.register_skill(skill)
 
-    def set_up_game_board(self, tilemap, bounds=None):
+    def set_up_game_board(self, tilemap, bounds=None, fog_state=None):
         from app.engine import boundary, game_board
         self.board = game_board.GameBoard(tilemap)
         if bounds:
             self.board.set_bounds(*bounds)
+        if fog_state:
+            self.board.set_previously_visited_tiles(fog_state)
         self.boundary = boundary.BoundaryInterface(tilemap.width, tilemap.height)
 
     def save(self):
@@ -406,6 +409,7 @@ class GameState():
                   'base_convos': self.base_convos,
                   'current_random_state': static_random.get_combat_random_state(),
                   'bounds': self.board.bounds if self.board else None,
+                  'fog_state': self.board.previously_visited_tiles if self.board else None,
                   'roam_info': self.roam_info,
                   }
         meta_dict = {'playtime': self.playtime,
@@ -516,7 +520,7 @@ class GameState():
         if s_dict['level']:
             logging.info("Loading Level...")
             self._current_level = LevelObject.restore(s_dict['level'], self)
-            self.set_up_game_board(self._current_level.tilemap, s_dict.get('bounds'))
+            self.set_up_game_board(self._current_level.tilemap, s_dict.get('bounds'), s_dict.get('fog_state'))
 
             self.generic()
             from app.engine.level_cursor import LevelCursor
@@ -1238,6 +1242,15 @@ class GameState():
 
     def clear_roam_unit(self):
         self.roam_info.roam_unit_nid = None
+
+    def get_current_fog_info(self) -> FogOfWarLevelConfig:
+        ai_fog_of_war_radius = self.level_vars.get('_ai_fog_of_war_radius', self.level_vars.get('_fog_of_war_radius', 0))
+        return FogOfWarLevelConfig(
+            self.level_vars.get('_fog_of_war', False),
+            self.level_vars.get('_fog_of_war_type', FogOfWarType.GBA_DEPRECATED),
+            self.level_vars.get('_fog_of_war_radius', 0),
+            ai_fog_of_war_radius,
+            self.level_vars.get('_other_fog_of_war_radius', ai_fog_of_war_radius))
 
     def check_dead(self, nid: NID) -> bool:
         """

@@ -70,6 +70,7 @@ These variables are cleared after winning or losing the current level
     0 - Entire map is revealed, but enemy positions are masked (like in the GBA)
     1 - Entire map is revealed, but enemy positions are masked (like in the GBA) (yes, these are identical for past compatibility reasons)
     2 - Both map and enemy positions are masked (like in Thracia)
+    3 - Both map and enemy positions are masked at the start, but the map stays revealed after exploring it
 
 `_fog_of_war_radius` **int** The distance that player units will be able to see in the fog. Defaults to 0.
 

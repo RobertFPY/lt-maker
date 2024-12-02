@@ -233,15 +233,15 @@ class MiniMap(object):
                 self.surf.blit(sprite, (x*self.scale_factor, y*self.scale_factor))
 
         # Fog of War
-        if game.level_vars.get('_fog_of_war', False) or game.board.fog_region_set:
-            for x in range(self.width):
-                for y in range(self.height):
-                    if not game.board.in_vision((x, y)):
-                        mask = (x * self.scale_factor, y * self.scale_factor, self.scale_factor, self.scale_factor)
-                        if game.level_vars.get('_fog_of_war_type', 0) == 2:
-                            engine.fill(self.surf, (12, 12, 12), mask)
-                        else:
-                            engine.fill(self.surf, (128, 128, 128), mask, engine.BLEND_RGB_MULT)
+        if game.get_current_fog_info().is_active or game.board.fog_region_set:
+            for (x, y) in utils.itergrid(self.width, self.height):
+                is_in_vision = game.board.in_vision((x, y))
+                if not is_in_vision:
+                    mask = (x * self.scale_factor, y * self.scale_factor, self.scale_factor, self.scale_factor)
+                    if game.board.terrain_known((x, y), is_in_vision):
+                        engine.fill(self.surf, (128, 128, 128), mask, engine.BLEND_RGB_MULT)
+                    else:
+                        engine.fill(self.surf, (12, 12, 12), mask)
 
             self.surf = self.surf.convert()
 

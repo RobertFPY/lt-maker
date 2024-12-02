@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import colorsys
 import hashlib
+import itertools
 import math
 import sys
 from collections import Counter
 from operator import add, sub
 from typing import Collection, Iterable, List, Optional, Tuple
 
-from app.utilities.typing import Point
+from app.utilities.typing import Point, Pos
 
 
 def frames_to_ms(num_frames: float) -> int:
@@ -79,6 +80,14 @@ def linspace(start: float, stop: float, num: float, endpoint: bool = True) -> Li
     else:
         step = (stop - start) / num
     return [start + (step * i) for i in range(num)]
+
+def itergrid(width: int, height: int) -> List[Pos]:
+    """
+    for x in range(width):
+        for y in range(height):
+            return (x, y)
+    """
+    return itertools.product(range(width), range(height))
 
 """Vector Tuple Math
 """

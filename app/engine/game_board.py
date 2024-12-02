@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from app.engine.objects.unit import UnitObject
 from typing import Dict, List, Optional, Set, Tuple, TYPE_CHECKING
 
 from app.data.database.database import DB
 from app.engine import line_of_sight
 from app.engine.pathfinding.node import Node
 from app.engine.game_state import game
+from app.engine.fog_of_war import FogOfWarType
+from app.engine.objects.unit import UnitObject
 from app.utilities.grid import Grid, BoundedGrid
 from app.utilities.typing import NID, Pos, UID
 
@@ -33,8 +34,9 @@ class GameBoard(object):
             self.fog_of_war_grids[team.nid] = self.init_set_grid()
         self.fow_vantage_point = {}  # Unit: Position where the unit is that's looking
         self.fog_regions = self.init_set_grid()
-        self.fog_region_set = set()  # Set of Fog region nids so we can tell how many fog regions exist at all times
+        self.fog_region_set: Set[NID] = set()  # Set of Fog region nids so we can tell how many fog regions exist at all times
         self.vision_regions = self.init_set_grid()
+        self.previously_visited_tiles: Set[Pos] = set()  # Used for Hybrid Fog to mark where we have seen in the past
 
         # For Auras
         self.aura_grid = self.init_set_grid()
@@ -52,6 +54,9 @@ class GameBoard(object):
 
     def get_all_positions_in_bounds(self) -> Set[Pos]:
         return {(x, y) for x in range(self.bounds[0], self.bounds[2] + 1) for y in range(self.bounds[1], self.bounds[3] + 1)}
+
+    def set_previously_visited_tiles(self, val: Set[Pos]):
+        self.previously_visited_tiles = val
 
     def reset_tile_grids(self, tilemap):
         # For each movement type
@@ -179,6 +184,28 @@ class GameBoard(object):
             positions = {pos for pos in positions if 0 <= pos[0] < self.width and 0 <= pos[1] < self.height}
             for position in positions:
                 grid.get(position).add(unit.nid)
+            self._update_previously_visited(positions, unit.team)
+
+    def _update_previously_visited(self, positions: List[Pos], team: NID):
+        """
+        If player team only, update with where we have seen before
+        """
+        if team == 'player':
+            if DB.constants.value('fog_los'):
+                fog_of_war_radius = game.get_current_fog_info().default_radius
+                for position in positions:
+                    # No need to recheck if we have already visited
+                    if position in self.previously_visited_tiles:
+                        continue
+                    valid: bool = False  # Can we see the pos?
+                    # We can if any of our allies can see the pos.
+                    for team_nid in DB.teams.get_allies(team):
+                        valid |= line_of_sight.simple_check(position, team_nid, fog_of_war_radius, self.fow_vantage_point)
+                    if valid:
+                        self.previously_visited_tiles.add(position)
+            else:
+                for position in positions:
+                    self.previously_visited_tiles.add(position)
 
     def add_fog_region(self, region):
         if region.position:
@@ -205,6 +232,8 @@ class GameBoard(object):
             positions = {pos for pos in positions if 0 <= pos[0] < self.width and 0 <= pos[1] < self.height}
             for position in positions:
                 self.vision_regions.get(position).add(region.nid)
+                # Anyone can see a vision region
+                self.previously_visited_tiles.add(position)
 
     def remove_vision_region(self, region):
         for cell in self.vision_regions.cells():
@@ -216,12 +245,12 @@ class GameBoard(object):
         if self.vision_regions.get(pos):
             return True
 
-        if game.level_vars.get('_fog_of_war') or self.fog_regions.get(pos):
+        if game.get_current_fog_info().is_active or self.fog_regions.get(pos):
             if team == 'player':
                 # Right now, line of sight doesn't interact at all with vision regions
                 # Since I'm not sure how we'd handle cases where a vision region is obscured by an opaque tile
                 if DB.constants.value('fog_los'):
-                    fog_of_war_radius = game.level_vars.get('_fog_of_war_radius', 0)
+                    fog_of_war_radius = game.get_current_fog_info().default_radius
                     valid: bool = False  # Can we see the pos?
                     # We can if any of our allies can see the pos.
                     for team_nid in DB.teams.get_allies(team):
@@ -246,15 +275,26 @@ class GameBoard(object):
         else:
             return True
 
+    def terrain_known(self, pos: Pos, is_in_vision: bool) -> bool:
+        """Returns whether the player knows the terrain type of this position.
+        """
+        fog_of_war_type = game.get_current_fog_info().mode
+        if fog_of_war_type == FogOfWarType.HYBRID:
+            return is_in_vision or pos in self.previously_visited_tiles
+        elif fog_of_war_type == FogOfWarType.THRACIA:
+            return is_in_vision
+        else:  # GBA
+            return True
+
     def get_fog_of_war_radius(self, team: str) -> int:
-        ai_fog_of_war_radius = game.level_vars.get('_ai_fog_of_war_radius', game.level_vars.get('_fog_of_war_radius', 0))
+        fog_info = game.get_current_fog_info()
         player_team_allies = DB.teams.allies
         if team == 'player':
-            fog_of_war_radius = game.level_vars.get('_fog_of_war_radius', 0)
+            fog_of_war_radius = fog_info.default_radius
         elif team in player_team_allies:
-            fog_of_war_radius = game.level_vars.get('_other_fog_of_war_radius', ai_fog_of_war_radius)
+            fog_of_war_radius = fog_info.other_radius
         else:
-            fog_of_war_radius = ai_fog_of_war_radius
+            fog_of_war_radius = fog_info.ai_radius
         return fog_of_war_radius
 
     def check_fog_of_war(self, unit: UnitObject, pos: Pos) -> bool:

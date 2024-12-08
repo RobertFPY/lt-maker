@@ -95,6 +95,7 @@ ITEM_HOOKS: Dict[str, HookInfo] = {
     'show_weapon_disadvantage':                        HookInfo(['unit', 'item', 'target', 'item2'], ResolvePolicy.UNIQUE),
     'battle_music':                                    HookInfo(['unit', 'item', 'target', 'item2', 'mode'], ResolvePolicy.UNIQUE),
     'combat_effect':                                   HookInfo(['unit', 'item', 'target', 'item2', 'mode'], ResolvePolicy.UNIQUE),
+    'on_hit_effect':                                   HookInfo(['unit', 'item', 'target', 'item2', 'mode'], ResolvePolicy.UNIQUE),
     # events do not return, but are the only item components currently inherited from parents
     'on_end_chapter':                                  HookInfo(['unit', 'item'], ResolvePolicy.NO_RETURN, inherits_parent=True),
     'reverse_use':                                     HookInfo(['unit', 'item'], ResolvePolicy.NO_RETURN, inherits_parent=True),

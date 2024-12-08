@@ -424,8 +424,19 @@ class AnimationCombat(BaseCombat, MockCombat):
 
         elif self.state == 'combat_hit':
             self.clean_up0()
-            self.state = 'hp_change'
+            
+            # Set up on-hit effects for magic stuff
+            attacker, item, defender, d_item, self.current_battle_anim = self.get_actors()   
+            if item:
+                effect_nid = item_system.on_hit_effect(attacker, item, defender, d_item, 'attack')
+                if effect_nid:
+                    # Must designate a pose called `Effect` that has no `SpellHit` and `BreakParentLoop` (unsure about this) in the editor so we don't hang
+                    # I used the `Legend` effect from the discord as a template to format other effects
+                    effect = self.current_battle_anim.get_effect(effect_nid, pose='Effect')
+                    self.current_battle_anim.add_effect(effect)
 
+            self.state = 'hp_change'
+                
         elif self.state == 'hp_change':
             proceed = self.current_battle_anim.can_proceed()
             if current_time > utils.frames2ms(27) and self.left_hp_bar.done() and self.right_hp_bar.done() and proceed:

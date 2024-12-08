@@ -1328,8 +1328,8 @@ class Convoy():
         self.disp_value = disp_value
         self.takes_input = True
         self.include_other_units = include_other_units
-
-        self.order = [w.nid for w in DB.weapons]
+        
+        self.order = [w.nid for w in DB.weapons.get_visible_weapon_types().values()]
         self.build_menus()
 
         self._info_flag = False  # Whether to show item info

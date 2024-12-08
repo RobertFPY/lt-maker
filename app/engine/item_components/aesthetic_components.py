@@ -129,6 +129,18 @@ class PreCombatEffect(ItemComponent):
     def combat_effect(self, unit, item, target, item2, mode):
         return self.value
 
+class OnHitEffect(ItemComponent):
+    nid = 'on_hit_effect'
+    desc = "Item plays an on-hit effect."
+    tag = ItemTags.AESTHETIC
+    
+    author = 'Eretein'
+
+    expose = ComponentType.EffectAnimation
+
+    def on_hit_effect(self, unit, item, target, item2, mode):
+        return self.value
+
 class Warning(ItemComponent):
     nid = 'warning'
     desc = "A yellow exclamation mark appears above the wielder's head. Often used for killing weapons."

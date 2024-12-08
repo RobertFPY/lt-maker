@@ -736,7 +736,8 @@ class InfoMenuState(State):
     def create_wexp_surf(self):
         wexp_to_draw: List[Tuple[str, int]] = []
         for weapon, wexp in self.unit.wexp.items():
-            if wexp > 0 and weapon in unit_funcs.usable_wtypes(self.unit):
+            if wexp > 0 and weapon in unit_funcs.usable_wtypes(self.unit) \
+                and weapon in DB.weapons.get_visible_weapon_types():
                 wexp_to_draw.append((weapon, wexp))
         width = (WINWIDTH - 102) // 2
         height = 16 * 2 + 4

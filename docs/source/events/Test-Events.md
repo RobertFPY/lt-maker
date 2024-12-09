@@ -46,6 +46,8 @@ These are the **ONLY** commands that will run:
 "ending"
 "paired_ending"
 "pop_dialog"
+"narrate"
+"toggle_narration_mode"
 "unpause"
 "screen_shake"
 ```

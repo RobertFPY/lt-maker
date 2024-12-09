@@ -35,10 +35,10 @@ class MockEvent(Event):
                  "move_portrait", "mirror_portrait", "bop_portrait",
                  "expression", "speak_style", "speak", "unhold",
                  "transition", "change_background", "table",
-                 "remove_table", "draw_overlay_sprite",
+                 "remove_table", "draw_overlay_sprite", "narrate",
                  "remove_overlay_sprite", "location_card", "credits",
                  "ending", "paired_ending", "pop_dialog", "unpause", 
-                 "screen_shake"}
+                 "screen_shake", "toggle_narration_mode"}
 
     def __init__(self, nid, event_prefab: EventPrefab, command_idx=0, if_statement_strategy=IfStatementStrategy.ALWAYS_TRUE):
         self._transition_speed = 250

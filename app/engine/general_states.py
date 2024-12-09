@@ -1429,6 +1429,9 @@ class ItemDiscardState(MapState):
 
         if game.game_vars.get('_convoy') and DB.constants.value("long_range_storage"):
             self.mode = self.ItemDiscardMode.STORAGE
+        # Always store when the unit is in Prep or Base and therefore doesn't have a position
+        elif game.game_vars.get('_convoy') and not self.cur_unit.position:  
+            self.mode = self.ItemDiscardMode.STORAGE
         elif game.game_vars.get('_convoy') and SupplyAbility.targets(self.cur_unit):
             self.mode = self.ItemDiscardMode.STORAGE
         else:

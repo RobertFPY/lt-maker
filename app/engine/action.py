@@ -3533,7 +3533,6 @@ class AddSkill(Action):
     def reverse(self):
         if not self.did_something:
             return
-        self.reset_action.reverse()
         if not self.skill_obj:
             return
 
@@ -3556,6 +3555,7 @@ class AddSkill(Action):
         # Return displaced skills
         for action in self.subactions:
             action.reverse()
+        self.reset_action.reverse()
 
 class RemoveSkill(Action):
     def __init__(self, unit, skill, count=-1, source=None, source_type=SourceType.DEFAULT):
@@ -3608,7 +3608,6 @@ class RemoveSkill(Action):
             else:
                 logging.warning("Skill %s not in %s's skills", self.skill.nid, self.unit)
 
-
         # Handle affects movement
         self.reset_action.execute()
 
@@ -3624,7 +3623,6 @@ class RemoveSkill(Action):
 
     @recalculate_unit
     def reverse(self):
-        self.reset_action.reverse()
         for skill, source, source_type in self.removed_skills:
             skill_system.before_add(self.unit, skill)
             skill.owner_nid = self.unit.nid
@@ -3636,6 +3634,7 @@ class RemoveSkill(Action):
                 game.boundary.register_unit_auras(self.unit)
 
             skill_system.after_add(self.unit, skill)
+        self.reset_action.reverse()
 
 
 # === Master Functions for adding to the action log ===

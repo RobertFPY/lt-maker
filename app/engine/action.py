@@ -131,15 +131,15 @@ def recalc_unit(unit):
         if game.boundary:
             game.boundary.recalculate_unit(unit)
         # Fog of War Sight may have changed
-        # But we can't update it immediately, because the unit may have just gained
-        # this skill on a move, and the unit shouldn't be able to see until they 
-        # press "Wait"
-        # if game.board:
-        #     fog_of_war_radius = game.board.get_fog_of_war_radius(unit.team)
-        #     sight_range = skill_system.sight_range(unit) + fog_of_war_radius
-        #     game.board.update_fow(unit.position, unit, sight_range)
-        #     if game.boundary:
-        #         game.boundary.reset_fog_of_war()
+        # But we can't update it directly here, because the unit may have just gained
+        # this skill on a move, and the unit shouldn't be able to see until they press "Wait"
+        # So instead, we just change the sight range directly but not their vantage point
+        if game.board:
+            fog_of_war_radius = game.board.get_fog_of_war_radius(unit.team)
+            sight_range = skill_system.sight_range(unit) + fog_of_war_radius
+            game.board.change_sight_range(unit, sight_range)
+            if game.boundary:
+                game.boundary.reset_fog_of_war()
 
 def recalculate_unit(func):
     @functools.wraps(func)

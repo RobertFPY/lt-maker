@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Dict
 from app.utilities.typing import NID, Pos
 
 from app.utilities import utils
@@ -34,7 +35,7 @@ def line_of_sight(source_pos: list, dest_pos: list, max_range: int) -> list:
     lit_tiles = [pos for pos in dest_pos if all_tiles[pos] != Visibility.Dark]
     return lit_tiles
 
-def simple_check(dest_pos: Pos, team: Nid, default_range: int, fow_vantage_point: Dict[NID, Pos] = None) -> bool:
+def simple_check(dest_pos: Pos, team: NID, default_range: int, fow_vantage_point: Dict[NID, Pos] = None) -> bool:
     """
     Returns true if can see position with line of sight
     """

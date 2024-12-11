@@ -8,7 +8,7 @@ from app.engine import action, combat_calcs, item_funcs, item_system, skill_syst
 from app.engine.game_state import game
 from app.engine.combat import playback as pb
 from app.engine.combat.playback import PlaybackBrush
-from app.utilities import static_random
+from app.utilities import static_random, utils
 from app.utilities.enums import Strike
 from app.engine.combat.utils import resolve_weapon
 
@@ -445,9 +445,11 @@ class CombatPhaseSolver():
         if assist:
             item = attacker.get_weapon()
 
-        to_hit = combat_calcs.compute_hit(attacker, defender, item, def_item, mode, attack_info)
+        unclamped_hit = combat_calcs.compute_hit(attacker, defender, item, def_item, mode, attack_info, clamp_hit=False)
         if game.rng_mode == RNGOption.FATES_HIT:
-            to_hit = self.calculate_fates_hit(to_hit)
+            to_hit = self.calculate_fates_hit(utils.clamp(unclamped_hit, 0, 100))
+        else:
+            to_hit = utils.clamp(unclamped_hit, 0, 100)
 
         if self.current_command.lower() in ('hit1', 'hit2', 'crit1', 'crit2'):
             roll = -1
@@ -481,7 +483,7 @@ class CombatPhaseSolver():
                 item_system.on_crit(actions, playback, attacker, item, defender, resolve_weapon(defender), def_pos, mode, attack_info, first_item)
                 if defender:
                     playback.append(pb.MarkCrit(attacker, defender, self.attacker, item))
-            elif roll >= to_hit - DB.constants.value('glancing_hit') and not guard_hit:
+            elif roll >= unclamped_hit - DB.constants.value('glancing_hit') and not guard_hit:
                 item_system.on_glancing_hit(actions, playback, attacker, item, defender, resolve_weapon(defender), def_pos, mode, attack_info, first_item)
                 if defender:
                     playback.append(pb.MarkHit(attacker, defender, self.attacker, item, guard_hit))

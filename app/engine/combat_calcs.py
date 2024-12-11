@@ -354,7 +354,7 @@ def defense_speed(unit, item, item_to_avoid=None):
 
     return speed
 
-def compute_hit(unit, target, item, def_item, mode, attack_info):
+def compute_hit(unit, target, item, def_item, mode, attack_info, *, clamp_hit=True):
     if not item:
         return None
 
@@ -400,7 +400,10 @@ def compute_hit(unit, target, item, def_item, mode, attack_info):
     hit += skill_system.dynamic_accuracy(unit, item, target, resolve_weapon(target), mode, attack_info, hit)
     hit -= skill_system.dynamic_avoid(target, resolve_weapon(target), unit, item, mode, attack_info, hit)
 
-    return utils.clamp(hit, 0, 100)
+    if clamp_hit:
+        return utils.clamp(hit, 0, 100)
+    else:
+        return max(hit, 0)
 
 def compute_crit(unit, target, item, def_item, mode, attack_info):
     if not item:

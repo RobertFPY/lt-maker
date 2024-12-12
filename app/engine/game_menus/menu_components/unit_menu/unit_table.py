@@ -48,7 +48,7 @@ class Column():
             self.get_font = get_font
 
 def get_all_weapon_types() -> List[WeaponType]:
-    return [wtype for wtype in DB.weapons.values() if wtype.nid != "Default"]
+    return [wtype for wtype in DB.weapons.get_visible_weapon_types().values() if wtype.nid != "Default"]
 
 def get_all_character_stats() -> List[StatPrefab]:
     return [stat for stat in DB.stats if stat.position != 'hidden']

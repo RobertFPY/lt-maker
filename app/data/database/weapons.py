@@ -161,7 +161,7 @@ class WeaponCatalog(Data[WeaponType]):
         nids = [d.nid for d in self]
         nid = name = str_utils.get_next_name("New Weapon Type", nids)
         new_weapon = WeaponType(
-            nid, name, False, CombatBonusList(),
+            nid, name, False, False, CombatBonusList(),
             CombatBonusList(), CombatBonusList())
         self.append(new_weapon)
         return new_weapon

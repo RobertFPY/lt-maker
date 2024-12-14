@@ -2716,6 +2716,7 @@ class ShopState(State):
                         elif game.game_vars.get('_convoy'):
                             action.do(action.PutItemInConvoy(new_item))
                             self.current_msg = self.get_dialog(self.convoy_message)
+                        self.update_options()
 
                     # How it could fail
                     elif self.buy_menu.get_stock() == 0:

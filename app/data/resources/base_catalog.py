@@ -2,7 +2,6 @@ import os
 from pathlib import Path
 import shutil
 import filecmp
-import json
 from typing import List, Set, Type, TypeVar, Union
 
 from app.data.resources.resource_prefab import WithResources

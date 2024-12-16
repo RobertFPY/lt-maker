@@ -746,7 +746,7 @@ class TitleExtrasState(TitleLoadState):
             options.append('Sound Room')
         if ACHIEVEMENTS:
             options.insert(1, 'Achievements')
-        if cf.SETTINGS['debug'] and save.get_all_saves():
+        if (cf.SETTINGS['debug'] or cf.SETTINGS['all_saves']) and save.get_all_saves():
             options.insert(0, 'All Saves')
         self.menu = menus.Main(options, 'title_menu_dark')
 

@@ -151,7 +151,7 @@ class MapView():
                 subsurface_rect = cull_rect[0] + subsurface_cull[0], cull_rect[1] + subsurface_cull[1], subsurface_cull[2], subsurface_cull[3]
                 self.draw_units(surf, cull_rect, subsurface_rect)
             else:
-                pass # Don't draw units
+                pass  # Don't draw units
         else:
             self.draw_units(surf, cull_rect)
 

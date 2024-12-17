@@ -51,7 +51,7 @@ class OverworldFreeState(MapState):
             next_level_node = game.overworld_controller.node_by_level(game.overworld_controller.next_level)
             if next_level_node:
                 game.overworld_controller.set_node_property(next_level_node.nid, OverworldNodeProperty.IS_NEXT_LEVEL, True)
-
+                
     def start(self):
         OverworldFreeState.set_up_overworld_game_state()
         logging.info('Fade in Overworld Music')

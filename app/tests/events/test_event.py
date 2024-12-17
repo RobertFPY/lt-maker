@@ -204,17 +204,30 @@ class EventUnitTests(unittest.TestCase):
 
     def test_overworld_menu_commands(self):
         from app.events import overworld_event_functions
+        from app.engine.objects.overworld import OverworldObject
+        from app.data.database.overworld import OverworldPrefab
+        from app.data.database.overworld_node import OverworldNodeCatalog, OverworldNodePrefab
+        from app.events.node_events import NodeEventCatalogue, NodeMenuEvent
+
         test_commands = [
-            "set_overworld_menu_option_visible;1;Battle;t",
-            "set_overworld_menu_option_enabled;1;Battle;t"
+            "set_overworld_menu_option_visible;0;0;Battle;t",
+            "set_overworld_menu_option_enabled;0;0;Battle;t"
         ]
+
+        nid = '0'
+        overworld = OverworldPrefab(nid, 'test')
+        node = OverworldNodePrefab.default()
+        node_event = NodeMenuEvent('Battle')
+        node.menu_options = NodeEventCatalogue([node_event])
+        overworld.overworld_nodes = OverworldNodeCatalog([node])
+        self.game.overworld_registry[nid] = OverworldObject.from_prefab(overworld, {}, {})
+
         event = self.create_event_from_script(test_commands)
 
-        event.run_command(event.processor.fetch_next_command())
-        event.run_command(event.processor.fetch_next_command())
+        self.run_all_commands(event)
 
-        self.game.overworld_controller.toggle_menu_option_enabled.assert_called_with('1', 'Battle', True)
-        self.game.overworld_controller.toggle_menu_option_visible.assert_called_with('1', 'Battle', True)
+        assert self.game.overworld_registry[nid].visible_menu_options['0']['Battle'] == True
+        assert self.game.overworld_registry[nid].enabled_menu_options['0']['Battle'] == True
 
     def test_textbox_command(self):
         from app.events import event_functions

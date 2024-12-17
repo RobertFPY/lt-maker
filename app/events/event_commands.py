@@ -3403,16 +3403,16 @@ class SetOverworldMenuOptionEnabled(EventCommand):
     tag = Tags.OVERWORLD
     desc = ('Toggle whether the specified node menu option can be accessed by the player. Note that even if enabled, it must also be visible for the player to access it.')
 
-    keywords = ['OverworldNodeNid', 'OverworldNodeMenuOption', 'Setting']
-    keyword_types = ['OverworldNodeNID', 'OverworldNodeMenuOption', 'Bool']
+    keywords = ['OverworldNID', 'OverworldNodeNid', 'OverworldNodeMenuOption', 'Setting']
+    keyword_types = ['OverworldNID', 'OverworldNodeNID', 'OverworldNodeMenuOption', 'Bool']
 
 class SetOverworldMenuOptionVisible(EventCommand):
     nid = 'set_overworld_menu_option_visible'
     tag = Tags.OVERWORLD
     desc = ('Toggle whether the specified node menu option can be seen by the player. Note that even if visible, it must also be enabled for the player to access it.')
 
-    keywords = ['OverworldNodeNID', 'OverworldNodeMenuOption', 'Setting']
-    keyword_types = ['OverworldNodeNID', 'OverworldNodeMenuOption', 'Bool']
+    keywords = ['OverworldNID', 'OverworldNodeNID', 'OverworldNodeMenuOption', 'Setting']
+    keyword_types = ['OverworldNID', 'OverworldNodeNID', 'OverworldNodeMenuOption', 'Bool']
 
 class EnterLevelFromOverworld(EventCommand):
     nid = 'enter_level_from_overworld'

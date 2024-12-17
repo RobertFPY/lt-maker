@@ -295,12 +295,14 @@ def narrate(self: Event, speaker, string, flags=None):
         self.should_remain_blocked.append(should_block)
         self.state = 'blocked'
 
-def set_overworld_menu_option_enabled(self: Event, overworld_node_nid: NID, overworld_node_menu_option: NID, setting: bool, flags=None):
-    overworld = self.game.overworld_controller
+def set_overworld_menu_option_enabled(self: Event, overworld_nid: NID, overworld_node_nid: NID, overworld_node_menu_option: NID, setting: bool, flags=None):
+    from app.engine.overworld.overworld_states import OverworldManager
+    overworld = OverworldManager(self.game.overworld_registry[overworld_nid], None, self.game.game_vars.get('_next_level_nid'), None)
     overworld.toggle_menu_option_enabled(overworld_node_nid, overworld_node_menu_option, setting)
 
-def set_overworld_menu_option_visible(self: Event, overworld_node_nid: NID, overworld_node_menu_option: NID, setting: bool, flags=None):
-    overworld = self.game.overworld_controller
+def set_overworld_menu_option_visible(self: Event, overworld_nid: NID, overworld_node_nid: NID, overworld_node_menu_option: NID, setting: bool, flags=None):
+    from app.engine.overworld.overworld_states import OverworldManager
+    overworld = OverworldManager(self.game.overworld_registry[overworld_nid], None, self.game.game_vars.get('_next_level_nid'), None)
     overworld.toggle_menu_option_visible(overworld_node_nid, overworld_node_menu_option, setting)
 
 def enter_level_from_overworld(self: Event, level_nid: str, flags=None):

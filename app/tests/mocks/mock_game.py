@@ -18,6 +18,9 @@ def get_mock_game() -> GameState:
 
     game.get_item = MagicMock()
     game.query_engine = GameQueryEngine(MagicMock(), game)
+    game.overworld_registry = {}
+
+    game.game_vars = {}
 
     # Need to mock a function that returns it's own MagicMock with stack set to None
     get_skill = MagicMock()

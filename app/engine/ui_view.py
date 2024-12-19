@@ -832,7 +832,7 @@ class ItemDescriptionPanel():
         bg_surf.blit(sub_bg_surf, (2, 4))
         bg_surf.blit(SPRITES.get('menu_gem_small'), (0, 0))
         bg_surf = image_mods.make_translucent(bg_surf, .1)
-
+        
         weapon = item_system.is_weapon(self.unit, self.item)
         available = item_funcs.available(self.unit, self.item)
 
@@ -888,13 +888,60 @@ class ItemDescriptionPanel():
                 render_text(bg_surf, ['text'], [line], [None], (4 + 2, 8 + idx * 16))
 
         return bg_surf
+        
+    def _draw_item_delta_info(self, bg_surf):
+        weapon = item_system.is_weapon(self.unit, self.item)
+        available = item_funcs.available(self.unit, self.item)
+        current_weapon = self.unit.get_weapon()
+
+        if weapon and available and current_weapon:
+            width, height = 96, 56
+            top = 4
+            left = 2
+            
+            up_arrow = engine.subsurface(SPRITES.get('arrow_advantage'), (ANIMATION_COUNTERS.arrow_counter.count * 7, 0, 7, 10))
+            down_arrow = engine.subsurface(SPRITES.get('arrow_advantage'), (ANIMATION_COUNTERS.arrow_counter.count * 7, 10, 7, 10))
+
+            damage = combat_calcs.damage(self.unit, self.item)
+            accuracy = combat_calcs.accuracy(self.unit, self.item)
+            crit = combat_calcs.crit_accuracy(self.unit, self.item)
+            avoid = combat_calcs.avoid(self.unit, self.item)
+            attack_speed = combat_calcs.attack_speed(self.unit, self.item)
+
+            curr_damage = combat_calcs.damage(self.unit, current_weapon)
+            curr_accuracy = combat_calcs.accuracy(self.unit, current_weapon)
+            curr_crit = combat_calcs.crit_accuracy(self.unit, current_weapon)
+            curr_avoid = combat_calcs.avoid(self.unit, current_weapon)
+            curr_attack_speed = combat_calcs.attack_speed(self.unit, current_weapon)
+            if curr_damage is not None and damage is not None and damage > curr_damage:
+                bg_surf.blit(up_arrow, (left + width//2 - 3, top + 24))
+            elif curr_damage is not None and damage is not None and damage < curr_damage:
+                bg_surf.blit(down_arrow, (left + width//2 - 3, top + 24))
+            if curr_accuracy is not None and accuracy is not None and accuracy > curr_accuracy:
+                bg_surf.blit(up_arrow, (left + width//2 - 3, top + 40))
+            elif curr_accuracy is not None and accuracy is not None and accuracy < curr_accuracy:
+                bg_surf.blit(down_arrow, (left + width//2 - 3, top + 40))
+            if DB.constants.value('crit'):
+                if curr_crit is not None and crit is not None and crit > curr_crit:
+                    bg_surf.blit(up_arrow, (left + width - 10, top + 24))
+                elif curr_crit is not None and crit is not None and crit < curr_crit:
+                    bg_surf.blit(down_arrow, (left + width - 10, top + 24))
+            else:
+                if curr_attack_speed is not None and attack_speed is not None and attack_speed > curr_attack_speed:
+                    bg_surf.blit(up_arrow, (left + width - 10, top + 24))
+                elif curr_attack_speed is not None and attack_speed is not None and attack_speed < curr_attack_speed:
+                    bg_surf.blit(down_arrow, (left + width - 10, top + 24))
+            if curr_avoid is not None and avoid is not None and avoid > curr_avoid:
+                bg_surf.blit(up_arrow, (left + width - 10, top + 40))
+            elif curr_avoid is not None and avoid is not None and avoid < curr_avoid:
+                bg_surf.blit(down_arrow, (left + width - 10, top + 40))
 
     def draw(self, surf):
         if not self.item:
             return surf
         if not self.surf:
             self.surf = self.create_surf()
-
+        
         cursor_left = False
         if game.cursor.position[0] > TILEX // 2 + game.camera.get_x():
             topleft = (WINWIDTH - 8 - self.surf.get_width(), WINHEIGHT - 8 - self.surf.get_height())
@@ -907,8 +954,10 @@ class ItemDescriptionPanel():
             if cursor_left:
                 portrait = engine.flip_horiz(portrait)
             surf.blit(portrait, (topleft[0] + 2, topleft[1] - 76))
-
-        surf.blit(self.surf, topleft)
+        copy_surf = self.surf.copy()
+        self._draw_item_delta_info(copy_surf)
+        surf.blit(copy_surf, topleft)
+        
         return surf
 
     def build_lines(self, desc, width):

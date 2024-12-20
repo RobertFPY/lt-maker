@@ -45,7 +45,7 @@ class UnitPathMovementComponent(MovementComponent):
             next_position = self.path[-1]
             net_position = (next_position[0] - self.unit.position[0], next_position[1] - self.unit.position[1])
             self.unit.sprite.handle_net_position(net_position)
-        action.PickUnitUp(self.unit).do()
+        action.QuickLeave(self.unit, keep_position=True).do()
         if not self.muted:
             self.unit.sound.play()
         self._last_update = engine.get_time()
@@ -122,7 +122,7 @@ class UnitPathMovementComponent(MovementComponent):
             if game.ai.unit is self.unit:
                 game.ai.interrupt()
 
-        action.PutUnitDown(self.unit).do()
+        action.QuickArrive(self.unit, self.unit.position).do()
         if self.unit.sound:
             self.unit.sound.stop()
 

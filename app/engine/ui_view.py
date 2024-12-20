@@ -819,6 +819,7 @@ class ItemDescriptionPanel():
     def __init__(self, unit, item):
         self.unit = unit
         self.item = item
+        self.reference_item = unit.get_weapon()
         self.surf = None
 
     def set_item(self, item):
@@ -890,51 +891,73 @@ class ItemDescriptionPanel():
         return bg_surf
         
     def _draw_item_delta_info(self, bg_surf):
-        weapon = item_system.is_weapon(self.unit, self.item)
-        available = item_funcs.available(self.unit, self.item)
-        current_weapon = self.unit.get_weapon()
-
-        if weapon and available and current_weapon:
+        if not self.reference_item: # fail early
+            return
+        
+        is_weapon = item_system.is_weapon(self.unit, self.item)
+        is_available = item_funcs.available(self.unit, self.item)
+        current_weapon = self.item
+        
+        if all([is_weapon, is_available, current_weapon]):
             width, height = 96, 56
             top = 4
             left = 2
             
             up_arrow = engine.subsurface(SPRITES.get('arrow_advantage'), (ANIMATION_COUNTERS.arrow_counter.count * 7, 0, 7, 10))
             down_arrow = engine.subsurface(SPRITES.get('arrow_advantage'), (ANIMATION_COUNTERS.arrow_counter.count * 7, 10, 7, 10))
-
-            damage = combat_calcs.damage(self.unit, self.item)
-            accuracy = combat_calcs.accuracy(self.unit, self.item)
-            crit = combat_calcs.crit_accuracy(self.unit, self.item)
-            avoid = combat_calcs.avoid(self.unit, self.item)
-            attack_speed = combat_calcs.attack_speed(self.unit, self.item)
-
+            
+            is_curr_better = None # reuse this flag across function
+            def compare(curr, prev) -> int:
+                if prev is None or curr is None:
+                    return 0
+                elif curr > prev:
+                    return 1
+                elif curr < prev:
+                    return -1
+                else:
+                    return 0
+            
             curr_damage = combat_calcs.damage(self.unit, current_weapon)
-            curr_accuracy = combat_calcs.accuracy(self.unit, current_weapon)
-            curr_crit = combat_calcs.crit_accuracy(self.unit, current_weapon)
-            curr_avoid = combat_calcs.avoid(self.unit, current_weapon)
-            curr_attack_speed = combat_calcs.attack_speed(self.unit, current_weapon)
-            if curr_damage is not None and damage is not None and damage > curr_damage:
+            prev_damage = combat_calcs.damage(self.unit, self.reference_item)
+            is_curr_better = compare(curr_damage, prev_damage)
+            if is_curr_better == 1:
                 bg_surf.blit(up_arrow, (left + width//2 - 3, top + 24))
-            elif curr_damage is not None and damage is not None and damage < curr_damage:
+            elif is_curr_better == -1:
                 bg_surf.blit(down_arrow, (left + width//2 - 3, top + 24))
-            if curr_accuracy is not None and accuracy is not None and accuracy > curr_accuracy:
+
+            curr_accuracy = combat_calcs.accuracy(self.unit, current_weapon)
+            prev_accuracy = combat_calcs.accuracy(self.unit, self.reference_item)
+            is_curr_better = compare(curr_accuracy, prev_accuracy)
+            if is_curr_better == 1:
                 bg_surf.blit(up_arrow, (left + width//2 - 3, top + 40))
-            elif curr_accuracy is not None and accuracy is not None and accuracy < curr_accuracy:
+            elif is_curr_better == -1:
                 bg_surf.blit(down_arrow, (left + width//2 - 3, top + 40))
+                          
             if DB.constants.value('crit'):
-                if curr_crit is not None and crit is not None and crit > curr_crit:
+                curr_crit = combat_calcs.crit_accuracy(self.unit, current_weapon)
+                prev_crit = combat_calcs.crit_accuracy(self.unit, self.reference_item)
+                is_curr_better = compare(curr_crit, prev_crit)
+                if is_curr_better == 1:
                     bg_surf.blit(up_arrow, (left + width - 10, top + 24))
-                elif curr_crit is not None and crit is not None and crit < curr_crit:
+                elif is_curr_better == -1:
                     bg_surf.blit(down_arrow, (left + width - 10, top + 24))
             else:
-                if curr_attack_speed is not None and attack_speed is not None and attack_speed > curr_attack_speed:
+                curr_attack_speed = combat_calcs.attack_speed(self.unit, current_weapon)
+                prev_attack_speed = combat_calcs.attack_speed(self.unit, self.reference_item)
+                is_curr_better = compare(curr_attack_speed, prev_attack_speed)
+                if is_curr_better == 1:
                     bg_surf.blit(up_arrow, (left + width - 10, top + 24))
-                elif curr_attack_speed is not None and attack_speed is not None and attack_speed < curr_attack_speed:
+                elif is_curr_better == -1:
                     bg_surf.blit(down_arrow, (left + width - 10, top + 24))
-            if curr_avoid is not None and avoid is not None and avoid > curr_avoid:
+
+            curr_avoid = combat_calcs.avoid(self.unit, current_weapon)     
+            prev_avoid = combat_calcs.avoid(self.unit, self.reference_item)
+            is_curr_better = compare(curr_avoid, prev_avoid)
+            if is_curr_better == 1:
                 bg_surf.blit(up_arrow, (left + width - 10, top + 40))
-            elif curr_avoid is not None and avoid is not None and avoid < curr_avoid:
+            elif is_curr_better == -1:
                 bg_surf.blit(down_arrow, (left + width - 10, top + 40))
+
 
     def draw(self, surf):
         if not self.item:

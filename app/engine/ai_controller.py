@@ -418,9 +418,8 @@ class PrimaryAI():
             return []
 
     def quick_move(self, move):
-        action.PickUnitUp(self.unit, True).do()
-        self.unit.position = move
-        action.PutUnitDown(self.unit, True).do()
+        action.QuickLeave(self.unit, True).do()
+        action.QuickArrive(self.unit, move, True).do()
 
     def run(self):
         if self.item_index >= len(self.items):

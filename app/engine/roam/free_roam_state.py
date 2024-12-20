@@ -187,19 +187,19 @@ class FreeRoamState(MapState):
         """
         other_unit = self.get_closest_unit()
         did_trigger = game.events.trigger(triggers.RoamPressAux(self.roam_unit, other_unit))
-        self.rationalize_all_units()
         if not did_trigger:
             game.state.change('option_menu')
+        self.rationalize_all_units()
 
     def check_start(self):
         """
         # Called whenever the player presses START
         """
         other_unit = self.get_closest_unit()
-        self.rationalize_all_units()
         did_trigger = game.events.trigger(triggers.RoamPressStart(self.roam_unit, other_unit))
         if not did_trigger:
             game.state.change('option_menu')
+        self.rationalize_all_units()
 
     def take_input(self, event):
         if not self.roam_unit:

@@ -306,7 +306,7 @@ class GameState():
             # Only let unit's that have a VALID position spawn onto the map
             if unit.position:
                 if self._current_level.tilemap.check_bounds(unit.position):
-                    self.arrive(unit)
+                    self.arrive(unit, unit.position)
                 else:
                     logging.warning("Unit %s's position not on map. Removing...", unit.nid)
                     unit.position = None
@@ -1282,7 +1282,7 @@ class GameState():
             return True
         return False
 
-    def leave(self, unit, test=False):
+    def leave(self, unit: UnitObject, test: bool = False):
         """
         Removes a unit from the map
         This function should always be called BEFORE changing the unit's position
@@ -1298,36 +1298,42 @@ class GameState():
         to a position (generally used for AI)
         """
         from app.engine import action, aura_funcs
-        if unit.position:
-            logging.debug("Leave %s %s", unit.nid, unit.position)
-            # Auras
-            for aura_data in game.board.get_auras(unit.position):
-                child_aura_uid, target = aura_data
-                child_skill = self.get_skill(child_aura_uid)
-                aura_funcs.remove_aura(unit, child_skill, test)
-            if not test:
-                for skill in unit.all_skills:
-                    if skill.aura:
-                        aura_funcs.release_aura(unit, skill, self)
-                self.boundary.unregister_unit_auras(unit)
-            # Status Regions
-            for region in game.level.regions:
-                if region.region_type == RegionType.STATUS and region.contains(unit.position):
-                    skill_uid = self._get_terrain_status((*region.position, region.sub_nid))
-                    skill_obj = self.get_skill(skill_uid)
-                    if skill_obj and skill_obj in unit.all_skills:
-                        if test:
-                            unit.remove_skill(skill_obj, source=region.nid, source_type=SourceType.REGION)
-                        else:
-                            act = action.RemoveSkill(unit, skill_obj, source=region.nid, source_type=SourceType.REGION)
-                            action.do(act)
-            self.remove_terrain_skills(unit, test)
-            # Boundary
-            if not test:
-                self.boundary.leave(unit)
-            # Board
-            if not test:
-                self.board.remove_unit(unit.position, unit)
+        logging.debug("Leave %s from %s", unit, unit.position)
+        if not unit.position:
+            raise ValueError("Unit must have a position to leave, not None")
+
+        # Auras
+        for aura_data in game.board.get_auras(unit.position):
+            child_aura_uid, target = aura_data
+            child_skill = self.get_skill(child_aura_uid)
+            aura_funcs.remove_aura(unit, child_skill, test)
+        if not test:
+            for skill in unit.all_skills:
+                if skill.aura:
+                    aura_funcs.release_aura(unit, skill, self)
+            self.boundary.unregister_unit_auras(unit)
+
+        # Status Regions
+        for region in game.level.regions:
+            if region.region_type == RegionType.STATUS and region.contains(unit.position):
+                skill_uid = self._get_terrain_status((*region.position, region.sub_nid))
+                skill_obj = self.get_skill(skill_uid)
+                if skill_obj and skill_obj in unit.all_skills:
+                    if test:
+                        unit.remove_skill(skill_obj, source=region.nid, source_type=SourceType.REGION)
+                    else:
+                        act = action.RemoveSkill(unit, skill_obj, source=region.nid, source_type=SourceType.REGION)
+                        action.do(act)
+        self.remove_terrain_skills(unit, test)
+
+        # Boundary
+        if not test:
+            self.boundary.leave(unit)
+
+        # Board
+        if not test:
+            self.board.remove_unit(unit.position, unit)
+        unit.position = None
 
     def remove_terrain_skills(self, unit, test=False):
         from app.engine import action
@@ -1345,7 +1351,7 @@ class GameState():
                 act = action.RemoveSkill(unit, skill_obj, source=unit.position, source_type=SourceType.TERRAIN)
                 action.do(act)
 
-    def arrive(self, unit, test=False):
+    def arrive(self, unit: UnitObject, position: Pos, test: bool = False):
         """
         Adds a unit to the map
         This function should always be called AFTER changing the unit's position
@@ -1361,28 +1367,36 @@ class GameState():
         to a position (generally used for AI)
         """
         from app.engine import aura_funcs, skill_system
-        if unit.position:
-            logging.debug("Arrive %s %s", unit.nid, unit.position)
-            if not test:
-                self.board.set_unit(unit.position, unit)
-            # Tiles and Terrain Regions
-            if not skill_system.ignore_terrain(unit):
-                self.add_terrain_status(unit, test)
-            # Status Regions
-            if not skill_system.ignore_region_status(unit):
-                for region in game.level.regions:
-                    if region.region_type == RegionType.STATUS and region.contains(unit.position):
-                        self.add_region_status(unit, region, test)
-            # Auras
-            aura_funcs.pull_auras(unit, self, test)
-            if not test:
-                for skill in unit.all_skills:
-                    if skill.aura:
-                        aura_funcs.propagate_aura(unit, skill, self)
-                self.boundary.register_unit_auras(unit)
-            # Boundary
-            if not test:
-                self.boundary.arrive(unit)
+        logging.debug("Arrive %s at %s", unit, position)
+        if not position:
+            raise ValueError("Must arrive at a position, not None")
+
+        # Set position
+        unit.position = position
+        if not test:
+            self.board.set_unit(unit.position, unit)
+
+        # Tiles and Terrain Regions
+        if not skill_system.ignore_terrain(unit):
+            self.add_terrain_status(unit, test)
+
+        # Status Regions
+        if not skill_system.ignore_region_status(unit):
+            for region in game.level.regions:
+                if region.region_type == RegionType.STATUS and region.contains(unit.position):
+                    self.add_region_status(unit, region, test)
+
+        # Auras
+        aura_funcs.pull_auras(unit, self, test)
+        if not test:
+            for skill in unit.all_skills:
+                if skill.aura:
+                    aura_funcs.propagate_aura(unit, skill, self)
+            self.boundary.register_unit_auras(unit)
+
+        # Boundary
+        if not test:
+            self.boundary.arrive(unit)
 
     def add_terrain_status(self, unit, test):
         from app.engine import action, item_funcs

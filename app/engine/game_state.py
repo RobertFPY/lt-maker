@@ -571,7 +571,8 @@ class GameState():
 
         if full:
             for unit in self.unit_registry.values():
-                self.leave(unit)
+                if unit.position:
+                    self.leave(unit)
         for unit in self.unit_registry.values():
             # Unit cleanup
             unit.is_dying = False

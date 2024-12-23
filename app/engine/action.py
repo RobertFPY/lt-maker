@@ -2386,6 +2386,8 @@ class RemoveUnitNote(Action):
 class Die(Action):
     def __init__(self, unit):
         self.unit = unit
+        # Old Pos is required for cursor movement in the turnwheel.py
+        self.old_pos = self.unit.position
         if self.unit.position:
             self.leave_map = LeaveMap(self.unit)
         else:

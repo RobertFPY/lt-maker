@@ -2626,7 +2626,7 @@ class RemoveMapAnim(EventCommand):
     tag = Tags.TILEMAP
     desc = ('Removes a map animation denoted by the nid *MapAnim* at *Position*. Only removes MapAnims that were created using'
             ' the "permanent" flag. Must include "overlay" flag to remove an overlaid map animation.')
-    keywords = ["MapAnim", "Position"]
+    keywords = ["MapAnim", "FloatPosition"]
     _flags = ['overlay']
 
 class AddUnitMapAnim(EventCommand):

@@ -2653,11 +2653,11 @@ def map_anim(self: Event, map_anim, float_position: Tuple[float, float] | NID, s
         self.wait_time = engine.get_time() + anim.get_wait()
         self.state = 'waiting'
 
-def remove_map_anim(self: Event, map_anim, position, flags=None):
+def remove_map_anim(self: Event, map_anim, float_position: Tuple[float, float] | NID, flags=None):
     flags = flags or set()
-    pos = self._parse_pos(position, True)
+    pos = self._parse_pos(float_position, True)
     if not pos:
-        self.logger.warn("remove_map_anim: Could not find position %s" % position)
+        self.logger.warn("remove_map_anim: Could not find position %s" % float_position)
         return
     action.do(action.RemoveMapAnim(map_anim, pos, 'overlay' in flags))
 

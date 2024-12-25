@@ -249,7 +249,10 @@ class Simple():
         # If we did scroll
         return scroll != self.scroll
 
-    def move_down(self, first_push=True):
+    def move_down(self, first_push=True) -> bool:
+        should_move = first_push or self.current_index < len(self.options) - 1
+        if not should_move:
+            return False
         if first_push:
             self.current_index += 1
             if self.current_index > len(self.options) - 1:
@@ -259,18 +262,20 @@ class Simple():
                 self.scroll += 1
             else:
                 self.cursor.y_offset_down()
-        else:
-            if self.current_index < len(self.options) - 1:
-                self.current_index += 1
-                if self.current_index > self.scroll + self.limit - 2 and self.scroll + self.limit < len(self.options):
-                    self.scroll += 1
-                else:
-                    self.cursor.y_offset_down()
+        else: # not at bottom of list
+            self.current_index += 1
+            if self.current_index > self.scroll + self.limit - 2 and self.scroll + self.limit < len(self.options):
+                self.scroll += 1
+            else:
+                self.cursor.y_offset_down()
         if self.limit < len(self.options):
             self.scroll = min(len(self.options) - self.limit, self.scroll)
-        return first_push or self.current_index < len(self.options) - 1
+        return True
 
-    def move_up(self, first_push=True):
+    def move_up(self, first_push=True) -> bool:
+        should_move = first_push or self.current_index > 0
+        if not should_move:
+            return False
         if first_push:
             self.current_index -= 1
             if self.current_index < 0:
@@ -280,15 +285,14 @@ class Simple():
                 self.scroll -= 1
             else:
                 self.cursor.y_offset_up()
-        else:
-            if self.current_index > 0:
-                self.current_index -= 1
-                if self.current_index < self.scroll + 1:
-                    self.scroll -= 1
-                else:
-                    self.cursor.y_offset_up()
+        else: # not at top of list
+            self.current_index -= 1
+            if self.current_index < self.scroll + 1:
+                self.scroll -= 1
+            else:
+                self.cursor.y_offset_up()
         self.scroll = max(0, self.scroll)
-        return first_push or self.current_index > 0
+        return True
 
     def update_options(self, options=None):
         if options is not None:
@@ -1328,7 +1332,7 @@ class Convoy():
         self.disp_value = disp_value
         self.takes_input = True
         self.include_other_units = include_other_units
-        
+
         self.order = [w.nid for w in DB.weapons.get_visible_weapon_types().values()]
         self.build_menus()
 

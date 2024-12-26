@@ -540,6 +540,7 @@ class GameState():
                     for skill in unit.all_skills:
                         if skill.aura:
                             aura_funcs.repopulate_aura(unit, skill, self)
+                    self.boundary.register_unit_auras(unit)
                     self.boundary.arrive(unit)
                     action.UpdateFogOfWar(unit).execute()
 

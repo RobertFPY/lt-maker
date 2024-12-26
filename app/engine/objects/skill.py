@@ -33,6 +33,14 @@ class SkillObject():
         self.subskill_uid = None
         self.parent_skill = None
 
+    @property
+    def tags(self) -> set:
+        all_tags = set()
+        for component in self.components:
+            if component.nid == 'skill_tags':
+                all_tags |= set(self.components.get('skill_tags').value)
+        return all_tags
+
     @classmethod
     def from_prefab(cls, prefab, component_data=None):
         # Components NEED To be copies! Since they store individualized information

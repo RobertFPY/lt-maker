@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 if TYPE_CHECKING:
     from app.engine.state import State
@@ -29,9 +29,10 @@ class SimpleStateMachine():
 
 class StateMachine():
     def __init__(self):
-        self.state = []
-        self.temp_state = []
-        self.prev_state = None
+        self.state: List[State] = []
+        self.temp_state: List[str] = []
+        self.prev_state: State = None
+        self.prior_state: State = None
 
     def load_states(self, starting_states=None, temp_state=None):
         from app.engine import (base, chapter_title, debug_mode, dialog_log,
@@ -195,8 +196,13 @@ class StateMachine():
             return self.state[-1]
 
     def get_prev_state(self) -> State:
+        """returns the state which precedes the current state on the stack"""
         if self.state and len(self.state) > 1:
             return self.state[-2]
+
+    def get_prior_state(self) -> State:
+        """return the state the state machine was just in. contrast with `get_prev_state`"""
+        return self.prior_state
 
     def exit_state(self, state):
         if state.processed:
@@ -215,6 +221,7 @@ class StateMachine():
                 if self.state:
                     state = self.state[-1]
                     self.exit_state(state)
+                    self.prior_state = state
                     self.state.pop()
             elif transition == 'clear':
                 for state in reversed(self.state):
@@ -222,6 +229,7 @@ class StateMachine():
                 self.state.clear()
             else:
                 new_state = self.all_states[transition](transition)
+                self.prior_state = self.state[-1] if self.state else None
                 self.state.append(new_state)
         if self.temp_state:
             logging.debug("State: %s", self.state_names())

@@ -723,7 +723,6 @@ class MoveState(MapState):
 
         elif event == 'SELECT':
             if game.cursor.position == cur_unit.position:
-                get_sound_thread().play_sfx('Select 2')
                 if cur_unit.has_attacked or cur_unit.has_traded:
                     game.state.clear()
                     game.state.change('free')
@@ -856,7 +855,9 @@ class MenuState(MapState):
                 interaction.start_combat(self.cur_unit, self.cur_unit.position, game.memory.get('item'))
                 return 'repeat'
         # Play this here because there's a gap in sound while unit is moving
-        get_sound_thread().play_sfx('Select 2')
+        # but only if we're entering from move state
+        if game.state.get_prior_state() in (MoveState, MovementState):
+            get_sound_thread().play_sfx('Select 2')
         self.fluid.reset_on_change_state()
         game.cursor.hide()
         self.cur_unit = game.cursor.cur_unit

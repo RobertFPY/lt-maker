@@ -3133,31 +3133,34 @@ class HideLayer(Action):
 
     def do(self):
         layer = game.level.tilemap.layers.get(self.layer_nid)
-        _leave(layer)
+        affected_units = _leave(layer)
         if self.transition == 'immediate':
             layer.quick_hide()
             game.level.tilemap.reset()
         else:
             layer.hide()
-        _arrive(layer)
+        for unit, pos in affected_units:
+            game.arrive(unit, pos)
         game.board.reset_tile_grids(game.level.tilemap)
         game.boundary.reset()
 
     def execute(self):
         layer = game.level.tilemap.layers.get(self.layer_nid)
-        _leave(layer)
+        affected_units = _leave(layer)
         layer.quick_hide()
         game.level.tilemap.reset()
-        _arrive(layer)
+        for unit, pos in affected_units:
+            game.arrive(unit, pos)
         game.board.reset_tile_grids(game.level.tilemap)
         game.boundary.reset()
 
     def reverse(self):
         layer = game.level.tilemap.layers.get(self.layer_nid)
-        _leave(layer)
+        affected_units = _leave(layer)
         layer.quick_show()
         game.level.tilemap.reset()
-        _arrive(layer)
+        for unit, pos in affected_units:
+            game.arrive(unit, pos)
         game.board.reset_tile_grids(game.level.tilemap)
         game.boundary.reset()
 

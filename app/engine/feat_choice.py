@@ -92,17 +92,17 @@ class FeatChoiceState(MapState):
 
         self.menu.handle_mouse()
         if 'DOWN' in directions:
-            get_sound_thread().play_sfx('Select 6')
-            self.menu.move_down(first_push)
+            if self.menu.move_down(first_push):
+                get_sound_thread().play_sfx('Select 6')
         elif 'UP' in directions:
-            get_sound_thread().play_sfx('Select 6')
-            self.menu.move_up(first_push)
+            if self.menu.move_up(first_push):
+                get_sound_thread().play_sfx('Select 6')
         if 'RIGHT' in directions:
-            get_sound_thread().play_sfx('Select 6')
-            self.menu.move_right(first_push)
+            if self.menu.move_right(first_push):
+                get_sound_thread().play_sfx('Select 6')
         elif 'LEFT' in directions:
-            get_sound_thread().play_sfx('Select 6')
-            self.menu.move_left(first_push)
+            if self.menu.move_left(first_push):
+                get_sound_thread().play_sfx('Select 6')
 
         if event == 'BACK':
             if self.menu.info_flag:

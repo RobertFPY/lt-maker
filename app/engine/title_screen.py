@@ -162,11 +162,11 @@ class TitleMainState(State):
         if self.state == 'normal':
             self.menu.handle_mouse()
             if 'DOWN' in directions:
-                get_sound_thread().play_sfx('Select 6')
-                self.menu.move_down(first_push)
+                if self.menu.move_down(first_push):
+                    get_sound_thread().play_sfx('Select 6')
             elif 'UP' in directions:
-                get_sound_thread().play_sfx('Select 6')
-                self.menu.move_up(first_push)
+                if self.menu.move_up(first_push):
+                    get_sound_thread().play_sfx('Select 6')
 
             if event == 'BACK':
                 get_sound_thread().play_sfx('Select 4')
@@ -361,11 +361,11 @@ class TitleModeState(State):
         old_current_index = self.menu.get_current_index()
         self.menu.handle_mouse()
         if 'DOWN' in directions:
-            get_sound_thread().play_sfx('Select 6')
-            self.menu.move_down(first_push)
+            if self.menu.move_down(first_push):
+                get_sound_thread().play_sfx('Select 6')
         elif 'UP' in directions:
-            get_sound_thread().play_sfx('Select 6')
-            self.menu.move_up(first_push)
+            if self.menu.move_up(first_push):
+                get_sound_thread().play_sfx('Select 6')
 
         if self.menu.get_current_index() != old_current_index:
             self.update_dialog()
@@ -483,11 +483,11 @@ class TitleLoadState(State):
 
         self.menu.handle_mouse()
         if 'DOWN' in directions:
-            get_sound_thread().play_sfx('Select 6')
-            self.menu.move_down(first_push)
+            if self.menu.move_down(first_push):
+                get_sound_thread().play_sfx('Select 6')
         elif 'UP' in directions:
-            get_sound_thread().play_sfx('Select 6')
-            self.menu.move_up(first_push)
+            if self.menu.move_up(first_push):
+                get_sound_thread().play_sfx('Select 6')
 
         if event == 'BACK':
             get_sound_thread().play_sfx('Select 4')
@@ -565,11 +565,11 @@ class TitleRestartState(TitleLoadState):
 
         self.menu.handle_mouse()
         if 'DOWN' in directions:
-            get_sound_thread().play_sfx('Select 6')
-            self.menu.move_down(first_push)
+            if self.menu.move_down(first_push):
+                get_sound_thread().play_sfx('Select 6')
         elif 'UP' in directions:
-            get_sound_thread().play_sfx('Select 6')
-            self.menu.move_up(first_push)
+            if self.menu.move_up(first_push):
+                get_sound_thread().play_sfx('Select 6')
 
         if event == 'BACK':
             get_sound_thread().play_sfx('Select 4')
@@ -643,11 +643,11 @@ class TitleNewState(TitleLoadState):
 
         self.menu.handle_mouse()
         if 'DOWN' in directions:
-            get_sound_thread().play_sfx('Select 6')
-            self.menu.move_down(first_push)
+            if self.menu.move_down(first_push):
+                get_sound_thread().play_sfx('Select 6')
         elif 'UP' in directions:
-            get_sound_thread().play_sfx('Select 6')
-            self.menu.move_up(first_push)
+            if self.menu.move_up(first_push):
+                get_sound_thread().play_sfx('Select 6')
 
         if event == 'BACK':
             get_sound_thread().play_sfx('Select 4')
@@ -695,11 +695,11 @@ class TitleNewChildState(State):
     def take_input(self, event):
         self.menu.handle_mouse()
         if event == 'RIGHT':
-            get_sound_thread().play_sfx('Select 6')
-            self.menu.move_down()
+            if self.menu.move_down():
+                get_sound_thread().play_sfx('Select 6')
         elif event == 'LEFT':
-            get_sound_thread().play_sfx('Select 6')
-            self.menu.move_up()
+            if self.menu.move_up():
+                get_sound_thread().play_sfx('Select 6')
 
         elif event == 'BACK':
             get_sound_thread().play_sfx('Select 4')
@@ -767,11 +767,11 @@ class TitleExtrasState(TitleLoadState):
 
         self.menu.handle_mouse()
         if 'DOWN' in directions:
-            get_sound_thread().play_sfx('Select 6')
-            self.menu.move_down(first_push)
+            if self.menu.move_down(first_push):
+                get_sound_thread().play_sfx('Select 6')
         elif 'UP' in directions:
-            get_sound_thread().play_sfx('Select 6')
-            self.menu.move_up(first_push)
+            if self.menu.move_up(first_push):
+                get_sound_thread().play_sfx('Select 6')
 
         if event == 'BACK':
             get_sound_thread().play_sfx('Select 4')
@@ -943,11 +943,11 @@ class TitleSaveState(State):
 
         self.menu.handle_mouse()
         if 'DOWN' in directions:
-            get_sound_thread().play_sfx('Select 6')
-            self.menu.move_down(first_push)
+            if self.menu.move_down(first_push):
+                get_sound_thread().play_sfx('Select 6')
         elif 'UP' in directions:
-            get_sound_thread().play_sfx('Select 6')
-            self.menu.move_up(first_push)
+            if self.menu.move_up(first_push):
+                get_sound_thread().play_sfx('Select 6')
 
         if event == 'BACK':
             # Proceed to next level anyway

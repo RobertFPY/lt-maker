@@ -51,7 +51,7 @@ class OverworldFreeState(MapState):
             next_level_node = game.overworld_controller.node_by_level(game.overworld_controller.next_level)
             if next_level_node:
                 game.overworld_controller.set_node_property(next_level_node.nid, OverworldNodeProperty.IS_NEXT_LEVEL, True)
-                
+
     def start(self):
         OverworldFreeState.set_up_overworld_game_state()
         logging.info('Fade in Overworld Music')
@@ -294,11 +294,11 @@ class OverworldGameOptionMenuState(State):
 
         self.menu.handle_mouse()
         if 'DOWN' in directions:
-            get_sound_thread().play_sfx('Select 6')
-            self.menu.move_down(first_push)
+            if self.menu.move_down(first_push):
+                get_sound_thread().play_sfx('Select 6')
         elif 'UP' in directions:
-            get_sound_thread().play_sfx('Select 6')
-            self.menu.move_up(first_push)
+            if self.menu.move_up(first_push):
+                get_sound_thread().play_sfx('Select 6')
 
         if event == 'BACK':
             get_sound_thread().play_sfx('Select 4')
@@ -378,11 +378,11 @@ class OverworldPartyOptionMenu(State):
 
         self.menu.handle_mouse()
         if 'DOWN' in directions:
-            get_sound_thread().play_sfx('Select 6')
-            self.menu.move_down(first_push)
+            if self.menu.move_down(first_push):
+                get_sound_thread().play_sfx('Select 6')
         elif 'UP' in directions:
-            get_sound_thread().play_sfx('Select 6')
-            self.menu.move_up(first_push)
+            if self.menu.move_up(first_push):
+                get_sound_thread().play_sfx('Select 6')
 
         if event == 'BACK':
             get_sound_thread().play_sfx('Select 4')

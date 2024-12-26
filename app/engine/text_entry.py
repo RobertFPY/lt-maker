@@ -72,17 +72,17 @@ class TextEntryState(MapState):
 
             self.menu.handle_mouse()
             if 'RIGHT' in directions:
-                get_sound_thread().play_sfx('Select 6')
-                self.menu.move_right(first_push)
+                if self.menu.move_right(first_push):
+                    get_sound_thread().play_sfx('Select 6')
             elif 'LEFT' in directions:
-                get_sound_thread().play_sfx('Select 6')
-                self.menu.move_left(first_push)
+                if self.menu.move_left(first_push):
+                    get_sound_thread().play_sfx('Select 6')
             if 'DOWN' in directions:
-                get_sound_thread().play_sfx('Select 6')
-                self.menu.move_down(first_push)
+                if self.menu.move_down(first_push):
+                    get_sound_thread().play_sfx('Select 6')
             elif 'UP' in directions:
-                get_sound_thread().play_sfx('Select 6')
-                self.menu.move_up(first_push)
+                if self.menu.move_up(first_push):
+                    get_sound_thread().play_sfx('Select 6')
 
             if event == 'BACK':
                 self._back()
@@ -139,12 +139,12 @@ class TextConfirmState(MapState):
         self.menu.handle_mouse()
         if (event == 'RIGHT' and self.orientation == 'horizontal') or \
                 (event == 'DOWN' and self.orientation == 'vertical'):
-            get_sound_thread().play_sfx('Select 6')
-            self.menu.move_down()
+            if self.menu.move_down():
+                get_sound_thread().play_sfx('Select 6')
         elif (event == 'LEFT' and self.orientation == 'horizontal') or \
                 (event == 'UP' and self.orientation == 'vertical'):
-            get_sound_thread().play_sfx('Select 6')
-            self.menu.move_up()
+            if self.menu.move_up():
+                get_sound_thread().play_sfx('Select 6')
 
         elif event == 'BACK':
             get_sound_thread().play_sfx('Error')

@@ -26,6 +26,7 @@ from app.engine.gui import ScrollArrow, ScrollBar
 from app.engine.objects.item import ItemObject
 from app.engine.objects.skill import SkillObject
 from app.engine.objects.unit import UnitObject
+from app.engine.sound import get_sound_thread
 from app.utilities.enums import Alignments, HAlignment, Orientation, VAlignment
 from app.utilities.str_utils import is_int
 from app.utilities.typing import NID
@@ -204,7 +205,15 @@ class GridChoiceMenu():
     def set_cursor_mode(self, draw_mode: CursorDrawMode):
         self.cursor_hand.mode = draw_mode
 
-    def move_right(self, first_push: bool = False):
+    def move_right(self, first_push: bool = False) -> bool:
+        """Move the cursor to the right.
+
+        Args:
+            first_push (bool, optional): Whether this movement is due to button press or button hold.
+
+        Returns:
+            bool: Whether the cursor actually moved.
+        """
         cursor_rx, _ = self.relative_cursor_coord()
         if cursor_rx == self.num_cols() - 1:
             self.rscroll_arrow.pulse()
@@ -212,9 +221,20 @@ class GridChoiceMenu():
             next_idx = (self._cursor_idx + 1) % len(self._option_data)
         else:
             next_idx = min(self._cursor_idx + 1, len(self._option_data) - 1)
+        if next_idx == self._cursor_idx:
+            return False
         self.move_cursor(next_idx)
+        return True
 
-    def move_left(self, first_push: bool = False):
+    def move_left(self, first_push: bool = False) -> bool:
+        """Move the cursor to the left.
+
+        Args:
+            first_push (bool, optional): Whether this movement is due to button press or button hold.
+
+        Returns:
+            bool: Whether the cursor actually moved.
+        """
         cursor_rx, _ = self.relative_cursor_coord()
         if cursor_rx == 0:
             self.lscroll_arrow.pulse()
@@ -222,9 +242,20 @@ class GridChoiceMenu():
             next_idx = (self._cursor_idx - 1) % len(self._option_data)
         else:
             next_idx = max(0, self._cursor_idx - 1)
+        if next_idx == self._cursor_idx:
+            return False
         self.move_cursor(next_idx)
+        return True
 
-    def move_up(self, first_push: bool = False):
+    def move_up(self, first_push: bool = False) -> bool:
+        """ Move the cursor up.
+
+        Args:
+            first_push (bool, optional): Whether this movement is due to button press or button hold.
+
+        Returns:
+            bool: Whether the cursor actually moved.
+        """
         num_cols, num_rows = self._total_grid_size()
         if first_push:
             next_idx = self._cursor_idx - num_cols
@@ -236,9 +267,20 @@ class GridChoiceMenu():
             next_idx = self._cursor_idx - num_cols
             if next_idx < 0:
                 return
+        if next_idx == self._cursor_idx:
+            return False
         self.move_cursor(next_idx)
+        return True
 
-    def move_down(self, first_push: bool = False):
+    def move_down(self, first_push: bool = False) -> bool:
+        """ Move the cursor down.
+
+        Args:
+            first_push (bool, optional): Whether this movement is due to button press or button hold.
+
+        Returns:
+            bool: Whether the cursor actually moved.
+        """
         num_cols = self._total_grid_size()[0]
         next_idx = self._cursor_idx + num_cols
         if next_idx >= len(self._option_data):
@@ -246,7 +288,10 @@ class GridChoiceMenu():
                 next_idx = next_idx % num_cols
             else:
                 return
+        if next_idx == self._cursor_idx:
+            return False
         self.move_cursor(next_idx)
+        return True
 
     def move_cursor(self, idx):
         idx = clamp(idx, 0, len(self._option_data) - 1)

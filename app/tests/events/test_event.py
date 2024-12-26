@@ -121,7 +121,7 @@ class EventUnitTests(unittest.TestCase):
                                        autosize=False, speed=1, font_color=None,
                                        font_type='convo', num_lines=2, draw_cursor=True,
                                        message_tail='message_bg_tail', transparency=0.05,
-                                       name_tag_bg='name_tag', boop_sound=None, flags={'no_block'})
+                                       name_tag_bg='name_tag', boop_sound='Talk_Boop', flags={'no_block'})
         self.assertEqual(len(event.text_boxes), 1)
         self.assertEqual(event.priority_counter, 1)
 
@@ -138,7 +138,7 @@ class EventUnitTests(unittest.TestCase):
                                        autosize=False, speed=5.0, font_color=None,
                                        font_type='convo', num_lines=2, draw_cursor=True,
                                        message_tail='message_bg_tail', transparency=0.05,
-                                       name_tag_bg='name_tag', boop_sound=None, flags=set())
+                                       name_tag_bg='name_tag', boop_sound='Talk_Boop', flags=set())
         self.assertEqual(mock_portrait.priority, 1)
 
         # Test #2a:
@@ -151,7 +151,7 @@ class EventUnitTests(unittest.TestCase):
                                        autosize=True, speed=1, font_color=None,
                                        font_type='convo', num_lines=2, draw_cursor=True,
                                        message_tail='message_bg_tail', transparency=0.05,
-                                       name_tag_bg='name_tag', boop_sound=None, flags={'low_priority', 'fit'})
+                                       name_tag_bg='name_tag', boop_sound='Talk_Boop', flags={'low_priority', 'fit'})
         self.assertEqual(mock_portrait.priority, 1)
 
         # test #3: dialog with speak style
@@ -166,7 +166,7 @@ class EventUnitTests(unittest.TestCase):
                                        autosize=False, speed=4.5, font_color='some_color',
                                        font_type='some_font', num_lines=6, draw_cursor=True,
                                        message_tail='message_bg_thought_tail', transparency=0.2,
-                                       name_tag_bg='name_tag', boop_sound=None, flags=set())
+                                       name_tag_bg='name_tag', boop_sound='Talk_Boop', flags=set())
 
         # test #3.1: speak style in the speaker slot
         self.game.speak_styles['Eirika'] = SpeakStyle('Eirika', 'Eirika', (1, 2), 3,
@@ -178,7 +178,7 @@ class EventUnitTests(unittest.TestCase):
                                        autosize=False, speed=4.5, font_color='some_color',
                                        font_type='some_font', num_lines=6, draw_cursor=True,
                                        message_tail='message_bg_thought_tail', transparency=0.2,
-                                       name_tag_bg='name_tag', boop_sound=None, flags=set())
+                                       name_tag_bg='name_tag', boop_sound='Talk_Boop', flags=set())
 
         # test #3.2: quoted speaker doesn't use style
         event_functions.speak(event, '"Eirika"', 'SPEAK_TEXT')
@@ -187,7 +187,7 @@ class EventUnitTests(unittest.TestCase):
                                        autosize=False, speed=1, font_color=None,
                                        font_type='convo', num_lines=2, draw_cursor=True,
                                        message_tail='message_bg_tail', transparency=0.05,
-                                       name_tag_bg='name_tag', boop_sound=None, flags=set())
+                                       name_tag_bg='name_tag', boop_sound='Talk_Boop', flags=set())
 
 
         # test #4: special center text position
@@ -197,7 +197,7 @@ class EventUnitTests(unittest.TestCase):
                                        autosize=False, speed=1, font_color=None,
                                        font_type='convo', num_lines=2, draw_cursor=True,
                                        message_tail='message_bg_tail', transparency=0.05,
-                                       name_tag_bg='name_tag', boop_sound=None, flags=set())
+                                       name_tag_bg='name_tag', boop_sound='Talk_Boop', flags=set())
 
         # disable intercepting calls at the end of the test
         dialog_patch.stop()
@@ -254,7 +254,7 @@ class EventUnitTests(unittest.TestCase):
                                        autosize=False, speed=1, font_color=None,
                                        font_type='convo', num_lines=2, draw_cursor=True,
                                        message_tail='message_bg_tail', transparency=0.05,
-                                       name_tag_bg='name_tag', boop_sound=None, flags={'no_block'})
+                                       name_tag_bg='name_tag', boop_sound='Talk_Boop', flags={'no_block'})
         self.assertEqual(len(event.text_boxes), 1)
         self.assertEqual(event.priority_counter, 1)
 

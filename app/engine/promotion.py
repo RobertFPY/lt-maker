@@ -96,19 +96,21 @@ class PromotionChoiceState(State):
             self.current_desc = self._get_desc()
 
         if 'DOWN' in directions:
-            get_sound_thread().play_sfx('Select 6')
             if self.child_menu:
-                self.child_menu.move_down(first_push)
+                if self.child_menu.move_down(first_push):
+                    get_sound_thread().play_sfx('Select 6')
             else:
-                self.menu.move_down(first_push)
+                if self.menu.move_down(first_push):
+                    get_sound_thread().play_sfx('Select 6')
                 self.target_anim_offset = True
                 self.current_desc = self._get_desc()
         elif 'UP' in directions:
-            get_sound_thread().play_sfx('Select 6')
             if self.child_menu:
-                self.child_menu.move_up(first_push)
+                if self.child_menu.move_up(first_push):
+                    get_sound_thread().play_sfx('Select 6')
             else:
-                self.menu.move_up(first_push)
+                if self.menu.move_up(first_push):
+                    get_sound_thread().play_sfx('Select 6')
                 self.target_anim_offset = True
                 self.current_desc = self._get_desc()
 

@@ -14,7 +14,7 @@ import logging, math
 
 
 class PartyTransferTable(Table):
-    
+
     # Overriding these such that you can scroll to ignored units.
     def move_to(self, idx):
         scroll = self.scroll
@@ -185,8 +185,8 @@ class PartyTransferState(State):
         self.top_party, self.bottom_party, self.fixed_list, self.top_party_name, self.bottom_party_name, \
             self.top_party_limit, self.bottom_party_limit = game.memory['party_transfer']
         self.top_units = [unit for unit in game.get_units_in_party(self.top_party.nid) if skill_system.can_select(unit)]
-        self.bottom_units = [unit for unit in game.get_units_in_party(self.bottom_party.nid) if skill_system.can_select(unit)]        
-        
+        self.bottom_units = [unit for unit in game.get_units_in_party(self.bottom_party.nid) if skill_system.can_select(unit)]
+
         if not self.top_units:
             logging.error("party_transfer: no selectable units in party %s" % self.top_party)
 
@@ -204,7 +204,7 @@ class PartyTransferState(State):
     def take_input(self, event):
         first_push = self.fluid.update()
         directions = self.fluid.get_directions()
-        
+
         self.handle_mouse()
         if 'DOWN' in directions:
             get_sound_thread().play_sfx('Select 5')
@@ -305,7 +305,7 @@ class PartyTransferState(State):
             self.bg.draw(surf)
         self.menu1.draw(surf)
         self.menu2.draw(surf)
-        
+
         # Draw party names and limits
         FONT['text-blue'].blit(self.top_party_name, surf, (6, -2))
         FONT['text-blue'].blit(self.bottom_party_name, surf, (6, 77))
@@ -346,10 +346,10 @@ class PartyTransferState(State):
         for idx, command in enumerate(commands):
             font.blit(command, button_surf, (38, idx * 16 + 3))
         surf.blit(button_surf, (WINWIDTH//2 + 35, WINHEIGHT//2 + 25))
-        
+
         # Draw info card
         menus.draw_unit_top(surf, (135,65), self.menu.get_current())
-        
+
         return surf
 
     def handle_mouse(self) -> bool:
@@ -409,12 +409,12 @@ class PartyTransferConfirmState(MapState):
         self.menu.handle_mouse()
         if (event == 'RIGHT' and self.orientation == 'horizontal') or \
                 (event == 'DOWN' and self.orientation == 'vertical'):
-            get_sound_thread().play_sfx('Select 6')
-            self.menu.move_down()
+            if self.menu.move_down():
+                get_sound_thread().play_sfx('Select 6')
         elif (event == 'LEFT' and self.orientation == 'horizontal') or \
                 (event == 'UP' and self.orientation == 'vertical'):
-            get_sound_thread().play_sfx('Select 6')
-            self.menu.move_up()
+            if self.menu.move_up():
+                get_sound_thread().play_sfx('Select 6')
 
         elif event == 'BACK':
             game.state.back()

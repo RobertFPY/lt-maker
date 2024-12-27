@@ -113,17 +113,17 @@ class PlayerChoiceState(MapState):
         first_push = self.fluid.update()
         directions = self.fluid.get_directions()
         if ('RIGHT' in directions and (self.orientation == Orientation.HORIZONTAL or self.size[0] > 1)):
-            get_sound_thread().play_sfx('Select 6')
-            self.menu.move_right(first_push)
+            if self.menu.move_right(first_push):
+                get_sound_thread().play_sfx('Select 6')
         elif ('DOWN' in directions and (self.orientation == Orientation.VERTICAL or self.size[1] > 1)):
-            get_sound_thread().play_sfx('Select 6')
-            self.menu.move_down(first_push)
+            if self.menu.move_down(first_push):
+                get_sound_thread().play_sfx('Select 6')
         elif ('LEFT' in directions and (self.orientation == Orientation.HORIZONTAL or self.size[0] > 1)):
-            get_sound_thread().play_sfx('Select 6')
-            self.menu.move_left(first_push)
+            if self.menu.move_left(first_push):
+                get_sound_thread().play_sfx('Select 6')
         elif ('UP' in directions and (self.orientation == Orientation.VERTICAL or self.size[1] > 1)):
-            get_sound_thread().play_sfx('Select 6')
-            self.menu.move_up(first_push)
+            if self.menu.move_up(first_push):
+                get_sound_thread().play_sfx('Select 6')
 
         if event == 'BACK':
             if self.should_persist or self.backable:

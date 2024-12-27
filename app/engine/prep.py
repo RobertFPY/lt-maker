@@ -107,11 +107,11 @@ class PrepMainState(MapState):
 
         self.menu.handle_mouse()
         if 'DOWN' in directions:
-            get_sound_thread().play_sfx('Select 6')
-            self.menu.move_down(first_push)
+            if self.menu.move_down(first_push):
+                get_sound_thread().play_sfx('Select 6')
         elif 'UP' in directions:
-            get_sound_thread().play_sfx('Select 6')
-            self.menu.move_up(first_push)
+            if self.menu.move_up(first_push):
+                get_sound_thread().play_sfx('Select 6')
 
         elif event == 'SELECT':
             get_sound_thread().play_sfx('Select 1')
@@ -262,7 +262,7 @@ class PrepPickUnitsState(State):
                 num_slots = game.level_vars.get('_prep_slots')
                 if num_slots is None:
                     num_slots = len(game.get_all_formation_spots())
-                on_map = [unit for unit in game.units if unit.position and unit in game.get_units_in_party() 
+                on_map = [unit for unit in game.units if unit.position and unit in game.get_units_in_party()
                           and game.check_for_region(unit.position, 'formation')]
                 if pair_up_valid:
                     on_map += [unit for unit in game.units if unit in game.get_units_in_party() and not unit.position and game.get_rescuer(unit) and game.get_rescuer(unit).position]
@@ -564,11 +564,11 @@ class PrepFormationMenuState(MapState):
 
         did_move = self.menu.handle_mouse()
         if 'DOWN' in directions:
-            get_sound_thread().play_sfx('Select 6')
-            self.menu.move_down(first_push)
+            if self.menu.move_down(first_push):
+                get_sound_thread().play_sfx('Select 6')
         elif 'UP' in directions:
-            get_sound_thread().play_sfx('Select 6')
-            self.menu.move_up(first_push)
+            if self.menu.move_up(first_push):
+                get_sound_thread().play_sfx('Select 6')
 
         if event == 'BACK':
             get_sound_thread().play_sfx('Select 4')
@@ -605,7 +605,7 @@ class PrepFormationMenuState(MapState):
                 action.do(action.LeaveMap(unit_to_move))
                 action.do(action.LeaveMap(hovered_unit))
                 action.do(action.ArriveOnMap(unit_to_move, old_hovered_unit_position))
-                action.do(action.ArriveOnMap(hovered_unit, old_unit_position))            
+                action.do(action.ArriveOnMap(hovered_unit, old_unit_position))
                 game.state.back()
                 game.state.back()
 
@@ -618,7 +618,7 @@ class PrepFormationMenuState(MapState):
                 # guaranteed that we are hovering over a duo unit on a formation
                 action.do(action.SwitchPaired(game.get_rescuer(self.unit), self.unit))
                 game.state.back()
-            
+
     def update(self):
         super().update()
         self.menu.update()
@@ -763,11 +763,11 @@ class OptimizeAllChoiceState(State):
     def take_input(self, event):
         self.menu.handle_mouse()
         if event == 'RIGHT':
-            get_sound_thread().play_sfx('Select 6')
-            self.menu.move_down()
+            if self.menu.move_down():
+                get_sound_thread().play_sfx('Select 6')
         elif event == 'LEFT':
-            get_sound_thread().play_sfx('Select 6')
-            self.menu.move_up()
+            if self.menu.move_up():
+                get_sound_thread().play_sfx('Select 6')
 
         elif event == 'BACK':
             get_sound_thread().play_sfx('Select 4')

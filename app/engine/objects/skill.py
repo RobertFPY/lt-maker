@@ -1,4 +1,6 @@
 from __future__ import annotations
+from typing import Optional
+from app.data.database.skill_components import SkillComponent
 from app.utilities.data import Data
 
 from app.data.database.database import DB
@@ -36,9 +38,9 @@ class SkillObject():
     @property
     def tags(self) -> set:
         all_tags = set()
-        for component in self.components:
-            if component.nid == 'skill_tags':
-                all_tags |= set(self.components.get('skill_tags').value)
+        tag_comp: Optional[SkillComponent] = self.components.get('skill_tags')
+        if tag_comp:
+            all_tags |= set(tag_comp.value)
         return all_tags
 
     @classmethod

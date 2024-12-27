@@ -55,8 +55,8 @@ class SpeakStyleLibrary(Dict[NID, SpeakStyle]):
         # Built in speak styles for backwards compatibility
         self.update(
             {'__default': SpeakStyle('__default', speed=1, font_type='convo', background='message_bg_base', num_lines=2, draw_cursor=True,
-                                     message_tail='message_bg_tail', name_tag_bg='name_tag', transparency=0.05),
-             '__default_text': SpeakStyle('__default_text', speed=0.5, font_type='text', background='menu_bg_base', num_lines=0, name_tag_bg='menu_bg_base', transparency=0.05),
+                                     message_tail='message_bg_tail', name_tag_bg='name_tag', transparency=0.05, boop_sound='Talk_Boop'),
+             '__default_text': SpeakStyle('__default_text', speed=0.5, font_type='text', background='menu_bg_base', num_lines=0, name_tag_bg='menu_bg_base', transparency=0.05, boop_sound='Talk_Boop'),
              '__default_help': SpeakStyle('__default_help', speed=0.5, font_type='convo', background='None', draw_cursor=False, num_lines=8, name_tag_bg='name_tag', transparency=0.05),
              'noir': SpeakStyle('noir', background='menu_bg_dark', font_color='white', message_tail='None'),
              'hint': SpeakStyle('hint', background='menu_bg_parchment', position=Alignments.CENTER, width=WINWIDTH//2 + 8, num_lines=4, message_tail='None'),

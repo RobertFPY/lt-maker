@@ -188,3 +188,11 @@ class IgnoreFatigue(SkillComponent):
 
     def ignore_fatigue(self, unit):
         return True
+
+class SkillTag(SkillComponent):
+    nid = 'skill_tags'
+    desc = 'attach arbitrary tags to items. Useful for conditionals.'
+    tag = SkillTags.BASE
+
+    expose = (ComponentType.List, ComponentType.Tag)
+    value = []

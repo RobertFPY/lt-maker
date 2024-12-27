@@ -43,9 +43,9 @@ class ItemObject():
     @property
     def tags(self) -> set:
         all_tags = set()
-        for component in self.components:
-            if component.nid == 'item_tags':
-                all_tags |= set(self.components.get('item_tags').value)
+        tag_comp: Optional[ItemComponent] = self.components.get('item_tags')
+        if tag_comp:
+            all_tags |= set(tag_comp.value)
         return all_tags
 
     def change_owner(self, nid):

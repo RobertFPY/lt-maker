@@ -224,6 +224,7 @@ class StateMachine():
                     self.prior_state = state
                     self.state.pop()
             elif transition == 'clear':
+                self.prior_state = self.current_state()
                 for state in reversed(self.state):
                     self.exit_state(state)
                 self.state.clear()

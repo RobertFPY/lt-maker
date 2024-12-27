@@ -1,9 +1,11 @@
+from __future__ import annotations
+from typing import ClassVar
 from app.constants import TILEHEIGHT, TILEWIDTH, WINHEIGHT, WINWIDTH
 from app.engine.fluid_scroll import FluidScroll
 from app.engine.game_state import game
 
 class State():
-    name = None
+    name: ClassVar[str] = None
     in_level = True
     show_map = True
     transparent = False
@@ -46,6 +48,9 @@ class State():
 
     def __str__(self) -> str:
         return self.name
+
+    def __eq__(self, other: State) -> bool:
+        return self.name == other.name
 
 class MapState(State):
     def __init__(self, name=None):

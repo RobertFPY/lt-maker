@@ -522,10 +522,6 @@ class UIView():
             surf.blit(up_arrow, topleft)
 
     def draw_attack_info(self, surf, attacker, weapon, defender, a_assist=None, d_assist=None):
-        # Turns on appropriate combat conditionals to get an accurate read
-        skill_system.test_on([], attacker, weapon, defender, resolve_weapon(defender), 'attack')
-        skill_system.test_on([], defender, resolve_weapon(defender), attacker, weapon, 'defense')
-
         def has_attacker_strike_partner() -> bool:
             return DB.constants.value('pairup') and \
                 a_assist and not (attacker.traveler or defender.traveler)
@@ -535,6 +531,14 @@ class UIView():
                 d_assist and not (attacker.traveler or defender.traveler) and \
                 defender.get_weapon() and \
                 combat_calcs.can_counterattack(attacker, weapon, defender, defender.get_weapon())
+        
+        # Turns on appropriate combat conditionals to get an accurate read
+        skill_system.test_on([], attacker, weapon, defender, resolve_weapon(defender), 'attack')
+        skill_system.test_on([], defender, resolve_weapon(defender), attacker, weapon, 'defense')
+        if has_attacker_strike_partner():
+            skill_system.test_on([], a_assist, a_assist.get_weapon(), defender, resolve_weapon(defender), 'attack')
+        if has_defender_strike_partner():
+            skill_system.test_on([], d_assist, resolve_weapon(d_assist), attacker, weapon, 'defense')
 
         if not self.attack_info_disp:
             self.attack_info_disp = self.create_attack_info(attacker, weapon, defender, a_assist, d_assist)
@@ -628,6 +632,10 @@ class UIView():
         # Turns off combat conditionals
         skill_system.test_off([], defender, resolve_weapon(defender), attacker, weapon, 'defense')
         skill_system.test_off([], attacker, weapon, defender, resolve_weapon(defender), 'attack')
+        if has_attacker_strike_partner():
+            skill_system.test_off([], a_assist, a_assist.get_weapon(), defender, resolve_weapon(defender), 'attack')
+        if has_defender_strike_partner():
+            skill_system.test_off([], d_assist, resolve_weapon(d_assist), attacker, weapon, 'defense')
 
         return surf
 

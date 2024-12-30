@@ -2223,7 +2223,12 @@ class SetModeAutolevels(EventCommand):
 
     desc = \
         """
-Changes the number of additional levels that enemy units gain from the difficulty mode setting. This can be used to grant a higher number of bonus levels to enemies later in the game to maintain a resonable difficulty curve. *Level* specifies the number of levels to be granted. If the *hidden* flag is set, enemy units will still gain the effects of the indicated level-ups, but their actual level is not incremented. In other words, the units get more powerful but remains at the same level. If the *boss* flag is included, this will only affect units with the "Boss" tag.
+Changes the number of additional levels that enemy units gain from the difficulty mode setting.
+This can be used to grant a higher number of bonus levels to enemies later in the game to maintain a resonable difficulty curve. *Level* specifies the number of levels to be granted. If the *hidden* flag is set, enemy units will still gain the effects of the indicated level-ups, but their actual level is not incremented. In other words, the units get more powerful but remains at the same level. 
+If the *boss* flag is included, this will only affect units with the "Boss" tag.
+This does not modify the value in the Difficulty Editor directly, but rather sets the value for the current
+game the player is playing. 
+The addition of this value and the value in the Difficulty Editor for the current difficulty will sum to the true value utilized when loading in new units.
 Cannot be undone by the turnwheel.
         """
 

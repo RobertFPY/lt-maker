@@ -1009,6 +1009,9 @@ class Table(Simple):
         self.stationary_cursor = Cursor()
         self.fake_cursor_idx = None
 
+    def get_scroll(self):
+        return self.scroll
+
     def set_mode(self, mode):
         self.mode = mode
         self.update_options()

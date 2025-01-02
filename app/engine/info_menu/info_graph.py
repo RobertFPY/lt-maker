@@ -79,9 +79,19 @@ class InfoGraph():
         self.last_bb = self.current_bb
         self.current_bb = None
 
-    def _move(self, boxes, horiz=False):
+    def _move(self, boxes, horiz=False) -> bool:
+        """Move the current_bb to the closest box in the given direction
+
+        Args:
+            boxes (list): List of bounding boxes to compare against
+            horiz (bool): Whether to move horizontally or vertically
+
+        Returns:
+            bool: Whether the current_bb was moved"""
         if not boxes:
-            return
+            return False
+        if not self.current_bb:
+            return False
         if self.current_bb:
             center_point = (self.current_bb.aabb[0] + self.current_bb.aabb[2]/2,
                             self.current_bb.aabb[1] + self.current_bb.aabb[3]/2)
@@ -108,23 +118,26 @@ class InfoGraph():
                     if distance < max_distance:
                         max_distance = distance
                         closest_box = bb
+            if closest_box == self.current_bb:
+                return False
             self.current_bb = closest_box
+            return True
 
-    def move_left(self):
+    def move_left(self) -> bool:
         boxes = [bb for bb in self.registry[self.current_state] if bb.aabb[0] < self.current_bb.aabb[0]]
-        self._move(boxes, horiz=True)
+        return self._move(boxes, horiz=True)
 
-    def move_right(self):
+    def move_right(self) -> bool:
         boxes = [bb for bb in self.registry[self.current_state] if bb.aabb[0] > self.current_bb.aabb[0]]
-        self._move(boxes, horiz=True)
+        return self._move(boxes, horiz=True)
 
-    def move_up(self):
+    def move_up(self) -> bool:
         boxes = [bb for bb in self.registry[self.current_state] if bb.aabb[1] < self.current_bb.aabb[1]]
-        self._move(boxes)
+        return self._move(boxes)
 
-    def move_down(self):
+    def move_down(self) -> bool:
         boxes = [bb for bb in self.registry[self.current_state] if bb.aabb[1] > self.current_bb.aabb[1]]
-        self._move(boxes)
+        return self._move(boxes)
 
     def handle_mouse(self, mouse_position):
         x, y = mouse_position

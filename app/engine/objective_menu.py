@@ -193,10 +193,14 @@ class ObjectiveMenuState(State):
         directions = self.fluid.get_directions()
 
         if 'DOWN' in directions:
-            if self.menu.move_down(first_push):
+            curr_scroll = self.menu.get_scroll()
+            self.menu.move_down(first_push)
+            if curr_scroll != self.menu.get_scroll():
                 get_sound_thread().play_sfx('Select 6')
         elif 'UP' in directions:
-            if self.menu.move_up(first_push):
+            curr_scroll = self.menu.get_scroll()
+            self.menu.move_up(first_push)
+            if curr_scroll != self.menu.get_scroll():
                 get_sound_thread().play_sfx('Select 6')
         if event == 'BACK':
             get_sound_thread().play_sfx('Select 4')

@@ -130,7 +130,10 @@ class RawDataProperties(QWidget):
         self.current.oattrs.remove(attr)
         self.rerender_sheet_widget()
 
-    def rename_column(self, col_idx, text):
+    def rename_column(self, col_idx: int, text: str):
+        if text in self.current.oattrs:
+            self.rerender_sheet_widget()
+            return
         new_attr = text
         old_attr = self.current.oattrs[col_idx]
         self.current.oattrs[col_idx] = text

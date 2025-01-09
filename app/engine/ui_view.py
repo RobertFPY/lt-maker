@@ -608,11 +608,11 @@ class UIView():
         else:
             my_num = min(my_num, weapon.data.get('uses', 100), weapon.data.get('c_uses', 100))
 
-        if my_num != 1:
+        if my_num > 1:
             surf.blit(SPRITES.get("x%d" % (my_num)), x2_pos_player)
 
         if a_assist:
-            if my_num != 1 and not DB.constants.value('limit_attack_stance'):
+            if my_num > 1 and not DB.constants.value('limit_attack_stance'):
                 surf.blit(SPRITES.get("x%d" % (my_num)), x2_pos_player_partner)
 
         # Enemy doubling
@@ -622,11 +622,11 @@ class UIView():
             e_num *= combat_calcs.compute_multiattacks(defender, attacker, eweapon, 'defense', (0, 0))
             e_num = min(e_num, eweapon.data.get('uses', 100))
 
-            if e_num != 1:
+            if e_num > 1:
                 surf.blit(SPRITES.get("x%d" % (e_num)), x2_pos_enemy)
 
             if d_assist:
-                if e_num != 1 and not DB.constants.value('limit_attack_stance'):
+                if e_num > 1 and not DB.constants.value('limit_attack_stance'):
                     surf.blit(SPRITES.get("x%d" % (e_num)), x2_pos_enemy_partner)
 
         # Turns off combat conditionals

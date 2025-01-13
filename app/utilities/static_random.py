@@ -10,11 +10,14 @@ class LCG(object):
         return self.state >> 16  # Only use the top 30..16 bits, the lower bits have a periodicity on even moduli
 
     def random(self):
-        return self._random() / 2147483647.  # 0x7FFFFFFF in decimal
+        return self._random() / (2147483647 >> 16)  # 0x7FFFFFFF in decimal (have to use the same top 30..16 bits)
 
     def randint(self, a, b):
         rng = self._random() % (b - a + 1)
         return rng + a
+
+    def randrange(self, end):
+        return self.randint(0, end - 1)
 
     def choice(self, seq):
         return seq[int(self.random() * len(seq))]  # raises IndexError if seq is empty
@@ -124,3 +127,9 @@ if __name__ == '__main__':
     print(L)
     shuffle(L)
     print(L)
+    p = StaticRandom(1)
+    # Make sure randomness is centered around 0.5
+    rng_sum = sum([p.combat_random.random() for _ in range(1000)]) / 1000
+    assert 0.49 < rng_sum < 0.51, rng_sum
+
+    assert all(0 <= p.combat_random.randrange(5) < 5 for _ in range(1000))

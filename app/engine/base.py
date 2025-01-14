@@ -794,7 +794,7 @@ class LoreDisplay():
         self.page_num = 0
         self.dialogs.clear()
         for line in text:
-            dlg = dialog.Dialog(line, font_type="text", font_color="white", num_lines=8, draw_cursor=False)
+            dlg = dialog.Dialog(line, font_type="text", font_color="white", num_lines=8, draw_cursor=False, speed=0)
             dlg.position = self.topleft[0], self.topleft[1] + 12
             dlg.text_width = WINWIDTH - 100
             dlg.reformat()

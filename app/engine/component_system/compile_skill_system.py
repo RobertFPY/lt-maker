@@ -37,7 +37,6 @@ SKILL_HOOKS: Dict[str, HookInfo] = {
     # exclusive (returns last component value, has default value if not defined)
     'can_select':                           HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
     'movement_type':                        HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
-    'sight_range':                          HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
     'num_items_offset':                     HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
     'num_accessories_offset':               HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
     'change_variant':                       HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
@@ -45,6 +44,8 @@ SKILL_HOOKS: Dict[str, HookInfo] = {
     'change_ai':                            HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
     'change_roam_ai':                       HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
     'witch_warp':                           HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True, is_cached=True),
+    # numeric accum (adds together all values. 0 if no values are defined)
+    'sight_range':                          HookInfo(['unit'], ResolvePolicy.NUMERIC_ACCUM, has_default_value=True),
     # formula (as exclusive)
     'damage_formula':                       HookInfo(['unit'], ResolvePolicy.UNIQUE),
     'resist_formula':                       HookInfo(['unit'], ResolvePolicy.UNIQUE),

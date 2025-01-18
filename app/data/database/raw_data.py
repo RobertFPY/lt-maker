@@ -74,6 +74,5 @@ class RawDataCatalog(Data[RawDataPrefab]):
             return super().get(key).value
         return super().get(key, fallback)
 
-
     def get_prefab(self, key: NID, fallback=None):
         return super().get(key, fallback)

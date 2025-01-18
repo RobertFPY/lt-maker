@@ -1,4 +1,6 @@
-<small>`Originally written by Hillgarm. Last Updated 2022-09-01`</small>
+<small>`Originally written by Hillgarm. Last Updated 2022-09-01`
+
+`This has not been updated recently and has been reported as no longer working in current versions of the engine.`</small>
 
 # [System] Skill Swap
 Lex Talionis Event Editor offers enough power to build custom systems. They can be quite complex, and this is the case with skill swap.
@@ -246,7 +248,7 @@ Our first is `Unit_Fetcher` and it has a really simple, get all the units and ca
 We'll use a `for-endf` loop with a `trigger_script` inside, passing our unit data.
 
 	for;FETCHED_UNIT;[u for u in game.level.units]
-	    trigger_script;Unit_Initializer (Global Unit_Initializer);{FETCHED_UNIT}
+	    trigger_script;Global Unit_Initializer;{FETCHED_UNIT}
 	endf
 
 This event is also the best place to set our skill slot size limiter. For this guide, we will use them to keep our code consistent.
@@ -259,7 +261,7 @@ Once assembled, is should look like this:
 
 	game_var;SKILL_SWAP_CAP;5
 	for;FETCHED_UNIT;[u for u in game.level.units]
-	    trigger_script;Unit_Initializer (Global Unit_Initializer);{FETCHED_UNIT}
+	    trigger_script;Global Unit_Initializer;{FETCHED_UNIT}
 	endf
 
 ### Step 3.2: Set the initialization condition

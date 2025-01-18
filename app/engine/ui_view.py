@@ -601,33 +601,37 @@ class UIView():
         x2_pos_player_partner = (topleft[0] + 107 + self.x_positions[count], topleft[1] + 38 + self.y_positions[count])
         x2_pos_enemy_partner = (topleft[0] + 20 + self.x_positions[count], topleft[1] + 38 + self.y_positions[count])
 
-        my_num = combat_calcs.compute_attack_phases(attacker, defender, weapon, resolve_weapon(defender), "attack", (0 , 0))
-        my_num *= combat_calcs.compute_multiattacks(attacker, defender, weapon, "attack", (0, 0))
+        num_phases = combat_calcs.compute_attack_phases(attacker, defender, weapon, resolve_weapon(defender), "attack", (0 , 0))
+        num_attacks = num_phases
+        for attack_phase in range(num_phases):
+            num_attacks += combat_calcs.compute_multiattacks(attacker, defender, weapon, "attack", (attack_phase, 0)) - 1
         if weapon.uses_options and weapon.uses_options.one_loss_per_combat():
             pass  # If you can only lose one use at a time, no need to min this
         else:
-            my_num = min(my_num, weapon.data.get('uses', 100), weapon.data.get('c_uses', 100))
+            num_attacks = min(num_attacks, weapon.data.get('uses', 100), weapon.data.get('c_uses', 100))
 
-        if my_num > 1:
-            surf.blit(SPRITES.get("x%d" % (my_num)), x2_pos_player)
+        if num_attacks > 1:
+            surf.blit(SPRITES.get("x%d" % (num_attacks)), x2_pos_player)
 
         if a_assist:
-            if my_num > 1 and not DB.constants.value('limit_attack_stance'):
-                surf.blit(SPRITES.get("x%d" % (my_num)), x2_pos_player_partner)
+            if num_attacks > 1 and not DB.constants.value('limit_attack_stance'):
+                surf.blit(SPRITES.get("x%d" % (num_attacks)), x2_pos_player_partner)
 
         # Enemy doubling
         eweapon = defender.get_weapon()
         if eweapon and combat_calcs.can_counterattack(attacker, weapon, defender, eweapon):
-            e_num = combat_calcs.compute_attack_phases(defender, attacker, eweapon, weapon, 'defense', (0, 0))
-            e_num *= combat_calcs.compute_multiattacks(defender, attacker, eweapon, 'defense', (0, 0))
-            e_num = min(e_num, eweapon.data.get('uses', 100))
+            e_num_phases = combat_calcs.compute_attack_phases(defender, attacker, eweapon, weapon, 'defense', (0, 0))
+            e_num_attacks = e_num_phases
+            for e_attack_phase in range(e_num_phases):
+                e_num_attacks += combat_calcs.compute_multiattacks(defender, attacker, eweapon, 'defense', (e_attack_phase, 0)) - 1
+            e_num_attacks = min(e_num_attacks, eweapon.data.get('uses', 100))
 
-            if e_num > 1:
-                surf.blit(SPRITES.get("x%d" % (e_num)), x2_pos_enemy)
+            if e_num_attacks > 1:
+                surf.blit(SPRITES.get("x%d" % (e_num_attacks)), x2_pos_enemy)
 
             if d_assist:
-                if e_num > 1 and not DB.constants.value('limit_attack_stance'):
-                    surf.blit(SPRITES.get("x%d" % (e_num)), x2_pos_enemy_partner)
+                if e_num_attacks > 1 and not DB.constants.value('limit_attack_stance'):
+                    surf.blit(SPRITES.get("x%d" % (e_num_attacks)), x2_pos_enemy_partner)
 
         # Turns off combat conditionals
         skill_system.test_off([], defender, resolve_weapon(defender), attacker, weapon, 'defense')

@@ -1283,17 +1283,12 @@ class AnimationCombat(BaseCombat, MockCombat):
         pairs = self.handle_supports(all_units)
         self.handle_support_pairs(pairs)
 
-        asp = self.attacker.strike_partner
-        dsp = None
-        if self.defender:
-            dsp = self.defender.strike_partner
-
         self.end_combat()
 
         self.handle_death(all_units)
 
-        self.handle_unusable_items(asp, dsp)
-        self.handle_broken_items(asp, dsp)
+        self.handle_unusable_items()
+        self.handle_broken_items()
 
         self.attacker.built_guard = True
         if self.defender:

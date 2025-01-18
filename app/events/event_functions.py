@@ -714,10 +714,11 @@ def change_tilemap(self: Event, tilemap, position_offset=None, load_tilemap=None
         position_offset = tuple(position_offset)
     else:
         position_offset = (0, 0)
+    current_tilemap_nid = self.game.level.tilemap.nid
     if load_tilemap:
         reload_map_nid = load_tilemap
     else:
-        reload_map_nid = tilemap_nid
+        reload_map_nid = current_tilemap_nid
 
     reload_map = 'reload' in flags
     # For Overworld
@@ -753,7 +754,6 @@ def change_tilemap(self: Event, tilemap, position_offset=None, load_tilemap=None
             previous_unit_pos[unit.nid] = unit.position
             act = action.LeaveMap(unit)
             act.execute()
-    current_tilemap_nid = self.game.level.tilemap.nid
     self.game.level_vars['_prev_pos_%s' % current_tilemap_nid] = previous_unit_pos
 
     # Remove all regions from the map

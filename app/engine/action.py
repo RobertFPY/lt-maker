@@ -274,8 +274,8 @@ class Swap(Action):
         self.update_fow_action2.reverse()
         game.leave(self.unit1)
         game.leave(self.unit2)
-        game.arrive(self.unit2, self.pos1)
-        game.arrive(self.unit1, self.pos2)
+        game.arrive(self.unit2, self.pos2)
+        game.arrive(self.unit1, self.pos1)
 
 
 class Warp(SimpleMove):

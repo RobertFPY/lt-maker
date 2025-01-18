@@ -19,6 +19,10 @@ In order to have your in-game dialog between characters or between the narrator 
 
 `{semicolon}`: Adds a `;`
 
+`{lt}`: Adds a `<`
+
+`{gt}`: Adds a `>`
+
 `{tgs}`: Toggles whether the speaking sound occurs.
 
 `{tgm}`: Toggles whether the portrait's mouth will move while talking.

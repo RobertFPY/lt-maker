@@ -41,6 +41,7 @@ def process_dialog_shorthand(text: str) -> str:
     text = text.replace("\n", "{br}")
     text = text.replace("|", "{w}{br}")
     text = text.replace("{semicolon}", ";")
+    text = text.replace("{lt}", "<").replace("{gt}", ">")
     return text
 
 

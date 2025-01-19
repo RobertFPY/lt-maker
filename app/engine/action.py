@@ -2992,7 +2992,7 @@ class RemoveRegion(Action):
                 self.subactions.append(update_fow_action)
 
             if self.region.region_type == RegionType.TERRAIN:
-                _region_leave(self.region)
+                affected_units = _region_leave(self.region)
 
             for act in self.subactions:
                 act.do()
@@ -3006,14 +3006,15 @@ class RemoveRegion(Action):
                 for position in self.region.get_all_positions():
                     game.board.reset_pos(game.level.tilemap, position)
                 game.boundary.reset()
-                _region_arrive(self.region)
+                for unit, pos in affected_units:
+                    game.arrive(unit, pos)
         else:
             logging.error("RemoveRegion Action: Could not find region with nid %s", self.region.nid)
 
     def reverse(self):
         if self.did_remove:
             if self.region.region_type == RegionType.TERRAIN:
-                _region_leave(self.region)
+                affected_units = _region_leave(self.region)
 
             game.get_region_under_pos.cache_clear()
             game.level.regions.append(self.region)
@@ -3026,7 +3027,8 @@ class RemoveRegion(Action):
                 for position in self.region.get_all_positions():
                     game.board.reset_pos(game.level.tilemap, position)
                 game.boundary.reset()
-                _region_arrive(self.region)
+                for unit, pos in affected_units:
+                    game.arrive(unit, pos)
 
 class AddFogRegion(Action):
     def __init__(self, region):

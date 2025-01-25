@@ -2245,7 +2245,10 @@ class CombatTargetingState(MapState):
             draw_on_top = game.cursor.position[1] >= game.tilemap.height - 1
             self.pennant.draw(surf, draw_on_top)
 
-        target_unit = game.board.get_unit(game.cursor.position)
+        if game.board.in_vision(game.cursor.position) or item_system.ignore_fog_of_war(self.cur_unit, self.item):
+            target_unit = game.board.get_unit(game.cursor.position)
+        else:
+            target_unit = None
         if self.cur_unit and target_unit:
             if item_system.targets_items(self.cur_unit, self.item):
                 ignore = [not item_system.item_restrict(self.cur_unit, self.item, target_unit, item) for item in target_unit.items]

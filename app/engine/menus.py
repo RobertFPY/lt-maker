@@ -65,10 +65,10 @@ def draw_unit_items(surf, topleft, unit, include_top=False, include_bottom=True,
         # Blit items
         for idx, item in enumerate(unit.nonaccessories):
             item_option = menu_options.ItemOption(idx, item)
-            item_option.draw(surf, topleft[0] + 1, topleft[1] + idx * 16 + 4)
+            item_option.draw(surf, topleft[0], topleft[1] + idx * 16 + 4)
         for idx, item in enumerate(unit.accessories):
             item_option = menu_options.ItemOption(idx, item)
-            item_option.draw(surf, topleft[0] + 1, topleft[1] + item_funcs.get_num_items(unit) * 16 + idx * 16 + 4)
+            item_option.draw(surf, topleft[0], topleft[1] + item_funcs.get_num_items(unit) * 16 + idx * 16 + 4)
 
 
 def draw_unit_bexp(surf, topleft, unit, new_exp, new_bexp, current_bexp, include_top=False, include_bottom=True,

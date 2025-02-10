@@ -303,7 +303,7 @@ For now, we should have:
 	if;not unit.get_field('Initialized')
 	    game_var;LEARNED_SKILLS;""
 	    game_var;EQUIPPED_SKILLS;""
-	    game_var;AUX_SKILL;""    
+	    game_var;AUX_SKILL;""
 	    #...
 	    set_unit_field;{unit};Initialized;True
 	end
@@ -448,7 +448,7 @@ Every single exception has to be checked first. We should have something like:
 	if;unit.level >= 5 * {v:AUX_INT} - 5
 	    game_var;AUX_SKILL;game.get_data('ClassData')[{v:C_INDEX}].skill1
 	    game_var;LEARNED_SKILLS;"{v:LEARNED_SKILLS}" + "'{v:AUX_SKILL}',"
-	    if;unit.klass in ('Bride', 'Dancer', 'Dread Fighter', 'Manakete', 'Taguel', 'Villager') and unit.level >= 15					
+	    if;unit.klass in ('Bride', 'Dancer', 'Dread Fighter', 'Manakete', 'Taguel', 'Villager') and unit.level >= 15
 	        game_var;AUX_SKILL;game.get_data('ClassData')[{v:C_INDEX}].skill2
 	        game_var;LEARNED_SKILLS;"{v:LEARNED_SKILL}" + "'{v:AUX_SKILL}',"
 	    elif;unit.level >= 5 * {v:AUX_INT} + 5
@@ -651,7 +651,7 @@ Up to this point we only managed the data. If we were to play a test chapter, no
 We can run a simple loop to add the `EQUIPPED_SKILLS`.
 
 	for;FETCHED_SKILL;{v:EQUIPPED_SKILLS}
-	    give_skill;{unit};{FETCHED_SKILL};FLAG(no_banner)
+	    give_skill;{unit};{FETCHED_SKILL};no_banner
 	endf
 
 ### Complete script
@@ -701,7 +701,7 @@ We can run a simple loop to add the `EQUIPPED_SKILLS`.
 	    if;unit.level >= 5 * {v:AUX_INT} - 5
 	        game_var;AUX_SKILL;game.get_data('ClassData')[{v:C_INDEX}].skill1
 	        game_var;LEARNED_SKILLS;"{v:LEARNED_SKILLS}" + "'{v:AUX_SKILL}',"
-	        if;unit.klass in ('Bride', 'Dancer', 'Dread Fighter', 'Manakete', 'Taguel', 'Villager') and unit.level >= 15					
+	        if;unit.klass in ('Bride', 'Dancer', 'Dread Fighter', 'Manakete', 'Taguel', 'Villager') and unit.level >= 15
 	            game_var;AUX_SKILL;game.get_data('ClassData')[{v:C_INDEX}].skill2
 	            game_var;LEARNED_SKILLS;"{v:LEARNED_SKILL}" + "'{v:AUX_SKILL}',"
 	        elif;unit.level >= 5 * {v:AUX_INT} + 5
@@ -722,7 +722,7 @@ We can run a simple loop to add the `EQUIPPED_SKILLS`.
 
 	    #<3.7>
 	    for;FETCHED_SKILL;{v:EQUIPPED_SKILLS}
-	        give_skill;{unit};{FETCHED_SKILL};FLAG(no_banner)
+	        give_skill;{unit};{FETCHED_SKILL};no_banner
 	    endf
 
 	    set_unit_field;{unit};Initialized;True
@@ -1028,15 +1028,15 @@ Once assembled, it should look like this:
 
 At this point we will be able to check our background work in action. Most of the work has already been done so we just need to set the menu. Since it is an extensive line with a lot of colons, we'll go over each item for a short explanation.
 
-	choice;UNIT_EQUIPPED_SKILLS;Equipped Skills;{v:EQUIPPED_SKILLS};100;vert;top_left;;Skill_Swap_Operations (Global Skill_Swap_Operations);type_skill;{v:SKILL_SWAP_CAP},1;FLAG(backable)
+	choice;UNIT_EQUIPPED_SKILLS;Equipped Skills;{v:EQUIPPED_SKILLS};100;vert;top_left;;Skill_Swap_Operations (Global Skill_Swap_Operations);type_skill;{v:SKILL_SWAP_CAP},1;backable
 
-There are a couple of important elements to take a look at.  
+There are a couple of important elements to take a look at.
 * `100` - Since our interface uses two windows it will look better if we have a static width.
 * `top_left` - Again, we need to consider the second window, so we're setting the first menu to be on the left.
 * `Skill_Swap_Operations` - That's our follow up event that will handle the operations, preemptively set.
 * `type_skill` - This will allow our skills to be displayed with an icon next to them, which is the reason our dummy skills don't have one.
 * `{v:SKILL_SWAP_CAP},1` - A table size limiter, rows defined by our slot limiter and 1 column.
-* `FLAG(backable)` - This flag allows the cancel button to be used to exit the menu.
+* `backable` - This flag allows the cancel button to be used to exit the menu.
 
 That's only equipped side of the our menu. For the learned skills we will emulate the same visuals through a static `table`.  Bear in mind that the table has to encapsulate the `choice` we just build.
 
@@ -1065,7 +1065,7 @@ Our event should look like this:
 	end
 
 	table;UNIT_RIGHT_SKILLS;{v:LEARNED_SKILLS};Learned Skills;{v:SKILL_SWAP_CAP},1;100;top_right;menu_bg_base (menu_bg_base);type_skill
-	choice;UNIT_EQUIPPED_SKILLS;Equipped Skills;{v:EQUIPPED_SKILLS};100;vert;top_left;;Skill_Swap_Operations (Global Skill_Swap_Operations);type_skill;{v:SKILL_SWAP_CAP},1;FLAG(backable)
+	choice;UNIT_EQUIPPED_SKILLS;Equipped Skills;{v:EQUIPPED_SKILLS};100;vert;top_left;;Skill_Swap_Operations (Global Skill_Swap_Operations);type_skill;{v:SKILL_SWAP_CAP},1;backable
 	rmtable;UNIT_RIGHT_SKILLS
 
 ### Step 5.4: Add a refresh mechanism
@@ -1125,7 +1125,7 @@ As it is, the condition will be ignored every time. We will address that at the 
 	end
 
 	table;UNIT_RIGHT_SKILLS;{v:LEARNED_SKILLS};Learned Skills;{v:SKILL_SWAP_CAP},1;100;top_right;menu_bg_base (menu_bg_base);type_skill
-	choice;UNIT_EQUIPPED_SKILLS;Equipped Skills;{v:EQUIPPED_SKILLS};100;vert;top_left;;Skill_Swap_Operations (Global Skill_Swap_Operations);type_skill;{v:SKILL_SWAP_CAP},1;FLAG(backable)
+	choice;UNIT_EQUIPPED_SKILLS;Equipped Skills;{v:EQUIPPED_SKILLS};100;vert;top_left;;Skill_Swap_Operations (Global Skill_Swap_Operations);type_skill;{v:SKILL_SWAP_CAP},1;backable
 	rmtable;UNIT_RIGHT_SKILLS
 
 	#<5.4>
@@ -1153,12 +1153,12 @@ Now we have to build a menu for our units in `Skill_Swap_Select`. For this guide
 Same as we did with the previous menu, fill a string with all the nids and use it on the `choice` command.
 
 	game_var;AUX_STR;"Eirika,Vanessa,Seth,Moulder,Bone"
-	choice;SELECTED_UNIT;Swap skills from which unit?;{v:AUX_STR};73;;top_left;;Target_Fix (Global Target_Fix);type_unit;8,3;FLAG(scroll_bar);FLAG(persist);FLAG(backable)
+	choice;SELECTED_UNIT;Swap skills from which unit?;{v:AUX_STR};73;;top_left;;Target_Fix (Global Target_Fix);type_unit;8,3;scroll_bar;persist;backable
 
 A couple of things to notice:
 * `type_unit` - This option adds each unit class animated sprite to the list as well. It is a great visual component but may cause a massive lag spike as well. A good alternative for it is `type_chibi`.
-* `FLAG (scroll_bar)` - Enables a scroll bar. It's a great tool to use whith menus that have fixed size.
-* `FLAG (persist)` - Maintains the menu open until the user hits the back key. It can be used since the options won't be changed during the operation.
+* `scroll_bar` - Enables a scroll bar. It's a great tool to use whith menus that have fixed size.
+* `persist` - Maintains the menu open until the user hits the back key. It can be used since the options won't be changed during the operation.
 
 Lastly, we add a single line of code to `Target_Fix`.
 
@@ -1166,7 +1166,7 @@ Lastly, we add a single line of code to `Target_Fix`.
 
 As the name implies, we're just fixing the event target so we can access it directly as `unit`. You may use `{v:SELECTED_UNIT}` but it can lead to a couple of issues depending on how the event flux is defined.
 
-We can finally see some of our work done by running a chapter. Try out with different classes, tiers and unit levels to see if everything is being listed as expected. You can also add extra skills by following step 3.7+.  
+We can finally see some of our work done by running a chapter. Try out with different classes, tiers and unit levels to see if everything is being listed as expected. You can also add extra skills by following step 3.7+.
 
 ## Step 7: Build the Skill Swap Operations event
 
@@ -1228,7 +1228,7 @@ Same thing for **Reorder**, but checking if our selected skill isn't the first i
 
 We wrap it up by setting a **choice**, acting as our second menu.
 
-	choice;SKILL_SWAP_OPERATION;;{v:AUX_STR}Cancel;40;FLAG(backable)
+	choice;SKILL_SWAP_OPERATION;;{v:AUX_STR}Cancel;40;backable
 
 It may not look elegant but we have no need to add an extra line just to stich **Cancel** in our menu. It will only be used in single particular case where none of the other options is eligible.
 
@@ -1248,7 +1248,7 @@ The complete structure should look like this:
 	        game_var;AUX_STR;"{v:AUX_STR}" + "Reorder,"
 	    end
 	end
-	choice;SKILL_SWAP_OPERATION;;{v:AUX_STR}Cancel;40;FLAG(backable)
+	choice;SKILL_SWAP_OPERATION;;{v:AUX_STR}Cancel;40;backable
 
 Following it, we can set our option branches checkers, and get them to pre-emptively call each individual event:
 
@@ -1280,7 +1280,7 @@ Following it, we can set our option branches checkers, and get them to pre-empti
 	    end
 	end
 
-	choice;SKILL_SWAP_OPERATION;;{v:AUX_STR}Cancel;40;FLAG(backable)
+	choice;SKILL_SWAP_OPERATION;;{v:AUX_STR}Cancel;40;backable
 
 	if;'{v:SKILL_SWAP_OPERATION}' == 'Remove'
 	    trigger_script;Skill_Swap_Remove (Global Skill_Swap_Remove);
@@ -1362,7 +1362,7 @@ This time, we'll need to access our right panel. Turns out, we can't as that is 
 
 The workaround for this is building a menu using the exact same properties to cover it completely.
 
-	choice;UNIT_LEARNED_SKILLS;Learned Skills;{v:LEARNED_SKILLS};100;vert;top_right;;;type_skill;{v:SKILL_SWAP_CAP},1;FLAG(scroll_bar);FLAG(backable)
+	choice;UNIT_LEARNED_SKILLS;Learned Skills;{v:LEARNED_SKILLS};100;vert;top_right;;;type_skill;{v:SKILL_SWAP_CAP},1;scroll_bar;backable
 
 The selected skill can be added directly to our unit.
 
@@ -1388,7 +1388,7 @@ Of course, this means we have to fix the previous line  with the string in mind.
 	#...
 	game_var;AUX_STR;','.join("'" + s + "'" for s in unit.get_field('EquippedSkills')) + "{v:AUX_STR}"
 
-The last thing we have to do is to address the `FLAG(backable)` set on our `choice` command. When the menu is cancelled, the variable `UNIT_LEARNED_SKILLS` will still "BACK" as its new value, which isn't a valid skill. We have to encapsulate all of the code below the `choice` command.
+The last thing we have to do is to address the `backable` set on our `choice` command. When the menu is cancelled, the variable `UNIT_LEARNED_SKILLS` will still "BACK" as its new value, which isn't a valid skill. We have to encapsulate all of the code below the `choice` command.
 
 	if;'{v:UNIT_LEARNED_SKILLS}' != 'BACK'
 	    #...
@@ -1398,7 +1398,7 @@ Last, we have to update the field.
 
 The end result should be:
 
-	choice;UNIT_LEARNED_SKILLS;Learned Skills;{v:LEARNED_SKILLS};100;vert;top_right;;;type_skill;{v:SKILL_SWAP_CAP},1;FLAG(scroll_bar);FLAG(backable)
+	choice;UNIT_LEARNED_SKILLS;Learned Skills;{v:LEARNED_SKILLS};100;vert;top_right;;;type_skill;{v:SKILL_SWAP_CAP},1;scroll_bar;backable
 	if;'{v:UNIT_LEARNED_SKILLS}' != 'BACK'
 	    give_skill;{unit};{v:UNIT_LEARNED_SKILLS}
 	    if;len(unit.get_field('EquippedSkills')) > 0
@@ -1415,7 +1415,7 @@ In theory, **Replace** should be a direct combination of **Add** and **Remove**,
 
 We'll start by taking the pieces that work from those two elements. From **Add**, we'll take the menu structure and "BACK" condition, from **Remove** we take the `AUX_STR` reset and the field loop.
 
-	choice;UNIT_LEARNED_SKILLS;Learned Skills;{v:LEARNED_SKILLS};100;vert;top_right;;;type_skill;{v:SKILL_SWAP_CAP},1;FLAG(scroll_bar);FLAG(backable)
+	choice;UNIT_LEARNED_SKILLS;Learned Skills;{v:LEARNED_SKILLS};100;vert;top_right;;;type_skill;{v:SKILL_SWAP_CAP},1;scroll_bar;backable
 	if;'{v:UNIT_LEARNED_SKILLS}' != 'BACK'
 	    game_var;AUX_STR;""
 	    for;FETCHED_SKILL;unit.get_field('EquippedSkills')
@@ -1437,8 +1437,8 @@ We'll do just that and start building our tuple as well.
 
 	#...
 	game_var;AUX_STR;"{v:AUX_STR}" + "'{FETCHED_SKILL}',"
-	remove_skill;{unit};{FETCHED_SKILL};FLAG(no_banner)
-	give_skill;{unit};{FETCHED_SKILL};FLAG(no_banner)
+	remove_skill;{unit};{FETCHED_SKILL};no_banner
+	give_skill;{unit};{FETCHED_SKILL};no_banner
 
 This chunk of code can be copied onto the `True` output side, replacing `FETCHED_SKILL` with the corresponding variables.
 
@@ -1447,13 +1447,13 @@ This chunk of code can be copied onto the `True` output side, replacing `FETCHED
 	remove_skill;{unit};{v:UNIT_EQUIPPED_SKILLS}
 	give_skill;{unit};{v:UNIT_LEARNED_SKILLS}
 
-<small>*Here we're letting the engine use the default alerts for both skill commands, you may use `FLAG(no_banner)` to suppress it or even add a custom alert if you want to.*</small>
+<small>*Here we're letting the engine use the default alerts for both skill commands, you may use `no_banner` to suppress it or even add a custom alert if you want to.*</small>
 
 At last, we update the field.
 
 The end result should be something like:
 
-	choice;UNIT_LEARNED_SKILLS;Learned Skills;{v:LEARNED_SKILLS};100;vert;top_right;;;type_skill;{v:SKILL_SWAP_CAP},1;FLAG(scroll_bar);FLAG(backable)
+	choice;UNIT_LEARNED_SKILLS;Learned Skills;{v:LEARNED_SKILLS};100;vert;top_right;;;type_skill;{v:SKILL_SWAP_CAP},1;scroll_bar;backable
 	if;'{v:UNIT_LEARNED_SKILLS}' != 'BACK'
 	    game_var;AUX_STR;""
 	    for;FETCHED_SKILL;unit.get_field('EquippedSkills')
@@ -1463,8 +1463,8 @@ The end result should be something like:
 	            give_skill;{unit};{v:UNIT_LEARNED_SKILLS}
 	        else
 	            game_var;AUX_STR;"{v:AUX_STR}" + "'{FETCHED_SKILL}',"
-	            remove_skill;{unit};{FETCHED_SKILL};FLAG(no_banner)
-	            give_skill;{unit};{FETCHED_SKILL};FLAG(no_banner)
+	            remove_skill;{unit};{FETCHED_SKILL};no_banner
+	            give_skill;{unit};{FETCHED_SKILL};no_banner
 	        end
 	    endf
 	    set_unit_field;{unit};EquippedSkills;[{v:AUX_STR}]
@@ -1496,7 +1496,7 @@ At last, replace `UNIT_LEARNED_SKILLS` with `AUX_SKILL`. It still contains the d
 The end result should be something like:
 
 	game_var;EQUIPPED_SKILLS;','.join(s for s in unit.get_field('EquippedSkills'))
-	choice;UNIT_EQUIPPED_SKILLS;Replace skill?;{v:EQUIPPED_SKILLS};100;vert;top_left;;;type_skill;FLAG(backable)
+	choice;UNIT_EQUIPPED_SKILLS;Replace skill?;{v:EQUIPPED_SKILLS};100;vert;top_left;;;type_skill;backable
 	if;'{v:UNIT_EQUIPPED_SKILLS}' != 'BACK'
 	    game_var;AUX_STR;""
 	    for;FETCHED_SKILL;unit.get_field('EquippedSkills')
@@ -1506,8 +1506,8 @@ The end result should be something like:
 	            give_skill;{unit};{v:AUX_SKILL}
 	        else
 	            game_var;AUX_STR;"{v:AUX_STR}" + "'{FETCHED_SKILL}',"
-	            remove_skill;{unit};{FETCHED_SKILL};FLAG(no_banner)
-	            give_skill;{unit};{FETCHED_SKILL};FLAG(no_banner)
+	            remove_skill;{unit};{FETCHED_SKILL};no_banner
+	            give_skill;{unit};{FETCHED_SKILL};no_banner
 	        end
 	    endf
 	    set_unit_field;{unit};EquippedSkills;[{v:AUX_STR}]

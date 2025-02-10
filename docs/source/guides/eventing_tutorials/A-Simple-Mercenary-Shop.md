@@ -24,7 +24,7 @@ This is just data; it doesn't do anything, but we can access it elsewhere.
 Such as in a choice command:
 
 ```
-choice;MercenaryHireChoice;Hire a merc;{eval:','.join([merc.nid + '|' + merc.Name for merc in game.get_data('MercenaryHiringList')])};;vert;top_left;;;FLAG(persist)
+choice;MercenaryHireChoice;Hire a merc;{eval:','.join([merc.nid + '|' + merc.Name for merc in game.get_data('MercenaryHiringList')])};;vert;top_left;;;persist
 ```
 
 Let's break this command down.
@@ -38,12 +38,12 @@ Let's break this command down.
       1. Note the bar notation - that means that the first thing ( `merc1, merc2` ) is going to be what's saved in the choice, while the second ( `Sellsword, Traveller`) is what's going to be displayed.
    3. Turns the list into a string ( `','.join()`) that the choice command understands: `merc1|Sellsword,merc2|Traveller`
 5. `vert;top_left` - puts makes the menu vertical and puts in the top-left, since having all choices in the center doesn't look that great, and
-6. `FLAG(persist)` - makes sure that we can make multiple choices on this menu, like a true shop.
+6. `persist` - makes sure that we can make multiple choices on this menu, like a true shop.
 
 Let's add a command to make sure we've written it all correctly (remember, press 'B' to end the choice, since otherwise it won't, because it's persistent):
 
 ```
-choice;MercenaryHireChoice;Hire a merc;{eval:','.join([merc.nid + '|' + merc.Name for merc in game.get_data('MercenaryHiringList')])};;vert;top_left;;;FLAG(persist)
+choice;MercenaryHireChoice;Hire a merc;{eval:','.join([merc.nid + '|' + merc.Name for merc in game.get_data('MercenaryHiringList')])};;vert;top_left;;;persist
 speak;Eirika;you chose {var:MercenaryHireChoice}
 ```
 
@@ -56,7 +56,7 @@ Looking good. But wait; don't we want to know the price and our current money, t
 We can use textboxes, in concert with `expression` data types and the data we wrote earlier, to display these things. Be warned: this one's a doozy.
 
 ```
-textbox;MercDescription;"{d:MercenaryHiringList.{v:MercenaryHireChoice_choice_hover}.Description}|Cost: {d:MercenaryHiringList.{v:MercenaryHireChoice_choice_hover}.Cost}";bottom;;3;;0.25;;;menu_bg_parchment;FLAG(expression)
+textbox;MercDescription;"{d:MercenaryHiringList.{v:MercenaryHireChoice_choice_hover}.Description}|Cost: {d:MercenaryHiringList.{v:MercenaryHireChoice_choice_hover}.Cost}";bottom;;3;;0.25;;;menu_bg_parchment;expression
 ```
 
 You probably want to copy that into a different text editor to look at while reading this tutorial, since it's _long_.
@@ -77,7 +77,7 @@ Let's break it down:
 3. `3` - this indicates the number of lines of the textbox.
 4. `0.25` - this is the TextSpeed. We want the text to display much faster, so we use a low value.
 5. `menu_bg_parchment` - let's use a different menu bg for this one for aesthetics. (This actually looks uglier, but I needed to work bgs into a tutorial somehow).
-6. `FLAG(expression)`. This is the other star of the show. This tells the engine to constantly eval the expression that we wrote above, and update the table with it.
+6. `expression`. This is the other star of the show. This tells the engine to constantly eval the expression that we wrote above, and update the table with it.
 
 Let's look at our work:
 
@@ -88,7 +88,7 @@ Great success!
 We also need a gold display. This one is easy in comparison:
 
 ```
-textbox;GoldDisplay;game.get_money();top_right;60;;;;;;funds_display;FLAG(expression)
+textbox;GoldDisplay;game.get_money();top_right;60;;;;;;funds_display;expression
 ```
 
 Another breakdown:
@@ -97,7 +97,7 @@ Another breakdown:
 2. `game.get_money()` is yet another `expression` that returns the current gold.
 3. `60` is a field we haven't used before, the `Width` field - this determines the width of the field. I use this here mostly for aesthetics; otherwise, the gold number won't be aligned with the left side of the bg.
 4. `funds_display` is the name of the stunning BG you're about to see. Unlike the others, this one is a sprite, not a menu_bg, and therefore doesn't automatically resize itself. Choices and textboxes support both bgs. You may find that your bg is off-center. You'll simply have to make new sprites that are offset correctly.
-5. `FLAG(expression)` - what would we do without you?
+5. `expression` - what would we do without you?
 
 ![image](../images/MercShopMenu.png)
 
@@ -113,7 +113,7 @@ Let's write a confirmation dialogue event, similar to the one in the existing ch
 choice;Confirmation;You sure?;Yes,No
 if;'{v:Confirmation}' == 'Yes'
     alert;You hired {d:MercenaryHiringList.{v:MercenaryHireChoice}.Name}.
-    give_money;{eval: -1 * int({d:MercenaryHiringList.{v:MercenaryHireChoice}.Cost})};FLAG(no_banner)
+    give_money;{eval: -1 * int({d:MercenaryHiringList.{v:MercenaryHireChoice}.Cost})};no_banner
     make_generic;;{d:MercenaryHiringList.{v:MercenaryHireChoice}.Class};{e:game.get_unit('Eirika').level};player;;Soldier (Soldier);;Iron Sword (Iron Sword)
     add_unit;{created_unit};(3, 4);immediate;closest
     speak;;{d:MercenaryHiringList.{v:MercenaryHireChoice}.Class}
@@ -125,7 +125,7 @@ All of this should be straightforward; display an alert, remove gold via the sam
 Let's add this to the main command:
 
 ```
-choice;MercenaryHireChoice;Hire a merc;{eval:','.join([merc.nid + '|' + merc.Name for merc in game.get_data('MercenaryHiringList')])};;vert;top_left;;ConfirmMercHire;FLAG(persist)
+choice;MercenaryHireChoice;Hire a merc;{eval:','.join([merc.nid + '|' + merc.Name for merc in game.get_data('MercenaryHiringList')])};;vert;top_left;;ConfirmMercHire;persist
 ```
 
 Let's see what happens now:
@@ -141,9 +141,9 @@ Here is the code used in this tutorial:
 **Main code:**
 
 ```
-textbox;MercDescription;"{d:MercenaryHiringList.{v:MercenaryHireChoice_choice_hover}.Description}|Cost: {d:MercenaryHiringList.{v:MercenaryHireChoice_choice_hover}.Cost}";bottom;;3;;0.25;;;menu_bg_parchment (menu_bg_parchment);FLAG(expression)
-textbox;GoldDisplay;game.get_money();top_right;60;;;;;;funds_display (funds_display);FLAG(expression)
-choice;MercenaryHireChoice;Hire a merc;{eval:','.join([merc.nid + '|' + merc.Name for merc in game.get_data('MercenaryHiringList')])};;vert;top_left;;ConfirmMercHire;FLAG(persist)
+textbox;MercDescription;"{d:MercenaryHiringList.{v:MercenaryHireChoice_choice_hover}.Description}|Cost: {d:MercenaryHiringList.{v:MercenaryHireChoice_choice_hover}.Cost}";bottom;;3;;0.25;;;menu_bg_parchment (menu_bg_parchment);expression
+textbox;GoldDisplay;game.get_money();top_right;60;;;;;;funds_display (funds_display);expression
+choice;MercenaryHireChoice;Hire a merc;{eval:','.join([merc.nid + '|' + merc.Name for merc in game.get_data('MercenaryHiringList')])};;vert;top_left;;ConfirmMercHire;persist
 remove_table;MercDescription
 remove_table;GoldDisplay
 ```
@@ -154,7 +154,7 @@ remove_table;GoldDisplay
 choice;Confirmation;You sure?;Yes,No
 if;'{v:Confirmation}' == 'Yes'
     alert;You hired {d:MercenaryHiringList.{v:MercenaryHireChoice}.Name}.
-    give_money;{eval: -1 * int({d:MercenaryHiringList.{v:MercenaryHireChoice}.Cost})};FLAG(no_banner)
+    give_money;{eval: -1 * int({d:MercenaryHiringList.{v:MercenaryHireChoice}.Cost})};no_banner
     make_generic;;{d:MercenaryHiringList.{v:MercenaryHireChoice}.Class};{e:game.get_unit('Eirika').level};player;;Soldier (Soldier);;Iron Sword
     add_unit;{created_unit};(3, 4);immediate;closest
 end

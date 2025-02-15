@@ -364,6 +364,14 @@ class CloseCounter(SkillComponent):
 
     def close_counter(self, unit):
         return True
+        
+class CannotCounter(SkillComponent):
+    nid = 'cannot_counter'
+    desc = "Unit cannot retaliate in combat"
+    tag = SkillTags.COMBAT2
+
+    def can_counter(self, unit):
+        return False
 
 
 class Cleave(SkillComponent):

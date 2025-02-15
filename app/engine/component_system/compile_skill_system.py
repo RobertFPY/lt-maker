@@ -6,6 +6,7 @@ from app.engine.component_system.utils import ARG_TYPE_MAP, HookInfo, ResolvePol
 SKILL_HOOKS: Dict[str, HookInfo] = {
     # true priority (set to False if result is False in any component, True if not defined)
     'available':                            HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_TRUE),
+    'can_counter':                          HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_TRUE),
     # false priority (set to False if result is False in any component, False if not defined)
     'pass_through':                         HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'vantage':                              HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),

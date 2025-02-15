@@ -170,7 +170,7 @@ class Move(Action):
     A basic, user-directed move
     """
 
-    def __init__(self, unit, new_pos, path=None, event=False, follow=True, speed=0):
+    def __init__(self, unit, new_pos, path=None, event=False, follow=True, speed=0, silent=False):
         self.unit: UnitObject = unit
         self.old_pos = self.unit.position
         self.new_pos = new_pos
@@ -183,11 +183,12 @@ class Move(Action):
         self.event = event
         self.follow = follow
         self.speed = speed or cf.SETTINGS['unit_speed']
+        self.silent = silent
 
     def do(self):
         if self.path is None:
             self.path = game.cursor.path[:]
-        game.movement.begin_move(self.unit, self.path, self.event, self.follow, speed=self.speed)
+        game.movement.begin_move(self.unit, self.path, self.event, self.follow, speed=self.speed, silent=self.silent)
 
     def execute(self):
         game.leave(self.unit)

@@ -981,6 +981,7 @@ def move_unit(self: Event, unit, position=None, movement_type=None, placement=No
     if not placement:
         placement = 'giveup'
     follow = 'no_follow' not in flags
+    silent = 'silent' in flags
 
     position = self._check_placement(unit, position, placement)
     if not position:
@@ -1006,9 +1007,9 @@ def move_unit(self: Event, unit, position=None, movement_type=None, placement=No
             if self.do_skip:
                 action.do(action.Teleport(unit, position))
             elif speed:
-                action.do(action.Move(unit, position, path, event=True, follow=follow, speed=speed))
+                action.do(action.Move(unit, position, path, event=True, follow=follow, speed=speed, silent=silent))
             else:
-                action.do(action.Move(unit, position, path, event=True, follow=follow))
+                action.do(action.Move(unit, position, path, event=True, follow=follow, silent=silent))
         else:
             self.logger.error("move_unit: no valid path for %s from %s to %s" % (unit, unit.position, position))
             return None

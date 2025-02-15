@@ -1272,7 +1272,7 @@ The *no_follow* flag prevents the camera from tracking the unit as it moves.
 
     keywords = ["Unit"]
     optional_keywords = ["Position", "MovementType", "Placement", "Speed"]
-    _flags = ['no_block', 'no_follow']
+    _flags = ['no_block', 'no_follow', 'silent']
 
 class RemoveUnit(EventCommand):
     nid = 'remove_unit'

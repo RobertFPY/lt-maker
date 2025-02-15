@@ -136,6 +136,7 @@ class BattleAnimation():
     def _generate_missing_poses(self):
         # Copy Stand -> RangedStand and Dodge -> RangedDodge if missing
         # Copy Attack -> Miss and Attack -> Critical if missing
+        # Copy Stand -> Damaged and Damaged or Damaged -> RangedDamaged if missing
         if 'RangedStand' not in self.poses and 'Stand' in self.poses:
             self.poses['RangedStand'] = self.poses['Stand']
         if 'RangedDodge' not in self.poses and 'Dodge' in self.poses:
@@ -144,6 +145,10 @@ class BattleAnimation():
             self.poses['Miss'] = self.poses['Attack']
         if 'Critical' not in self.poses and 'Attack' in self.poses:
             self.poses['Critical'] = self.poses['Attack']
+        if 'Damaged' not in self.poses and 'Stand' in self.poses:
+            self.poses['Damaged'] = self.poses['Stand']
+        if 'RangedDamaged' not in self.poses and 'Damaged' in self.poses:
+            self.poses['RangedDamaged'] = self.poses['Damaged']    
 
     def load_full_image(self):
         # Only do load stuff if image does not exist already
@@ -258,6 +263,12 @@ class BattleAnimation():
             self.start_anim('RangedDodge')
         else:
             self.start_anim('Dodge')
+
+    def damaged(self):
+        if self.at_range:
+            self.start_anim('RangedDamaged')
+        else:
+            self.start_anim('Damaged')
 
     def get_num_frames(self, num) -> int:
         return max(1, int(int(num) * battle_anim_speed))
@@ -466,6 +477,7 @@ class BattleAnimation():
             self.owner.shake()
             self.owner.start_hit()
             if self.partner_anim:  # Also offset partner, since they got hit
+                self.partner_anim.damaged()
                 self.partner_anim.lr_offset = [-1, -2, -3, -2, -1]
         elif command.nid == 'wait_for_hit':
             if self.wait_for_hit:
@@ -485,6 +497,7 @@ class BattleAnimation():
             self.owner.shake()
             self.owner.spell_hit()
             self.owner.hit_modifiers()
+            self.partner_anim.damaged()
 
         elif command.nid == 'effect':
             effect = values[0]

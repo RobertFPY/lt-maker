@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List
 
 from app.counters import GenericAnimCounter, GenericEdgeCounter
 from app.data.database.units import UnitPrefab

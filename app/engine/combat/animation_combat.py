@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import random
-from typing import List
+from typing import List, Optional
 
 import logging
 
@@ -43,6 +43,11 @@ class AnimationCombat(BaseCombat, MockCombat):
         self.defender = defender
         self.main_item = main_item
         self.def_item = def_item
+        self.attack_partner_weapon: Optional[ItemObject] = resolve_weapon(self.attacker.strike_partner)
+        if self.defender:
+            self.defense_partner_weapon: Optional[ItemObject] = resolve_weapon(self.defender.strike_partner)
+        else:
+            self.defense_partner_weapon: Optional[ItemObject] = None
 
         if self.defender.team == 'player' and self.attacker.team != 'player':
             self.right = self.defender

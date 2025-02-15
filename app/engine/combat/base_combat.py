@@ -1,3 +1,5 @@
+from typing import Optional
+
 from app.engine.combat.solver import CombatPhaseSolver
 
 from app.engine import skill_system, item_system, action
@@ -25,6 +27,11 @@ class BaseCombat(SimpleCombat):
         self.def_item = None
         if self.defender:
             self.def_item = resolve_weapon(self.defender)
+        self.attack_partner_weapon: Optional[ItemObject] = resolve_weapon(self.attacker.strike_partner)
+        if self.defender:
+            self.defense_partner_weapon: Optional[ItemObject] = resolve_weapon(self.defender.strike_partner)
+        else:
+            self.defense_partner_weapon: Optional[ItemObject] = None
 
         self.state_machine = CombatPhaseSolver(
             self.attacker, self.main_item, [self.main_item],

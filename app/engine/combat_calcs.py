@@ -113,6 +113,8 @@ def can_counterattack(attacker, aweapon, defender, dweapon) -> bool:
         return False
     if not item_system.can_counter(defender, dweapon):
         return False
+    if not skill_system.can_counter(defender):
+        return False
     if DB.constants.value('line_of_sight'):
         if not item_system.ignore_line_of_sight(defender, dweapon) and len(line_of_sight.line_of_sight([defender.position], [attacker.position], 99)) == 0:
             return False

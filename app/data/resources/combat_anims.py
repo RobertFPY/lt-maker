@@ -13,7 +13,7 @@ import logging
 from app.utilities.typing import NID, NestedPrimitiveDict
 
 required_poses = ('Stand', 'Attack', 'Miss', 'Dodge')
-other_poses = ('RangedStand', 'RangedDodge', 'Critical')
+other_poses = ('RangedStand', 'RangedDodge', 'Critical', 'Damaged', 'RangedDamaged')
 
 class Pose():
     def __init__(self, nid):

@@ -200,7 +200,7 @@ class AttackProc(SkillComponent):
                     playback.append(pb.AttackProc(unit, act.skill_obj))
                 self._did_action = True
 
-    def end_sub_combat(self, actions, playback, unit, item, target, item2, mode, attack_info):
+    def end_sub_combat_unconditional(self, actions, playback, unit, item, target, item2, mode, attack_info):
         if self._did_action:
             action.do(action.TriggerCharge(unit, self.skill))
             action.do(action.RemoveSkill(unit, self.value))
@@ -227,7 +227,7 @@ class DefenseProc(SkillComponent):
                     playback.append(pb.DefenseProc(unit, act.skill_obj))
                 self._did_action = True
 
-    def end_sub_combat(self, actions, playback, unit, item, target, item2, mode, attack_info):
+    def end_sub_combat_unconditional(self, actions, playback, unit, item, target, item2, mode, attack_info):
         if self._did_action:
             action.do(action.TriggerCharge(unit, self.skill))
             action.do(action.RemoveSkill(unit, self.value))

@@ -112,6 +112,7 @@ class PlayerChoiceState(MapState):
     def take_input(self, event):
         first_push = self.fluid.update()
         directions = self.fluid.get_directions()
+        self.menu.handle_mouse()
         if ('RIGHT' in directions and (self.orientation == Orientation.HORIZONTAL or self.size[0] > 1)):
             if self.menu.move_right(first_push):
                 get_sound_thread().play_sfx('Select 6')

@@ -124,8 +124,8 @@ SKILL_HOOKS: Dict[str, HookInfo] = {
     'on_equip_item':                        HookInfo(['unit', 'item'], ResolvePolicy.NO_RETURN),
     'on_unequip_item':                      HookInfo(['unit', 'item'], ResolvePolicy.NO_RETURN),
     # sub-combat events
-    'start_sub_combat':                     HookInfo(['actions', 'playback', 'unit', 'item', 'target', 'item2', 'mode', 'attack_info'], ResolvePolicy.NO_RETURN),
-    'end_sub_combat':                       HookInfo(['actions', 'playback', 'unit', 'item', 'target', 'item2', 'mode', 'attack_info'], ResolvePolicy.NO_RETURN),
+    'start_sub_combat':                     HookInfo(['actions', 'playback', 'unit', 'item', 'target', 'item2', 'mode', 'attack_info'], ResolvePolicy.NO_RETURN, has_unconditional=True),
+    'end_sub_combat':                       HookInfo(['actions', 'playback', 'unit', 'item', 'target', 'item2', 'mode', 'attack_info'], ResolvePolicy.NO_RETURN, has_unconditional=True),
     # after strike events
     'after_strike':                         HookInfo(['actions', 'playback', 'unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'strike'], ResolvePolicy.NO_RETURN),
     'after_take_strike':                    HookInfo(['actions', 'playback', 'unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'strike'], ResolvePolicy.NO_RETURN),

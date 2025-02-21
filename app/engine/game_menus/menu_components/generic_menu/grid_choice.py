@@ -327,7 +327,7 @@ class GridChoiceMenu():
         else:
             # constraint on num_rows
             num_rows = self.num_rows()
-            return (len(self._option_data) // num_rows) + 1, num_rows
+            return ((len(self._option_data) - 1) // num_rows) + 1, num_rows
 
     def _get_index_of_coord(self, coord: Tuple[int, int]) -> int:
         nx, _ = self._total_grid_size()

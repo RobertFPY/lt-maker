@@ -350,11 +350,11 @@ def speak(self: Event, speaker_or_style: str, text, text_position: Point | Align
         else:
             continue
         text = text.replace(block, '{p}', 1)  # Replace first instance
-        self._queue_command(event_command_str)
+        self.queue_command(event_command_str)
         if speaker:
-            self._queue_command('unpause;%s' % speaker)
+            self.queue_command('unpause;%s' % speaker)
         else:
-            self._queue_command('unpause')
+            self.queue_command('unpause')
 
     flags = style.flags
 

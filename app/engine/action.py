@@ -1016,7 +1016,8 @@ class Separate(Action):
 
         if self.with_wait:
             self.droppee_wait_action.reverse()
-        game.leave(self.droppee)
+        if self.droppee.position:
+            game.leave(self.droppee)
         self.unit.has_dropped = False
 
         self.unit.lead_unit = True
@@ -3478,6 +3479,9 @@ class AddSkill(Action):
             logging.info("Skill %s is at max stacks, removing oldest displaceable instance" % self.skill_obj.nid)
             self.subactions.append(RemoveSkill(self.unit, popped_skill_obj))
 
+        for action in self.subactions:
+            action.execute()
+
         # Actually add skill
         skill_system.before_add(self.unit, self.skill_obj)
         self.skill_obj.owner_nid = self.unit.nid
@@ -3490,9 +3494,6 @@ class AddSkill(Action):
             game.boundary.register_unit_auras(self.unit)
 
         skill_system.after_add(self.unit, self.skill_obj)
-
-        for action in self.subactions:
-            action.execute()
 
         self.did_something = True
 

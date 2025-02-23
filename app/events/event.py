@@ -396,7 +396,7 @@ class Event():
             exc.what = str(e)
             raise exc
 
-    def _queue_command(self, event_command_str: str):
+    def queue_command(self, event_command_str: str):
         try:
             command, _ = event_commands.parse_text_to_command(event_command_str, strict=True)
             if not command:
@@ -406,7 +406,7 @@ class Event():
             processed_command = command.__class__(parameters, flags, command.display_values)
             self.command_queue.append(processed_command)
         except Exception as e:
-            logging.error('_queue_command: Unable to parse command "%s". %s', event_command_str, e)
+            logging.error('queue_command: Unable to parse command "%s". %s', event_command_str, e)
 
     def _place_unit(self, unit, position, entry_type, entry_direc=None):
         position = tuple(position)

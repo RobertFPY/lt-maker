@@ -572,7 +572,10 @@ class InfoMenuState(State):
                 max_stat = self.unit.get_stat_cap(stat_nid)
                 if max_stat > 0:
                     total_length = int(max_stat / highest_stat * 42)
-                    frac = utils.clamp(self.unit.stats.get(stat_nid) / max_stat, 0, 1)
+                    base_value = self.unit.stats.get(stat_nid, 0)
+                    subtle_stat_bonus = self.unit.subtle_stat_bonus(stat_nid)
+                    base_value += subtle_stat_bonus
+                    frac = utils.clamp(base_value / max_stat, 0, 1)
                     build_groove(surf, (27, 16 * idx + 32), total_length, frac)
                 icons.draw_stat(surf, stat_nid, self.unit, (47, 16 * idx + 24))
 

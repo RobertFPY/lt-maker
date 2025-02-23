@@ -120,7 +120,7 @@ class Resist(SkillComponent):
     expose = ComponentType.Int
     value = 2
 
-    def modify_resist(self, unit, item_to_avoid):
+    def modify_resist(self, unit, item):
         return self.value
 
 class Hit(SkillComponent):
@@ -157,7 +157,7 @@ class Avoid(SkillComponent):
     expose = ComponentType.Int
     value = 20
 
-    def modify_avoid(self, unit, item_to_avoid):
+    def modify_avoid(self, unit, item):
         return self.value
 
     def tile_avoid(self):
@@ -212,7 +212,7 @@ class CritAvoid(SkillComponent):
     expose = ComponentType.Int
     value = 10
 
-    def modify_crit_avoid(self, unit, item_to_avoid):
+    def modify_crit_avoid(self, unit, item):
         return self.value
 
 class AttackSpeed(SkillComponent):
@@ -234,7 +234,7 @@ class DefenseSpeed(SkillComponent):
     expose = ComponentType.Int
     value = 4
 
-    def modify_defense_speed(self, unit, item_to_avoid):
+    def modify_defense_speed(self, unit, item):
         return self.value
 
 class DamageMultiplier(SkillComponent):

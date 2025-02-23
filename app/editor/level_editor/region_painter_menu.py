@@ -325,7 +325,7 @@ class ModifyRegionWidget(QWidget):
         if current.region_type == RegionType.STATUS:
             self.status_box.edit.setValue(str(current.sub_nid))
         elif current.region_type == RegionType.TERRAIN:
-            self.terrain_box.edit.setValue(str(current.sub_nid))
+            self.terrain_box.setValue(str(current.sub_nid))
         elif current.region_type in (RegionType.EVENT, RegionType.FOG, RegionType.VISION):
             self.sub_nid_box.edit.setText(str(current.sub_nid))
         else:

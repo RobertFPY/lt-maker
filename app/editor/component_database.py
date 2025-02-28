@@ -2,11 +2,11 @@ from __future__ import annotations
 from functools import partial
 from typing import Any, Dict
 
-from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtCore import Qt, QSize, pyqtSignal
 from PyQt5.QtGui import QColor, QIcon, QPalette
 from PyQt5.QtWidgets import (QApplication, QDoubleSpinBox, QHBoxLayout,
-                             QItemDelegate, QLabel, QLineEdit, QListWidgetItem,
-                             QSpinBox, QToolButton, QVBoxLayout, QWidget, QPushButton)
+                             QLabel, QLineEdit, QListWidgetItem,
+                             QSpinBox, QToolButton, QVBoxLayout, QWidget)
 
 from app.data.database.components import ComponentType
 from app.data.database.database import DB
@@ -35,6 +35,11 @@ from app.extensions.frame_layout import FrameLayout
 from app.extensions.widget_list import WidgetList
 from app.utilities import utils
 
+from app.editor.auto_resizing_text_edit import AutoResizingTextEdit
+
+from app.editor.settings import MainSettingsController
+
+from app.editor.event_editor.py_syntax import PythonHighlighter
 
 class ComponentList(WidgetList):
     def __init__(self, parent):
@@ -50,16 +55,20 @@ class ComponentList(WidgetList):
         self.addItem(item)
         self.setItemWidget(item, component)
         self.index_list.append(component.data.nid)
+
+        component.resized.connect(self.updateGeometry)
+
         if len(self.index_list) % 2 == 0:
             item.setBackground(self.highlight_color)
         else:
             item.setBackground(self.bg_color)
         return item
 
-    def remove_component(self, component):
+    def remove_component(self, component : BoolItemComponent):
         if component.data.nid in self.index_list:
             idx = self.index_list.index(component.data.nid)
             self.index_list.remove(component.data.nid)
+            component.resized.disconnect(self.updateGeometry)
             return self.takeItem(idx)
         return None
 
@@ -81,6 +90,7 @@ class ComponentList(WidgetList):
 
 class BoolItemComponent(QWidget):
     delegate = None
+    resized = pyqtSignal() # emit this generic signal when the item could be resized
 
     def __init__(self, data, parent, delegate=None):
         super().__init__(parent)
@@ -163,20 +173,40 @@ class FloatItemComponent(BoolItemComponent):
     def on_value_changed(self, val):
         self._data.value = float(val)
 
-
 class StringItemComponent(BoolItemComponent):
     def create_editor(self, hbox):
-        self.editor = QLineEdit(self)
+        self.settings = MainSettingsController()
+        self.editor = AutoResizingTextEdit(self)
         self.editor.setMaximumWidth(640)
-        if not self._data.value:
-            self._data.value = ''
-        self.editor.setText(str(self._data.value))
+
+        # must set to at least 3 to avoid an edge case 
+        # where lines < 3 are just a TINY bit taller than the box
+        # and is visually annoying
+        # probably due to rounding errors
+        self.editor.setMinimumLines(3)
+        self.editor.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.editor.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        
+        self._set_font()
+        self.editor.setText(str(self._data.value) if self._data.value else '')
+        self._old_height = self.editor.document().size().height()
+        
+        self.highlighter = PythonHighlighter(self.editor.document())
+        
         self.editor.textChanged.connect(self.on_value_changed)
         hbox.addWidget(self.editor)
 
-    def on_value_changed(self, text):
-        self._data.value = text
-
+    def on_value_changed(self):
+        self._data.value = self.editor.toPlainText()
+        
+        new_height = self.editor.document().size().height()
+        if new_height != self._old_height:
+            self._old_height = new_height
+            self.resized.emit() # size could change here so emit
+        
+    def _set_font(self):
+        if self.settings.get_code_font_in_boxes():
+            self.editor.setFont(QFont(self.settings.get_code_font()))
 
 class DropDownItemComponent(BoolItemComponent):
     def __init__(self, data, parent, options):

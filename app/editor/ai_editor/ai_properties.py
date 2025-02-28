@@ -1,16 +1,20 @@
 from PyQt5.QtWidgets import QWidget, QLabel, QLineEdit, \
     QMessageBox, QSpinBox, QHBoxLayout, QGroupBox, QRadioButton, \
     QVBoxLayout, QComboBox, QStackedWidget, QDoubleSpinBox, QCheckBox, \
-    QGridLayout, QListWidget, QListWidgetItem, QPushButton
+    QGridLayout, QListWidget, QListWidgetItem, QPushButton, QPlainTextEdit
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QFont
 
 import app.data.database.ai as ai
 from app.data.database.database import DB
 
+from app.editor.event_editor.py_syntax import PythonHighlighter
 from app.extensions.custom_gui import PropertyBox, ComboBox, PropertyCheckBox
 from app.editor.custom_widgets import ClassBox, UnitBox, TeamBox, FactionBox, PartyBox, TerrainBox
 from app.editor.lib.components.validated_line_edit import NidLineEdit
 from app.utilities import str_utils
+
+from app.editor.code_line_edit import CodeLineEdit
 
 # Target Specifications
 class NullSpecification(QWidget):
@@ -323,11 +327,11 @@ class BehaviourBox(QGroupBox):
         self.proximity_box.edit.setAlignment(Qt.AlignRight)
         self.proximity_box.edit.valueChanged.connect(self.set_desired_proximity)
 
-        self.condition_box = PropertyBox("Condition", QLineEdit, self)
+        self.condition_box = PropertyBox("Condition", CodeLineEdit, self)
         self.condition_box.setToolTip("If Condition is false, behaviour is skipped.")
         self.condition_box.edit.setMaximumWidth(200)
-        self.condition_box.edit.textChanged.connect(self.set_condition)
-
+        self.condition_box.edit.textChanged.connect(lambda: self.set_condition(self.condition_box.edit.toPlainText()))
+        
         self.within_label = QLabel(" within ")
 
         left_layout = QGridLayout()
@@ -458,9 +462,9 @@ class BehaviourBox(QGroupBox):
             self.view_range.setCurrentIndex(4)
 
         if behaviour.condition:
-            self.condition_box.edit.setText(behaviour.condition)
+            self.condition_box.edit.setPlainText(behaviour.condition)
         else:
-            self.condition_box.edit.setText("")
+            self.condition_box.edit.setPlainText("")
 
 class AIProperties(QWidget):
     def __init__(self, parent, current=None):

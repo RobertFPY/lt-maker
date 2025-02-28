@@ -34,6 +34,7 @@ class PreferencesDialog(Dialog):
         self.saved_preferences['place_button'] = self.settings.get_place_button(Qt.RightButton)
         self.saved_preferences['theme'] = self.settings.get_theme(0)
         self.saved_preferences['code_font'] = self.settings.get_code_font()
+        self.saved_preferences['code_font_in_boxes'] = self.settings.get_code_font_in_boxes()
         self.saved_preferences['event_autocomplete'] = self.settings.get_event_autocomplete(1)
         self.saved_preferences['autocomplete_button'] = self.settings.get_autocomplete_button(Qt.Key_Tab)
         self.saved_preferences['autosave_time'] = self.settings.get_autosave_time()
@@ -68,6 +69,9 @@ class PreferencesDialog(Dialog):
         self.code_font = PropertyBox('Code Font', QFontComboBox, self)
         self.code_font.edit.setFontFilters(QFontComboBox.FontFilter.MonospacedFonts)
         self.code_font.edit.setCurrentFont(QtGui.QFont(self.saved_preferences['code_font']))
+        
+        self.code_font_in_boxes = PropertyCheckBox('Code boxes also use code font?', QCheckBox, self)
+        self.code_font_in_boxes.edit.setChecked(bool(self.saved_preferences['code_font_in_boxes']))
 
         self.autocomplete = PropertyCheckBox('Event Autocomplete', QCheckBox, self)
         self.autocomplete.edit.setChecked(bool(self.saved_preferences['event_autocomplete']))
@@ -116,6 +120,7 @@ class PreferencesDialog(Dialog):
         self.layout.addWidget(self.place)
         self.layout.addWidget(self.theme)
         self.layout.addWidget(self.code_font)
+        self.layout.addWidget(self.code_font_in_boxes)
         self.layout.addWidget(self.autocomplete_button)
         self.layout.addLayout(self.editor_close_button_layout)
         self.layout.addWidget(self.autocomplete)
@@ -187,6 +192,9 @@ class PreferencesDialog(Dialog):
         self.settings.set_code_font(self.code_font.edit.currentText())
         # For some reason Qt doesn't save booleans correctly
         # resorting to int
+        # lmao - tein
+        code_font_in_boxes = 1 if self.code_font_in_boxes.edit.isChecked() else 0
+        self.settings.set_code_font_in_boxes(code_font_in_boxes)
         autocomplete = 1 if self.autocomplete.edit.isChecked() else 0
         self.settings.set_event_autocomplete(autocomplete)
         crash_log_setting = 1 if self.crashlog.edit.isChecked() else 0

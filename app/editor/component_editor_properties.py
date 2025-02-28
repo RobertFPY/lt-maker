@@ -17,7 +17,6 @@ from app.editor import component_database
 from app.editor.component_search_dialog import ShowComponentSearchDialog
 from app.editor.icons import PushableIcon16
 from app.editor.lib.components.validated_line_edit import NidLineEdit
-from app.editor.settings import MainSettingsController
 from app.extensions.custom_gui import PropertyBox, QHLine
 from app.extensions.qhelpmenu import QHelpMenu
 from app.utilities.data import Data

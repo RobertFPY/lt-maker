@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 from typing import Any, Dict, List
 
-from app.counters import GenericAnimCounter, GenericEdgeCounter
+from app.counters import GenericAnimCounter
 from app.data.database.units import UnitPrefab
 from app.data.resources import map_sprites
 from app.engine.game_counters import ANIMATION_COUNTERS
@@ -45,7 +45,7 @@ class SingleMapSprite():
         """Create an animated sprite that only plays once"""
         sprite = cls()
         sprite.frames = frames
-        sprite.counter = GenericEdgeCounter(frame_timings)
+        sprite.counter = GenericAnimCounter.from_frames(frame_timings, loop=False, get_time=engine.get_time)
         return sprite
 
     def get_frame(self) -> engine.Surface:
@@ -85,8 +85,8 @@ class MapSprite():
 
         active_frames = [engine.subsurface(stand, (num*64, 96, 64, 48)) for num in range(3)]
         self.active = SingleMapSprite.create_looping_sprite(active_frames, ANIMATION_COUNTERS.active_sprite_counter)
-        # self.start_cast = SingleMapSprite.create_anim_sprite(active_frames, ANIMATION_COUNTERS.active_sprite_counter.to_edge_counter())
-        # self.end_cast = SingleMapSprite.create_anim_sprite(reversed(active_frames), ANIMATION_COUNTERS.active_sprite_counter.to_edge_counter())
+        self.start_cast = SingleMapSprite.create_anim_sprite(active_frames, [22, 4, 22])
+        self.end_cast = SingleMapSprite.create_anim_sprite([frame for frame in reversed(active_frames)], [22, 4, 22])
 
     def _get_team_palette(self):
         team_obj = DB.teams.get(self.team)
@@ -375,6 +375,12 @@ class UnitSprite():
             self.handle_net_position(self.net_position)
         elif self.state == 'selected':
             self.set_image_state('down')
+        elif self.state == 'start_cast':
+            self.map_sprite.start_cast.counter.reset()
+            self.set_image_state('start_cast')
+        elif self.state == 'end_cast':
+            self.map_sprite.end_cast.counter.reset()
+            self.set_image_state('end_cast')
         elif self.state == 'normal':
             self.set_transition('normal')
 
@@ -600,7 +606,8 @@ class UnitSprite():
 
         if DB.constants.value('pairup') and self.unit.traveler:
             partner = game.get_unit(self.unit.traveler)
-            partner_image = partner.sprite.create_image(self.image_state)
+            partner_state = 'passive' if self.image_state in ('start_cast', 'end_cast') else self.image_state
+            partner_image = partner.sprite.create_image(partner_state)
             partner_image = partner_image.convert_alpha()
             surf.blit(partner_image, (topleft[0] + 3, topleft[1] - 3))
             surf.blit(image, (topleft[0] - 3, topleft[1] + 3))

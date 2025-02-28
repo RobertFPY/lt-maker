@@ -3,6 +3,7 @@ from __future__  import annotations
 from typing import Callable, List, Union
 
 from app.constants import FRAMERATE
+from app.engine import engine
 
 
 class generic3counter():
@@ -49,9 +50,6 @@ class generic3counter():
         self.last_update = 0
         self.lastcount = 1
 
-    def to_edge_counter(self) -> GenericEdgeCounter:
-        return GenericEdgeCounter([self.first_time, self.second_time, self.third_time])
-
 class GenericAnimCounter():
     _count: int
     _values: List[int]
@@ -90,7 +88,10 @@ class GenericAnimCounter():
 
     def reset(self):
         self._count = 0
-        self._last_update = 0
+        if self._loop or not self._get_time:
+            self._last_update = 0
+        else:
+            self._last_update = self._get_time()
 
     @staticmethod
     def from_frames(frames: List[int], loop: bool = True, frame_duration: int = FRAMERATE, get_time: Callable[[], int] = None) -> GenericAnimCounter:
@@ -122,24 +123,6 @@ class GenericAnimCounter():
         """stupid compatability getter, replace this with all haste"""
         return self.get()
 
-
-class GenericEdgeCounter():
-    def __init__(self, times: List[int]):
-        self.count = 0
-        self.last_update = 0
-        self.times = times
-
-    def update(self, current_time):
-        if self.count < len(self.times):
-            if current_time - self.last_update > self.times[self.count]:
-                self.count += 1
-                self.last_update = current_time
-                return True
-        return False
-
-    def reset(self):
-        self.count = 0
-        self.last_update = 0
 
 class movement_counter():
     def __init__(self):

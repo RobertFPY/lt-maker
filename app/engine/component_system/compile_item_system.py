@@ -30,6 +30,7 @@ ITEM_HOOKS: Dict[str, HookInfo] = {
     'can_attack_after_combat':                         HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'simple_target_restrict':                          HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'force_map_anim':                                  HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'map_cast_pose':                                   HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'ignore_line_of_sight':                            HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'ignore_fog_of_war':                               HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
     # default true, return false if any component returns false

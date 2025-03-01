@@ -3,7 +3,7 @@ from functools import partial
 from typing import Any, Dict
 
 from PyQt5.QtCore import Qt, QSize, pyqtSignal
-from PyQt5.QtGui import QColor, QIcon, QPalette
+from PyQt5.QtGui import QColor, QIcon, QPalette, QFont
 from PyQt5.QtWidgets import (QApplication, QDoubleSpinBox, QHBoxLayout,
                              QLabel, QLineEdit, QListWidgetItem,
                              QSpinBox, QToolButton, QVBoxLayout, QWidget)

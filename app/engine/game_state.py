@@ -7,6 +7,7 @@ from collections import Counter
 from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Tuple
 
 from app.engine.query_engine import GameQueryEngine
+from app.engine.utils import ltcache
 from app.utilities.primitive_counter import PrimitiveCounter
 
 if TYPE_CHECKING:
@@ -148,11 +149,13 @@ class GameState():
         self.target_system: TargetSystem = None
         self.path_system: PathSystem = None
 
+        # initialize game cache
+        ltcache.init()
+
         self.clear()
 
     def on_alter_game_state(self):
-        from app.engine import skill_system
-        skill_system.reset_cache()
+        ltcache.alter_state()
 
     def clear(self):
         self.game_vars = PrimitiveCounter()
@@ -759,7 +762,7 @@ class GameState():
     @property
     def rng_mode(self) -> RNGOption:
         """
-        Gets which RNG Option the game is currently using. 
+        Gets which RNG Option the game is currently using.
         If none have been set, falls back to the DifficultyModePrefab's RNG option
 
         Returns:

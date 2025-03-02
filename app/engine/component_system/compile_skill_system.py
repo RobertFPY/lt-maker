@@ -166,7 +166,7 @@ def generate_skill_hook_str(hook_name: str, hook_info: HookInfo):
 """.format(hook_name=hook_name, args=', '.join(args))
     if hook_info.is_cached:
         cache_handling = """
-@lru_cache(65535)"""
+@ltcached"""
 
     func_text = """{cache_handling}
 def {hook_name}({func_signature}):
@@ -204,20 +204,10 @@ def compile_skill_system():
     # copy skill system base
     for line in skill_system_base.readlines():
         compiled_skill_system.write(line)
-        
-    cache_func_text = """
-def reset_cache():
-    condition.cache_clear()
-"""
 
     for hook_name, hook_info in SKILL_HOOKS.items():
         func = generate_skill_hook_str(hook_name, hook_info)
         compiled_skill_system.write(func)
-        if hook_info.is_cached:
-            cache_func_text += '    ' + hook_name + """.cache_clear()
-"""
-
-    compiled_skill_system.write(cache_func_text)
 
     skill_system_base.close()
     compiled_skill_system.close()

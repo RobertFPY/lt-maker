@@ -1,9 +1,9 @@
 from __future__ import annotations
-from functools import lru_cache
 
 from typing import TYPE_CHECKING
 
 from app.engine.component_system import utils
+from app.engine.utils.ltcache import ltcached
 
 if TYPE_CHECKING:
     from app.engine.objects.item import ItemObject
@@ -162,8 +162,9 @@ class Defaults():
     def thracia_critical_multiplier_formula(unit) -> str:
         return 'THRACIA_CRIT'
 
-@lru_cache(65535)
+@ltcached
 def condition(skill, unit: UnitObject, item=None) -> bool:
+    # print('Checking condition for', skill, unit, item)
     if not item:
         item = unit.equipped_weapon
     for component in skill.components:

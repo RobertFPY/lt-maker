@@ -38,11 +38,11 @@ def ltcached(func):
     func = functools.lru_cache()(func)
     prev_state = get_state()
     @functools.wraps(func)
-    def wrapper(*args):
+    def wrapper(*args, **kwargs):
         nonlocal prev_state
         curr_state = get_state()
         if curr_state != prev_state:
             func.cache_clear()
             prev_state = curr_state
-        return func(*args)
+        return func(*args, **kwargs)
     return wrapper

@@ -23,6 +23,10 @@ In order to have your in-game dialog between characters or between the narrator 
 
 `{gt}`: Adds a `>`
 
+`{lcb}`: Adds a `{`
+
+`{rcb}`: Adds a `}`
+
 `{tgs}`: Toggles whether the speaking sound occurs.
 
 `{tgm}`: Toggles whether the portrait's mouth will move while talking.

@@ -156,11 +156,10 @@ class ChangeVariant(SkillComponent):
 
 class ChangeAnimation(SkillComponent):
     nid = 'change_animation'
-    desc = "Change the unit's animation"
+    desc = "Change the unit's animation to the specified NID"
     tag = SkillTags.AESTHETIC
 
-    expose = ComponentType.String
-    value = ''
+    expose = ComponentType.CombatAnimation
 
     def change_animation(self, unit):
         return self.value

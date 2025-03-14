@@ -479,6 +479,19 @@ class MapAnimationItemComponent(BoolItemComponent):
         self.editor.currentTextChanged.connect(self.on_value_changed)
         hbox.addWidget(self.editor)
 
+class CombatAnimationItemComponent(BoolItemComponent):
+    def create_editor(self, hbox):
+        self.editor = ComboBox(self)
+        for combat_anim in RESOURCES.combat_anims.values():
+            self.editor.addItem(combat_anim.nid)
+        width = utils.clamp(self.editor.minimumSizeHint().width(
+        ) + DROP_DOWN_BUFFER, MIN_DROP_DOWN_WIDTH, MAX_DROP_DOWN_WIDTH)
+        self.editor.setMaximumWidth(width)
+        if not self._data.value and RESOURCES.combat_anims:
+            self._data.value = RESOURCES.combat_anims[0].nid
+        self.editor.setValue(self._data.value)
+        self.editor.currentTextChanged.connect(self.on_value_changed)
+        hbox.addWidget(self.editor)
 
 class EffectAnimationItemComponent(BoolItemComponent):
     def create_editor(self, hbox):
@@ -647,6 +660,8 @@ def get_display_widget(component, parent):
         c = SkillItemComponent(component, parent)
     elif component.expose == ComponentType.MapAnimation:
         c = MapAnimationItemComponent(component, parent)
+    elif component.expose == ComponentType.CombatAnimation:
+        c = CombatAnimationItemComponent(component, parent)
     elif component.expose == ComponentType.EffectAnimation:
         c = EffectAnimationItemComponent(component, parent)
     elif component.expose == ComponentType.Equation:

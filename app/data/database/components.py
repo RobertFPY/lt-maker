@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import copy
-from enum import Enum, IntEnum
+from enum import Enum
 from typing import Any, List, Optional, Tuple
 
 from app.utilities import str_utils
@@ -32,15 +32,15 @@ class ComponentType(Enum):
     CombatAnimation = 21  # Stored as Nid
     EffectAnimation = 22  # Stored as Nid
     Affinity = 23  # Stored as Nid
-    Terrain = 24 # stored as Nid
+    Terrain = 24  # stored as Nid
     Event = 80
     List = 100  # List containing Items
     Dict = 101  # List of Tuples of [Item, integer]
     FloatDict = 102  # List of Tuples of [Item, float]
-    MultipleChoice = 103 # item is a string value from a number of choices
-    MultipleOptions = 104 # Deprecated
+    MultipleChoice = 103  # item is a string value from a number of choices
+    MultipleOptions = 104  # Deprecated
     StringDict = 105  # List of Tuples of [Item, str]
-    NewMultipleOptions = 106 # item is a dict of string options with types that can be individually configured
+    NewMultipleOptions = 106  # item is a dict of string options with types that can be individually configured
 
 
 def convert_type_from_string(tstr: str, ttype: ComponentType):

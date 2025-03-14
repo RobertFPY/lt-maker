@@ -885,18 +885,20 @@ def get_battle_anim(unit, item, distance=1, klass=None, default_variant=False, a
     # Find the right combat animation
     if klass:
         class_obj = DB.classes.get(klass)
+        combat_anim_nid = class_obj.combat_anim_nid
     else:
-        class_obj = DB.classes.get(skill_system.change_animation(unit))
-    combat_anim_nid = class_obj.combat_anim_nid
+        combat_anim_nid = skill_system.change_animation(unit)
     if default_variant:
         use_variant = unit.variant
     else:
         use_variant = skill_system.change_variant(unit)
     if combat_anim_nid and use_variant:
-        combat_anim_nid += use_variant
-    res = RESOURCES.combat_anims.get(combat_anim_nid)
+        modified_combat_anim_nid = combat_anim_nid + use_variant
+    else:
+        modified_combat_anim_nid = combat_anim_nid
+    res = RESOURCES.combat_anims.get(modified_combat_anim_nid)
     if not res:  # Try without unit variant
-        res = RESOURCES.combat_anims.get(class_obj.combat_anim_nid)
+        res = RESOURCES.combat_anims.get(combat_anim_nid)
     if not res:
         return None
 

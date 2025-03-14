@@ -814,11 +814,11 @@ def change_bg_tilemap(self: Event, tilemap=None, flags=None):
 
 def set_game_board_bounds(self: Event, min_x: int, min_y: int, max_x: int, max_y: int, flags=None):
     if not self.game.board:
-        self.logger.warning("set_game_board_bounds: No game board available")
+        self.logger.error("set_game_board_bounds: No game board available")
     elif max_x <= min_x:
-        self.logger.warning("set_game_board_bounds: MaxX must be strictly greater than MinX, (MinX: %d, MaxX: %d)", min_x, max_x)
+        self.logger.error("set_game_board_bounds: MaxX must be strictly greater than MinX, (MinX: %d, MaxX: %d)", min_x, max_x)
     elif max_y <= min_y:
-        self.logger.warning("set_game_board_bounds: MaxY must be strictly greater than MinY, (MinY: %d, MaxY: %d)", min_y, max_y)
+        self.logger.error("set_game_board_bounds: MaxY must be strictly greater than MinY, (MinY: %d, MaxY: %d)", min_y, max_y)
     else:
         bounds = (min_x, min_y, max_x, max_y)
         action.do(action.SetGameBoardBounds(bounds))

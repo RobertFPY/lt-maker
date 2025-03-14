@@ -374,7 +374,11 @@ class Event():
         parameters, flags = command.parameters, command.chosen_flags
         parameters = {str_utils.camel_to_snake(k): v for k, v in parameters.items()}
         self.logger.debug("%s, %s", parameters, flags)
+        if 'no_warn' in flags:  # Disable all logging up to warning
+            logging.disable(logging.WARNING)
         get_catalog()[command.nid](self, **parameters, flags=flags)
+        if 'no_warn' in flags:  # Reenable all logging
+            logging.disable(logging.NOTSET)
 
     def _object_to_str(self, obj) -> str:
         if hasattr(obj, 'uid'):

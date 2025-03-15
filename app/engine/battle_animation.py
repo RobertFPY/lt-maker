@@ -879,6 +879,7 @@ def get_palette(anim_prefab: CombatAnimation, unit) -> tuple:
     return palette_name, current_palette
 
 def get_battle_anim(unit, item, distance=1, klass=None, default_variant=False, allow_transform=False, allow_revert=False) -> BattleAnimation:
+    # klass is when you want to force a class (promotion, for instance)
     # Some items never want to have a battle anim
     if item_system.force_map_anim(unit, item):
         return False
@@ -888,6 +889,8 @@ def get_battle_anim(unit, item, distance=1, klass=None, default_variant=False, a
         combat_anim_nid = class_obj.combat_anim_nid
     else:
         combat_anim_nid = skill_system.change_animation(unit)
+        if not combat_anim_nid:
+            combat_anim_nid = DB.classes.get(unit.klass).combat_anim_nid
     if default_variant:
         use_variant = unit.variant
     else:

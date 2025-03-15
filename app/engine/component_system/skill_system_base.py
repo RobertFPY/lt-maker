@@ -72,7 +72,7 @@ class Defaults():
 
     @staticmethod
     def change_animation(unit) -> str:
-        return unit.klass
+        return None
 
     @staticmethod
     def change_ai(unit) -> str:

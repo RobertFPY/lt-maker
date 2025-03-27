@@ -1013,7 +1013,7 @@ class InfoMenuState(State):
         # Menu background
         menu_surf = engine.create_surface((WINWIDTH - 96, WINHEIGHT), transparent=True)
 
-        text_parser = TextEvaluator(logging.getLogger(), game)
+        text_parser = TextEvaluator(logging.getLogger(), game, self.unit)
         my_notes = self.unit.notes
 
         if my_notes:

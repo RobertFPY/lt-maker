@@ -1,6 +1,6 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QPlainTextEdit
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QFontMetrics
 from app.editor.settings import MainSettingsController
 from app.editor.event_editor.py_syntax import PythonHighlighter
 
@@ -29,6 +29,31 @@ class CodeLineEdit(QPlainTextEdit):
         settings = MainSettingsController()
         if settings.get_code_font_in_boxes():
             self.setFont(QFont(settings.get_code_font()))
+
+        self.textChanged.connect(self._clamp_scroll)
+        self._clamp_scroll() # just to be sure
+
+    def _get_max_width(self):
+        metrics = QFontMetrics(self.font())
+        # easier on the eyes with +5
+        return (metrics.horizontalAdvance(self.toPlainText()) + 5) if self.toPlainText() else 0
+
+    def _clamp_scroll(self):
+        """ Dynamically adjusts the horizontal scroll range while preserving cursor position. """
+        max_width = self._get_max_width()
+        scroll_bar = self.horizontalScrollBar()
+        current_value = scroll_bar.value()
+
+        # adjust max but preserve relative position
+        scroll_bar.setMaximum(max(0, max_width - self.viewport().width()))
+
+        # shift scroll only if user is at the end? ugh
+        if current_value >= scroll_bar.maximum() - 5:  
+            scroll_bar.setValue(scroll_bar.maximum())
+        
+    def scrollContentsBy(self, dx, dy):
+        self.verticalScrollBar().setValue(0)
+        super().scrollContentsBy(dx, 0) # explicitly no vertical scrolling
 
     def keyPressEvent(self, event):
         if event.key() in (Qt.Key_Enter, Qt.Key_Return):

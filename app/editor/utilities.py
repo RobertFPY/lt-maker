@@ -52,10 +52,16 @@ def color_convert(image, conversion_dict):
     num_colors = new_image.colorCount()
     if num_colors > 192:
         return color_convert_slow(image, conversion_dict)
+    # Figure out what color conversions to make
+    color_conv = {}
     for old_color, new_color in conversion_dict.items():
         for i in range(new_image.colorCount()):
             if new_image.color(i) == old_color:
-                new_image.setColor(i, new_color)
+                color_conv[i] = new_color
+    # Actually make them
+    # Got to do this so swapped colors don't just replace all of one of the color with the second color swapped
+    for i, new_color in color_conv.items():
+        new_image.setColor(i, new_color)
     return new_image.convertToFormat(QtGui.QImage.Format_RGB32)
 
 def color_convert_pixmap(pixmap: QtGui.QPixmap, convert_dict: dict) -> QtGui.QPixmap:

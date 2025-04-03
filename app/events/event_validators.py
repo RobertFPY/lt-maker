@@ -376,9 +376,9 @@ class WholeNumber(Integer):
         return int(text)
 
 class Time(Integer):
-    desc = "indicates a duration"
+    desc = "Indicates a duration"
 class Volume(Float):
-    desc = "A number between greater than 0 (0 is muted, 1 is current volume)"
+    desc = "A number between 0 and 1 (0 is muted, 1 is current volume)"
 
 class String(Validator):
     """

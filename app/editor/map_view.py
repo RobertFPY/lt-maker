@@ -29,6 +29,7 @@ class SimpleMapView(QGraphicsView):
     position_moved = pyqtSignal(int, int)
 
     position_clicked_float = pyqtSignal(float, float)
+    position_right_clicked_float = pyqtSignal(float, float)
 
     def __init__(self, window=None):
         super().__init__()
@@ -142,6 +143,7 @@ class SimpleMapView(QGraphicsView):
         if self.current_map and self.current_map.check_bounds(pos):
             if(event.buttons() == Qt.RightButton):
                 self.position_right_clicked.emit(*pos)
+                self.position_right_clicked_float.emit(*pos_float)
             else:
                 self.position_clicked.emit(*pos)
                 self.position_clicked_float.emit(*pos_float)

@@ -617,6 +617,7 @@ class ShowMapDialog(QDialog):
         self.map_view = SimpleMapView(self)
         self.map_view.position_clicked.connect(self.position_clicked)
         self.map_view.position_moved.connect(self.position_moved)
+        self.map_view.position_right_clicked_float.connect(self.position_right_clicked_float)
         if self.current_level:
             self.map_view.set_current_level(self.current_level)
         else:
@@ -648,6 +649,9 @@ class ShowMapDialog(QDialog):
 
     def position_clicked(self, x, y):
         self.window.insert_text("%d,%d" % (x, y))
+
+    def position_right_clicked_float(self, x: float, y: float):
+        self.window.insert_text("%0.1f,%0.1f" % (x, y))
 
     def position_moved(self, x, y):
         if x >= 0 and y >= 0:

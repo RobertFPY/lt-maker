@@ -101,7 +101,8 @@ class EventPortrait():
     def desaturate(self):
         self.saturation_direction = -1
 
-    def bop(self, num=2, height=2):
+    def bop(self, num: int = 2, height: int = 2, speed: int = utils.frames2ms(8)):
+        self.bop_time = speed
         self.bops_remaining = num
         self.bop_state = False
         self.bop_height = height

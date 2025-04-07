@@ -490,10 +490,15 @@ class BopPortrait(EventCommand):
     desc = \
         """
 Causes a portrait to briefly bob up and down. Often used to illustrate a surprised or shocked reaction.
+
+*NumBops* determines how many bops to perform, and defaults to 2 bops in a row. 
+*Time* controls how long each bop will take. By default, this is 132 ms.
 If the *no_block* flag is set, portrait bopping will not pause execution of event script.
         """
 
     keywords = ['Portrait']
+    optional_keywords = ['NumBops', 'Time']
+    keyword_types = ['Portrait', 'PositiveInteger', 'Time']
     _flags = ["no_block"]
 
 class MirrorPortrait(EventCommand):

@@ -259,7 +259,7 @@ def generate_pyev1_completions(line: str, level_nid: NID) -> List[CompletionEntr
         arg_validator = event_validators.get(command_t.get_validator_from_keyword(arg_name))
         completions = []
         if arg_validator:
-            valids = arg_validator(DB, RESOURCES).valid_entries(level_nid)
+            valids = arg_validator(DB, RESOURCES).valid_entries(level_nid, arg)
             completions += [create_completion(nid, name) for name, nid in valids]
         # add positional args only if we're likely searching for them
         if not as_tokens.tokens[-1] or as_tokens.tokens[-1].isalpha():

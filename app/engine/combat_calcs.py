@@ -157,7 +157,7 @@ def accuracy(unit, item=None):
     accuracy = int(accuracy)
 
     if DB.constants.value('lead'):
-        stars = sum(u.stats.get('LEAD', 0) for u in game.get_all_units() if u.team == unit.team)
+        stars = sum(u.get_stat('LEAD') for u in game.get_all_units() if u.team == unit.team)
         accuracy += stars * equations.parser.get('LEAD_HIT', unit)
 
     accuracy += item_system.modify_accuracy(unit, item)
@@ -183,7 +183,7 @@ def avoid(unit, item, item_to_avoid=None):
     avoid = int(avoid)
 
     if DB.constants.value('lead'):
-        target_stars = sum(u.stats.get('LEAD', 0) for u in game.get_all_units() if u.team == unit.team)
+        target_stars = sum(u.get_stat('LEAD') for u in game.get_all_units() if u.team == unit.team)
         avoid += target_stars * equations.parser.get('LEAD_AVOID', unit)
 
     if item:

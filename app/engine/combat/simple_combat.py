@@ -241,8 +241,8 @@ class SimpleCombat():
         skill_system.end_combat(self.full_playback, self.attacker, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
         item_system.end_combat(self.full_playback, self.attacker, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
         if self.attacker.strike_partner:
-            skill_system.end_combat(self.full_playback, self.attacker.strike_partner, self.attacker.strike_partner.get_weapon(), self.defender, self.defender.get_weapon(), 'attack')
-            item_system.end_combat(self.full_playback, self.attacker.strike_partner, self.attacker.strike_partner.get_weapon(), self.defender, self.defender.get_weapon(), 'attack')
+            skill_system.end_combat(self.full_playback, self.attacker.strike_partner, self.attacker.strike_partner.get_weapon(), self.defender, resolve_weapon(self.defender), 'attack')
+            item_system.end_combat(self.full_playback, self.attacker.strike_partner, self.attacker.strike_partner.get_weapon(), self.defender, resolve_weapon(self.defender), 'attack')
             self.attacker.strike_partner = None
         if self.defender:
             if self.defender.strike_partner:

@@ -68,7 +68,7 @@ def get_formatted_stat_pages() -> List[Tuple[str, List[Column]]]:
     for idx, stat in enumerate(get_all_character_stats()):
         new_character_stat_page.append(
             # truncate the name to 5 digits
-            Column('16%', stat.name[:5], uif.HAlignment.RIGHT, None, lambda unit, nid=stat.nid: unit.get_stat(nid), None,
+            Column('16%', stat.name, uif.HAlignment.RIGHT, None, lambda unit, nid=stat.nid: unit.get_stat(nid), None,
                    get_font=(lambda unit, nid=stat.nid: 'text-blue' if unit.get_stat(nid) < unit.get_stat_cap(nid) else 'text-yellow'))
         )
         if len(new_character_stat_page) == 6 or idx == len(get_all_character_stats()) - 1:

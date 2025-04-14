@@ -120,6 +120,8 @@ class HelpDialog():
             pos = (WINWIDTH - self.help_surf.get_width() - 8, pos[1])
         if pos[1] + self.help_surf.get_height() >= WINHEIGHT:
             pos = (pos[0], max(0, pos[1] - self.help_surf.get_height() - 16))
+        if pos[0] < 0:
+            pos = (0, pos[1])
         return pos
 
     def final_draw(self, surf, pos, time, help_surf):
@@ -218,6 +220,7 @@ class StatDialog(HelpDialog):
         surf = self.final_draw(surf, self.top_left(pos, right), time, help_surf)
         return surf
 
+ITEM_HELP_WIDTH = 160
 
 class ItemHelpDialog(HelpDialog):
     text_font: NID = 'text'
@@ -255,7 +258,7 @@ class ItemHelpDialog(HelpDialog):
                 self.item.desc,
                 unit=self.unit,
                 self=self.item)
-            self.build_lines(desc, 144)
+            self.build_lines(desc, ITEM_HELP_WIDTH)
         else:
             self.lines = []
 
@@ -268,8 +271,8 @@ class ItemHelpDialog(HelpDialog):
 
         self.create_dialog(desc)
 
-        self.help_surf = base_surf.create_base_surf(160, height, 'help_bg_base')
-        self.h_surf = engine.create_surface((160, height + 3), transparent=True)
+        self.help_surf = base_surf.create_base_surf(ITEM_HELP_WIDTH, height, 'help_bg_base')
+        self.h_surf = engine.create_surface((ITEM_HELP_WIDTH, height + 3), transparent=True)
 
     def create_dialog(self, desc):
         if desc:
@@ -277,7 +280,7 @@ class ItemHelpDialog(HelpDialog):
             desc = desc.replace('\n', '{br}')
             self.dlg = \
                 dialog.Dialog.from_style(game.speak_styles.get('__default_help'), desc,
-                                         width=160)
+                                         width=ITEM_HELP_WIDTH)
             y_height = 32 if self.num_present > 3 else 16
             self.dlg.position = (0, y_height)
         else:

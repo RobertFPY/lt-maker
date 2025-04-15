@@ -257,17 +257,20 @@ def toggle_narration_mode(self: Event, direction, speed=None, flags=None):
         narration_component: NarrationDialogue = self.overlay_ui.get_child('event_narration')
 
     # animate in or out
-    if not self.do_skip:
-        if toggle_which == 'open':
-
-            narration_component.enter()
-            self.wait_time = engine.get_time() + anim_duration
-            self.state = 'waiting'
+    if toggle_which == 'open':
+        if self.do_skip:
+            narration_component.quick_enter()
         else:
-            narration_component: NarrationDialogue = self.overlay_ui.get_child('event_narration')
+            narration_component.enter()
+        self.wait_time = engine.get_time() + anim_duration
+        self.state = 'waiting'
+    else:
+        if self.do_skip:
+            narration_component.quick_exit()
+        else:
             narration_component.exit()
-            self.wait_time = engine.get_time() + anim_duration
-            self.state = 'waiting'
+        self.wait_time = engine.get_time() + anim_duration
+        self.state = 'waiting'
 
 
 def narrate(self: Event, speaker, string, flags=None):

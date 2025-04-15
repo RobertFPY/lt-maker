@@ -253,38 +253,37 @@ class ItemHelpDialog(HelpDialog):
         self.vals = [weapon_rank, rng, weight, might, hit, crit]
 
         desc = self.item.desc
-        if self.item.desc:
-            desc = text_funcs.translate_and_text_evaluate(
-                self.item.desc,
-                unit=self.unit,
-                self=self.item)
-            self.build_lines(desc, ITEM_HELP_WIDTH)
-        else:
-            self.lines = []
 
         self.num_present = len([v for v in self.vals if v is not None])
 
-        if self.num_present > 3:
-            height = 48 + font_height(self.font) * len(self.lines)
+        self.dlg = self.create_dialog(desc)
+        fake_dlg = self.create_dialog(desc)
+        if fake_dlg:
+            fake_dlg.warp_speed()
+            num_lines = len(fake_dlg.text_indices)
         else:
-            height = 32 + font_height(self.font) * len(self.lines)
+            num_lines = 0
 
-        self.create_dialog(desc)
+        if self.num_present > 3:
+            height = 48 + font_height(self.font) * num_lines
+        else:
+            height = 32 + font_height(self.font) * num_lines
 
         self.help_surf = base_surf.create_base_surf(ITEM_HELP_WIDTH, height, 'help_bg_base')
         self.h_surf = engine.create_surface((ITEM_HELP_WIDTH, height + 3), transparent=True)
 
-    def create_dialog(self, desc):
+    def create_dialog(self, desc: str):
         if desc:
             from app.engine import dialog
             desc = desc.replace('\n', '{br}')
-            self.dlg = \
+            dlg = \
                 dialog.Dialog.from_style(game.speak_styles.get('__default_help'), desc,
                                          width=ITEM_HELP_WIDTH)
             y_height = 32 if self.num_present > 3 else 16
-            self.dlg.position = (0, y_height)
+            dlg.position = (0, y_height)
         else:
-            self.dlg = None
+            dlg = None
+        return dlg
 
     def build_lines(self, desc, width):
         if not desc:

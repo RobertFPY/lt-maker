@@ -9,7 +9,7 @@ from app.engine.game_state import game
 from app.engine.graphics.text.text_renderer import (anchor_align, render_text,
                                                     text_width)
 from app.engine.objects.unit import UnitObject
-from app.engine.unit_sprite import UnitSprite
+from app.engine.unit_sprite import UnitSprite, load_klass_sprite
 from app.sprites import SPRITES
 from app.utilities.enums import HAlignment
 from app.utilities.typing import NID
@@ -144,7 +144,9 @@ class BasicKlassOption(BaseOption[str]):
         blit_loc = anchor_align(x, self.width(), self._align, (20, 5)), y
         color = self.get_color()
         # TODO find out how to get sprite from klass
-        # MapSpriteOptionUtils.draw_map_sprite(surf, self._value.sprite, x, y, active)
+        # TODO whatever, this works but is missing stuff people may want - tein
+        # TODO provide interface to define color & unit variant? etc.
+        MapSpriteOptionUtils.draw_map_sprite(surf, load_klass_sprite(self._value, team='player'), x, y, active)
         render_text(surf, [font], [display_text], [color], blit_loc)
 
     def draw(self, surf, x, y):

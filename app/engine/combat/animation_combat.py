@@ -684,9 +684,9 @@ class AnimationCombat(BaseCombat, MockCombat):
         else:
             suffix = '-Melee'
 
-        left_platform_full_loc = RESOURCES.platforms.get(left_platform_type + suffix)
+        left_platform_full_loc = RESOURCES.platforms.get(left_platform_type + suffix, RESOURCES.platforms.get('Arena' + suffix))
         self.left_platform = engine.image_load(left_platform_full_loc)
-        right_platform_full_loc = RESOURCES.platforms.get(right_platform_type + suffix)
+        right_platform_full_loc = RESOURCES.platforms.get(right_platform_type + suffix, RESOURCES.platforms.get('Arena' + suffix))
         self.right_platform = engine.flip_horiz(engine.image_load(right_platform_full_loc))
 
         if self.arena_combat:

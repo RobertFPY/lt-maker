@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from app.counters import GenericAnimCounter
 from app.data.database.units import UnitPrefab
@@ -158,10 +158,12 @@ def load_map_sprite(unit: UnitObject | UnitPrefab, team='player'):
         game.map_sprite_registry[map_sprite.nid + '_' + team] = map_sprite
     return map_sprite
 
-def load_klass_sprite(klass_nid: NID, team:NID='player'):
+def load_klass_sprite(klass_nid: NID, team: NID = 'player') -> Optional[MapSprite]:
     klass = DB.classes.get(klass_nid)
     nid = klass.map_sprite_nid
     res = RESOURCES.map_sprites.get(nid)
+    if not res:
+        return None
 
     map_sprite = game.map_sprite_registry.get(res.nid + '_' + team)
     if not map_sprite:

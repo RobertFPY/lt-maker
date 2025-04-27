@@ -146,7 +146,9 @@ class BasicKlassOption(BaseOption[str]):
         # TODO find out how to get sprite from klass
         # TODO whatever, this works but is missing stuff people may want - tein
         # TODO provide interface to define color & unit variant? etc.
-        MapSpriteOptionUtils.draw_map_sprite(surf, load_klass_sprite(self._value, team='player'), x, y, active)
+        base_sprite: UnitSprite = load_klass_sprite(self._value, team='player')
+        if base_sprite:
+            MapSpriteOptionUtils.draw_map_sprite(surf, base_sprite, x, y, active)
         render_text(surf, [font], [display_text], [color], blit_loc)
 
     def draw(self, surf, x, y):

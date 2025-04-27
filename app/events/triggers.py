@@ -204,6 +204,17 @@ class DuringUnitLevelUp(EventTrigger):
     source: str #: One of ('exp_gain', 'stat_change', 'class_change', 'promote') describing how the unit got to this screen.
 
 @dataclass(init=True)
+class UnitWeaponRankUp(EventTrigger):
+    """
+    Occurs whenever a unit gains a weapon rank.
+    """
+    nid: ClassVar[NID] = 'unit_weapon_rank_up'
+    unit: UnitObject #: the unit that increased in weapon rank.
+    weapon_type: NID #: nid of weapon type object
+    old_wexp: int #: old wexp before gaining wexp
+    rank: str #: new weapon rank by letter
+
+@dataclass(init=True)
 class CombatStart(EventTrigger):
     """
     Occurs when non-scripted combat is begun between any two units. Useful for boss quotes.

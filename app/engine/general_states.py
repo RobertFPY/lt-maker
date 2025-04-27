@@ -710,25 +710,23 @@ class MoveState(MapState):
             pass
 
         elif event == 'BACK':
-            get_sound_thread().play_sfx('Select 4')
-            game.cursor.set_pos(cur_unit.position)
-            game.state.clear()
-            game.state.change('free')
             if cur_unit.has_attacked or cur_unit.has_traded:
-                if not cur_unit.finished:
-                    cur_unit.wait()
+                get_sound_thread().play_sfx('Error')
             else:
+                get_sound_thread().play_sfx('Select 4')
+                game.cursor.set_pos(cur_unit.position)
+                game.state.clear()
+                game.state.change('free')
                 cur_unit.sprite.change_state('normal')
-            game.events.trigger(triggers.UnitDeselect(cur_unit, cur_unit.position))
+                game.events.trigger(triggers.UnitDeselect(cur_unit, cur_unit.position))
 
         elif event == 'SELECT':
             if game.cursor.position == cur_unit.position:
                 if cur_unit.has_attacked or cur_unit.has_traded:
-                    get_sound_thread().play_sfx('Select 2')
-                    game.state.clear()
-                    game.state.change('free')
-                    if not cur_unit.finished:
-                        cur_unit.wait()
+                    # Just move in place
+                    cur_unit.current_move = action.CantoMove(cur_unit, game.cursor.position)
+                    action.execute(cur_unit.current_move)
+                    game.state.change('canto_wait')
                 else:
                     # Just move in place
                     cur_unit.current_move = action.Move(cur_unit, game.cursor.position)
@@ -800,19 +798,60 @@ class CantoWaitState(MapState):
     def start(self):
         get_sound_thread().play_sfx('Select 2')
         self.cur_unit = game.cursor.cur_unit
-        self.menu = menus.Choice(self.cur_unit, ['Wait'])
+
+        options = ['Wait']
+        info_descs = ['Wait_desc']
+        
+        # Handle Supply Ability
+        targets = SupplyAbility.targets(self.cur_unit)
+        if targets:
+            options.insert(0, 'Supply')
+            info_descs.insert(0, 'Supply_desc')
+
+        self.menu = menus.Choice(self.cur_unit, options, info=info_descs)
+        self.menu.set_color(['green' if option == 'Supply' else None for option in options])
 
     def begin(self):
         self.cur_unit.sprite.change_state('selected')
 
     def take_input(self, event):
-        if event == 'INFO':
-            pass
+        first_push = self.fluid.update()
+        directions = self.fluid.get_directions()
+
+        self.menu.handle_mouse()
+        if 'DOWN' in directions:
+            if self.menu.move_down(first_push):
+                get_sound_thread().play_sfx('Select 6')
+        elif 'UP' in directions:
+            if self.menu.move_up(first_push):
+                get_sound_thread().play_sfx('Select 6')
+                
+        elif event == 'INFO':
+            if self.menu.info_flag:
+                get_sound_thread().play_sfx('Info Out')
+                self.menu.info_flag = False
+            else:
+                selection = self.menu.get_current()
+                # Show info menu for Wait
+                if selection in ('Wait'):
+                    _handle_info()
+                else:  # Show description for everything else.
+                    get_sound_thread().play_sfx('Info In')
+                    self.menu.info_flag = True
 
         elif event == 'SELECT':
-            game.state.clear()
-            game.state.change('free')
-            self.cur_unit.wait()
+            selection = self.menu.get_current()
+            logging.info("In CantoWait State: Player selected %s", selection)
+            game.highlight.remove_highlights()
+
+            if selection == 'Supply':
+                game.memory['current_unit'] = self.cur_unit
+                game.memory['next_state'] = 'supply_items'
+                game.state.change('transition_to')
+            elif selection == 'Wait':
+                game.state.clear()
+                game.state.change('free')
+                self.cur_unit.wait(actively_chosen=True)
 
         elif event == 'BACK':
             if self.cur_unit.current_move:

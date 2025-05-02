@@ -2932,9 +2932,9 @@ def choice(self: Event, nid: NID, title: str, choices: TableRows, row_width: int
 
     # Automatically convert str to alignment, orientation
     if isinstance(orientation, str):
-        if orientation.lower() in ('h', 'horiz'):
+        if orientation.lower() in ('h', 'horiz', 'horizontal'):
             orientation = 'horizontal'
-        elif orientation.lower() in ('v', 'vert'):
+        elif orientation.lower() in ('v', 'vert', 'vertical'):
             orientation = 'vertical'
         orientation = Orientation(orientation)
     if isinstance(alignment, str):

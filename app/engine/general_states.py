@@ -2293,6 +2293,7 @@ class CombatTargetingState(MapState):
                 ignore = [not item_system.item_restrict(self.cur_unit, self.item, target_unit, item) for item in target_unit.items]
                 game.ui_view.draw_trade_preview(target_unit, surf, ignore)
             elif item_system.is_weapon(self.cur_unit, self.item):
+                self.find_strike_partners(game.cursor.position, atk=False)
                 game.ui_view.draw_attack_info(surf, self.cur_unit, self.item, target_unit, self.attacker_assist, self.defender_assist)
             else:
                 game.ui_view.draw_spell_info(surf, self.cur_unit, self.item, target_unit)

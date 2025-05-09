@@ -731,7 +731,7 @@ class MoveState(MapState):
                     game.state.change('canto_wait')
                 else:
                     # Just move in place
-                    action.do(action.MarkActionGroupStart('free'))
+                    action.do(action.MarkActionGroupStart(cur_unit, 'free'))
                     cur_unit.current_move = action.Move(cur_unit, game.cursor.position)
                     action.execute(cur_unit.current_move)
                     game.state.change('menu')

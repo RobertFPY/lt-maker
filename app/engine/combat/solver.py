@@ -448,6 +448,10 @@ class CombatPhaseSolver():
         unclamped_hit = combat_calcs.compute_hit(attacker, defender, item, def_item, mode, attack_info, clamp_hit=False)
         if game.rng_mode == RNGOption.FATES_HIT:
             to_hit = self.calculate_fates_hit(utils.clamp(unclamped_hit, 0, 100))
+            # Recalculate unclamped hit so it matches fates to_hit
+            # Otherwise, unclamped hit could be 75 when fates to_hit is 85, which ruins
+            # the glancing hit calculation below.
+            unclamped_hit = self.calculate_fates_hit(unclamped_hit)
         else:
             to_hit = utils.clamp(unclamped_hit, 0, 100)
 

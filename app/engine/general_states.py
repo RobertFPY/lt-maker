@@ -860,7 +860,7 @@ class CantoWaitState(MapState):
 
         elif event == 'BACK':
             if self.cur_unit.current_move:
-                game.action_log.reverse_move_to_action_start(self.cur_unit.current_move)
+                game.action_log.reverse_move_to_action_group_start(self.cur_unit.current_move)
                 self.cur_unit.current_move = None
                 game.cursor.set_pos(self.cur_unit.position)
             game.state.back()
@@ -1045,7 +1045,7 @@ class MenuState(MapState):
                         game.cursor.cur_unit = u
                     if self.cur_unit.current_move:
                         logging.info("Reversing " + self.cur_unit.nid + "'s move")
-                        game.action_log.reverse_move_to_action_start(self.cur_unit.current_move)
+                        game.action_log.reverse_move_to_action_group_start(self.cur_unit.current_move)
                         self.cur_unit.current_move = None
                     game.state.change('move')
                     game.cursor.construct_arrows(game.cursor.path[::-1])

@@ -448,13 +448,14 @@ def transition(self: Event, direction=None, speed=None, color3=None, panorama=No
             self.wait_time = current_time + int(self.transition_speed * 1.33)
             self.state = 'waiting'
 
-def change_background(self: Event, panorama=None, flags=None):
+def change_background(self: Event, panorama=None, speed=50, flags=None):
     flags = flags or set()
     if not panorama:
         self.background = None
     elif RESOURCES.panoramas.get(panorama):
         if 'scroll' in flags:
             self.background = background.create_background(panorama, True)
+            self.background.scroll_speed = speed
         else:
             self.background = background.create_background(panorama, False)
 

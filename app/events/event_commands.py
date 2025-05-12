@@ -2332,6 +2332,30 @@ Removes the ability for the two indicated units to "Talk" in the current chapter
     keywords = ["Unit1", "Unit2"]
     keyword_types = ["Unit", "Unit"]
 
+class HideTalk(EventCommand):
+    nid = 'hide_talk'
+    tag = Tags.LEVEL_VARS
+
+    desc = \
+        """
+Hides the "Talk" marker from maps matching the Unit1 and Unit2 selected, making it a secret conversation.
+        """
+
+    keywords = ["Unit1", "Unit2"]
+    keyword_types = ["Unit", "Unit"]
+
+class UnhideTalk(EventCommand):
+    nid = 'unhide_talk'
+    tag = Tags.LEVEL_VARS
+
+    desc = \
+        """
+Removes the hidden flag for the "Talk" marker from maps matching the Unit1 and Unit2 selected, making it visible again.
+        """
+
+    keywords = ["Unit1", "Unit2"]
+    keyword_types = ["Unit", "Unit"]
+
 class AddLore(EventCommand):
     nid = 'add_lore'
     nickname = 'unlock_lore'

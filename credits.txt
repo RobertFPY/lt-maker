@@ -4,5 +4,9 @@ With additional programming and help from the Lex Talionis Discord server, inclu
 
 Narrow fonts and droppable item icon originally created by Scraiza.
 
+Cynon's Metropolis Autotiles by JaidynReiman, original tileset and map animations by Cynon.
+Village Village Remake + Coconut Tree + Ship Extras Autotiles by JaidynReiman, original tileset and map animations by flasuban, N426, ZoramineFae, Venno.
+Village Remake + Coconut Tree + Ship Extras Autotiles by JaidynReiman, original tileset and map animations by N426.
+
 Lex Talionis is a non-profit engine, released for free, and developed using Python, Pygame, and PyQt5. Some default assets are copyrighted or trademarked by their respective owners.
 

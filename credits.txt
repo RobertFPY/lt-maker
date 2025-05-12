@@ -1,6 +1,6 @@
 Lex Talionis Engine and LT-Maker Editor created by rainlash
 
-With additional programming and help from the Lex Talionis Discord server, including mag, KD, Sigmaraven, TheeBill, Lord Tweed, ZessDynamite, Nemid, Kyogokudo, beccarte, Meinerieve, Greentwip, Klokinator, Sealvester, Joytis, and aorlnn.
+With additional programming and help from the Lex Talionis Discord server, including mag, KD, Sigmaraven, MFHadOuken, Lord Tweed, Eretein, TheeBill, beccarte, aorlnn, ZessDynamite, Nemid, Kyogokudo, Meinerieve, Greentwip, Klokinator, Sealvester, fh720, OmegaX128, GigaExcalibur, JaidynReiman, Kinetic1000, Mustacho'd Capitalist, Lord Jike, Xepher, Hillgarm, Dung, Rasta, Ciro Miranda de Freitas, and Joytis.
 
 Narrow fonts and droppable item icon originally created by Scraiza.
 

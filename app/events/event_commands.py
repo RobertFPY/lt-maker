@@ -703,12 +703,17 @@ class ChangeBackground(EventCommand):
     desc = \
         """
 Changes the dialogue scene's background image to *Panorama*. If no *Panorama* is specified,
-the current background is removed without being replaced.
+the current background is removed without being replaced. 
+
+*Speed* controls the moving speed when paired with *scroll* flag. 
+Higher speed makes it move slower. Exact meaning: milliseconds it takes to move 1 px.
+
 Displayed portraits are also removed unless the *keep_portraits* flag is set.
 The *Scroll* flag determines whether the background image will move.
         """
 
-    optional_keywords = ['Panorama']
+    optional_keywords = ['Panorama', 'Speed']
+    keyword_types = ['Panorama', 'WholeNumber']
     _flags = ["keep_portraits", "scroll"]
 
 class PauseBackground(EventCommand):

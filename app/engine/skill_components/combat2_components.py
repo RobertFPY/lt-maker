@@ -733,7 +733,7 @@ class DevilAxeGBA(SkillComponent):
         playbacks = [p for p in playback if p.nid in (
             'damage_hit', 'damage_crit') and p.defender == defender]
         for p in playbacks:
-            total_damage_dealt += p.true_damage
+            total_damage_dealt += p.damage
             p.defender = attacker
 
         damage = -utils.clamp(total_damage_dealt, 0, attacker.get_hp())

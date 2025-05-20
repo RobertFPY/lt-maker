@@ -2515,8 +2515,8 @@ When set, the *only_once* flag applies only to event region, preventing them fro
         """
 
     keywords = ["Region", "Position", "Size", "RegionType"]
-    optional_keywords = ["String", "TimeLeft"]
-    keyword_types = ["Region", "Position", "Size", "RegionType", "String", "PositiveInteger"]
+    optional_keywords = ["String", "TimeLeft", "HideTime"]
+    keyword_types = ["Region", "Position", "Size", "RegionType", "String", "PositiveInteger", "Bool"]
     _flags = ["only_once", "interrupt_move"]
 
 class RegionCondition(EventCommand):

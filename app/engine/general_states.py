@@ -21,7 +21,7 @@ from app.engine import engine, action, menus, image_mods, \
     banner, save, phase, skill_system, item_system, \
     item_funcs, ui_view, base_surf, gui, background, dialog, \
     text_funcs, equations, evaluate, supports
-from app.engine.combat import interaction
+from app.engine.combat import base_combat, interaction
 from app.engine.selection_helper import SelectionHelper
 from app.engine.abilities import ABILITIES, PRIMARY_ABILITIES, OTHER_ABILITIES, TradeAbility, SupplyAbility
 from app.engine.input_manager import get_input_manager
@@ -2438,6 +2438,18 @@ class CombatState(MapState):
                 surf = super().draw(surf)
         else:
             surf = super().draw(surf)
+
+        # handle drawing the base in a BaseCombat
+        # This must be done to prevent a single frame
+        # of the MapState from poking through
+        # during the frame this combat takes place in
+        if self.combat and type(self.combat) == base_combat.BaseCombat:
+            state_index = game.state.state.index(self)
+            prev_state_index = state_index - 1
+            if prev_state_index >= 0:
+                prev_state = game.state.state[prev_state_index]
+                surf = prev_state.draw(surf)
+
         if self.combat:
             self.combat.draw(surf)
         return surf

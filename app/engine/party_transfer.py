@@ -264,6 +264,10 @@ class PartyTransferState(State):
             #game.state.change('transition_pop')
 
         elif event == 'INFO':
+            if not self.menu.get_current():
+                get_sound_thread().play_sfx('Error')
+                return
+                
             get_sound_thread().play_sfx('Select 1')
             game.memory['scroll_units'] = game.get_units_in_party()
             game.memory['current_unit'] = self.menu.get_current()

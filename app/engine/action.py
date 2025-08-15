@@ -2682,7 +2682,7 @@ class ChangeAIGroup(Action):
     def __init__(self, unit, ai_group):
         self.unit = unit
         self.ai_group = ai_group
-        self.old_ai = self.unit.ai_group
+        self.old_ai_group = self.unit.ai_group
 
     def do(self):
         self.unit.ai_group = self.ai_group

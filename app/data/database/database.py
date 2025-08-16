@@ -111,7 +111,7 @@ class Database(object):
             # logging.info("Time taken: %s ms" % time2)
         return to_save
 
-    def serialize(self, proj_dir, as_chunks:bool=False) -> bool:
+    def serialize(self, proj_dir, as_chunks: bool=False) -> bool:
         # Returns whether we were successful
 
         data_dir = os.path.join(proj_dir, 'game_data')

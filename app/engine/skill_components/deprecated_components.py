@@ -92,3 +92,17 @@ class EvalMaximumRange(SkillComponent):
 
     def has_dynamic_range(sellf, unit):
         return True
+
+class Galeforce(SkillComponent):
+    nid = 'galeforce'
+    desc = "After killing an enemy on player phase, unit can move again."
+    tag = SkillTags.DEPRECATED
+
+    _did_something = False
+
+    def end_combat(self, playback, unit, item, target, item2, mode):
+        mark_playbacks = [p for p in playback if p.nid in ('mark_miss', 'mark_hit', 'mark_crit')]
+        if target and target.get_hp() <= 0 and \
+                any(p.main_attacker is unit for p in mark_playbacks):  # Unit is overall attacker
+            action.do(action.Reset(unit))
+            action.do(action.TriggerCharge(unit, self.skill))

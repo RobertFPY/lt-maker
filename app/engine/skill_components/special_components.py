@@ -134,10 +134,11 @@ class Nihil(SkillComponent):
 
     def pre_combat(self, playback, unit, item, target, item2, mode):
         all_target_nihils = set(self.value)
-        for skill in target.skills:
-            if skill.nid in all_target_nihils:
-                self._condition = False
-                return
+        if target:
+            for skill in target.skills:
+                if skill.nid in all_target_nihils:
+                    self._condition = False
+                    return
         self._condition = True
 
     def post_combat_unconditional(self, playback, unit, item, target, item2, mode):

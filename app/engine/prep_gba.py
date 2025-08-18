@@ -31,7 +31,7 @@ class PrepGBAMainState(State):
         ignore = [True, False, True, False, False]
         events = [None] * len(options)
         info_descs = [text_funcs.translate("prep_gba_%s_desc" % option.replace(' ', '_').lower()) 
-                        for option in options]
+                      for option in options]
 
         # Don't manage units if there's nobody in the party!
         if game.get_units_in_party():
@@ -85,7 +85,7 @@ class PrepGBAMainState(State):
         options, ignore, events_on_options, info_descs = self.populate_options()
         self.events_on_option_select = events_on_options
 
-        self.menu = menus.PrepGBA(options, info_descs, *game.memory.get('prep_gba_disp'))
+        self.menu = menus.PrepGBA(options, info_descs, *game.game_vars.get('_prep_gba_disp'))
         self.menu.set_ignore(ignore)
 
         self.button_surfs = self.create_button_surfs()

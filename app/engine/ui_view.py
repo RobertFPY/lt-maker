@@ -618,6 +618,11 @@ class UIView():
         x2_pos_player_partner = (topleft[0] + 107 + self.x_positions[count], topleft[1] + 38 + self.y_positions[count])
         x2_pos_enemy_partner = (topleft[0] + 20 + self.x_positions[count], topleft[1] + 38 + self.y_positions[count])
 
+        x2_font = 'small-yellow'
+        x2_offset = (0, -4)
+        number_font = 'number_small'
+        number_offset = (6, -2)
+
         num_phases = combat_calcs.compute_attack_phases(attacker, defender, weapon, resolve_weapon(defender), "attack", (0 , 0))
         num_attacks = num_phases
         for attack_phase in range(num_phases):
@@ -628,11 +633,21 @@ class UIView():
             num_attacks = min(num_attacks, weapon.data.get('uses', 100), weapon.data.get('c_uses', 100))
 
         if num_attacks > 1:
-            surf.blit(SPRITES.get("x%d" % (num_attacks)), x2_pos_player)
+            im = SPRITES.get("x%d" % (num_attacks), fallback=None)
+            if im:
+                surf.blit(im, x2_pos_player)
+            else:
+                FONT[x2_font].blit("X", surf, utils.tuple_add(x2_pos_player, x2_offset))
+                FONT[number_font].blit(str(num_attacks), surf, utils.tuple_add(x2_pos_player, number_offset))
 
         if a_assist:
             if num_attacks > 1 and not DB.constants.value('limit_attack_stance'):
-                surf.blit(SPRITES.get("x%d" % (num_attacks)), x2_pos_player_partner)
+                im = SPRITES.get("x%d" % (num_attacks), fallback=None)
+                if im:
+                    surf.blit(im, x2_pos_player_partner)
+                else:
+                    FONT[x2_font].blit("X", surf, utils.tuple_add(x2_pos_player_partner, x2_offset))
+                    FONT[number_font].blit(str(num_attacks), surf, utils.tuple_add(x2_pos_player_partner, number_offset))
 
         # Enemy doubling
         eweapon = defender.get_weapon()
@@ -644,11 +659,21 @@ class UIView():
             e_num_attacks = min(e_num_attacks, eweapon.data.get('uses', 100))
 
             if e_num_attacks > 1:
-                surf.blit(SPRITES.get("x%d" % (e_num_attacks)), x2_pos_enemy)
+                im = SPRITES.get("x%d" % (e_num_attacks), fallback=None)
+                if im:
+                    surf.blit(im, x2_pos_enemy)
+                else:
+                    FONT[x2_font].blit("X", surf, utils.tuple_add(x2_pos_enemy, x2_offset))
+                    FONT[number_font].blit(str(e_num_attacks), surf, utils.tuple_add(x2_pos_enemy, number_offset))
 
             if d_assist:
                 if e_num_attacks > 1 and not DB.constants.value('limit_attack_stance'):
-                    surf.blit(SPRITES.get("x%d" % (e_num_attacks)), x2_pos_enemy_partner)
+                    im = SPRITES.get("x%d" % (e_num_attacks), fallback=None)
+                    if im:
+                        surf.blit(im, x2_pos_enemy_partner)
+                    else:
+                        FONT[x2_font].blit("X", surf, utils.tuple_add(x2_pos_enemy_partner, x2_offset))
+                        FONT[number_font].blit(str(e_num_attacks), surf, utils.tuple_add(x2_pos_enemy_partner, number_offset))
 
         # Turns off combat conditionals
         skill_system.test_off([], defender, resolve_weapon(defender), attacker, weapon, 'defense')

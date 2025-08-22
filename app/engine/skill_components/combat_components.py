@@ -28,7 +28,7 @@ class StatChangeExpression(SkillComponent):
     desc = "Gives stat bonuses based on expression"
     tag = SkillTags.COMBAT
 
-    expose = (ComponentType.StringDict, ComponentType.Stat)
+    expose = (ComponentType.StringDict, ComponentType.StatString)
     value = []
 
     def stat_change(self, unit=None):
@@ -44,7 +44,7 @@ class StatMultiplier(SkillComponent):
     desc = "Gives stat bonuses"
     tag = SkillTags.COMBAT
 
-    expose = (ComponentType.FloatDict, ComponentType.Stat)
+    expose = (ComponentType.FloatDict, ComponentType.StatFloat)
     value = []
 
     def stat_change(self, unit):

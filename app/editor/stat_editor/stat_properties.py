@@ -50,6 +50,11 @@ class StatTypeProperties(QWidget):
         self.growth_colors_box.edit.stateChanged.connect(self.growth_colors_changed)
         self.growth_colors_box.setToolTip(_("Select individually which stat growths will change color based on their value"))
         name_section.addWidget(self.growth_colors_box)
+        
+        self.hidden_stat_box = PropertyCheckBox(_("Hidden Stat"), QCheckBox, self)
+        self.hidden_stat_box.edit.stateChanged.connect(self.hidden_stat_changed)
+        self.hidden_stat_box.setToolTip(_("Whether this stat appears in the unit and class editors"))
+        name_section.addWidget(self.hidden_stat_box)
 
         self.setLayout(name_section)
         name_section.setAlignment(Qt.AlignTop)
@@ -120,12 +125,16 @@ class StatTypeProperties(QWidget):
 
     def growth_colors_changed(self, state):
         self.current.growth_colors = bool(state)
+        
+    def hidden_stat_changed(self, state):
+        self.current.hidden_stat = bool(state)
 
-    def set_current(self, current):
+    def set_current(self, current: StatPrefab):
         self.current = current
         self.nid_box.edit.setText(current.nid)
         self.name_box.edit.setText(current.name)
         self.max_box.edit.setValue(current.maximum)
         self.growth_colors_box.edit.setChecked(bool(current.growth_colors))
+        self.hidden_stat_box.edit.setChecked(bool(current.hidden_stat))
         self.desc_box.edit.setText(current.desc)
         self.position_box.edit.setValue(current.position)

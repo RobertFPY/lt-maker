@@ -96,7 +96,7 @@ class StatListWidget(QWidget):
 
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-        column_titles = DB.stats.keys()
+        column_titles = list(DB.stats.get_visible_stats().keys())
         if obj:
             row_titles = obj.get_stat_titles()
             row_values = obj.get_stat_lists()
@@ -154,7 +154,7 @@ class StatListWidget(QWidget):
             self.view.resizeColumnToContents(col)
 
     def update_stats(self):
-        column_titles = DB.stats.keys()
+        column_titles = list(DB.stats.get_visible_stats().keys())
         self.model.update_column_header(column_titles)
         if self._obj:
             self.set_new_obj(self._obj)
@@ -221,7 +221,7 @@ class StatAverageDialog(QDialog):
         self.current = current
         self.setMinimumWidth(400)
 
-        column_titles = DB.stats.keys()
+        column_titles = list(DB.stats.get_visible_stats().keys())
         self.setup(column_titles, "Average Stats", model)
         if title == 'Generic':
             self.view.verticalHeader().setFixedWidth(20)

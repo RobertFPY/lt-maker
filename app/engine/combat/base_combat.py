@@ -70,7 +70,7 @@ class BaseCombat(SimpleCombat):
         if self.defender.strike_partner:
             skill_system.start_combat(self.full_playback, self.defender.strike_partner, self.defender.strike_partner.get_weapon(), 
                                     self.attacker, self.main_item, 'defense')
-            skill_system.start_combat(self.full_playback, self.defender.strike_partner, self.defender.strike_partner.get_weapon(), 
+            item_system.start_combat(self.full_playback, self.defender.strike_partner, self.defender.strike_partner.get_weapon(), 
                                     self.attacker, self.main_item, 'defense')
 
         if self.attacker is not self.defender:

@@ -14,6 +14,7 @@ from app.data.resources.resources import RESOURCES
 from app.editor.component_editor_delegates import (AffinityDelegate,
                                                    ClassDelegate, ItemDelegate,
                                                    SkillDelegate, StatDelegate,
+                                                   StatFloatDelegate, StatStringDelegate,
                                                    TagDelegate,
                                                    TerrainDelegate,
                                                    UnitDelegate,
@@ -756,6 +757,10 @@ def get_display_widget(component, parent):
             delegate = ItemDelegate
         elif component.expose[1] == ComponentType.Stat:
             delegate = StatDelegate
+        elif component.expose[1] == ComponentType.StatFloat:
+            delegate = StatFloatDelegate
+        elif component.expose[1] == ComponentType.StatString:
+            delegate = StatStringDelegate
         elif component.expose[1] == ComponentType.WeaponType:
             delegate = WeaponTypeDelegate
         elif component.expose[1] == ComponentType.Skill:

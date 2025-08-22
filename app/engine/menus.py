@@ -310,7 +310,7 @@ class Simple():
         self.current_index = utils.clamp(self.current_index, 0, len(self.options) - 1)
 
     def get_menu_width(self):
-        max_width = max(option.width() for option in self.options)
+        max_width = max(option.width() for option in self.options if not isinstance(option, menu_options.EmptyOption))
         return max_width - max_width%8
 
     def get_menu_height(self):

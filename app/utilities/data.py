@@ -35,7 +35,13 @@ class Data(Generic[T]):
 
     def get(self, key: NID, fallback: Optional[T] = None) -> Optional[T]:
         return self._dict.get(key, fallback)
-
+    
+    def as_dict(self) -> dict[NID, T]:
+        return self._dict
+    
+    def as_list(self) -> list[T]:
+        return self._list
+    
     def sort(self, sort_func=None):
         self._list = sorted(self._list, key=sort_func)
         self._dict.clear()

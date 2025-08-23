@@ -35,6 +35,8 @@ class ComponentType(Enum):
     Terrain = 24  # stored as Nid
     Lore = 25 # Lore entry stored as an NID
     Shape = 26 #List of lists of [x,y] coordinates
+    StatFloat = 27 # Special handling for stat as float
+    StatString = 28 # Special handling for stat as string
     Event = 80
     List = 100  # List containing Items
     Dict = 101  # List of Tuples of [Item, integer]

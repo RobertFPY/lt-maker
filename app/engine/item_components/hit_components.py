@@ -515,6 +515,8 @@ class EventAfterCombatEvenMiss(ItemComponent):
 
     expose = ComponentType.Event
     
+    target_pos = None
+    
     def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         self.target_pos = target_pos
 
@@ -526,3 +528,4 @@ class EventAfterCombatEvenMiss(ItemComponent):
         if event_prefab:
             local_args = {'target_pos': self.target_pos, 'item': item, 'item2': item2, 'mode': mode}
             game.events.trigger_specific_event(event_prefab.nid, unit, target, unit.position, local_args)
+        self.target_pos = None

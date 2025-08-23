@@ -402,6 +402,7 @@ class Choice(Simple):
 
     def create_options(self, options, info_descs=None):
         self.options.clear()
+        is_library = False
         if not options and not self.hard_limit:
             null_option = menu_options.NullOption(0)
             self.options.append(null_option)
@@ -422,6 +423,7 @@ class Choice(Simple):
                 elif isinstance(option, lore.Lore):
                     option = menu_options.LoreOption(idx, option)
                     self.options.append(option)
+                    is_library = True
                 else:
                     if self.horizontal:
                         option = menu_options.HorizOption(idx, option)
@@ -443,6 +445,8 @@ class Choice(Simple):
                 option = menu_options.EmptyOption(len(options) + num)
                 if self.is_convoy:
                     option._width = 112
+                elif is_library:
+                    option._width = 80
                 self.options.append(option)
 
     def move_down(self, first_push=True):

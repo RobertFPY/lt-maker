@@ -87,6 +87,16 @@ class ItemDelegate(BaseComponentDelegate):
 class StatDelegate(BaseComponentDelegate):
     data = DB.stats
     name = "Stat"
+    
+class StatFloatDelegate(BaseComponentDelegate):
+    data = DB.stats
+    name = "Stat"
+    is_float = True
+
+class StatStringDelegate(BaseComponentDelegate):
+    data = DB.stats
+    name = "Stat"
+    is_string = True
 
 class WeaponTypeDelegate(BaseComponentDelegate):
     data = DB.weapons

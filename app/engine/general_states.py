@@ -2876,7 +2876,7 @@ class ShopState(State):
                         action.do(action.GainMoney(game.current_party, -value))
                         action.do(action.UpdateRecords('money', (game.current_party, -value)))
                         stock_marker = '__shop_%s_%s' % (self.shop_id, item.nid)
-                        action.do(action.SetGameVar(stock_marker, game.level_vars.get(stock_marker, 0) + 1))  # Remember that we bought one of this
+                        action.do(action.SetGameVar(stock_marker, game.game_vars.get(stock_marker, 0) + 1))  # Remember that we bought one of this
                         self.buy_menu.decrement_stock()
                         self.money_counter_disp.start(-value)
                         game.register_item(new_item)

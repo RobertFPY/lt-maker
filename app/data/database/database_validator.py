@@ -42,6 +42,8 @@ class DatabaseValidatorEngine():
             CType.Item: _nid_in_data(db.items),
             CType.Skill: _nid_in_data(db.skills),
             CType.Stat: _nid_in_data(db.stats),
+            CType.StatFloat: _nid_in_data(db.stats),
+            CType.StatString: _nid_in_data(db.stats),
             CType.MapAnimation: _nid_in_data(resources.animations),
             CType.Equation: _nid_in_data(db.equations),
             CType.MovementType: lambda mtype: mtype in db.mcost.get_unit_types(),

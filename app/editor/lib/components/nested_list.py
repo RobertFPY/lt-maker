@@ -427,8 +427,25 @@ class LTNestedList(QWidget):
         self.tree_widget.blockSignals(False)
 
     def get_list_and_category_structure(self) -> Tuple[List[NID], Categories]:
+        """
+        # Returns 
+        # (1) a flattened list of all items in this nested list
+        # (2) a dictionary for each item inside a category, where the key is the 
+        #   item nid, and the value is a list of strs, one for each category
+        #   directory containing it
+        #
+        # Example:
+        #   - Waffle
+        #   - Pancake Category
+        #        - Wheat Category
+        #            - Buckwheat
+        #
+        # Would return
+        # (["Waffle", "Buckwheat"], {"Buckwheat": ["Pancake Category", "Wheat Category]})
+        """
         item_list = []
         item_categories = Categories()
+
         def recurse(root: QTreeWidgetItem, parent_categories: List[str]):
             child_count = root.childCount()
             categories = parent_categories[:]
@@ -438,13 +455,14 @@ class LTNestedList(QWidget):
                 if parent_categories:
                     item_categories[item_nid] = parent_categories
                 return
-            else: # category
+            else:  # category
                 category_nid = root.text(0)
                 if category_nid:
                     categories.append(category_nid)
                 for row in range(child_count):
                     child = root.child(row)
                     recurse(child, categories[:])
+
         recurse(self.tree_widget.invisibleRootItem(), [])
 
         return (item_list, item_categories)

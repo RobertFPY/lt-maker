@@ -536,15 +536,19 @@ class SetGameVar(Action):
         self.val = val
         if self.nid in game.game_vars:
             self.old_val = game.game_vars[self.nid]
+            self.already_exists = True
         else:
             self.old_val = None
+            self.already_exists = False
 
     def do(self):
         game.game_vars[self.nid] = self.val
 
     def reverse(self):
-        game.game_vars[self.nid] = self.old_val
-
+        if self.already_exists:
+            game.game_vars[self.nid] = self.old_val
+        else:
+            game.game_vars.pop(self.nid, None)
 
 class SetLevelVar(Action):
     fog_nids = ('_fog_of_war', '_fog_of_war_radius', '_ai_fog_of_war_radius', '_other_fog_of_war_radius', '_fog_of_war_type')
@@ -554,8 +558,10 @@ class SetLevelVar(Action):
         self.val = val
         if self.nid in game.level_vars:
             self.old_val = game.level_vars[self.nid]
+            self.already_exists = True
         else:
             self.old_val = None
+            self.already_exists = False
 
     def _update_fog_of_war(self):
         if self.nid in self.fog_nids:
@@ -569,7 +575,10 @@ class SetLevelVar(Action):
         self._update_fog_of_war()
 
     def reverse(self):
-        game.level_vars[self.nid] = self.old_val
+        if self.already_exists:
+            game.level_vars[self.nid] = self.old_val
+        else:
+            game.level_vars.pop(self.nid, None)
         self._update_fog_of_war()
 
 class SetMovementLeft(Action):

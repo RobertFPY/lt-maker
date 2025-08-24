@@ -251,10 +251,14 @@ class MapSpriteBox(QWidget):
     def select_map_sprite(self):
         res, ok = new_map_sprite_tab.get()
         if ok:
-            nid = res.nid
-            pix = map_sprite_model.get_map_sprite_icon(nid, num=0)
-            self.map_sprite_label.setPixmap(pix)
-            self.sourceChanged.emit(nid)
+            if res:
+                nid = res.nid
+                pix = map_sprite_model.get_map_sprite_icon(nid, num=0)
+                self.map_sprite_label.setPixmap(pix)
+                self.sourceChanged.emit(nid)
+            else:
+                self.map_sprite_label.clear()
+                self.sourceChanged.emit(None)
 
     def autoselect_map_sprite(self):        
         nid = self.current.nid

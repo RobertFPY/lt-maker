@@ -2868,6 +2868,7 @@
         "priority": 20,
         "_source": [
             "# Get the NIDs and positions of all units on the map and store them into variables. This will be used to put the units back after the arena battle.",
+            "# NOTE: Destructible tiles will NOT respawn on the map after entering the arena. It is highly recommend you put all destructible tiles in a unit group and add an 'add_group' event command at the end of the code to reinsert any destructible tiles.",
             "level_var;SavedUnitNids;[unit.nid for unit in game.get_all_units()]",
             "level_var;SavedUnitPositions;[unit.position for unit in game.get_all_units()]",
             "# Changes terrain to Arena terrain. Add an Arena layer to the tilemap in the Tilemap editor to chapters with an arena.",

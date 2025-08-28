@@ -12,10 +12,6 @@
             [
                 "alternate_resist_formula",
                 "ZERO"
-            ],
-            [
-                "pre_combat_effect",
-                "Luna_proc"
             ]
         ]
     }

@@ -125,9 +125,6 @@ class PhaseIn():
 
     def __init__(self, name):
         self.name = name
-        self.sprite_name = 'turnbanner_' + name
-        self.image = SPRITES.get(self.sprite_name)
-
         self.starting_time = None
 
     def begin(self):
@@ -143,6 +140,14 @@ class PhaseIn():
             else:
                 game.cursor.autocursor()
 
+        sprite_name = 'turnbanner_' + self.name
+        team_obj = game.teams[self.name]
+        if team_obj.combat_color_diverged():
+            colored_name = sprite_name + '_' + team_obj.combat_color
+            self.image = SPRITES.get(colored_name, sprite_name)
+        else:
+            self.image = SPRITES.get(sprite_name)
+        
     def update(self):
         return engine.get_time() - self.starting_time >= self.t_display
 

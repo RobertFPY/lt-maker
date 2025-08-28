@@ -994,7 +994,7 @@ class AlignOrPosition(OptionValidator):
         return Alignments(text)
 
 class GrowthMethod(OptionValidator):
-    valid = ["random", "fixed", "dynamic", "lucky"]
+    valid = ["random", "fixed", "dynamic", "lucky", "bexp"]
 
 class CombatScript(SequenceValidator):
     valid_commands = ['hit1', 'hit2', 'crit1', 'crit2', 'miss1', 'miss2', '--', 'end']

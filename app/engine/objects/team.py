@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+from app.data.database.database import DB
 from app.data.database.teams import Team
 from app.utilities.typing import NID
 from app.utilities.data import Prefab
@@ -37,3 +39,8 @@ class TeamObject(Prefab):
             self.combat_variant_palette = combat_variant_palette
         if combat_color:
             self.combat_color = combat_color
+
+    # check if combat_color has been changed
+    # to switch to using new colored sprites
+    def combat_color_diverged(self) -> bool:
+        return DB.teams.get(self.nid).combat_color != self.combat_color

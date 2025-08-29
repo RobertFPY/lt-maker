@@ -225,7 +225,7 @@ class ShoveOnEndCombat(Shove):
     value = 1
 
     def end_combat(self, playback, unit, item, target, item2, mode):
-        if not skill_system.ignore_forced_movement(target) and mode:
+        if target and not skill_system.ignore_forced_movement(target) and mode:
             new_position = self._check_shove(target, unit.position, self.value)
             if new_position:
                 action.do(action.ForcedMovement(target, new_position))

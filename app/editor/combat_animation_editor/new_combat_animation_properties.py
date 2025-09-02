@@ -92,6 +92,8 @@ class NewCombatAnimProperties(QWidget):
         self.info_form.addRow("Weapon", weapon_row)
         self.info_form.addRow("Pose", pose_row)
 
+        self.set_current(self.current)
+
         self.build_frames()
         self.set_layout()
 

@@ -45,8 +45,8 @@ class NewPortraitDatabase(NewEditorTab):
             return False
         portrait = portrait_model.create_new(self)
         if portrait:
-            self.reset()
-        
+            self.data.append(portrait)
+            return portrait.nid
         return False
 
     def _on_nid_changed(self, old_nid: NID, new_nid: NID):

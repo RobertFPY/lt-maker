@@ -590,6 +590,8 @@ class NewPaletteProperties(QWidget):
         main_layout.addWidget(self.color_editor_widget)
         self.setLayout(main_layout)
 
+        self.set_current(self.current)
+
     def undo(self):
         palette_commands.undo()
         self.draw_frame()

@@ -104,7 +104,6 @@ def create_new(window):
                     new_portrait = PortraitPrefab(nid, fn, pix)
                     auto_colorkey(new_portrait)
                     auto_frame_portrait(new_portrait)
-                    window.data.append(new_portrait)
                 else:
                     QMessageBox.critical(window, "Error", "Image is not correct size (128x112 px)")
             else:

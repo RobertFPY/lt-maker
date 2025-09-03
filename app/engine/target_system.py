@@ -146,7 +146,7 @@ class TargetSystem():
 
     def apply_fog_of_war(self, unit: UnitObject, item: ItemObject) -> bool:
         """Returns whether fog of war applies to this unit and item combination"""
-        return (unit.team == 'player' or DB.constants.value('ai_fog_of_war')) and not item_system.ignore_fog_of_war(unit, item)
+        return (unit.team == 'player' or DB.constants.value('ai_fog_of_war')) and not item_system.allow_target_in_fog_of_war(unit, item)
 
     def _filter_splash_through_fog_of_war(self, unit, main_target_pos: Optional[Pos],
                                           splash_positions: List[Pos]

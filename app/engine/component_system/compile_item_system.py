@@ -34,6 +34,7 @@ ITEM_HOOKS: Dict[str, HookInfo] = {
     'map_cast_pose':                                   HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'ignore_line_of_sight':                            HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'ignore_fog_of_war':                               HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'allow_target_in_fog_of_war':                      HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
     # default true, return false if any component returns false
     'alerts_when_broken':                              HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_TRUE, inherits_parent=True),
     'tradeable':                                       HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_TRUE),                                       

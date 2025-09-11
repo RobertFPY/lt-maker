@@ -71,6 +71,10 @@
             [
                 "magic",
                 null
+            ],
+            [
+                "status_on_equip",
+                "LightOverride"
             ]
         ]
     }

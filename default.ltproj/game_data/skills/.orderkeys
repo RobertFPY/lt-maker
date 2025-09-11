@@ -57,5 +57,8 @@
     "Ninis_s_Grace",
     "Filla_s_Might",
     "Thor_s_Ire",
-    "Set_s_Litany"
+    "Set_s_Litany",
+    "LightOverride",
+    "AnimaOverride",
+    "DarkOverride"
 ]

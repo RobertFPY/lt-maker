@@ -64,7 +64,7 @@
         "components": [
             [
                 "regeneration",
-                0.10000000000000002
+                0.1
             ],
             [
                 "avoid",
@@ -1140,7 +1140,8 @@
                     "lost_on_self": true,
                     "lost_on_ally": true,
                     "lost_on_enemy": true,
-                    "lost_on_splash": true
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
                 }
             ]
         ]
@@ -1484,6 +1485,26 @@
             [
                 "avoid",
                 10
+            ]
+        ]
+    },
+    {
+        "nid": "LightOverride",
+        "name": "LightOverride",
+        "desc": "(Allows Light Brand to count as Light magic at range.)",
+        "icon_nid": "wexp_icons",
+        "icon_index": [
+            0,
+            5
+        ],
+        "components": [
+            [
+                "hidden",
+                null
+            ],
+            [
+                "combat_condition",
+                ""
             ]
         ]
     }

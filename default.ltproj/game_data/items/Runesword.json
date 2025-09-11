@@ -75,6 +75,10 @@
             [
                 "battle_cast_anim",
                 "Nosferatu"
+            ],
+            [
+                "status_on_equip",
+                "DarkOverride"
             ]
         ]
     }

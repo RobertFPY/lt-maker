@@ -14,6 +14,7 @@ class GrowthOption(str, Enum):
     FIXED = 'Fixed'
     DYNAMIC = 'Dynamic'
     LUCKY = 'Lucky'
+    BEXP = 'Bexp'
 
 class RNGOption(str, Enum):
     CLASSIC = 'Classic'

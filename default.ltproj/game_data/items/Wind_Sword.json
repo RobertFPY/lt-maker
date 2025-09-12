@@ -79,6 +79,10 @@
             [
                 "battle_cast_anim",
                 "Gustblade"
+            ],
+            [
+                "status_on_equip",
+                "AnimaOverride"
             ]
         ]
     }

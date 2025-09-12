@@ -53,7 +53,7 @@
                 null
             ],
             [
-                "ignore_fog_of_war",
+                "target_fog_of_war",
                 null
             ],
             [

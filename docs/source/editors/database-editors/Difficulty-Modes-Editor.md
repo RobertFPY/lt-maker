@@ -15,6 +15,7 @@ All units have a specific growth rate for each of their stats. This growth rate 
 - **Fixed**: Units will always have their average stats. A unit with a 50% growth rate is guaranteed to get a stat increase every other level.
 - **Dynamic**: Like **Random**, but it applies a rubberbanding effect to the growth rate. If a unit fails to increase a stat on level-up, next level-up that stat will have a higher effective growth rate.
 - **Lucky**: Units will always grow a stat that has at least a 1% chance to grow, and will not lose stats to negative growths that are not -100%. The equivalent of rigging the best growths possible.
+- **Bexp**:  Units will always gain exactly 3 stat increases on level up, provided they have three non-capped stats with positive growth rates.  The probability of a stat being chosen is weighted according to its growth rate.
 
 ### RNG Method
 
@@ -34,11 +35,11 @@ When testing a singular chapter via the "Test Current Chapter" option, the diffi
 
 ### Stat Gain on Level Up
 
-The **Lex Talionis** engine implements three different methods you can choose from for how your units will level up. You can find these options in the DifficultyEditor. 
+The **Lex Talionis** engine implements different methods you can choose from for how your units will level up. You can find these options in the DifficultyEditor. 
 
 You can choose different growth methods for the player characters and the enemy characters. For instance, you could use the classic *Random* growth method for player characters, and then select *Fixed* for enemy characters to make their stats in battle more consistent.
 
-The remaining fourth option, *Match*, is only available for non-player units and will force them to use whatever the player units use. This option is found in the Constants editor.
+The remaining option, *Match*, is only available for non-player units and will force them to use whatever the player units use. This option is found in the Constants editor.
 
 ![ConstantsEditor](../images/constants-editor.png)
 
@@ -48,7 +49,7 @@ This is the classic Fire Emblem experience. A unit with an `X` growth rate in a 
 
 ##### Additional Notes:
 
-A unit with a 100 or greater growth rate in a stat will automatically gain at least one point in that stat. A unit with a 260 growth rate will automatically gain two points in that stat on level up, and then has a 60% chance to gain a third point in that stat. 
+For most level up methods, a unit with a 100 or greater growth rate in a stat will automatically gain at least one point in that stat. A unit with a 260 growth rate will automatically gain two points in that stat on level up, and then has a 60% chance to gain a third point in that stat. 
 
 A unit with a negative growth rate will have a chance of losing a point in that stat. From a -20 growth rate it follows that the unit will have a 20% chance to lose a point in that stat on level up. 
 
@@ -109,4 +110,4 @@ Level 4 Growth Rate = 72 + 6 => 78
 
 ### Average Stats
 
-All methods result in the unit having the same average stat as they level up. For instance, a level 1 unit that starts with a Speed stat of 5 and a speed growth of 40, under all three methods, will end up with, on average, a Speed stat of 13 at level 20. The only difference is how wide the variance on the results will be, with the *Fixed* method having no variance, and the *Dynamic* method have reduced variance compared to the *Random* method.
+The *Random*, *Fixed*, and *Dynamic* methods result in the unit having the same average stats as they level up. For instance, a level 1 unit that starts with a Speed stat of 5 and a speed growth of 40, under all three methods, will end up with, on average, a Speed stat of 13 at level 20. The only difference is how wide the variance on the results will be, with the *Fixed* method having no variance, and the *Dynamic* method have reduced variance compared to the *Random* method.

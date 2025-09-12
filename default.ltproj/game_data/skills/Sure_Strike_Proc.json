@@ -12,10 +12,6 @@
             [
                 "hit",
                 1000
-            ],
-            [
-                "item_override",
-                "Skill_Activate"
             ]
         ]
     }

@@ -84,6 +84,8 @@ class NewCombatEffectProperties(NewCombatAnimProperties):
         self.info_form.addRow("Unique ID", self.nid_box)
         self.info_form.addRow("Pose", pose_row)
 
+        self.set_current(self.current)
+
         self.build_frames()
         self.set_layout()
 

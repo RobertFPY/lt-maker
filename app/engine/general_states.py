@@ -2590,6 +2590,7 @@ class AlertState(State):
         return 'repeat'
 
     def take_input(self, event):
+        alert = None
         if game.alerts:
             alert = game.alerts[-1]
 

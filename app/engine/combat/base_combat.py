@@ -1,3 +1,5 @@
+from typing import Optional
+
 from app.engine.combat.solver import CombatPhaseSolver
 
 from app.engine import skill_system, item_system, action
@@ -25,6 +27,11 @@ class BaseCombat(SimpleCombat):
         self.def_item = None
         if self.defender:
             self.def_item = resolve_weapon(self.defender)
+        self.attack_partner_weapon: Optional[ItemObject] = resolve_weapon(self.attacker.strike_partner)
+        if self.defender:
+            self.defense_partner_weapon: Optional[ItemObject] = resolve_weapon(self.defender.strike_partner)
+        else:
+            self.defense_partner_weapon: Optional[ItemObject] = None
 
         self.state_machine = CombatPhaseSolver(
             self.attacker, self.main_item, [self.main_item],
@@ -45,8 +52,26 @@ class BaseCombat(SimpleCombat):
         if self.attacker is not self.defender:
             skill_system.pre_combat(self.full_playback, self.defender, self.def_item, self.attacker, self.main_item, 'defense')
 
+        if self.attacker.strike_partner:
+            skill_system.pre_combat(self.full_playback, self.attacker.strike_partner, self.attacker.strike_partner.get_weapon(), 
+                                    self.defender, resolve_weapon(self.defender), 'attack')
+        if self.defender.strike_partner:
+            skill_system.pre_combat(self.full_playback, self.defender.strike_partner, self.defender.strike_partner.get_weapon(), 
+                                    self.attacker, self.main_item, 'defense')
+
         skill_system.start_combat(self.full_playback, self.attacker, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
         item_system.start_combat(self.full_playback, self.attacker, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
+
+        if self.attacker.strike_partner:
+            skill_system.start_combat(self.full_playback, self.attacker.strike_partner, self.attacker.strike_partner.get_weapon(), 
+                                    self.defender, resolve_weapon(self.defender), 'attack')
+            item_system.start_combat(self.full_playback, self.attacker.strike_partner, self.attacker.strike_partner.get_weapon(), 
+                                    self.defender, resolve_weapon(self.defender), 'attack')
+        if self.defender.strike_partner:
+            skill_system.start_combat(self.full_playback, self.defender.strike_partner, self.defender.strike_partner.get_weapon(), 
+                                    self.attacker, self.main_item, 'defense')
+            item_system.start_combat(self.full_playback, self.defender.strike_partner, self.defender.strike_partner.get_weapon(), 
+                                    self.attacker, self.main_item, 'defense')
 
         if self.attacker is not self.defender:
             skill_system.start_combat(self.full_playback, self.defender, self.def_item, self.attacker, self.main_item, 'defense')
@@ -64,11 +89,9 @@ class BaseCombat(SimpleCombat):
         if self.attacker.strike_partner:
             skill_system.end_combat(self.full_playback, self.attacker.strike_partner, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
             item_system.end_combat(self.full_playback, self.attacker.strike_partner, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
-            self.attacker.strike_partner = None
         if self.defender.strike_partner:
             skill_system.end_combat(self.full_playback, self.defender.strike_partner, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
             item_system.end_combat(self.full_playback, self.defender.strike_partner, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
-            self.attacker.strike_partner = None
         if self.attacker is not self.defender:
             skill_system.end_combat(self.full_playback, self.defender, self.def_item, self.attacker, self.main_item, 'defense')
             if self.def_item:
@@ -77,8 +100,16 @@ class BaseCombat(SimpleCombat):
         skill_system.deactivate_all_combat_arts(self.attacker)
 
         skill_system.post_combat(self.full_playback, self.attacker, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
+        if self.attacker.strike_partner:
+            skill_system.post_combat(self.full_playback, self.attacker.strike_partner, self.attacker.strike_partner.get_weapon(), \
+                                     self.defender, resolve_weapon(self.defender), 'attack')
         if self.attacker is not self.defender:
             skill_system.post_combat(self.full_playback, self.defender, self.def_item, self.attacker, self.main_item, 'defense')
+            if self.defender.strike_partner:
+                skill_system.post_combat(self.full_playback, self.defender.strike_partner, self.defender.strike_partner.get_weapon(), \
+                                         self.attacker, self.main_item, 'defense')
+        self.attacker.strike_partner = None
+        self.defender.strike_partner = None
 
         self.final_random_state = static_random.get_combat_random_state()
         action.do(action.RecordRandomState(self.initial_random_state, self.final_random_state))
@@ -103,7 +134,7 @@ class BaseCombat(SimpleCombat):
             return False
         else:
             self.clean_up()
-            return True
+        return True
 
     def handle_state_stack(self):
         pass

@@ -1,0 +1,18 @@
+[
+    {
+        "nid": "AnimaOverride",
+        "name": "AnimaOverride",
+        "desc": "",
+        "icon_nid": "wexp_icons",
+        "icon_index": [
+            0,
+            6
+        ],
+        "components": [
+            [
+                "weapon_triangle_override",
+                "Anima"
+            ]
+        ]
+    }
+]

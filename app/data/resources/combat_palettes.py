@@ -7,6 +7,8 @@ from typing import Dict, List, Optional, Set
 from typing_extensions import override
 from app.data.resources.resource_prefab import WithResources
 from app.utilities.data import Prefab
+
+from app.data.category import CategorizedCatalog
 from app.data.resources.base_catalog import ManifestCatalog
 from app.data.resources.default_palettes import default_palettes
 
@@ -66,9 +68,9 @@ class Palette(Prefab, WithResources):
         self.assign_colors(colors)
         return self
 
-class PaletteCatalog(ManifestCatalog[Palette]):
+class PaletteCatalog(ManifestCatalog[Palette], CategorizedCatalog[Palette]):
     datatype = Palette
-    manifest = 'palettes.json'
+    manifest = 'combat_palettes.json'
     title = 'palettes'
 
     def __init__(self, vals: List[Palette] | None = None):

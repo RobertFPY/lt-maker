@@ -1,7 +1,7 @@
 import logging
 import functools
 import math
-from typing import Collection, List
+from typing import List, Set
 
 from app.constants import FRAMERATE
 from app.data.database.database import DB
@@ -45,6 +45,10 @@ class AIController():
         self.move_ai_complete = False
         self.attack_ai_complete = False
         self.canto_ai_complete = False
+
+    def finalize(self):
+        # Anything that needs to be done when the AI is finished with the unit
+        action.do(action.MarkActionGroupEnd('ai'))
 
     def load_unit(self, unit):
         self.reset()
@@ -114,6 +118,7 @@ class AIController():
                 game.state.change('movement')
                 # If we pass in speed=0 to Move it'll use your unit_speed setting
                 speedup = 10 if self.do_skip else 0
+                action.do(action.MarkActionGroupStart(self.unit, 'ai'))
                 action.do(action.Move(self.unit, self.goal_position, path, speed=speedup))
             return True
         else:
@@ -192,8 +197,8 @@ class AIController():
         target_positions = get_targets(self.unit, self.behaviour)
 
         zero_move = item_funcs.get_max_range(self.unit)
-        single_move = zero_move + equations.parser.movement(self.unit)
-        double_move = single_move + equations.parser.movement(self.unit)
+        single_move = zero_move + self.unit.get_movement()
+        double_move = single_move + self.unit.get_movement()
 
         targets_and_dist = {(pos, utils.calculate_distance(self.unit.position, pos)) for pos in target_positions}
 
@@ -214,7 +219,7 @@ class AIController():
         else:
             return False
 
-    def get_true_valid_moves(self) -> Collection[Point]:
+    def get_true_valid_moves(self) -> Set[Pos]:
         # Guard AI
         if self.behaviour and self.behaviour.view_range == -1 and not game.ai_group_active(self.unit.ai_group):
             return {self.unit.position}
@@ -343,7 +348,7 @@ class AIController():
         return SecondaryAI(self.unit, self.behaviour)
 
 class PrimaryAI():
-    def __init__(self, unit: UnitObject, valid_moves, behaviour):
+    def __init__(self, unit: UnitObject, valid_moves: Set[Pos], behaviour):
         self.max_tp = 0
 
         self.unit: UnitObject = unit
@@ -354,15 +359,21 @@ class PrimaryAI():
         if self.behaviour.action == "Attack":
             self.items = [item for item in item_funcs.get_all_items(self.unit) if
                           item_funcs.available(self.unit, item)]
+            self.items += [item_system.extra_command(self.unit, item) for item in item_funcs.get_all_items(self.unit) if
+                           item_system.extra_command(self.unit, item) and item_funcs.available(self.unit, item_system.extra_command(self.unit, item))]
             self.extra_abilities = skill_system.get_extra_abilities(self.unit)
             for ability in self.extra_abilities.values():
                 self.items.append(ability)
+
         elif self.behaviour.action == 'Support':
             self.items = [item for item in item_funcs.get_all_items(self.unit) if
                           item_funcs.available(self.unit, item)]
+            self.items = self.items + [item_system.extra_command(self.unit, item) for item in item_funcs.get_all_items(self.unit) if
+                                       item_system.extra_command(self.unit, item) and item_funcs.available(self.unit, item_system.extra_command(self.unit, item))]
             self.extra_abilities = skill_system.get_extra_abilities(self.unit)
             for ability in self.extra_abilities.values():
                 self.items.append(ability)
+                
         elif self.behaviour.action == 'Steal':
             self.items = []
             self.extra_abilities = skill_system.get_extra_abilities(self.unit)
@@ -418,9 +429,8 @@ class PrimaryAI():
             return []
 
     def quick_move(self, move):
-        action.PickUnitUp(self.unit, True).do()
-        self.unit.position = move
-        action.PutUnitDown(self.unit, True).do()
+        action.QuickLeave(self.unit, True).do()
+        action.QuickArrive(self.unit, move, True).do()
 
     def run(self):
         if self.item_index >= len(self.items):
@@ -609,7 +619,7 @@ class PrimaryAI():
 
         # Only here to break ties
         # Tries to minimize how far the unit should move
-        max_distance = equations.parser.movement(self.unit)
+        max_distance = self.unit.get_movement()
         if max_distance > 0:
             distance_term = (max_distance - utils.calculate_distance(move, self.orig_pos)) / float(max_distance)
         else:
@@ -704,8 +714,8 @@ class SecondaryAI():
         self.all_targets = get_targets(self.unit, behaviour)
 
         self.zero_move = item_funcs.get_max_range(self.unit)
-        self.single_move = self.zero_move + equations.parser.movement(self.unit)
-        self.double_move = self.single_move + equations.parser.movement(self.unit)
+        self.single_move = self.zero_move + self.unit.get_movement()
+        self.double_move = self.single_move + self.unit.get_movement()
 
         movement_group = movement_funcs.get_movement_group(self.unit)
         self.grid = game.board.get_movement_grid(movement_group)
@@ -791,7 +801,8 @@ class SecondaryAI():
             can_move_through = lambda adj: True
         else:
             can_move_through = functools.partial(game.board.can_move_through, self.unit.team)
-        path = self.pathfinder.process(can_move_through, adj_good_enough=adj_good_enough, limit=limit)
+        max_movement_limit = self.unit.get_movement()
+        path = self.pathfinder.process(can_move_through, adj_good_enough=adj_good_enough, limit=limit, max_movement_limit=max_movement_limit)
         self.pathfinder.reset()
         return path
 

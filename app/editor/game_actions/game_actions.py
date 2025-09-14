@@ -90,7 +90,12 @@ def test_event(event_prefab, starting_command_idx=0, strategy=None):
     try:
         driver.start("Event Test", from_editor=True)
         from app.events.mock_event import MockEvent
+        # Runs the `on_startup` trigger event commands before running the main MockEvent
+        startup_event_prefabs = DB.events.get('on_startup', None)
         mock_event = MockEvent('Test Event', event_prefab, starting_command_idx, strategy)
+        for startup in startup_event_prefabs:
+            for line in startup.source.split('\n'):
+                mock_event.queue_command(line)
         driver.run_event(mock_event)
     except Exception as e:
         handle_exception(e)

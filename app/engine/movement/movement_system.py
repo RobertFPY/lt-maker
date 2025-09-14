@@ -52,7 +52,7 @@ class MovementSystem:
                 movement_component.finish()    
 
     def begin_move(self, unit, path: List[Tuple[int, int]], 
-                   event=False, follow=True, speed=0):
+                   event=False, follow=True, speed=0, silent=False):
         """
         # Used for simple movement of a unit in the normal way
         """
@@ -60,7 +60,7 @@ class MovementSystem:
         logging.info("Unit %s to begin moving", unit)
         speed = speed or cf.SETTINGS['unit_speed']
         movement_component = \
-            UnitPathMovementComponent(unit, path, event, follow, speed=speed)
+            UnitPathMovementComponent(unit, path, event, follow, speed=speed, muted=silent)
         self.moving_entities.append(movement_component)
 
     def update(self):

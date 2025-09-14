@@ -376,9 +376,9 @@ class WholeNumber(Integer):
         return int(text)
 
 class Time(Integer):
-    desc = "indicates a duration"
+    desc = "Indicates a duration"
 class Volume(Float):
-    desc = "A number between greater than 0 (0 is muted, 1 is current volume)"
+    desc = "A number between 0 and 1 (0 is muted, 1 is current volume)"
 
 class String(Validator):
     """
@@ -567,8 +567,8 @@ class Orientation(OptionValidator):
         return o.VERTICAL
 
 class ExpressionList(SequenceValidator):
-    valid_expressions = ["NoSmile", "Smile", "NormalBlink", "CloseEyes", "HalfCloseEyes", "OpenEyes", "OpenMouth"]
-    desc = "expects a comma-delimited list of expressions. Valid expressions are: (`NoSmile`, `Smile`, `NormalBlink`, `CloseEyes`, `HalfCloseEyes`, `OpenEyes`, `OpenMouth`). Example: `Smile,CloseEyes`"
+    valid_expressions = ["NoSmile", "Smile", "NormalBlink", "CloseEyes", "HalfCloseEyes", "LeftWink", "RightWink", "FarWink", "NearWink", "OpenEyes", "OpenMouth"]
+    desc = "expects a comma-delimited list of expressions. Valid expressions are: (`NoSmile`, `Smile`, `NormalBlink`, `CloseEyes`, `HalfCloseEyes`, `LeftWink`, `RightWink`, `FarWink`, `NearWink`, `OpenEyes`, `OpenMouth`). Example: `Smile,CloseEyes`"
 
     def validate(self, text, level):
         text = text.split(',')
@@ -994,7 +994,7 @@ class AlignOrPosition(OptionValidator):
         return Alignments(text)
 
 class GrowthMethod(OptionValidator):
-    valid = ["random", "fixed", "dynamic"]
+    valid = ["random", "fixed", "dynamic", "lucky", "bexp"]
 
 class CombatScript(SequenceValidator):
     valid_commands = ['hit1', 'hit2', 'crit1', 'crit2', 'miss1', 'miss2', '--', 'end']
@@ -1111,6 +1111,20 @@ class KlassList(SequenceValidator):
 
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
         valids = [(klass.name, klass.nid) for klass in self._db.classes.values()]
+        return valids
+
+class TagList(SequenceValidator):
+    desc = "accepts a comma-delimited list of tags."
+
+    def validate(self, text, level):
+        s_l = self.convert(text)
+        for entry in s_l:
+            if entry not in self._db.tags:
+                return None
+        return text
+
+    def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
+        valids = [(None, tag.nid) for tag in self._db.tags.values()]
         return valids
 
 class ArgList(DictValidator):
@@ -1340,6 +1354,18 @@ class OverworldEntity(Validator):
         valids = [(party.name, party.nid) for party in self._db.parties.values()]
         return valids
 
+class Palette(Validator):
+    desc = 'accepts the NID of any palette in the project.'
+
+    def validate(self, text: NID, level: NID):
+        if text in RESOURCES.combat_palettes:
+            return text
+        return None
+
+    def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
+        valids = [(combat_palette.nid, combat_palette.nid) for combat_palette in RESOURCES.combat_palettes]
+        return valids
+
 class Sprite(Validator):
     desc = 'accepts the filename of any sprite resource in the project.'
 
@@ -1366,6 +1392,21 @@ class MaybeSprite(Validator):
         valids = [(sprite_name, sprite_name) for sprite_name in SPRITES.keys()]
         valids += [(None, "None")]
         return valids
+
+class SpritePose(OptionValidator):
+    desc = """
+Specify the pose the unit's sprite will take.
+Available options are (`normal`, `active`, `moving`, `stand_dir`, `start_cast`, `end_cast`).
+"""
+    valid = ['normal', 'active', 'moving', 'stand_dir', 'start_cast', 'end_cast']
+
+class SpriteDirection(OptionValidator):
+    desc = """
+Specify the direction moving or stand pose will take.
+Available options are (`up`, `left`, `right`, `down`).
+This has no effect unless the sprite pose is `moving` or `stand_dir`.
+"""
+    valid = ['up', 'left', 'right', 'down']
 
 class DifficultyMode(Validator):
     desc = 'accepts the nid of a difficulty mode.'

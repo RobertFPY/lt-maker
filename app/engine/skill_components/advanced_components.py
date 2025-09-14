@@ -75,7 +75,6 @@ class Ability(SkillComponent):
         if item and item.nid == self.value:
             action.do(action.TriggerCharge(unit, self.skill))
 
-
 class CombatArt(SkillComponent):
     nid = 'combat_art'
     desc = "Unit has the ability to apply an extra effect to next attack"
@@ -115,6 +114,16 @@ class CombatArt(SkillComponent):
         self.skill.data['active'] = False
 
 
+class MenuCategory(SkillComponent):
+    nid = 'menu_category'
+    desc = "Categorize an ability or combat art in the menu"
+    tag = SkillTags.ADVANCED
+
+    expose = ComponentType.String
+
+    def menu_category(self):
+        return self.value
+
 class AutomaticCombatArt(SkillComponent):
     nid = 'automatic_combat_art'
     desc = "Unit will be given skill on upkeep and removed on endstep"
@@ -140,7 +149,7 @@ class AllowedWeapons(SkillComponent):
     def weapon_filter(self, unit, item) -> bool:
         from app.engine import evaluate
         try:
-            return bool(evaluate.evaluate(self.value, unit, local_args={'item': item}))
+            return bool(evaluate.evaluate(self.value, unit, local_args={'item': item, 'skill': self.skill}))
         except Exception as e:
             print("Couldn't evaluate conditional {%s} %s" % (self.value, e))
         return False
@@ -200,7 +209,7 @@ class AttackProc(SkillComponent):
                     playback.append(pb.AttackProc(unit, act.skill_obj))
                 self._did_action = True
 
-    def end_sub_combat(self, actions, playback, unit, item, target, item2, mode, attack_info):
+    def end_sub_combat_unconditional(self, actions, playback, unit, item, target, item2, mode, attack_info):
         if self._did_action:
             action.do(action.TriggerCharge(unit, self.skill))
             action.do(action.RemoveSkill(unit, self.value))
@@ -227,7 +236,7 @@ class DefenseProc(SkillComponent):
                     playback.append(pb.DefenseProc(unit, act.skill_obj))
                 self._did_action = True
 
-    def end_sub_combat(self, actions, playback, unit, item, target, item2, mode, attack_info):
+    def end_sub_combat_unconditional(self, actions, playback, unit, item, target, item2, mode, attack_info):
         if self._did_action:
             action.do(action.TriggerCharge(unit, self.skill))
             action.do(action.RemoveSkill(unit, self.value))

@@ -96,7 +96,8 @@ class EventScriptCompleter(QCompleter):
         # If completer is up, Tab/Enter can auto-complete
         if event.key() == self.settings.get_autocomplete_button(Qt.Key_Tab):
             if self.popup().isVisible() and len(self.popup().selectedIndexes()) > 0:
-                self.do_complete(self.popup().selectedIndexes()[0])
+                choice = self.popup().selectedIndexes()[0]
+                self.do_complete(choice)
                 return True  # should not enter a tab
         elif event.key() == Qt.Key_Backspace:
             self.popup().hide()
@@ -259,7 +260,7 @@ def generate_pyev1_completions(line: str, level_nid: NID) -> List[CompletionEntr
         arg_validator = event_validators.get(command_t.get_validator_from_keyword(arg_name))
         completions = []
         if arg_validator:
-            valids = arg_validator(DB, RESOURCES).valid_entries(level_nid)
+            valids = arg_validator(DB, RESOURCES).valid_entries(level_nid, arg)
             completions += [create_completion(nid, name) for name, nid in valids]
         # add positional args only if we're likely searching for them
         if not as_tokens.tokens[-1] or as_tokens.tokens[-1].isalpha():
@@ -315,10 +316,10 @@ def get_arg_name(command_t: Type[event_commands.EventCommand], arg_text: str, ar
     return command_t.get_keyword_from_index(arg_idx)
 
 def trim_arg_match(arg_text: str) -> str:
-    return re.split('[^a-zA-Z0-9_]', arg_text)[-1]
+    return re.split('[^a-zA-Z0-9_ ]', arg_text)[-1]
 
 def trim_arg_text(arg_text: str) -> str:
-    return re.split('[^a-zA-Z0-9_"\'\{]', arg_text)[-1]
+    return re.split('[^a-zA-Z0-9_ "\'\{]', arg_text)[-1]
 
 def trim_arg_text_python(arg_text: str) -> str:
-    return re.split('[^a-zA-Z0-9_"\']', arg_text)[-1]
+    return re.split('[^a-zA-Z0-9_ "\']', arg_text)[-1]

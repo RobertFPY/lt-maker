@@ -23,9 +23,11 @@ from app.engine.graphics.text.text_renderer import (font_height, render_text,
                                                     text_width)
 from app.engine.graphics.ui_framework.ui_framework_layout import convert_align
 from app.engine.gui import ScrollArrow, ScrollBar
+from app.engine.input_manager import get_input_manager
 from app.engine.objects.item import ItemObject
 from app.engine.objects.skill import SkillObject
 from app.engine.objects.unit import UnitObject
+from app.engine.sound import get_sound_thread
 from app.utilities.enums import Alignments, HAlignment, Orientation, VAlignment
 from app.utilities.str_utils import is_int
 from app.utilities.typing import NID
@@ -148,6 +150,7 @@ class GridChoiceMenu():
         if self._total_grid_size()[1] > self.num_rows():
             self._should_draw_scrollbar = True
         self._cached_bg: engine.Surface = self._build_bg()
+        self._next_scroll_time = 0
 
     def set_scrollbar(self, should_draw_scrollbar):
         if self._orientation == Orientation.VERTICAL and self._total_grid_size()[1] > self.num_rows():
@@ -204,7 +207,15 @@ class GridChoiceMenu():
     def set_cursor_mode(self, draw_mode: CursorDrawMode):
         self.cursor_hand.mode = draw_mode
 
-    def move_right(self, first_push: bool = False):
+    def move_right(self, first_push: bool = False) -> bool:
+        """Move the cursor to the right.
+
+        Args:
+            first_push (bool, optional): Whether this movement is due to button press or button hold.
+
+        Returns:
+            bool: Whether the cursor actually moved.
+        """
         cursor_rx, _ = self.relative_cursor_coord()
         if cursor_rx == self.num_cols() - 1:
             self.rscroll_arrow.pulse()
@@ -212,9 +223,20 @@ class GridChoiceMenu():
             next_idx = (self._cursor_idx + 1) % len(self._option_data)
         else:
             next_idx = min(self._cursor_idx + 1, len(self._option_data) - 1)
+        if next_idx == self._cursor_idx:
+            return False
         self.move_cursor(next_idx)
+        return True
 
-    def move_left(self, first_push: bool = False):
+    def move_left(self, first_push: bool = False) -> bool:
+        """Move the cursor to the left.
+
+        Args:
+            first_push (bool, optional): Whether this movement is due to button press or button hold.
+
+        Returns:
+            bool: Whether the cursor actually moved.
+        """
         cursor_rx, _ = self.relative_cursor_coord()
         if cursor_rx == 0:
             self.lscroll_arrow.pulse()
@@ -222,9 +244,20 @@ class GridChoiceMenu():
             next_idx = (self._cursor_idx - 1) % len(self._option_data)
         else:
             next_idx = max(0, self._cursor_idx - 1)
+        if next_idx == self._cursor_idx:
+            return False
         self.move_cursor(next_idx)
+        return True
 
-    def move_up(self, first_push: bool = False):
+    def move_up(self, first_push: bool = False) -> bool:
+        """ Move the cursor up.
+
+        Args:
+            first_push (bool, optional): Whether this movement is due to button press or button hold.
+
+        Returns:
+            bool: Whether the cursor actually moved.
+        """
         num_cols, num_rows = self._total_grid_size()
         if first_push:
             next_idx = self._cursor_idx - num_cols
@@ -236,9 +269,20 @@ class GridChoiceMenu():
             next_idx = self._cursor_idx - num_cols
             if next_idx < 0:
                 return
+        if next_idx == self._cursor_idx:
+            return False
         self.move_cursor(next_idx)
+        return True
 
-    def move_down(self, first_push: bool = False):
+    def move_down(self, first_push: bool = False) -> bool:
+        """ Move the cursor down.
+
+        Args:
+            first_push (bool, optional): Whether this movement is due to button press or button hold.
+
+        Returns:
+            bool: Whether the cursor actually moved.
+        """
         num_cols = self._total_grid_size()[0]
         next_idx = self._cursor_idx + num_cols
         if next_idx >= len(self._option_data):
@@ -246,9 +290,13 @@ class GridChoiceMenu():
                 next_idx = next_idx % num_cols
             else:
                 return
+        if next_idx == self._cursor_idx:
+            return False
         self.move_cursor(next_idx)
+        return True
 
-    def move_cursor(self, idx):
+    def move_cursor(self, idx: int) -> bool:
+        curr_scroll = self._scroll
         idx = clamp(idx, 0, len(self._option_data) - 1)
         old_coord = self._get_coord_of_option_idx(self._cursor_idx)
         new_coord = self._get_coord_of_option_idx(idx)
@@ -261,6 +309,7 @@ class GridChoiceMenu():
         # Only if no scrolling
         elif new_coord[1] < old_coord[1]:
             self.cursor_hand.y_offset_up()
+        return not (curr_scroll == self._scroll == self._scroll_to)
 
     def scroll_to(self, coord: Tuple[float, float]):
         # If it's really far away, don't bother even scrolling, just jump
@@ -276,9 +325,9 @@ class GridChoiceMenu():
             num_cols = self.num_cols()
             return num_cols, ((len(self._option_data) - 1) // num_cols) + 1
         else:
-            # constraint on num_rols
+            # constraint on num_rows
             num_rows = self.num_rows()
-            return (len(self._option_data) // num_rows) + 1, num_rows
+            return ((len(self._option_data) - 1) // num_rows) + 1, num_rows
 
     def _get_index_of_coord(self, coord: Tuple[int, int]) -> int:
         nx, _ = self._total_grid_size()
@@ -343,6 +392,40 @@ class GridChoiceMenu():
         px = clamp(px + menu_left, 0, WINWIDTH)
         py = clamp(py + menu_top, 0, WINHEIGHT)
         return (px, py)
+        
+    def _get_rects(self) -> List[Tuple[int, Tuple[int, int, int, int]]]:
+        """
+        Return a list of pairs of: indexes of visible choices, rectangles (x, y, width, height) of bounding boxes around those choices
+        """
+        choices = self._option_data
+        indexed_rects = []
+        for idx, choice in enumerate(choices):
+            if self._is_option_visible(idx):
+                left, top = self.get_topleft_of_idx(idx)
+                rect = (left, top, choice.width(), choice.height())
+                indexed_rects.append((idx, rect))
+
+        return indexed_rects
+        
+    def _is_scrolling(self) -> bool:
+        return not ((1.0*self._scroll[0]).is_integer() and (1.0*self._scroll[1]).is_integer())
+        
+    def _mouse_move(self, idx: int):
+        if engine.get_time() > self._next_scroll_time and not self._is_scrolling():
+            did_scroll = self.move_cursor(idx)
+            if did_scroll:
+                self._next_scroll_time = engine.get_time() + 50
+        
+    def handle_mouse(self) -> bool:
+        mouse_position = get_input_manager().get_mouse_position()
+        if mouse_position:
+            mouse_x, mouse_y = mouse_position
+            for idx, option_rect in self._get_rects():
+                x, y, width, height = option_rect
+                if x <= mouse_x <= x + width and y <= mouse_y <= y + height:
+                    self._mouse_move(idx)
+                    return True
+        return False
 
     def _autosize_grid(self, data: List[Any]):
         return (1, min(len(data), 1))
@@ -409,12 +492,22 @@ class GridChoiceMenu():
 
     def _identify_minimum_scroll_to_loc(self, scroll: Tuple[float, float], loc: Tuple[float, float]) -> Tuple[float, float]:
         """Identifies the scroll location that allows loc to be visible with a minimum of net movement.
+        Scrolls pre-emptively to buffer the next row.
         """
         ncols, nrows = self.num_cols(), self.num_rows()
         sx, sy = scroll
         lb, rb = sx, sx + ncols
         ub, db = sy, sy + nrows
         nx, ny = loc
+        mx, my = self._total_grid_size()
+        if nx == sx and nx > 0:
+            nx -= 1
+        elif nx > 0 and nx < mx - 1:
+            nx += 1
+        if ny == sy and ny > 0:
+            ny -= 1
+        elif ny > 0 and ny < my - 1:
+            ny += 1
 
         fx, fy = scroll
         if nx < lb:

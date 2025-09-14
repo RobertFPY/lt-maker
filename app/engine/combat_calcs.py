@@ -113,6 +113,8 @@ def can_counterattack(attacker, aweapon, defender, dweapon) -> bool:
         return False
     if not item_system.can_counter(defender, dweapon):
         return False
+    if not skill_system.can_counter(defender):
+        return False
     if DB.constants.value('line_of_sight'):
         if not item_system.ignore_line_of_sight(defender, dweapon) and len(line_of_sight.line_of_sight([defender.position], [attacker.position], 99)) == 0:
             return False
@@ -155,7 +157,7 @@ def accuracy(unit, item=None):
     accuracy = int(accuracy)
 
     if DB.constants.value('lead'):
-        stars = sum(u.stats.get('LEAD', 0) for u in game.get_all_units() if u.team == unit.team)
+        stars = sum(u.get_stat('LEAD') for u in game.get_all_units() if u.team == unit.team)
         accuracy += stars * equations.parser.get('LEAD_HIT', unit)
 
     accuracy += item_system.modify_accuracy(unit, item)
@@ -181,12 +183,12 @@ def avoid(unit, item, item_to_avoid=None):
     avoid = int(avoid)
 
     if DB.constants.value('lead'):
-        target_stars = sum(u.stats.get('LEAD', 0) for u in game.get_all_units() if u.team == unit.team)
+        target_stars = sum(u.get_stat('LEAD') for u in game.get_all_units() if u.team == unit.team)
         avoid += target_stars * equations.parser.get('LEAD_AVOID', unit)
 
     if item:
         avoid += item_system.modify_avoid(unit, item)
-    avoid += skill_system.modify_avoid(unit, item_to_avoid)
+    avoid += skill_system.modify_avoid(unit, item)
     return avoid
 
 def crit_accuracy(unit, item=None):
@@ -239,7 +241,7 @@ def crit_avoid(unit, item, item_to_avoid=None):
 
     if item:
         avoid += item_system.modify_crit_avoid(unit, item)
-    avoid += skill_system.modify_crit_avoid(unit, item_to_avoid)
+    avoid += skill_system.modify_crit_avoid(unit, item)
     return avoid
 
 def damage(unit, item=None):
@@ -293,7 +295,7 @@ def defense(atk_unit, def_unit, item, item_to_avoid=None):
 
     if item:
         res += item_system.modify_resist(def_unit, item)
-    res += skill_system.modify_resist(def_unit, item_to_avoid)
+    res += skill_system.modify_resist(def_unit, item)
     return res
 
 def attack_speed(unit, item=None):
@@ -347,14 +349,14 @@ def defense_speed(unit, item, item_to_avoid=None):
 
     if item:
         speed += item_system.modify_defense_speed(unit, item)
-    speed += skill_system.modify_defense_speed(unit, item_to_avoid)
+    speed += skill_system.modify_defense_speed(unit, item)
 
     if not DB.constants.value('allow_negative_as') and speed < 0:
         speed = 0
 
     return speed
 
-def compute_hit(unit, target, item, def_item, mode, attack_info):
+def compute_hit(unit, target, item, def_item, mode, attack_info, *, clamp_hit=True):
     if not item:
         return None
 
@@ -400,7 +402,10 @@ def compute_hit(unit, target, item, def_item, mode, attack_info):
     hit += skill_system.dynamic_accuracy(unit, item, target, resolve_weapon(target), mode, attack_info, hit)
     hit -= skill_system.dynamic_avoid(target, resolve_weapon(target), unit, item, mode, attack_info, hit)
 
-    return utils.clamp(hit, 0, 100)
+    if clamp_hit:
+        return utils.clamp(hit, 0, 100)
+    else:
+        return max(hit, 0)
 
 def compute_crit(unit, target, item, def_item, mode, attack_info):
     if not item:
@@ -582,7 +587,7 @@ def outspeed(unit, target, item, def_item, mode, attack_info) -> int:
         return 0
     if skill_system.no_double(unit):
         return 0
-    if mode == 'defense' and not (DB.constants.value('def_double') or skill_system.def_double(target)):
+    if mode == 'defense' and not (DB.constants.value('def_double') or skill_system.def_double(unit)):
         return 0
 
     speed = compute_true_speed(unit, target, item, def_item, mode, attack_info)

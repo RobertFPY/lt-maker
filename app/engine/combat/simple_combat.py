@@ -57,6 +57,11 @@ class SimpleCombat():
         self.def_item: Optional[ItemObject] = None
         if self.defender:
             self.def_item = resolve_weapon(self.defender)
+        self.attack_partner_weapon: Optional[ItemObject] = resolve_weapon(self.attacker.strike_partner)
+        if self.defender:
+            self.defense_partner_weapon: Optional[ItemObject] = resolve_weapon(self.defender.strike_partner)
+        else:
+            self.defense_partner_weapon: Optional[ItemObject] = None
 
     def __init__(self, attacker, main_item, items, positions, main_target_positions, splash_positions, script, total_rounds=1):
         self._full_setup(attacker, main_item, items, positions, main_target_positions, splash_positions)
@@ -161,16 +166,10 @@ class SimpleCombat():
         self.handle_mana(all_units)
         self.handle_exp()
 
-        asp = self.attacker.strike_partner
-        dsp = None
-        if self.defender:
-            dsp = self.defender.strike_partner
-
         self.end_combat()
 
         self.attacker.built_guard = True
         if self.defender:
-            self.defender.strike_partner = None
             self.defender.built_guard = True
 
         self.handle_death(all_units)
@@ -178,8 +177,8 @@ class SimpleCombat():
         # triggered events get added in stack order (combat death should run first)
         self.handle_combat_death(all_units)
 
-        self.handle_unusable_items(asp, dsp)
-        self.handle_broken_items(asp, dsp)
+        self.handle_unusable_items()
+        self.handle_broken_items()
 
     def start_event(self, full_animation=False):
         # region is set to True or False depending on whether we are in a battle anim
@@ -190,6 +189,10 @@ class SimpleCombat():
 
         skill_system.pre_combat(self.full_playback, self.attacker, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
 
+        if self.attacker.strike_partner:
+            skill_system.pre_combat(self.full_playback, self.attacker.strike_partner, self.attacker.strike_partner.get_weapon(), \
+                                    self.defender, resolve_weapon(self.defender), 'attack')
+
         already_pre = [self.attacker]
         for idx, defender in enumerate(self.defenders):
             # Make sure we only do this once
@@ -197,11 +200,17 @@ class SimpleCombat():
                 already_pre.append(defender)
                 def_item = self.def_items[idx]
                 skill_system.pre_combat(self.full_playback, defender, def_item, self.attacker, self.main_item, 'defense')
+                if defender.strike_partner:
+                    skill_system.pre_combat(self.full_playback, defender.strike_partner, defender.strike_partner.get_weapon(), self.attacker, self.main_item, 'defense')
         for unit in self.all_splash:
             skill_system.pre_combat(self.full_playback, unit, None, self.attacker, self.main_item, 'defense')
 
         skill_system.start_combat(self.full_playback, self.attacker, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
         item_system.start_combat(self.full_playback, self.attacker, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
+
+        if self.attacker.strike_partner:
+            skill_system.start_combat(self.full_playback, self.attacker.strike_partner, self.attacker.strike_partner.get_weapon(), \
+                                    self.defender, resolve_weapon(self.defender), 'attack')
 
         already_pre = [self.attacker]
         for idx, defender in enumerate(self.defenders):
@@ -211,6 +220,8 @@ class SimpleCombat():
                 skill_system.start_combat(self.full_playback, defender, def_item, self.attacker, self.main_item, 'defense')
                 if def_item:
                     item_system.start_combat(self.full_playback, defender, def_item, self.attacker, self.main_item, 'defense')
+                if defender.strike_partner:
+                    skill_system.start_combat(self.full_playback, defender.strike_partner, defender.strike_partner.get_weapon(), self.attacker, self.main_item, 'defense')
         for unit in self.all_splash:
             skill_system.start_combat(self.full_playback, unit, None, self.attacker, self.main_item, 'defense')
 
@@ -229,14 +240,12 @@ class SimpleCombat():
         skill_system.end_combat(self.full_playback, self.attacker, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
         item_system.end_combat(self.full_playback, self.attacker, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
         if self.attacker.strike_partner:
-            skill_system.end_combat(self.full_playback, self.attacker.strike_partner, self.attacker.strike_partner.get_weapon(), self.defender, self.defender.get_weapon(), 'attack')
-            item_system.end_combat(self.full_playback, self.attacker.strike_partner, self.attacker.strike_partner.get_weapon(), self.defender, self.defender.get_weapon(), 'attack')
-            self.attacker.strike_partner = None
+            skill_system.end_combat(self.full_playback, self.attacker.strike_partner, self.attacker.strike_partner.get_weapon(), self.defender, resolve_weapon(self.defender), 'attack')
+            item_system.end_combat(self.full_playback, self.attacker.strike_partner, self.attacker.strike_partner.get_weapon(), self.defender, resolve_weapon(self.defender), 'attack')
         if self.defender:
             if self.defender.strike_partner:
                 skill_system.end_combat(self.full_playback, self.defender.strike_partner, self.defender.strike_partner.get_weapon(), self.attacker, self.main_item, 'defense')
                 item_system.end_combat(self.full_playback, self.defender.strike_partner, self.defender.strike_partner.get_weapon(), self.attacker, self.main_item, 'defense')
-                self.defender.strike_partner = None
         already_pre = [self.attacker]
         for idx, defender in enumerate(self.defenders):
             if defender and defender not in already_pre:
@@ -251,14 +260,24 @@ class SimpleCombat():
         skill_system.deactivate_all_combat_arts(self.attacker)
 
         skill_system.post_combat(self.full_playback, self.attacker, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
+        if self.attacker.strike_partner:
+            skill_system.post_combat(self.full_playback, self.attacker.strike_partner, self.attacker.strike_partner.get_weapon(), \
+                                     self.defender, resolve_weapon(self.defender), 'attack')
         already_pre = [self.attacker]
         for idx, defender in enumerate(self.defenders):
             if defender and defender not in already_pre:
                 already_pre.append(defender)
                 def_item = self.def_items[idx]
                 skill_system.post_combat(self.full_playback, defender, def_item, self.attacker, self.main_item, 'defense')
+                if defender.strike_partner:
+                    skill_system.post_combat(self.full_playback, defender.strike_partner, defender.strike_partner.get_weapon(), \
+                                             self.attacker, self.main_item, 'defense')
         for unit in self.all_splash:
             skill_system.post_combat(self.full_playback, unit, None, self.attacker, self.main_item, 'defense')
+
+        self.attacker.strike_partner = None
+        if self.defender:
+            self.defender.strike_partner = None
 
         self.final_random_state = static_random.get_combat_random_state()
         action.do(action.RecordRandomState(self.initial_random_state, self.final_random_state))
@@ -386,7 +405,7 @@ class SimpleCombat():
                     game.events._add_event_from_script(event_nid, str(command), trigger)
                     counter += 1
 
-    def handle_broken_items(self, attack_partner: Optional[UnitObject], defense_partner: Optional[UnitObject]):
+    def handle_broken_items(self):
         """
         Checks if any of the items used in battle are broken,
         and if so calls the corresponding function.
@@ -408,18 +427,20 @@ class SimpleCombat():
                 game.alerts.append(banner.BrokenItem(self.defender, self.def_item))
                 game.state.change('alert')
         # Partners
-        if attack_partner and attack_partner.get_weapon() and item_system.is_broken(attack_partner, attack_partner.get_weapon()):
-            item_system.on_broken(attack_partner, attack_partner.get_weapon())
+        if self.attacker.strike_partner and self.attack_partner_weapon and item_system.is_broken(self.attacker.strike_partner, self.attack_partner_weapon):
+            item_system.on_broken(self.attacker.strike_partner, self.attack_partner_weapon)
+            should_alert = item_system.alerts_when_broken(self.attacker.strike_partner, self.attack_partner_weapon)
             if self.alerts and should_alert and self.attacker.team == 'player':
-                game.alerts.append(banner.BrokenItem(attack_partner, attack_partner.get_weapon()))
+                game.alerts.append(banner.BrokenItem(self.attacker.strike_partner, self.attack_partner_weapon))
                 game.state.change('alert')
-        if defense_partner and defense_partner.get_weapon() and item_system.is_broken(defense_partner, defense_partner.get_weapon()):
-            item_system.on_broken(defense_partner, defense_partner.get_weapon())
+        if self.defender and self.defender.strike_partner and self.defense_partner_weapon and item_system.is_broken(self.defender.strike_partner, self.defense_partner_weapon):
+            item_system.on_broken(self.defender.strike_partner, self.defense_partner_weapon)
+            should_alert = item_system.alerts_when_broken(self.defender.strike_partner, self.defense_partner_weapon)
             if self.alerts and should_alert and self.defender.team == 'player':
-                game.alerts.append(banner.BrokenItem(defense_partner, defense_partner.get_weapon()))
+                game.alerts.append(banner.BrokenItem(self.defender.strike_partner, self.defense_partner_weapon))
                 game.state.change('alert')
 
-    def handle_unusable_items(self, attack_partner: Optional[UnitObject], defense_partner: Optional[UnitObject]):
+    def handle_unusable_items(self):
         """
         Checks if any of the items used in battle are now unusable,
         and if so calls the corresponding function.
@@ -429,10 +450,12 @@ class SimpleCombat():
             item_system.on_unusable(self.attacker, self.main_item)
         if self.def_item and item_system.is_unusable(self.defender, self.def_item):
             item_system.on_unusable(self.defender, self.def_item)
-        if attack_partner and attack_partner.get_weapon() and item_system.is_unusable(attack_partner, attack_partner.get_weapon()):
-            item_system.on_unusable(attack_partner, attack_partner.get_weapon())
-        if defense_partner and defense_partner.get_weapon() and item_system.is_unusable(defense_partner, defense_partner.get_weapon()):
-            item_system.on_unusable(defense_partner, defense_partner.get_weapon())
+        if self.attacker.strike_partner and self.attack_partner_weapon \
+                and item_system.is_unusable(self.attacker.strike_partner, self.attack_partner_weapon):
+            item_system.on_unusable(self.attacker.strike_partner, self.attack_partner_weapon)
+        if self.defender and self.defender.strike_partner and self.defense_partner_weapon \
+                and item_system.is_unusable(self.defender.strike_partner, self.defense_partner_weapon):
+            item_system.on_unusable(self.defender.strike_partner, self.defense_partner_weapon)
 
     def handle_wexp(self, unit, item, target):
         marks = self.get_from_full_playback('mark_hit')

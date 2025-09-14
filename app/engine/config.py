@@ -1,4 +1,5 @@
 import os
+import logging
 from collections import OrderedDict
 from pathlib import Path
 
@@ -7,6 +8,7 @@ from app.utilities import str_utils
 
 def base_config() -> OrderedDict:
     return OrderedDict([('debug', 1),
+                        ('all_saves', 0),
                         ('random_seed', -1),
                         ('screen_size', 2),
                         ('fullscreen', 0),
@@ -84,9 +86,12 @@ def save_settings():
     save_config(SETTINGS, 'saves/config.ini')
 
 def save_debug_commands(commands):
-    with open('saves/debug_commands.txt', 'w') as fp:
-        write_out = '\n'.join(commands)
-        fp.write(write_out)
+    try:
+        with open('saves/debug_commands.txt', 'w') as fp:
+            write_out = '\n'.join(commands)
+            fp.write(write_out)
+    except OSError as e:
+        logging.exception(e)
 
 def get_debug_commands() -> list:
     commands = []

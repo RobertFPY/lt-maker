@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import FrozenSet, TYPE_CHECKING, List, Optional, Set, Tuple
+from typing import FrozenSet, TYPE_CHECKING, List, Literal, Optional, Set, Tuple
 from functools import lru_cache
 
 from app.data.database.database import DB
@@ -146,7 +146,7 @@ class TargetSystem():
 
     def apply_fog_of_war(self, unit: UnitObject, item: ItemObject) -> bool:
         """Returns whether fog of war applies to this unit and item combination"""
-        return (unit.team == 'player' or DB.constants.value('ai_fog_of_war')) and not item_system.ignore_fog_of_war(unit, item)
+        return (unit.team == 'player' or DB.constants.value('ai_fog_of_war')) and not item_system.allow_target_in_fog_of_war(unit, item)
 
     def _filter_splash_through_fog_of_war(self, unit, main_target_pos: Optional[Pos],
                                           splash_positions: List[Pos]
@@ -514,15 +514,15 @@ class TargetSystem():
         attacker_partner = None
         defender_partner = None
         attacker_adj_allies = self.get_adj_allies(attacker)
-        attacker_adj_allies = [ally for ally in attacker_adj_allies if ally.get_weapon() and not item_system.cannot_dual_strike(ally, ally.get_weapon())]
+        attacker_adj_allies = [ally for ally in attacker_adj_allies if ally.get_weapon() and not item_system.cannot_be_dual_strike_partner(ally, ally.get_weapon())]
         defender_adj_allies = self.get_adj_allies(defender)
-        defender_adj_allies = [ally for ally in defender_adj_allies if ally.get_weapon() and not item_system.cannot_dual_strike(ally, ally.get_weapon())]
+        defender_adj_allies = [ally for ally in defender_adj_allies if ally.get_weapon() and not item_system.cannot_be_dual_strike_partner(ally, ally.get_weapon())]
         attacker_partner = self.strike_partner_formula(attacker_adj_allies, attacker, defender, 'attack', (0, 0))
         defender_partner = self.strike_partner_formula(defender_adj_allies, defender, attacker, 'defense', (0, 0))
 
-        if item_system.cannot_dual_strike(attacker, item):
+        if item_system.cannot_have_dual_strike_partner(attacker, item):
             attacker_partner = None
-        if defender.get_weapon() and item_system.cannot_dual_strike(defender, defender.get_weapon()):
+        if defender.get_weapon() and item_system.cannot_have_dual_strike_partner(defender, defender.get_weapon()):
             defender_partner = None
         if DB.constants.value('player_pairup_only'):
             if attacker.team != 'player':
@@ -535,13 +535,14 @@ class TargetSystem():
             return None, None
         return attacker_partner, defender_partner
 
-    def strike_partner_formula(self, allies: list, attacker, defender, mode, attack_info):
-        """This is the formula for the best choice to make when autoselecting strike partners"""
+    def strike_partner_formula(self, allies: list[UnitObject], attacker: UnitObject, defender: UnitObject,
+                               mode: Literal['attack', 'defense', 'splash'], attack_info: list[int]) -> Optional[UnitObject]:
+        """This is the formula for the best choice to make when autoselecting strike partners."""
         if not allies:
             return None
-        damage = [combat_calcs.compute_assist_damage(ally, defender, ally.get_weapon(), resolve_weapon(defender), mode, attack_info) for ally in allies]
-        accuracy = [utils.clamp(combat_calcs.compute_hit(ally, defender, ally.get_weapon(), resolve_weapon(defender), mode, attack_info)/100., 0, 1) for ally in allies]
-        score = [dam * acc for dam, acc in zip(damage, accuracy)]
-        max_score = max(score)
-        max_index = score.index(max_score)
+        damage: list[int] = [(combat_calcs.compute_assist_damage(ally, defender, ally.get_weapon(), resolve_weapon(defender), mode, attack_info) or 0) for ally in allies]
+        accuracy: list[int] = [utils.clamp((combat_calcs.compute_hit(ally, defender, ally.get_weapon(), resolve_weapon(defender), mode, attack_info) or 0)/100., 0, 1) for ally in allies]
+        scores: list[int] = [dam * acc for dam, acc in zip(damage, accuracy)] 
+        max_score = max(scores)
+        max_index = scores.index(max_score)
         return allies[max_index]

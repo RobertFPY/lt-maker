@@ -190,7 +190,13 @@ class EventProcessor():
                 continue
             elif command.nid in ('for',):
                 if not self.iterator_stack or self.command_pointer != self.iterator_stack[-1].line:
-                    self.iterator_stack.append(self._build_iterator(self.command_pointer, command))
+                    try:
+                        self.iterator_stack.append(self._build_iterator(self.command_pointer, command))
+                    except Exception:
+                        # If we fail to create an iterator because the iterator is not valid (say we are in a MockEvent)
+                        # we just go to the end of this for loop.
+                        self.command_pointer = self._find_end(self.command_pointer)
+                        continue
                 else:
                     self.iterator_stack[-1].iterator.next()
                 if self.iterator_stack[-1].iterator.empty():
@@ -199,7 +205,7 @@ class EventProcessor():
                 else:
                     self.command_pointer += 1
                 continue
-            elif command.nid in ('endf',): # jump to iterator
+            elif command.nid in ('endf',):  # jump to iterator
                 self.command_pointer = self.iterator_stack[-1].line
                 continue
 

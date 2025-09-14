@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QGridLayout, QPushButton, QSlider, QLabel, QListView, \
     QWidget
-from PyQt5.QtCore import Qt, QSize, pyqtSignal
+from PyQt5.QtCore import Qt, QSize, QModelIndex, pyqtSignal
 
 from app.data.database.database import DB
 
@@ -25,7 +25,7 @@ class TerrainPainterMenu(QWidget):
         self.alpha_slider.valueChanged.connect(self.map_editor.update_view)
         self.alpha_slider.valueChanged.connect(self.alpha_changed)
 
-        self.list_view = QListView(self)
+        self.list_view = TerrainListView(self)
 
         self.model = TerrainModel(DB.terrain, self)
         self.list_view.setModel(self.model)
@@ -56,10 +56,26 @@ class TerrainPainterMenu(QWidget):
         self.map_editor.update_view()
 
     def set_current_nid(self, nid):
-        idx = self.model.index(DB.terrain.index(nid))
-        self.list_view.setCurrentIndex(idx)
+        if nid is None:
+            self.list_view.setCurrentIndex(QModelIndex())
+        else:
+            idx = self.model.index(DB.terrain.index(nid))
+            self.list_view.setCurrentIndex(idx)
 
     def get_current_nid(self):
         index = self.list_view.currentIndex()
-        terrain = DB.terrain[index.row()]
-        return terrain.nid
+        if index.isValid():
+            terrain = DB.terrain[index.row()]
+            return terrain.nid
+        else:
+            return None
+
+class TerrainListView(QListView):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.parent = parent
+
+    def mousePressEvent(self, event):
+        super().mousePressEvent(event)
+        if event.button() == Qt.LeftButton:
+            self.parent.map_editor.void_right_selection()

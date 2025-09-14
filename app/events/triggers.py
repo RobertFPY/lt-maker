@@ -133,6 +133,20 @@ class OnRegionInteract(EventTrigger):
     region: RegionObject  #: the event region.
 
 @dataclass(init=True)
+class OnRoamInteract(EventTrigger):
+    """
+    Occurs when a unit interacts during free roam. If a Talk
+    or Region event exists, they will trigger instead. This
+    event will only trigger if Talk or Region events do not
+    exist at the given location during Free Roam.
+    Can be used for Generic NPC dialogue or for opening a menu
+    when not interacting with other NPC's or regions.
+    """
+    nid: ClassVar[NID] = 'on_roam_interact'
+    unit1: UnitObject #: The current roam unit.
+    units: List[UnitObject] #: the closest nearby other units.
+
+@dataclass(init=True)
 class CombatDeath(EventTrigger):
     """
     Occurs during combat when any unit dies, including generics.
@@ -202,6 +216,17 @@ class DuringUnitLevelUp(EventTrigger):
     unit1: UnitObject #: the unit that gained/lost stats.
     stat_changes: Dict[NID, int] #: a dict containing their stat changes.
     source: str #: One of ('exp_gain', 'stat_change', 'class_change', 'promote') describing how the unit got to this screen.
+
+@dataclass(init=True)
+class UnitWeaponRankUp(EventTrigger):
+    """
+    Occurs whenever a unit gains a weapon rank.
+    """
+    nid: ClassVar[NID] = 'unit_weapon_rank_up'
+    unit: UnitObject #: the unit that increased in weapon rank.
+    weapon_type: NID #: nid of weapon type object
+    old_wexp: int #: old wexp before gaining wexp
+    rank: str #: new weapon rank by letter
 
 @dataclass(init=True)
 class CombatStart(EventTrigger):

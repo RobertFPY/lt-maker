@@ -222,12 +222,18 @@ def create_overworld_entity(self: Event, nid, unit=None, team=None, flags=None):
         self.logger.error('%s: Entity with nid %s already exists', 'create_overworld_entity', nid)
         return
     if unit:
-        if unit not in DB.units:
+        if unit in game.unit_registry:
+            new_entity = OverworldEntityObject.from_unit_object(nid, None, unit, game.unit_registry)
+
+        elif unit in DB.units:
+            if team not in DB.teams:
+                team = 'player'
+            new_entity = OverworldEntityObject.from_unit_prefab(nid, None, unit, team)
+
+        else:
             self.logger.error('%s: No such unit with nid %s', 'create_overworld_entity', unit)
             return
-        if team not in DB.teams:
-            team = 'player'
-        new_entity = OverworldEntityObject.from_unit_prefab(nid, None, unit, team)
+
         game.overworld_controller.add_entity(new_entity)
 
 def disable_overworld_entity(self: Event, nid, flags=None):
@@ -257,17 +263,20 @@ def toggle_narration_mode(self: Event, direction, speed=None, flags=None):
         narration_component: NarrationDialogue = self.overlay_ui.get_child('event_narration')
 
     # animate in or out
-    if not self.do_skip:
-        if toggle_which == 'open':
-
-            narration_component.enter()
-            self.wait_time = engine.get_time() + anim_duration
-            self.state = 'waiting'
+    if toggle_which == 'open':
+        if self.do_skip:
+            narration_component.quick_enter()
         else:
-            narration_component: NarrationDialogue = self.overlay_ui.get_child('event_narration')
+            narration_component.enter()
+        self.wait_time = engine.get_time() + anim_duration
+        self.state = 'waiting'
+    else:
+        if self.do_skip:
+            narration_component.quick_exit()
+        else:
             narration_component.exit()
-            self.wait_time = engine.get_time() + anim_duration
-            self.state = 'waiting'
+        self.wait_time = engine.get_time() + anim_duration
+        self.state = 'waiting'
 
 
 def narrate(self: Event, speaker, string, flags=None):
@@ -295,12 +304,14 @@ def narrate(self: Event, speaker, string, flags=None):
         self.should_remain_blocked.append(should_block)
         self.state = 'blocked'
 
-def set_overworld_menu_option_enabled(self: Event, overworld_node_nid: NID, overworld_node_menu_option: NID, setting: bool, flags=None):
-    overworld = self.game.overworld_controller
+def set_overworld_menu_option_enabled(self: Event, overworld_nid: NID, overworld_node_nid: NID, overworld_node_menu_option: NID, setting: bool, flags=None):
+    from app.engine.overworld.overworld_states import OverworldManager
+    overworld = OverworldManager(self.game.overworld_registry[overworld_nid], None, self.game.game_vars.get('_next_level_nid'), None)
     overworld.toggle_menu_option_enabled(overworld_node_nid, overworld_node_menu_option, setting)
 
-def set_overworld_menu_option_visible(self: Event, overworld_node_nid: NID, overworld_node_menu_option: NID, setting: bool, flags=None):
-    overworld = self.game.overworld_controller
+def set_overworld_menu_option_visible(self: Event, overworld_nid: NID, overworld_node_nid: NID, overworld_node_menu_option: NID, setting: bool, flags=None):
+    from app.engine.overworld.overworld_states import OverworldManager
+    overworld = OverworldManager(self.game.overworld_registry[overworld_nid], None, self.game.game_vars.get('_next_level_nid'), None)
     overworld.toggle_menu_option_visible(overworld_node_nid, overworld_node_menu_option, setting)
 
 def enter_level_from_overworld(self: Event, level_nid: str, flags=None):

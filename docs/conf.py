@@ -66,6 +66,14 @@ html_static_path = ['_static']
 # Allow anchors for up to h2
 myst_heading_anchors = 2
 
+html_context = {
+    "display_gitlab": True, # Integrate Gitlab
+    "gitlab_user": "rainlash", # Username
+    "gitlab_repo": "lt-maker", # Repo name
+    "gitlab_version": "master", # Version
+    "conf_py_path": "/docs/", # Path in the checkout to the docs root
+}
+
 def setup(app):
     app.add_css_file("theme_overrides.css")
     from custom_directives.document_constants import DocumentConstantsList

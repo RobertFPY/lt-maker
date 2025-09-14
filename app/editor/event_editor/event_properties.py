@@ -48,6 +48,8 @@ from app.extensions.custom_gui import (ComboBox, PropertyBox, PropertyCheckBox,
 from app.extensions.markdown2 import Markdown
 from app.utilities import str_utils
 
+from app.editor.code_line_edit import CodeLineEdit
+
 class EventCollection(QWidget):
     def __init__(self, deletion_criteria, collection_model, parent,
                  button_text="Create %s", view_type=TableView):
@@ -345,9 +347,9 @@ class EventProperties(QWidget):
         self.level_nid_box.edit.addItems(DB.levels.keys())
         self.level_nid_box.edit.currentIndexChanged.connect(self.level_nid_changed)
 
-        self.condition_box = PropertyBox("Condition", QLineEdit, self)
+        self.condition_box = PropertyBox("Condition", CodeLineEdit, self)
         self.condition_box.edit.setPlaceholderText("Condition required for event to fire")
-        self.condition_box.edit.textChanged.connect(self.condition_changed)
+        self.condition_box.edit.textChanged.connect(lambda: self.condition_changed(self.condition_box.edit.toPlainText()))
 
         self.only_once_box = PropertyCheckBox("Trigger only once?", QCheckBox, self)
         self.only_once_box.edit.stateChanged.connect(self.only_once_changed)
@@ -576,7 +578,7 @@ class EventProperties(QWidget):
             self.trigger_box.edit.setValue(current.trigger)
         else:
             self.trigger_box.edit.setValue("None")
-        self.condition_box.edit.setText(current.condition)
+        self.condition_box.edit.setPlainText(current.condition)
         self.only_once_box.edit.setChecked(bool(current.only_once))
         self.priority_box.edit.setValue(current.priority)
 
@@ -615,6 +617,7 @@ class ShowMapDialog(QDialog):
         self.map_view = SimpleMapView(self)
         self.map_view.position_clicked.connect(self.position_clicked)
         self.map_view.position_moved.connect(self.position_moved)
+        self.map_view.position_right_clicked_float.connect(self.position_right_clicked_float)
         if self.current_level:
             self.map_view.set_current_level(self.current_level)
         else:
@@ -646,6 +649,9 @@ class ShowMapDialog(QDialog):
 
     def position_clicked(self, x, y):
         self.window.insert_text("%d,%d" % (x, y))
+
+    def position_right_clicked_float(self, x: float, y: float):
+        self.window.insert_text("%0.1f,%0.1f" % (x, y))
 
     def position_moved(self, x, y):
         if x >= 0 and y >= 0:

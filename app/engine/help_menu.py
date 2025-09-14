@@ -120,6 +120,8 @@ class HelpDialog():
             pos = (WINWIDTH - self.help_surf.get_width() - 8, pos[1])
         if pos[1] + self.help_surf.get_height() >= WINHEIGHT:
             pos = (pos[0], max(0, pos[1] - self.help_surf.get_height() - 16))
+        if pos[0] < 0:
+            pos = (0, pos[1])
         return pos
 
     def final_draw(self, surf, pos, time, help_surf):
@@ -218,6 +220,7 @@ class StatDialog(HelpDialog):
         surf = self.final_draw(surf, self.top_left(pos, right), time, help_surf)
         return surf
 
+ITEM_HELP_WIDTH = 160
 
 class ItemHelpDialog(HelpDialog):
     text_font: NID = 'text'
@@ -249,39 +252,41 @@ class ItemHelpDialog(HelpDialog):
 
         self.vals = [weapon_rank, rng, weight, might, hit, crit]
 
-        desc = self.item.desc
-        if self.item.desc:
-            desc = text_funcs.translate_and_text_evaluate(
-                self.item.desc,
-                unit=self.unit,
-                self=self.item)
-            self.build_lines(desc, 144)
-        else:
-            self.lines = []
+        desc = text_funcs.translate_and_text_evaluate(
+            self.item.desc,
+            unit=self.unit,
+            self=self.item)
 
         self.num_present = len([v for v in self.vals if v is not None])
 
-        if self.num_present > 3:
-            height = 48 + font_height(self.font) * len(self.lines)
+        self.dlg = self.create_dialog(desc)
+        fake_dlg = self.create_dialog(desc)
+        if fake_dlg:
+            fake_dlg.warp_speed()
+            num_lines = len(fake_dlg.text_indices)
         else:
-            height = 32 + font_height(self.font) * len(self.lines)
+            num_lines = 0
 
-        self.create_dialog(desc)
+        if self.num_present > 3:
+            height = 48 + font_height(self.font) * num_lines
+        else:
+            height = 32 + font_height(self.font) * num_lines
 
-        self.help_surf = base_surf.create_base_surf(160, height, 'help_bg_base')
-        self.h_surf = engine.create_surface((160, height + 3), transparent=True)
+        self.help_surf = base_surf.create_base_surf(ITEM_HELP_WIDTH, height, 'help_bg_base')
+        self.h_surf = engine.create_surface((ITEM_HELP_WIDTH, height + 3), transparent=True)
 
-    def create_dialog(self, desc):
+    def create_dialog(self, desc: str):
         if desc:
             from app.engine import dialog
             desc = desc.replace('\n', '{br}')
-            self.dlg = \
+            dlg = \
                 dialog.Dialog.from_style(game.speak_styles.get('__default_help'), desc,
-                                         width=160)
+                                         width=ITEM_HELP_WIDTH)
             y_height = 32 if self.num_present > 3 else 16
-            self.dlg.position = (0, y_height)
+            dlg.position = (0, y_height)
         else:
-            self.dlg = None
+            dlg = None
+        return dlg
 
     def build_lines(self, desc, width):
         if not desc:
@@ -310,12 +315,12 @@ class ItemHelpDialog(HelpDialog):
         help_surf = engine.copy_surface(self.help_surf)
         weapon_type = item_system.weapon_type(self.unit, self.item)
         if weapon_type:
-            icons.draw_weapon(help_surf, weapon_type, (8, 6))
-        render_text(help_surf, [self.text_font], [str(self.vals[0])], ['blue'], (50, 6), HAlignment.RIGHT)
+            icons.draw_weapon(help_surf, weapon_type, (8, 8))
+        render_text(help_surf, [self.text_font], [str(self.vals[0])], ['blue'], (50, 8), HAlignment.RIGHT)
 
-        name_positions = [(56, 6), (106, 6), (8, 22), (56, 22), (106, 22)]
+        name_positions = [(56, 8), (106, 8), (8, 24), (56, 24), (106, 24)]
         name_positions.reverse()
-        val_positions = [(100, 6), (144, 6), (50, 22), (100, 22), (144, 22)]
+        val_positions = [(100, 8), (144, 8), (50, 24), (100, 24), (144, 24)]
         val_positions.reverse()
         names = ['Rng', 'Wt', 'Mt', 'Hit', 'Crit']
         for v, n in zip(self.vals[1:], names):

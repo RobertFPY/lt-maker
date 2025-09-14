@@ -139,11 +139,11 @@ class BaseMainState(State):
 
         self.menu.handle_mouse()
         if 'DOWN' in directions:
-            get_sound_thread().play_sfx('Select 6')
-            self.menu.move_down(first_push)
+            if self.menu.move_down(first_push):
+                get_sound_thread().play_sfx('Select 6')
         elif 'UP' in directions:
-            get_sound_thread().play_sfx('Select 6')
-            self.menu.move_up(first_push)
+            if self.menu.move_up(first_push):
+                get_sound_thread().play_sfx('Select 6')
 
         elif event == 'BACK':
             if self.is_from_overworld:
@@ -297,11 +297,11 @@ class BaseConvosChildState(State):
 
         self.menu.handle_mouse()
         if 'DOWN' in directions:
-            get_sound_thread().play_sfx('Select 6')
-            self.menu.move_down(first_push)
+            if self.menu.move_down(first_push):
+                get_sound_thread().play_sfx('Select 6')
         elif 'UP' in directions:
-            get_sound_thread().play_sfx('Select 6')
-            self.menu.move_up(first_push)
+            if self.menu.move_up(first_push):
+                get_sound_thread().play_sfx('Select 6')
 
         elif event == 'BACK':
             get_sound_thread().play_sfx('Select 4')
@@ -724,11 +724,11 @@ class BaseCodexChildState(State):
 
         self.menu.handle_mouse()
         if 'DOWN' in directions:
-            get_sound_thread().play_sfx('Select 6')
-            self.menu.move_down(first_push)
+            if self.menu.move_down(first_push):
+                get_sound_thread().play_sfx('Select 6')
         elif 'UP' in directions:
-            get_sound_thread().play_sfx('Select 6')
-            self.menu.move_up(first_push)
+            if self.menu.move_up(first_push):
+                get_sound_thread().play_sfx('Select 6')
 
         elif event == 'BACK':
             get_sound_thread().play_sfx('Select 4')
@@ -794,7 +794,7 @@ class LoreDisplay():
         self.page_num = 0
         self.dialogs.clear()
         for line in text:
-            dlg = dialog.Dialog(line, font_type="text", font_color="white", num_lines=8, draw_cursor=False)
+            dlg = dialog.Dialog(line, font_type="text", font_color="white", num_lines=8, draw_cursor=False, speed=0)
             dlg.position = self.topleft[0], self.topleft[1] + 12
             dlg.text_width = WINWIDTH - 100
             dlg.reformat()

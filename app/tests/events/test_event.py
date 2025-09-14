@@ -38,9 +38,15 @@ class EventUnitTests(unittest.TestCase):
 
     def create_event(self, test_commands: List[EventCommand]):
         from app.events.event import Event
-        return self.create_event_from_script([str(cmd) for cmd in test_commands])
+        # Ignore the from_python tag if it was added...
+        # This is a bad solution but I don't see a better one without passing
+        # in the source, which the original `test_python_event_command_wrapper`
+        # test purposefully doesn't do.
+        script = [str(cmd).replace('from_python', '') for cmd in test_commands]
+        return self.create_event_from_script(script)
 
     def create_event_from_script(self, test_script: List[str]):
+        # Returns Event
         from app.events.event import Event
         prefab = EventPrefab('test_nid')
         prefab.source = '\n'.join(test_script)
@@ -64,7 +70,6 @@ class EventUnitTests(unittest.TestCase):
         for mocked_command in mocked_commands:
             mocked_command.assert_called_once()
         reset_catalog()
-
 
     def MACRO_test_event_script(self, test_script):
         parsed_test_commands = [parse_text_to_command(command)[0] for command in test_script]
@@ -121,7 +126,7 @@ class EventUnitTests(unittest.TestCase):
                                        autosize=False, speed=1, font_color=None,
                                        font_type='convo', num_lines=2, draw_cursor=True,
                                        message_tail='message_bg_tail', transparency=0.05,
-                                       name_tag_bg='name_tag', boop_sound=None, flags={'no_block'})
+                                       name_tag_bg='name_tag', boop_sound='Talk_Boop', flags={'no_block'})
         self.assertEqual(len(event.text_boxes), 1)
         self.assertEqual(event.priority_counter, 1)
 
@@ -138,7 +143,7 @@ class EventUnitTests(unittest.TestCase):
                                        autosize=False, speed=5.0, font_color=None,
                                        font_type='convo', num_lines=2, draw_cursor=True,
                                        message_tail='message_bg_tail', transparency=0.05,
-                                       name_tag_bg='name_tag', boop_sound=None, flags=set())
+                                       name_tag_bg='name_tag', boop_sound='Talk_Boop', flags=set())
         self.assertEqual(mock_portrait.priority, 1)
 
         # Test #2a:
@@ -151,7 +156,7 @@ class EventUnitTests(unittest.TestCase):
                                        autosize=True, speed=1, font_color=None,
                                        font_type='convo', num_lines=2, draw_cursor=True,
                                        message_tail='message_bg_tail', transparency=0.05,
-                                       name_tag_bg='name_tag', boop_sound=None, flags={'low_priority', 'fit'})
+                                       name_tag_bg='name_tag', boop_sound='Talk_Boop', flags={'low_priority', 'fit'})
         self.assertEqual(mock_portrait.priority, 1)
 
         # test #3: dialog with speak style
@@ -166,7 +171,7 @@ class EventUnitTests(unittest.TestCase):
                                        autosize=False, speed=4.5, font_color='some_color',
                                        font_type='some_font', num_lines=6, draw_cursor=True,
                                        message_tail='message_bg_thought_tail', transparency=0.2,
-                                       name_tag_bg='name_tag', boop_sound=None, flags=set())
+                                       name_tag_bg='name_tag', boop_sound='Talk_Boop', flags=set())
 
         # test #3.1: speak style in the speaker slot
         self.game.speak_styles['Eirika'] = SpeakStyle('Eirika', 'Eirika', (1, 2), 3,
@@ -178,7 +183,7 @@ class EventUnitTests(unittest.TestCase):
                                        autosize=False, speed=4.5, font_color='some_color',
                                        font_type='some_font', num_lines=6, draw_cursor=True,
                                        message_tail='message_bg_thought_tail', transparency=0.2,
-                                       name_tag_bg='name_tag', boop_sound=None, flags=set())
+                                       name_tag_bg='name_tag', boop_sound='Talk_Boop', flags=set())
 
         # test #3.2: quoted speaker doesn't use style
         event_functions.speak(event, '"Eirika"', 'SPEAK_TEXT')
@@ -187,7 +192,7 @@ class EventUnitTests(unittest.TestCase):
                                        autosize=False, speed=1, font_color=None,
                                        font_type='convo', num_lines=2, draw_cursor=True,
                                        message_tail='message_bg_tail', transparency=0.05,
-                                       name_tag_bg='name_tag', boop_sound=None, flags=set())
+                                       name_tag_bg='name_tag', boop_sound='Talk_Boop', flags=set())
 
 
         # test #4: special center text position
@@ -197,24 +202,37 @@ class EventUnitTests(unittest.TestCase):
                                        autosize=False, speed=1, font_color=None,
                                        font_type='convo', num_lines=2, draw_cursor=True,
                                        message_tail='message_bg_tail', transparency=0.05,
-                                       name_tag_bg='name_tag', boop_sound=None, flags=set())
+                                       name_tag_bg='name_tag', boop_sound='Talk_Boop', flags=set())
 
         # disable intercepting calls at the end of the test
         dialog_patch.stop()
 
     def test_overworld_menu_commands(self):
         from app.events import overworld_event_functions
+        from app.engine.objects.overworld import OverworldObject
+        from app.data.database.overworld import OverworldPrefab
+        from app.data.database.overworld_node import OverworldNodeCatalog, OverworldNodePrefab
+        from app.events.node_events import NodeEventCatalogue, NodeMenuEvent
+
         test_commands = [
-            "set_overworld_menu_option_visible;1;Battle;t",
-            "set_overworld_menu_option_enabled;1;Battle;t"
+            "set_overworld_menu_option_visible;0;0;Battle;t",
+            "set_overworld_menu_option_enabled;0;0;Battle;t"
         ]
+
+        nid = '0'
+        overworld = OverworldPrefab(nid, 'test')
+        node = OverworldNodePrefab.default()
+        node_event = NodeMenuEvent('Battle')
+        node.menu_options = NodeEventCatalogue([node_event])
+        overworld.overworld_nodes = OverworldNodeCatalog([node])
+        self.game.overworld_registry[nid] = OverworldObject.from_prefab(overworld, {}, {})
+
         event = self.create_event_from_script(test_commands)
 
-        event.run_command(event.processor.fetch_next_command())
-        event.run_command(event.processor.fetch_next_command())
+        self.run_all_commands(event)
 
-        self.game.overworld_controller.toggle_menu_option_enabled.assert_called_with('1', 'Battle', True)
-        self.game.overworld_controller.toggle_menu_option_visible.assert_called_with('1', 'Battle', True)
+        assert self.game.overworld_registry[nid].visible_menu_options['0']['Battle'] == True
+        assert self.game.overworld_registry[nid].enabled_menu_options['0']['Battle'] == True
 
     def test_textbox_command(self):
         from app.events import event_functions
@@ -241,7 +259,7 @@ class EventUnitTests(unittest.TestCase):
                                        autosize=False, speed=1, font_color=None,
                                        font_type='convo', num_lines=2, draw_cursor=True,
                                        message_tail='message_bg_tail', transparency=0.05,
-                                       name_tag_bg='name_tag', boop_sound=None, flags={'no_block'})
+                                       name_tag_bg='name_tag', boop_sound='Talk_Boop', flags={'no_block'})
         self.assertEqual(len(event.text_boxes), 1)
         self.assertEqual(event.priority_counter, 1)
 

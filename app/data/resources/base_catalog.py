@@ -2,7 +2,6 @@ import os
 from pathlib import Path
 import shutil
 import filecmp
-import json
 from typing import List, Set, Type, TypeVar, Union
 
 from app.data.resources.resource_prefab import WithResources
@@ -74,6 +73,7 @@ class ManifestCatalog(Data[M]):
         # in the format of just the filename (e.g. 'test.png')
         valid_filenames: str = {r.name for r in used_files}
         valid_filenames.add(self.manifest)  # also include the manifest file ('manifest.json') otherwise it would be deleted
+        valid_filenames.add(self.manifest.replace('.json', '.category.json'))  # also include the category file ('manifest.category.json') otherwise it would be deleted
         for fn in os.listdir(loc):
             if not Path(fn).suffix: # no filetype indicates directory, don't delete directories
                 continue

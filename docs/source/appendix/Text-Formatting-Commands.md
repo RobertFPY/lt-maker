@@ -19,6 +19,14 @@ In order to have your in-game dialog between characters or between the narrator 
 
 `{semicolon}`: Adds a `;`
 
+`{lt}`: Adds a `<`
+
+`{gt}`: Adds a `>`
+
+`{lcb}`: Adds a `{`
+
+`{rcb}`: Adds a `}`
+
 `{tgs}`: Toggles whether the speaking sound occurs.
 
 `{tgm}`: Toggles whether the portrait's mouth will move while talking.
@@ -26,6 +34,8 @@ In order to have your in-game dialog between characters or between the narrator 
 `{max_speed}`: After this command, dialog will be drawn immediately to the screen.
 
 `{starting_speed}`: After this command, dialog will be drawn at the normal speed to the screen.
+
+`{speed:NUMBER}`: Replace `NUMBER` with a non-negative number (for example: 4, 0.6, 1.23, etc). After this command, dialog will be drawn at the input speed to the screen. Higher input value means slower speed.
 
 `{command:??}, {c:??}`: Allows you to run any event command inline while dialog is being drawn to the screen. For instance: `s;Eirika;I'm... so.... {c:set_expression;Eirika;CloseEyes} sleepy...`
 

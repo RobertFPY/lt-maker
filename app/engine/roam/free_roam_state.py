@@ -16,7 +16,7 @@ from app.utilities import utils
 class FreeRoamState(MapState):
     name = 'free_roam'
 
-    TALK_RANGE = 1.0
+    TALK_RANGE = 1.2
 
     def start(self):
         self.roam_unit = None
@@ -44,6 +44,8 @@ class FreeRoamState(MapState):
         if game.is_roam() and game.get_roam_unit():
             roam_unit = game.get_roam_unit()
             if self.roam_unit and self.roam_unit != roam_unit:
+                # Remove the existing AI from the previous unit, if necessary
+                self.ai_handler.stop(self.roam_unit)
                 # Now get the new unit
                 self._assign_unit(roam_unit)
             elif self.roam_unit:
@@ -85,7 +87,7 @@ class FreeRoamState(MapState):
             self.movement_component.finish()
         game.state.change('free_roam_rationalize')
 
-    def get_closest_unit(self, must_have_talk=False):
+    def get_closest_units(self, must_have_talk=False):
         """
         # Returns a unit that roam unit can talk to.
         # Returns the closest unit if more than one is available.
@@ -107,6 +109,10 @@ class FreeRoamState(MapState):
                     (has_talk if must_have_talk else True):
                 units.append(unit)
         units = list(sorted(units, key=lambda unit: utils.calculate_distance(my_pos, unit.position)))
+        return units
+
+    def get_closest_unit(self, must_have_talk=False):
+        units = self.get_closest_units(must_have_talk)
         if units:
             return units[0]
         return None
@@ -146,25 +152,35 @@ class FreeRoamState(MapState):
         """
         other_unit = self.get_closest_unit(must_have_talk=True)
         region = self.get_visit_region()
+        did_trigger = None
 
         if other_unit:
-            get_sound_thread().play_sfx('Select 2')
             did_trigger = game.events.trigger(triggers.OnTalk(self.roam_unit, other_unit, None))
             if did_trigger:
+                get_sound_thread().play_sfx('Select 2')
                 # Rely on the talk event itself to remove the trigger
                 # Behaves more like other things in the engine
                 # action.do(action.RemoveTalk(self.roam_unit.nid, other_unit.nid))
                 self.rationalize_all_units()
-        elif region:
-            get_sound_thread().play_sfx('Select 2')
+
+        if not did_trigger and region:
             did_trigger = game.events.trigger(triggers.RegionTrigger(region.sub_nid, self.roam_unit, self.roam_unit.position, region))
             if not did_trigger:  # maybe this uses the more dynamic region trigger
                 did_trigger = game.events.trigger(triggers.OnRegionInteract(self.roam_unit, self.roam_unit.position, region))
             if did_trigger:
+                get_sound_thread().play_sfx('Select 2')
                 if region.only_once:
                     action.do(action.RemoveRegion(region))
                 self.rationalize_all_units()
-        else:
+
+        if not did_trigger:
+            other_units = self.get_closest_units()
+            did_trigger = game.events.trigger(triggers.OnRoamInteract(self.roam_unit, other_units))
+            if did_trigger:
+                get_sound_thread().play_sfx('Select 2')
+                self.rationalize_all_units()
+
+        if not did_trigger:
             get_sound_thread().play_sfx('Error')
 
     def check_info(self):
@@ -187,19 +203,19 @@ class FreeRoamState(MapState):
         """
         other_unit = self.get_closest_unit()
         did_trigger = game.events.trigger(triggers.RoamPressAux(self.roam_unit, other_unit))
-        self.rationalize_all_units()
         if not did_trigger:
             game.state.change('option_menu')
+        self.rationalize_all_units()
 
     def check_start(self):
         """
         # Called whenever the player presses START
         """
         other_unit = self.get_closest_unit()
-        self.rationalize_all_units()
         did_trigger = game.events.trigger(triggers.RoamPressStart(self.roam_unit, other_unit))
         if not did_trigger:
             game.state.change('option_menu')
+        self.rationalize_all_units()
 
     def take_input(self, event):
         if not self.roam_unit:

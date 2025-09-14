@@ -4,6 +4,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon, QColor, QPixmap
 
 from app.data.database.database import DB
+from app.editor.code_line_edit import CodeLineEdit
 from app.events.regions import Region, RegionType
 
 from app.utilities import utils, str_utils
@@ -207,9 +208,9 @@ class ModifyRegionWidget(QWidget):
         self.sub_nid_box.edit.textChanged.connect(self.sub_nid_changed)
         layout.addWidget(self.sub_nid_box)
 
-        self.condition_box = PropertyBox("Condition", QLineEdit, self)
+        self.condition_box = PropertyBox("Condition", CodeLineEdit, self)
         # self.condition_box.edit.setText(self.current.condition)
-        self.condition_box.edit.textChanged.connect(self.condition_changed)
+        self.condition_box.edit.textChanged.connect(lambda: self.condition_changed(self.condition_box.edit.toPlainText()))
         layout.addWidget(self.condition_box)
 
         self.time_left_box = PropertyBox("Num Turns", QLineEdit, self)
@@ -223,6 +224,10 @@ class ModifyRegionWidget(QWidget):
         self.interrupt_move_box = PropertyCheckBox("Interrupts Movement?", QCheckBox, self)
         self.interrupt_move_box.edit.stateChanged.connect(self.interrupt_move_changed)
         layout.addWidget(self.interrupt_move_box)
+        
+        self.hide_time_box = PropertyCheckBox("Hide time?", QCheckBox, self)
+        self.hide_time_box.edit.stateChanged.connect(self.hide_time_changed)
+        layout.addWidget(self.hide_time_box)
 
         self.status_box = SkillBox(self)
         self.status_box.edit.currentIndexChanged.connect(self.status_changed)
@@ -236,6 +241,7 @@ class ModifyRegionWidget(QWidget):
         self.condition_box.hide()
         self.only_once_box.hide()
         self.interrupt_move_box.hide()
+        self.hide_time_box.hide()
         self.status_box.hide()
         self.terrain_box.hide()
 
@@ -284,6 +290,8 @@ class ModifyRegionWidget(QWidget):
         elif self.current.region_type in (RegionType.VISION, RegionType.FOG):
             self.sub_nid_box.label.setText("Range")
             self.sub_nid_box.show()
+            
+        self.hide_time_box.show()
 
     def sub_nid_changed(self, text):
         self.current.sub_nid = text
@@ -304,6 +312,9 @@ class ModifyRegionWidget(QWidget):
 
     def interrupt_move_changed(self, state):
         self.current.interrupt_move = bool(state)
+        
+    def hide_time_changed(self, state):
+        self.current.hide_time = bool(state)
 
     def status_changed(self, index):
         self.current.sub_nid = self.status_box.edit.currentText()
@@ -318,14 +329,15 @@ class ModifyRegionWidget(QWidget):
         self.current = current
         self.nid_box.edit.setText(current.nid)
         self.region_type_box.edit.setValue(current.region_type)
-        self.condition_box.edit.setText(current.condition)
+        self.condition_box.edit.setPlainText(current.condition)
         self.time_left_box.edit.setText(str(current.time_left) if current.time_left is not None else '')
         self.only_once_box.edit.setChecked(bool(current.only_once))
         self.interrupt_move_box.edit.setChecked(bool(current.interrupt_move))
+        self.hide_time_box.edit.setChecked(bool(current.hide_time))
         if current.region_type == RegionType.STATUS:
             self.status_box.edit.setValue(str(current.sub_nid))
         elif current.region_type == RegionType.TERRAIN:
-            self.terrain_box.edit.setValue(str(current.sub_nid))
+            self.terrain_box.setValue(str(current.sub_nid))
         elif current.region_type in (RegionType.EVENT, RegionType.FOG, RegionType.VISION):
             self.sub_nid_box.edit.setText(str(current.sub_nid))
         else:

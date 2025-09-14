@@ -186,6 +186,15 @@ class GameBoard(object):
                 grid.get(position).add(unit.nid)
             self._update_previously_visited(positions, unit.team)
 
+    def change_sight_range(self, unit: UnitObject, new_sight_range: int):
+        """Modifies the state of the fog of war game board 
+        in order to increase or decrease an existing units sight range
+        without putting them in a new position
+        """
+        old_pos: Pos = self.fow_vantage_point.get(unit.nid)
+        if old_pos:
+            self.update_fow(old_pos, unit, new_sight_range)
+
     def _update_previously_visited(self, positions: List[Pos], team: NID):
         """
         If player team only, update with where we have seen before

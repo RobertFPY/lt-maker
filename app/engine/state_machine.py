@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 if TYPE_CHECKING:
     from app.engine.state import State
@@ -29,18 +29,19 @@ class SimpleStateMachine():
 
 class StateMachine():
     def __init__(self):
-        self.state = []
-        self.temp_state = []
-        self.prev_state = None
+        self.state: List[State] = []
+        self.temp_state: List[str] = []
+        self.prev_state: State = None
+        self.prior_state: State = None
 
     def load_states(self, starting_states=None, temp_state=None):
         from app.engine import (base, chapter_title, debug_mode, dialog_log,
                                 feat_choice, game_over, general_states,
                                 level_up, minimap, objective_menu,
-                                player_choice, prep, promotion,
+                                player_choice, prep, prep_gba, promotion,
                                 settings, status_upkeep, text_entry,
                                 title_screen, trade, transitions, turnwheel,
-                                victory_screen, party_transfer)
+                                victory_screen, party_transfer, credit_state)
         from app.engine.game_menus.menu_states import unit_menu_state
         from app.engine.info_menu import info_menu_state
         from app.engine.overworld import overworld_states
@@ -92,7 +93,7 @@ class StateMachine():
              'combat_trade': trade.CombatTradeState,
              'weapon_choice': general_states.WeaponChoiceState,
              'spell_choice': general_states.SpellChoiceState,
-             'combat_art_choice': general_states.CombatArtChoiceState,
+             'ability_submenu_choice': general_states.AbilitySubmenuChoiceState,
              'combat_targeting': general_states.CombatTargetingState,
              'item_targeting': general_states.ItemTargetingState,
              'combat': general_states.CombatState,
@@ -137,6 +138,8 @@ class StateMachine():
              'prep_restock': prep.PrepRestockState,
              'prep_use': prep.PrepUseState,
              'prep_market': prep.PrepMarketState,
+             'prep_gba_main': prep_gba.PrepGBAMainState,
+             'prep_gba_map': prep_gba.PrepGBAMapState,
              'base_main': base.BaseMainState,
              'base_market_select': base.BaseMarketSelectState,
              'base_bexp_select': base.BaseBEXPSelectState,
@@ -161,7 +164,8 @@ class StateMachine():
              'overworld_next_level': overworld_states.OverworldLevelTransition,
              'dialog_log': dialog_log.DialogLogState,
              'party_transfer': party_transfer.PartyTransferState,
-             'party_transfer_confirm': party_transfer.PartyTransferConfirmState
+             'party_transfer_confirm': party_transfer.PartyTransferConfirmState,
+             'credit': credit_state.CreditState
              }
 
         if starting_states:
@@ -195,8 +199,13 @@ class StateMachine():
             return self.state[-1]
 
     def get_prev_state(self) -> State:
+        """returns the state which precedes the current state on the stack"""
         if self.state and len(self.state) > 1:
             return self.state[-2]
+
+    def get_prior_state(self) -> State:
+        """return the state the state machine was just in. contrast with `get_prev_state`"""
+        return self.prior_state
 
     def exit_state(self, state):
         if state.processed:
@@ -215,13 +224,16 @@ class StateMachine():
                 if self.state:
                     state = self.state[-1]
                     self.exit_state(state)
+                    self.prior_state = state
                     self.state.pop()
             elif transition == 'clear':
+                self.prior_state = self.current_state()
                 for state in reversed(self.state):
                     self.exit_state(state)
                 self.state.clear()
             else:
                 new_state = self.all_states[transition](transition)
+                self.prior_state = self.state[-1] if self.state else None
                 self.state.append(new_state)
         if self.temp_state:
             logging.debug("State: %s", self.state_names())

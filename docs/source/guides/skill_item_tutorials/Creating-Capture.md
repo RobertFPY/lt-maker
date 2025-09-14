@@ -51,7 +51,7 @@ Where Kill 0 HP Travelers refers to the following event in the Global level:
 ![Screenshot_2022-01-10_170330](./images/Capture/kill_event.png)
 ~~~
 if;game.get_unit(unit.traveler) and game.get_unit(unit.traveler).get_hp() == 0
-    kill_unit;{eval:game.get_unit(unit.traveler)};FLAG(immediate)
+    kill_unit;{eval:game.get_unit(unit.traveler)};immediate
 end
 ~~~
 

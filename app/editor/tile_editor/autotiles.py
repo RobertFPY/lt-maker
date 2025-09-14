@@ -38,28 +38,35 @@ def similar_fast(p1: list, p2: list) -> int:
             mapping[i] = j
     return 0
 
-class Series(list):
-    def is_present(self, test) -> bool:
-        test_palette = test.palette
-        all_palettes = [im.palette for im in self]
-        return any(similar_fast(test_palette, palette) for palette in all_palettes)
-
-    def get_frames_with_color(self, color: tuple) -> list:
-        return [im for im in self if color in im.colors]
-
 class PaletteData():
     def __init__(self, im: QImage):
         self.im: QImage = im
         self.new_im: QImage = None
         self.colors: list = editor_utilities.get_full_palette(im)
         # Sort by most
-        self.uniques: list = sorted(set(self.colors), key=lambda x: self.colors.count(x), reverse=True)
+        # dict.fromkeys preserves order
+        self.uniques: list = sorted(dict.fromkeys(self.colors), key=lambda x: self.colors.count(x), reverse=True)
         self.palette: list = self.colors[:]
 
         for idx, pixel in enumerate(self.colors):
             # Each pixel in the palette is assigned its color id
             self.palette[idx] = self.uniques.index(pixel)
             # So palette is a unique string of ints
+        self.hash_id = hash(tuple(self.palette))
+
+def check_hashes(p1: PaletteData, p2: PaletteData) -> bool:
+    """
+    Compares whether their hashes match
+    """
+    return p1.hash_id == p2.hash_id
+
+class Series(list):
+    def is_present(self, test: PaletteData) -> bool:
+        all_palettes = [im for im in self]
+        return any(check_hashes(test, palette) for palette in all_palettes)
+
+    def get_frames_with_color(self, color: tuple) -> list:
+        return [im for im in self if color in im.colors]
 
 class AutotileMaker():
     def __init__(self, parent=None, fast=True):
@@ -201,24 +208,27 @@ class AutotileMaker():
         closest_series = None
         closest_frame = None
         closest_book = None
-        min_sim = 4
 
+        has_matched: bool = False
         for book_idx, book in enumerate(self.books):
+            if has_matched:
+                continue
             for series_idx, series in enumerate(book):
                 if not self.series_has_changes(series):
                     continue  # Don't bother checking if it doesn't have changes
                 for frame_idx, frame in enumerate(series):
-                    similarity = self.similar_func(frame.palette, tile_palette.palette)
-                    if similarity < min_sim:
-                        min_sim = similarity
+                    is_same = check_hashes(frame, tile_palette)
+                    if is_same:
                         closest_series = series
                         closest_frame = frame
                         closest_book = book
                         num_tiles_x = self.num_tiles_x_list[book_idx]
-                        pos_x = series_idx%num_tiles_x
-                        pos_y = series_idx//num_tiles_x
-                        print("Similarity met for position %s using template: %s at template pos (%d, %d), frame %d" % 
+                        pos_x = series_idx % num_tiles_x
+                        pos_y = series_idx // num_tiles_x
+                        print("Match at position %s using template: %s at template pos (%d, %d), frame %d" % 
                               (pos, self.autotile_templates[book_idx], pos_x, pos_y, frame_idx))
+                        has_matched = True
+                        break
 
         if closest_series:
             if closest_series in self.recognized_series:
@@ -255,7 +265,7 @@ class AutotileMaker():
                         if len(map_tile.uniques) < 2:
                             continue
                         # If so, do those frames show up in the map sprite?
-                        if similar_fast(f.palette, map_tile.palette) == 0:
+                        if check_hashes(f, map_tile):
                             # If so, add to the color conversion
                             color_idx = f.colors.index(color)
                             new_color = map_tile.colors[color_idx]
@@ -294,7 +304,7 @@ class AutotileMaker():
         self.companion_autotile_im = new_im
 
     def series_has_changes(self, series: list) -> bool:
-        no_changes = all(frame.palette == series[0].palette for frame in series)
+        no_changes = all(frame.hash_id == series[0].hash_id and frame.colors == series[0].colors for frame in series)
         return not no_changes
 
 AUTOTILEMAKER = None

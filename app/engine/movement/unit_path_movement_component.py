@@ -45,7 +45,7 @@ class UnitPathMovementComponent(MovementComponent):
             next_position = self.path[-1]
             net_position = (next_position[0] - self.unit.position[0], next_position[1] - self.unit.position[1])
             self.unit.sprite.handle_net_position(net_position)
-        action.PickUnitUp(self.unit).do()
+        action.QuickLeave(self.unit, keep_position=True).do()
         if not self.muted:
             self.unit.sound.play()
         self._last_update = engine.get_time()
@@ -111,6 +111,9 @@ class UnitPathMovementComponent(MovementComponent):
             self.unit.sprite.change_state('normal')
             self.unit.sprite.reset()
             self.unit.sprite.add_animation('MapSurprise', loop=False)
+            # Necessary so that turnwheeling backwards and then forwards 
+            # doesn't put you in the position you tried to go to originally
+            action.do(action.SetPosition(self.unit, self.unit.position))  
             action.do(action.HasAttacked(self.unit))
             if self.unit.team == 'player':
                 game.state.clear()
@@ -122,7 +125,7 @@ class UnitPathMovementComponent(MovementComponent):
             if game.ai.unit is self.unit:
                 game.ai.interrupt()
 
-        action.PutUnitDown(self.unit).do()
+        action.QuickArrive(self.unit, self.unit.position).do()
         if self.unit.sound:
             self.unit.sound.stop()
 

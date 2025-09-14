@@ -42,6 +42,8 @@ class DatabaseValidatorEngine():
             CType.Item: _nid_in_data(db.items),
             CType.Skill: _nid_in_data(db.skills),
             CType.Stat: _nid_in_data(db.stats),
+            CType.StatFloat: _nid_in_data(db.stats),
+            CType.StatString: _nid_in_data(db.stats),
             CType.MapAnimation: _nid_in_data(resources.animations),
             CType.Equation: _nid_in_data(db.equations),
             CType.MovementType: lambda mtype: mtype in db.mcost.get_unit_types(),
@@ -53,6 +55,7 @@ class DatabaseValidatorEngine():
             CType.Affinity: _nid_in_data(db.affinities),
             CType.Terrain: _nid_in_data(db.terrain),
             CType.Event: _nid_in_data(db.events),
+            CType.Lore: _nid_in_data(db.lore),
 
             RType.ICONS16: _nid_in_data(resources.icons16),
             RType.ICONS32: _nid_in_data(resources.icons32),
@@ -99,11 +102,12 @@ class DatabaseValidatorEngine():
             DType.TRANSLATIONS: _nid_in_data(db.translations),
             DType.LORE: _nid_in_data(db.lore),
             DType.RAW_DATA: _nid_in_data(db.raw_data),
+            DType.CREDIT: _nid_in_data(db.credit),
         }
 
         # native types, don't really need to check these
         for ctype in (CType.Bool, CType.Int, CType.Float, CType.String,
-                      CType.Color3, CType.Color4, CType.StringDict, CType.MultipleOptions):
+                      CType.Color3, CType.Color4, CType.StringDict, CType.MultipleOptions, CType.Shape):
             def _trivial_type(val):
                 return True
             self._vmap[ctype] = _trivial_type

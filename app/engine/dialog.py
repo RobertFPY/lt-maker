@@ -41,6 +41,8 @@ def process_dialog_shorthand(text: str) -> str:
     text = text.replace("\n", "{br}")
     text = text.replace("|", "{w}{br}")
     text = text.replace("{semicolon}", ";")
+    text = text.replace("{lt}", "<").replace("{gt}", ">")
+    text = text.replace("{lcb}", "{").replace("{rcb}", "}")
     return text
 
 
@@ -95,7 +97,7 @@ class Dialog:
                  flags=None):
         self.cursor = SPRITES.get("waiting_cursor")
         flags = flags or set()
-        
+
         self.plain_text = text
         self.portrait = portrait
         self.speaker = speaker
@@ -361,11 +363,6 @@ class Dialog:
             self.y_offset = 16
         else:
             self.state = DialogState.PROCESS
-            if self.portrait:
-                if self.should_move_mouth:
-                    self.portrait.talk()
-                else:
-                    self.portrait.stop_talking()
         self._add_text_indices(whitespace)
 
     def _done_processing(self):
@@ -375,6 +372,10 @@ class Dialog:
         if self._done_processing():
             self.pause_before_wait()
             return
+
+        if self.portrait:
+            self.portrait.stop_talking()  # We will turn this back on if we reach a spoken character
+
         command = self.text_commands[self.text_index]
         if command in ("{br}", "{break}", "{sub_break}"):
             self._next_line()
@@ -388,17 +389,15 @@ class Dialog:
             self.command_pause()
         elif command == "{tgm}":
             self.should_move_mouth = not self.should_move_mouth
-            if self.portrait:
-                if self.should_move_mouth:
-                    self.portrait.talk()
-                else:
-                    self.portrait.stop_talking()
         elif command == "{tgs}":
             self.should_speak_sound = not self.should_speak_sound
         elif command == "{max_speed}":
             self.speed = 0
         elif command == "{starting_speed}":
             self.speed = self.starting_speed
+        elif re.fullmatch(r"\{speed:(\d+(?:\.\d+)?)\}", command):
+            val = float(command[7:-1])  # Slice out the number part directly
+            self.speed = int(val) if val.is_integer() else val
         elif command == " ":  # Check to see if we should move to next line
             next_word = self._get_next_word(self.text_index)
             start, stop = self.text_indices[-1]
@@ -409,6 +408,8 @@ class Dialog:
                 self._next_line(True)
             else:
                 self._increment_text_indices()
+                if self.should_move_mouth and self.portrait:
+                    self.portrait.start_talking()
                 if sound:
                     self.play_talk_boop(self.boop_sound)
         elif command in (".", ",", ";", "!", "?"):
@@ -416,6 +417,8 @@ class Dialog:
             self.pause()
         else:
             self._increment_text_indices()
+            if self.should_move_mouth and self.portrait:
+                self.portrait.start_talking()
             if sound:
                 self.play_talk_boop(self.boop_sound)
         self.text_index += 1
@@ -476,8 +479,6 @@ class Dialog:
     def command_unpause(self):
         if self.state == DialogState.COMMAND_PAUSE:
             self.state = DialogState.PROCESS
-            if self.portrait and self.should_move_mouth:
-                self.portrait.talk()
 
     def start_processing(self):
         if self.state == DialogState.TRANSITION_IN:
@@ -496,11 +497,6 @@ class Dialog:
                 self.state = DialogState.DONE
             else:
                 self.state = DialogState.PROCESS
-                if self.portrait:
-                    if self.should_move_mouth:
-                        self.portrait.talk()
-                    else:
-                        self.portrait.stop_talking()
 
     def play_talk_boop(self, boop=None):
         if (cf.SETTINGS["talk_boop"]
@@ -509,8 +505,6 @@ class Dialog:
             self.last_sound_update = engine.get_true_time()
             if boop:
                 get_sound_thread().play_sfx(boop)
-            else:
-                get_sound_thread().play_sfx("Talk_Boop")
 
     def update(self):
         current_time = engine.get_time()
@@ -550,22 +544,12 @@ class Dialog:
         elif self.state == DialogState.PAUSE:  # Regular pause for periods
             if current_time - self.last_update > self.pause_time:
                 self.state = DialogState.PROCESS
-                if self.portrait:
-                    if self.should_move_mouth:
-                        self.portrait.talk()
-                    else:
-                        self.portrait.stop_talking()
 
         elif self.state == DialogState.NEW_LINE:
             # Update y_offset
             self.y_offset = max(0, self.y_offset - 2)
             if self.y_offset == 0:
                 self.state = DialogState.PROCESS
-                if self.portrait:
-                    if self.should_move_mouth:
-                        self.portrait.talk()
-                    else:
-                        self.portrait.stop_talking()
 
         self.cursor_offset_index = (self.cursor_offset_index + 1) % len(
             self.cursor_offset)
@@ -964,12 +948,13 @@ class Ending:
     wait_time = 5000
     background = SPRITES.get("endings_display")
 
-    def __init__(self, portrait, title, text, unit):
+    def __init__(self, portrait, title, text, unit, wait_for_input: bool = False):
         self.portrait = portrait
         self.title = title
         self.plain_text = text
         self.speaker = None  # Unused attribute to match Dialog
         self.unit = unit
+        self.wait_for_input = wait_for_input
         self.font = FONT["text"]
         self.font_name = "text"
 
@@ -981,7 +966,7 @@ class Ending:
         self.wait_update = 0
 
     def build_dialog(self):
-        self.dialog = Dialog(self.plain_text, num_lines=5, draw_cursor=False)
+        self.dialog = Dialog(self.plain_text, num_lines=5, draw_cursor=self.wait_for_input)
         self.dialog.position = (8, 40)
         self.dialog.text_width = WINWIDTH - 32
         self.dialog.width = self.dialog.text_width + 16
@@ -1052,7 +1037,9 @@ class Ending:
         if self.wait_update:
             if current_time - self.wait_update > self.wait_time:
                 self.dialog.state = DialogState.DONE
-        elif self.is_done_or_wait():
+        elif self.wait_for_input and self.is_done():
+            self.wait_update = current_time
+        elif not self.wait_for_input and self.is_done_or_wait():
             self.wait_update = current_time
 
         return False
@@ -1071,7 +1058,7 @@ class PairedEnding(Ending):
     background = SPRITES.get("paired_endings_display")
 
     def __init__(self, left_portrait, right_portrait, left_title, right_title, text,
-                 left_unit, right_unit):
+                 left_unit, right_unit, wait_for_input: bool = False):
         self.left_portrait = left_portrait
         self.right_portrait = right_portrait
         self.left_title = left_title
@@ -1080,6 +1067,7 @@ class PairedEnding(Ending):
         self.speaker = None  # Unused attribute to match Dialog
         self.left_unit = left_unit  # Used in stats
         self.right_unit = right_unit
+        self.wait_for_input = wait_for_input
         self.font_name = "text"
 
         self.build_dialog()

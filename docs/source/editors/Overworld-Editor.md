@@ -10,7 +10,7 @@ This is the overworld which ships with the `default.ltproj` project. You can use
 
 **Click the Create New Overworld button to do the thing, and double click to enter the editor.**![image](images/OverworldEditorImages/Overworld2.png)
 
-On the left side, there are a lot of fields that are effectively self-explanatory. 
+On the left side, there are a lot of fields that are effectively self-explanatory.
 
 * **Overworld ID** is the internal ID of the overworld. Make it memorable, make it count.
 * **World Name** is the name of the overworld that will be displayed in the game to the player.
@@ -74,7 +74,7 @@ reveal_overworld_road;Border Mulan (0);Frelia Castle (2)
 toggle_narration_mode;open;1000
 wait;500
 narrate;Narrator;Eirika and her companions have liberated the border castle.
-overworld_move_unit;Eirika's Group (Eirika);Frelia Castle (2);FLAG(no_block)
+overworld_move_unit;Eirika's Group (Eirika);Frelia Castle (2);no_block
 narrate;Narrator;Alongside Princess Tana of Frelia, they ride to the Frelian Capital.
 wait;500
 transition;close
@@ -131,7 +131,7 @@ We simply need to navigate the party onto Castle Renais, and... voila! Our event
 ![Picture5](images/OverworldEditorImages/OverworldA.png)
 
 Let's select our event and see what happens.
-We're given a (kinda ugly, I didn't care about the aesthetics) menu prompting us to select the unit to shop with. 
+We're given a (kinda ugly, I didn't care about the aesthetics) menu prompting us to select the unit to shop with.
 
 ![Picture6](images/OverworldEditorImages/OverworldB.png)
 

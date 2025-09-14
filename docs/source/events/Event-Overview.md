@@ -52,17 +52,19 @@ Event Regions can create their own triggers which can also be caught by the even
 
 11. `during_unit_level_up` {`unit`, `unit2`}: This trigger fires when the unit levels up, right after the level up screen shows what stats have increased.
 
-12. `combat_start` {`unit`, `unit2`, `item`, `position`}: This trigger fires at the beginning of combat. Useful for boss fight quotes.
+12. `unit_weapon_rank_up` {`unit`, `item`, `position`}: This trigger fires when unit's weapon rank increases. Useful for Three Houses-like weapon ranks adding spells or skills on rank up.
 
-13. `combat_end` {`unit`, `unit2`, `item`, `position`}: This trigger fires at the end of combat. Useful for checking win or loss conditions.
+13. `combat_start` {`unit`, `unit2`, `item`, `position`}: This trigger fires at the beginning of combat. Useful for boss fight quotes.
 
-14. `on_talk` {`unit`, `unit2`, `position`}: This trigger fires when two units "Talk" to one another.
+14. `combat_end` {`unit`, `unit2`, `item`, `position`}: This trigger fires at the end of combat. Useful for checking win or loss conditions.
 
-15. `on_support` {`unit`, `unit2`, `item`, `position`}: This trigger fires when two units "Support" with one another. For this trigger, `item` contains the nid of the support rank ('C', 'B', 'A', or 'S', for example).
+15. `on_talk` {`unit`, `unit2`, `position`}: This trigger fires when two units "Talk" to one another.
 
-16. `on_base_convo` {`unit`}: This trigger fires when the player selects a base conversation to view. For this trigger, `unit` contains the title of the base conversation.
+16. `on_support` {`unit`, `unit2`, `item`, `position`}: This trigger fires when two units "Support" with one another. For this trigger, `item` contains the nid of the support rank ('C', 'B', 'A', or 'S', for example).
 
-17. `on_turnwheel`: This trigger fires after the turnwheel is used.
+17. `on_base_convo` {`unit`}: This trigger fires when the player selects a base conversation to view. For this trigger, `unit` contains the title of the base conversation.
+
+18. `on_turnwheel`: This trigger fires after the turnwheel is used.
 
 ## Conditions
 

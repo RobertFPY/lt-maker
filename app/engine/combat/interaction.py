@@ -96,7 +96,8 @@ def engage(attacker: UnitObject, positions: list, main_item: ItemObject, skip: b
 
 def start_combat(unit: UnitObject, target: tuple, item: ItemObject, skip: bool = False,
                  ai_combat: bool = False, event_combat: bool = False, script: list = None,
-                 total_rounds: int = 1, arena: bool = False, force_animation: bool = False, force_no_animation: bool = False):
+                 total_rounds: int = 1, arena: bool = False, force_animation: bool = False, 
+                 force_no_animation: bool = False):
     """
     Target is a position tuple
     """

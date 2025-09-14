@@ -4,6 +4,7 @@ from app.data.database.database import DB
 
 from app.engine.sprites import SPRITES
 from app.engine.sound import get_sound_thread
+from app.engine.game_state import game
 from app.engine import engine, image_mods, item_system, item_funcs, skill_system
 
 from app.data.resources.combat_anims import CombatAnimation, WeaponAnimation, EffectAnimation
@@ -136,6 +137,7 @@ class BattleAnimation():
     def _generate_missing_poses(self):
         # Copy Stand -> RangedStand and Dodge -> RangedDodge if missing
         # Copy Attack -> Miss and Attack -> Critical if missing
+        # Copy Stand -> Damaged and Damaged or Damaged -> RangedDamaged if missing
         if 'RangedStand' not in self.poses and 'Stand' in self.poses:
             self.poses['RangedStand'] = self.poses['Stand']
         if 'RangedDodge' not in self.poses and 'Dodge' in self.poses:
@@ -144,6 +146,10 @@ class BattleAnimation():
             self.poses['Miss'] = self.poses['Attack']
         if 'Critical' not in self.poses and 'Attack' in self.poses:
             self.poses['Critical'] = self.poses['Attack']
+        if 'Damaged' not in self.poses and 'Stand' in self.poses:
+            self.poses['Damaged'] = self.poses['Stand']
+        if 'RangedDamaged' not in self.poses and 'Damaged' in self.poses:
+            self.poses['RangedDamaged'] = self.poses['Damaged']    
 
     def load_full_image(self):
         # Only do load stuff if image does not exist already
@@ -258,6 +264,12 @@ class BattleAnimation():
             self.start_anim('RangedDodge')
         else:
             self.start_anim('Dodge')
+
+    def damaged(self):
+        if self.at_range:
+            self.start_anim('RangedDamaged')
+        else:
+            self.start_anim('Damaged')
 
     def get_num_frames(self, num) -> int:
         return max(1, int(int(num) * battle_anim_speed))
@@ -466,6 +478,7 @@ class BattleAnimation():
             self.owner.shake()
             self.owner.start_hit()
             if self.partner_anim:  # Also offset partner, since they got hit
+                self.partner_anim.damaged()
                 self.partner_anim.lr_offset = [-1, -2, -3, -2, -1]
         elif command.nid == 'wait_for_hit':
             if self.wait_for_hit:
@@ -485,6 +498,7 @@ class BattleAnimation():
             self.owner.shake()
             self.owner.spell_hit()
             self.owner.hit_modifiers()
+            self.partner_anim.damaged()
 
         elif command.nid == 'effect':
             effect = values[0]
@@ -546,6 +560,11 @@ class BattleAnimation():
         elif command.nid == 'blend':
             if bool(values[0]):
                 self.blend = engine.BLEND_RGB_ADD
+            else:
+                self.blend = 0
+        elif command.nid == 'blend2':
+            if bool(values[0]):
+                self.blend = engine.BLEND_RGB_SUB
             else:
                 self.blend = 0
         elif command.nid == 'partial_blend':
@@ -726,6 +745,13 @@ class BattleAnimation():
             if y_offset:
                 image = image_mods.make_anim_gray(image)
 
+            # Add tints from skills
+            if self.unit and self.parent == self: # Don't apply tint if this is combat effect or mock combat
+                current_time = engine.get_time()
+                flicker_tints = skill_system.combat_sprite_flicker_tint(self.unit)
+                flicker_tints = [image_mods.FlickerTint(*tint) for tint in flicker_tints]
+                image = image_mods.draw_flicker_tint(image, current_time, flicker_tints)
+
             # Actually blit
             if self.background and self.blend:
                 old_bg = self.background.copy()
@@ -841,7 +867,7 @@ def get_palette(anim_prefab: CombatAnimation, unit) -> tuple:
     palettes = anim_prefab.palettes
     palette_names = [palette[0] for palette in palettes]
     palette_nids = [palette[1] for palette in palettes]
-    team_obj = DB.teams.get(unit.team)
+    team_obj = game.teams.get(unit.team)
     team_palette = team_obj.combat_variant_palette if team_obj else None
     if unit.name in palette_names:
         idx = palette_names.index(unit.name)
@@ -866,24 +892,29 @@ def get_palette(anim_prefab: CombatAnimation, unit) -> tuple:
     return palette_name, current_palette
 
 def get_battle_anim(unit, item, distance=1, klass=None, default_variant=False, allow_transform=False, allow_revert=False) -> BattleAnimation:
+    # klass is when you want to force a class (promotion, for instance)
     # Some items never want to have a battle anim
     if item_system.force_map_anim(unit, item):
         return False
     # Find the right combat animation
     if klass:
         class_obj = DB.classes.get(klass)
+        combat_anim_nid = class_obj.combat_anim_nid
     else:
-        class_obj = DB.classes.get(skill_system.change_animation(unit))
-    combat_anim_nid = class_obj.combat_anim_nid
+        combat_anim_nid = skill_system.change_animation(unit)
+        if not combat_anim_nid:
+            combat_anim_nid = DB.classes.get(unit.klass).combat_anim_nid
     if default_variant:
         use_variant = unit.variant
     else:
         use_variant = skill_system.change_variant(unit)
     if combat_anim_nid and use_variant:
-        combat_anim_nid += use_variant
-    res = RESOURCES.combat_anims.get(combat_anim_nid)
+        modified_combat_anim_nid = combat_anim_nid + use_variant
+    else:
+        modified_combat_anim_nid = combat_anim_nid
+    res = RESOURCES.combat_anims.get(modified_combat_anim_nid)
     if not res:  # Try without unit variant
-        res = RESOURCES.combat_anims.get(class_obj.combat_anim_nid)
+        res = RESOURCES.combat_anims.get(combat_anim_nid)
     if not res:
         return None
 

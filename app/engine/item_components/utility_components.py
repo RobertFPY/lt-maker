@@ -34,6 +34,9 @@ class Heal(ItemComponent):
                 return True
         return False
 
+    def simple_target_restrict(self, unit, item):
+        return unit and unit.get_hp() < unit.get_max_hp()
+
     def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         heal = self._get_heal_amount(unit, target)
         true_heal = min(heal, target.get_max_hp() - target.get_hp())

@@ -953,6 +953,10 @@ class ItemDescriptionPanel():
             else:
                 desc = ""
 
+            desc = text_funcs.translate_and_text_evaluate(
+                        desc,
+                        unit=self.unit,
+                        self=self.item)
             desc = desc.replace('{br}', '\n')
             lines = self.build_lines(desc, width - 8)
             lines = fix_tags(lines)

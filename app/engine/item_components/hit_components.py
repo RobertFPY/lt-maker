@@ -196,9 +196,12 @@ class Shove(ItemComponent):
     expose = ComponentType.Int
     value = 1
 
+    def _check_shove(self, unit_to_move, anchor_pos, magnitude):
+        return game.query_engine.check_shove(unit_to_move, anchor_pos, magnitude)
+
     def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         if not skill_system.ignore_forced_movement(target):
-            new_position = game.query_engine.check_shove(target, unit.position, self.value)
+            new_position = self._check_shove(target, unit.position, self.value)
             if new_position:
                 actions.append(action.ForcedMovement(target, new_position))
                 playback.append(pb.ShoveHit(unit, item, target))

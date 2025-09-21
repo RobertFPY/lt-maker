@@ -37,7 +37,7 @@ build_engine:
     only:
         - release
     before_script:
-        - choco install -y python --version=3.11.8
+        - choco install -y python --version=3.11.8 --allow-downgrade
         - "C:\\Python311\\python.exe -m pip install -r requirements_engine.txt"
         - "C:\\Python311\\python.exe -m pip install pywin32"
         # Necessary to use setuptools < 70 until we upgrade to Pyinstaller v6.7.0
@@ -76,7 +76,7 @@ build_editor:
     only:
         - release
     before_script:
-        - choco install -y python --version=3.11.8
+        - choco install -y python --version=3.11.8 --allow-downgrade
         - "C:\\Python311\\python.exe -m pip install -r requirements_editor.txt"
         - "C:\\Python311\\python.exe -m pip install pywin32"
         # Necessary to use setuptools < 70 until we upgrade to Pyinstaller v6.7.0
@@ -118,7 +118,7 @@ build_map_maker:
     only:
         - release
     before_script:
-        - choco install -y python --version=3.11.8
+        - choco install -y python --version=3.11.8 --allow-downgrade
         - "C:\\Python311\\python.exe -m pip install -r requirements_editor.txt"
         - "C:\\Python311\\python.exe -m pip install pywin32"
         # Necessary to use setuptools < 70 until we upgrade to Pyinstaller v6.7.0

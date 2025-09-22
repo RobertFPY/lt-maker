@@ -23,21 +23,23 @@ class ThemeParameter:
     _type: Type
     desc: str = ""
 
+percent = object()
+
 theme_parameters = Data([
     ThemeParameter('size', "Map Size", (30, 18), Tuple[int, int]),
     ThemeParameter('section_grid', "Section Grid", (4, 3), Tuple[int, int], "Individual sections to fill with rooms"),
     ThemeParameter('floor_upper', "Upper Floor Terrain", Terrain.FLOOR_1, Terrain, "Which terrain to use for the upper floor"),
     ThemeParameter('floor_lower', "Lower Floor Terrain", Terrain.FLOOR_2, Terrain, "Which terrain to use for the lower floor"),
-    ThemeParameter('room_chance', "Room Chance", 0.6, float, "Chance of a full size room in a section"),
-    ThemeParameter('hallway_chance', "Hallway Chance", 0.4, float, "Chance of hallway (instead of a room) in a section"),
-    ThemeParameter('connection_chance', "Connection Chance", 1.0, float, "Chance that adjacent rooms connect"),
-    ThemeParameter('wide_hallway_chance', "Wide Hallway Chance", 0.5, float, "Chance that a given hallway is 2-wide"),
-    ThemeParameter('floor_lower_chance', "Lower Floor Chance", 0.5, float, "Chance that a room is on the lower floor"),
-    ThemeParameter('use_water_chance', "Pool Chance", 0, float, "Chance to use pool and pool bridge on lower floor"),
+    ThemeParameter('room_chance', "Room Chance", 0.6, percent, "Chance of a full size room in a section"),
+    ThemeParameter('hallway_chance', "Hallway Chance", 0.4, percent, "Chance of hallway (instead of a room) in a section"),
+    ThemeParameter('connection_chance', "Connection Chance", 1.0, percent, "Chance that adjacent rooms connect"),
+    ThemeParameter('wide_hallway_chance', "Wide Hallway Chance", 0.5, percent, "Chance that a given hallway is 2-wide"),
+    ThemeParameter('floor_lower_chance', "Lower Floor Chance", 0.5, percent, "Chance that a room is on the lower floor"),
+    ThemeParameter('use_water_chance', "Pool Chance", 0, percent, "Chance to use pool and pool bridge on lower floor"),
     ThemeParameter('room_size_min_x', "Minimum Width of Room", 3, int, "All rooms generated will have width >= value"),
     ThemeParameter('room_size_min_y', "Mimumum Height of Room", 3, int, "All rooms generated will have height >= value"),
     ThemeParameter('small_floor_section_area', "Minimum Size of Floor", 2, int, "Swap any areas of floor smaller than this to the other floor"),
-    ThemeParameter('pillar_chance', "Pillar Chance", 0.5, float, "Chance that any room has pillars"),
+    ThemeParameter('pillar_chance', "Pillar Chance", 0.5, percent, "Chance that any room has pillars"),
     ThemeParameter('horiz_symmetry', "Horizontally Symmetric", False, bool),
     ThemeParameter('vert_symmetry', "Vertically Symmetric", False, bool),
     ThemeParameter('fill_in_empty_areas', "Fill in Empty Areas", False, bool, "Attempt to fill large areas of void with floor?"),

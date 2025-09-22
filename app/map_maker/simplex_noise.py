@@ -171,6 +171,17 @@ def get_full_noise(x, y, seed,
     total /= denominator
     return total
 
+def normalize_noise_map(noise_map: dict) -> dict:
+    """
+    Given a noise map, normalize it so its value are between 0 and 1
+    Simplex noise seems to output mostly between 0.15 and 0.85
+    So multiply to make it 0 and 1
+    """
+    new_noise_map = {}
+    for k, v in noise_map.items():
+        new_noise_map[k] = max(min((v - 0.135) / 0.73, 1), 0)
+    return new_noise_map
+
 def gen_noise_map(size: tuple, seed,
                   starting_frequency=1.0, starting_amplitude=0.5,
                   octaves=4, lacunarity=2.0, gain=0.5) -> dict:

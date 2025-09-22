@@ -300,7 +300,7 @@ class AlgorithmXThread(QThread):
 
         # Now solve
         counter = 0
-        limit = int(1e5)
+        limit = int(1e6)
         while counter < limit:
             # time.sleep(0)
             if counter % 10000 == 0:

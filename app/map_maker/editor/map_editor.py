@@ -25,6 +25,7 @@ from .draw_tilemap import simple_draw_tilemap
 from .palette_model import PaletteModel
 from .nid_dialog import NidDialog
 from .autogenerate_indoor_map import AutogenerateIndoorMap
+from .autogenerate_outdoor_map import AutogenerateOutdoorMap
 
 from app.map_maker.map_prefab import MapPrefab
 import app.map_maker.utilities as map_utils
@@ -419,7 +420,7 @@ class MapEditor(QMainWindow):
         AutogenerateIndoorMap.customize(self)
 
     def autogenerate_outdoor_map(self):
-        QMessageBox.information(self, self.title, "Not implemented yet!")
+        AutogenerateOutdoorMap.customize(self)
 
     def export_as_png(self):
         if self.current:

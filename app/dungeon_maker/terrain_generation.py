@@ -73,6 +73,7 @@ def _generate_terrain_process(theme: Dict[NID, Any], seed: int) -> Optional[Dung
     if theme["fill_in_empty_areas"]:
         tilemap.fill_in_empty_areas()
 
+    print("=== TO ADD WATER ===")
     tilemap.print_terrain_grid()
 
     if theme["use_water_chance"]:
@@ -85,6 +86,9 @@ def _generate_terrain_process(theme: Dict[NID, Any], seed: int) -> Optional[Dung
 
     # 7. Make sure all walls are at least 2 tiles high if grounded on the lower level
     tilemap.make_walls_two_high()
+
+    print("=== TO ADD PILLARS ===")
+    tilemap.print_terrain_grid()
 
     # 8. Add pillars to rooms
     # 8.1 Randomly determine which pillar pattern will be used for this room
@@ -107,12 +111,20 @@ def _generate_terrain_process(theme: Dict[NID, Any], seed: int) -> Optional[Dung
     # 11.4 Removes any wall that has no adjacent walls
     # 11.5 Crops the map to it's minimum possible size
     if not theme["use_global_section"]:
+        print("=== TO WRAP IN WALLS ===")
+        tilemap.print_terrain_grid()
         tilemap.wrap_in_walls()
+    print("=== TO FILL IN CREVICES ===")
+    tilemap.print_terrain_grid()
     tilemap.fill_in_crevices()
     tilemap.fill_in_crevices()  # Do it twice on purpose
     tilemap.split_walls()
     tilemap.remove_useless_stairs()
     tilemap.remove_single_wall()
+    tilemap.remove_blocking_wall()
+    print("=== TO CROP VOID ===")
+    tilemap.print_terrain_grid()
+    tilemap.add_outside_walls()
     tilemap.print_terrain_grid()
     tilemap.crop_void()
     if theme["convert_void_to_water"]:
@@ -121,6 +133,7 @@ def _generate_terrain_process(theme: Dict[NID, Any], seed: int) -> Optional[Dung
     if theme["require_connectivity"] and not tilemap.is_fully_connected():
         return
 
+    print("=== COMPLETE ===")
     tilemap.print_terrain_grid()
 
     return tilemap
@@ -276,6 +289,39 @@ class DungeonTileMap:
                     section.connect_global(direction)
                     self.print_sections()
 
+    def fix_stairs(self):
+        # Make sure stairs won't go straight into a wall
+        while True:
+            walls = (Terrain.WALL_TOP, Terrain.WALL_BOTTOM, Terrain.COLUMN, None)
+            to_fix = set()
+            for pos, terrain in self.terrain_grid.items():
+                if self.floor_grid.get(pos) != FloorLevel.LOWER:
+                    continue
+                north, east, south, west = self.get_cardinal_terrain(pos)
+                ne, se, sw, nw = self.get_diagonal_terrain(pos)
+                nfl, efl, sfl, wfl = self.get_cardinal_floor_level(pos)
+                if efl == FloorLevel.UPPER and west in walls:
+                    to_fix.add(pos)
+                elif wfl == FloorLevel.UPPER and east in walls:
+                    to_fix.add(pos)
+                elif nfl == FloorLevel.UPPER and south in walls:
+                    to_fix.add(pos)
+                elif sfl == FloorLevel.UPPER and north in walls:
+                    to_fix.add(pos)
+                # Prevent building a wall above stairs that would result in a hallway being blocked
+                elif wfl == FloorLevel.UPPER and efl == FloorLevel.LOWER \
+                        and nfl == FloorLevel.LOWER and ne in walls and nw in walls:
+                    to_fix.add(pos)
+                elif efl == FloorLevel.UPPER and wfl == FloorLevel.LOWER \
+                        and nfl == FloorLevel.LOWER and ne in walls and nw in walls:
+                    to_fix.add(pos)
+            for pos in to_fix:
+                self.terrain_grid[pos] = self.theme["floor_upper"]
+                self.floor_grid[pos] = FloorLevel.UPPER
+            if not to_fix:
+                break
+            to_fix.clear()
+
     def coerce_terrain(self):
         """
         All areas that are not covered by a room or hallway, fill with Terrain.FLOOR_LOWER
@@ -334,38 +380,7 @@ class DungeonTileMap:
 
         # print("--- After Hallway Fill ---")
         # self.print_terrain_grid()
-
-        # Make sure stairs won't go straight into a wall
-        while True:
-            walls = (Terrain.WALL_TOP, Terrain.WALL_BOTTOM, Terrain.COLUMN)
-            to_fix = set()
-            for pos, terrain in self.terrain_grid.items():
-                if self.floor_grid.get(pos) != FloorLevel.LOWER:
-                    continue
-                north, east, south, west = self.get_cardinal_terrain(pos)
-                ne, se, sw, nw = self.get_diagonal_terrain(pos)
-                nfl, efl, sfl, wfl = self.get_cardinal_floor_level(pos)
-                if efl == FloorLevel.UPPER and west in walls:
-                    to_fix.add(pos)
-                elif wfl == FloorLevel.UPPER and east in walls:
-                    to_fix.add(pos)
-                elif nfl == FloorLevel.UPPER and south in walls:
-                    to_fix.add(pos)
-                elif sfl == FloorLevel.UPPER and north in walls:
-                    to_fix.add(pos)
-                # Prevent building a wall above stairs that would result in a hallway being blocked
-                elif wfl == FloorLevel.UPPER and efl == FloorLevel.LOWER \
-                        and nfl == FloorLevel.LOWER and ne in walls and nw in walls:
-                    to_fix.add(pos)
-                elif efl == FloorLevel.UPPER and wfl == FloorLevel.LOWER \
-                        and nfl == FloorLevel.LOWER and ne in walls and nw in walls:
-                    to_fix.add(pos)
-            for pos in to_fix:
-                self.terrain_grid[pos] = self.theme["floor_upper"]
-                self.floor_grid[pos] = FloorLevel.UPPER
-            if not to_fix:
-                break
-            to_fix.clear()
+        self.fix_stairs()
 
         # print("--- After Stairs should not run into walls ---")
         # self.print_terrain_grid()
@@ -585,12 +600,12 @@ class DungeonTileMap:
             # Figure out which side (top or bottom) handles a wall addition better
             # If all of the positions south 2 tiles are exist and are not wall
             # Easy fix to make it lower by 1
-            if all(self.terrain_grid.get((pos[0], pos[1] + 2), Terrain.WALL_TOP) != Terrain.WALL_TOP for pos in wall_group):
+            if all(self.terrain_grid.get((pos[0], pos[1] + 2), Terrain.WALL_TOP) not in (Terrain.WALL_TOP, Terrain.STAIRS_UPDOWN) for pos in wall_group):
                 for pos in wall_group:
                     turn_into_walls.add((pos[0], pos[1] + 1))
             # If all of the positions north 2 tiles are exist and are not wall
             # Easy fix to make it higher by 1
-            elif all(self.terrain_grid.get((pos[0], pos[1] - 2), Terrain.WALL_TOP) != Terrain.WALL_TOP for pos in wall_group):
+            elif all(self.terrain_grid.get((pos[0], pos[1] - 2), Terrain.WALL_TOP) not in (Terrain.WALL_TOP, Terrain.STAIRS_UPDOWN) for pos in wall_group):
                 for pos in wall_group:
                     turn_into_walls.add((pos[0], pos[1] - 1))
             # Fallback option is turn the south into a wall
@@ -603,6 +618,15 @@ class DungeonTileMap:
         for pos in turn_into_walls:
             self.terrain_grid[pos] = Terrain.WALL_TOP
             self.floor_grid[pos] = None
+
+            right_pos = (pos[0] + 1, pos[1])
+            left_pos = (pos[0] - 1, pos[1])
+            if self.check_bounds(right_pos) and self.terrain_grid[right_pos] in (Terrain.STAIRS_LEFT, Terrain.STAIRS_RIGHT):
+                self.terrain_grid[right_pos] = Terrain.WALL_TOP
+                self.floor_grid[right_pos] = None
+            if self.check_bounds(left_pos) and self.terrain_grid[left_pos] in (Terrain.STAIRS_LEFT, Terrain.STAIRS_RIGHT):
+                self.terrain_grid[left_pos] = Terrain.WALL_TOP
+                self.floor_grid[left_pos] = None
 
     def add_pillars(self, upper_floor_only: bool = False):
         """
@@ -696,8 +720,12 @@ class DungeonTileMap:
             else:
                 final_pillar_positions |= pillar_positions
 
-        final_pillar_positions = [pos for pos in final_pillar_positions if self.terrain_grid[(pos[0], pos[1] + 1)] in Terrain.get_all_floor()]
-        final_column_positions = [pos for pos in final_column_positions if self.terrain_grid[(pos[0], pos[1] + 1)] in Terrain.get_all_floor()]
+        final_pillar_positions = \
+            [pos for pos in final_pillar_positions if self.terrain_grid[pos] in Terrain.get_all_floor() 
+             and self.terrain_grid[(pos[0], pos[1] + 1)] in Terrain.get_all_floor()]
+        final_column_positions = \
+            [pos for pos in final_column_positions if self.terrain_grid[pos] in Terrain.get_all_floor() 
+             and self.terrain_grid[(pos[0], pos[1] + 1)] in Terrain.get_all_floor()]
 
         for pos in final_pillar_positions:
             self.terrain_grid[pos] = Terrain.PILLAR
@@ -896,20 +924,58 @@ class DungeonTileMap:
             self.terrain_grid[pos] = Terrain.VOID
             self.floor_grid[pos] = None
 
+    def remove_blocking_wall(self):
+        """
+        Any single wall between a stair case and the floor should be removed
+        """
+        for pos, terrain in self.terrain_grid.items():
+            n, e, s, w = self.get_cardinal_terrain(pos)
+            if terrain == Terrain.WALL_TOP:
+                if Terrain.floor(w) and e in (Terrain.STAIRS_LEFT, Terrain.STAIRS_RIGHT):
+                    self.terrain_grid[pos] = w
+                elif Terrain.floor(e) and w in (Terrain.STAIRS_LEFT, Terrain.STAIRS_RIGHT):
+                    self.terrain_grid[pos] = e
+                elif terrain.floor(n) and s == Terrain.STAIRS_UPDOWN:
+                    self.terrain_grid[pos] = n
+                elif terrain.floor(s) and n == Terrain.STAIRS_UPDOWN:
+                    self.terrain_grid[pos] = s
+
     def remove_single_wall(self):
         """
         Any single wall by itself should be converted to nearby floor
         """
         convert_to_floor: Set[Pos] = set()
+        convert_to_wall_top: Set[Pos] = set()
         for pos in self.terrain_grid.keys():
             if self.terrain_grid.get(pos) == Terrain.WALL_TOP \
-                and all(terrain not in (Terrain.WALL_TOP, Terrain.WALL_BOTTOM) and self.check_bounds(adj) for terrain, adj in
-                        zip(self.get_cardinal_terrain(pos), get_cardinal_positions(pos))):
-                convert_to_floor.add(pos)
+                    and all(terrain not in (Terrain.WALL_TOP, Terrain.WALL_BOTTOM) and self.check_bounds(adj) for terrain, adj in
+                            zip(self.get_cardinal_terrain(pos), get_cardinal_positions(pos))):
+                # Check diagonal
+                if any(terrain in (Terrain.WALL_TOP, Terrain.WALL_BOTTOM) for terrain in self.get_diagonal_terrain(pos)):
+                    ne, se, sw, nw = self.get_diagonal_terrain(pos)
+                    if ne in (Terrain.WALL_TOP, Terrain.WALL_BOTTOM):
+                        convert_to_wall_top.add((pos[0] + 1, pos[1]))
+                        convert_to_wall_top.add((pos[0], pos[1] - 1))
+                    if se in (Terrain.WALL_TOP, Terrain.WALL_BOTTOM):
+                        convert_to_wall_top.add((pos[0] + 1, pos[1]))
+                        convert_to_wall_top.add((pos[0], pos[1] + 1))
+                    if sw in (Terrain.WALL_TOP, Terrain.WALL_BOTTOM):
+                        convert_to_wall_top.add((pos[0] - 1, pos[1]))
+                        convert_to_wall_top.add((pos[0], pos[1] + 1))
+                    if nw in (Terrain.WALL_TOP, Terrain.WALL_BOTTOM):
+                        convert_to_wall_top.add((pos[0] - 1, pos[1]))
+                        convert_to_wall_top.add((pos[0], pos[1] - 1))
+                elif any(terrain in (Terrain.STAIRS_LEFT, Terrain.STAIRS_RIGHT, Terrain.STAIRS_UPDOWN) for terrain in self.get_cardinal_terrain(pos)):
+                    pass
+                else:
+                    convert_to_floor.add(pos)
 
         for pos in convert_to_floor:
             self.terrain_grid[pos] = self.theme["floor_upper"]
             self.floor_grid[pos] = FloorLevel.UPPER
+        for pos in convert_to_wall_top:
+            self.terrain_grid[pos] = Terrain.WALL_TOP
+            self.floor_grid[pos] = None
 
     def remove_useless_stairs(self):
         convert_to_floor_upper = set()
@@ -921,6 +987,13 @@ class DungeonTileMap:
             elif terrain == Terrain.STAIRS_LEFT and self.terrain_grid.get((pos[0] + 1, pos[1])) == Terrain.STAIRS_RIGHT:
                 convert_to_floor_upper.add(pos)
                 convert_to_floor_upper.add((pos[0] + 1, pos[1]))
+            elif terrain == Terrain.STAIRS_UPDOWN and self.terrain_grid.get((pos[0], pos[1] + 1)) == Terrain.STAIRS_UPDOWN:
+                if self.floor_grid.get(pos) == FloorLevel.LOWER:                
+                    convert_to_floor_lower.add(pos)
+                    convert_to_floor_lower.add((pos[0], pos[1] + 1))
+                else:
+                    convert_to_floor_upper.add(pos)
+                    convert_to_floor_upper.add((pos[0], pos[1] + 1))
 
         for pos in convert_to_floor_upper:
             self.terrain_grid[pos] = self.theme["floor_upper"]
@@ -928,6 +1001,22 @@ class DungeonTileMap:
         for pos in convert_to_floor_lower:
             self.terrain_grid[pos] = self.theme["floor_lower"]
             self.floor_grid[pos] = FloorLevel.LOWER
+
+    def add_outside_walls(self):
+        # Add one layer of void along the bottom
+        for x in range(self.width):
+            self.terrain_grid[(x, self.height)] = Terrain.VOID
+            self.floor_grid[(x, self.height)] = None
+        self.height += 1
+
+        # Add wall bottoms on the outside
+        for pos, terrain in self.terrain_grid.items():
+            n, e, s, w = self.get_cardinal_terrain(pos)
+            if terrain == Terrain.VOID and n == Terrain.WALL_TOP:
+                if s == Terrain.WALL_TOP:
+                    self.terrain_grid[pos] = Terrain.WALL_TOP
+                else:
+                    self.terrain_grid[pos] = Terrain.WALL_BOTTOM
 
     def crop_void(self):
         # Now crop out areas of just void
@@ -992,9 +1081,9 @@ class DungeonTileMap:
             for x in range(self.width):
                 terrain = self.terrain_grid[(x, y)]
                 floor_level = self.floor_grid.get((x, y))
-                if floor_level == FloorLevel.LOWER:
+                if Terrain.floor(terrain) and floor_level == FloorLevel.LOWER:
                     print("_", end='')
-                elif floor_level == FloorLevel.UPPER:
+                elif Terrain.floor(terrain) and floor_level == FloorLevel.UPPER:
                     print("=", end='')
                 elif terrain == Terrain.WALL_TOP:
                     print("#", end='')

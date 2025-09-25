@@ -1,0 +1,30 @@
+[
+    {
+        "nid": "Shove",
+        "name": "Shove",
+        "desc": "Pushes target away from the unit.\n(This item is linked to the Shove skill via the Ability skill component. This allows the skill to be able to target a unit.)",
+        "icon_nid": "Skills",
+        "icon_index": [
+            4,
+            4
+        ],
+        "components": [
+            [
+                "target_ally",
+                null
+            ],
+            [
+                "min_range",
+                1
+            ],
+            [
+                "max_range",
+                1
+            ],
+            [
+                "shove",
+                1
+            ]
+        ]
+    }
+]

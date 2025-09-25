@@ -63,6 +63,10 @@
             [
                 "target_enemy",
                 null
+            ],
+            [
+                "eval_target_restrict_2",
+                "'Tile' not in target.tags"
             ]
         ]
     }

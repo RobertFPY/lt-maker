@@ -107,7 +107,7 @@
             "load_unit;Valter;enemy",
             "load_unit;Riev;enemy",
             "load_unit;Caellach;enemy",
-            "make_generic;Glen;Wyvern Lord;1;enemy",
+            "make_generic;Glen;Wyvern_Lord;1;enemy",
             "load_unit;Duessel;enemy",
             "load_unit;Selena;enemy",
             "load_unit;Lyon;enemy",

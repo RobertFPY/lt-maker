@@ -2,7 +2,7 @@
 
 `This has not been updated recently and has been reported as no longer working in current versions of the engine.`</small>
 
-# [System] Skill Swap
+# [System] Skill Swap (Depreciated)
 Lex Talionis Event Editor offers enough power to build custom systems. They can be quite complex, and this is the case with skill swap.
 
 In this guide, we will be covering all the requirements to build your own skill swap system using the tools available in the latest engine build.

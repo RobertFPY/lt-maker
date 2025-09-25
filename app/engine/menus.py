@@ -32,7 +32,11 @@ def draw_unit_top(surf, topleft, unit):
     white_surf = SPRITES.get('prep_top')
     surf.blit(white_surf, (x - 6, y - white_surf.get_height()))
     if unit:
-        icons.draw_chibi(surf, unit.portrait_nid, (x + 3, y - 35))
+        if not unit.portrait_nid and unit.faction:
+            icons.draw_faction(surf, DB.factions.get(unit.faction), (x + 3, y - 35))
+        elif unit.portrait_nid:
+            portrait_nid = unit.portrait_nid
+            icons.draw_chibi(surf, portrait_nid, (x + 3, y - 35))
         FONT['text'].blit_center(unit.name, surf, (x + 68, y - 35))
         FONT['text-blue'].blit_right(str(unit.level), surf, (x + 72, y - 19))
         FONT['text-blue'].blit_right(str(unit.exp), surf, (x + 97, y - 19))

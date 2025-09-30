@@ -1155,7 +1155,12 @@ class TileSetMenu(QWidget):
 
         self.tab_clear()
         for nid in self.current.tilesets:
-            self.tab_bar.addTab(nid)
+            tileset = RESOURCES.tilesets.get(nid)
+            if tileset:
+                self.tab_bar.addTab(nid)
+            else:
+                # If a tileset somehow doesn't exist, remove it!
+                self.current.tilesets.remove(nid)
 
         if self.current.tilesets:
             self.load_tileset(self.current.tilesets[0])
@@ -1164,6 +1169,9 @@ class TileSetMenu(QWidget):
 
     def load_tileset(self, tileset_nid):
         tileset = RESOURCES.tilesets.get(tileset_nid)
+        if not tileset:
+            self.empty_tileset()
+            return
         if not tileset.pixmap:
             tileset.set_pixmap(QPixmap(tileset.full_path))
         self.current_tileset = tileset

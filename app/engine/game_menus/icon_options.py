@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-from enum import Enum
 from typing import Optional, Tuple
 
 from app.data.database.database import DB
 from app.engine import help_menu, icons, item_funcs, item_system, text_funcs
+from app.engine.game_menus.uses_display_config import UsesDisplayConfig, ItemOptionModes
 from app.engine.game_menus.string_options import BaseOption
 from app.engine.game_state import game
 from app.engine.graphics.text.text_renderer import (anchor_align, render_text,
                                                     text_width)
+
 from app.engine.objects.item import ItemObject
 from app.engine.objects.skill import SkillObject
 from app.utilities.enums import HAlignment
@@ -117,14 +118,47 @@ class ItemOptionUtils():
         render_text(surf, [uses_font], [uses_string_b], [
                     uses_color], uses_string_b_loc, HAlignment.RIGHT)
 
+    @staticmethod
+    def draw_with_custom_uses(surf, x, y, item: ItemObject, custom_uses: UsesDisplayConfig,
+                            font: NID, color: NID, uses_color: NID, width: int,
+                            align: HAlignment = HAlignment.LEFT, disp_text: Optional[str] = None):
+        main_font = font
+        display_text = disp_text or item.name
+        if text_width(main_font, display_text) > width - 56:
+            main_font = 'narrow'
+        uses_font = font
+        blit_loc = anchor_align(x, width, align, (20, 36)), y
+        if align == HAlignment.RIGHT:
+            ItemOptionUtils.draw_icon(surf, blit_loc[0] - 20 - text_width(font, display_text), y, item)
+        elif align == HAlignment.CENTER:
+            blit_loc = (blit_loc[0] + 10, blit_loc[1])
+            ItemOptionUtils.draw_icon(surf, blit_loc[0] - 20 - text_width(font, display_text) // 2, y, item)
+        else:
+            ItemOptionUtils.draw_icon(surf, x, y, item)
+        render_text(surf, [main_font], [display_text],
+                    [color], blit_loc, align)
 
-class ItemOptionModes(Enum):
-    NO_USES = 0
-    USES = 1
-    FULL_USES = 2
-    FULL_USES_AND_REPAIR = 3
-    VALUE = 4
-    STOCK_AND_VALUE = 5
+        # Set Current Uses
+        curr_uses_string = custom_uses.get_uses()
+        max_uses_string = custom_uses.get_max()
+        curr_uses_string_loc_x = 25 if curr_uses_string is not None else 5
+
+        # Check Custom Color
+        uses_color = custom_uses.get_color() or uses_color
+
+        # Set String A
+        curr_uses_string_loc = anchor_align(
+            x, width, HAlignment.RIGHT, (0, curr_uses_string_loc_x)), y
+        render_text(surf, [uses_font], [curr_uses_string], [
+                    uses_color], curr_uses_string_loc, HAlignment.RIGHT)
+
+        # Set String B if Not None
+        if max_uses_string is not None:
+            max_uses_string_loc = anchor_align(x, width, HAlignment.RIGHT, (0, 0)), y
+            slash_loc = anchor_align(x, width, HAlignment.RIGHT, (0, 16)), y
+            render_text(surf, [uses_font], [custom_uses.delim], [], slash_loc, HAlignment.RIGHT)
+            render_text(surf, [uses_font], [curr_uses_string], [
+                        uses_color], max_uses_string_loc, HAlignment.RIGHT)
 
 
 class BasicItemOption(BaseOption[Optional[ItemObject]]):
@@ -132,12 +166,17 @@ class BasicItemOption(BaseOption[Optional[ItemObject]]):
                  height: int = 0, ignore: bool = False, font: NID = 'text', text_color: Optional[NID] = None,
                  align: HAlignment = HAlignment.LEFT, mode: ItemOptionModes = ItemOptionModes.NO_USES):
         super().__init__(idx, item, display_value, width, height, ignore)
+
         self._disp_value = text_funcs.translate(
             display_value or (self._value.name if self._value else "None"))
         self._align = align
         self._color = text_color
         self._font = font
         self._mode = mode
+
+        self._custom_uses = UsesDisplayConfig.from_item(self._value)
+        if self._custom_uses:
+            self._mode = ItemOptionModes.CUSTOM
 
     @classmethod
     def from_nid(cls, idx, item_nid: NID, display_value: str | None = None, width: int = 0,
@@ -217,6 +256,9 @@ class BasicItemOption(BaseOption[Optional[ItemObject]]):
         if not self._value:
             blit_loc = anchor_align(x, self.width(), self._align, (5, 5)), y
             render_text(surf, [self._font], [self._disp_value], [main_color], blit_loc, self._align)
+        elif self._mode == ItemOptionModes.CUSTOM:
+            ItemOptionUtils.draw_with_custom_uses(surf, x, y, self._value, self._custom_uses, self._font,
+                                           main_color, uses_color, self.width(), self._align, self._disp_value)
         elif self._mode == ItemOptionModes.NO_USES:
             ItemOptionUtils.draw_without_uses(
                 surf, x, y, self._value, self._font, main_color, self.width(), self._align, self._disp_value)

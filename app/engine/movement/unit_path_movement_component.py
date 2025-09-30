@@ -91,6 +91,7 @@ class UnitPathMovementComponent(MovementComponent):
                 logging.debug("%s moved to %s", self.unit, next_position)
                 mcost = movement_funcs.get_mcost(self.unit, next_position)
                 self.unit.consume_movement(mcost)
+                movement_funcs.handle_terrain_traversal(self.unit, next_position, self.goal == next_position)
             else:  # This new position ain't valid
                 logging.debug("%s can't move any further", self.unit)
                 self.finish(surprise=True)

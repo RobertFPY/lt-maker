@@ -2,10 +2,11 @@ from typing import Set, Tuple
 from app.data.database.skill_components import SkillComponent, SkillTags
 from app.data.database.components import ComponentType
 
-from app.engine import equations, action
+from app.engine import equations, action, gui
 from app.engine.game_state import game
 from app.engine.movement import movement_funcs
 from app.engine.objects.unit import UnitObject
+from app.engine.sound import get_sound_thread
 
 import logging
 
@@ -89,6 +90,17 @@ class IgnoreTerrain(SkillComponent):
         return True
 
     def ignore_region_status(self, unit):
+        return True
+        
+    def ignore_terrain_traversal(self, unit, effect):
+        return True
+        
+class IgnoreTerrainTraversal(SkillComponent):
+    nid = 'ignore_terrain_traversal'
+    desc = "This unit is not affected by terrain traversal effects."
+    tag = SkillTags.MOVEMENT
+            
+    def ignore_terrain_traversal(self, unit, effect):
         return True
 
 class IgnoreRescuePenalty(SkillComponent):
@@ -246,3 +258,30 @@ class EvalXCOMMovement(SkillComponent):
         except Exception as e:
             logging.error(f"Could not evaluate {self.value}, ({e})")
             return 0
+            
+class DamageTerrain(SkillComponent):
+    nid = 'damage_terrain'
+    desc = 'Causes units to take the specified amount of damage when crossing terrain with this status.  Cannot be lethal.'
+    tag = SkillTags.MOVEMENT
+    
+    expose = ComponentType.Int
+    
+    def terrain_move_effect(self, unit, pos, is_final_pos):
+        true_damage = min(unit.get_hp()-1, self.value)
+        action.do(action.ChangeHP(unit, -true_damage))
+        str_damage = str(true_damage)
+        for idx, num in enumerate(str_damage):
+            d = gui.MovementDamageNumber(int(num), idx, len(str_damage), pos, 'small_red', origin_pos = pos)
+            unit.sprite.damage_numbers.append(d)
+        unit.sprite.start_flicker(0, unit.sprite.default_transition_time / 4, (255, 0, 0), fade_out = True)
+        get_sound_thread().play_sfx("Attack Hit 1", volume = 0.5)
+            
+class StatusInflictTerrain(SkillComponent):
+    nid = 'status_inflict_terrain'
+    desc = 'Causes units to receive the specified status when passing through this terrain.'
+    tag = SkillTags.MOVEMENT
+    
+    expose = ComponentType.Skill
+    
+    def terrain_move_effect(self, unit, pos, is_final_pos):
+        action.do(action.AddSkill(unit, self.value))

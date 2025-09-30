@@ -32,7 +32,8 @@ To save time, create all of the listed events in advance, preferably using the s
 |`Skill_Swap_Select`|`base;` or `prep;` commands
 |`Skill_Swap_Setup`|Interface|`Skill_Swap_Target_Fix`
 |`Skill_Swap_Target_Fix`|`Skill_Swap_Select`
-|`Skill_Swap_Add`,<br/>`Skill_Swap_Remove`,<br/>`Skill_Swap_Reorder`,<br/>`Skill_Swap_Replace`|Option|`Skill_Swap_Operations`
+|`Skill_Swap_Add`,<br/>`Skill_Swap_Remove`,<br/>`Skill_Swap_Reorder`,<br/>`Skill_Swap_Replace`|`Skill_Swap_Operations`
+
 
 ## Step 0.b: Remove All Skills
 You need to remove all skills from all classes. This includes Canto from mounted units.
@@ -48,6 +49,7 @@ We need to build up a replacement for the data we deleted. This data will all be
 |Soldier|Aether|RightfulKing
 |Brigand|Luna|DualGuard+
 |General|RallyDefense|Pavise
+|...|...|...
 
 Just to reinforce an important point. 'nid' should be the exact nid of each class in your game, and the skill1 and skill2 for that class should be the exact nids of two skills that already exist. Continue until you have listed all classes and all skills.
 

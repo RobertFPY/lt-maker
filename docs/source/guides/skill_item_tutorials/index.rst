@@ -15,6 +15,7 @@ These are guides on various useful skills and items.
    Tile-Passives
    Auras
    Skill-Swap
+   Skill-Swap-with-Python
 
 .. toctree::
    :maxdepth: 2

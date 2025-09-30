@@ -719,6 +719,7 @@ class MoveState(MapState):
             else:
                 get_sound_thread().play_sfx('Select 4')
                 game.cursor.set_pos(cur_unit.position)
+                game.cursor.cur_unit = None
                 game.state.clear()
                 game.state.change('free')
                 cur_unit.sprite.change_state('normal')

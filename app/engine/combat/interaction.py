@@ -53,25 +53,35 @@ def engage(attacker: UnitObject, positions: list, main_item: ItemObject, skip: b
         items = main_item.subitems
     else:
         items = [main_item]
+
+    multitarget_items = items[:]
     for idx, position in enumerate(positions):
         item = items[idx]
-        splash = []
-        if isinstance(position, list):
+
+        if isinstance(position, list):  # Treat multi-target like sequence item
             for pos in position:
-                main_target, s = item_system.splash(attacker, item, pos)
-                if main_target:
-                    splash.append(main_target)
-                splash += list(s)
-            main_target = None
-            target_positions.append(position[0])
+                main_target, splash = item_system.splash(attacker, item, pos)
+                target_positions.append(pos)
+                main_targets.append(main_target)
+                splashes.append(splash)
+
+            # To separate out each instance of the multi-target item so that
+            # each positional target pretends to be it's own item-target pair for the next combat.
+            multitarget_items[idx:idx] = [item] * (len(position) - 1)
+
         elif position:
             main_target, splash = item_system.splash(attacker, item, position)
             target_positions.append(position)
+            main_targets.append(main_target)
+            splashes.append(splash)
+
         else:  # Using an item in the base/prep
-            main_target, splash = position, []
-            target_positions.append(position)
-        main_targets.append(main_target)
-        splashes.append(splash)
+            target_positions.append(None)
+            main_targets.append(None)
+            splashes.append([])
+
+    # To account for any multitarget items that have been duplicated in the preceding for loop
+    items = multitarget_items
 
     if target_positions[0] is None:
         # If we are targeting None, (which means we're in base using an item)

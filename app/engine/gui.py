@@ -162,6 +162,15 @@ class SkillIcon():
             else:
                 x_pos = self.left_pos + 4
             surf.blit(self.image, (x_pos, 32))
+            
+class MovementDamageNumber(DamageNumber):
+    #Used for damage numbers generated while the unit is moving.  Numbers remain at the tile they originated from, rather than following the unit.
+    def __init__(self, num, idx, length, left, color, origin_pos = None):
+        super().__init__(num, idx, length, left, color)
+        self.origin_pos = origin_pos
+    
+    def draw(self, surf, pos=None):
+        super().draw(surf,(self.origin_pos[0] * 16 + 4, self.origin_pos[1] * 16))
 
 class ScrollArrow():
     def __init__(self, direction, topleft, offset=0):

@@ -12,6 +12,7 @@ SKILL_HOOKS: Dict[str, HookInfo] = {
     'vantage':                              HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'desperation':                          HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'ignore_terrain':                       HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'ignore_terrain_traversal':             HookInfo(['unit', 'effect'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'crit_anyway':                          HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'ignore_region_status':                 HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'no_double':                            HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),

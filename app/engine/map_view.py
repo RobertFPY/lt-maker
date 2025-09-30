@@ -60,7 +60,12 @@ class MapView():
             unit.sprite.update()
             unit.sound.update(volume=norm_dist_from_center)
 
-        pos_units = [unit for unit in update_units if unit is not game.cursor.cur_unit and unit.sprite.position]
+        # Determine main unit
+        cur_unit = game.cursor.cur_unit or game.cursor.get_hover()
+        if cur_unit and (cur_unit.team != 'player' or cur_unit.finished or not cur_unit.sprite.position):
+            cur_unit = None
+
+        pos_units = [unit for unit in update_units if not (unit is cur_unit) and unit.sprite.position]
         # Only draw units within 2 tiles of cull_rect
         culled_units = [unit for unit in pos_units if unit.sprite.draw_anyway() or
                         (cull_rect[0] - TILEWIDTH*2 < unit.sprite.position[0] * TILEWIDTH < cull_rect[0] + cull_rect[2] + TILEWIDTH*2 and
@@ -81,8 +86,7 @@ class MapView():
         game.cursor.draw_arrows(unit_surf, topleft)
 
         # Draw the main unit
-        cur_unit = game.cursor.cur_unit
-        if cur_unit and cur_unit.sprite.position:
+        if cur_unit:
             cur_unit.sprite.draw(unit_surf, topleft)
             cur_unit.sprite.draw_hp(unit_surf, topleft, event)
             if not event:

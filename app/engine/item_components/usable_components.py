@@ -278,7 +278,7 @@ class ManaCostAsUses(ItemComponent):
         color = 'navy'
         if not item_funcs.available(unit, item):
             color = 'grey'
-        if FONT['text-' + color] is not None:
+        if 'text-' + color in FONT:
             return color
         return None
 

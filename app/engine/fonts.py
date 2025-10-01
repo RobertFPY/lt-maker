@@ -3,7 +3,7 @@ from app.data.resources.resources import RESOURCES
 from app.engine import bmpfont, image_mods
 from app.utilities.typing import NID
 
-NORMAL_FONT_COLORS = ['white', 'blue', 'green', 'red', 'orange', 'grey', 'yellow', 'brown', 'purple']
+NORMAL_FONT_COLORS = ['white', 'blue', 'green', 'red', 'orange', 'grey', 'yellow', 'brown', 'purple', 'navy']
 
 # Load in default, uncolored fonts
 FONT: Dict[NID, bmpfont.BmpFont] = {}

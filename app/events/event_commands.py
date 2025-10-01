@@ -2957,7 +2957,7 @@ via hitting the back button, and the event will go on as normal.
 * *no_cursor* removes the cursor.
 * Horizontal pulsing left/right arrows will appear by default if you have a single row and it has more options than will fit inside the menu without scrolling. You can use *arrows* to force the arrows to display, or use *no_arrows* to forcibly remove them.
 * A vertical scroll bar will appear by default if you have more rows than will fit in the menu. Use *scroll_bar* to force this bar to appear when it wouldn't otherwise, or use *no_scroll_bar* to forcibly remote it.
-* *backable* allows you to exit out of the menu without making a choice - similarly to *persist*. If backed out in this way, will set `BACK` as the chosen option.
+* *backable* allows you to exit out of the menu without making a choice - similarly to *persist*. If backed out in this way, will set `BACK` as the chosen option. NOTE: This does not affect *_last_choice*. If backed out, _last_choice will retain its value from a previous Choice or be set as *0* if no other Choice was made beforehand.
  """
 
     keywords = ['Nid', 'Title', 'Choices']

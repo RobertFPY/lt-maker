@@ -563,6 +563,8 @@ class OptionMenuState(MapState):
             elif selection == 'Turnwheel':
                 if cf.SETTINGS['debug'] or game.game_vars.get('_current_turnwheel_uses', 1) > 0:
                     game.state.change('turnwheel')
+                elif game.game_vars.get('_current_turnwheel_uses') == -1:
+                    game.state.change('turnwheel')
                 else:
                     alert = banner.Custom("Turnwheel_empty")
                     # Add banner sound

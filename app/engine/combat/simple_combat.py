@@ -19,6 +19,7 @@ class SimpleCombat():
     event_combat: bool = False
     arena_combat: bool = False
     alerts: bool = False  # Whether to show end of combat alerts
+    exp_pause: bool = False
     """
     Does the simple mechanical effects of combat without any effects
     """
@@ -98,8 +99,12 @@ class SimpleCombat():
         self.state_machine.total_rounds = 0  # So that we are forced out next time
 
     def update(self) -> bool:
-        self.clean_up()
-        return True
+        if self.exp_pause:
+            self.clean_up2()
+            return True
+        else:
+            self.clean_up()
+        return False
 
     def _apply_actions(self):
         """
@@ -112,13 +117,6 @@ class SimpleCombat():
         return surf
 
     def clean_up(self):
-        game.state.back()
-
-        # attacker has attacked
-        action.do(action.HasAttacked(self.attacker))
-
-        self.handle_messages()
-
         all_units = self._all_units()
 
         for unit in all_units:
@@ -128,21 +126,7 @@ class SimpleCombat():
 
         self.cleanup_combat()
 
-        # Handle death
-        for unit in all_units:
-            if unit.get_hp() <= 0:
-                game.death.should_die(unit)
-
         self.handle_records(self.full_playback, all_units)
-
-        self.turnwheel_death_messages(all_units)
-
-        self.handle_state_stack()
-        game.events.trigger(triggers.CombatEnd(self.attacker, self.defender, self.attacker.position, self.main_item, self.full_playback))
-        self.handle_item_gain(all_units)
-
-        pairs = self.handle_supports(all_units)
-        self.handle_support_pairs(pairs)
 
         # handle wexp & skills
         if not self.attacker.is_dying:
@@ -165,20 +149,44 @@ class SimpleCombat():
 
         self.handle_mana(all_units)
         self.handle_exp()
+        self.exp_pause = True
+    
+    def clean_up2(self):
+        game.state.back()
+        self.exp_pause = False
 
+        # attacker has attacked
+        action.do(action.HasAttacked(self.attacker))
+        
+        self.handle_messages()
+        all_units = self._all_units()
+        self.turnwheel_death_messages(all_units)
+        
+        self.handle_state_stack()
+        game.events.trigger(triggers.CombatEnd(self.attacker, self.defender, self.attacker.position, self.main_item, self.full_playback))
+        self.handle_item_gain(all_units)
+        
+        pairs = self.handle_supports(all_units)
+        self.handle_support_pairs(pairs)
+        
         self.end_combat()
 
-        self.attacker.built_guard = True
-        if self.defender:
-            self.defender.built_guard = True
-
+        # Handle death
+        for unit in all_units:
+            if unit.get_hp() <= 0:
+                game.death.should_die(unit)
         self.handle_death(all_units)
+
         # combat death gets handled after unit death here since
         # triggered events get added in stack order (combat death should run first)
         self.handle_combat_death(all_units)
 
         self.handle_unusable_items()
         self.handle_broken_items()
+        
+        self.attacker.built_guard = True
+        if self.defender:
+            self.defender.built_guard = True
 
     def start_event(self, full_animation=False):
         # region is set to True or False depending on whether we are in a battle anim

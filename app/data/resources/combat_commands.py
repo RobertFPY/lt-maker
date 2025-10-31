@@ -164,6 +164,7 @@ anim_commands = Data([
     CombatAnimationCommand('miss', 'Miss', None, None, 'process'),
     CombatAnimationCommand('spell', 'Cast Spell', ('effect',), (None,), 'process'),
     CombatAnimationCommand('spell_hit', 'Spell Hit', None, None, 'process'),
+    CombatAnimationCommand('spell_hit_2', 'Spell Hit (Crit)', None, None, 'process'),
 
     CombatAnimationCommand('self_tint', 'Tint Self', (int, 'color'), (0, (248, 248, 248)), 'aesthetic1'),
     CombatAnimationCommand('parent_tint', 'Tint Parent', (int, 'color'), (0, (248, 248, 248)), 'aesthetic1'),
@@ -179,7 +180,8 @@ anim_commands = Data([
     CombatAnimationCommand('parent_opacity', 'Set Parent Opacity (0 - 255)', (int,), (0,), 'aesthetic1'),
 
     CombatAnimationCommand('platform_shake', 'Shake Platform', None, None, 'aesthetic2'),
-    CombatAnimationCommand('screen_shake', 'Shake Screen', None, None, 'aesthetic2'),
+    CombatAnimationCommand('screen_shake', 'Shake Screen (Light)', None, None, 'aesthetic2'),
+    CombatAnimationCommand('screen_shake_2', 'Shake Screen (Heavy)', None, None, 'aesthetic2'),
     CombatAnimationCommand('hit_spark', 'Show Hit Spark', None, None, 'aesthetic2'),
     CombatAnimationCommand('crit_spark', 'Show Crit Spark', None, None, 'aesthetic2'),
     CombatAnimationCommand('darken', 'Darken Background', None, None, 'aesthetic2'),

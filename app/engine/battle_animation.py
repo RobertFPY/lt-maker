@@ -499,6 +499,13 @@ class BattleAnimation():
             self.owner.spell_hit()
             self.owner.hit_modifiers()
             self.partner_anim.damaged()
+        elif command.nid == 'spell_hit_2':
+            self.state = 'wait'
+            self.processing = False
+            self.owner._shake(4)
+            self.owner.spell_hit()
+            self.owner.hit_modifiers()
+            self.partner_anim.damaged()
 
         elif command.nid == 'effect':
             effect = values[0]
@@ -650,6 +657,8 @@ class BattleAnimation():
             self.owner.platform_shake()
         elif command.nid == 'screen_shake':
             self.owner._shake(1)
+        elif command.nid == 'screen_shake_2':
+            self.owner._shake(4)
         elif command.nid == 'darken':
             self.owner.darken()
         elif command.nid == 'lighten':

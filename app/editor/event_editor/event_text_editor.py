@@ -91,10 +91,26 @@ class EventTextEditor(QPlainTextEdit):
 
     def autoformat(self):
         if self.event_properties.version == EventVersion.EVENT:
+            scroll_pos = self.verticalScrollBar().value()
+            # maintain old reference to the text_cursor
+            # so we can just restore it later
+            text_cursor = self.textCursor()
+            block_num = text_cursor.blockNumber()
+            pos_in_block = text_cursor.positionInBlock()
+            
             text = self.document().toRawText()
             text = str_utils.convert_raw_text_newlines(text)
             formatted = event_formatter.format_event_script(text)
             self.document().setPlainText(formatted)
+            
+            # attempt to snap to the nearest valid block after autoformatting
+            block = self.document().findBlockByNumber(block_num)
+            if block and block.isValid():
+                new_pos: int = block.position() + min(pos_in_block, block.length() - 1)
+                text_cursor.setPosition(new_pos)
+                self.setTextCursor(text_cursor)
+            
+            self.verticalScrollBar().setValue(scroll_pos)
         else:
             pass
 

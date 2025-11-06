@@ -88,12 +88,7 @@ class EffectiveDamage(ItemComponent):
         if self._check_effective(target):
             might = item_system.damage(unit, item) or 0
             if self.weapon_effectiveness_multiplied:
-                adv = combat_calcs.compute_advantage(unit, target, item, item2)
-                disadv = combat_calcs.compute_advantage(unit, target, item, item2, False)
-                if adv:
-                    might += int(adv.damage)
-                if disadv:
-                    might += int(disadv.damage)
+                might += combat_calcs.compute_advantage_attr(unit, target, item, item2, 'damage')
             return int((self.multiplier - 1.0) * might + self.bonus_damage)
         return 0
 

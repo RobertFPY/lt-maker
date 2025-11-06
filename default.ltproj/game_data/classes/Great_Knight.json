@@ -3,7 +3,7 @@
         "nid": "Great_Knight",
         "name": "Great Knight",
         "desc": "Veteran horse knights.",
-        "tier": 1,
+        "tier": 2,
         "movement_group": "Armors",
         "promotes_from": "Cavalier",
         "turns_into": [],

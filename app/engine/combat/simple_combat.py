@@ -118,6 +118,14 @@ class SimpleCombat():
 
     def clean_up(self):
         all_units = self._all_units()
+                
+        # Handle death
+        for unit in all_units:
+            if unit.get_hp() <= 0:
+                game.death.should_die(unit)
+
+        
+        self.handle_records(self.full_playback, all_units)
 
         for unit in all_units:
             if unit.get_hp() > 0:
@@ -125,8 +133,6 @@ class SimpleCombat():
                 unit.sprite.reset()
 
         self.cleanup_combat()
-
-        self.handle_records(self.full_playback, all_units)
 
         # handle wexp & skills
         if not self.attacker.is_dying:
@@ -171,10 +177,6 @@ class SimpleCombat():
         
         self.end_combat()
 
-        # Handle death
-        for unit in all_units:
-            if unit.get_hp() <= 0:
-                game.death.should_die(unit)
         self.handle_death(all_units)
 
         # combat death gets handled after unit death here since

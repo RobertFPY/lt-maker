@@ -1054,7 +1054,8 @@ class Separate(Action):
                                           (self.unit.position[1] - self.pos[1]) * TILEHEIGHT]
 
     def execute(self):
-        game.arrive(self.droppee, self.pos)
+        if self.pos:
+            game.arrive(self.droppee, self.pos)
         self.droppee.sprite.change_state('normal')
         if self.with_wait:
             self.droppee_wait_action.execute()

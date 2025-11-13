@@ -256,9 +256,10 @@ key_map = {"enter": pygame.K_RETURN,
 
 events = []
 def get_events():
-    global events
+    global events, fast_quit
     events.clear()
     if fast_quit:
+        fast_quit = False  # Reset so this doesn't persist
         terminate()
         return pygame.QUIT
     for event in pygame.event.get():

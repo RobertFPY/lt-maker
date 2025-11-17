@@ -2555,17 +2555,15 @@ class IncrementSupportPoints(Action):
         self.nid = nid
         self.inc = points
 
-        if self.nid not in game.supports.support_pairs:
-            game.supports.create_pair(self.nid)
-        pair = game.supports.support_pairs[self.nid]
+        pair = game.supports.create_pair(self.nid)
         self.saved_data = pair.save()
 
     def do(self):
-        pair = game.supports.support_pairs[self.nid]
+        pair = game.supports.create_pair(self.nid)
         pair.increment_points(self.inc)
 
     def reverse(self):
-        pair = game.supports.support_pairs[self.nid]
+        pair = game.supports.create_pair(self.nid)
         pair.points = int(self.saved_data['points'])
         pair.locked_ranks = self.saved_data['locked_ranks']
         pair.points_gained_this_chapter = int(self.saved_data['points_gained_this_chapter'])
@@ -2577,12 +2575,10 @@ class UnlockSupportRank(Action):
         self.nid = nid
         self.rank = rank
         self.was_locked: bool = False
-        if self.nid not in game.supports.support_pairs:
-            game.supports.create_pair(self.nid)
 
     def do(self):
         self.was_locked = False
-        pair = game.supports.support_pairs[self.nid]
+        pair = game.supports.create_pair(self.nid)
         if self.rank in pair.locked_ranks:
             self.was_locked = True
             pair.locked_ranks.remove(self.rank)
@@ -2590,7 +2586,7 @@ class UnlockSupportRank(Action):
             pair.unlocked_ranks.append(self.rank)
 
     def reverse(self):
-        pair = game.supports.support_pairs[self.nid]
+        pair = game.supports.create_pair(self.nid)
         if self.rank in pair.unlocked_ranks:
             pair.unlocked_ranks.remove(self.rank)
         if self.was_locked and self.rank not in pair.locked_ranks:
@@ -2602,21 +2598,19 @@ class DisableSupportRank(Action):
         self.nid = nid
         self.rank = rank
         self.was_unlocked: bool = False
-        if self.nid not in game.supports.support_pairs:
-            game.supports.create_pair(self.nid)
-        pair = game.supports.support_pairs[self.nid]
+        pair = game.supports.create_pair(self.nid)
         self.locked_ranks = pair.locked_ranks[:]
         self.unlocked_ranks = pair.unlocked_ranks[:]
 
     def do(self):
-        pair = game.supports.support_pairs[self.nid]
+        pair = game.supports.create_pair(self.nid)
         if self.rank in pair.unlocked_ranks:
             pair.unlocked_ranks.remove(self.rank)
         if self.rank in pair.locked_ranks:
             pair.locked_ranks.remove(self.rank)
 
     def reverse(self):
-        pair = game.supports.support_pairs[self.nid]
+        pair = game.supports.create_pair(self.nid)
         pair.locked_ranks = self.locked_ranks
         pair.unlocked_ranks = self.unlocked_ranks
 
@@ -2629,19 +2623,17 @@ class LockAllSupportRanks(Action):
 
     def __init__(self, nid):
         self.nid = nid
-        if self.nid not in game.supports.support_pairs:
-            game.supports.create_pair(self.nid)
-        pair = game.supports.support_pairs[self.nid]
+        pair = game.supports.create_pair(self.nid)
         self.unlocked_ranks = pair.unlocked_ranks[:]
 
     def do(self):
-        pair = game.supports.support_pairs[self.nid]
+        pair = game.supports.create_pair(self.nid)
         for rank in pair.unlocked_ranks:
             pair.locked_ranks.append(rank)
         pair.unlocked_ranks.clear()
 
     def reverse(self):
-        pair = game.supports.support_pairs[self.nid]
+        pair = game.supports.create_pair(self.nid)
         for rank in self.unlocked_ranks:
             if rank in pair.locked_ranks:
                 pair.locked_ranks.remove(rank)

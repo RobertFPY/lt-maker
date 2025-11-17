@@ -77,9 +77,7 @@ class SupportAbility(Ability):
             units = set()
             for u in adj_units:
                 for prefab in DB.support_pairs.get_pairs(unit.nid, u.nid):
-                    if prefab.nid not in game.supports.support_pairs:
-                        game.supports.create_pair(prefab.nid)
-                    pair = game.supports.support_pairs[prefab.nid]
+                    pair = game.supports.create_pair(prefab.nid)
                     if pair.can_support():
                         units.add(u)
                         break

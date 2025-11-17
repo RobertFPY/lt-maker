@@ -110,6 +110,9 @@ class SupportEffect():
         self.attack_speed += effect[6]
         self.defense_speed += effect[7]
 
+def swap_nid(pair_nid: str) -> NID:
+    units = pair_nid.split(' | ')
+    return "%s | %s" % (units[1], units[0])
 
 class SupportController():
     def __init__(self):
@@ -129,6 +132,8 @@ class SupportController():
             return
         if prefab.nid in self.support_pairs:
             return self.support_pairs[prefab.nid]
+        if swap_nid(prefab.nid) in self.support_pairs:
+            return self.support_pairs[swap_nid(prefab.nid)]
 
         new_support_pair = SupportPair(nid)
         self.support_pairs[nid] = new_support_pair
@@ -142,6 +147,9 @@ class SupportController():
         self = cls()
         for support_pair_dat in s_list:
             support_pair = SupportPair.restore(support_pair_dat)
+            if swap_nid(support_pair.nid) in self.support_pairs:
+                print('support.py:restore dropping', support_pair.nid, 'because', swap_nid(support_pair.nid), 'exists')
+                continue # Skip duplicate/swapped entries in old savefiles
             self.support_pairs[support_pair.nid] = support_pair
         return self
 
@@ -149,9 +157,7 @@ class SupportController():
         pairs = []
         for prefab in DB.support_pairs:
             if prefab.unit1 == unit_nid or prefab.unit2 == unit_nid:
-                if prefab.nid not in self.support_pairs:
-                    self.create_pair(prefab.nid)
-                pairs.append(self.support_pairs[prefab.nid])
+                pairs.append(self.create_pair(prefab.nid))
         return pairs
 
     def get_bonus_pairs(self, unit_nid: str) -> list:

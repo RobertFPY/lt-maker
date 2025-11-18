@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 import random
-from typing import TYPE_CHECKING, List, Set, Tuple, Any
+from typing import TYPE_CHECKING, List, Optional, Set, Tuple, Any, Callable
 import app.engine.combat.playback as pb
 
 from app.engine.component_system import utils
+from app.engine.utils.ltcache import ltcached
 
 if TYPE_CHECKING:
     from app.engine.objects.item import ItemObject
     from app.engine.objects.unit import UnitObject
+    from app.engine.info_menu.multi_desc_utils import RawPages
 
 class Defaults():
     @staticmethod
@@ -82,6 +84,9 @@ class Defaults():
     @staticmethod
     def weapon_triangle_override(unit: UnitObject, item: ItemObject):
         return None
+    
+    def show_item_name_in_help_dlg(unit: UnitObject, item: ItemObject) -> bool:
+        return False
 
 def get_all_components(unit: UnitObject, item: ItemObject) -> list:
     from app.engine import skill_system
@@ -90,6 +95,14 @@ def get_all_components(unit: UnitObject, item: ItemObject) -> list:
         return override_components
     all_components = [c for c in item.components] + override_components
     return all_components
+
+@ltcached
+def get_multi_desc(item, unit) -> list[RawPages]:
+    all_descs: list[RawPages] = []
+    for component in item.components:
+        if component.defines('multi_desc'):
+            all_descs.append(component.multi_desc(item, unit))
+    return all_descs
 
 def available(unit: UnitObject, item: ItemObject) -> bool:
     """

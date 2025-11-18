@@ -1,10 +1,12 @@
-from typing import List
+from __future__ import annotations
+
+from typing import List, Optional, TYPE_CHECKING
 
 import app.engine.config as cf
 from app.constants import WINHEIGHT, WINWIDTH
 from app.data.database.database import DB
 from app.engine import (base_surf, engine, icons, item_funcs,
-                        item_system, text_funcs)
+                        item_system, skill_system, text_funcs)
 from app.engine.fonts import FONT
 from app.engine.game_state import game
 from app.engine.graphics.text.text_renderer import (fix_tags, font_height, render_text,
@@ -14,20 +16,23 @@ from app.utilities import utils
 from app.utilities.enums import HAlignment
 from app.utilities.typing import NID
 
+if TYPE_CHECKING:
+    from app.engine.objects.skill import SkillObject
+    from app.engine.objects.unit import UnitObject
+    from app.engine.objects.item import ItemObject
+    
 MAX_TEXT_WIDTH = WINWIDTH - 40
 
 class HelpDialog():
     help_logo = SPRITES.get('help_logo')
     font: NID = 'convo'
 
-    def __init__(self, desc, name=False):
+    def __init__(self, desc:str='', name:str=''):
         self.name = name
         self.last_time = self.start_time = 0
         self.transition_in = False
         self.transition_out = 0
 
-        if not desc:
-            desc = ''
         desc = text_funcs.translate(desc)
         lines = self.build_lines(desc)
         num_lines = len(lines)
@@ -225,13 +230,25 @@ ITEM_HELP_WIDTH = 160
 class ItemHelpDialog(HelpDialog):
     text_font: NID = 'text'
 
-    def __init__(self, item):
+    def __init__(self, item: ItemObject, first:bool=True, unit_override:Optional[UnitObject]=None):
         self.last_time = self.start_time = 0
         self.transition_in = False
         self.transition_out = 0
-
+            
         self.item = item
-        self.unit = game.get_unit(item.owner_nid) if item.owner_nid else None
+        self.unit = self._resolve_unit(self.item, unit_override)
+        
+        show_name: bool = item_system.show_item_name_in_help_dlg(self.unit, self.item)
+        self.name_override: Optional[str] = None
+        self.v_offset: int = 0
+        if not first or show_name:
+            self.name_override = item_system.multi_desc_name_override(self.unit, self.item)
+            if self.name_override is None:
+                self.name_override = self.item.name # We still want to show the name, so just show the default.
+            else:
+                # maintain parity with item evals allowing reference to the item object via the 'item' name
+                self.name_override = text_funcs.translate_and_text_evaluate(self.name_override, self.unit, self=self.item, local_args={'item': self.item})
+            self.v_offset += 16
 
         weapon_rank = item_system.weapon_rank(self.unit, self.item)
         if not weapon_rank:
@@ -271,19 +288,28 @@ class ItemHelpDialog(HelpDialog):
             height = 48 + font_height(self.font) * num_lines
         else:
             height = 32 + font_height(self.font) * num_lines
+            
+        height += self.v_offset
 
         self.help_surf = base_surf.create_base_surf(ITEM_HELP_WIDTH, height, 'help_bg_base')
         self.h_surf = engine.create_surface((ITEM_HELP_WIDTH, height + 3), transparent=True)
 
+    def _resolve_unit(self, item: ItemObject, unit: Optional[UnitObject]) -> Optional[UnitObject]:
+        if unit:
+            return unit
+        if item.owner_nid:
+            return game.get_unit(item.owner_nid)
+        return None
+            
     def create_dialog(self, desc: str):
         if desc:
             from app.engine import dialog
             desc = desc.replace('\n', '{br}')
-            dlg = \
+            dlg: dialog.Dialog = \
                 dialog.Dialog.from_style(game.speak_styles.get('__default_help'), desc,
                                          width=ITEM_HELP_WIDTH)
             y_height = 32 if self.num_present > 3 else 16
-            dlg.position = (0, y_height)
+            dlg.position = (0, y_height + self.v_offset)
         else:
             dlg = None
         return dlg
@@ -315,9 +341,12 @@ class ItemHelpDialog(HelpDialog):
         help_surf = engine.copy_surface(self.help_surf)
         weapon_type = item_system.weapon_type(self.unit, self.item)
         if weapon_type:
-            icons.draw_weapon(help_surf, weapon_type, (8, 8))
-        render_text(help_surf, [self.text_font], [str(self.vals[0])], ['blue'], (50, 8), HAlignment.RIGHT)
+            icons.draw_weapon(help_surf, weapon_type, (8, 8 + self.v_offset))
+        render_text(help_surf, [self.text_font], [str(self.vals[0])], ['blue'], (50, 8 + self.v_offset), HAlignment.RIGHT)
 
+        if self.name_override is not None:
+            render_text(help_surf, ['text'], [self.name_override], ['blue'], (8, 6))
+            
         name_positions = [(56, 8), (106, 8), (8, 24), (56, 24), (106, 24)]
         name_positions.reverse()
         val_positions = [(100, 8), (144, 8), (50, 24), (100, 24), (144, 24)]
@@ -326,9 +355,9 @@ class ItemHelpDialog(HelpDialog):
         for v, n in zip(self.vals[1:], names):
             if v is not None:
                 name_pos = name_positions.pop()
-                render_text(help_surf, [self.text_font], [n], ['yellow'], name_pos)
+                render_text(help_surf, [self.text_font], [n], ['yellow'], (name_pos[0], name_pos[1] + self.v_offset))
                 val_pos = val_positions.pop()
-                render_text(help_surf, [self.text_font], [str(v)], ['blue'], val_pos, HAlignment.RIGHT)
+                render_text(help_surf, [self.text_font], [str(v)], ['blue'], (val_pos[0], val_pos[1] + self.v_offset), HAlignment.RIGHT)
 
         if self.dlg:
             self.dlg.update()
@@ -336,3 +365,51 @@ class ItemHelpDialog(HelpDialog):
 
         surf = self.final_draw(surf, self.top_left(pos, right), time, help_surf)
         return surf
+
+class SkillHelpDialog(HelpDialog):
+    def __init__(self, skill: SkillObject, first:bool=True, unit_override:Optional[UnitObject]=None):
+        # old behavior where the charge is just shown next to the name
+        self.name = skill.name + self._get_charge_str(skill)
+        self.last_time = self.start_time = 0
+        self.transition_in = False
+        self.transition_out = 0
+        
+        unit = self._resolve_unit(skill, unit_override)
+        
+        name_override: Optional[str] = skill_system.get_multi_desc_name_override(skill, unit)
+        if not first and name_override is not None:
+            # maintain parity with skill evals allowing access to the skill object via the 'skill' name
+            self.name = text_funcs.translate_and_text_evaluate(name_override, unit, self=skill, local_args={'skill': skill})
+
+        desc = skill.desc
+        desc = text_funcs.translate_and_text_evaluate(desc, unit=unit_override)
+        lines = self.build_lines(desc)
+        num_lines = len(lines)
+
+        if lines:
+            self.greatest_line_len = text_funcs.get_max_width(self.font, lines)
+        else:
+            self.greatest_line_len = 8
+        if self.name:
+            self.greatest_line_len = max(self.greatest_line_len, text_width(self.font, self.name))
+            num_lines += 1
+
+        self.create_dialog(desc)
+
+        height = font_height(self.font) * num_lines + 16
+        self.help_surf = base_surf.create_base_surf(self.dlg.width, height, 'help_bg_base')
+        self.h_surf = engine.create_surface((self.dlg.width, height + 3), transparent=True)
+
+    def _get_charge_str(self, skill: SkillObject) -> str:
+        if skill.data.get('total_charge'): # this is so programmer-coded
+            charge = ' %d / %d' % (skill.data['charge'], skill.data['total_charge'])
+        else:
+            charge = ''
+        return charge
+
+    def _resolve_unit(self, skill: SkillObject, unit: Optional[UnitObject]) -> Optional[UnitObject]:
+        if unit:
+            return unit
+        if skill.owner_nid:
+            return game.get_unit(skill.owner_nid)
+        return None

@@ -1,5 +1,10 @@
+from __future__ import annotations
 from enum import Enum
 from app.data.database.components import Component, ComponentType, get_objs_using
+
+from typing import TYPE_CHECKING, Optional
+if TYPE_CHECKING:
+    from app.engine.objects.skill import SkillObject
 
 class SkillTags(Enum):
     ATTRIBUTE = 'attribute'
@@ -15,14 +20,15 @@ class SkillTags(Enum):
     AESTHETIC = 'aesthetic'
     ADVANCED = 'advanced'
     EXTRA = 'extra'
+    MULTI_DESC = 'multi_desc'
 
     CUSTOM = 'custom'
     HIDDEN = 'hidden'
     DEPRECATED = 'deprecated'
 
 class SkillComponent(Component):
-    skill = None
-    ignore_conditional = False
+    skill: Optional[SkillObject] = None
+    ignore_conditional: bool = False
 
 def get_skills_using(expose: ComponentType, value, db) -> list:
     return get_objs_using(db.skills.values(), expose, value)

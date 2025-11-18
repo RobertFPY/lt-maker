@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable, Optional
 
 from app.engine.component_system import utils
 from app.engine.utils.ltcache import ltcached
@@ -9,6 +9,9 @@ from app.engine.utils.ltcache import ltcached
 if TYPE_CHECKING:
     from app.engine.objects.item import ItemObject
     from app.engine.objects.unit import UnitObject
+    from app.engine.objects.skill import SkillObject
+    from app.data.database.components import ComponentType
+    from app.engine.info_menu.multi_desc_utils import RawPages
 
 class Defaults():
     @staticmethod
@@ -345,6 +348,21 @@ def get_text(skill) -> str:
     for component in skill.components:
         if component.defines('text'):
             return component.text()
+    return None
+
+@ltcached
+def get_multi_desc(skill, unit) -> list[RawPages]:
+    all_descs: list[RawPages] = []
+    for component in skill.components:
+        if component.defines('multi_desc'):
+            all_descs.append(component.multi_desc(skill, unit))
+    return all_descs
+
+@ltcached
+def get_multi_desc_name_override(skill, unit) -> Optional[str]:
+    for component in skill.components:
+        if component.defines('multi_desc_name_override'):
+            return component.multi_desc_name_override(skill, unit)
     return None
 
 def get_cooldown(skill) -> float:

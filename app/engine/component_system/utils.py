@@ -10,7 +10,8 @@ ARG_TYPE_MAP: Dict[str, str] = {
     'unit': "UnitObject",
     'item': "ItemObject",
     'target': "UnitObject",
-    'item2': "ItemObject"
+    'item2': "ItemObject",
+    'skill': "SkillObject",
 }
 
 class ResolvePolicy(Enum):

@@ -1,4 +1,5 @@
 import math
+from typing import Optional
 
 from app.utilities import utils
 from app.utilities.enums import HAlignment
@@ -39,7 +40,7 @@ def get_icon_by_nid(nid, x, y) -> engine.Surface:
     engine.set_colorkey(image, COLORKEY, rleaccel=True)
     return image
 
-def get_icon(item) -> engine.Surface:
+def get_icon(item) -> Optional[engine.Surface]:
     if not item:
         return None
     image = RESOURCES.icons16.get(item.icon_nid)

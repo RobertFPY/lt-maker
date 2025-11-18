@@ -22,6 +22,7 @@ class ItemTags(Enum):
     AOE = 'aoe'
     AESTHETIC = 'aesthetic'
     ADVANCED = 'advanced'
+    MULTI_DESC = 'multi_desc'
 
     CUSTOM = 'custom'
     HIDDEN = 'hidden'

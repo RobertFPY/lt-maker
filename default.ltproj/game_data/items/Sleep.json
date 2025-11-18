@@ -67,6 +67,22 @@
             [
                 "eval_target_restrict_2",
                 "'Tile' not in target.tags"
+            ],
+            [
+                "hit",
+                0
+            ],
+            [
+                "alternate_accuracy_formula",
+                "STATUS_STAFF_HIT"
+            ],
+            [
+                "alternate_avoid_formula",
+                "STATUS_STAFF_AVOID"
+            ],
+            [
+                "status_on_hold",
+                "Distance_Debuff"
             ]
         ]
     }

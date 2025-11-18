@@ -6,11 +6,23 @@ If you want to be able to distribute an executable to others for release and pla
 
 If you are working with an executable version of the editor, follow this process.
 
-You can download the current version of the standalone engine from here: https://gitlab.com/rainlash/lt-maker/-/jobs/artifacts/release/download?job=build_engine (Download will start automatically!)
+First, download the current version of the standalone engine from here: https://gitlab.com/rainlash/lt-maker/-/jobs/artifacts/release/download?job=build_engine (Download will start automatically!) You must do this step even if you already see engine files in your editor directory, as you can only create a built version of your game using these standalone files when using the non-Python editor.
+
+Then, unzip the download, stick your `.ltproj` file in the folder `lt_engine/lt_engine` (should be at the same level as `app`, `Include`, etc.), and then you should be good to go.
+
+![GenericEngineProject](images/GenericEngineProject1.png)
+
+(Further...)
+
+![GenericEngineProject](images/GenericEngineProject2.png)
+
+(Keep going...)
 
 ![GenericEngineProject](images/GenericEngineProject.png)
 
-Unzip the download, stick your `.ltproj` file in the folder `lt_engine/lt_engine` (should be at the same level as `app`, `Include`, etc.), and then you should be good to go. Test that the engine works with your project, and then re-zip it all up for distribution to others!
+(You can place the file anywhere in the same directory as these files (they may be in a different order on your machine).)
+
+Test that the engine works with your project, by navigating back up and double-clicking double_click_to_play.bat, and then re-zip it all up for distribution to others!
 
 ## Python Process
 

@@ -132,8 +132,9 @@ class SupportController():
             return
         if prefab.nid in self.support_pairs:
             return self.support_pairs[prefab.nid]
-        if swap_nid(prefab.nid) in self.support_pairs:
-            return self.support_pairs[swap_nid(prefab.nid)]
+        if not prefab.one_way:
+            if swap_nid(prefab.nid) in self.support_pairs:
+                return self.support_pairs[swap_nid(prefab.nid)]
 
         new_support_pair = SupportPair(nid)
         self.support_pairs[nid] = new_support_pair
@@ -147,9 +148,11 @@ class SupportController():
         self = cls()
         for support_pair_dat in s_list:
             support_pair = SupportPair.restore(support_pair_dat)
-            if swap_nid(support_pair.nid) in self.support_pairs:
-                logging.debug('support.py:restore dropping', support_pair.nid, 'because', swap_nid(support_pair.nid), 'exists')
-                continue # Skip duplicate/swapped entries in old savefiles
+            prefab = DB.support_pairs.get(support_pair.nid)
+            if prefab and not prefab.one_way:
+                if swap_nid(support_pair.nid) in self.support_pairs:
+                    logging.debug('support.py:restore dropping', support_pair.nid, 'because', swap_nid(support_pair.nid), 'exists')
+                    continue # Skip duplicate/swapped entries in old savefiles
             self.support_pairs[support_pair.nid] = support_pair
         return self
 

@@ -69,7 +69,7 @@ class MapCombat(SimpleCombat):
         elif self.state == 'begin_phase':
             # Get playback
             if not self.state_machine.get_state():
-                self.clean_up()
+                self.clean_up0()
                 self.set_state('exp_wait')
                 return False
 
@@ -258,6 +258,10 @@ class MapCombat(SimpleCombat):
                 self.set_state('begin_phase')
                 
         elif self.state == 'exp_wait':
+            self.clean_up1()
+            self.set_state('post_combat')
+            
+        elif self.state == 'post_combat':
             self.clean_up2()
             return True
 

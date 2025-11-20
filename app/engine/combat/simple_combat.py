@@ -19,7 +19,6 @@ class SimpleCombat():
     event_combat: bool = False
     arena_combat: bool = False
     alerts: bool = False  # Whether to show end of combat alerts
-    exp_pause: bool = False
     """
     Does the simple mechanical effects of combat without any effects
     """
@@ -106,9 +105,9 @@ class SimpleCombat():
         
         if self.state == 'post_combat':
             self.clean_up1()
-            self.state = 'exp_pause':
+            self.state = 'exp_pause'
 
-        self.clean_up()
+        self.clean_up0()
         self.state = 'post_combat'
         return False
 
@@ -130,7 +129,7 @@ class SimpleCombat():
             if unit.get_hp() <= 0:
                 game.death.should_die(unit)
 
-        self._delay_death = self.combat_death_should_trigger(all_units)
+        self.handle_combat_death(all_units)
 
     def clean_up1(self):
         all_units = self._all_units()

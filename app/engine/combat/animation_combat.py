@@ -1266,8 +1266,21 @@ class AnimationCombat(BaseCombat, MockCombat):
         # handle wexp & skills
         if not self.attacker.is_dying:
             self.handle_wexp(self.attacker, self.main_item, self.defender)
+
+        if DB.constants.value('pairup') and self.main_item:
+            if self.attacker.strike_partner:
+                self.handle_wexp(self.attacker.strike_partner, self.main_item, self.defender)
+            if self.attacker.traveler:
+                self.handle_wexp(game.get_unit(self.attacker.traveler), self.main_item, self.defender)
+
         if self.defender and self.def_item and not self.defender.is_dying:
             self.handle_wexp(self.defender, self.def_item, self.attacker)
+
+        if DB.constants.value('pairup') and self.def_item:
+            if self.defender and self.defender.strike_partner:
+                self.handle_wexp(self.defender.strike_partner, self.def_item, self.attacker)
+            if self.defender and self.defender.traveler:
+                self.handle_wexp(game.get_unit(self.defender.traveler), self.def_item, self.attacker)
 
         self.handle_mana(all_units)
         self.handle_exp(self)

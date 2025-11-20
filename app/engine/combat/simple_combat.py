@@ -74,6 +74,7 @@ class SimpleCombat():
         self.full_playback: List[PlaybackBrush] = []
         self.playback: List[PlaybackBrush] = []
         self.actions = []
+        self.state = 'combat'
 
         self.start_combat()
         self.start_event()
@@ -99,11 +100,16 @@ class SimpleCombat():
         self.state_machine.total_rounds = 0  # So that we are forced out next time
 
     def update(self) -> bool:
-        if self.exp_pause:
+        if self.state == 'exp_pause':
             self.clean_up2()
             return True
-        else:
-            self.clean_up()
+        
+        if self.state == 'post_combat':
+            self.clean_up1()
+            self.state = 'exp_pause':
+
+        self.clean_up()
+        self.state = 'post_combat'
         return False
 
     def _apply_actions(self):
@@ -116,24 +122,29 @@ class SimpleCombat():
     def draw(self, surf):
         return surf
 
-    def clean_up(self):
+    def clean_up0(self):
         all_units = self._all_units()
-                
+
         # Handle death
         for unit in all_units:
             if unit.get_hp() <= 0:
                 game.death.should_die(unit)
 
-        
-        self.handle_records(self.full_playback, all_units)
+        self._delay_death = self.combat_death_should_trigger(all_units)
 
+    def clean_up1(self):
+        all_units = self._all_units()
+
+        # Handle changing the sprite back
         for unit in all_units:
             if unit.get_hp() > 0:
                 unit.sprite.change_state('normal')
-                unit.sprite.reset()
 
         self.cleanup_combat()
 
+        self.handle_unusable_items()
+        self.handle_broken_items()
+        
         # handle wexp & skills
         if not self.attacker.is_dying:
             self.handle_wexp(self.attacker, self.main_item, self.defender)
@@ -154,38 +165,34 @@ class SimpleCombat():
                 self.handle_wexp(game.get_unit(self.defender.traveler), self.def_item, self.attacker)
 
         self.handle_mana(all_units)
-        self.handle_exp()
-        self.exp_pause = True
-    
+        self.handle_exp(self)
+
     def clean_up2(self):
+        all_units = self._all_units()
+        
         game.state.back()
-        self.exp_pause = False
 
         # attacker has attacked
         action.do(action.HasAttacked(self.attacker))
         
+        self.handle_records(self.full_playback, all_units)
+
         self.handle_messages()
-        all_units = self._all_units()
         self.turnwheel_death_messages(all_units)
-        
+
         self.handle_state_stack()
-        game.events.trigger(triggers.CombatEnd(self.attacker, self.defender, self.attacker.position, self.main_item, self.full_playback))
-        self.handle_item_gain(all_units)
         
+        game.events.trigger(triggers.CombatEnd(self.attacker, self.defender, self.attacker.position, self.main_item, self.full_playback))
+
+        self.handle_item_gain(all_units)
+
         pairs = self.handle_supports(all_units)
         self.handle_support_pairs(pairs)
-        
+
         self.end_combat()
 
         self.handle_death(all_units)
 
-        # combat death gets handled after unit death here since
-        # triggered events get added in stack order (combat death should run first)
-        self.handle_combat_death(all_units)
-
-        self.handle_unusable_items()
-        self.handle_broken_items()
-        
         self.attacker.built_guard = True
         if self.defender:
             self.defender.built_guard = True

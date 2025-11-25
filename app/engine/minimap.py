@@ -465,10 +465,11 @@ class MiniMap(object):
             keys = ('Sand', 'Desert', 'Desert_Cliff', 'Wall')
         elif key in ('Sea', 'River'):
             keys = ('Sea', 'Coast', 'River', 'Wall', 'Pier', 'Bridge')
-        elif key == 'Lava':
-            column += 2
         else:
             keys = (key, )
+
+        if key == 'Lava':
+            column += 2
 
         row = 0
 

@@ -106,6 +106,7 @@ class SimpleCombat():
         if self.state == 'post_combat':
             self.clean_up1()
             self.state = 'exp_pause'
+            return False
 
         self.clean_up0()
         self.state = 'post_combat'

@@ -298,7 +298,10 @@ def bop_portrait(self: Event, portrait, num_bops: int = 2, time: int = None, fla
     if 'no_block' in flags:
         pass
     else:
-        self.wait_time = engine.get_time() + 666
+        # Wait time is (1. no bop for time, 2. bop for time, 3. no bop for time, and so on for each bop)
+        # So if 1 bop, 3 * time worth of blocking
+        # If 2 bop, 5 * time worth of blocking, and so on
+        self.wait_time = engine.get_time() + (2 * num_bops * time + time)
         self.state = 'waiting'
 
 def expression(self: Event, portrait, expression_list: List[str], flags=None):

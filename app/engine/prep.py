@@ -874,6 +874,9 @@ class PrepManageSelectState(State):
                 tradeable_items = item_funcs.get_all_tradeable_items(self.unit)
                 for item in tradeable_items:
                     convoy_funcs.store_item(item, self.unit)
+                # Could have given away an item that would let us Restock/Repair/Use etc.
+                # Recheck what should be ignored
+                self.select_menu.set_ignore(self.get_ignore())
             elif choice == 'Items':
                 if self.name.startswith('base'):
                     game.memory['next_state'] = 'base_items'

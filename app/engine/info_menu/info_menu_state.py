@@ -37,22 +37,31 @@ class InfoMenuState(State):
     in_level = False
     show_map = False 
 
-    left_stats = [stat.nid for stat in DB.stats if stat.position == 'left']
-    if len(left_stats) >= 7:
-        _extra_stat_row = True
-        # If we have 7 or more left stats, use 7 rows
-        right_stats = left_stats[7:]
-    else:  # Otherwise, just use the 6 rows
-        _extra_stat_row = False
-        right_stats = left_stats[6:]
-    right_stats += [stat.nid for stat in DB.stats if stat.position == 'right']
-    # Make sure we only display up to 6 or 7 on each
-    if _extra_stat_row:
-        left_stats = left_stats[:7]
-        right_stats = right_stats[:7]
-    else:
-        left_stats = left_stats[:6]
-        right_stats = right_stats[:6]
+    def _init(self):
+        """
+        Determines which stats are left stats, right stats, and/or hidden stats
+        for use when drawing within this state.
+
+        Necessary to wrap this in a function that's called when the info menu starts up
+        because otherwise starting up the info menu, then changing the stat nids, and then
+        starting up the info menu again will break which stats are actually available
+        """
+        left_stats = [stat.nid for stat in DB.stats if stat.position == 'left']
+        if len(left_stats) >= 7:
+            _extra_stat_row = True
+            # If we have 7 or more left stats, use 7 rows
+            right_stats = left_stats[7:]
+        else:  # Otherwise, just use the 6 rows
+            _extra_stat_row = False
+            right_stats = left_stats[6:]
+        right_stats += [stat.nid for stat in DB.stats if stat.position == 'right']
+        # Make sure we only display up to 6 or 7 on each
+        if _extra_stat_row:
+            left_stats = left_stats[:7]
+            right_stats = right_stats[:7]
+        else:
+            left_stats = left_stats[:6]
+            right_stats = right_stats[:6]
 
     def create_background(self):
         panorama = RESOURCES.panoramas.get('info_menu_background')
@@ -64,6 +73,7 @@ class InfoMenuState(State):
             self.bg = None
 
     def start(self):
+        self._init()
         self.mouse_indicator = gui.MouseIndicator()
         self.create_background()
 

@@ -101,7 +101,7 @@ constants = ConstantCatalog([
     Constant('def_double', "Defender can double counterattack", ConstantType.BOOL, True, ConstantTag.OTHER),
     Constant('unit_stats_as_bonus', "Add generic class stats to non-generic base stats", ConstantType.BOOL, False, ConstantTag.LEVELING),
     Constant('enemy_leveling', "Method for autoleveling generic units", [growth.value for growth in GrowthOption if growth != GrowthOption.PLAYER_CHOICE] + ["Match"], "Match", ConstantTag.LEVELING),
-    Constant('auto_promote', "Units will promote automatically upon reaching max level", ConstantType.BOOL, False, ConstantTag.LEVELING),
+    Constant('auto_promote', "Units will promote automatically upon exceeding max level", ConstantType.BOOL, False, ConstantTag.LEVELING),
     Constant('promote_skill_inheritance', "Promoted units will have the skills of their previous classes", ConstantType.BOOL, True, ConstantTag.LEVELING),
     Constant('promote_level_reset', "Promotion resets level back to 1", ConstantType.BOOL, True, ConstantTag.LEVELING),
     Constant('class_change_level_reset', "Class Change resets level back to 1", ConstantType.BOOL, False, ConstantTag.LEVELING),

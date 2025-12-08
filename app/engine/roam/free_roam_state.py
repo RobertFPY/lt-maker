@@ -39,6 +39,11 @@ class FreeRoamState(MapState):
         if not self.ai_handler.active:
             self.ai_handler.start_all_units()
 
+        # Check that we are not missing any units that should be roaming
+        for unit in game.get_all_units():
+            if not self.contains_ai_unit(unit):
+                unit.add_ai_unit(self.unit)
+
         self.ai_handler.reset_all_units()
 
         if game.is_roam() and game.get_roam_unit():

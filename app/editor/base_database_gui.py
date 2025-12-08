@@ -6,7 +6,7 @@ import json
 
 from PyQt5.QtWidgets import QLineEdit, QTextEdit, QWidget, QHBoxLayout, QGridLayout, QPushButton, \
     QSizePolicy, QSplitter, QMessageBox, QApplication, QAbstractItemView
-from PyQt5.QtCore import QSize, Qt, pyqtSignal
+from PyQt5.QtCore import QSize, Qt, pyqtSignal, QModelIndex
 from PyQt5.QtCore import QAbstractListModel
 from app.data.database.components import Component
 from app.editor import timer
@@ -21,6 +21,33 @@ import logging
 
 if '_' not in globals():
     _ = lambda s: s
+
+def find_filter_keyword(keyword: str, model: Type[QAbstractListModel], index: QModelIndex) -> bool:
+    # if quotations are used == strict mode
+    if len(keyword) > 2 and keyword.startswith('"'):
+        match_text = keyword[1:-1]
+        name: str = model.data(index, Qt.DisplayRole)
+        if match_text.lower() in name.lower():
+            return True
+        return False
+
+    # search every subfield for occurrences of this string
+    item = model._data[index.row()]
+    item_attrs = [attr for attr in dir(item) if not callable(getattr(item, attr)) and not attr.startswith("__")]
+    for attr in item_attrs:
+        field = getattr(item, attr)
+        if isinstance(field, str):
+            if keyword.lower() in field.lower():
+                return True
+        elif isinstance(field, Iterable):
+            for field_item in field:
+                if isinstance(field_item, str):
+                    if keyword.lower() in field_item.lower():
+                        return True
+        elif isinstance(field, Component) and isinstance(field.value, str):
+            if keyword.lower() in field.value.lower():
+                return True
+    return False
 
 class Collection(QWidget):
     def __init__(self, deletion_criteria, collection_model: Type[DragDropCollectionModel], parent,
@@ -86,35 +113,7 @@ class Collection(QWidget):
         try:
             for i in range(self.model.rowCount()):
                 self.view.setRowHidden(i, False)
-                index = self.model.index(i)
-
-                # if quotations are used == strict mode
-                match = False
-                if len(text) > 2 and text.startswith('"'):
-                    match_text = text[1:-1]
-                    name: str = self.model.data(index, Qt.DisplayRole)
-                    if match_text.lower() in name.lower():
-                        match = True
-                else: # search every subfield for occurrences of this string
-                    item = self.model._data[index.row()]
-                    item_attrs = [attr for attr in dir(item) if not callable(getattr(item, attr)) and not attr.startswith("__")]
-                    for attr in item_attrs:
-                        field = getattr(item, attr)
-                        if isinstance(field, str):
-                            if text.lower() in field.lower():
-                                match = True
-                                break
-                        elif isinstance(field, Iterable):
-                            for field_item in field:
-                                if isinstance(field_item, str):
-                                    if text.lower() in field_item.lower():
-                                        match = True
-                                        break
-                        elif isinstance(field, Component) and isinstance(field.value, str):
-                            if text.lower() in field.value.lower():
-                                match = True
-                                break
-                if not match:
+                if not find_filter_keyword(text, self.model, self.model.index(i)):
                     self.view.setRowHidden(i, True)
 
             self.view.setDragEnabled(False)

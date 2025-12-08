@@ -17,6 +17,71 @@ from app.editor.tilemap_editor import MapEditor
 from app.editor.settings import MainSettingsController
 
 from app.utilities import str_utils
+import app.editor.utilities as editor_utilities
+
+def read_mapchip_file(filename: str) -> list:
+    mapchip = []
+    with open(filename, 'rb') as f:
+        data = f.read()
+    for i in range(0, len(data), 2):
+        # Each subtile data has 2 bytes, so 16 bits:     0123 4567 89ab cdef
+            #    89ab stores the palette
+            #      cd stores the rotation
+            #   ef012 stores the row
+            #   34567 stores the column
+        p = data[i+1] >> 4
+        r = data[i+1] >> 2 & 3
+        y = (data[i+1] & 3) << 3 | data[i] >> 5
+        x = data[i] & 31
+        mapchip.append((p, r, x, y))
+    return mapchip
+
+def read_palette_file(filename: str) -> list:
+    palette = []
+    with open(filename, 'rb') as f:
+        signature = f.read(8)
+        while True:
+            chunk_len = int.from_bytes(f.read(4), "big")
+            type = f.read(4)
+            data = f.read(chunk_len)
+            crc = f.read(4)
+            if type == b'IEND':
+                return
+            elif type != b'PLTE':
+                continue
+            for i in range(0, len(data), 16*3):
+                pal = [(data[i+j], data[i+j+1], data[i+j+2]) for j in range(0, 16*3, 3)]
+                palette.append(pal)
+            return palette
+
+def draw_tileset_from_mapchip(mapchip: list, palette: list, object_palette: QImage) -> QPixmap:
+    tileset_size = 32   # tiles
+    subtile_size = 8    # px
+    colored_im = [object_palette.copy()]
+    for pal in palette[1:]:
+        conv_dict = dict(zip(palette[0], pal))
+        color_transform = editor_utilities.rgb_convert(conv_dict)
+        im = editor_utilities.color_convert(object_palette.copy(), color_transform)
+        colored_im.append(im)
+
+    new_pix = QPixmap(tileset_size * subtile_size * 2, tileset_size * subtile_size * 2)
+    painter = QPainter()
+    painter.begin(new_pix)
+
+    for i, subtile in enumerate(mapchip):
+        # Each tile has 4 subtiles:
+        # top left, top right, bottom left, bottom right
+        quadrant = i % 4
+        tile_x = i // 4  % tileset_size
+        tile_y = i // 4 // tileset_size
+        true_x = (tile_x * 2 + quadrant  % 2) * subtile_size
+        true_y = (tile_y * 2 + quadrant // 2) * subtile_size
+
+        p, r, x, y = subtile
+        im = colored_im[p].copy(x * subtile_size, y * subtile_size, subtile_size, subtile_size)
+        painter.drawImage(true_x, true_y, im.mirrored(r % 2, r // 2))
+    painter.end()
+    return new_pix
 
 class TileSetModel(ResourceCollectionModel):
     def __init__(self, data, window):
@@ -42,9 +107,49 @@ class TileSetModel(ResourceCollectionModel):
     def create_new(self):
         settings = MainSettingsController()
         starting_path = settings.get_last_open_path()
-        fns, ok = QFileDialog.getOpenFileNames(self.window, "Choose %s", starting_path, "PNG Files (*.png);;All Files(*)")
+        fns, ok = QFileDialog.getOpenFileNames(self.window, "Choose new Tileset", starting_path, "PNG Files (*.png);;Config Files (*.mapchip_config);;All Files(*)")
         new_tileset = None
         if ok:
+            if len(fns) == 1 and fns[0].endswith('.mapchip_config'):
+                mapchip_config = fns[0]
+                parent_dir = os.path.split(fns[0])[0]
+                settings.set_last_open_path(parent_dir)
+                starting_path = settings.get_last_open_path()
+                fn, pok = QFileDialog.getOpenFileName(self.window, "Choose Object Palette", starting_path, "PNG Files (*.png);;All Files(*)")
+                if pok:
+                    if fn.endswith('.png'):
+                        object_palette = fn
+                        nid = os.path.split(mapchip_config)[-1][:-15]
+                        nid = str_utils.get_next_name(nid, RESOURCES.tilesets.keys())
+
+                        current_proj = settings.get_current_project()
+                        if not current_proj:
+                            QMessageBox.critical(self.window, "Error!", "Cannot load new tilesets without having saved the project")
+                            return
+
+                        mapchip = read_mapchip_file(mapchip_config)
+                        if not mapchip:
+                            QMessageBox.critical(self.window, "Error!", "Mapchip files must not be empty!")
+                            return
+
+                        palette = read_palette_file(object_palette)
+                        if not palette:
+                            QMessageBox.critical(self.window, "Error!", "PLTE chunk not found. Choose 8-bit PNG files only!")
+                            return
+
+                        palette_image = QImage(object_palette)
+                        pix = draw_tileset_from_mapchip(mapchip, palette, palette_image)
+                        full_path = os.path.join(current_proj, 'resources', 'tilesets', '%s.png' % nid)
+                        pix.save(full_path)
+                        new_tileset = TileSet(nid, full_path)
+                        new_tileset.set_pixmap(pix)
+                        RESOURCES.tilesets.append(new_tileset)
+                    else:
+                        QMessageBox.critical(self.window, "File Type Error!", "Object Palette must be PNG format!")
+                    parent_dir = os.path.split(fns[0])[0]
+                    settings.set_last_open_path(parent_dir)
+                return new_tileset
+
             for fn in fns:
                 if fn.endswith('.png'):
                     nid = os.path.split(fn)[-1][:-4]

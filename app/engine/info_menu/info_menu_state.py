@@ -62,6 +62,7 @@ class InfoMenuState(State):
         else:
             left_stats = left_stats[:6]
             right_stats = right_stats[:6]
+        self._extra_stat_row = _extra_stat_row
         self.left_stats = left_stats
         self.right_stats = right_stats
 

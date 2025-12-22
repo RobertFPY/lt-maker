@@ -85,6 +85,7 @@ class Defaults():
     def weapon_triangle_override(unit: UnitObject, item: ItemObject):
         return None
     
+    @staticmethod
     def show_item_name_in_help_dlg(unit: UnitObject, item: ItemObject) -> bool:
         return False
 

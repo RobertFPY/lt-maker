@@ -83,7 +83,7 @@ class MapSprite():
         self.left_stand = SingleMapSprite.create_anim_sprite([self.left.get_stationary_frame()], [22])
         right_frames = [engine.subsurface(move, (num*48, 80, 48, 40)) for num in range(4)]
         self.right = SingleMapSprite.create_looping_sprite(right_frames, ANIMATION_COUNTERS.move_sprite_counter)
-        self.right_stand =SingleMapSprite.create_anim_sprite([self.right.get_stationary_frame()], [22])
+        self.right_stand = SingleMapSprite.create_anim_sprite([self.right.get_stationary_frame()], [22])
         up_frames = [engine.subsurface(move, (num*48, 120, 48, 40)) for num in range(4)]
         self.up = SingleMapSprite.create_looping_sprite(up_frames, ANIMATION_COUNTERS.move_sprite_counter)
         self.up_stand = SingleMapSprite.create_anim_sprite([self.up.get_stationary_frame()], [22])
@@ -137,8 +137,8 @@ class MapSprite():
             new_colors: List[Color3] = current_palette.get_colors()
         conversion_dict: Dict[Color3, Color3] = {a: b for a, b in zip(new_colors, colors)}
         imgs = [image_mods.color_convert(img, conversion_dict) for img in imgs]
-        for img in imgs:
-            engine.set_colorkey(img, COLORKEY, rleaccel=True)
+        # for img in imgs:
+            # engine.set_colorkey(img, COLORKEY, rleaccel=True)
         return imgs
 
     def create_image(self, state, stationary=False):
@@ -612,6 +612,10 @@ class UnitSprite():
         flicker_tints = skill_system.unit_sprite_flicker_tint(self.unit)
         flicker_tints = [image_mods.FlickerTint(*tint) for tint in flicker_tints]
         image = image_mods.draw_flicker_tint(image, current_time, flicker_tints)
+
+        final_alpha = skill_system.unit_sprite_alpha_tint(self.unit)
+        if final_alpha != 0.0:
+            image = image_mods.make_translucent(image.convert_alpha(), final_alpha)
 
         # Each image has (self.image.get_width() - 32)//2 pixels on the
         # left and right of it, to handle any off tile spriting

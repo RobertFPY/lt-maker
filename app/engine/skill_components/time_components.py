@@ -171,7 +171,7 @@ class LostOnEndCombat2(SkillComponent):
         from app.engine import skill_system
         # Skip this if the unit didn't initiate
         if self.value.get('only_if_initiated', False):
-            if mode == "attack":
+            if mode not in ("attack", "splash"):
                 return
         remove_skill = False
         if self.value.get('lost_on_self', True):

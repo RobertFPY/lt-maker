@@ -119,6 +119,10 @@ class Defaults():
         return 0
 
     @staticmethod
+    def unit_sprite_alpha_tint(unit) -> float:
+        return 0.0
+
+    @staticmethod
     def modify_buy_price(unit, item) -> float:
         return 1.0
 

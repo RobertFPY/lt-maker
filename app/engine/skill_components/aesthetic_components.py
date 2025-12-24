@@ -24,6 +24,17 @@ class UnitAnim(SkillComponent):
     def should_draw_anim(self, unit, skill):
         return self.value
 
+class UnitAlphaTint(SkillComponent):
+    nid = 'unit_alpha_tint'
+    desc = "Modifies the unit's sprite to be translucent (0.0 = fully opaque, 1.0 = fully transparent)"
+    tag = SkillTags.AESTHETIC
+
+    expose = ComponentType.Float
+    value = 0.0
+
+    def unit_sprite_alpha_tint(self, unit) -> float:
+        return self.value
+
 class UnitTint(SkillComponent):
     nid = 'unit_tint'
     desc = "Displays a tint on the unit sprite on map"

@@ -268,6 +268,10 @@ class ForcedMovement(SimpleMove):
         game.arrive(self.unit, self.new_pos)
         self.update_fow_action.do()
 
+    def execute(self):
+        game.leave(self.unit)
+        game.arrive(self.unit, self.new_pos)
+        self.update_fow_action.do()
 
 class Swap(Action):
     def __init__(self, unit1: UnitObject, unit2: UnitObject):

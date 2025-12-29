@@ -1476,10 +1476,14 @@ class SetCurrentHP(EventCommand):
     desc = \
         """
 Sets *Unit*'s hit points to *HP*.
+
+If the flag `damage_numbers` is supplied, the change in HP will appear
+as a damage number on the unit's sprite.
         """
 
     keywords = ["Unit", "HP"]
     keyword_types = ["Unit", "PositiveInteger"]
+    _flags = ['damage_numbers']
 
 class SetCurrentMana(EventCommand):
     nid = 'set_current_mana'

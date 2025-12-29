@@ -13,7 +13,7 @@ from app.data.database.difficulty_modes import RNGOption
 from app.data.resources.resources import RESOURCES
 from app.data.resources.sounds import SFXPrefab, SongPrefab
 from app.engine import (action, background, banner, base_surf, dialog, engine,
-                        icons, image_mods, item_funcs, item_system,
+                        gui, icons, image_mods, item_funcs, item_system,
                         save, skill_system, unit_funcs)
 from app.engine.game_board import FogOfWarType
 from app.engine.achievements import ACHIEVEMENTS
@@ -1282,10 +1282,17 @@ def set_variant(self: Event, unit: NID, string: str = None, flags=None):
     action.do(action.SetVariant(actor, string))
 
 def set_current_hp(self: Event, unit, hp: int, flags=None):
+    flags = flags or set()
+
     actor = self._get_unit(unit)
     if not actor:
         self.logger.error("set_current_hp: Couldn't find unit %s" % unit)
         return
+
+    if 'damage_numbers' in flags and actor.position:
+        difference: int = unit.get_hp() - hp
+        actor.sprite.add_damage_number(difference)
+
     action.do(action.SetHP(actor, hp))
 
 def set_current_mana(self: Event, unit, mana: int, flags=None):

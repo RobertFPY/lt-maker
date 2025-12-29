@@ -19,7 +19,7 @@ from app.utilities import utils
 
 from app.engine.sprites import SPRITES
 from app.engine.sound import get_sound_thread
-from app.engine import engine, image_mods, health_bar, equations
+from app.engine import engine, image_mods, gui, health_bar, equations
 from app.engine import item_funcs, item_system, skill_system, particles
 import app.engine.config as cf
 from app.engine.animations import Animation
@@ -309,6 +309,20 @@ class UnitSprite():
         if anim:
             anim = Animation(anim, (-12, -40), reverse=reverse)
         self.animations['swoosh'] = anim
+
+    def add_damage_number(self, damage: int):
+        """
+        damage should be positive if its a damage
+        and negative if its a heal
+        """
+        str_damage = str(abs(damage))
+        if damage >= 0:
+            color = 'small_red'
+        else:
+            color = 'small_cyan'
+        for idx, num in enumerate(str_damage):
+            d = gui.DamageNumber(int(num), idx, len(str_damage), self.position, color)
+            self.damage_numbers.append(d)
 
     def set_transition(self, new_state):
         self.transition_state = new_state

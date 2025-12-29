@@ -21,7 +21,7 @@ class NarrationDialogue(uif.UIComponent):
         self.acknowledged: bool = False
 
         # TODO This should be configurable instead of magic number
-        self.text_vertical_offset = 35
+        self.text_vertical_offset = 32
         self.text_horizontal_area = 200
         self.text_horizontal_margin = 20
 

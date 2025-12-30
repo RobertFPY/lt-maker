@@ -431,6 +431,76 @@ class PurpleMote(Particle):
         sprite = image_mods.make_translucent_blend(self.sprite, alpha)
         engine.blit(surf, sprite, (self.x - offset_x, self.y - offset_y), None, engine.BLEND_RGB_ADD)
 
+class EventTileParticle(Particle):
+    sprite = SPRITES.get('particle_light_mote')
+    x_speed = 0.16
+    min_y_speed = 0.33
+    y_speed = 1
+
+    def reset(self, pos):
+        super().reset(pos)
+        self.orig_pos = pos
+        self.my_x_speed = (random.random() * self.x_speed * 2) - self.x_speed
+        self.my_y_speed = -(random.random() * (self.y_speed - self.min_y_speed)) - self.min_y_speed
+        self.transparency = 0.6 * (random.random() * 0.3)
+        self.transition = False
+        self.change_over_time = 0.05
+        return self
+
+    def update(self):
+        self.x += self.my_x_speed
+        self.y += self.my_y_speed
+        if self.y < self.orig_pos[1] - 20:
+            self.transition = True
+
+        if self.transition:
+            self.transparency += self.change_over_time
+        else:
+            self.transparency += self.change_over_time / 5
+        if self.transparency >= 1:
+            self.remove_me_flag = True
+            self.transparency = 1.
+
+    def draw(self, surf, offset_x=0, offset_y=0):
+        sprite = image_mods.make_translucent(self.sprite, self.transparency)
+        surf.blit(sprite, (self.x - offset_x, self.y - offset_y))
+
+class FirePillar(Particle):
+    if _fire_sprite:
+        sprites = [engine.subsurface(_fire_sprite, (0, i*2, 3, 2)) for i in range(6)]
+    else:
+        sprites = []
+
+    def reset(self, pos):
+        super().reset(pos)
+        self.orig_pos = pos
+        self.speed = random.randint(1, 4)
+        self.sprite = self.sprites[-1]
+        self.counter = 0
+        return self
+
+    def update(self):
+        self.x += (random.random() * self.speed * 2) - self.speed
+        self.y -= random.random() * self.speed
+        self.counter += 1
+        if self.counter < 4:
+            self.sprite = self.sprites[-1]
+        elif self.counter < 8:
+            self.sprite = self.sprites[-2]
+        elif self.counter < 12:
+            self.sprite = self.sprites[-3]
+        elif self.counter < 16:
+            self.sprite = self.sprites[-4]
+        elif self.counter < 20:
+            self.sprite = self.sprites[-5]
+        elif self.counter < 24:
+            self.sprite = self.sprites[-6]
+        else:
+            self.remove_me_flag = True
+
+    def draw(self, surf, offset_x=0, offset_y=0):
+        surf.blit(self.sprite, (self.x - offset_x, self.y - offset_y))
+
 def create_system(nid, width, height, position):
     twidth, theight = width * TILEWIDTH, height * TILEHEIGHT
     if nid == 'rain':
@@ -477,6 +547,10 @@ def create_system(nid, width, height, position):
         y = position[1] * TILEWIDTH
         creation_bounds = x, x, y, y
         ps = SimpleParticleSystem(nid, SwitchTileParticle, position, creation_bounds, 5)
+    elif nid == 'fire_pillar':
+        ypos = (position[1] + 1) * TILEHEIGHT
+        creation_bounds = position[0] * TILEWIDTH, (position[0] + 1) * TILEWIDTH, ypos - 5, ypos
+        ps = SimpleParticleSystem(nid, FirePillar, position, creation_bounds, 12)
 
     if ps:
         ps.prefill()

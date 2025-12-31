@@ -46,6 +46,8 @@ class Uses(ItemComponent):
 
     def on_broken(self, unit, item):
         from app.engine.game_state import game
+        if item.no_break_out_of_uses:
+            return
         if item in unit.items:
             action.do(action.RemoveItem(unit, item))
         elif item in game.party.convoy:
@@ -173,6 +175,23 @@ class NoAlertOnBreak(ItemComponent):
 
     def alerts_when_broken(self, unit, item):
         return False
+
+class NoBreakOutOfUses(ItemComponent):
+    nid = 'no_break_out_of_uses'
+    desc = "Item will not be removed from inventory when it runs out of uses."
+
+    tag = ItemTags.USES
+
+    expose = ComponentType.Bool
+
+    def is_unusable(self, unit, item) -> bool:
+        return item.data['uses'] <= 0
+
+    def on_unusable(self, unit, item):
+        if unit.equipped_weapon is item:
+            action.do(action.UnequipItem(unit, item))
+        elif unit.equipped_accessory is item:
+            action.do(action.UnequipItem(unit, item))
 
 class HPCost(ItemComponent):
     nid = 'hp_cost'

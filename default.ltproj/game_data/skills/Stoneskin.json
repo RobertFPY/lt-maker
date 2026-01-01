@@ -2,7 +2,7 @@
     {
         "nid": "Stoneskin",
         "name": "Stoneskin",
-        "desc": "Take half damage but inflicts -2 SPD.",
+        "desc": "Take half damage but inflicts -4 SPD.",
         "icon_nid": "Skills",
         "icon_index": [
             9,

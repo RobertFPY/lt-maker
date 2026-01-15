@@ -382,7 +382,7 @@ class UIView():
             if d_assist_flag:
                 surf.blit(SPRITES.get(as_prefix + 'left_' + d_color, as_prefix + 'left_red'), (1, 35))
         else:
-            surf = SPRITES.get(prefix + d_color, prefix + 'red')
+            surf = SPRITES.get(prefix + d_color, prefix + 'red').copy()
             if a_assist_flag:
                 surf.blit(SPRITES.get(as_prefix + a_color, as_prefix + 'red'), (92, 35))
             if d_assist_flag:

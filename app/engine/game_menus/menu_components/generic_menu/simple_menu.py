@@ -23,7 +23,7 @@ class SimpleIconTable(UIComponent):
                  initial_data: List[str] | List[Tuple[engine.Surface, str, str]] = [],
                  num_columns: int = 1, num_rows: int = 0, row_width: int = -1,
                  background = 'menu_bg_base', title: str = None, orientation: Orientation = Orientation.VERTICAL,
-                 option_text_align: HAlignment = HAlignment.LEFT):
+                 option_text_align: HAlignment = HAlignment.LEFT, default_row_height: int = 16):
         super().__init__(name=name, parent=parent)
 
         self.num_display_columns = max(num_columns, 1)
@@ -36,7 +36,7 @@ class SimpleIconTable(UIComponent):
         self.text_align = option_text_align
         self.column_data: List[List[IconRow]] = []
 
-        self.row_height = 16 # default icon. will be resized if any rows are larger.
+        self.row_height = default_row_height
 
         # subcomponents and layout
         self.props.layout = UILayoutType.LIST

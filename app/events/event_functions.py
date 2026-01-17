@@ -2016,7 +2016,8 @@ def give_exp(self: Event, global_unit, experience: int, flags=None):
         return
     exp = utils.clamp(experience, -100, 100)
     klass = DB.classes.get(unit.klass)
-    max_exp = 100 * (klass.max_level - unit.level) - unit.exp
+    max_lvl = klass.max_level + 1 if exp_funcs.can_give_exp(unit, exp) else klass.max_level
+    max_exp = 100 * (max_lvl - unit.level) - unit.exp
     exp = min(exp, max_exp)
     if 'silent' in flags:
         old_exp = unit.exp

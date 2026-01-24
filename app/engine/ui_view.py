@@ -643,7 +643,8 @@ class UIView():
         num_phases = combat_calcs.compute_attack_phases(attacker, defender, weapon, resolve_weapon(defender), "attack", (0 , 0))
         num_attacks = num_phases
         for attack_phase in range(num_phases):
-            num_attacks += combat_calcs.compute_multiattacks(attacker, defender, weapon, "attack", (attack_phase, 0)) - 1
+            num_sub_attacks = combat_calcs.compute_multiattacks(attacker, defender, weapon, "attack", (attack_phase, 0)) - 1
+            num_attacks += num_sub_attacks
         if weapon.uses_options and weapon.uses_options.one_loss_per_combat():
             pass  # If you can only lose one use at a time, no need to min this
         else:
@@ -658,13 +659,20 @@ class UIView():
                 FONT[number_font].blit(str(num_attacks), surf, utils.tuple_add(x2_pos_player, number_offset))
 
         if a_assist:
-            if num_attacks > 1 and not DB.constants.value('limit_attack_stance'):
-                im = SPRITES.get("x%d" % (num_attacks), fallback=None)
+            if DB.constants.value('limit_attack_stance'):
+                a_assist_num_attacks = combat_calcs.compute_multiattacks(a_assist, defender, a_assist.get_weapon(), "attack", (0, 0))
+            else:
+                a_assist_num_attacks = 0
+                for attack_phase in range(num_phases):
+                    a_assist_num_attacks += combat_calcs.compute_multiattacks(a_assist, defender, a_assist.get_weapon(), "attack", (attack_phase, 0))
+
+            if a_assist_num_attacks > 1:
+                im = SPRITES.get("x%d" % (a_assist_num_attacks), fallback=None)
                 if im:
                     surf.blit(im, x2_pos_player_partner)
                 else:
                     FONT[x2_font].blit("X", surf, utils.tuple_add(x2_pos_player_partner, x2_offset))
-                    FONT[number_font].blit(str(num_attacks), surf, utils.tuple_add(x2_pos_player_partner, number_offset))
+                    FONT[number_font].blit(str(a_assist_num_attacks), surf, utils.tuple_add(x2_pos_player_partner, number_offset))
 
         # Enemy doubling
         eweapon = defender.get_weapon()
@@ -683,14 +691,21 @@ class UIView():
                     FONT[x2_font].blit("X", surf, utils.tuple_add(x2_pos_enemy, x2_offset))
                     FONT[number_font].blit(str(e_num_attacks), surf, utils.tuple_add(x2_pos_enemy, number_offset))
 
-            if d_assist:
-                if e_num_attacks > 1 and not DB.constants.value('limit_attack_stance'):
-                    im = SPRITES.get("x%d" % (e_num_attacks), fallback=None)
+            if d_assist:     
+                if DB.constants.value('limit_attack_stance'):
+                    d_assist_num_attacks = combat_calcs.compute_multiattacks(d_assist, attacker, d_assist.get_weapon(), "defense", (0, 0))
+                else:
+                    d_assist_num_attacks = 0
+                    for attack_phase in range(e_num_phases):
+                        d_assist_num_attacks += combat_calcs.compute_multiattacks(d_assist, attacker, d_assist.get_weapon(), "defense", (attack_phase, 0))
+
+                if d_assist_num_attacks > 1:
+                    im = SPRITES.get("x%d" % (d_assist_num_attacks), fallback=None)
                     if im:
                         surf.blit(im, x2_pos_enemy_partner)
                     else:
                         FONT[x2_font].blit("X", surf, utils.tuple_add(x2_pos_enemy_partner, x2_offset))
-                        FONT[number_font].blit(str(e_num_attacks), surf, utils.tuple_add(x2_pos_enemy_partner, number_offset))
+                        FONT[number_font].blit(str(d_assist_num_attacks), surf, utils.tuple_add(x2_pos_enemy_partner, number_offset))
 
         # Turns off combat conditionals
         skill_system.test_off([], defender, resolve_weapon(defender), attacker, weapon, 'defense')

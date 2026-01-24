@@ -201,6 +201,7 @@ class AttackerPartnerState(SolverState):
                 solver.simple_process(actions, playback, atk_p, atk_p, target_pos, item, None, None, None)
 
         solver.num_subattacks += 1
+        self.num_multiattacks = combat_calcs.compute_multiattacks(atk_p, solver.defender, resolve_weapon(atk_p), 'attack', attack_info)
         # End check attack proc
         skill_system.end_sub_combat(actions, playback, atk_p, solver.main_item, solver.defender, resolve_weapon(solver.defender), 'attack', attack_info)
 
@@ -317,9 +318,11 @@ class DefenderPartnerState(SolverState):
             solver.update_stats(playback)
         solver.process(actions, playback, def_p, solver.attacker, solver.attacker.position, solver.def_item, solver.main_item, 'defense', attack_info, assist=True)
 
+        solver.num_subdefends += 1
+        self.num_multiattacks = combat_calcs.compute_multiattacks(def_p, solver.attacker, resolve_weapon(def_p), 'defense', attack_info)
+
         # Remove defending unit's proc skills (which is solver.attacker)
         skill_system.end_sub_combat(actions, playback, solver.attacker, solver.main_item, def_p, solver.def_item, 'defense', attack_info)
-        solver.num_subdefends += 1
         # Remove attacking unit's proc skills (which is solver.defender)
         skill_system.end_sub_combat(actions, playback, def_p, solver.def_item, solver.attacker, solver.main_item, 'attack', attack_info)
 

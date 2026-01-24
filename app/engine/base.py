@@ -22,6 +22,7 @@ from app.engine import menus, base_surf, background, text_funcs, \
     engine, equations
 from app.engine.fluid_scroll import FluidScroll
 from app.engine.graphics.text.text_renderer import render_text
+from app.engine.persistent_records import RECORDS
 
 from app.utilities.utils import linspace
 from app.utilities.enums import HAlignment
@@ -1477,13 +1478,24 @@ class BaseSoundRoomState(State):
         self.fluid = FluidScroll()
         self.bg = game.memory.get('base_bg')
 
-        self.music_names = [title for title in RESOURCES.music.keys() if not title.startswith('_')]
+        sorted_list = sorted(RESOURCES.music.keys(), key=lambda x: RESOURCES.music.get(x).soundroom_idx)
+        if sorted_list:
+            self.music_names = sorted_list[-RESOURCES.music.get(sorted_list[-1]).soundroom_idx:]
+        else:
+            self.music_names = []
 
         layout = (6, 4)
         topleft = (80, 48)
         self.menu = menus.Table(None, [str(i + 1) for i in range(len(self.music_names))], layout, topleft)
         self.menu.gem = True
         self.menu.shimmer = 2
+
+        if DB.constants.value('locked_soundroom'):
+            ignore = [not RECORDS.check_song_unlocked(music) for music in self.music_names]
+            self.menu.set_ignore(ignore)
+            self.unlocked_idxes = [idx for idx, ig in enumerate(ignore) if not ig]
+        else:
+            self.unlocked_idxes = range(len(self.music_names))
 
         self.playing = False
         full_sound_room_volume_sprite = SPRITES.get('sound_room_volume')
@@ -1496,8 +1508,14 @@ class BaseSoundRoomState(State):
 
     def begin(self):
         self.fluid.reset_on_change_state()
+
+        self.prev_state_music = None
+        if get_sound_thread().get_current_song():
+            self.prev_state_music = get_sound_thread().get_current_song().nid
+
         get_sound_thread().fade_clear()
         self.playing = False
+        self.last_choice = None
 
     def take_input(self, event):
         first_push = self.fluid.update()
@@ -1522,30 +1540,48 @@ class BaseSoundRoomState(State):
             get_sound_thread().play_sfx('Select 4')
             game.state.change('transition_pop')
             if self.name == 'base_sound_room':
-                base_music = game.game_vars.get('_base_music')
-                if base_music:
-                    get_sound_thread().fade_in(base_music)
+                music = game.game_vars.get('_base_music')
             elif self.name == 'extras_sound_room':
-                get_sound_thread().clear()
-                if DB.constants.value('music_main'):
-                    get_sound_thread().fade_in(DB.constants.value('music_main'), fade_in=50)
+                music = DB.constants.value('music_main')
+            elif self.name == 'event_sound_room':
+                music = self.prev_state_music
+
+            get_sound_thread().clear()
+            if music:
+                get_sound_thread().fade_in(music, fade_in=50)
+            action.do(action.SetGameVar('_soundroom_choice', self.last_choice))
+
+        elif event and not self.unlocked_idxes:
+            pass    # If all songs are locked, then stop Play and Random from working
 
         elif event == 'SELECT':
             current_music_index = int(self.menu.get_current()) - 1
             music = self.music_names[current_music_index]
             get_sound_thread().fade_in(music)
             self.playing = True
+            self.last_choice = music
 
         elif event == 'START':
             get_sound_thread().fade_clear()
             self.playing = False
 
         elif event == 'INFO':
-            rand_idx = random.randrange(0, len(self.music_names))
+            rand_idx = random.choice(self.unlocked_idxes)
             self.menu.move_to(rand_idx)
             music = self.music_names[rand_idx]
             get_sound_thread().fade_in(music)
             self.playing = True
+
+        elif event == 'AUX':
+            current_music_index = int(self.menu.get_current()) - 1
+            music = self.music_names[current_music_index]
+            song_prefab = RESOURCES.music.get(music)
+
+            if self.playing and song_prefab.battle_full_path and \
+                    get_sound_thread().get_current_song().nid == music:
+                get_sound_thread().battle_fade_in(music)
+            else:
+                get_sound_thread().play_sfx('Error')
 
     def update(self):
         if self.menu:
@@ -1554,18 +1590,28 @@ class BaseSoundRoomState(State):
     def draw(self, surf):
         if self.bg:
             self.bg.draw(surf)
-        surf.blit(SPRITES.get('sound_player'), (8, 56))
+
+        player = 'sound_player'
+        music = ''
+
+        if self.unlocked_idxes:
+            current_music_index = int(self.menu.get_current()) - 1
+            music = self.music_names[current_music_index]
+            song_prefab = RESOURCES.music.get(music)
+            if song_prefab.battle_full_path:
+                player += '_variant'
+
+        surf.blit(SPRITES.get(player), (8, 56))
+
         if self.playing:
             self.draw_volume(surf)
         self.menu.draw(surf)
-        current_music_index = int(self.menu.get_current()) - 1
-        music = self.music_names[current_music_index]
-        self.draw_sound_room_title(surf, (24, 6), music)
+        self.draw_sound_room_title(surf, (WINWIDTH//2, 22), music)
         return surf
 
-    def draw_sound_room_title(self, surf, topleft, music_name):
-        surf.blit(SPRITES.get('chapter_select_green'), (topleft[0], topleft[1]))
-        render_text(surf, ['convo'], [music_name], ['white'], (topleft[0] + 98, topleft[1] + 8), HAlignment.CENTER)
+    def draw_sound_room_title(self, surf, center, music_name):
+        engine.blit_center(surf, SPRITES.get('chapter_select_green'), center)
+        render_text(surf, ['convo'], [music_name], ['white'], (center[0], center[1] - 8), HAlignment.CENTER)
         return surf
 
     def draw_volume(self, surf):

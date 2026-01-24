@@ -3279,6 +3279,22 @@ Opens the achivements screen with the given background.
     keywords = ["Background"]
     keyword_types = ['Panorama']
 
+class Soundroom(EventCommand):
+    nid = 'soundroom'
+    tag = Tags.MISCELLANEOUS
+
+    desc = \
+        """
+Displays the game's sound room. Last song being played in the sound room can be accessed through game var '_soundroom_choice'.
+If given, uses the (*Panorama*) as the background image.
+1. *immediate* flag skips the transition between screens
+        """
+
+    optional_keywords = ['Panorama']
+    keyword_types = ['Panorama']
+
+    _flags = ["immediate"]
+
 class LocationCard(EventCommand):
     nid = 'location_card'
     tag = Tags.DIALOGUE_TEXT
@@ -3669,6 +3685,14 @@ class UnlockDifficulty(EventCommand):
 
     keywords = ['DifficultyMode']
     keyword_types = ['DifficultyMode']
+
+class UnlockSong(EventCommand):
+    nid = 'unlock_song'
+    tag = Tags.PERSISTENT_RECORDS
+    desc = ("Unlocks the specified song to be viewed in the Sound Room.")
+
+    keywords = ['Music']
+    keyword_types = ['Music']
 
 class PartyTransfer(EventCommand):
     nid = 'party_transfer'

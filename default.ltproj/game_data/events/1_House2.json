@@ -17,7 +17,7 @@
             "transition;Close",
             "change_background",
             "transition;Open",
-            "has_traded;{unit}"
+            "has_visited;{unit}"
         ],
         "nid": "1 House2"
     }

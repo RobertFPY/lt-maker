@@ -21,7 +21,7 @@
             "transition;Open",
             "give_item;{unit};Torch",
             "show_layer;Village4",
-            "has_traded;{unit}"
+            "has_visited;{unit}"
         ],
         "nid": "5 Village4"
     }

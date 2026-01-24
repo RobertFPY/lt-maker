@@ -19,7 +19,7 @@
             "transition;Open",
             "give_item;{unit};Secret_Book",
             "show_layer;Village3",
-            "has_traded;{unit}"
+            "has_visited;{unit}"
         ],
         "nid": "5 Village3"
     }

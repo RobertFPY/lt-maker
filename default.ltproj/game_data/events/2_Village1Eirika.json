@@ -36,7 +36,7 @@
             "change_background",
             "transition;Open",
             "give_item;Eirika;Red_Gem",
-            "has_traded;{unit}"
+            "has_visited;{unit}"
         ],
         "nid": "2 Village1Eirika"
     }

@@ -1593,6 +1593,20 @@ Sets the unit's state as having already traded this turn. The unit can still att
 
     keywords = ['Unit']
 
+class HasVisited(EventCommand):
+    nid = 'has_visited'
+    tag = Tags.MODIFY_UNIT_PROPERTIES
+
+    desc = \
+        """
+Sets the unit's state as having already traded this turn, then triggers Canto if the unit has Canto. Once Canto is completed, or if the unit does not have Canto, the unit will be grayed out.
+
+If the *attacked* flag is set, the unit's state is set as having already attacked this turn. As such, canto will only work if the unit has CantoPlus. This is useful for the arena or similar situations.
+        """
+
+    keywords = ['Unit']
+    _flags = ["attacked"]
+
 class HasFinished(EventCommand):
     nid = 'has_finished'
     tag = Tags.MODIFY_UNIT_PROPERTIES

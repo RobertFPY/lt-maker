@@ -66,6 +66,20 @@ class PersistentRecordManager(Data):
         else:
             return False
 
+    def unlock_song(self, music: str):
+        if music in self:
+            logging.info("Music with nid of %s already unlocked")
+            return
+        else:
+            self.append(PersistentRecord(music, True))
+        persistent_data.serialize(self.location, self.save())
+
+    def check_song_unlocked(self, music: str):
+        if music in self:
+            return super().get(music).value
+        else:
+            return False
+
 def reset():
     game_id = str(DB.constants.value('game_nid'))
     location = 'saves/' + game_id + '-persistent_records.p'

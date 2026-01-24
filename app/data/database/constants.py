@@ -143,6 +143,7 @@ constants = ConstantCatalog([
     Constant('music_game_over', "Music to play on game over", ConstantType.MUSIC, 'Game Over', ConstantTag.MUSIC),
     Constant('restart_phase_music', "Restart phase music at beginning of new phase", ConstantType.BOOL, True, ConstantTag.MUSIC),
     Constant('restart_battle_music', "Restart battle music at beginning of each combat", ConstantType.BOOL, True, ConstantTag.MUSIC),
+    Constant('locked_soundroom', "Lock all music in the sound room by default", ConstantType.BOOL, False, ConstantTag.MUSIC),
     Constant('kill_wexp', "Kills give double weapon exp", ConstantType.BOOL, True, ConstantTag.WEXP),
     Constant('double_wexp', "Each hit when doubling grants weapon exp", ConstantType.BOOL, True, ConstantTag.WEXP),
     Constant('miss_wexp', "Gain weapon exp even on miss", ConstantType.BOOL, True, ConstantTag.WEXP),

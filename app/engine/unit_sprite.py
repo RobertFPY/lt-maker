@@ -55,9 +55,10 @@ class SingleMapSprite():
         return self.frames[0].copy()
 
 class MapSprite():
-    def __init__(self, map_sprite: map_sprites.MapSprite, team: NID):
+    def __init__(self, map_sprite: map_sprites.MapSprite, team: NID, palette_override: NID = None):
         self.nid = map_sprite.nid
         self.team = team
+        self.palette_override = palette_override
         self.resource = map_sprite
         if not map_sprite.standing_image:
             map_sprite.standing_image = engine.image_load(map_sprite.stand_full_path)
@@ -94,15 +95,17 @@ class MapSprite():
         self.end_cast = SingleMapSprite.create_anim_sprite([frame for frame in reversed(active_frames)], [22, 4, 22])
 
     def _get_team_palette(self):
-        team_obj = game.teams.get(self.team)
-        palette_nid = team_obj.map_sprite_palette
+        palette_nid = self.palette_override
+        if palette_nid is None:
+            team_obj = game.teams.get(self.team)
+            palette_nid = team_obj.map_sprite_palette
         palette = RESOURCES.combat_palettes.get(palette_nid)
         if not palette:
             logging.error("Unable to locate map sprite palette with nid %s" % palette_nid)
         return palette
 
     def convert_to_team_colors(self, map_sprite):
-        if self.team == 'black':
+        if self.team == 'black' and not self.palette_override:
             palette = RESOURCES.combat_palettes.get('map_sprite_black')
             if palette:
                 colors: List[Color3] = palette.get_colors()
@@ -156,11 +159,16 @@ def load_map_sprite(unit: UnitObject | UnitPrefab, team='player'):
         res = RESOURCES.map_sprites.get(klass.map_sprite_nid)
     if not res:
         return None
-
-    map_sprite = game.map_sprite_registry.get(res.nid + '_' + team)
+    
+    palette_override = skill_system.change_map_palette(unit)
+    if palette_override:
+        term = palette_override
+    else:
+        term = team
+    map_sprite = game.map_sprite_registry.get(res.nid + '_' + term)
     if not map_sprite:
-        map_sprite = MapSprite(res, team)
-        game.map_sprite_registry[map_sprite.nid + '_' + team] = map_sprite
+        map_sprite = MapSprite(res, team, palette_override)
+        game.map_sprite_registry[map_sprite.nid + '_' + term] = map_sprite
     return map_sprite
 
 def load_klass_sprite(klass_nid: NID, team: NID = 'player') -> Optional[MapSprite]:

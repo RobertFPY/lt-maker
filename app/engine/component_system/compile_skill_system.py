@@ -36,6 +36,7 @@ SKILL_HOOKS: Dict[str, HookInfo] = {
     'has_immune':                           HookInfo(['unit'], ResolvePolicy.ANY_DEFAULT_FALSE),
     # exclusive (returns last component value, returns None if not defined)
     'alternate_splash':                     HookInfo(['unit'], ResolvePolicy.UNIQUE),
+    'change_map_palette':                   HookInfo(['unit'], ResolvePolicy.UNIQUE),
     # exclusive (returns last component value, has default value if not defined)
     'can_select':                           HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
     'movement_type':                        HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),

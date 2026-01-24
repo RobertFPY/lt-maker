@@ -186,6 +186,26 @@ class ChangeVariant(SkillComponent):
 
     def change_variant(self, unit):
         return self.value
+        
+class ChangeMapPalette(SkillComponent):
+    nid = 'change_map_palette'
+    desc = "Change the unit's map palette."
+    tag = SkillTags.AESTHETIC
+
+    expose = ComponentType.String
+    value = ''
+
+    def after_add(self, unit, skill):
+        unit.sprite.load_sprites()
+
+    def after_add_from_restore(self, unit, skill):
+        unit.sprite.load_sprites()
+
+    def after_remove(self, unit, skill):
+        unit.sprite.load_sprites()
+
+    def change_map_palette(self, unit):
+        return self.value
 
 class ChangeAnimation(SkillComponent):
     nid = 'change_animation'

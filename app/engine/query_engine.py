@@ -32,6 +32,8 @@ class GameQueryEngine():
                 return obj_or_nid
 
     def _resolve_to_unit(self, unit_or_nid) -> Optional[UnitObject]:
+        if hasattr(unit_or_nid, "nid"):  # Assumes this is a unit 
+            return unit_or_nid
         nid = self._resolve_to_nid(unit_or_nid)
         return self.game.get_unit(nid)
 

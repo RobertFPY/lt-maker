@@ -265,7 +265,7 @@ class EvalManaCost(ItemComponent):
         try:
             return int(evaluate.evaluate(self.value, unit, local_args={'item': item}))
         except:
-            print("Couldn't evaluate %s conditional" % self.value)
+            logging.error("Couldn't evaluate %s conditional" % self.value)
         return 0
 
     def available(self, unit, item) -> bool:
@@ -448,7 +448,8 @@ class EvalAvailable(ItemComponent):
     def available(self, unit, item) -> bool:
         from app.engine import evaluate
         try:
-            return bool(evaluate.evaluate(self.value, unit, local_args={'item': item}))
+            ans = bool(evaluate.evaluate(self.value, unit, local_args={'item': item}))
+            return ans
         except:
             logging.error("EvalAvailable: Couldn't evaluate %s conditional" % self.value)
         return False

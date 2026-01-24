@@ -27,6 +27,8 @@ class MultiSkill(SkillComponent):
         tag = SkillTags.HIDDEN
 
         expose = ComponentType.Int
+
+        ignore_conditional = True
         
         def condition(self, unit, item):
             parent_skill = game.get_skill(self.value)

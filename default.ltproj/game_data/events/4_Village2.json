@@ -43,7 +43,7 @@
             "change_team;Lute;player",
             "add_unit;Lute;1,12;immediate;closest",
             "transition;Open",
-            "has_traded;{unit}"
+            "has_visited;{unit}"
         ],
         "nid": "4 Village2"
     }

@@ -264,6 +264,11 @@ def _handle_info():
         game.memory['next_state'] = 'info_menu'
         game.memory['current_unit'] = game.cursor.get_hover()
         game.state.change('transition_to')
+    elif region := game.cursor.get_previewable_region():
+        get_sound_thread().play_sfx('Select 1')
+        did_trigger = game.events.trigger(triggers.Preview(game.cursor.position, region))
+        if did_trigger and region.only_once:
+            action.do(action.RemoveRegion(region))
     else:
         get_sound_thread().play_sfx('Select 3')
         game.boundary.toggle_all_enemy_attacks()
@@ -2804,6 +2809,7 @@ class ShopState(State):
         self.shop_id = game.memory['shop_id']
         self.unit = game.memory['current_unit']
         self.flavor = game.memory['shop_flavor']
+        self.preview = game.memory['is_preview']
 
         def apply_flavor(string: str) -> str:
             if (string % self.flavor) in DB.translations:
@@ -2825,6 +2831,7 @@ class ShopState(State):
             self.sell_again_message = apply_flavor('%s_sell_again')
             self.again_message = apply_flavor('%s_again')
             self.no_value_message = apply_flavor('%s_no_value')
+            self.preview_message = apply_flavor('%s_preview')
         else:
             self.portrait = SPRITES.get('armory_portrait')
             self.opening_message = 'armory_opener'
@@ -2839,19 +2846,26 @@ class ShopState(State):
             self.sell_again_message = 'shop_sell_again'
             self.again_message = 'shop_again'
             self.no_value_message = 'shop_no_value'
+            self.preview_message = 'shop_preview'
 
         items = game.memory['shop_items']
         self.stock = game.memory.get('shop_stock', None)
-        my_items = item_funcs.get_all_tradeable_items(self.unit)
         topleft = (44, WINHEIGHT - 16 * 5 - 8 - 4)
-        self.sell_menu = menus.Shop(self.unit, my_items, topleft, disp_value='sell')
-        self.sell_menu.set_limit(5)
-        self.sell_menu.set_hard_limit(True)
-        self.sell_menu.gem = True
-        self.sell_menu.shimmer = 0
-        self.sell_menu.set_takes_input(False)
+
+        # Sell Menu
+        if not self.preview:
+            my_items = item_funcs.get_all_tradeable_items(self.unit)
+            self.sell_menu = menus.Shop(self.unit, my_items, topleft, disp_value='sell')
+            self.sell_menu.set_limit(5)
+            self.sell_menu.set_hard_limit(True)
+            self.sell_menu.gem = True
+            self.sell_menu.shimmer = 0
+            self.sell_menu.set_takes_input(False)
+
         if self.stock:
             topleft = (36, topleft[1] + 4)
+
+        # Buy Menu
         self.buy_menu = menus.Shop(self.unit, items, topleft, disp_value='buy', stock=self.stock)
         self.buy_menu.set_limit(5)
         self.buy_menu.set_hard_limit(True)
@@ -2866,7 +2880,10 @@ class ShopState(State):
         self.menu = None  # For input
 
         self.state = 'open'
-        self.current_msg = self.get_dialog(self.opening_message)
+        if self.preview:
+            self.current_msg = self.get_dialog(self.preview_message)
+        else:
+            self.current_msg = self.get_dialog(self.opening_message)
 
         self.message_bg = base_surf.create_base_surf(WINWIDTH + 8, 48, 'menu_bg_clear')
         self.money_counter_disp = gui.PopUpDisplay((223, 32))
@@ -2911,8 +2928,13 @@ class ShopState(State):
                 get_sound_thread().play_sfx('Select 1')
                 self.current_msg.hurry_up()
                 if self.current_msg.is_done_or_wait():
-                    self.state = 'choice'
-                    self.menu = self.choice_menu
+                    if self.preview:
+                        self.state = 'preview'
+                        self.menu = self.buy_menu
+                        self.buy_menu.set_takes_input(True)
+                    else:
+                        self.state = 'choice'
+                        self.menu = self.choice_menu
 
             elif self.state == 'choice':
                 get_sound_thread().play_sfx('Select 1')
@@ -2991,11 +3013,20 @@ class ShopState(State):
             elif self.state == 'close':
                 get_sound_thread().play_sfx('Select 1')
                 if self.current_msg.is_done_or_wait():
-                    if self.unit.has_traded:
+                    if self.unit and self.unit.has_traded:
                         action.do(action.HasAttacked(self.unit))
                     game.state.change('transition_pop')
                 else:
                     self.current_msg.hurry_up()
+
+            elif self.state == 'preview':
+                if self.menu.info_flag:
+                    self.menu.toggle_info()
+                    get_sound_thread().play_sfx('Info Out')
+                else:
+                    get_sound_thread().play_sfx('Select 4')
+                    self.state = 'close'
+                    self.current_msg = self.get_dialog(self.leave_message)
 
         elif event == 'BACK':
             if self.state == 'open' or self.state == 'close':
@@ -3003,10 +3034,12 @@ class ShopState(State):
                 if self.unit.has_traded:
                     action.do(action.HasAttacked(self.unit))
                 game.state.change('transition_pop')
+
             elif self.state == 'choice':
                 get_sound_thread().play_sfx('Select 4')
                 self.state = 'close'
                 self.current_msg = self.get_dialog(self.leave_message)
+
             elif self.state == 'buy' or self.state == 'sell':
                 if self.menu.info_flag:
                     self.menu.toggle_info()
@@ -3018,8 +3051,17 @@ class ShopState(State):
                     self.menu = self.choice_menu
                     self.current_msg = self.get_dialog(self.again_message)
 
+            elif self.state == 'preview':
+                if self.menu.info_flag:
+                    self.menu.toggle_info()
+                    get_sound_thread().play_sfx('Info Out')
+                else:
+                    get_sound_thread().play_sfx('Select 4')
+                    self.state = 'close'
+                    self.current_msg = self.get_dialog(self.leave_message)
+
         elif event == 'INFO':
-            if self.state == 'buy' or self.state == 'sell':
+            if self.state == 'buy' or self.state == 'sell' or self.state == 'preview':
                 self.menu.toggle_info()
                 if self.menu.info_flag:
                     get_sound_thread().play_sfx('Info In')

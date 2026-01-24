@@ -3017,17 +3017,25 @@ def set_custom_options(self: Event, custom_options: List[str], custom_options_en
     action.do(action.SetGameVar('_custom_additional_options', options_list))
 
 def shop(self: Event, unit, item_list: List[str], shop_flavor=None, stock_list: List[int]=None, shop_id=None, flags=None):
+    flags = flags or set()
+
     new_unit = self._get_unit(unit)
-    if not new_unit:
+    is_preview = "preview" in flags
+
+    if not new_unit and not is_preview:
         self.logger.error("shop: Must have a unit visit the shop!")
         return
     unit = new_unit
     if shop_id is None:
         shop_id = self.nid
     self.game.memory['shop_id'] = shop_id
-    self.game.memory['current_unit'] = unit
+    if unit:
+        self.game.memory['current_unit'] = unit
+    else:
+        self.game.memory['current_unit'] = unit
     shop_items = item_funcs.create_items(unit, item_list)
     self.game.memory['shop_items'] = shop_items
+    self.game.memory['preview'] = is_preview
 
     if shop_flavor:
         self.game.memory['shop_flavor'] = shop_flavor.lower()

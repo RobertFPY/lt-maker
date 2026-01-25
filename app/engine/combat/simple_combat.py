@@ -165,7 +165,7 @@ class SimpleCombat():
                 self.handle_wexp(game.get_unit(self.defender.traveler), self.def_item, self.attacker)
 
         self.handle_mana(all_units)
-        self.handle_exp(self)
+        self.handle_exp()
 
     def clean_up2(self):
         all_units = self._all_units()
@@ -691,9 +691,13 @@ class SimpleCombat():
     def handle_combat_death(self, units):
         for unit in units:
             if unit.is_dying:
-                killer = game.records.get_killer(unit.nid, game.level.nid if game.level else None)
-                if killer:
-                    killer = game.get_unit(killer)
+                # Find the killer
+                marks = [mark for mark in self.full_playback if mark.nid in ('mark_miss', 'mark_hit', 'mark_crit')]
+                killer = None
+                for mark in reversed(marks):
+                    if mark.defender == unit:
+                        killer = mark.attacker
+                        break
                 game.events.trigger(triggers.CombatDeath(unit, killer, unit.position))
 
     def handle_death(self, units):

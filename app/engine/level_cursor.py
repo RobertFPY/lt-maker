@@ -62,7 +62,7 @@ class LevelCursor(BaseCursor):
 
     def get_previewable_region(self) -> Optional[RegionObject]:
         for region in self.game.level.regions:
-            if region.region_type == RegionType.EVENT and region.sub_nid == 'Preview' and region.contains(self.position):
+            if region.region_type == RegionType.EVENT and region.sub_nid.lower() == 'preview' and region.contains(self.position):
                 try:
                     truth = evaluate.evaluate(region.condition, position=self.position, local_args={'region': region})
                     logging.debug("Testing region: %s %s", region.condition, truth)

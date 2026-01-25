@@ -2809,7 +2809,7 @@ class ShopState(State):
         self.shop_id = game.memory['shop_id']
         self.unit = game.memory['current_unit']
         self.flavor = game.memory['shop_flavor']
-        self.preview = game.memory['is_preview']
+        self.preview = game.memory['preview']
 
         def apply_flavor(string: str) -> str:
             if (string % self.flavor) in DB.translations:

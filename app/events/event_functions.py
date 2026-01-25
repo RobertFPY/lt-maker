@@ -1379,12 +1379,31 @@ def has_traded(self: Event, unit, flags=None):
         return
     action.do(action.HasTraded(actor))
 
+def has_visited(self: Event, unit, flags=None):
+    actor = self._get_unit(unit)
+    if not actor:
+        self.logger.error("has_visited: Couldn't find unit %s" % unit)
+        return
+    if 'attacked' in flags:
+        action.do(action.HasAttacked(actor))
+    else:
+        action.do(action.HasTraded(actor))
+    if self.game.check_alive(unit):
+        if skill_system.has_canto(actor, None):
+            self.game.cursor.set_pos(actor.position)
+            self.game.state.change('move')
+            self.game.cursor.place_arrows()
+        else:
+            self.game.state.clear()
+            self.game.state.change('free')
+            actor.wait()
+    self.state = 'paused'
+
 def has_finished(self: Event, unit, flags=None):
     actor = self._get_unit(unit)
     if not actor:
         self.logger.error("has_finished: Couldn't find unit %s" % unit)
         return
-    action.do(action.Wait(actor))
 
 def add_group(self: Event, group, starting_group=None, entry_type=None, placement=None, flags=None):
     flags = flags or set()

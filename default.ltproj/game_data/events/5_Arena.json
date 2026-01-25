@@ -84,7 +84,7 @@
             "music_fade_back;100",
             "end",
             "change_music;player_battle;Attack",
-            "has_attacked;{unit}",
+            "has_visited;{unit};attacked",
             "else",
             "speak;;What are you wasting my time for?;top_right;160;noir",
             "remove_table;OpponentStats",

@@ -132,6 +132,14 @@ class TradeState(MapState):
                 self.menu.set_selected_option()
 
         elif event == 'INFO':
+            if self.menu.selecting_hand[0] == 0:
+                info_flag = self.menu.menu1.info_flag
+            else:
+                info_flag = self.menu.menu2.info_flag
+            if info_flag:
+                get_sound_thread().play_sfx('Info Out')
+            else:
+                get_sound_thread().play_sfx('Info In')
             self.menu.toggle_info()
 
     def update(self):

@@ -2,7 +2,7 @@ from app.data.database.item_components import ItemComponent, ItemTags
 from app.data.database.components import ComponentType
 
 from app.utilities import utils
-from app.engine import skill_system
+from app.engine import skill_system, item_system
 from app.engine.game_state import game
 
 class BlastAOE(ItemComponent):
@@ -21,7 +21,6 @@ class BlastAOE(ItemComponent):
         ranges = set(range(self._get_power(unit)))
         splash = game.target_system.find_manhattan_spheres(ranges, position[0], position[1])
         splash = {pos for pos in splash if game.tilemap.check_bounds(pos)}
-        from app.engine import item_system
         if item_system.is_spell(unit, item):
             # spell blast
             splash = [game.board.get_unit(s) for s in splash]
@@ -48,7 +47,6 @@ class EnemyBlastAOE(BlastAOE):
         ranges = set(range(self._get_power(unit)))
         splash = game.target_system.find_manhattan_spheres(ranges, position[0], position[1])
         splash = {pos for pos in splash if game.board.check_bounds(pos)}
-        from app.engine import item_system, skill_system
         if item_system.is_spell(unit, item):
             # spell blast
             splash = [game.board.get_unit(s) for s in splash]
@@ -61,7 +59,6 @@ class EnemyBlastAOE(BlastAOE):
             return position if game.board.get_unit(position) else None, splash
 
     def splash_positions(self, unit, item, position) -> set:
-        from app.engine import skill_system
         ranges = set(range(self._get_power(unit)))
         splash = game.target_system.find_manhattan_spheres(ranges, position[0], position[1])
         splash = {pos for pos in splash if game.tilemap.check_bounds(pos)}
@@ -78,7 +75,6 @@ class AllyBlastAOE(BlastAOE):
         ranges = set(range(self._get_power(unit)))
         splash = game.target_system.find_manhattan_spheres(ranges, position[0], position[1])
         splash = {pos for pos in splash if game.tilemap.check_bounds(pos)}
-        from app.engine import skill_system
         splash = [game.board.get_unit(s) for s in splash]
         splash = [s.position for s in splash if s and skill_system.check_ally(unit, s)]
         return None, splash
@@ -165,7 +161,6 @@ class ShapeBlastAOE(ItemComponent):
         rng = self._get_power(unit)
         splash = self._get_shape(position, rng)
         splash = {pos for pos in splash if game.tilemap.check_bounds(pos)}
-        from app.engine import item_system
         if item_system.is_spell(unit, item):
             # spell blast
             splash = [game.board.get_unit(s) for s in splash]
@@ -202,7 +197,6 @@ class EnemyCleaveAOE(ItemComponent):
     tag = ItemTags.AOE
 
     def splash(self, unit, item, position) -> tuple:
-        from app.engine import skill_system
         pos = unit.position
         all_positions = {(pos[0] - 1, pos[1] - 1),
                          (pos[0], pos[1] - 1),
@@ -222,7 +216,6 @@ class EnemyCleaveAOE(ItemComponent):
         return main_target, splash
 
     def splash_positions(self, unit, item, position) -> set:
-        from app.engine import skill_system
         pos = unit.position
         all_positions = {(pos[0] - 1, pos[1] - 1),
                          (pos[0], pos[1] - 1),
@@ -246,7 +239,6 @@ class AllAlliesAOE(ItemComponent):
     tag = ItemTags.AOE
 
     def splash(self, unit, item, position) -> tuple:
-        from app.engine import skill_system
         splash = [u.position for u in game.units if u.position and skill_system.check_ally(unit, u)]
         return None, splash
 
@@ -261,7 +253,6 @@ class AllAlliesExceptSelfAOE(ItemComponent):
     tag = ItemTags.AOE
 
     def splash(self, unit, item, position) -> tuple:
-        from app.engine import skill_system
         splash = [u.position for u in game.units if u.position and skill_system.check_ally(unit, u) and u is not unit]
         return None, splash
 
@@ -276,12 +267,13 @@ class AllEnemiesAOE(ItemComponent):
     tag = ItemTags.AOE
 
     def splash(self, unit, item, position) -> tuple:
-        from app.engine import skill_system
         splash = [u.position for u in game.units if u.position and skill_system.check_enemy(unit, u)]
-        return None, splash
+        if item_system.is_spell(unit, item): #spell
+            return None, splash
+        else: #regular
+            return position if game.board.get_unit(position) else None, splash
 
     def splash_positions(self, unit, item, position) -> set:
-        from app.engine import skill_system
         # All positions
         splash = {(x, y) for x in range(game.tilemap.width) for y in range(game.tilemap.height)}
         # Doesn't highlight allies positions
@@ -296,9 +288,16 @@ class LineAOE(ItemComponent):
     def splash(self, unit, item, position) -> tuple:
         splash = set(utils.raytrace(unit.position, position))
         splash.discard(unit.position)
-        splash = [game.board.get_unit(s) for s in splash]
-        splash = [s.position for s in splash if s]
-        return None, splash
+        if item_system.is_spell(unit, item):
+            # spell
+            splash = [game.board.get_unit(s) for s in splash]
+            splash = [s.position for s in splash if s]
+            return None, splash
+        else:
+            # regular
+            splash = [game.board.get_unit(s) for s in splash if s != position]
+            splash = [s.position for s in splash if s]
+            return position if game.board.get_unit(position) else None, splash
 
     def splash_positions(self, unit, item, position) -> set:
         splash = set(utils.raytrace(unit.position, position))
@@ -313,9 +312,16 @@ class EnemyLineAOE(ItemComponent):
     def splash(self, unit, item, position) -> tuple:
         splash = set(utils.raytrace(unit.position, position))
         splash.discard(unit.position)
-        splash = [game.board.get_unit(s) for s in splash]
-        splash = [s.position for s in splash if s and skill_system.check_enemy(unit, s)]
-        return None, splash
+        if item_system.is_spell(unit, item):
+            # spell
+            splash = [game.board.get_unit(s) for s in splash]
+            splash = [s.position for s in splash if s and skill_system.check_enemy(unit, s)]
+            return None, splash
+        else:
+            # regular
+            splash = [game.board.get_unit(s) for s in splash if s != position]
+            splash = [s.position for s in splash if s and skill_system.check_enemy(unit, s)]
+            return position if game.board.get_unit(position) else None, splash
 
     def splash_positions(self, unit, item, position) -> set:
         splash = set(utils.raytrace(unit.position, position))

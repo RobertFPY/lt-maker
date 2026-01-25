@@ -313,7 +313,7 @@
             "transition;Close",
             "change_background",
             "transition;Open",
-            "has_traded;{unit}"
+            "has_visited;{unit}"
         ],
         "nid": "1 House1"
     },
@@ -335,7 +335,7 @@
             "transition;Close",
             "change_background",
             "transition;Open",
-            "has_traded;{unit}"
+            "has_visited;{unit}"
         ],
         "nid": "1 House2"
     },
@@ -931,7 +931,7 @@
             "change_background",
             "transition;Open",
             "give_item;Eirika;Red_Gem",
-            "has_traded;{unit}"
+            "has_visited;{unit}"
         ],
         "nid": "2 Village1Eirika"
     },
@@ -955,7 +955,7 @@
             "change_background",
             "transition;Open",
             "give_item;{unit};Red_Gem",
-            "has_traded;{unit}"
+            "has_visited;{unit}"
         ],
         "nid": "2 Village1"
     },
@@ -979,7 +979,7 @@
             "transition;Open",
             "give_item;{unit};Dragonshield",
             "show_layer;Village1",
-            "has_traded;{unit}"
+            "has_visited;{unit}"
         ],
         "nid": "5 Village1"
     },
@@ -1003,7 +1003,7 @@
             "transition;Open",
             "give_item;{unit};Armorslayer",
             "show_layer;Village2",
-            "has_traded;{unit}"
+            "has_visited;{unit}"
         ],
         "nid": "5 Village2"
     },
@@ -1027,7 +1027,7 @@
             "transition;Open",
             "give_item;{unit};Secret_Book",
             "show_layer;Village3",
-            "has_traded;{unit}"
+            "has_visited;{unit}"
         ],
         "nid": "5 Village3"
     },
@@ -1053,7 +1053,7 @@
             "transition;Open",
             "give_item;{unit};Torch",
             "show_layer;Village4",
-            "has_traded;{unit}"
+            "has_visited;{unit}"
         ],
         "nid": "5 Village4"
     },
@@ -1077,7 +1077,7 @@
             "change_background",
             "transition;Open",
             "give_item;{unit};Iron_Axe",
-            "has_traded;{unit}"
+            "has_visited;{unit}"
         ],
         "nid": "4 Village1"
     },
@@ -1125,7 +1125,7 @@
             "change_team;Lute;player",
             "add_unit;Lute;1,12;immediate;closest",
             "transition;Open",
-            "has_traded;{unit}"
+            "has_visited;{unit}"
         ],
         "nid": "4 Village2"
     },
@@ -1173,7 +1173,7 @@
             "change_background",
             "transition;Open",
             "give_item;{unit};Elixir",
-            "has_traded;{unit}"
+            "has_visited;{unit}"
         ],
         "nid": "2 Village2"
     },
@@ -1197,7 +1197,7 @@
             "change_background",
             "transition;Open",
             "give_item;{unit};Pure_Water",
-            "has_traded;{unit}"
+            "has_visited;{unit}"
         ],
         "nid": "2 Village3"
     },
@@ -2943,7 +2943,7 @@
             "music_fade_back;100",
             "end",
             "change_music;player_battle;Attack",
-            "has_attacked;{unit}",
+            "has_visited;{unit};attacked",
             "else",
             "speak;;What are you wasting my time for?;top_right;160;noir",
             "remove_table;OpponentStats",

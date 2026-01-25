@@ -67,6 +67,8 @@ class HeaderList(UIComponent, Generic[T]):
         self.repopulate_children()
 
     def set_data_rows(self, data_rows: List[T]):
+        if data_rows is None:
+            data_rows = []
         self.data_rows = data_rows
         self.regenerate_list_component()
         self.repopulate_children()
@@ -84,8 +86,6 @@ class HeaderList(UIComponent, Generic[T]):
         self.scrollable_list._should_redraw = True
 
     def regenerate_list_component(self) -> UIComponent:
-        if not self.data_rows:
-            return
         list_comp = UIComponent('list', self)
         list_comp.size = ('100%', self.height - (self.header_row.height if self.header_row else 0))
         list_comp.max_height = self.height

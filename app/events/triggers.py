@@ -395,6 +395,14 @@ class RegionTrigger(EventTrigger):
     item: ItemObject = None #: the item used to trigger this region (used with unlock staves and keys)
 
 @dataclass(init=True)
+class Preview(EventTrigger):
+    """
+    """
+    nid: ClassVar[NID] = 'preview'
+    position: Tuple[int, int]  #: the position of the user's cursor when triggering this event
+    region: RegionObject  #: the name of the region that was triggered
+
+@dataclass(init=True)
 class EventOnHit(EventTrigger):
     """
     Plays before a hit, if the unit will hit with this item.

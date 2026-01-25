@@ -268,6 +268,10 @@ class ForcedMovement(SimpleMove):
         game.arrive(self.unit, self.new_pos)
         self.update_fow_action.do()
 
+    def execute(self):
+        game.leave(self.unit)
+        game.arrive(self.unit, self.new_pos)
+        self.update_fow_action.do()
 
 class Swap(Action):
     def __init__(self, unit1: UnitObject, unit2: UnitObject):
@@ -1054,7 +1058,8 @@ class Separate(Action):
                                           (self.unit.position[1] - self.pos[1]) * TILEHEIGHT]
 
     def execute(self):
-        game.arrive(self.droppee, self.pos)
+        if self.pos:
+            game.arrive(self.droppee, self.pos)
         self.droppee.sprite.change_state('normal')
         if self.with_wait:
             self.droppee_wait_action.execute()

@@ -13,7 +13,7 @@ from app.data.database.difficulty_modes import RNGOption
 from app.data.resources.resources import RESOURCES
 from app.data.resources.sounds import SFXPrefab, SongPrefab
 from app.engine import (action, background, banner, base_surf, dialog, engine,
-                        icons, image_mods, item_funcs, item_system,
+                        gui, icons, image_mods, item_funcs, item_system,
                         save, skill_system, unit_funcs)
 from app.engine.game_board import FogOfWarType
 from app.engine.achievements import ACHIEVEMENTS
@@ -284,21 +284,21 @@ def mirror_portrait(self: Event, portrait, speed_mult: float = 1.0, flags=None):
                 self.wait_time = engine.get_time() + event_portrait.transition_speed + 33
                 self.state = 'waiting'
 
-def bop_portrait(self: Event, portrait, num_bops: int = 2, time: int = None, flags=None):
+def bop_portrait(self: Event, portrait, num_bops: int = 2, time: int = utils.frames2ms(8), flags=None):
     flags = flags or set()
 
     _, name = self._get_portrait(portrait)
     event_portrait = self.portraits.get(name)
     if not event_portrait:
         return False
-    if time is not None:
-        event_portrait.bop(num=num_bops, speed=time)
-    else:
-        event_portrait.bop(num=num_bops)
+    event_portrait.bop(num=num_bops, speed=time)
     if 'no_block' in flags:
         pass
     else:
-        self.wait_time = engine.get_time() + 666
+        # Wait time is (1. no bop for time, 2. bop for time, 3. no bop for time, and so on for each bop)
+        # So if 1 bop, 3 * time worth of blocking
+        # If 2 bop, 5 * time worth of blocking, and so on
+        self.wait_time = engine.get_time() + (2 * num_bops * time + time)
         self.state = 'waiting'
 
 def expression(self: Event, portrait, expression_list: List[str], flags=None):
@@ -1282,10 +1282,17 @@ def set_variant(self: Event, unit: NID, string: str = None, flags=None):
     action.do(action.SetVariant(actor, string))
 
 def set_current_hp(self: Event, unit, hp: int, flags=None):
+    flags = flags or set()
+
     actor = self._get_unit(unit)
     if not actor:
         self.logger.error("set_current_hp: Couldn't find unit %s" % unit)
         return
+
+    if 'damage_numbers' in flags and actor.position:
+        difference: int = unit.get_hp() - hp
+        actor.sprite.add_damage_number(difference)
+
     action.do(action.SetHP(actor, hp))
 
 def set_current_mana(self: Event, unit, mana: int, flags=None):
@@ -1372,12 +1379,31 @@ def has_traded(self: Event, unit, flags=None):
         return
     action.do(action.HasTraded(actor))
 
+def has_visited(self: Event, unit, flags=None):
+    actor = self._get_unit(unit)
+    if not actor:
+        self.logger.error("has_visited: Couldn't find unit %s" % unit)
+        return
+    if 'attacked' in flags:
+        action.do(action.HasAttacked(actor))
+    else:
+        action.do(action.HasTraded(actor))
+    if self.game.check_alive(unit):
+        if skill_system.has_canto(actor, None):
+            self.game.cursor.set_pos(actor.position)
+            self.game.state.change('move')
+            self.game.cursor.place_arrows()
+        else:
+            self.game.state.clear()
+            self.game.state.change('free')
+            actor.wait()
+    self.state = 'paused'
+
 def has_finished(self: Event, unit, flags=None):
     actor = self._get_unit(unit)
     if not actor:
         self.logger.error("has_finished: Couldn't find unit %s" % unit)
         return
-    action.do(action.Wait(actor))
 
 def add_group(self: Event, group, starting_group=None, entry_type=None, placement=None, flags=None):
     flags = flags or set()
@@ -2009,7 +2035,8 @@ def give_exp(self: Event, global_unit, experience: int, flags=None):
         return
     exp = utils.clamp(experience, -100, 100)
     klass = DB.classes.get(unit.klass)
-    max_exp = 100 * (klass.max_level - unit.level) - unit.exp
+    max_lvl = klass.max_level + 1 if exp_funcs.can_give_exp(unit, exp) else klass.max_level
+    max_exp = 100 * (max_lvl - unit.level) - unit.exp
     exp = min(exp, max_exp)
     if 'silent' in flags:
         old_exp = unit.exp
@@ -3009,17 +3036,25 @@ def set_custom_options(self: Event, custom_options: List[str], custom_options_en
     action.do(action.SetGameVar('_custom_additional_options', options_list))
 
 def shop(self: Event, unit, item_list: List[str], shop_flavor=None, stock_list: List[int]=None, shop_id=None, flags=None):
+    flags = flags or set()
+
     new_unit = self._get_unit(unit)
-    if not new_unit:
+    is_preview = "preview" in flags
+
+    if not new_unit and not is_preview:
         self.logger.error("shop: Must have a unit visit the shop!")
         return
     unit = new_unit
     if shop_id is None:
         shop_id = self.nid
     self.game.memory['shop_id'] = shop_id
-    self.game.memory['current_unit'] = unit
+    if unit:
+        self.game.memory['current_unit'] = unit
+    else:
+        self.game.memory['current_unit'] = unit
     shop_items = item_funcs.create_items(unit, item_list)
     self.game.memory['shop_items'] = shop_items
+    self.game.memory['preview'] = is_preview
 
     if shop_flavor:
         self.game.memory['shop_flavor'] = shop_flavor.lower()
@@ -3516,6 +3551,18 @@ def open_achievements(self: Event, background: str, flags=None):
     self.game.memory['next_state'] = 'base_achievement'
     self.game.state.change('transition_to')
 
+def soundroom(self: Event, panorama = "default_background", flags=None):
+    bg = background.create_background(panorama, False)
+    self.game.memory['base_bg'] = bg
+
+    flags = flags or set()
+    self.state = "paused"
+    if 'immediate' in flags:
+        self.game.state.change('event_sound_room')
+    else:
+        self.game.memory['next_state'] = 'event_sound_room'
+        self.game.state.change('transition_to')
+
 def location_card(self: Event, string, flags=None):
     new_location_card = dialog.LocationCard(string)
     self.other_boxes.append((None, new_location_card))
@@ -3900,6 +3947,9 @@ def delete_record(self: Event, nid: str, flags=None):
 
 def unlock_difficulty(self: Event, difficulty_mode: str, flags=None):
     RECORDS.unlock_difficulty(difficulty_mode)
+
+def unlock_song(self: Event, music: str, flags=None):
+    RECORDS.unlock_song(music)
 
 def hide_combat_ui(self: Event, flags=None):
     self.game.game_vars["_hide_ui"] = True

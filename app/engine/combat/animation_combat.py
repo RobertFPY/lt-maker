@@ -1018,7 +1018,9 @@ class AnimationCombat(BaseCombat, MockCombat):
                 item = brush.item
                 magic = item_funcs.is_magic(unit, item, self.distance)
                 if damage > 0:
-                    if magic:
+                    if self.special_boss_crit(brush.defender):
+                        self._shake(4)
+                    elif magic:
                         self._shake(3)
                     else:
                         self._shake(1)

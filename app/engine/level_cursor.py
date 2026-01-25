@@ -2,12 +2,13 @@ from enum import IntEnum
 import math
 from typing import Optional, Tuple
 
-from app.engine.game_counters import ANIMATION_COUNTERS
 from app.engine.objects.unit import UnitObject
+from app.engine.objects.region import RegionObject
+from app.events.regions import RegionType
 from app.constants import TILEHEIGHT, TILEWIDTH
 from app.counters import GenericAnimCounter
 from app.data.database.database import DB
-from app.engine import engine, image_mods, skill_system, equations
+from app.engine import engine, image_mods, skill_system, evaluate
 from app.engine.cursor import BaseCursor
 from app.engine.game_state import GameState
 from app.engine.input_manager import get_input_manager
@@ -58,6 +59,19 @@ class LevelCursor(BaseCursor):
     def get_bounds(self) -> Tuple[int, int, int, int]:
         self.game_board = self.game.board
         return super().get_bounds()
+
+    def get_previewable_region(self) -> Optional[RegionObject]:
+        for region in self.game.level.regions:
+            if region.region_type == RegionType.EVENT and region.sub_nid.lower() == 'preview' and region.contains(self.position):
+                try:
+                    truth = evaluate.evaluate(region.condition, position=self.position, local_args={'region': region})
+                    logging.debug("Testing region: %s %s", region.condition, truth)
+                    # No duplicates
+                    if truth:
+                        return region
+                except:
+                    logging.error("Region condition {%s} could not be evaluated" % region.condition)
+        return None
 
     def hide(self):
         super().hide()

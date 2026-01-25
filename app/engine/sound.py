@@ -652,7 +652,7 @@ class DefaultSoundController(SoundController):
     def _set_next_song(self, song, num_plays, fade_in=DEFAULT_FADE_TIME_MS):
         # Clear the oldest channel and use it
         # to play the next song
-        logging.info("Set Next Song: %s" % song)
+        logging.info("Set Next Song: %s" % song.nid)
         oldest_channel = self.channel_stack[0]
         oldest_channel.clear()
         self.channel_stack.remove(oldest_channel)
@@ -743,7 +743,7 @@ class DefaultSoundController(SoundController):
                     self._set_next_song(song, num_plays, fade_in)
                 break
         else: # Song is not in stack
-            logging.info("New song %s" % next_song)
+            logging.info("New song %s" % next_song.nid)
             self.song_stack.append(next_song)
             logging.debug("Any music is playing? %s", any_music_is_playing)
             # Clear the oldest channel and use it

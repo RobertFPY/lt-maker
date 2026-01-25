@@ -151,10 +151,6 @@ With these in hand, we can finally set our **condition** as:
 
 	unit.get_hp() <= unit.get_max_hp() / 2
 
-Our skill should end up like this:
-
-![2_5](./images/Conditional-Passives-I/2_5.png)
-
 ## Step 2.B → 4.D: [Quick Burn] Add the Dynamic Components
 At last, we will get into a new type of component that can handle a non-fixed value. Instead of a static number, it can take formulas or other attributes as its value, such as the user level, the number of allies within a given range or even an unrelated different stat. **Dynamic Components** can also carry **condition**, including **expressions**, within them, which allows it to provide two different outputs depending on the result.
 

@@ -2,7 +2,7 @@ from app.editor.lib.components.validated_line_edit import NidLineEdit
 import os
 
 from PyQt5.QtWidgets import QLineEdit, QMessageBox, QVBoxLayout, \
-    QFileDialog, QPushButton
+    QFileDialog, QPushButton, QSpinBox
 
 from app.utilities import str_utils
 from app.extensions.custom_gui import ComboBox, PropertyBox, Dialog
@@ -121,6 +121,11 @@ class ModifyMusicDialog(Dialog):
         layout.addWidget(self.battle_box)
         layout.addWidget(self.intro_box)
 
+        self.soundroom_box = PropertyBox("Sound Room Number", QSpinBox, self)
+        self.soundroom_box.edit.setValue(self.current.soundroom_idx)
+        self.soundroom_box.edit.valueChanged.connect(self.soundroom_idx_changed)
+        layout.addWidget(self.soundroom_box)
+
         layout.addWidget(self.buttonbox)
 
     def on_choice(self):
@@ -184,3 +189,46 @@ class ModifyMusicDialog(Dialog):
                 QMessageBox.critical(self.window, "File Type Error!", "Music must be in OGG format!")
             parent_dir = os.path.split(fn)[0]
             settings.set_last_open_path(parent_dir)
+
+    def soundroom_idx_changed(self, text):
+        # Sound room index can be consecutive unique positive int, or 0.
+        # Example: 0, 0, 0, 0, 1, 2, 3, 4.
+        # Setting a song to #0 will hide the song from the sound room.
+
+        old_idx = self.current.soundroom_idx
+        new_idx = self.soundroom_box.edit.value()
+        if old_idx == new_idx:
+            return
+
+        sorted_db = sorted(self._data, key=lambda x: x.soundroom_idx)
+        max_idx = sorted_db[-1].soundroom_idx
+        if max_idx == 0:    # All songs are hidden
+            self.current.soundroom_idx = 1
+            return
+
+        soundroom = sorted_db[-max_idx:]    # Filter out hidden songs
+
+        # If we move a hidden song to slot #2, songs from #2 onwards have to be shifted up
+        if old_idx == 0:
+            for song_prefab in soundroom[new_idx-1:]:
+                song_prefab.soundroom_idx += 1
+
+            self.current.soundroom_idx = min(new_idx, max_idx + 1)
+            return
+
+        # If we hide song #3, songs from #4 onwards have to be shifted down
+        if new_idx == 0:
+            for song_prefab in soundroom[old_idx:]:
+                song_prefab.soundroom_idx -= 1
+
+        # If we move song #3 to slot #1, songs #1 and #2 have to be shifted up
+        elif new_idx < old_idx:
+            for song_prefab in soundroom[new_idx-1:old_idx-1]:
+                song_prefab.soundroom_idx += 1
+
+        # If we move song #1 to slot #3, songs #2 and #3 have to be shifted down
+        else:
+            for song_prefab in soundroom[old_idx:new_idx]:
+                song_prefab.soundroom_idx -= 1
+
+        self.current.soundroom_idx = min(new_idx, max_idx)

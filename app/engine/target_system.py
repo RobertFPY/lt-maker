@@ -75,7 +75,7 @@ class TargetSystem():
     def get_nearest_open_tile(self, unit: UnitObject, position: Pos, check_for_valid_path: bool = False) -> Optional[Pos]:
         """Given a unit and their position, determines the nearest tile without a unit on it.
 
-        The nearest tile must be weakly traversable by the unit and not have a unit on it or in the process of moving to it.
+        The nearest tile must be weakly traversable by the unit and not have another unit on it or in the process of moving to it.
         If all tiles within 10 tiles of the starting point do not meet the requirements, returns None
 
         Args:
@@ -90,16 +90,18 @@ class TargetSystem():
         _abs = abs
         while r < 10:
             for x in range(-r, r + 1):
-                magn = _abs(x)
-                n1 = position[0] + x, position[1] + r - magn
-                n2 = position[0] + x, position[1] - r + magn
+                magn: int = _abs(x)
+                n1: Pos = position[0] + x, position[1] + r - magn
+                n2: Pos = position[0] + x, position[1] - r + magn
+                u1: Optional[UnitObject] = self.game.board.get_unit(n1)
+                u2: Optional[UnitObject] = self.game.board.get_unit(n2)
                 if movement_funcs.check_weakly_traversable(unit, n1) \
-                        and not self.game.board.get_unit(n1) \
+                        and (not u1 or u1 is unit) \
                         and not self.game.movement.check_if_occupied_in_future(n1) \
                         and (not check_for_valid_path or not unit.position or self.game.path_system.get_path(unit, n1)):
                     return n1
                 elif movement_funcs.check_weakly_traversable(unit, n2) \
-                        and not self.game.board.get_unit(n2) \
+                        and (not u2 or u2 is unit) \
                         and not self.game.movement.check_if_occupied_in_future(n2) \
                         and (not check_for_valid_path or not unit.position or self.game.path_system.get_path(unit, n2)):
                     return n2
@@ -107,7 +109,7 @@ class TargetSystem():
         return None
 
     def get_closest_reachable_tile(self, unit: UnitObject, position: Pos) -> Optional[Pos]:
-        """Identical to self.get_nearest_open_tile, except it alsqo checks that the unit can find a valid path to the position
+        """Identical to self.get_nearest_open_tile, except it also checks that the unit can find a valid path to the position
         """
         return self.get_nearest_open_tile(unit, position, check_for_valid_path=True)
 

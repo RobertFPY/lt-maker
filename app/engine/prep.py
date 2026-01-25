@@ -348,6 +348,11 @@ def _handle_info():
         game.memory['next_state'] = 'info_menu'
         game.memory['current_unit'] = game.cursor.get_hover()
         game.state.change('transition_to')
+    elif region := game.cursor.get_previewable_region():
+        get_sound_thread().play_sfx('Select 1')
+        did_trigger = game.events.trigger(triggers.Preview(game.cursor.position, region))
+        if did_trigger and region.only_once:
+            action.do(action.RemoveRegion(region))
     else:
         get_sound_thread().play_sfx('Select 3')
         game.boundary.toggle_all_enemy_attacks()
@@ -393,6 +398,11 @@ class PrepFormationState(MapState):
                         game.boundary.toggle_unit(cur_unit)
                     else:
                         get_sound_thread().play_sfx('Error')
+            elif region := game.cursor.get_previewable_region():
+                get_sound_thread().play_sfx('Select 1')
+                did_trigger = game.events.trigger(triggers.Preview(game.cursor.position, region))
+                if did_trigger and region.only_once:
+                    action.do(action.RemoveRegion(region))
 
         elif event == 'BACK':
             get_sound_thread().play_sfx('Select 1')
@@ -874,6 +884,9 @@ class PrepManageSelectState(State):
                 tradeable_items = item_funcs.get_all_tradeable_items(self.unit)
                 for item in tradeable_items:
                     convoy_funcs.store_item(item, self.unit)
+                # Could have given away an item that would let us Restock/Repair/Use etc.
+                # Recheck what should be ignored
+                self.select_menu.set_ignore(self.get_ignore())
             elif choice == 'Items':
                 if self.name.startswith('base'):
                     game.memory['next_state'] = 'base_items'

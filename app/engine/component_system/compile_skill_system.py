@@ -36,6 +36,7 @@ SKILL_HOOKS: Dict[str, HookInfo] = {
     'has_immune':                           HookInfo(['unit'], ResolvePolicy.ANY_DEFAULT_FALSE),
     # exclusive (returns last component value, returns None if not defined)
     'alternate_splash':                     HookInfo(['unit'], ResolvePolicy.UNIQUE),
+    'change_map_palette':                   HookInfo(['unit'], ResolvePolicy.UNIQUE),
     # exclusive (returns last component value, has default value if not defined)
     'can_select':                           HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
     'movement_type':                        HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
@@ -145,6 +146,8 @@ SKILL_HOOKS: Dict[str, HookInfo] = {
     'test_off':                             HookInfo(['playback', 'unit', 'item', 'target', 'item2', 'mode'], ResolvePolicy.NO_RETURN, has_unconditional=True),
     # list hooks (returns a list of all hook return values)
     'combat_sprite_flicker_tint':           HookInfo(['unit'], ResolvePolicy.LIST),
+    # simple multiply hooks
+    'unit_sprite_alpha_tint':               HookInfo(['unit'], ResolvePolicy.NUMERIC_MULTIPLY, has_default_value=True),
     # union hooks (returns a set containing every unique hook return)
     'usable_wtypes':                        HookInfo(['unit'], ResolvePolicy.UNION),
     'forbidden_wtypes':                     HookInfo(['unit'], ResolvePolicy.UNION),

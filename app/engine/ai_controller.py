@@ -726,7 +726,7 @@ class SecondaryAI():
         self.reset()
 
     def reset(self):
-        self.max_tp = 0
+        self.max_tp = None  # Not 0, to entertain the possible case of non-positive tp
         self.best_target = 0
         self.best_path = None
 
@@ -763,7 +763,7 @@ class SecondaryAI():
             # We found a path
             tp = self.compute_priority(target, len(path))
             logging.info("Path to %s. -- %s", target, tp)
-            if tp > self.max_tp:
+            if tp is not None and (self.max_tp is None or tp > self.max_tp):
                 self.max_tp = tp
                 self.best_target = target
                 self.best_path = path
@@ -814,30 +814,30 @@ class SecondaryAI():
                  item_funcs.available(self.unit, item)]
 
         terms = []
-        tp, highest_damage_term, highest_status_term = 0, 0, 0
+        tp = None   # Not 0, to entertain the possible case of non-positive tp
+        highest_damage_term, highest_status_term = 0, 0
 
         for item in items:
             status_term = 1 if item.status_on_hit else 0
-            true_damage = 0
+            true_damage = None
             if item_system.is_weapon(self.unit, item) or item_system.is_spell(self.unit, item):
                 raw_damage = combat_calcs.compute_damage(self.unit, enemy, item, enemy.get_weapon(), 'attack', (0, 0))
                 hit = utils.clamp(combat_calcs.compute_hit(self.unit, enemy, item, enemy.get_weapon(), 'attack', (0, 0))/100., 0, 1)
-                if raw_damage:
+                if raw_damage is not None and \
+                        (raw_damage > 0 or DB.constants.value('attack_zero_dam')) and \
+                        (hit > 0 or DB.constants.value('attack_zero_hit')):
                     true_damage = raw_damage * hit
-                else:
-                    true_damage = 0
 
-            if true_damage <= 0 and status_term <= 0:
-                continue  # If no damage could be dealt, ignore
-            damage_term = min(float(true_damage / hp_max), 1.)
+            if true_damage is None and status_term <= 0:
+                continue  # If no damage could be dealt and AI is smart, ignore
+            damage_term = min(float(true_damage / hp_max), 1.) if true_damage else 0
             new_tp = damage_term + status_term/2
-            if new_tp > tp:
+            if tp is None or new_tp > tp:
                 tp = new_tp
                 highest_damage_term = damage_term
                 highest_status_term = status_term
 
-        if highest_status_term == 0 and highest_damage_term == 0:
-            # Just don't include any of this
+        if tp is None:
             return terms
         terms.append((highest_damage_term, 15))
         terms.append((highest_status_term, 10))
@@ -859,13 +859,13 @@ class SecondaryAI():
             if new_terms:
                 terms += new_terms
             else:
-                return 0
+                return None
 
         elif self.behaviour.action == 'Support' and enemy:
             ally = enemy
             # Try to help others since we already checked ourself in Primary AI
             if ally is self.unit:
-                return 0
+                return None
             else:
                 max_hp = ally.get_max_hp()
                 missing_health = max_hp - ally.get_hp()
@@ -873,7 +873,7 @@ class SecondaryAI():
                 terms.append((help_term, 100))
 
         elif self.behaviour.action == "Steal" and enemy:
-            return 0  # TODO: For now, Steal just won't work with secondary AI
+            return None  # TODO: For now, Steal just won't work with secondary AI
 
         elif self.behaviour.action == "Interact":
             # Lower the quality of positions where there is already a unit

@@ -144,11 +144,14 @@ def buy_price(unit: UnitObject, item: ItemObject) -> int:
     Returns:
         int: The buy price of the item.
     """
-    value = item_system.buy_price(unit, item)
-    if value:
-        value *= skill_system.modify_buy_price(unit, item)
+    if unit:
+        value = item_system.buy_price(unit, item)
+        if value:
+            value *= skill_system.modify_buy_price(unit, item)
+        else:
+            return 0
     else:
-        return 0
+        value = item_system.buy_price(None, item)
     return int(value)
 
 def sell_price(unit: UnitObject, item: ItemObject) -> int:

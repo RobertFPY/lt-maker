@@ -423,6 +423,7 @@ class Choice(Simple):
                     self.options.append(option)
                 elif isinstance(option, SkillObject):
                     option = menu_options.SkillOption(idx, option)
+                    option.help_box = option.get_help_box()
                     self.options.append(option)
                 elif isinstance(option, lore.Lore):
                     option = menu_options.LoreOption(idx, option)

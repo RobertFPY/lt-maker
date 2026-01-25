@@ -19,7 +19,7 @@
             "transition;Open",
             "give_item;{unit};Dragonshield",
             "show_layer;Village1",
-            "has_traded;{unit}"
+            "has_visited;{unit}"
         ],
         "nid": "5 Village1"
     }

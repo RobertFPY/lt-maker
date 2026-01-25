@@ -46,6 +46,7 @@ class NewClassDatabase(NewEditorTab):
             QMessageBox.warning(self, 'Warning', 'ID %s already in use' % nid)
             return False
         new_class = self.catalog_type.datatype(nid, nid, '')
+        new_class.movement_group = self._db.mcost.unit_types[0]
         self.data.append(new_class)
         return True
 

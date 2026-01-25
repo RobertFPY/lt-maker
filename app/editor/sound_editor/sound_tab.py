@@ -90,6 +90,18 @@ class MusicDatabase(SoundTab):
         dialog = cls(data, title, MusicModel, ResourceTableView, parent)
         return dialog
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.autofill_button = QPushButton("Autofill Sound Room Number")
+        self.autofill_button.clicked.connect(self.autofill)
+        self.autofill_button.setToolTip('Assign consecutive, unique, positive values to all the Sound Room Numbers that are currently 0.')
+        self.layout.addWidget(self.autofill_button)
+
+        self.view.setColumnWidth(2, 200)
+
+    def autofill(self):
+        self.model.autofill()
+
 def get_sfx():
     window = SingleResourceEditor(SFXDatabase, ['sfx'])
     result = window.exec_()

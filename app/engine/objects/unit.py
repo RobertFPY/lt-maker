@@ -269,6 +269,7 @@ class UnitObject(Prefab):
             for s in all_skills:
                 skill_system.before_add(self, s.get())
                 self._skills.append(s)
+            self._visible_skills_cache.clear()
 
         klass = DB.classes.get(self.klass)
         if klass.tier == 0:

@@ -19,7 +19,7 @@ from app.utilities import utils
 
 from app.engine.sprites import SPRITES
 from app.engine.sound import get_sound_thread
-from app.engine import engine, image_mods, health_bar, equations
+from app.engine import engine, image_mods, gui, health_bar, equations
 from app.engine import item_funcs, item_system, skill_system, particles
 import app.engine.config as cf
 from app.engine.animations import Animation
@@ -55,9 +55,10 @@ class SingleMapSprite():
         return self.frames[0].copy()
 
 class MapSprite():
-    def __init__(self, map_sprite: map_sprites.MapSprite, team: NID):
+    def __init__(self, map_sprite: map_sprites.MapSprite, team: NID, palette_override: NID = None):
         self.nid = map_sprite.nid
         self.team = team
+        self.palette_override = palette_override
         self.resource = map_sprite
         if not map_sprite.standing_image:
             map_sprite.standing_image = engine.image_load(map_sprite.stand_full_path)
@@ -83,7 +84,7 @@ class MapSprite():
         self.left_stand = SingleMapSprite.create_anim_sprite([self.left.get_stationary_frame()], [22])
         right_frames = [engine.subsurface(move, (num*48, 80, 48, 40)) for num in range(4)]
         self.right = SingleMapSprite.create_looping_sprite(right_frames, ANIMATION_COUNTERS.move_sprite_counter)
-        self.right_stand =SingleMapSprite.create_anim_sprite([self.right.get_stationary_frame()], [22])
+        self.right_stand = SingleMapSprite.create_anim_sprite([self.right.get_stationary_frame()], [22])
         up_frames = [engine.subsurface(move, (num*48, 120, 48, 40)) for num in range(4)]
         self.up = SingleMapSprite.create_looping_sprite(up_frames, ANIMATION_COUNTERS.move_sprite_counter)
         self.up_stand = SingleMapSprite.create_anim_sprite([self.up.get_stationary_frame()], [22])
@@ -94,15 +95,17 @@ class MapSprite():
         self.end_cast = SingleMapSprite.create_anim_sprite([frame for frame in reversed(active_frames)], [22, 4, 22])
 
     def _get_team_palette(self):
-        team_obj = game.teams.get(self.team)
-        palette_nid = team_obj.map_sprite_palette
+        palette_nid = self.palette_override
+        if palette_nid is None:
+            team_obj = game.teams.get(self.team)
+            palette_nid = team_obj.map_sprite_palette
         palette = RESOURCES.combat_palettes.get(palette_nid)
         if not palette:
             logging.error("Unable to locate map sprite palette with nid %s" % palette_nid)
         return palette
 
     def convert_to_team_colors(self, map_sprite):
-        if self.team == 'black':
+        if self.team == 'black' and not self.palette_override:
             palette = RESOURCES.combat_palettes.get('map_sprite_black')
             if palette:
                 colors: List[Color3] = palette.get_colors()
@@ -137,8 +140,8 @@ class MapSprite():
             new_colors: List[Color3] = current_palette.get_colors()
         conversion_dict: Dict[Color3, Color3] = {a: b for a, b in zip(new_colors, colors)}
         imgs = [image_mods.color_convert(img, conversion_dict) for img in imgs]
-        for img in imgs:
-            engine.set_colorkey(img, COLORKEY, rleaccel=True)
+        # for img in imgs:
+            # engine.set_colorkey(img, COLORKEY, rleaccel=True)
         return imgs
 
     def create_image(self, state, stationary=False):
@@ -156,11 +159,16 @@ def load_map_sprite(unit: UnitObject | UnitPrefab, team='player'):
         res = RESOURCES.map_sprites.get(klass.map_sprite_nid)
     if not res:
         return None
-
-    map_sprite = game.map_sprite_registry.get(res.nid + '_' + team)
+    
+    palette_override = skill_system.change_map_palette(unit)
+    if palette_override:
+        term = palette_override
+    else:
+        term = team
+    map_sprite = game.map_sprite_registry.get(res.nid + '_' + term)
     if not map_sprite:
-        map_sprite = MapSprite(res, team)
-        game.map_sprite_registry[map_sprite.nid + '_' + team] = map_sprite
+        map_sprite = MapSprite(res, team, palette_override)
+        game.map_sprite_registry[map_sprite.nid + '_' + term] = map_sprite
     return map_sprite
 
 def load_klass_sprite(klass_nid: NID, team: NID = 'player') -> Optional[MapSprite]:
@@ -309,6 +317,20 @@ class UnitSprite():
         if anim:
             anim = Animation(anim, (-12, -40), reverse=reverse)
         self.animations['swoosh'] = anim
+
+    def add_damage_number(self, damage: int):
+        """
+        damage should be positive if its a damage
+        and negative if its a heal
+        """
+        str_damage = str(abs(damage))
+        if damage >= 0:
+            color = 'small_red'
+        else:
+            color = 'small_cyan'
+        for idx, num in enumerate(str_damage):
+            d = gui.DamageNumber(int(num), idx, len(str_damage), self.position, color)
+            self.damage_numbers.append(d)
 
     def set_transition(self, new_state):
         self.transition_state = new_state
@@ -612,6 +634,10 @@ class UnitSprite():
         flicker_tints = skill_system.unit_sprite_flicker_tint(self.unit)
         flicker_tints = [image_mods.FlickerTint(*tint) for tint in flicker_tints]
         image = image_mods.draw_flicker_tint(image, current_time, flicker_tints)
+
+        final_alpha = skill_system.unit_sprite_alpha_tint(self.unit)
+        if final_alpha != 0.0:
+            image = image_mods.make_translucent(image.convert_alpha(), final_alpha)
 
         # Each image has (self.image.get_width() - 32)//2 pixels on the
         # left and right of it, to handle any off tile spriting

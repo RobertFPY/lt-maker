@@ -216,6 +216,7 @@ class FlickerTint():
     width: int      # milliseconds, actual time with tint applied
     add: bool       # whether to use blend_add or blend_sub
 
+
 def draw_flicker_tint(image: engine.Surface, time: int, tints: List[FlickerTint]) -> engine.Surface:
     for idx, tint in enumerate(tints):
         color = tint.color

@@ -19,6 +19,9 @@ class SongPrefab(HasNid, WithResources, Prefab):
         self.intro_full_path = None
         self.battle_full_path = None
 
+        # Consecutive unique positive int, or 0 (e.g: 0, 0, 0, 0, 1, 2, 3, 4)
+        self.soundroom_idx: int = 0
+
     def set_intro_full_path(self, full_path):
         self.intro_full_path = full_path
 
@@ -26,10 +29,10 @@ class SongPrefab(HasNid, WithResources, Prefab):
         self.battle_full_path = full_path
 
     def full_save(self):
-        return (self.nid, self.intro_full_path, self.battle_full_path)
+        return (self.nid, self.intro_full_path, self.battle_full_path, self.soundroom_idx)
 
     def save(self):
-        return (self.nid, True if self.intro_full_path else False, True if self.battle_full_path else False)
+        return (self.nid, True if self.intro_full_path else False, True if self.battle_full_path else False, self.soundroom_idx)
 
     @override
     def set_full_path(self, path: str) -> None:
@@ -52,6 +55,8 @@ class SongPrefab(HasNid, WithResources, Prefab):
         self = cls(s_tuple[0])
         self.intro_full_path = s_tuple[1]
         self.battle_full_path = s_tuple[2]
+        if len(s_tuple) > 3:
+            self.soundroom_idx = s_tuple[3]
         return self
 
 class MusicCatalog(ManifestCatalog[SongPrefab]):

@@ -126,7 +126,16 @@ class Icon16Model(IconModel):
                     QMessageBox.critical(self.window, "File Type Error!", "Icon must be PNG format!")
             parent_dir = os.path.split(fns[-1])[0]
             settings.set_last_open_path(parent_dir)
-            self.window.update_list()
+            """
+            # This `self.window.update_list` has been removed to fix a bug where
+            # 1. Create a new icon
+            # 2. rename the icon
+            # 3. Create another new icon
+            # 4. Segmentation fault with error `QSortFilterProxyModel: index from wrong model passed to mapFromSource`
+            It doesn't seem to be necessary????
+            """
+            # self.window.update_list()  
+
         return icon
 
     def delete(self, idx):

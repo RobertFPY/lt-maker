@@ -966,7 +966,9 @@ class RegionType(OptionValidator):
     valid = [r.value for r in RegionTypeEnum]
 
 class Weather(OptionValidator):
-    valid = ["rain", "sand", "snow", "fire", "light", "purple", "dark", "smoke", "night", "sunset", "event_tile", "switch_tile"]
+    valid = ["rain", "sand", "snow", "fire", "light", 
+             "purple", "dark", "smoke", "night", "sunset", 
+             "event_tile", "switch_tile", "fire_pillar"]
 
 class Align(EnumValidator):
     enum_type = Alignments

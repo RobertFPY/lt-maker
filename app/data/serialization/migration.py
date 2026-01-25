@@ -10,7 +10,7 @@ def migrate_db(data: NestedPrimitiveDict, version: int) -> NestedPrimitiveDict:
         raise NotImplementedError("Migration to next version from {} not implemented".format(version))
     return MIGRATORS[version].migrate_database(data)
 
-def migrate_resources(resources: NestedPrimitiveDict, version: int) -> NestedPrimitiveDict:
+def migrate_resources(resources: NestedPrimitiveDict, data_dir: str, version: int) -> NestedPrimitiveDict:
     if version not in MIGRATORS:
         raise NotImplementedError("Migration to next version from {} not implemented".format(version))
-    return MIGRATORS[version].migrate_resources(resources)
+    return MIGRATORS[version].migrate_resources(resources, data_dir)

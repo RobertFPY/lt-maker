@@ -88,6 +88,20 @@ class Region(Prefab):
         else:
             return None
 
+    def draw_center(self) -> Tuple[float, float]:
+        """
+        Calculate the center position of the region for drawing.
+
+        Returns:
+            Tuple[float, float]: The center position of the region.
+        """
+        if self.position:
+            x = self.position[0] + self.size[0] / 2
+            y = self.position[1] + self.size[1] / 2
+            return x, y
+        else:
+            return None
+
     def contains(self, pos: Pos) -> bool:
         """
         Check if the given position is within the region.

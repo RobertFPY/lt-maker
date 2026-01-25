@@ -35,6 +35,6 @@ def load_resources(data_dir: str, version: int) -> NestedPrimitiveDict:
     current_version = CURRENT_SERIALIZATION_VERSION
     loaded = _dispatch_load_resources(data_dir, version)
     while version < current_version:
-        loaded = migrate_resources(loaded, version)
+        loaded = migrate_resources(loaded, data_dir, version)
         version += 1
     return loaded

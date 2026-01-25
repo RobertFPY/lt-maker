@@ -7,5 +7,5 @@ class MigratorBase(Protocol):
     def migrate_database(self, db_dict: NestedPrimitiveDict) -> NestedPrimitiveDict:
         ...
 
-    def migrate_resources(self, resource_dict: NestedPrimitiveDict) -> NestedPrimitiveDict:
+    def migrate_resources(self, resource_dict: NestedPrimitiveDict, data_dir: str) -> NestedPrimitiveDict:
         ...

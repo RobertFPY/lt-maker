@@ -141,7 +141,7 @@ class ItemOptionUtils():
         # Set Current Uses
         curr_uses_string = custom_uses.get_uses()
         max_uses_string = custom_uses.get_max()
-        curr_uses_string_loc_x = 25 if curr_uses_string is not None else 5
+        curr_uses_string_loc_x = 25 if max_uses_string is not None else 5
 
         # Check Custom Color
         uses_color = custom_uses.get_color() or uses_color

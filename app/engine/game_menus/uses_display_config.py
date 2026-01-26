@@ -32,7 +32,8 @@ class UsesDisplayConfig:
         return str(self.get_curr_uses(self.unit, self.item))
 
     def get_max(self) -> str:
-        return str(self.get_max_uses(self.unit, self.item))
+        max_uses = self.get_max_uses(self.unit, self.item)
+        return str(max_uses) if max_uses is not None else None
 
     def get_color(self) -> str:
         return self.get_uses_color(self.unit, self.item)

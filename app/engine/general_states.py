@@ -3031,7 +3031,7 @@ class ShopState(State):
         elif event == 'BACK':
             if self.state == 'open' or self.state == 'close':
                 get_sound_thread().play_sfx('Select 4')
-                if self.unit.has_traded:
+                if self.unit and self.unit.has_traded:
                     action.do(action.HasAttacked(self.unit))
                 game.state.change('transition_pop')
 

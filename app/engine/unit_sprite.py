@@ -96,12 +96,15 @@ class MapSprite():
 
     def _get_team_palette(self):
         palette_nid = self.palette_override
-        if palette_nid is None:
+        palette = RESOURCES.combat_palettes.get(palette_nid)
+        if not palette: #If we can't find a valid override palette, default to team colors
+            if palette_nid is not None:
+                logging.error("Map palette override with nid %s could not be found." % palette_nid)
             team_obj = game.teams.get(self.team)
             palette_nid = team_obj.map_sprite_palette
-        palette = RESOURCES.combat_palettes.get(palette_nid)
-        if not palette:
-            logging.error("Unable to locate map sprite palette with nid %s" % palette_nid)
+            palette = RESOURCES.combat_palettes.get(palette_nid)
+            if not palette:
+                logging.error("Unable to locate map sprite palette with nid %s" % palette_nid)
         return palette
 
     def convert_to_team_colors(self, map_sprite):

@@ -382,7 +382,7 @@ class SkillHelpDialog(HelpDialog):
             self.name = text_funcs.translate_and_text_evaluate(name_override, unit, self=skill, local_args={'skill': skill})
 
         desc = skill.desc
-        desc = text_funcs.translate_and_text_evaluate(desc, unit=unit_override)
+        desc = text_funcs.translate_and_text_evaluate(desc, unit=unit_override, self=skill, local_args={'skill': skill})
         lines = self.build_lines(desc)
         num_lines = len(lines)
 

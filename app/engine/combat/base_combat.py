@@ -20,7 +20,7 @@ class BaseCombat(SimpleCombat):
     def __init__(self, attacker: UnitObject, main_item: ItemObject,
                  main_target: UnitObject, script: list, total_rounds: int = 1):
         self._counter: int = 0
-        
+        self.state = 'init'
         self.attacker = attacker
         self.defender = main_target
         self.main_item = main_item
@@ -133,7 +133,16 @@ class BaseCombat(SimpleCombat):
             self._counter += 1
             return False
         else:
-            self.clean_up()
+            if self.state == 'init':
+                self.clean_up0()
+                self.state = 'cleanup1'
+                return False
+            elif self.state == 'cleanup1':
+                self.clean_up1()
+                self.state = 'cleanup2'
+                return False
+            elif self.state == 'cleanup2':
+                self.clean_up2()
         return True
 
     def handle_state_stack(self):

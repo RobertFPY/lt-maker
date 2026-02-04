@@ -168,10 +168,6 @@ class TileMapObject(Prefab):
                     tileset.autotile_image = engine.image_load(tileset.autotile_full_path)
                 pos = tile_sprite.tileset_position
 
-                rect = (pos[0] * TILEWIDTH, pos[1] * TILEHEIGHT, TILEWIDTH, TILEHEIGHT)
-                sub_image = engine.subsurface(tileset.image, rect)
-                image.blit(sub_image, (coord[0] * TILEWIDTH, coord[1] * TILEHEIGHT))
-
                 # Handle Autotiles
                 if pos in tileset.autotiles and tileset.autotile_image:
                     has_autotiles = True
@@ -180,6 +176,12 @@ class TileMapObject(Prefab):
                         rect = (column * TILEWIDTH, idx * TILEHEIGHT, TILEWIDTH, TILEHEIGHT)
                         sub_image = engine.subsurface(tileset.autotile_image, rect)
                         im.blit(sub_image, (coord[0] * TILEWIDTH, coord[1] * TILEHEIGHT))
+                else:
+                    # Only blit on base image if there isn't autotile
+                    # So that transparent autotiles are displayed correctly
+                    rect = (pos[0] * TILEWIDTH, pos[1] * TILEHEIGHT, TILEWIDTH, TILEHEIGHT)
+                    sub_image = engine.subsurface(tileset.image, rect)
+                    image.blit(sub_image, (coord[0] * TILEWIDTH, coord[1] * TILEHEIGHT))
 
             new_layer.image = image
             if has_autotiles:

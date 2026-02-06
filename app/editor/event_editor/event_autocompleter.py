@@ -95,8 +95,8 @@ class EventScriptCompleter(QCompleter):
     def handleKeyPressEvent(self, event) -> bool:
         # If completer is up, Tab/Enter can auto-complete
         if event.key() == self.settings.get_autocomplete_button(Qt.Key_Tab):
-            if self.popup().isVisible() and len(self.popup().selectedIndexes()) > 0:
-                choice = self.popup().selectedIndexes()[0]
+            if self.popup().isVisible() and len(self.popup().selectionModel().selectedIndexes()) > 0:
+                choice = self.popup().selectionModel().selectedIndexes()[0]
                 self.do_complete(choice)
                 return True  # should not enter a tab
         elif event.key() == Qt.Key_Backspace:

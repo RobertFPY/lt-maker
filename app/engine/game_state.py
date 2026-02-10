@@ -160,10 +160,10 @@ class GameState():
 
         self.clear()
 
-    def on_alter_game_state(self):
+    def on_alter_game_state(self) -> None:
         ltcache.alter_state()
 
-    def clear(self):
+    def clear(self) -> None:
         self.game_vars = PrimitiveCounter()
         self.memory = {}
 

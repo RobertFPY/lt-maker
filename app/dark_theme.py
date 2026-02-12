@@ -405,7 +405,10 @@ def get_theme(theme: Optional[ThemeType] = None) -> QLightPalette:
     from app.editor.settings.preference_definitions import Preference
     if not theme:
         settings = MainSettingsController()
-        theme_idx = int(settings.get_preference(Preference.THEME))
+        try:
+            theme_idx = int(settings.get_preference(Preference.THEME))
+        except (ValueError, TypeError):
+            theme_idx = 1
         return THEMES[ThemeType(theme_idx)]
     return THEMES[theme]
 

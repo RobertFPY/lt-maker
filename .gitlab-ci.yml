@@ -19,6 +19,8 @@ run_tests:
         refs:
             - merge_requests
     before_script:
+        - apt-get update
+        - apt-get install -y libgl1
         - python --version
         - pip install -r requirements_editor.txt
     script:

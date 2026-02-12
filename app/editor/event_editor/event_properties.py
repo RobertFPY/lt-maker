@@ -37,6 +37,7 @@ from app.editor.lib.components.validated_line_edit import \
     NoParentheticalLineEdit
 from app.editor.map_view import SimpleMapView
 from app.editor.settings import MainSettingsController
+from app.editor.settings.preference_definitions import Preference
 from app.events import event_commands, event_validators
 from app.events.event_prefab import EventPrefab
 from app.events.event_version import EventVersion
@@ -319,7 +320,7 @@ class EventProperties(QWidget):
         # Text setup
         self.cursor = self.text_box.textCursor()
         self.code_font = QFont()
-        self.code_font.setFamily(self.settings.get_code_font())
+        self.code_font.setFamily(self.settings.get_preference(Preference.CODE_FONT))
         self.code_font.setFixedPitch(True)
         self.code_font.setPointSize(10)
         self.text_box.setFont(self.code_font)

@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import (QFileDialog, QHBoxLayout, QHeaderView,
 
 from app.editor.file_manager.project_initializer import ProjectInitializer
 from app.editor.settings.main_settings_controller import MainSettingsController
+from app.editor.settings.preference_definitions import Preference
 from app.editor.settings.project_history_controller import ProjectHistoryEntry
 from app.extensions.custom_gui import SimpleDialog
 
@@ -149,7 +150,7 @@ def choose_recent_project(load_only: bool = False, allow_auto_open: bool = False
     if not recent_projects:
         # default.ltproj is always an available choice
         recent_projects = [ProjectHistoryEntry("default.ltproj", "default.ltproj")]
-    if allow_auto_open and settings.get_auto_open():
+    if allow_auto_open and settings.get_preference(Preference.AUTO_OPEN_LAST):
         return settings.get_current_project(fallback="default.ltproj")
     dialog = RecentProjectDialog(recent_projects, load_only)
     dialog.exec_()

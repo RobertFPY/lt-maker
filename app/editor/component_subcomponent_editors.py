@@ -27,6 +27,7 @@ from app.editor.event_editor.py_syntax import PythonHighlighter
 from app.editor.settings.main_settings_controller import MainSettingsController
 from app.editor.auto_resizing_text_edit import AutoResizingTextEdit
 
+from app.editor.settings.preference_definitions import Preference
 from app.extensions.custom_gui import ComboBox
 from app.extensions.list_widgets import AppendSingleListWidget
 from app.extensions.shape_dialog import ShapeIcon
@@ -35,7 +36,7 @@ from app.utilities import str_utils, utils
 
 class BaseSubcomponentEditor(QWidget):
     resized: pyqtSignal = pyqtSignal() # emit on possible resize
-    
+
     def __init__(self, field_name: str, option_dict: Dict[str, Any]) -> None:
         super().__init__()
         hbox = QHBoxLayout()
@@ -114,19 +115,19 @@ class StringSubcomponentEditor(BaseSubcomponentEditor):
         self.settings = MainSettingsController()
         self.editor = AutoResizingTextEdit(self)
         self.editor.setMaximumWidth(640)
-        
+
         self.editor.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.editor.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        
+
         if not self.option_dict.get(self.field_name):
             self.option_dict[self.field_name] = ''
-        
+
         self._set_font()
         self.editor.setText(str(self.option_dict[self.field_name]))
-        
+
         self._old_height = self.editor.document().size().height()
         self.highlighter = PythonHighlighter(self.editor.document())
-        
+
         self.editor.textChanged.connect(lambda: self.on_value_changed(self.editor.toPlainText()))
         hbox.addWidget(self.editor)
 
@@ -136,10 +137,10 @@ class StringSubcomponentEditor(BaseSubcomponentEditor):
         if new_height != self._old_height:
             self._old_height = new_height
             self.resized.emit() # size could change here so emit
-                        
+
     def _set_font(self):
-        if self.settings.get_code_font_in_boxes():
-            self.editor.setFont(QFont(self.settings.get_code_font()))
+        if self.settings.get_preference(Preference.CODE_FONT_IN_BOXES):
+            self.editor.setFont(QFont(self.settings.get_preference(Preference.CODE_FONT)))
 
 class FloatSubcomponentEditor(BaseSubcomponentEditor):
     @override
@@ -235,8 +236,8 @@ class SoundSubcomponentEditor(BaseSubcomponentEditor):
 
     def on_value_changed(self, val):
         self.option_dict[self.field_name] = val
-        
-        
+
+
 class ShapeSubcomponentEditor(BaseSubcomponentEditor):
     @override
     def _create_editor(self, hbox):

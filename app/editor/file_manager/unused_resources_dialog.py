@@ -2,6 +2,7 @@ from typing import Dict, List
 
 from PyQt5.QtWidgets import QDialog, QTextEdit, QVBoxLayout
 
+from app.editor.settings.preference_definitions import Preference
 from app.extensions.custom_gui import Dialog
 from app.editor.settings.main_settings_controller import MainSettingsController
 
@@ -18,7 +19,7 @@ class UnusedResourcesDialog(Dialog):
         self.settings = MainSettingsController()
         self.textEdit = QTextEdit()
         self.textEdit.setReadOnly(True)
-        self.textEdit.setFontFamily(self.settings.get_code_font())
+        self.textEdit.setFontFamily(self.settings.get_preference(Preference.CODE_FONT))
         self.textEdit.setFontPointSize(12)
         self.textEdit.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
         layout.addWidget(self.textEdit)
@@ -32,7 +33,7 @@ class UnusedResourcesDialog(Dialog):
         for save_data_type, unused_files in self.unused_resources.items():
             if not unused_files:  # Don't bother displaying if no unused files of that type
                 continue
-            data_type_text = f"=== {save_data_type} ===\n" 
+            data_type_text = f"=== {save_data_type} ===\n"
             for unused_file in unused_files:
                 data_type_text += f"{unused_file}\n"
             data_type_text += "\n"

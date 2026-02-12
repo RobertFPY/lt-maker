@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import QStyle, QStyledItemDelegate, QPlainTextEdit
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 
+from app.editor.settings.preference_definitions import Preference
 from app.utilities import str_utils
 from app.data.database.database import DB
 
@@ -41,7 +42,7 @@ class EquationMultiModel(MultiAttrListModel):
         "STEAL_DEF": "Steal resistance",
         "THRACIA_CRIT": "Multiplicative damage bonus on crits, before def/res",
     }
-    
+
     settings = MainSettingsController()
 
     def data(self, index, role):
@@ -53,8 +54,8 @@ class EquationMultiModel(MultiAttrListModel):
             return getattr(data, attr)
         # no easy way of showing syntax highlighting via a role...
         if index.column() == 1 and role == Qt.FontRole:
-            if self.settings.get_code_font_in_boxes():
-                return QFont(self.settings.get_code_font())
+            if self.settings.get_preference(Preference.CODE_FONT_IN_BOXES):
+                return QFont(self.settings.get_preference(Preference.CODE_FONT))
             else:
                 return QFont()
         if index.column() == 1 and role == Qt.DecorationRole:
@@ -135,7 +136,7 @@ class EquationMultiModel(MultiAttrListModel):
             affected_skills = skill_components.get_skills_using(ComponentType.Equation, old_value, DB)
             swap_values(affected_skills, ComponentType.Equation, old_value, new_value)
 
-class EquationDelegate(QStyledItemDelegate):     
+class EquationDelegate(QStyledItemDelegate):
     def createEditor(self, parent, option, index):
         return CodeLineEdit(parent)
 
@@ -153,10 +154,10 @@ class EquationDialog(MultiAttrListDialog):
 
         dlg = cls(DB.equations, "Equation", ("nid", "expression"),
                   EquationMultiModel, (deletion_func, None, deletion_func), cls.locked_vars)
-        
+
         equation_delegate = EquationDelegate(dlg.view)
         dlg.view.setItemDelegateForColumn(1, equation_delegate)
-        
+
         return dlg
 
     def accept(self):

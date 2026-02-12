@@ -234,7 +234,10 @@ class TabbedPreferencesDialog(Dialog):
         if definition.pref_type == PreferenceType.MOUSEBINDING:
             value = preference_definitions.button_to_name.get(value, definition.default_value)
         elif pref == Preference.THEME:
-            value = dark_theme.ThemeType(int(value)).name
+            try:
+                value = dark_theme.ThemeType[value].name
+            except Exception:
+                value = dark_theme.ThemeType.Dark.name
         widget.set_value(value)
         return widget
 
@@ -286,7 +289,7 @@ class TabbedPreferencesDialog(Dialog):
                 storage_value = preference_definitions.name_to_button[value]
             elif pref == Preference.THEME:
                 theme_type = dark_theme.ThemeType[value]
-                storage_value = theme_type.value
+                storage_value = theme_type.name
             elif defn.pref_type == PreferenceType.BOOLEAN:
                 # Convert bool to int (Qt settings quirk)
                 storage_value = 1 if value else 0

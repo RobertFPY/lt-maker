@@ -10,6 +10,7 @@ from app.editor.map_sprite_editor import map_sprite_model
 from app.editor.overworld_editor.road_sprite_wrapper import RoadSpriteWrapper
 from app.editor.settings import MainSettingsController
 from app.data.resources.resources import RESOURCES
+from app.editor.settings.preference_definitions import Preference
 from app.sprites import SPRITES
 from app.utilities import utils
 from PyQt5.QtCore import Qt, pyqtSignal
@@ -487,7 +488,7 @@ class NewMapView(SimpleMapView):
         if self.current_map and self.current_map.check_bounds(pos):
             # Units
             if self.edit_mode == EditMode.UNITS:
-                if event.button() == self.settings.get_place_button(Qt.RightButton):
+                if event.button() == self.settings.get_preference(Preference.PLACE_BUTTON):
                     current_unit = self.main_editor.unit_painter_menu.get_current()
                     if current_unit:
                         under_unit = self.check_position(
@@ -513,7 +514,7 @@ class NewMapView(SimpleMapView):
                                     unit.starting_traveler = None
                             self.main_editor.set_message(message)
                         self.update_view()
-                elif event.button() == self.settings.get_select_button(Qt.LeftButton):
+                elif event.button() == self.settings.get_preference(Preference.SELECT_BUTTON):
                     under_unit = self.check_position(self.current_level, pos)
                     if under_unit:
                         idx = self.current_level.units.index(under_unit.nid)
@@ -522,7 +523,7 @@ class NewMapView(SimpleMapView):
                         self.main_editor.unit_painter_menu.deselect()
             # Groups
             elif self.edit_mode == EditMode.GROUPS:
-                if event.button() == self.settings.get_place_button(Qt.RightButton):
+                if event.button() == self.settings.get_preference(Preference.PLACE_BUTTON):
                     current_group = self.main_editor.group_painter_menu.get_current()
                     current_unit = self.main_editor.group_painter_menu.get_current_unit()
                     if current_unit:
@@ -536,7 +537,7 @@ class NewMapView(SimpleMapView):
                                 current_group.nid, current_unit.nid, pos[0], pos[1])
                         self.main_editor.set_message(message)
                         self.update_view()
-                elif event.button() == self.settings.get_select_button(Qt.LeftButton):
+                elif event.button() == self.settings.get_preference(Preference.SELECT_BUTTON):
                     current_group = self.main_editor.group_painter_menu.get_current()
                     under_unit_nid = None
                     if current_group:
@@ -557,7 +558,7 @@ class NewMapView(SimpleMapView):
                     else:
                         self.main_editor.group_painter_menu.deselect()
             elif self.edit_mode == EditMode.REGIONS:
-                if event.button() == self.settings.get_place_button(Qt.RightButton):
+                if event.button() == self.settings.get_preference(Preference.PLACE_BUTTON):
                     current_region = self.main_editor.region_painter_menu.get_current()
                     if current_region:
                         # Remove position for current region if it has one
@@ -616,7 +617,7 @@ class NewMapView(SimpleMapView):
 
         if self.current_map and self.current_map.check_bounds(pos):
             if self.region_select and self.edit_mode == EditMode.REGIONS:
-                if event.button() == self.settings.get_place_button(Qt.RightButton):
+                if event.button() == self.settings.get_preference(Preference.PLACE_BUTTON):
                     current_region = self.main_editor.region_painter_menu.get_current()
                     if current_region:
                         prev_pos = self.region_select

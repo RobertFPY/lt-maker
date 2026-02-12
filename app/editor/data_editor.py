@@ -8,6 +8,7 @@ from app.data.database.database import DB
 
 from app.data.serialization.versions import CURRENT_SERIALIZATION_VERSION
 from app.editor.settings import MainSettingsController
+from app.editor.settings.preference_definitions import Preference
 
 class SingleDatabaseEditor(QDialog):
     def __init__(self, tab, parent=None):
@@ -32,7 +33,7 @@ class SingleDatabaseEditor(QDialog):
             self.tab.splitter.restoreState(state)
 
     def keyPressEvent(self, keypress: QtGui.QKeyEvent) -> None:
-        if keypress.key() == self.settings.get_editor_close_button():
+        if keypress.key() == self.settings.get_preference(Preference.EDITOR_CLOSE_BUTTON):
             self.reject()
         else:
             pass

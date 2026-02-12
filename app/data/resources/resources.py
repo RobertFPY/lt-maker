@@ -13,6 +13,7 @@ from app import sprites
 from app.data.category import Categories, CategorizedCatalog
 from app.data.resources.base_catalog import ManifestCatalog
 from app.data.serialization import disk_loader
+from app.editor.settings.preference_definitions import Preference
 from app.utilities import exceptions
 from app.data.resources.fonts import FontCatalog
 from app.data.resources.icons import Icon16Catalog, Icon32Catalog, Icon80Catalog
@@ -202,7 +203,7 @@ class Resources():
                     # divide save data into chunks based on key value
                     if not os.path.exists(actual_save_dir):
                         os.makedirs(actual_save_dir)
-                    if key in self.save_as_chunks and main_settings.get_should_save_as_chunks():
+                    if key in self.save_as_chunks and main_settings.get_preference(Preference.SAVE_CHUNKS):
                         orderkeys: List[str] = []
                         for idx, subvalue in enumerate(value):
                             # ordering

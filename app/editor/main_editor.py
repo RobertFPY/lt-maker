@@ -12,6 +12,7 @@ from PyQt5.QtGui import QIcon
 from app import autoupdate, dark_theme
 
 from app.editor.file_manager.project_builder.project_builder import LTProjectBuilder
+from app.editor.settings.preferences_tabbed import TabbedPreferencesDialog
 from app.editor.settings import MainSettingsController
 
 from app.constants import VERSION
@@ -22,7 +23,6 @@ from app.editor import log_viewer, timer, error_viewer
 # components
 from app.editor.lib.components.menubar import MenuBar
 from app.editor.lib.components.toolbar import Toolbar
-from app.editor.preferences import PreferencesDialog
 from app.editor.save_viewer import SaveViewer
 from app.editor.file_manager.unused_resources_dialog import UnusedResourcesDialog
 
@@ -572,7 +572,7 @@ class MainEditor(QMainWindow):
         dialog.exec_()
 
     def edit_preferences(self):
-        dialog = PreferencesDialog(self)
+        dialog = TabbedPreferencesDialog(self)
         dialog.exec_()
 
     def render_editor(self, main_editor_mode):

@@ -8,6 +8,7 @@ from app.data.resources.resources import RESOURCES
 
 from app.data.validation.db_validation import DBChecker, ValidationResult
 from app.editor.settings.main_settings_controller import MainSettingsController
+from app.editor.settings.preference_definitions import Preference
 
 MAX_NUM_CHARS = 100000
 
@@ -25,7 +26,7 @@ class ErrorViewer(QWidget):
         self.settings = MainSettingsController()
         self.textEdit = QTextEdit()
         self.textEdit.setReadOnly(True)
-        self.textEdit.setFontFamily(self.settings.get_code_font())
+        self.textEdit.setFontFamily(self.settings.get_preference(Preference.CODE_FONT))
         self.textEdit.setFontPointSize(12)
         self.textEdit.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
 

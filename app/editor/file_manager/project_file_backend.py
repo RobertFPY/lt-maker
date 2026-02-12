@@ -21,6 +21,7 @@ from app.data.serialization.versions import CURRENT_SERIALIZATION_VERSION
 from app.data.validation.db_validation import DBChecker
 from app.editor import timer
 from app.editor.error_viewer import show_error_report
+from app.editor.settings.preference_definitions import Preference
 from app.extensions.message_box import show_warning_message
 from app.utilities.file_manager import FileManager
 from app.data.metadata import Metadata
@@ -199,7 +200,7 @@ class ProjectFileBackend():
                     return False
 
         # Make directory for saving if it doesn't already exist
-        if not new and self.settings.get_should_make_backup_save():
+        if not new and self.settings.get_preference(Preference.SAVE_BACKUP):
             # we will copy the existing save (whichever is more recent)
             # as a backup
             self.tmp_proj = self.current_proj + '.lttmp'
@@ -229,9 +230,9 @@ class ProjectFileBackend():
             display_error("resources")
             return False
         self.save_progress.setValue(75)
-        
+
         if as_chunks is None:
-            as_chunks = self.settings.get_should_save_as_chunks()
+            as_chunks = self.settings.get_preference(Preference.SAVE_CHUNKS)
 
         success = DB.serialize(self.current_proj, as_chunks=as_chunks)
         if not success:
@@ -242,7 +243,7 @@ class ProjectFileBackend():
         # Save metadata
         self.save_metadata(self.current_proj, has_fatal_errors, as_chunks)
         self.save_progress.setValue(87)
-        if not new and self.settings.get_should_make_backup_save():
+        if not new and self.settings.get_preference(Preference.SAVE_BACKUP):
             # we have fully saved the current project.
             # first, delete the .json files that don't appear in the new project
             for old_dir, dirs, files in os.walk(self.tmp_proj):
@@ -375,11 +376,11 @@ class ProjectFileBackend():
         RESOURCES.autosave(self.current_proj, autosave_dir,
                            self.autosave_progress)
         self.autosave_progress.setValue(75)
-        DB.serialize(autosave_dir, as_chunks=self.settings.get_should_save_as_chunks())
+        DB.serialize(autosave_dir, as_chunks=self.settings.get_preference(Preference.SAVE_CHUNKS))
         self.autosave_progress.setValue(99)
 
         # Save metadata
-        self.save_metadata(autosave_dir, self.metadata.has_fatal_errors, self.settings.get_should_save_as_chunks())
+        self.save_metadata(autosave_dir, self.metadata.has_fatal_errors, self.settings.get_preference(Preference.SAVE_CHUNKS))
 
         try:
             self.parent.status_bar.showMessage(
@@ -393,15 +394,15 @@ class ProjectFileBackend():
             'date': str(datetime.now()),
             'engine_version': VERSION,
             # always uses the current version to save. this is only required to select the deserializer on the load side
-            'serialization_version': CURRENT_SERIALIZATION_VERSION, 
+            'serialization_version': CURRENT_SERIALIZATION_VERSION,
             'project': DB.constants.get('game_nid').value,
             'has_fatal_errors': has_fatal_errors,
             'as_chunks': as_chunks
         }
-        
+
         # static to serialized
         serialized_metadata = self.metadata.update(updated_metadata)
-        
+
         metadata_loc = os.path.join(save_dir, 'metadata.json')
         with open(metadata_loc, 'w') as serialize_file:
             json.dump(serialized_metadata, serialize_file, indent=4)

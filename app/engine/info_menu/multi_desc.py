@@ -110,7 +110,10 @@ def get_dlg_box(source: InfoSource, page_type: PageType, unit: Optional[UnitObje
         return None
         
     if page_type == PageType.ITEM:
-        return ItemHelpDialog(source, first=is_first, unit_override=unit)
+        if item_system.is_weapon(unit, source) or item_system.is_spell(unit, source):
+            return ItemHelpDialog(source, first=is_first, unit_override=unit)
+        else:
+            return HelpDialog(text_funcs.translate_and_text_evaluate(source.desc, unit=unit, self=source))
     elif page_type == PageType.SKILL:
         return SkillHelpDialog(source, first=is_first, unit_override=unit)
     # TODO: Someday make specialized HelpDialog classes for these? Requires some refactors in other places.

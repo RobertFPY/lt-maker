@@ -230,7 +230,7 @@ ITEM_HELP_WIDTH = 160
 class ItemHelpDialog(HelpDialog):
     text_font: NID = 'text'
 
-    def __init__(self, item: ItemObject, first:bool=True, unit_override:Optional[UnitObject]=None):
+    def __init__(self, item: ItemObject, first: bool = True, unit_override: Optional[UnitObject]=None):
         self.last_time = self.start_time = 0
         self.transition_in = False
         self.transition_out = 0

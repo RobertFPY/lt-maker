@@ -8,8 +8,6 @@ from typing import Dict, Optional
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QPalette
 
-from app.engine.item_system import text_color
-
 WHITE = QColor(255, 255, 255)
 BLACK = QColor(0, 0, 0)
 RED = QColor(255, 0, 0)

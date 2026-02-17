@@ -1290,7 +1290,7 @@ def set_current_hp(self: Event, unit, hp: int, flags=None):
         return
 
     if 'damage_numbers' in flags and actor.position:
-        difference: int = unit.get_hp() - hp
+        difference: int = actor.get_hp() - hp
         actor.sprite.add_damage_number(difference)
 
     action.do(action.SetHP(actor, hp))

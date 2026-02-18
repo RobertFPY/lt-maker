@@ -60,6 +60,11 @@ class MainSettingsController():
     def get_default_anim_background(self, fallback=True):
         return self.state.value('default_anim_background', fallback, type=bool)
 
+    """========== General Saving Settings =========="""
+    # Necessarily broken out of the generic accessor to enable non-editor data objects to access this preference
+    def get_save_chunks_preference(self):
+        return self.state.value('save_chunks', False, type=bool)
+
     """========== Generic Preference Accessors =========="""
     def get_preference(self, pref: Preference):
         """

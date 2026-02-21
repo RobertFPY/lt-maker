@@ -93,18 +93,20 @@ class TargetSystem():
                 magn: int = _abs(x)
                 n1: Pos = position[0] + x, position[1] + r - magn
                 n2: Pos = position[0] + x, position[1] - r + magn
-                u1: Optional[UnitObject] = self.game.board.get_unit(n1)
-                u2: Optional[UnitObject] = self.game.board.get_unit(n2)
-                if movement_funcs.check_weakly_traversable(unit, n1) \
-                        and (not u1 or u1 is unit) \
-                        and not self.game.movement.check_if_occupied_in_future(n1) \
-                        and (not check_for_valid_path or not unit.position or self.game.path_system.get_path(unit, n1)):
-                    return n1
-                elif movement_funcs.check_weakly_traversable(unit, n2) \
-                        and (not u2 or u2 is unit) \
-                        and not self.game.movement.check_if_occupied_in_future(n2) \
-                        and (not check_for_valid_path or not unit.position or self.game.path_system.get_path(unit, n2)):
-                    return n2
+                if self.game.board.check_bounds(n1):
+                    u1: Optional[UnitObject] = self.game.board.get_unit(n1)
+                    if movement_funcs.check_weakly_traversable(unit, n1) \
+                            and (not u1 or u1 is unit) \
+                            and not self.game.movement.check_if_occupied_in_future(n1) \
+                            and (not check_for_valid_path or not unit.position or self.game.path_system.get_path(unit, n1)):
+                        return n1
+                elif self.game.board.check_bounds(n2):
+                    u2: Optional[UnitObject] = self.game.board.get_unit(n2)
+                    if movement_funcs.check_weakly_traversable(unit, n2) \
+                            and (not u2 or u2 is unit) \
+                            and not self.game.movement.check_if_occupied_in_future(n2) \
+                            and (not check_for_valid_path or not unit.position or self.game.path_system.get_path(unit, n2)):
+                        return n2
             r += 1
         return None
 

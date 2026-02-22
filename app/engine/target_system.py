@@ -100,7 +100,7 @@ class TargetSystem():
                             and not self.game.movement.check_if_occupied_in_future(n1) \
                             and (not check_for_valid_path or not unit.position or self.game.path_system.get_path(unit, n1)):
                         return n1
-                elif self.game.board.check_bounds(n2):
+                if self.game.board.check_bounds(n2):
                     u2: Optional[UnitObject] = self.game.board.get_unit(n2)
                     if movement_funcs.check_weakly_traversable(unit, n2) \
                             and (not u2 or u2 is unit) \

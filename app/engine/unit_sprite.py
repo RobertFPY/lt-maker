@@ -163,7 +163,7 @@ def load_map_sprite(unit: UnitObject | UnitPrefab, team='player'):
     if not res:
         return None
     
-    palette_override = skill_system.change_map_palette(unit)
+    palette_override = skill_system.change_map_palette(unit) if isinstance(unit, UnitObject) else None
     if palette_override:
         term = palette_override
     else:

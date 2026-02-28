@@ -7,14 +7,14 @@ from app.events.event_version import EventVersion
 
 def create_wrapper_func(command_name: str, command_t: Type[EventCommand]):
     command_param_names = command_t.keywords
-    command_params = ', '.join(command_param_names)
+    command_params = ', '.join([f'{p}: Any' for p in command_param_names])
     if command_params:
         command_params += ', '
 
     command_params_list = '[' + ', '.join([f'"{param}"' for param in command_param_names]) + ']'
 
     command_optional_param_names = command_t.optional_keywords
-    command_optional_params = ', '.join(["%s=None" % param for param in command_optional_param_names])
+    command_optional_params = ', '.join(["%s: Any = None" % param for param in command_optional_param_names])
     if command_optional_params:
         command_optional_params += ', '
 
@@ -22,15 +22,17 @@ def create_wrapper_func(command_name: str, command_t: Type[EventCommand]):
     command_param_dict_str = '{' + command_param_dict_str + '}'
     func = \
 """
-def {command_name}({command_params}{command_optional_params}):
+def {command_name}({command_params}{command_optional_params}) -> event_commands.{command_type}:
     command_t = event_commands.{command_type}
-    parameters = {command_param_dict}
+    parameters: dict[str, Any] = {command_param_dict}
     parameters = dict(filter(optional_value_filter({command_params_list}), parameters.items()))
     for k, v in parameters.items():
         if isinstance(v, str):
             param_name = command_t.get_validator_from_keyword(k)
+            if param_name is None:
+                continue
             param_validator = event_validators.get(param_name)
-            if issubclass(param_validator, event_validators.EnumValidator):
+            if param_validator and issubclass(param_validator, event_validators.EnumValidator):
                 parameters[k] = event_validators.convert(param_name, v)
     return command_t(parameters=parameters).set_flags('from_python')
 """.format(command_name=command_name, command_type=command_t.__name__, command_params_list=command_params_list,

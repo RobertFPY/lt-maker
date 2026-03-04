@@ -840,7 +840,7 @@ class DefaultSoundController(SoundController):
     def load_songs(self, nids: Set[NID]):
         MUSIC.preload(nids)
 
-    def flush(self, should_interrupt_current_song=True):
+    def flush(self, should_interrupt_current_song:bool=True) -> None:
         """Simply flushes the song cache from memory - this prevents memory bloat.
 
         Args:
@@ -851,7 +851,7 @@ class DefaultSoundController(SoundController):
         if not should_interrupt_current_song:
             current_song = self.get_current_song()
             if current_song:
-                print(current_song.nid)
+                logging.info(current_song.nid)
                 current_song_nid = current_song.nid
         MUSIC.clear(current_song_nid)
         SFX.clear()

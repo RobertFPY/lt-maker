@@ -2063,10 +2063,12 @@ class PrepGBA(Choice):
     def move_up(self, first_push=True):
         if super().move_up(first_push):
             self._update_info_desc()
+            return True
 
     def move_down(self, first_push=True):
         if super().move_down(first_push):
             self._update_info_desc()
+            return True
 
     def get_menu_width(self):
         return 64

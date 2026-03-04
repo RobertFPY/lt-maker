@@ -316,8 +316,9 @@ class NewUnitProperties(QWidget):
             view.selectionModel().select(selection, QItemSelectionModel.Select)
             selected_indexes = view.selectionModel().selectedIndexes()
 
+        visible_stat_nids = list(DB.stats.get_visible_stats().keys())
         for index in selected_indexes:
-            stat_nid = DB.stats[index.column()].nid
+            stat_nid = visible_stat_nids[index.column()]
             if index.row() == 0:
                 class_value = my_klass.bases.get(stat_nid, 0)
             elif index.row() == 1:

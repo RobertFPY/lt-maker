@@ -4,6 +4,7 @@ from app.utilities.typing import NID
 
 import functools
 import logging
+import pickle
 import sys
 import app.engine.config as cf
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type
@@ -81,7 +82,21 @@ class Action():
         elif isinstance(value, Action):
             value = ('action', value.save())
         else:
-            value = ('generic', value)
+            # verify value can be pickled
+            # complex objects (e.g., PlaybackBrush containing game objects
+            # with cached pygame surfaces) may not be picklable
+            # so we just fail gracefully - nothing of value has been lost
+            # becase the GenericTrigger on the restore path ditches
+            # the list of PlaybackBrush in the old impl anyway
+            # if pickling these objects is desired, then that burden falls upon
+            # the impl of the class itself, not in this routine
+            try:
+                pickle.dumps(value)
+                value = ('generic', value)
+            # shouldn't happen with our guard upstream, but just in case
+            except (TypeError, pickle.PicklingError, AttributeError):
+                logging.error(f"save_obj: dropping unpicklable value of type {type(value).__name__}: {value}")
+                value = ('generic', None)
         return value
 
     def save(self) -> Tuple[str, Dict[str, Tuple[str, Any]]]:

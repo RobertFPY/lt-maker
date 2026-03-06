@@ -123,6 +123,7 @@ class WeaponType(Prefab):
     force_melee_anim: bool = False
     
     hide_from_display: bool = False
+    hide_from_convoy: bool = False
 
     rank_bonus: CombatBonusList = None
     advantage: CombatBonusList = None
@@ -168,6 +169,10 @@ class WeaponCatalog(Data[WeaponType]):
     
     def get_visible_weapon_types(self) -> dict:
         visible_weapon_types = {nid : weapon_type for nid, weapon_type in self._dict.items() if not weapon_type.hide_from_display}
+        return visible_weapon_types
+    
+    def get_convoy_visible_weapon_types(self) -> dict:
+        visible_weapon_types = {nid : weapon_type for nid, weapon_type in self._dict.items() if not weapon_type.hide_from_convoy and not weapon_type.hide_from_display}
         return visible_weapon_types
 
 # === WEAPON EXPERIENCE GAINED ===

@@ -53,6 +53,11 @@ class WeaponProperties(QWidget):
         self.hide_from_display_box.edit.stateChanged.connect(self.hide_from_display_changed)
         self.hide_from_display_box.setToolTip(_("Hides this weapon type from the Convoy and the Info Menu displays. Useful for dummy or hidden weapon types."))
         name_section.addWidget(self.hide_from_display_box)
+        
+        self.hide_from_convoy_box = PropertyCheckBox(_("Hide From Convoy"), QCheckBox, self)
+        self.hide_from_convoy_box.edit.stateChanged.connect(self.hide_from_convoy_changed)
+        self.hide_from_convoy_box.setToolTip(_("Hides this weapon type from the Convoy display only, but still appears in the Info Menu. Useful for dummy or hidden weapon types."))
+        name_section.addWidget(self.hide_from_convoy_box)
 
         attrs = ('weapon_rank', 'damage', 'resist', 'accuracy', 'avoid', 'crit', 'dodge', 'attack_speed', 'defense_speed')
         self.rank_bonus = AppendMultiListWidget(CombatBonusList(), _("Rank Bonus"), attrs, RankBonusDelegate, self)
@@ -95,12 +100,16 @@ class WeaponProperties(QWidget):
     def hide_from_display_changed(self, state):
         self.current.hide_from_display = bool(state)
 
+    def hide_from_convoy_changed(self, state):
+        self.current.hide_from_convoy = bool(state)
+
     def set_current(self, current):
         self.current = current
         self.nid_box.edit.setText(current.nid)
         self.name_box.edit.setText(current.name)
         self.force_melee_anim_box.edit.setChecked(bool(current.force_melee_anim))
         self.hide_from_display_box.edit.setChecked(bool(current.hide_from_display))
+        self.hide_from_convoy_box.edit.setChecked(bool(current.hide_from_convoy))
         self.rank_bonus.set_current(current.rank_bonus)
         self.advantage.set_current(current.advantage)
         self.disadvantage.set_current(current.disadvantage)

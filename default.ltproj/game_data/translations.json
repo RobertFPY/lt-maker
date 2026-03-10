@@ -252,6 +252,10 @@
         "text": "Hit points. The unit is removed from the battle if HP reaches 0."
     },
     {
+        "nid": "MANA_desc",
+        "text": "Mana points. Can be removed from the info menu by deleting MANA in the Equations editor."
+    },
+    {
         "nid": "armory_opener",
         "text": "This is an armory.{w}{clear}Buy something, would ya?"
     },

@@ -190,7 +190,7 @@ class StatusAfterCombatOnHit(StatusOnHit):
 
 class Shove(ItemComponent):
     nid = 'shove'
-    desc = "Item shoves target on hit"
+    desc = "Item shoves target up to X tiles on hit. Target stops short if blocked."
     tag = ItemTags.SPECIAL
 
     expose = ComponentType.Int
@@ -206,9 +206,17 @@ class Shove(ItemComponent):
                 actions.append(action.ForcedMovement(target, new_position))
                 playback.append(pb.ShoveHit(unit, item, target))
 
+class BypassShove(Shove):
+    nid = 'bypass_shove'
+    desc = "Item shoves target exactly X tiles on hit. Fails to move the target if the destination tile is blocked, but ignores the tiles between."
+    tag = ItemTags.SPECIAL
+
+    def _check_shove(self, unit_to_move, anchor_pos, magnitude):
+        return game.query_engine.check_bypass_shove(unit_to_move, anchor_pos, magnitude)
+
 class ShoveOnEndCombat(Shove):
     nid = 'shove_on_end_combat'
-    desc = "Item shoves target at the end of combat"
+    desc = "Item shoves target X tiles at the end of combat. Target stops short if blocked."
     tag = ItemTags.SPECIAL
 
     expose = ComponentType.Int
@@ -223,9 +231,9 @@ class ShoveOnEndCombat(Shove):
     def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         pass
 
-class ShoveTargetRestrict(Shove):
+class ShoveTargetRestrict(ItemComponent):
     nid = 'shove_target_restrict'
-    desc = "Works the same as shove but will not allow the item to be selected if the action cannot be performed."
+    desc = "Prevents use of the item if the target is blocked from moving away from you."
     tag = ItemTags.SPECIAL
 
     expose = ComponentType.Int
@@ -243,11 +251,25 @@ class ShoveTargetRestrict(Shove):
                 return True
         return False
 
-    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
-        pass
+class BypassShoveTargetRestrict(ItemComponent):
+    nid = 'bypass_shove_target_restrict'
+    desc = "Prevents use of the item if a BypassShove would fail."
+    tag = ItemTags.SPECIAL
 
-    def end_combat(self, playback, unit, item, target, item2, mode):
-        pass
+    expose = ComponentType.Int
+    value = 1
+
+    def target_restrict(self, unit, item, def_pos, splash) -> bool:
+        defender = game.board.get_unit(def_pos)
+        if defender and game.query_engine.check_bypass_shove(defender, unit.position, self.value) and \
+                not skill_system.ignore_forced_movement(defender):
+            return True
+        for s_pos in splash:
+            s = game.board.get_unit(s_pos)
+            if game.query_engine.check_bypass_shove(s, unit.position, self.value) and \
+                    not skill_system.ignore_forced_movement(s):
+                return True
+        return False
 
 class Swap(ItemComponent):
     nid = 'swap'

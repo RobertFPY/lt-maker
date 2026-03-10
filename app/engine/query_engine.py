@@ -434,7 +434,7 @@ class GameQueryEngine():
         return ACHIEVEMENTS.check_achievement(nid)
 
     def check_shove(self, target, anchor_pos, magnitude) -> Optional[Pos]:
-        """Returns the position to be pushed to and the distance to be traveled.
+        """Calculates where a unit would go if pushed <magnitude> tiles, respecting obstacles.
 
         Args:
             target: GlobalUnit
@@ -468,3 +468,31 @@ class GameQueryEngine():
                 break
 
         return result
+
+    def check_bypass_shove(self, target, anchor_pos, magnitude) -> Optional[Pos]:
+        """Checks a destination <magnitude> tiles away for obstacles.
+
+        Args:
+            target: GlobalUnit
+            anchor_pos: Position of the source of the push
+            magnitude: Distance to push
+
+        Returns:
+            Optional[Pos]: the destination or None
+        """
+        unit_to_move = self._resolve_to_unit(target)
+        if not unit_to_move:
+            return None
+
+        from app.engine.movement import movement_funcs
+        offset_x = utils.clamp(unit_to_move.position[0] - anchor_pos[0], -1, 1)
+        offset_y = utils.clamp(unit_to_move.position[1] - anchor_pos[1], -1, 1)
+        new_position = (unit_to_move.position[0] + offset_x * magnitude,
+                        unit_to_move.position[1] + offset_y * magnitude)
+
+        mcost = movement_funcs.get_mcost(unit_to_move, new_position)
+        if self.game.board.check_bounds(new_position) and \
+                not self.game.board.get_unit(new_position) and \
+                mcost <= unit_to_move.get_movement():
+            return new_position
+        return None

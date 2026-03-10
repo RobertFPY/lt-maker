@@ -659,7 +659,9 @@ class InfoMenuState(State):
             help_box = help_menu.StatDialog(desc_text or ('%s_desc' % stat_nid), contribution)
             self.info_graph.register((96 + 72, 16 * idx + 24, 64, 16), help_box, state)
 
-        other_stats = ['RAT']
+        other_stats = []
+        if DB.constants.value('enable_rating'):
+            other_stats.append('RAT')
         if DB.constants.value('talk_display'):
             other_stats.insert(0, 'TALK')
         if DB.constants.value('pairup') and DB.constants.value('attack_stance_only'):

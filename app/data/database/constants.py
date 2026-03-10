@@ -119,6 +119,7 @@ constants = ConstantCatalog([
     Constant('autogenerate_grey_map_sprites', 'Automatically generate grey "wait" map sprites', ConstantType.BOOL, True, ConstantTag.AESTHETIC),
     Constant('translucent_unit_sprite', "A phantom of current unit will appear at cursor's position", ConstantType.BOOL, False, ConstantTag.AESTHETIC),
     Constant('talk_display', "If enough room, display who a unit can talk to in info menu", ConstantType.BOOL, False, ConstantTag.AESTHETIC),
+    Constant('enable_rating', "Enable rating display in info menu", ConstantType.BOOL, True, ConstantTag.AESTHETIC),
     Constant('show_abilities', "Display range of extra abilities", ConstantType.BOOL, False, ConstantTag.AESTHETIC),
     Constant('info_menu_blink', "Portraits will blink in info menu", ConstantType.BOOL, False, ConstantTag.AESTHETIC),
     Constant('convoy_on_death', "Items held by dead player units are sent to convoy", ConstantType.BOOL, ConstantTag.OTHER),

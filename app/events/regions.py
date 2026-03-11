@@ -12,7 +12,19 @@ class RegionType(str, Enum):
     FOG = 'fog'
     VISION = 'vision'
     TERRAIN = 'terrain'
-
+    
+class RegionHighlight(str, Enum):
+    NONE = 'none'
+    RED = "red"
+    LIGHTRED = "lightred"
+    YELLOW = "yellow"
+    LIGHTYELLOW = "lightyellow"
+    GREEN = "green"
+    LIGHTGREEN = "lightgreen"   
+    BLUE = "blue"
+    LIGHTBLUE = "lightblue"
+    LIGHTPURPLE = "lightpurple"
+    
 class Region(Prefab):
     """
     A region prefab that has not been instantiated as a Region Object yet
@@ -23,6 +35,7 @@ class Region(Prefab):
         position (Pos): The position of the region object. Defaults to None.
         size (Tuple[int, int]): The size of the region object in tiles. Defaults to [1, 1].
         sub_nid (str): Extra data for the region object. Defaults to None.
+        highlight (str): Highlight color to add to region.  Defaults to None.
         condition (str): The condition for the region object to be enabled. Defaults to 'True'.
         time_left (Optional[int]): The number of turns left for the region object. Defaults to None, which means it is permanent.
         only_once (bool): Flag indicating if the region object triggers only once. Defaults to False.
@@ -36,6 +49,7 @@ class Region(Prefab):
         self.size: Tuple[int, int] = [1, 1]
 
         self.sub_nid: str = None
+        self.highlight = None
         self.condition: str = 'True'
         self.time_left: Optional[int] = None
         self.only_once: bool = False

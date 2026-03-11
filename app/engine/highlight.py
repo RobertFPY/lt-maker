@@ -141,12 +141,17 @@ class HighlightController():
         for position in self.formation_highlights:
             surf.blit(formation_image, (position[0] * TILEWIDTH - cull_rect[0], position[1] * TILEHEIGHT - cull_rect[1]))
 
-        # Handle escape Highlight
-        escape_image = SPRITES.get('highlight_yellow')
+        # Handle Region Highlights
+        escape_image = SPRITES.get('highlight_yellow') #Not needed since it can now be achieved through the region highlight, but kept for backward compatability
         rect = (self.update_idx//4 * TILEWIDTH, 0, TILEWIDTH, TILEHEIGHT)
         escape_image = engine.subsurface(escape_image, rect)
         for region in game.level.regions:
-            if (region.region_type == RegionType.EVENT and region.sub_nid in ('Escape', 'Arrive')):
+            if region.highlight is not None and region.region_type in (RegionType.NORMAL, RegionType.STATUS, RegionType.TERRAIN, RegionType.EVENT):
+                highlight_image = SPRITES.get('highlight_' + region.highlight)
+                highlight_image = engine.subsurface(highlight_image, rect)
+                for position in region.get_all_positions():
+                    surf.blit(highlight_image, (position[0] * TILEWIDTH - cull_rect[0], position[1] * TILEHEIGHT - cull_rect[1]))
+            elif (region.region_type == RegionType.EVENT and region.sub_nid in ('Escape', 'Arrive')):
                 for position in region.get_all_positions():
                     surf.blit(escape_image, (position[0] * TILEWIDTH - cull_rect[0], position[1] * TILEHEIGHT - cull_rect[1]))
 

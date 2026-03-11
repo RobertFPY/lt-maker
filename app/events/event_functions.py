@@ -2691,7 +2691,7 @@ def remove_market_item(self: Event, item, stock: int=0, flags=None):
 def clear_market_items(self: Event, flags=None):
     self.game.market_items.clear()
 
-def add_region(self: Event, region, position, size: Tuple, region_type, string=None, time_left=None, hide_time=False, flags=None):
+def add_region(self: Event, region, position, size: Tuple, region_type, string=None, highlight = None, time_left=None, hide_time=False, flags=None):
     flags = flags or set()
 
     if region in self.game.level.regions:
@@ -2707,6 +2707,12 @@ def add_region(self: Event, region, position, size: Tuple, region_type, string=N
     new_region.position = position
     new_region.size = size
     new_region.sub_nid = sub_region_type
+    new_region.highlight = None
+    if highlight is not None and highlight != regions.RegionHighlight.NONE:
+        if highlight in list(regions.RegionHighlight):
+            new_region.highlight = highlight
+        else:
+            self.logger.warning("Could not find highlight anim %s%s", "highlight_", highlight)
     new_region.time_left = time_left
     new_region.hide_time = hide_time
 

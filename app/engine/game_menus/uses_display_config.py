@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from enum import Enum
 from typing import Callable, Optional
 from dataclasses import dataclass
@@ -27,6 +29,16 @@ class UsesDisplayConfig:
 
     unit: Optional[UnitObject]
     item: Optional[ItemObject]
+
+    def __add__(self, other: UsesDisplayConfig) -> UsesDisplayConfig:
+        return UsesDisplayConfig(
+            get_curr_uses=other.get_curr_uses if other.get_curr_uses is not None else self.get_curr_uses,
+            delim=other.delim if other.delim is not None else self.delim,
+            get_max_uses=other.get_max_uses if other.get_max_uses is not None else self.get_max_uses,
+            get_uses_color=other.get_uses_color if other.get_uses_color is not None else self.get_uses_color,
+            unit=self.unit,
+            item=self.item,
+        )
 
     def get_uses(self) -> str:
         return str(self.get_curr_uses(self.unit, self.item))

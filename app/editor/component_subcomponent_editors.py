@@ -11,6 +11,7 @@ from PyQt5.QtCore import Qt, pyqtSignal
 from app.data.database.components import ComponentType
 from app.data.database.database import DB
 from app.data.resources.resources import RESOURCES
+from app.engine.fonts import get_text_color_options
 from app.editor.component_editor_delegates import (AffinityDelegate,
                                                    BaseComponentDelegate,
                                                    ClassDelegate, ItemDelegate,
@@ -252,6 +253,26 @@ class ShapeSubcomponentEditor(BaseSubcomponentEditor):
         self.option_dict[self.field_name] = self.editor.shape()
 
 
+class TextColorSubcomponentEditor(BaseSubcomponentEditor):
+    @override
+    def _create_editor(self, hbox):
+        self.editor = ComboBox(self)
+        choices = get_text_color_options()
+        for choice in choices:
+            self.editor.addItem(choice)
+        width = utils.clamp(self.editor.minimumSizeHint().width(
+        ) + DROP_DOWN_BUFFER, MIN_DROP_DOWN_WIDTH, MAX_DROP_DOWN_WIDTH)
+        self.editor.setMaximumWidth(width)
+        if not self.option_dict.get(self.field_name):
+            self.option_dict[self.field_name] = choices[0]
+        self.editor.setValue(self.option_dict[self.field_name])
+        self.editor.currentTextChanged.connect(self.on_value_changed)
+        hbox.addWidget(self.editor)
+
+    def on_value_changed(self, val):
+        self.option_dict[self.field_name] = val
+
+
 class BaseContainerSubcomponentEditor(BaseSubcomponentEditor):
     def __init__(self, field_name: str, option_dict: Dict[str, Any], delegate: BaseComponentDelegate) -> None:
         self.delegate = delegate
@@ -300,7 +321,8 @@ EDITOR_MAP: Dict[ComponentType, BaseSubcomponentEditor] = {
     ComponentType.Event: EventSubcomponentEditor,
     ComponentType.Sound: SoundSubcomponentEditor,
     ComponentType.Affinity: AffinitySubcomponentEditor,
-    ComponentType.Shape: ShapeSubcomponentEditor
+    ComponentType.Shape: ShapeSubcomponentEditor,
+    ComponentType.TextColor: TextColorSubcomponentEditor
 }
 
 CONTAINER_EDITOR_MAP: Dict[ComponentType, BaseContainerSubcomponentEditor] = {

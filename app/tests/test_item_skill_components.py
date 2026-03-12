@@ -347,6 +347,36 @@ class ItemSkillComponentTests(unittest.TestCase):
         self.assertEqual(25, item_system.crit(mock_unit, mock_item))
         self.assertEqual(4, item_system.modify_weapon_triangle(mock_unit, mock_item))
 
+    def test_object_merge_policy(self) -> None:
+        from app.engine.component_system.utils import object_merge
+        from app.engine.game_menus.uses_display_config import UsesDisplayConfig
+
+        mock_unit = MagicMock()
+        mock_item = MagicMock()
+
+        func_a = lambda u, i: 'a'
+        func_b = lambda u, i: 'b'
+        func_c = lambda u, i: 'c'
+        func_d = lambda u, i: 'd'
+
+        config_1 = UsesDisplayConfig(func_a, '/', func_b, func_c, mock_unit, mock_item)
+        config_2 = UsesDisplayConfig(None, '-', None, func_d, mock_unit, mock_item)
+
+        # empty list returns None
+        self.assertIsNone(object_merge([]))
+
+        # single item returns itself
+        self.assertIs(object_merge([config_1]), config_1)
+
+        # right side overrides non-None fields; None fields fall back to left
+        result = object_merge([config_1, config_2])
+        self.assertIs(result.get_curr_uses, func_a)   # config_2 is None -> keep config_1's
+        self.assertEqual(result.delim, '-')            # config_2 overrides
+        self.assertIs(result.get_max_uses, func_b)     # config_2 is None -> keep config_1's
+        self.assertIs(result.get_uses_color, func_d)   # config_2 overrides
+        self.assertIs(result.unit, mock_unit)
+        self.assertIs(result.item, mock_item)
+
     def test_item_tags(self) -> None:
         mock_item = ItemObject("test", "Test", "Test", None, (0, 0), Data([ItemTag(['weapon'])]))
         self.assertTrue('weapon' in mock_item.tags)

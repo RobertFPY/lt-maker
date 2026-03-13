@@ -56,6 +56,7 @@ class DatabaseValidatorEngine():
             CType.Terrain: _nid_in_data(db.terrain),
             CType.Event: _nid_in_data(db.events),
             CType.Lore: _nid_in_data(db.lore),
+            CType.TextColor: lambda color: bool(resources.fonts.get('text')) and color in resources.fonts.get('text').palettes,
 
             RType.ICONS16: _nid_in_data(resources.icons16),
             RType.ICONS32: _nid_in_data(resources.icons32),

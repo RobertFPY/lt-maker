@@ -3,6 +3,7 @@ import sys
 from app.editor.recent_project_dialog import choose_recent_project
 
 from app.editor.editor_locale import init_locale
+from app.engine import engine
 from app.engine.codegen import source_generator
 
 from PyQt5.QtWidgets import QApplication
@@ -39,6 +40,8 @@ if __name__ == '__main__':
     initialize_icon()
     code_gen()
     initialize_logger()
+    # init pygame for some editor features that rely on it, like font rendering
+    engine.init()
 
     lockfile = QLockFile(QDir.tempPath() + '/lt-maker.lock')
     if lockfile.tryLock(100):

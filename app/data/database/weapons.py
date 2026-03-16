@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from app.utilities.data import Data, Prefab
 from app.utilities import str_utils
@@ -125,9 +125,9 @@ class WeaponType(Prefab):
     hide_from_display: bool = False
     hide_from_convoy: bool = False
 
-    rank_bonus: CombatBonusList = None
-    advantage: CombatBonusList = None
-    disadvantage: CombatBonusList = None
+    rank_bonus: CombatBonusList = field(default_factory=CombatBonusList)
+    advantage: CombatBonusList = field(default_factory=CombatBonusList)
+    disadvantage: CombatBonusList = field(default_factory=CombatBonusList)
 
     icon_nid: str = None
     icon_index: tuple = (0, 0)
@@ -161,9 +161,7 @@ class WeaponCatalog(Data[WeaponType]):
     def create_new(self, db):
         nids = [d.nid for d in self]
         nid = name = str_utils.get_next_name("New Weapon Type", nids)
-        new_weapon = WeaponType(
-            nid, name, False, False, CombatBonusList(),
-            CombatBonusList(), CombatBonusList())
+        new_weapon = WeaponType(nid, name)
         self.append(new_weapon)
         return new_weapon
     

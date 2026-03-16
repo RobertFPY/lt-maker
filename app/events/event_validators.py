@@ -18,7 +18,7 @@ from app.sprites import SPRITES
 from app.utilities import str_utils
 from app.utilities.enums import Alignments
 from app.utilities.typing import NID, Point
-from app.events.regions import RegionType as RegionTypeEnum
+from app.events.regions import RegionType as RegionTypeEnum, RegionHighlight as HighlightTypeEnum
 
 class Validator():
     desc = ""
@@ -964,6 +964,9 @@ class RemoveType(OptionValidator):
 
 class RegionType(OptionValidator):
     valid = [r.value for r in RegionTypeEnum]
+    
+class HighlightType(OptionValidator):
+    valid = [r.value for r in HighlightTypeEnum]
 
 class Weather(OptionValidator):
     valid = ["rain", "sand", "snow", "fire", "light", 

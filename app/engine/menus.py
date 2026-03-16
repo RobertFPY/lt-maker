@@ -1355,7 +1355,7 @@ class Convoy():
         self.takes_input = True
         self.include_other_units = include_other_units
 
-        self.order = [w.nid for w in DB.weapons.get_visible_weapon_types().values()]
+        self.order = [w.nid for w in DB.weapons.get_convoy_visible_weapon_types().values()]
         self.build_menus()
 
         self._info_flag = False  # Whether to show item info
@@ -2063,10 +2063,12 @@ class PrepGBA(Choice):
     def move_up(self, first_push=True):
         if super().move_up(first_push):
             self._update_info_desc()
+            return True
 
     def move_down(self, first_push=True):
         if super().move_down(first_push):
             self._update_info_desc()
+            return True
 
     def get_menu_width(self):
         return 64

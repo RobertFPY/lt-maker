@@ -40,13 +40,16 @@ class NewPortraitDatabase(NewEditorTab):
         return None
 
     def create_new(self, nid):
-        if self.data.get(nid):
-            QMessageBox.warning(self, 'Warning', 'ID %s already in use' % nid)
-            return False
-        portrait = portrait_model.create_new(self)
-        if portrait:
-            self.data.append(portrait)
-            return portrait.nid
+        portraits = portrait_model.create_new(self)
+        if portraits:
+            for portrait in portraits:
+                if self.data.get(portrait.nid):
+                    # i don't think this ever happens, anyway?
+                    # but i preserve it here just in case
+                    QMessageBox.warning(self, 'Warning', 'ID %s already in use' % portrait.nid)
+                    return False
+                self.data.append(portrait)
+            return [portrait.nid for portrait in portraits]
         return False
 
     def _on_nid_changed(self, old_nid: NID, new_nid: NID):

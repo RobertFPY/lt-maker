@@ -68,27 +68,37 @@ class TitleStartState(State):
         game.state.refresh()
 
         # Title Screen Intro Cinematic
+        self._events_triggered = False
         if game.memory.get('title_intro_already_played'):
             game.state.change('transition_in')
         else:
             game.sweep()
-            game.events.trigger(triggers.OnTitleScreen())
+            self._events_triggered = game.events.trigger(triggers.OnTitleScreen())
             # On startup occurs before on title_screen
-            game.events.trigger(triggers.OnStartup())
+            self._events_triggered = game.events.trigger(triggers.OnStartup()) or self._events_triggered
             game.memory['title_intro_already_played'] = True
 
+        # delay title music until after on_startup/on_title_screen events complete
+        # to avoid a brief stutter of title music before the events fire
+        if not self._events_triggered:
+            self._start_title_music()
+
+        return 'repeat'
+
+    def _start_title_music(self):
         get_sound_thread().clear()
         if RECORDS.get('_music_title_screen'):
             get_sound_thread().fade_in(RECORDS.get('_music_title_screen'), fade_in=50)
         elif DB.constants.value('music_main'):
             get_sound_thread().fade_in(DB.constants.value('music_main'), fade_in=50)
 
-        return 'repeat'
-
     def begin(self):
         if game.state.from_transition():
             game.state.change('transition_in')
             return 'repeat'
+        if self._events_triggered:
+            self._events_triggered = False
+            self._start_title_music()
 
     def take_input(self, event):
         if event:

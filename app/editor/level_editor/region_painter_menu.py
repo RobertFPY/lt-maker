@@ -5,7 +5,7 @@ from PyQt5.QtGui import QIcon, QColor, QPixmap
 
 from app.data.database.database import DB
 from app.editor.code_line_edit import CodeLineEdit
-from app.events.regions import Region, RegionType
+from app.events.regions import Region, RegionType, RegionHighlight
 
 from app.utilities import utils, str_utils
 from app.utilities.data import Data
@@ -207,6 +207,12 @@ class ModifyRegionWidget(QWidget):
         #     self.sub_nid_box.edit.setText(self.current.sub_nid)
         self.sub_nid_box.edit.textChanged.connect(self.sub_nid_changed)
         layout.addWidget(self.sub_nid_box)
+        
+        self.highlight_box = PropertyBox("Highlight", ComboBox, self)
+        self.highlight_box.edit.addItems(list(RegionHighlight))
+        self.highlight_box.edit.currentIndexChanged.connect(
+            self.highlight_changed)
+        layout.addWidget(self.highlight_box)
 
         self.condition_box = PropertyBox("Condition", CodeLineEdit, self)
         # self.condition_box.edit.setText(self.current.condition)
@@ -238,6 +244,7 @@ class ModifyRegionWidget(QWidget):
         layout.addWidget(self.terrain_box)
 
         self.sub_nid_box.hide()
+        self.highlight_box.hide()
         self.condition_box.hide()
         self.only_once_box.hide()
         self.interrupt_move_box.hide()
@@ -270,11 +277,14 @@ class ModifyRegionWidget(QWidget):
         self.current.region_type = self.region_type_box.edit.currentText().lower()
         # Just hide them all
         self.sub_nid_box.hide()
+        self.highlight_box.hide()
         self.condition_box.hide()
         self.only_once_box.hide()
         self.interrupt_move_box.hide()
         self.status_box.hide()
         self.terrain_box.hide()
+        if self.current.region_type in (RegionType.NORMAL, RegionType.STATUS, RegionType.TERRAIN, RegionType.EVENT):
+            self.highlight_box.show()
         if self.current.region_type in (RegionType.NORMAL, RegionType.FORMATION):
             pass
         elif self.current.region_type == RegionType.STATUS:
@@ -296,6 +306,12 @@ class ModifyRegionWidget(QWidget):
     def sub_nid_changed(self, text):
         self.current.sub_nid = text
         self.window.update_list()
+
+    def highlight_changed(self, index):
+        if self.highlight_box.edit.currentText() != 'none':
+            self.current.highlight = self.highlight_box.edit.currentText()
+        else:
+            self.current.highlight = None
 
     def condition_changed(self, text):
         self.current.condition = text
@@ -329,6 +345,7 @@ class ModifyRegionWidget(QWidget):
         self.current = current
         self.nid_box.edit.setText(current.nid)
         self.region_type_box.edit.setValue(current.region_type)
+        self.highlight_box.edit.setValue(current.highlight)
         self.condition_box.edit.setPlainText(current.condition)
         self.time_left_box.edit.setText(str(current.time_left) if current.time_left is not None else '')
         self.only_once_box.edit.setChecked(bool(current.only_once))

@@ -14,6 +14,18 @@ from PyQt5.QtWidgets import (QCheckBox, QDialog, QGridLayout, QLineEdit,
                              QWidget)
 
 
+class IconSheetList(QListWidget):
+    def __init__(self, delete_func, parent=None):
+        super().__init__(parent)
+        self._delete_func = delete_func
+
+    def keyPressEvent(self, event):
+        super().keyPressEvent(event)
+        if event.key() == Qt.Key_Delete:
+            current = self.currentItem()
+            if current:
+                self._delete_func(current.text())
+
 class IconTab(QWidget):
     side_menu_enabled: bool = False
 
@@ -52,7 +64,7 @@ class IconTab(QWidget):
 
             left_layout.addWidget(self.icon_sheet_search)
 
-            self.icon_sheet_list = QListWidget()
+            self.icon_sheet_list = IconSheetList(self.delete_icon_sheet)
             for i, icon_sheet in enumerate(data):
                 self.icon_sheet_list.insertItem(i, icon_sheet.nid)
             self.icon_sheet_list.itemSelectionChanged.connect(self.on_icon_sheet_selection_changed)
@@ -71,6 +83,13 @@ class IconTab(QWidget):
 
         if initial_icon_nid and self.side_menu_enabled:
             self.model.setFilterRegularExpression(re.escape(initial_icon_nid))
+
+    def delete_icon_sheet(self, nid):
+        for i, icon in enumerate(self.full_model.sub_data):
+            if icon.parent_nid == nid or icon.nid == nid:
+                self.full_model.delete(i)
+                self.update_list()
+                return
 
     def on_icon_sheet_selection_changed(self):
         item = self.icon_sheet_list.currentItem()

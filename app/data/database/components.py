@@ -37,6 +37,7 @@ class ComponentType(Enum):
     Shape = 26 #List of lists of [x,y] coordinates
     StatFloat = 27 # Special handling for stat as float
     StatString = 28 # Special handling for stat as string
+    TextColor = 29 # Stored as a text palette name for the default text font
     Event = 80
     List = 100  # List containing Items
     Dict = 101  # List of Tuples of [Item, integer]

@@ -138,13 +138,20 @@ class Event():
     def unit1(self):
         return self.unit
 
+    # these keys in local_args shouldn't be saved because they
+    # contain non-serializable ephemereal data ('playback' contains
+    # PlaybackBrush objects with nested game object references
+    # that may cache pygame surfaces), hence our mysterious pickle bug...
+    _EXCLUDE_FROM_SAVE = frozenset({'playback'})
+
     def save(self):
         ser_dict = {}
         ser_dict['nid'] = self.nid
         ser_dict['unit1'] = self.unit.nid if self.unit else None
         ser_dict['unit2'] = self.unit2.nid if self.unit2 else None
         ser_dict['position'] = self.position
-        ser_dict['local_args'] = {k: action.Action.save_obj(v) for k, v in self.local_args.items()}
+        ser_dict['local_args'] = {k: action.Action.save_obj(v) for k, v in self.local_args.items()
+                                  if k not in self._EXCLUDE_FROM_SAVE}
         ser_dict['processor_state'] = self.processor.save()
         return ser_dict
 

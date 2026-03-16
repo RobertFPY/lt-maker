@@ -1,6 +1,6 @@
 import functools
 import re
-from typing import Dict, List, Tuple
+from typing import Any, Collection, Dict, List, Optional, Tuple
 
 
 RAW_NEWLINE = '\u2029'
@@ -9,7 +9,7 @@ SHIFT_NEWLINE = '\u2028'
 def convert_raw_text_newlines(s: str) -> str:
     return s.replace('\u2029', '\n')
 
-def get_next_name(name, names, infix='_'):
+def get_next_name(name: str, names: Collection[str], infix: str = '_') -> str:
     if name not in names:
         return name
     else:
@@ -22,7 +22,7 @@ def get_next_name(name, names, infix='_'):
                 return test_name
             counter += 1
 
-def get_next_int(name, names):
+def get_next_int(name: str, names: Collection[str]) -> str:
     if name not in names:
         return name
     else:
@@ -33,7 +33,7 @@ def get_next_int(name, names):
                 return test_name
             counter += 1
 
-def get_next_generic_nid(name: str, names):
+def get_next_generic_nid(name: str, names: Collection[str]) -> str:
     if name not in names:
         return name
     elif is_int(name):
@@ -46,7 +46,7 @@ def get_next_generic_nid(name: str, names):
     else:
         return get_next_name(name, names)
 
-def find_last_number(s: str):
+def find_last_number(s: str) -> Optional[int]:
     last_number = re.findall(r'\d+$', s)
     if last_number:
         return int(last_number[-1])
@@ -65,7 +65,7 @@ def intify(s: str) -> List[int]:
     vals = s.split(',')
     return [int(i) for i in vals]
 
-def skill_parser(s: str) -> list:
+def skill_parser(s: str) -> List[List[Any]]:
     if s is not None:
         each_skill = [each.split(',') for each in s.split(';')]
         split_line = [[int(s_l[0]), s_l[1]] for s_l in each_skill]
@@ -108,17 +108,17 @@ def camel_to_snake(name: str) -> str:
 def snake_to_readable(s: str) -> str:
     return s.replace('_', ' ').title()
 
-def nested_expr(s, opener, closer):
+def nested_expr(s: str, opener: str, closer: str) -> Any:
     # Returns a nested list
     assert opener != closer
     assert len(opener) == 1
     assert len(closer) == 1
-    main_list = []
+    main_list: List[Any] = []
     list_stack = [main_list]
     current_list = main_list
     for character in s:
         if character == opener:
-            new_list = []
+            new_list: List[Any] = []
             list_stack.append(new_list)
             current_list.append(new_list)
             current_list = new_list
@@ -129,7 +129,7 @@ def nested_expr(s, opener, closer):
             current_list.append(character)
     return main_list[0]
 
-def matched_expr(s: str, opener: str, closer: str):
+def matched_expr(s: str, opener: str, closer: str) -> List[str]:
     # returns all strings bounded by balanced openers, closers
     # e.g. "{bac{def}jk} {lmno}" would return "[bac{def}jk, lmno]", not "[bac{def, lmno]"
     assert opener != closer
@@ -152,7 +152,7 @@ def matched_expr(s: str, opener: str, closer: str):
             unclosed += 1
     return all_strs
 
-def matched_block_expr(s: str, opener: str, closer: str):
+def matched_block_expr(s: str, opener: str, closer: str) -> List[str]:
     # returns all strings bounded by balanced openers, closers
     # inclduding content not found within the openers and closers
     # e.g. "Hi{bac{def}jk}Waffle{lmno}" would return "[Hi, {bac{def}jk}, Waffle, {lmno}]""
@@ -184,7 +184,7 @@ def split_expr_on_comma(s: str) -> Tuple[str, str | None]:
        If string is poorly formed then garbage in garbage out
     """
     escape = False
-    in_quote = False
+    in_quote: Optional[str] = None
     brackets_stack = []
     for i, char in enumerate(s):
         if in_quote and escape:
@@ -193,7 +193,7 @@ def split_expr_on_comma(s: str) -> Tuple[str, str | None]:
             escape = True
         elif char == '"' or char == "'":
             if in_quote == char:
-                in_quote = False
+                in_quote = None
             elif not in_quote:
                 in_quote = char
         elif not in_quote and char in _OPENING_BRACKETS:
@@ -205,12 +205,12 @@ def split_expr_on_comma(s: str) -> Tuple[str, str | None]:
             return s[:i], s[i+1:]
     return s, None  # No comma found outside
 
-def remove_prefix(text: str, prefix: str):
+def remove_prefix(text: str, prefix: str) -> str:
     if text.startswith(prefix):
         return text[len(prefix):]
     return text
 
-def remove_all_matched(s: str, opener: str, closer: str):
+def remove_all_matched(s: str, opener: str, closer: str) -> str:
     """
     usage: `{d:{eval:f}.{eval:y}.` becomes `{d:..` - useful for determining which level of a nested eval we're in
     https://stackoverflow.com/questions/37528373/how-to-remove-all-text-between-the-outer-parentheses-in-a-string

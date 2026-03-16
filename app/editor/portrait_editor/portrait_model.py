@@ -92,25 +92,27 @@ def create_new(window):
     settings = MainSettingsController()
     starting_path = settings.get_last_open_path()
     fns, ok = QFileDialog.getOpenFileNames(window, "Select Portraits", starting_path, "PNG Files (*.png);;All Files(*)")
-    new_portrait = None
+    new_portraits = []
     if ok:
         for fn in fns:
             if fn.endswith('.png'):
                 nid = os.path.split(fn)[-1][:-4]
                 pix = QPixmap(fn)
-                nid = str_utils.get_next_name(nid, [d.nid for d in RESOURCES.portraits])
+                existing_nids = [d.nid for d in RESOURCES.portraits] + [p.nid for p in new_portraits]
+                nid = str_utils.get_next_name(nid, existing_nids)
                 if pix.width() == PORTRAIT_WIDTH and pix.height() == PORTRAIT_HEIGHT:
                     # Swap to use colorkey color if it's not
                     new_portrait = PortraitPrefab(nid, fn, pix)
                     auto_colorkey(new_portrait)
                     auto_frame_portrait(new_portrait)
+                    new_portraits.append(new_portrait)
                 else:
                     QMessageBox.critical(window, "Error", "Image is not correct size (128x112 px)")
             else:
                 QMessageBox.critical(window, "File Type Error!", "Portrait must be PNG format!")
         parent_dir = os.path.split(fns[-1])[0]
         settings.set_last_open_path(parent_dir)
-    return new_portrait
+    return new_portraits
 
 def check_delete(nid: NID, window) -> bool:
     # Check to see what is using me?

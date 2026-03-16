@@ -191,7 +191,7 @@ class StatModel(VirtualListModel):
             row = self._data[index.row()]  # row is a dict
             key = self._columns[index.column()]
             attr = self._rows[index.row()]
-            if attr == 'max_stats':
+            if attr == 'Stat Maximums':
                 val = row.get(key, DB.stats.get(key).maximum)
             else:
                 val = row.get(key, 0)

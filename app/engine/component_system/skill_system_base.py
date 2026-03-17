@@ -99,6 +99,14 @@ class Defaults():
         return 0
 
     @staticmethod
+    def empower_mana(unit1, unit2) -> int:
+        return 0
+
+    @staticmethod
+    def empower_mana_received(unit2, unit1) -> int:
+        return 0
+
+    @staticmethod
     def limit_maximum_range(unit, item) -> int:
         return 1000
 

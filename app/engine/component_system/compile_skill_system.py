@@ -88,6 +88,8 @@ SKILL_HOOKS: Dict[str, HookInfo] = {
     'empower_splash':                       HookInfo(['unit'], ResolvePolicy.NUMERIC_ACCUM),
     'empower_heal':                         HookInfo(['unit', 'target'], ResolvePolicy.NUMERIC_ACCUM),
     'empower_heal_received':                HookInfo(['unit', 'target'], ResolvePolicy.NUMERIC_ACCUM),
+    'empower_mana':                         HookInfo(['unit', 'target'], ResolvePolicy.NUMERIC_ACCUM),
+    'empower_mana_received':                HookInfo(['unit', 'target'], ResolvePolicy.NUMERIC_ACCUM),
     'modify_damage':                        HookInfo(['unit', 'item'], ResolvePolicy.NUMERIC_ACCUM),
     'modify_resist':                        HookInfo(['unit', 'item'], ResolvePolicy.NUMERIC_ACCUM),
     'modify_accuracy':                      HookInfo(['unit', 'item'], ResolvePolicy.NUMERIC_ACCUM),

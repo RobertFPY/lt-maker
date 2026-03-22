@@ -1,11 +1,14 @@
 import math
 import random
-from typing import List, Tuple
+import logging
+from dataclasses import dataclass
+from typing import List, Tuple, Dict, Optional
 from app.constants import WINWIDTH, WINHEIGHT
 from app.utilities import utils
 
 from app.data.resources.resources import RESOURCES
 from app.data.database.database import DB
+from app.data.database.supports import Affinity
 
 from app.engine.achievements import ACHIEVEMENTS
 
@@ -19,15 +22,17 @@ from app.engine.state import MapState
 from app.engine.game_state import game
 from app.engine import menus, base_surf, background, text_funcs, \
     image_mods, gui, icons, prep, record_book, unit_sprite, action, \
-    engine, equations
+    engine, equations, evaluate
 from app.engine.fluid_scroll import FluidScroll
 from app.engine.graphics.text.text_renderer import render_text
 from app.engine.persistent_records import RECORDS
+from app.engine.unit_sprite import MapSprite, load_map_sprite
+import app.engine.config as cf
 
 from app.utilities.utils import linspace
 from app.utilities.enums import HAlignment
-import app.engine.config as cf
 from app.events import triggers
+from app.events.mock_event import MockEvent
 
 def base_background():
     # build background
@@ -326,6 +331,13 @@ class BaseConvosChildState(State):
         return surf
 
 
+@dataclass
+class SupportPartner:
+    name: str
+    affinity: Optional[Affinity]
+    map_sprite: Optional[MapSprite]
+    rank_colors: Dict[str, Optional[str]]
+
 class SupportDisplay():
     support_word_sprite = SPRITES.get('support_words')
 
@@ -446,6 +458,48 @@ class SupportDisplay():
                 return False
         return True
 
+    def _process_support_partner(self, other_unit_nid: str, hover: bool) -> SupportPartner:
+        if game.get_unit(other_unit_nid) and game.get_unit(other_unit_nid).party == game.get_unit(self.unit_nid).party:
+            other_unit = game.get_unit(other_unit_nid)
+            if other_unit.dead:
+                map_sprite = other_unit.sprite.create_image('gray')
+            elif hover:
+                map_sprite = other_unit.sprite.create_image('active')
+            else:
+                map_sprite = other_unit.sprite.create_image('passive')
+            image = map_sprite
+            name = other_unit.name
+            affinity = DB.affinities.get(other_unit.affinity)
+        elif DB.units.get(other_unit_nid):  # Not loaded into game yet
+            other_unit_prefab = DB.units.get(other_unit_nid)
+            map_sprite = load_map_sprite(other_unit_prefab, 'black')
+            image = map_sprite.passive.get_frame()
+            # name = other_unit_prefab.name
+            name = '---'
+            affinity = DB.affinities.get(other_unit_prefab.affinity)
+        else:
+            image = None
+            name = '---'
+            affinity = None
+
+        ranks = {}
+        prefabs = DB.support_pairs.get_pairs(self.unit_nid, other_unit_nid)
+        if prefabs:
+            prefab = prefabs[0]
+            if prefab.nid not in game.supports.support_pairs:
+                game.supports.create_pair(prefab.nid)
+            pair = game.supports.support_pairs[prefab.nid]
+            for bonus in prefab.requirements:
+                rank = bonus.support_rank
+                if rank in pair.locked_ranks:
+                    font_color = 'green'
+                elif rank in pair.unlocked_ranks:
+                    font_color = None
+                else:
+                    font_color = 'grey'
+                ranks[rank] = font_color
+        return SupportPartner(name, affinity, image, ranks)
+
     def draw(self, surf):
         if self.unit_nid:
             bg_surf = self.bg_surf.copy()
@@ -458,51 +512,17 @@ class SupportDisplay():
             choices = other_unit_nids[start_index:end_index]
 
             for idx, other_unit_nid in enumerate(choices):
-                if game.get_unit(other_unit_nid) and game.get_unit(other_unit_nid).party == game.get_unit(self.unit_nid).party:
-                    other_unit = game.get_unit(other_unit_nid)
-                    if other_unit.dead:
-                        map_sprite = other_unit.sprite.create_image('gray')
-                    elif self.draw_cursor and self.char_idx - start_index == idx:
-                        map_sprite = other_unit.sprite.create_image('active')
-                    else:
-                        map_sprite = other_unit.sprite.create_image('passive')
-                    image = map_sprite
-                    name = other_unit.name
-                    affinity = DB.affinities.get(other_unit.affinity)
-                elif DB.units.get(other_unit_nid):  # Not loaded into game yet
-                    other_unit_prefab = DB.units.get(other_unit_nid)
-                    map_sprite = unit_sprite.load_map_sprite(other_unit_prefab, 'black')
-                    image = map_sprite.passive.get_frame()
-                    # name = other_unit_prefab.name
-                    name = '---'
-                    affinity = DB.affinities.get(other_unit_prefab.affinity)
-                else:
-                    image = None
-                    name = '---'
-                    affinity = None
-
-                map_sprites.append(image)
+                hover = self.draw_cursor and self.char_idx - start_index == idx
+                partner = self._process_support_partner(other_unit_nid, hover)
+                map_sprites.append(partner.map_sprite)
                 # Blit name
-                render_text(bg_surf, ['text'], name, None, (25, idx * 16 + 20))
+                render_text(bg_surf, ['text'], partner.name, None, (25, idx * 16 + 20))
                 # Blit affinity
-                if affinity:
-                    icons.draw_item(bg_surf, affinity, (72, idx * 16 + 19))
+                if partner.affinity:
+                    icons.draw_item(bg_surf, partner.affinity, (72, idx * 16 + 19))
                 # Blit support levels
-                prefabs = DB.support_pairs.get_pairs(self.unit_nid, other_unit_nid)
-                if prefabs:
-                    prefab = prefabs[0]
-                    if prefab.nid not in game.supports.support_pairs:
-                        game.supports.create_pair(prefab.nid)
-                    pair = game.supports.support_pairs[prefab.nid]
-                    for ridx, bonus in enumerate(prefab.requirements):
-                        rank = bonus.support_rank
-                        if rank in pair.locked_ranks:
-                            font_color = 'green'
-                        elif rank in pair.unlocked_ranks:
-                            font_color = None
-                        else:
-                            font_color = 'grey'
-                        render_text(bg_surf, ['text'], [rank], [font_color], (90 + ridx * 10, idx * 16 + 20))
+                for ridx, (rank, font_color) in enumerate(partner.rank_colors.items()):
+                    render_text(bg_surf, ['text'], [rank], [font_color], (90 + ridx * 10, idx * 16 + 20))
 
             for idx, map_sprite in enumerate(map_sprites):
                 if map_sprite:
@@ -566,6 +586,92 @@ class SupportDisplay():
                         rects.append((190 + ridx * 10, idx * 16 + 24, 10, 16))
         return idxs, rects
 
+class ExtrasSupportDisplay(SupportDisplay):
+    def __init__(self, fully_unlocked: bool = False):
+        super().__init__()
+        self.fully_unlocked = fully_unlocked
+
+    def get_num_ranks(self, other_unit_nid) -> int:
+        if self.fully_unlocked or RECORDS.check_unit_loaded(other_unit_nid):
+            return super().get_num_ranks(other_unit_nid)
+        return 0
+
+    def get_background(self, bg_name: str = 'support_room_bg'):
+        if (imgs := RESOURCES.panoramas.get(bg_name)):
+            bg = background.PanoramaBackground(imgs)
+        elif (imgs := RESOURCES.panoramas.get('default_background')):
+            bg = background.ScrollingBackground(imgs)
+            bg.scroll_speed = 50
+        else:
+            bg = None
+        return bg
+
+    def trigger(self, trigger: triggers.EventTrigger):
+        default_bg = self.get_background()
+        triggered_events = []
+        for event_prefab in DB.events.get(trigger.nid, None):
+            try:
+                args = trigger.to_args()
+                if evaluate.evaluate(event_prefab.condition,
+                                        unit1=args.get('unit1', None),
+                                        unit2=args.get('unit2', None),
+                                        position=args.get('position', None),
+                                        local_args=args):
+                    triggered_events.append(event_prefab)
+            except:
+                logging.error("Condition {%s} could not be evaluated" % event_prefab.condition)
+
+        sorted_events = sorted(triggered_events, key=lambda x: x.priority)
+        game.memory['mock_events'] = []
+        for event_prefab in sorted_events:
+            mock_event = MockEvent('extra_support', event_prefab)
+            if not mock_event.background:
+                mock_event.background = default_bg
+            game.memory['mock_events'].append(mock_event)
+            game.state.change('mock_event')
+
+    def click_selection(self) -> bool:
+        other_unit_nids = self.options
+        other_unit_nid = other_unit_nids[self.char_idx]
+        prefabs = DB.support_pairs.get_pairs(self.unit_nid, other_unit_nid)
+        if prefabs:
+            prefab = prefabs[0]
+            bonus = prefab.requirements[self.rank_idx]
+            rank = bonus.support_rank
+            if RECORDS.check_support_unlocked(prefab.nid, rank):
+                self.trigger(triggers.OnSupport(DB.units.get(self.unit_nid),
+                                                DB.units.get(other_unit_nid),
+                                                None, rank, True))
+                return True
+        return False
+
+    def _process_support_partner(self, other_unit_nid: str, hover: bool) -> SupportPartner:
+        other_unit_prefab = DB.units.get(other_unit_nid)
+
+        if not (self.fully_unlocked or RECORDS.check_unit_loaded(other_unit_nid)):
+            map_sprite = load_map_sprite(other_unit_prefab, 'black')
+            image = map_sprite.passive.get_frame()
+            return SupportPartner('---', None, image, {})
+
+        name = other_unit_prefab.name
+        map_sprite = load_map_sprite(other_unit_prefab)
+        if hover:
+            image = map_sprite.active.get_frame()
+        else:
+            image = map_sprite.passive.get_frame()
+        affinity = DB.affinities.get(other_unit_prefab.affinity)
+
+        ranks = {}
+        if (prefabs := DB.support_pairs.get_pairs(self.unit_nid, other_unit_nid)):
+            prefab = prefabs[0]
+            for bonus in prefab.requirements:
+                rank = bonus.support_rank
+                if self.fully_unlocked or RECORDS.check_support_unlocked(prefab.nid, rank):
+                    ranks[rank] = None
+                else:
+                    ranks[rank] = 'grey'
+        return SupportPartner(name, affinity, image, ranks)
+
 class BaseSupportsState(State):
     name = 'base_supports'
 
@@ -573,17 +679,31 @@ class BaseSupportsState(State):
         self.fluid = FluidScroll()
         self.bg = game.memory['base_bg']
 
-        player_units = game.get_units_in_party()
         # Filter only to units with supports
-        self.units = [unit for unit in player_units if
-                      any(prefab.unit1 == unit.nid or prefab.unit2 == unit.nid for prefab in DB.support_pairs)]
+        if self.name == 'base_supports':
+            self.units = [unit for unit in game.get_units_in_party() if
+                            any(prefab.unit1 == unit.nid or prefab.unit2 == unit.nid for prefab in DB.support_pairs)]
+            self.display = SupportDisplay()
+
+        elif self.name == 'extras_supports':
+            fully_unlocked = DB.constants.value('title_full_support')
+            self.units = [unit for nid, unit in DB.units.items() if (fully_unlocked or RECORDS.check_unit_loaded(nid)) and \
+                            any(prefab.unit1 == unit.nid or prefab.unit2 == unit.nid for prefab in DB.support_pairs)]
+            self.display = ExtrasSupportDisplay(fully_unlocked)
+
+        if not self.units:
+            # Empty table, let's quickly bail
+            self.menu = None
+            get_sound_thread().play_sfx('Error')
+            game.state.back()
+            return
+
         # sort to official unit order
         self.units = sorted(self.units, key=lambda unit: DB.units.index(unit.nid) if unit.nid in DB.units else 999999)
 
         self.menu = menus.Table(None, self.units, (9, 1), (4, 4))
         self.menu.set_mode('unit')
 
-        self.display = SupportDisplay()
         self.display.update_entry(self.menu.get_current().nid)
 
         self.in_display = False
@@ -593,11 +713,18 @@ class BaseSupportsState(State):
 
     def begin(self):
         self.fluid.reset_on_change_state()
-        base_music = game.game_vars.get('_base_music')
-        if base_music:
-            get_sound_thread().fade_in(base_music)
+        music = None
+        if self.name == 'base_supports':
+            music = game.game_vars.get('_base_music')
+        elif self.name == 'extras_supports':
+            music = RECORDS.get('_music_title_screen') or DB.constants.value('music_main')
+        if music:
+            get_sound_thread().fade_in(music, fade_in=50)
 
     def take_input(self, event):
+        if not self.menu:
+            return
+
         first_push = self.fluid.update()
         directions = self.fluid.get_directions()
 
@@ -662,7 +789,7 @@ class BaseSupportsState(State):
                 self.in_display = True
                 self.display.draw_cursor = True
 
-        elif event == 'INFO':
+        elif event == 'INFO' and self.name == 'base_supports':
             get_sound_thread().play_sfx('Select 1')
             game.memory['scroll_units'] = self.units
             game.memory['current_unit'] = self.menu.get_current()

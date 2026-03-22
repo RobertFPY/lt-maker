@@ -6,6 +6,7 @@ import math, string
 from app.constants import TILEX, WINWIDTH, WINHEIGHT
 from app.data.database import lore
 from app.data.database.database import DB
+from app.data.database.units import UnitPrefab
 
 from app.engine.sprites import SPRITES
 from app.engine.fonts import FONT
@@ -1047,6 +1048,8 @@ class Table(Simple):
             if isinstance(option, UnitObject):
                 option = menu_options.UnitOption(idx, option)
                 option.set_mode(self.mode)
+            elif isinstance(option, UnitPrefab):
+                option = menu_options.UnitPrefabOption(idx, option)
             elif isinstance(option, Achievement):
                 option = menu_options.AchievementOption(idx, option)
             else:

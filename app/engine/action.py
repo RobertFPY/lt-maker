@@ -21,6 +21,7 @@ from app.engine.objects.item import ItemObject
 from app.engine.objects.skill import SkillObject
 from app.engine.objects.unit import UnitObject
 from app.engine.objects.region import RegionObject
+from app.engine.persistent_records import RECORDS
 from app.engine import engine
 from app.utilities import utils, static_random
 from app.utilities.typing import Pos
@@ -2597,6 +2598,9 @@ class UnlockSupportRank(Action):
             game.supports.create_pair(self.nid)
 
     def do(self):
+        # Yea, this one can't be turnwheel-ed lol
+        RECORDS.unlock_support_rank(self.nid, self.rank)
+
         self.was_locked = False
         pair = game.supports.support_pairs[self.nid]
         if self.rank in pair.locked_ranks:

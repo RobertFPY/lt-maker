@@ -3716,6 +3716,12 @@ class UnlockSong(EventCommand):
     keywords = ['Music']
     keyword_types = ['Music']
 
+class UnlockSupportRoom(EventCommand):
+    nid = 'unlock_support_room'
+    tag = Tags.PERSISTENT_RECORDS
+    desc = ("Allows Support Room to be viewed from Title Screen > Extras."
+            "Once unlocked, Support Room will remain opened permanently across all save files.")
+
 class PartyTransfer(EventCommand):
     nid = 'party_transfer'
     tag = Tags.MISCELLANEOUS

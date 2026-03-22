@@ -5,7 +5,7 @@ from typing import Callable, Optional
 from dataclasses import dataclass
 
 
-from app.engine import item_system
+from app.engine import item_funcs, item_system
 from app.engine.game_state import game
 
 from app.engine.objects.unit import UnitObject
@@ -22,13 +22,13 @@ class ItemOptionModes(Enum):
 
 @dataclass
 class UsesDisplayConfig:
-    get_curr_uses: Callable[[ItemObject, UnitObject], str]
-    delim: str
-    get_max_uses: Callable[[ItemObject, UnitObject], str]
-    get_uses_color: Callable[[ItemObject, UnitObject], str]
+    get_curr_uses: Callable[[ItemObject, UnitObject], str] = None
+    delim: str = ''
+    get_max_uses: Callable[[ItemObject, UnitObject], str] = None
+    get_uses_color: Callable[[ItemObject, UnitObject], str] = None
 
-    unit: Optional[UnitObject]
-    item: Optional[ItemObject]
+    unit: Optional[UnitObject] = None
+    item: Optional[ItemObject] = None
 
     def __add__(self, other: UsesDisplayConfig) -> UsesDisplayConfig:
         return UsesDisplayConfig(
@@ -37,25 +37,27 @@ class UsesDisplayConfig:
             get_max_uses=other.get_max_uses if other.get_max_uses is not None else self.get_max_uses,
             get_uses_color=other.get_uses_color if other.get_uses_color is not None else self.get_uses_color,
             unit=self.unit,
-            item=self.item,
+            item=self.item
         )
 
     def get_uses(self) -> str:
-        return str(self.get_curr_uses(self.unit, self.item))
+        curr_uses = self.get_curr_uses(self.unit, self.item) if self.get_curr_uses else None
+        return str(curr_uses) if curr_uses is not None else None
 
     def get_max(self) -> str:
-        max_uses = self.get_max_uses(self.unit, self.item)
+        max_uses = self.get_max_uses(self.unit, self.item) if self.get_max_uses else None
         return str(max_uses) if max_uses is not None else None
 
     def get_color(self) -> str:
-        return self.get_uses_color(self.unit, self.item)
+        # Grab Custom Color If It Exists
+        return self.get_uses_color(self.unit, self.item) if self.get_uses_color else None
 
     @staticmethod
-    def from_item(item: ItemObject):
+    def from_item(item: ItemObject, owner: Optional[UnitObject] = None):
         if not item:
             return None
 
-        owner = game.get_unit(item.owner_nid)
+        owner = game.get_unit(item.owner_nid) if owner is None else owner
         if not owner:
             return None
 

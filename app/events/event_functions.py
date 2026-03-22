@@ -3957,6 +3957,9 @@ def unlock_difficulty(self: Event, difficulty_mode: str, flags=None):
 def unlock_song(self: Event, music: str, flags=None):
     RECORDS.unlock_song(music)
 
+def unlock_support_room(self: Event, flags=None):
+    RECORDS.unlock_support_room()
+
 def hide_combat_ui(self: Event, flags=None):
     self.game.game_vars["_hide_ui"] = True
 

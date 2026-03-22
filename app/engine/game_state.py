@@ -51,6 +51,7 @@ from app.engine.roam.roam_info import RoamInfo
 from app.utilities import static_random
 from app.data.resources.resources import RESOURCES
 from app.engine.source_type import SourceType
+from app.engine.persistent_records import RECORDS
 
 import logging
 
@@ -867,6 +868,7 @@ class GameState():
     def register_unit(self, unit):
         logging.debug("Registering unit %s as %s", unit, unit.nid)
         self.unit_registry[unit.nid] = unit
+        RECORDS.mark_unit_as_loaded(unit.nid)
 
     def unregister_unit(self, unit):
         logging.debug("Unregistering unit %s as %s", unit, unit.nid)

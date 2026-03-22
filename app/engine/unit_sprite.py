@@ -114,6 +114,9 @@ class MapSprite():
                 colors: List[Color3] = palette.get_colors()
             else:
                 colors: List[Color3] = default_palettes['map_sprite_black']
+        elif not game.teams:
+            # Currently in Title Screen, havent loaded any games, so game.teams is empty
+            return map_sprite.standing_image, map_sprite.moving_image
         else:
             palette = self._get_team_palette()
             if palette:
@@ -138,6 +141,9 @@ class MapSprite():
         # Handle the situation where team is "black"
         if self.team == 'black':
             new_colors: List[Color3] = default_palettes['map_sprite_black']
+        elif not game.teams:
+            # Currently in Title Screen, havent loaded any games, so game.teams is empty
+            new_colors: List[Color3] = default_palettes['map_sprite_blue']
         else:
             current_palette = self._get_team_palette()
             new_colors: List[Color3] = current_palette.get_colors()

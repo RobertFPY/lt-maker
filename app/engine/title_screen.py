@@ -754,6 +754,8 @@ class TitleExtrasState(TitleLoadState):
         options = ['Options', 'Credits']
         if DB.constants.value('title_sound'):
             options.append('Sound Room')
+        if RECORDS.check_support_room_unlocked():
+            options.append('Support Room')
         if ACHIEVEMENTS:
             options.insert(1, 'Achievements')
         if (cf.SETTINGS['debug'] or cf.SETTINGS['all_saves']) and save.get_all_saves():
@@ -813,6 +815,10 @@ class TitleExtrasState(TitleLoadState):
                 game.state.change('transition_to')
             elif selection == 'Achievements':
                 game.memory['next_state'] = 'base_achievement'
+                game.memory['base_bg'] = self.bg
+                game.state.change('transition_to')
+            elif selection == 'Support Room':
+                game.memory['next_state'] = 'extras_supports'
                 game.memory['base_bg'] = self.bg
                 game.state.change('transition_to')
 

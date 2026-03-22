@@ -6,6 +6,7 @@ from app.engine.sprites import SPRITES
 from app.engine.fonts import FONT
 from app.engine import engine, image_mods, icons, help_menu, text_funcs, item_system, item_funcs
 from app.engine.game_state import game
+from app.engine.unit_sprite import load_map_sprite
 
 from app.engine.graphics.text.text_renderer import render_text, text_width, rendered_text_width
 from app.utilities.enums import HAlignment
@@ -606,6 +607,15 @@ class UnitOption(BasicOption):
 
         self.draw_map_sprite(surf, x, y, highlight=True)
         self.draw_text(surf, x, y)
+
+class UnitPrefabOption(UnitOption):
+    def draw_map_sprite(self, surf, x, y, highlight=False):
+        map_sprite = load_map_sprite(self.unit)
+        if highlight:
+            image = map_sprite.active.get_frame()
+        else:
+            image = map_sprite.passive.get_frame()
+        surf.blit(image, (x - 20, y - 24 - 1))
 
 class LoreOption(BasicOption):
     def __init__(self, idx, lore):

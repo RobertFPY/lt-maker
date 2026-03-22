@@ -138,6 +138,7 @@ constants = ConstantCatalog([
     Constant('title', "Game Title", ConstantType.STR, "Lex Talionis Game", ConstantTag.TITLE),
     Constant('title_particles', "Display particle effect on title screen", ConstantType.BOOL, True, ConstantTag.TITLE),
     Constant('title_sound', "Access sound room in Extras on title screen", ConstantType.BOOL, True, ConstantTag.TITLE),
+    Constant('title_full_support', "Support room in Extras on title screen when unlocked will have all entries available to view", ConstantType.BOOL, False, ConstantTag.TITLE),
     Constant('music_main', "Music to play on title screen", ConstantType.MUSIC, None, ConstantTag.MUSIC),
     Constant('music_promotion', "Music to play on promotion", ConstantType.MUSIC, None, ConstantTag.MUSIC),
     Constant('music_class_change', "Music to play on class change", ConstantType.MUSIC, None, ConstantTag.MUSIC),

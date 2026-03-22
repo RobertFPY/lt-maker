@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from typing import Dict, Optional, Tuple
 from functools import lru_cache
 from app.data.resources.fonts import Font
@@ -30,24 +29,9 @@ def default_render(font: pygame.font.Font, char: str, height: int, color: Color4
     surf.blit(black, (0, 0))
     return surf, text_width
 
-@dataclass
-class CharGlyph():
-    """Class representing a char position and dimension on the sheet"""
-    x: int
-    y: int
-    char_width: int
-
 class BmpFont():
-    def __init__(self, font_info: Font, png_path: str, idx_path: str):
-        self.all_uppercase = False
-        self.all_lowercase = False
-        self.stacked = False
-        self.chartable: Dict[str, CharGlyph] = {}
-        self.idx_path = idx_path
+    def __init__(self, font_info: Font, png_path: str, idx_path: str = None):
         self.png_path = png_path
-        self.space_offset = 0
-        self._width = 8
-        self.height = 16
         self.memory: Dict[str, Dict[str, Tuple[engine.Surface, int]]] = {}
 
         self.font_info = font_info
@@ -55,36 +39,40 @@ class BmpFont():
         if self.font_info.ttf_path():
             self.fallback_font = pygame.font.Font(self.font_info.ttf_path(), font_info.fallback_size)
 
-        with open(self.idx_path, 'r', encoding='utf-8') as fp:
-            for x in fp.readlines():
-                words = x.strip().split()
-                if words[0] == 'alluppercase':
-                    self.all_uppercase = True
-                elif words[0] == 'alllowercase':
-                    self.all_lowercase = True
-                elif words[0] == 'stacked':
-                    self.stacked = True
-                elif words[0] == 'space_offset':
-                    self.space_offset = int(words[1])
-                elif words[0] == "width":
-                    self._width = int(words[1])
-                elif words[0] == "height":
-                    self.height = int(words[1])
-                else:  # Default to index entry.
-                    if words[0] == "space":
-                        words[0] = ' '
-                    if self.all_uppercase:
-                        words[0] = words[0].upper()
-                    if self.all_lowercase:
-                        words[0] = words[0].lower()
-                    self.chartable[words[0]] = CharGlyph(int(words[1]) * self._width,
-                                                         int(words[2]) * self.height,
-                                                         int(words[3]))
+        self.index = font_info.font_index
 
         self.default_color = font_info.default_color or 'default'
         self.surfaces: Dict[str, engine.Surface] = {}
         self.surfaces[font_info.default_color or 'default'] = engine.image_load(self.png_path)
         # engine.set_colorkey(self.surface, (0, 0, 0), rleaccel=True)
+
+    @property
+    def all_uppercase(self) -> bool:
+        return self.index.all_uppercase
+
+    @property
+    def all_lowercase(self) -> bool:
+        return self.index.all_lowercase
+
+    @property
+    def stacked(self) -> bool:
+        return self.index.stacked
+
+    @property
+    def space_offset(self) -> int:
+        return self.index.space_offset
+
+    @property
+    def _width(self) -> int:
+        return self.index.char_width
+
+    @property
+    def height(self) -> int:
+        return self.index.char_height
+
+    @property
+    def chartable(self):
+        return self.index.chartable
 
     def get_base_surf(self) -> engine.Surface:
         return self.surfaces[self.default_color]

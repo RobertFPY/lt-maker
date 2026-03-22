@@ -278,6 +278,7 @@ class ItemOption(BasicOption):
         self.font = 'text'
         self.color = item_system.text_color(None, item)
         self.ignore = False
+        self.uses_config = UsesDisplayConfig.from_item(item)
 
     def get(self):
         return self.item
@@ -287,6 +288,8 @@ class ItemOption(BasicOption):
 
     def set_item(self, item):
         self.item = item
+        self.color = item_system.text_color(None, item)
+        self.uses_config = UsesDisplayConfig.from_item(item)
 
     def width(self):
         return 104
@@ -297,21 +300,25 @@ class ItemOption(BasicOption):
     def get_color(self):
         owner = game.get_unit(self.item.owner_nid)
         main_color = 'grey'
-        uses_color = 'grey'
+        custom_color = self.uses_config.get_color() if self.uses_config else None
+        uses_color = custom_color or 'grey'
         if self.ignore:
             pass
         elif self.color:
             main_color = self.color
-            if owner and not item_funcs.available(owner, self.item):
-                pass
-            else:
-                uses_color = 'blue'
+            if not custom_color:
+                if owner and not item_funcs.available(owner, self._value):
+                    pass
+                else:
+                    uses_color = 'blue'
         elif self.item.droppable:
             main_color = 'green'
-            uses_color = 'green'
+            if not custom_color:
+                uses_color = 'green'
         elif not owner or item_funcs.available(owner, self.item):
             main_color = None
-            uses_color = 'blue'
+            if not custom_color:
+                uses_color = 'blue'
         return main_color, uses_color
 
     def get_help_box(self):
@@ -338,10 +345,9 @@ class ItemOption(BasicOption):
 
         # Draw Uses String
         uses_string = '--'
-        custom_uses = UsesDisplayConfig.from_item(self.item)
-        if custom_uses:
-            uses_string = custom_uses.get_uses()
-            uses_color = custom_uses.get_color() or uses_color
+        if self.uses_config and self.uses_config.get_uses() is not None:
+            uses_string = self.uses_config.get_uses()
+            # TO DO: Fully configure uses strings in UsesDisplayConfig and remove item-specific logic here
         elif self.item.uses:
             uses_string = str(self.item.data['uses'])
         elif self.item.parent_item and self.item.parent_item.uses and self.item.parent_item.data['uses']:
@@ -359,21 +365,28 @@ class ConvoyItemOption(ItemOption):
     def __init__(self, idx, item, owner):
         super().__init__(idx, item)
         self.owner = owner
+        self.uses_config = UsesDisplayConfig.from_item(item, owner)
 
     def width(self):
         return 112
 
     def get_color(self):
         main_color = 'grey'
-        uses_color = 'grey'
+        custom_color = self.uses_config.get_color() if self.uses_config else None
+        uses_color = custom_color or 'grey'
         if self.ignore:
             pass
         elif self.color:
             main_color = self.color
-            uses_color = 'blue'
+            if not custom_color:
+                if self.owner and not item_funcs.available(self.owner, self.item):
+                    pass
+                else:
+                    uses_color = 'blue'
         elif item_funcs.available(self.owner, self.item):
             main_color = None
-            uses_color = 'blue'
+            if not custom_color:
+                uses_color = 'blue'
         return main_color, uses_color
 
 class FullItemOption(ItemOption):
@@ -395,12 +408,11 @@ class FullItemOption(ItemOption):
         uses_string_a = '--'
         uses_string_b = '--'
         uses_delimiter = "/"
-        custom_uses = UsesDisplayConfig.from_item(self.item)
-        if custom_uses:
-            uses_string_a = custom_uses.get_uses()
-            uses_string_b = custom_uses.get_max() or uses_string_b
-            uses_color = custom_uses.get_color() or uses_color
-            uses_delimiter = custom_uses.delim
+        if self.uses_config and self.uses_config.get_uses() is not None:
+            uses_string_a = self.uses_config.get_uses()
+            uses_string_b = self.uses_config.get_max() or uses_string_b
+            uses_delimiter = self.uses_config.delim
+            # TO DO: Fully configure uses strings in UsesDisplayConfig and remove item-specific logic here
         elif self.item.data.get('uses') is not None:
             uses_string_a = str(self.item.data['uses'])
             uses_string_b = str(self.item.data['starting_uses'])
@@ -433,6 +445,7 @@ class ValueItemOption(ItemOption):
         icon = icons.get_icon(self.item)
         if icon:
             surf.blit(icon, (x + 2, y))
+        uses_config = UsesDisplayConfig.from_item(self.item)
         main_color, uses_color = self.get_color()
         main_font = self.font
         width = text_width(main_font, self.item.name)
@@ -442,10 +455,9 @@ class ValueItemOption(ItemOption):
         render_text(surf, [main_font], [self.item.name], [main_color], (x + 20, y))
 
         uses_string = '--'
-        custom_uses = UsesDisplayConfig.from_item(self.item)
-        if custom_uses:
-            uses_string = custom_uses.get_uses()
-            uses_color = custom_uses.get_color() or uses_color
+        if self.uses_config and self.uses_config.get_uses() is not None:
+            uses_string = self.uses_config.get_uses()
+            uses_color = self.uses_config.get_color() or uses_color
         elif self.item.data.get('uses') is not None:
             uses_string = str(self.item.data['uses'])
         elif self.item.parent_item and self.item.parent_item.data.get('uses') is not None:

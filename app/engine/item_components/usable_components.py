@@ -302,7 +302,7 @@ class ManaCostAsUses(ItemComponent):
         return None
 
     def item_uses_display(self, unit, item) -> UsesDisplayConfig:
-        return UsesDisplayConfig(self._calc_uses, self.delim, self._calc_max_uses, self._font_color, unit, item)
+        return UsesDisplayConfig(self._calc_uses, self.delim, self._calc_max_uses, self._font_color, unit=unit, item=item)
 
 class RemainingManaUses(ManaCostAsUses):
     nid = 'remaining_mana_uses'

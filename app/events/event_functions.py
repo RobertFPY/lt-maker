@@ -1404,6 +1404,7 @@ def has_finished(self: Event, unit, flags=None):
     if not actor:
         self.logger.error("has_finished: Couldn't find unit %s" % unit)
         return
+    action.do(action.Wait(actor))
 
 def add_group(self: Event, group, starting_group=None, entry_type=None, placement=None, flags=None):
     flags = flags or set()

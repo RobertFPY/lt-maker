@@ -1384,20 +1384,38 @@ def has_visited(self: Event, unit, flags=None):
     if not actor:
         self.logger.error("has_visited: Couldn't find unit %s" % unit)
         return
+    
+    # Set the appropriate action state
     if 'attacked' in flags:
         action.do(action.HasAttacked(actor))
     else:
         action.do(action.HasTraded(actor))
-    if self.game.check_alive(unit):
-        if skill_system.has_canto(actor, None):
-            self.game.cursor.set_pos(actor.position)
-            self.game.state.change('move')
-            self.game.cursor.place_arrows()
-        else:
-            self.game.state.clear()
-            self.game.state.change('free')
-            actor.wait()
-    self.state = 'paused'
+    
+    # Check if the level has ended or is ending to prevent crashes
+    if (self.game.level_vars.get('_win_game') or 
+        self.game.level_vars.get('_lose_game') or 
+        self.game.level_vars.get('_level_end_triggered')):
+        self.logger.info("has_visited: Level ending, skipping action for unit %s" % unit)
+        return
+    
+    # Check if the unit is still alive and valid
+    if not self.game.check_alive(unit):
+        self.logger.info("has_visited: Unit %s is no longer alive, skipping action" % unit)
+        return
+    
+    # Handle canto properly - follow the Rescue/Drop pattern exactly
+    if skill_system.has_canto(actor, None):
+        # Critical: Set the cursor unit so MoveState recognizes this as a canto situation
+        self.game.cursor.cur_unit = actor
+        self.game.cursor.set_pos(actor.position)
+        action.do(action.SetMovementLeft(actor, skill_system.canto_movement(actor, None)))
+        self.game.cursor.place_arrows()
+        self.game.level_vars['_go_to_state'] = 'move'
+    else:
+        # Use the action system for proper turnwheel recording
+        self.game.state.change('free')
+        self.game.cursor.set_pos(actor.position)
+        action.do(action.Wait(actor))
 
 def has_finished(self: Event, unit, flags=None):
     actor = self._get_unit(unit)

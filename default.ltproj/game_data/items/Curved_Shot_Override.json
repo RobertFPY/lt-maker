@@ -1,0 +1,22 @@
+[
+    {
+        "nid": "Curved_Shot_Override",
+        "name": "Curved Shot Override",
+        "desc": "(Used in the Curved Shot Combat Art in the Skills editor.)",
+        "icon_nid": "Skills",
+        "icon_index": [
+            4,
+            9
+        ],
+        "components": [
+            [
+                "max_range",
+                3
+            ],
+            [
+                "hp_cost",
+                1
+            ]
+        ]
+    }
+]

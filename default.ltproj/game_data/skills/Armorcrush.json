@@ -1,0 +1,22 @@
+[
+    {
+        "nid": "Armorcrush",
+        "name": "Armorcrush",
+        "desc": "Combat Art, Lance Only (Cost: 4 MANA): Increases Might and Hit. Deals bonus damage on Armor units.",
+        "icon_nid": "Skills",
+        "icon_index": [
+            10,
+            5
+        ],
+        "components": [
+            [
+                "combat_art",
+                "Armorcrush_CA"
+            ],
+            [
+                "allowed_weapons",
+                "item and item_system.is_weapon(unit, item) and item_system.weapon_type(unit, item) == 'Lance'"
+            ]
+        ]
+    }
+]

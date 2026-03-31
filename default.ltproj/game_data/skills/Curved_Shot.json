@@ -1,0 +1,22 @@
+[
+    {
+        "nid": "Curved_Shot",
+        "name": "Curved Shot",
+        "desc": "Combat Art, Bow Only (Cost: 1HP): Increases range, Might, and Hit. Cannot perform a follow-up attack.",
+        "icon_nid": "Skills",
+        "icon_index": [
+            4,
+            9
+        ],
+        "components": [
+            [
+                "combat_art",
+                "Curved_Shot_CA"
+            ],
+            [
+                "allowed_weapons",
+                "item and item_system.is_weapon(unit, item) and item_system.weapon_type(unit, item) == 'Bow'"
+            ]
+        ]
+    }
+]

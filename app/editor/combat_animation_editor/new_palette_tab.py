@@ -25,6 +25,11 @@ class NewPaletteDatabase(NewEditorTab):
         self.data.append(new_class)
         return True
 
+    def on_begin_rename(self, entry_nid: NID, on_begin: bool = True):
+        super().on_begin_rename(entry_nid, on_begin)
+        self.right_frame.nid_box.setEnabled(not on_begin)
+        return
+
     @classmethod
     def edit(cls, parent=None):
         window = SingleResourceEditor(NewPaletteDatabase, ['combat_palettes'], parent)

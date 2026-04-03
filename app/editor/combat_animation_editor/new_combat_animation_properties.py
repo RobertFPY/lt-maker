@@ -600,6 +600,7 @@ class NewCombatAnimProperties(QWidget):
             self.set_current(self.current)
             if self.current.weapon_anims:
                 self.weapon_box.setValue(self.current.weapon_anims[-1].nid)
+            self.on_icon_change()
 
     def export_legacy(self):
         # Ask user for location
@@ -647,6 +648,7 @@ class NewCombatAnimProperties(QWidget):
             self.set_current(self.current)
             if self.current.weapon_anims:
                 self.weapon_box.setValue(self.current.weapon_anims[-1].nid)
+                self.on_icon_change()
 
     def select_frame(self):
         if not self.current.palettes:
@@ -856,9 +858,10 @@ class NewCombatAnimProperties(QWidget):
             return
         self.settings.set_last_open_path(fn_dir)
         # Determine the palettes in the folder
-        palette_nid_swap = self.import_palettes(fn_dir)
+        escaped_fn_dir = glob.escape(fn_dir)
+        palette_nid_swap = self.import_palettes(escaped_fn_dir)
         # Determine the combat_anims in the folder
-        anim_path = os.path.join(fn_dir, '*_anim.json')
+        anim_path = os.path.join(escaped_fn_dir, '*_anim.json')
         anims = sorted(glob.glob(anim_path))
         if not anims:
             QMessageBox.warning(self, "File Not Found", "Could not find any valid *_anim.json Combat Animation files.")
@@ -878,7 +881,7 @@ class NewCombatAnimProperties(QWidget):
             populate_anim_pixmaps(anim)
             RESOURCES.combat_anims.append(anim)
         # Print done import! Import complete!
-        self.on_icon_change()
+        self.window.reset()
         QMessageBox.information(self, "Import Complete", "Import of combat animation %s complete!" % fn_dir)
 
     def export_anim(self):

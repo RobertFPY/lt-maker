@@ -161,10 +161,10 @@ class Direction(str, Enum):
 
 def get_cardinal_positions(pos: Tuple[int, int]) -> Tuple[Tuple[int, int], ...]:
     return (
-        (pos[0], pos[1] - 1), # North
-        (pos[0] + 1, pos[1]), # East
-        (pos[0], pos[1] + 1), # South
-        (pos[0] - 1, pos[1]), # West
+        (pos[0], pos[1] - 1),  # North
+        (pos[0] + 1, pos[1]),  # East
+        (pos[0], pos[1] + 1),  # South
+        (pos[0] - 1, pos[1]),  # West
     )
 
 def get_diagonal_positions(pos: Tuple[int, int]) -> Tuple[Tuple[int, int], ...]:

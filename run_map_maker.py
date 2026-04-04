@@ -5,12 +5,23 @@ from PyQt5.QtGui import QIcon
 
 from app.editor.settings import MainSettingsController
 
+def initialize_icon():
+    # Hack to get a Windows icon to show up
+    try:
+        import ctypes
+        myappid = u'rainlash.lextalionis.ltmaker.current'  # arbitrary string
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+    except:
+        print("Maybe not Windows? But that's OK")
+
 if __name__ == '__main__':
     import logging, traceback
     from app import lt_log
     success = lt_log.create_logger()
     from PyQt5.QtWidgets import QApplication
     from app import dark_theme
+
+    initialize_icon()
 
     # For High DPI displays
     os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"

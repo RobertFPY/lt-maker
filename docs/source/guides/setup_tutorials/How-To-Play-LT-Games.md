@@ -59,35 +59,50 @@ https://gitlab.com/rainlash/lt-maker.git
 NOTE: Most creators will ship the blank .exe engine with their game files attached. For maximum stability, the MacOS version needs the python version of the engine to run in Wine. If you are unsure, please contact the developer(s) of the LT game you want to play.
 
 1. Download and extract the game folder from its archive file to a desired location.
-2. Install Homebrew
+
+* If the developer(s) have a python version available, you can skip steps 2 and 3.
+
+2. Download the LT repository and place it in desired location:
+```
+https://gitlab.com/rainlash/lt-maker.git
+```
+
+3. Grab the "GAMENAME.ltproj" folder and place it into the "lt-maker" folder. Remove the "default.ltproj" folder from the "lt-maker" folder.
+
+4. Install Homebrew
 ```
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
-3. Install Wine
+
+5. Install Wine
 ```
 brew install wine-stable
 ```
-4. Install Miniconda
+
+6. Install Miniconda
 ```
 brew install --cask miniconda
 ```
-5. Initialize conda in your shell
+
+7. Initialize conda in your shell
 ```
 conda init "$(basename "${SHELL}")"
 ```
 
-6. Perform the following steps before first boot;
+8. Perform the following steps before first boot;
 ```
 cd lt-maker
 conda create -n fe-i-lt python=3.11.7
 conda activate fe-i-ltproj
 ```
-7. Setup Windows Python;
+
+9. Setup Windows Python;
 ```
 curl -O https://www.python.org/ftp/python/3.11.7/python-3.11.7-amd64.exe
 wine python-3.11.7-amd64.exe
 ```
-8. Install the following requirements IN Wine Python;
+
+10. Install the following requirements IN Wine Python;
 ```
 wine pip install -r
 python3pip
@@ -98,7 +113,8 @@ PyQt5==5.15.10
 mypy==1.8.0
 mypy-extensions==1.0.0
 ```
-9. Execute the following commands;
+
+11. Execute the following commands;
 ```
 cd lt-maker
 conda activate fe-i-lt

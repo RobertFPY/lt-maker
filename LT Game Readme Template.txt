@@ -68,9 +68,11 @@ If the game gets an update and you would like to transfer your saves from an old
 
 =============================
 [ADVANCED INSTALLATIONS] - Linux (source), MacOS, Android
+
+!!NOTE TO DEVELOPERS: CHANGE THE "lt-maker" FOLDER NAME IN THIS DOCUMENT WITH YOUR OWN FOLDER NAME WHERE NECESSARY!!
 =============================
 [LINUX - BUILD FROM SOURCE]
-NOTE: Most creators will ship the blank .exe engine with their game files attached. If this is the case, you can build the game from source. However, if the creator has included engine hacking in their project, this method WILL NOT WORK. If you are unsure, please contact the developer(s) of the LT game you want to play. If the developer(s) have a native version for linux available for download, you can skip step 3.
+NOTE: Most developer(s) will ship the blank .exe engine with their game files attached. If this is the case, you can build the game from source. However, if the developer(s) have included engine hacking in their project, this method WILL NOT WORK. If you are unsure, please contact the developer(s) of the LT game you want to play.
 
 1) Install the following programs (preferred versions if possible);
     python==3.11*
@@ -86,36 +88,41 @@ NOTE: Most creators will ship the blank .exe engine with their game files attach
 
 2) Clone the following repository to your prefered storage location;
     https://gitlab.com/rainlash/lt-maker.git***
-        ***If the creator has their own repository set up, clone that instead.
+        ***If the creator has their own repository set up, clone that instead. You can skip step 3.
 
 3) Grab the folder named "GAMETITLE.ltproj" from the windows version and put it inside the "lt-maker" folder. Delete the "default.ltproj" folder.
 
-4) Open a terminal window in the folder and type "python3 run_engine.py". The engine should now boot up with the desired game.**** You can also create a script to perform this command. It is recommended to run this script in the terminal, as the game uses the terminal as a log.
+4) Open a terminal window in the folder where "GAMETITLE.ltproj" is stored and type "python3 run_engine.py". The engine should now boot up with the desired game.**** You can also create a script to perform this command. It is recommended to run this script in the terminal, as the game uses the terminal as a log.
     ****If the desired game does not boot up, change the command to "python3 run_editor.py", click the "Open other" button and select the "GAMENAME.ltproj" folder. Once the editor opens, click the play icon in the icon bar and then select the "Test Full Game..." option. From there, you can play as normal.
 
 =============================
 [MacOS - WINE]
-NOTE: Most creators will ship the blank .exe engine with their game files attached. For maximum stability, the MacOS version needs the python version of the engine to run in Wine. If you are unsure, please contact the developer(s) of the LT game you want to play.
+NOTE: Most developer(s) will ship the blank .exe engine with their game files attached. For maximum stability, you need the python version of the engine to run in Wine. You can manually extract the game data from the .exe download to run the game, but if the developer(s) have included engine hacking, THIS METHOD WILL NOT WORK. For this reason, unless the developers(s) have a python version of their game available, it is not recommended to run LT projects on MacOS. If you are unsure, please contact the developer(s) of the LT game you want to play.
 
 How to play:
-1) Download and extract the game folder from its archive file to a desired location.
-2) Install Homebrew
+1) Download and extract the game folder from its archive file to a desired location.*
+    *If the developer(s) have a python version available, you can skip steps 2 and 3.
+2) Download the LT repository and place it in desired location;
+    https://gitlab.com/rainlash/lt-maker.git
+3) Grab the "GAMENAME.ltproj" folder and place it into the "lt-maker" folder. Remove the "default.ltproj" folder from the "lt-maker" folder.
+
+4) Install Homebrew
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-3) Install Wine
+5) Install Wine
     brew install wine-stable
-4) Install Miniconda
+6) Install Miniconda
     brew install --cask miniconda
-5) Initialize conda in your shell
+7) Initialize conda in your shell
     conda init "$(basename "${SHELL}")"
 
-6) Perform the following steps before first boot;
+8) Perform the following steps before first boot;
     cd lt-maker
     conda create -n fe-i-lt python=3.11.7
     conda activate fe-i-lt
-7) Setup Windows Python;
+9) Setup Windows Python;
     curl -O https://www.python.org/ftp/python/3.11.7/python-3.11.7-amd64.exe
     wine python-3.11.7-amd64.exe
-8) Install the following requirements IN Wine Python;
+10) Install the following requirements IN Wine Python;
     wine pip install -r
     python3pip
     pygame-ce==2.3.2
@@ -124,10 +131,12 @@ How to play:
     PyQt5==5.15.10
     mypy==1.8.0
     mypy-extensions==1.0.0
-9) Execute the following commands;
+
+11) Execute the following commands;
     cd lt-maker
     conda activate fe-i-lt
     wine python run_engine.py
+EX) If the desired game does not boot up, change the command to "python3 run_editor.py", click the "Open other" button and select the "GAMENAME.ltproj" folder. Once the editor opens, click the play icon in the icon bar and then select the "Test Full Game..." option. From there, you can play as normal.
 
 =============================
 [ANDROID]

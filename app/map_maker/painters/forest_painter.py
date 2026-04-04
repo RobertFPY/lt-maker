@@ -25,8 +25,8 @@ class ForestPainter(Painter):
         my_radius_height: float = abs(pos[1] + 0.5 - center_y)
         depth_w: float = (blob_width / 2) - my_radius_width
         depth_h: float = (blob_height / 2) - my_radius_height
-        chance_w: float = lerp(1, 0, depth_w/4)
-        chance_h: float = lerp(1, 0, depth_h/4)
+        chance_w: float = lerp(1, 0, depth_w/3)
+        chance_h: float = lerp(1, 0, depth_h/3)
         chance_to_lose_adjacent_edges: float = clamp(max(chance_w, chance_h), 0, 1)
 
         north_edge = bool(north and north not in self.forest_like)  # Whether we don't border a forest

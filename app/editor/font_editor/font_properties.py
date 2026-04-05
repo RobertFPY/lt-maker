@@ -290,8 +290,6 @@ class FontProperties(QWidget):
             return
         self.setEnabled(True)
 
-        self._reinit_bmp_font()
-
         ttf_basename = os.path.basename(current.fallback_ttf) if current.fallback_ttf else ""
         self.fallback_ttf_box.edit.blockSignals(True)
         self.fallback_ttf_box.edit.setText(ttf_basename)
@@ -332,6 +330,8 @@ class FontProperties(QWidget):
             if idx >= 0:
                 self.preview_color_box.setCurrentIndex(idx)
         self.preview_color_box.blockSignals(False)
+
+        self._reinit_bmp_font()
 
     def _on_palette_changed(self):
         if not self.current:

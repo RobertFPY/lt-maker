@@ -3,12 +3,13 @@ from __future__ import annotations
 from PyQt5 import QtGui
 from PyQt5.QtCore import Qt
 
-from typing import Dict, Optional
+from typing import Dict, Set, Optional
 from app.utilities.typing import Color3
 
 from app.constants import COLORKEY
 from app.data.resources.combat_palettes import Palette
 from app.data.resources.combat_anims import Frame
+from app.data.resources.default_palettes import blue as default_blue_palette
 
 qCOLORKEY = QtGui.qRgb(*COLORKEY)
 qEFFECT_COLORKEY = QtGui.qRgb(0, 0, 0)
@@ -136,6 +137,46 @@ def convert_gba(image):
         new_color = (color.red() // 8 * 8), (color.green() // 8 * 8), (color.blue() // 8 * 8)
         image.setColor(i, QtGui.qRgb(*new_color))
     return image
+
+def find_closest_match(color: QtGui.QColor, palette: Set[Color3]) -> Optional[Color3]:
+    #   Given a color and a palette, find the palette color that closest matches the color
+    #   Return None if color is present in the palette
+
+    rgb = (color.red(), color.green(), color.blue())
+    if rgb in palette:
+        return None
+
+    closest_diff = (256 ** 2) * 3   # Largest value possible
+    for c in palette:
+        diff = sum((c[i] - rgb[i])**2 for i in range(3))
+        if diff < closest_diff:
+            closest_rgb = c
+            closest_diff = diff
+    return closest_rgb
+
+def convert_default_palette(image: QtGui.QImage) -> Optional[QtGui.QImage]:
+    #   Recolor the given image using only colors from the default palette
+    #   Return None if no recolor needed (the image already uses only colors from default palette)
+
+    did_something = False
+    palette = set(default_blue_palette)
+    for i in range(image.colorCount()):
+        color = QtGui.QColor(image.color(i))
+        if new_color := find_closest_match(color, palette):
+            image.setColor(i, QtGui.qRgb(*new_color))
+            did_something = True
+    if did_something:
+        return image
+
+def convert_default_palette_pixmap(pixmap: QtGui.QPixmap) -> Optional[QtGui.QPixmap]:
+    #   Recolor the given image using only colors from the default palette
+    #   Return None if no recolor needed (the image already uses only colors from default palette)
+
+    im = pixmap.toImage()
+    im.convertTo(QtGui.QImage.Format_Indexed8)
+    if im := convert_default_palette(im):
+        pixmap = QtGui.QPixmap.fromImage(im)
+        return pixmap
 
 def get_bbox(image, exclude_color: Optional[QtGui.qRgb] = None):
     min_x, max_x = image.width(), 0

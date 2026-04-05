@@ -185,7 +185,6 @@ def create_new(window):
             else:
                 QMessageBox.critical(window, "Error", "Cannot load GBA map sprites without having saved the project")
                 return
-        window.data.append(new_map_sprite)
         parent_dir = os.path.split(fn)[0]
         settings.set_last_open_path(parent_dir)
         return new_map_sprite

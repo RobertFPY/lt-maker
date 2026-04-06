@@ -12,6 +12,7 @@ from PyQt5.QtGui import QIcon
 from app import autoupdate, dark_theme
 
 from app.editor.file_manager.project_builder.project_builder import LTProjectBuilder
+from app.editor.font_editor.font_tab import FontDatabase
 from app.editor.settings.preferences_tabbed import TabbedPreferencesDialog
 from app.editor.settings import MainSettingsController
 
@@ -267,7 +268,8 @@ class MainEditor(QMainWindow):
                             "Map Sprites": NewMapSpriteDatabase.edit,
                             "Combat Animations": self.edit_combat_animations,
                             "Tilemaps": self.edit_tilemaps,
-                            "Sounds": self.edit_sounds
+                            "Sounds": self.edit_sounds,
+                            "Fonts": FontDatabase.edit
                             }
         self.resource_actions = {}
         for name, func in resource_actions.items():

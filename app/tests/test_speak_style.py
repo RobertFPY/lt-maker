@@ -10,7 +10,7 @@ class CsvExporterTests(unittest.TestCase):
         from app.data.resources.resources import RESOURCES
         from app.engine import fonts
         RESOURCES.load('testing_proj.ltproj', CURRENT_SERIALIZATION_VERSION)
-        fonts.load_fonts()
+        fonts.load_fonts(headless=True)
         self.db = SpeakStyleLibrary()
 
     def tearDown(self) -> None:

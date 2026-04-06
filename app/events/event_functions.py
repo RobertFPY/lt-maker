@@ -3027,13 +3027,21 @@ def base(self: Event, background: str, music: SongPrefab | SongObject | NID = No
     self.game.state.change('base_main')
     self.state = 'paused'
 
-def set_custom_options(self: Event, custom_options: List[str], custom_options_enabled: List[bool] = None,
-                       custom_options_desc: List[str] = None, custom_options_on_select: List[str] = None, flags=None):
+def set_custom_options(
+    self: Event,
+    custom_options: Optional[List[str]],
+    custom_options_enabled: Optional[List[bool]] = None,
+    custom_options_desc: Optional[List[str]] = None,
+    custom_options_on_select: Optional[List[str]] = None,
+    flags: Optional[set[str]] = None
+) -> None:
+    
     flags = flags or set()
 
     options_list = custom_options or []
     options_enabled = custom_options_enabled or []
     options_desc = [option + '_desc' for option in options_list]
+    options_desc_str = custom_options_desc or []
     options_events = custom_options_on_select or []
 
     if len(options_enabled) <= len(options_list):
@@ -3043,12 +3051,12 @@ def set_custom_options(self: Event, custom_options: List[str], custom_options_en
         self.logger.error("set_custom_options: too many bools in option enabled list: ", custom_options_enabled)
         return
 
-    if len(custom_options_desc) <= len(options_events):
-        for idx, desc in enumerate(custom_options_desc):
+    if len(options_desc_str) <= len(options_events):
+        for idx, desc in enumerate(options_desc_str):
             options_desc[idx] = desc
         action.do(action.SetGameVar('_custom_info_desc', options_desc))
     else:
-        self.logger.error("set_custom_options: too many descriptions in option description list: ", custom_options_desc)
+        self.logger.error("set_custom_options: too many descriptions in option description list: ", options_desc_str)
         return
 
     if len(options_events) <= len(options_list):

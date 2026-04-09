@@ -258,6 +258,7 @@ class MapCombat(SimpleCombat):
                 self.set_state('begin_phase')
                 
         elif self.state == 'exp_wait':
+            self.health_bars.clear()
             self.clean_up1()
             self.set_state('post_combat')
             

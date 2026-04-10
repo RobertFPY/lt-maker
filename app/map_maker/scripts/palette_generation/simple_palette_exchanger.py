@@ -1,7 +1,7 @@
 from typing import Dict
 
 import glob
-from PyQt5.QtGui import QImage, qRgb
+from PyQt5.QtGui import QImage, qRgb, QColor
 
 from app.editor.tile_editor.autotiles import PaletteData, check_hashes
 
@@ -63,9 +63,9 @@ if __name__ == '__main__':
     #                              'app/map_maker/palettes/monastery_outdoors/sparse_forest.png',
     #                              'app/map_maker/palettes/monastery_outdoors/thicket.png',
     #            
-    color_change_these_images = ['app/map_maker/palettes/greysnow/*.png']
-    original_palette = 'app/map_maker/palettes/monastery_outdoors/main.png'
-    new_palette = 'app/map_maker/palettes/greysnow_outdoors/Snow_Ruins.png'
+    color_change_these_images = ['app/map_maker/palettes/desert/*.png']
+    original_palette = 'app/map_maker/palettes/sacred_fields/main.png'
+    new_palette = 'app/map_maker/palettes/ImprovedDesert.png'
 
     change_images = []
     for c in color_change_these_images:
@@ -81,6 +81,17 @@ if __name__ == '__main__':
             if check_hashes(orig, new):
                 conv = get_color_exchange(orig, new)
                 palette_exchange.update(conv)
+
+    # Remove 0, 0, 0 on both sides
+    palette_exchange.pop(qRgb(0, 0, 0))
+    for k, v in list(palette_exchange.items()):
+        if v == qRgb(0, 0, 0):
+            palette_exchange.pop(k)
+    # Print transfers
+    for opalette, npalette in palette_exchange.items():
+        k = QColor(opalette)
+        v = QColor(npalette)
+        print(f"({k.red()}, {k.green()}, {k.blue()}) -> ({v.red()}, {v.green()}, {v.blue()})")
 
     for im_path in change_images[:]:
         print(im_path)

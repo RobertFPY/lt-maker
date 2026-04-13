@@ -411,11 +411,14 @@ class PrepFormationState(MapState):
             game.state.back()
 
         elif event == 'START':
-            get_sound_thread().play_sfx('Select 5')
             if DB.constants.value('initiative'):
+                get_sound_thread().play_sfx('Select 5')
                 game.initiative.toggle_draw()
-            else:
+            elif DB.constants.value('minimap') and game.game_vars.get('_minimap', True):
+                get_sound_thread().play_sfx('Select 5')
                 game.state.change('minimap')
+            else:
+                get_sound_thread().play_sfx('Error')
 
     def update(self):
         super().update()

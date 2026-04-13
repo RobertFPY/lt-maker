@@ -92,6 +92,32 @@ class InputManager():
         else:  # Returns None if mouse is not in screen
             return None
 
+    def get_mouse_pos_with_scaled_surf(self) -> Tuple[int, int] | None:
+        """
+        Return mouse coordinates corresponding to scaled surface.
+        """
+        mouse_pos = engine.get_mouse_pos()
+        if not mouse_pos or not engine.get_mouse_focus():
+            return None
+
+        win_w, win_h = engine.get_screen_size()
+        base_w, base_h = WINWIDTH, WINHEIGHT
+
+        # calculate scale & offset 
+        scale = min(win_w / base_w, win_h / base_h)
+        offset_x = (win_w - int(base_w * scale)) // 2
+        offset_y = (win_h - int(base_h * scale)) // 2
+
+        mx, my = mouse_pos
+        mx -= offset_x
+        my -= offset_y
+
+        # convert to game coordinates
+        mx = max(0, min(base_w - 1, int(mx / scale)))
+        my = max(0, min(base_h - 1, int(my / scale)))
+
+        return mx, my
+
     def update(self):
         self.update_key_map()
         self.update_joystick_control()

@@ -751,7 +751,9 @@ class TitleExtrasState(TitleLoadState):
         self.bg = game.memory['title_bg']
         self.particles = game.memory['title_particles']
 
-        options = ['Options', 'Credits']
+        options = ['Options']
+        if DB.constants.value('title_credits'):
+            options.append('Credits')
         if DB.constants.value('title_sound'):
             options.append('Sound Room')
         if RECORDS.check_support_room_unlocked():

@@ -63,9 +63,9 @@ if __name__ == '__main__':
     #                              'app/map_maker/palettes/monastery_outdoors/sparse_forest.png',
     #                              'app/map_maker/palettes/monastery_outdoors/thicket.png',
     #            
-    color_change_these_images = ['app/map_maker/palettes/desert/*.png']
-    original_palette = 'app/map_maker/palettes/sacred_fields/main.png'
-    new_palette = 'app/map_maker/palettes/ImprovedDesert.png'
+    color_change_these_images = ['app/map_maker/palettes/test/*.png']
+    original_palette = 'app/map_maker/palettes/ImprovedDesert.png'
+    new_palette = 'app/map_maker/palettes/sacred_fields/main.png'
 
     change_images = []
     for c in color_change_these_images:

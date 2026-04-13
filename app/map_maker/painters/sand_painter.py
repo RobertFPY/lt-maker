@@ -10,6 +10,7 @@ class SandPainter(WangCorner8Painter):
         Terrain.SAND,
         Terrain.ROAD, 
         Terrain.SEA,
+        Terrain.DESERT,
         Terrain.BRIDGEV,
         Terrain.BRIDGEH,
         Terrain.HOUSE,

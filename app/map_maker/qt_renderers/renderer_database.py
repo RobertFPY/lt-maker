@@ -57,6 +57,12 @@ RENDERERS[Terrain.MOUNTAIN] = \
 RENDERERS[Terrain.CLIFF] = \
     CliffRenderer(PAINTERS[Terrain.CLIFF],
                   PALETTES.outdoor_palettes()[0].get(Terrain.CLIFF))
+RENDERERS[Terrain.DESERT] = \
+    LimitRenderer16(PAINTERS[Terrain.DESERT],
+                    PALETTES.outdoor_palettes()[0].get(Terrain.DESERT))
+RENDERERS[Terrain.DESERT_CLIFF] = \
+    CliffRenderer(PAINTERS[Terrain.DESERT_CLIFF],
+                  PALETTES.outdoor_palettes()[0].get(Terrain.DESERT_CLIFF))
 RENDERERS[Terrain.BRIDGEH] = \
     LimitRenderer16(PAINTERS[Terrain.BRIDGEH],
                     PALETTES.outdoor_palettes()[0].get(Terrain.BRIDGEH))

@@ -45,6 +45,25 @@ def _generate_terrain_process(theme: Dict[NID, Any], seed: int) -> Optional[Worl
         new_terrain_noise_map[(pos[0] - 1, pos[1] - 1)] = value
     terrain_noise_map = new_terrain_noise_map
 
+    # Modify elevation
+    new_terrain_noise_map = {}
+    for pos, value in terrain_noise_map.items():
+        new_terrain_noise_map[pos] = utils.clamp(value + theme['elevation'], 0, 1)
+    terrain_noise_map = new_terrain_noise_map
+
+    # Set Water Border
+    if theme['water_border']:
+        new_terrain_noise_map = {}
+        for pos, value in terrain_noise_map.items():
+            distance_from_center_x = abs(tilemap.width/2 - pos[0])/(tilemap.width/2)
+            distance_from_center_y = abs(tilemap.height/2 - pos[1])/(tilemap.height/2)
+            total_distance_from_center = math.sqrt(distance_from_center_x**2 + distance_from_center_y**2)
+            if total_distance_from_center < 0.9:
+                total_distance_from_center = 0
+            new_value = value * utils.clamp(1 - total_distance_from_center, 0, 1)
+            new_terrain_noise_map[pos] = new_value
+        terrain_noise_map = new_terrain_noise_map
+
     # 1.5 Fill any sinks with the lowest average of the adjacent tiles
     new_terrain_noise_map = {}
     for pos, value in terrain_noise_map.items():

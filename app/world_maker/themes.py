@@ -19,10 +19,13 @@ theme_parameters = Data([
     ThemeParameter('forest_threshold', "Forest Chance", 0.35, percent, "Height of forest noise map that produces forests"),
     ThemeParameter('thick_forest_threshold', "Thick Forest Chance", 0.2, percent, "Height of forest noise map that produces thick forests"),
     ThemeParameter('river_incidence', "River Chance", 0.05, percent, "Chance that any given tile becomes a river"),
+    ThemeParameter('elevation', "Elevation Modification", 0.0, float, "Modify the effective elevation generated"),
+    ThemeParameter('water_border', "Set Sea Border", False, bool, "Add a sea border around the map"),
 ])
 
 theme_presets: Dict[str, Dict[NID, Any]] = {
     "Default": {},
+    "Pangaea": {"water_border": True}
 }
 
 def get_default_theme() -> Dict[NID, Any]:

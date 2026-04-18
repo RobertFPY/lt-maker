@@ -1,0 +1,9 @@
+{
+    "author": "ZoramineFae",
+    "name": "Desert Ruins",
+    "floor1": "default",
+    "floor2": "ruins",
+    "floor3": "grass",
+    "location": "ImprovedDesert.png",
+    "outdoor": false
+}

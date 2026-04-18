@@ -41,15 +41,6 @@ class SeaPainter(WangEdge16Painter):
     def has_autotiles(self) -> bool:
         return True
 
-    def _determine_index(self, tilemap, pos: Pos) -> int:
-        north, east, south, west = tilemap.get_cardinal_terrain(pos)
-        north_edge = bool(not north or north in self.terrain_like)
-        south_edge = bool(not south or south in self.terrain_like)
-        east_edge = bool(not east or east in self.terrain_like)
-        west_edge = bool(not west or west in self.terrain_like)
-        index = 1 * north_edge + 2 * east_edge + 4 * south_edge + 8 * west_edge
-        return index
-
     def _near_sand(self, tilemap, pos: Pos) -> bool:
         return any(_ == Terrain.SAND for _ in tilemap.get_cardinal_terrain(pos))
 

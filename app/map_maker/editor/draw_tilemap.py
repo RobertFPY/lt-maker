@@ -69,8 +69,8 @@ def draw_tilemap(tilemap: MapPrefab, autotile_fps=29) -> QImage:
 
     # Draw the tile grid
     for pos, pix in tilemap.tile_grid.items():
-        assert pix.width() == TILEWIDTH, pix.width()
-        assert pix.height() == TILEHEIGHT, pix.height()
+        assert pix.width() == TILEWIDTH, (pos, pix.width())
+        assert pix.height() == TILEHEIGHT, (pos, pix.height())
         qpainter.drawPixmap(pos[0] * TILEWIDTH,
                             pos[1] * TILEHEIGHT,
                             pix)

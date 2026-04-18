@@ -16,6 +16,7 @@ from app.map_maker.painters import (
     MountainPainter,
     CliffPainter,
     DesertPainter,
+    DesertRockPainter,
     CastlePainter,
     HousePainter,
     RuinsPainter,
@@ -59,6 +60,7 @@ PAINTERS[Terrain.MOUNTAIN] = MountainPainter()
 PAINTERS[Terrain.CLIFF] = CliffPainter()
 PAINTERS[Terrain.DESERT] = DesertPainter()
 PAINTERS[Terrain.DESERT_CLIFF] = CliffPainter()
+PAINTERS[Terrain.DESERT_ROCK] = DesertRockPainter()
 PAINTERS[Terrain.BRIDGEH] = WangEdge16Painter()
 PAINTERS[Terrain.BRIDGEH].terrain_like = (Terrain.BRIDGEH, )
 PAINTERS[Terrain.BRIDGEV] = WangEdge16Painter()

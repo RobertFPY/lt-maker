@@ -22,6 +22,7 @@ class Terrain(namedtuple("Terrain", "value outdoor"), Enum):
     SEA = 'Sea', True
     DESERT = 'Desert', True
     DESERT_CLIFF = 'Desert Cliff', True
+    DESERT_ROCK = 'Desert Rock', True
     BRIDGEH = 'Bridge H', True
     BRIDGEV = 'Bridge V', True
     HOUSE = 'House', True

@@ -16,5 +16,6 @@ from .ruined_floor_painter import RuinedFloorPainter, GrassFloorPainter
 from .sand_painter import SandPainter
 from .sea_painter import SeaPainter
 from .desert_painter import DesertPainter
+from .desert_rock_painter import DesertRockPainter
 from .stairs_painter import StairsUpDownPainter, StairsLeftPainter, StairsRightPainter
 from .wall_painter import WallTopPainter, WallBottomPainter, ColumnPainter

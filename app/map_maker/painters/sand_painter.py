@@ -11,6 +11,8 @@ class SandPainter(WangCorner8Painter):
         Terrain.ROAD, 
         Terrain.SEA,
         Terrain.DESERT,
+        Terrain.DESERT_CLIFF,
+        Terrain.DESERT_ROCK,
         Terrain.BRIDGEV,
         Terrain.BRIDGEH,
         Terrain.HOUSE,

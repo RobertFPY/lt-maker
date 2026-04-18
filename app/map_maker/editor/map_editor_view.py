@@ -86,10 +86,10 @@ class MapEditorView(QGraphicsView):
             for y in range(self.tilemap.height):
                 painter.drawLine(0, y * TILEHEIGHT, self.tilemap.width * TILEWIDTH, y * TILEHEIGHT)
 
-        # Draw cliff markers
-        painter.setPen(QPen(QColor(255, 0, 0, 128), 2))
-        for cliff_marker in self.tilemap.cliff_markers:
-            painter.drawPoint(cliff_marker[0] * TILEWIDTH, cliff_marker[1] * TILEHEIGHT)
+            # Draw cliff markers
+            painter.setPen(QPen(QColor(255, 0, 0, 128), 2))
+            for cliff_marker in self.tilemap.cliff_markers:
+                painter.drawPoint(cliff_marker[0] * TILEWIDTH, cliff_marker[1] * TILEHEIGHT)
 
         # Draw cursor...
         if self.window.current_tool == PaintTool.CliffMarker:

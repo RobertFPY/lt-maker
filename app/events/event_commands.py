@@ -2944,7 +2944,7 @@ What is the difference? The Python Expression will be constantly updated, which 
 **NOTE: Use the flags to determine the correct type.**
 
 **NOTE:** You can use the `|` delimiter to mark a distinction between the nid of a choice, and the text of a choice, if the nid is not meant to be read.
-For example, suppose you give the player a choice between two klasses, and these klasses are called ArmorKnight\_Sun and ArmorKnight\_Moon. Obviously, you don't
+For example, suppose you give the player a choice between two klasses, and these klasses are called ArmorKnight_Sun and ArmorKnight_Moon. Obviously, you don't
 want the player to be forced to read the weird nid. You can instead populate the choices like so:
 
 `choice;ClassSelection;Choose Class; ArmorKnight_Sun|Solar Knight,ArmorKnight_Moon|Lunar Knight;...`
@@ -3660,7 +3660,7 @@ class UpdateAchievement(EventCommand):
 class CompleteAchievement(EventCommand):
     nid = 'complete_achievement'
     tag = Tags.ACHIEVEMENT
-    desc = ('True marks the achievement as complete. False marks it as incomplete. No effect if achievement doesn\'t exist.\n\nYou can check an achievement\'s completion status with `check_achievement("nid")`\n\nbanner flag determines whether a pop-up box will appear notifying the player.')
+    desc = ('True marks the achievement as complete. False marks it as incomplete. No effect if achievement doesn\'t exist.\n\nYou can check an achievement\'s completion status with `has_achievement("nid")`\n\nbanner flag determines whether a pop-up box will appear notifying the player.')
 
     keywords = ['Achievement', 'Completed']
     keyword_types = ['Achievement', 'Bool']

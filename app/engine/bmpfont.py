@@ -1,50 +1,96 @@
 from typing import Dict, Optional, Tuple
 from functools import lru_cache
-from app.data.resources.fonts import Font
+from app.data.resources.fonts import Font, FontIndex
 
-from app.engine import engine
+from app.engine import engine, image_mods
 import pygame
 
 from app.utilities.typing import Color4
 
 OUTLINE_WIDTH = 1
 
-@lru_cache()
-def default_render_with_outline(font: pygame.font.Font, char: str, height: int, internal_color: Color4, outline_color: Color4) -> Tuple[engine.Surface, int]:
-    text_width, _ = font.size(char)
-    surf = engine.create_surface((text_width + 2 * OUTLINE_WIDTH, height), True)
-    internal = font.render(char, False, internal_color)
-    outline = font.render(char, False, outline_color)
-    for i in -OUTLINE_WIDTH, OUTLINE_WIDTH:
-        surf.blit(outline, (i + OUTLINE_WIDTH, OUTLINE_WIDTH))
-        surf.blit(outline, (OUTLINE_WIDTH, i + OUTLINE_WIDTH))
-    surf.blit(internal, (OUTLINE_WIDTH, OUTLINE_WIDTH))
-    return surf, text_width
+class FallbackFont():
+    """TTF font wrapper used when a BmpFont character is not in its sprite sheet.
 
-@lru_cache()
-def default_render(font: pygame.font.Font, char: str, height: int, color: Color4) -> Tuple[engine.Surface, int]:
-    text_width, _ = font.size(char)
-    surf = engine.create_surface((text_width, height), True)
-    black = font.render(char, False, color)
-    surf.blit(black, (0, 0))
-    return surf, text_width
+    Args:
+        font: The pygame TTF font to render with.
+        height: Row height in pixels, matching the parent BmpFont's char height.
+        outline: Whether to render characters with a 1px cardinal outline
+            (internal color + outline color), as opposed to plain rendering.
+        headless: If True, surfaces are created without convert_alpha(). Required
+            when no pygame display has been initialised (e.g. editor previews).
+    """
+    def __init__(self, font: pygame.font.Font, height: int, outline: bool, headless: bool = False):
+        self.font = font
+        self.height = height
+        self.outline = outline
+        self.headless = headless
+
+    def _make_surface(self, size: Tuple[int, int]) -> pygame.Surface:
+        if self.headless:
+            return pygame.Surface(size, pygame.SRCALPHA, 32)
+        return engine.create_surface(size, transparent=True)
+
+    @lru_cache()
+    def char_width(self, c: str) -> int:
+        text_width = self.font.size(c)[0]
+        if self.outline:
+            text_width += 2 * OUTLINE_WIDTH
+        return text_width
+
+    @lru_cache()
+    def render_char(self, c: str, color: Color4, outline_color: Color4 = None) -> Tuple[engine.Surface, int]:
+        text_width = self.font.size(c)[0]
+        if self.outline:
+            surf = self._make_surface((text_width + 2 * OUTLINE_WIDTH, self.height))
+            internal = self.font.render(c, False, color)
+            outline = self.font.render(c, False, outline_color)
+            for i in -OUTLINE_WIDTH, OUTLINE_WIDTH:
+                surf.blit(outline, (i + OUTLINE_WIDTH, OUTLINE_WIDTH))
+                surf.blit(outline, (OUTLINE_WIDTH, i + OUTLINE_WIDTH))
+            surf.blit(internal, (OUTLINE_WIDTH, OUTLINE_WIDTH))
+        else:
+            surf = self._make_surface((text_width, self.height))
+            surf.blit(self.font.render(c, False, color), (0, 0))
+        return surf, text_width
 
 class BmpFont():
-    def __init__(self, font_info: Font, png_path: str, idx_path: str = None):
-        self.png_path = png_path
+    """Bitmap font renderer backed by a sprite sheet PNG.
+
+    Args:
+        font_info: Font metadata including color palettes, fallback TTF path, and
+            the character index mapping glyphs to sprite sheet coordinates.
+        headless: If True, surfaces are created without
+            convert_alpha() and the sprite sheet is loaded without conversion.
+            Must be True when no pygame display has been initialised (e.g. editor
+            previews). Defaults to False for normal in-game use.
+    """
+    def __init__(self, font_info: Font, headless: bool = False):
+        self.png_path = font_info.image_path()
         self.memory: Dict[str, Dict[str, Tuple[engine.Surface, int]]] = {}
 
         self.font_info = font_info
         self.fallback_font = None
         if self.font_info.ttf_path():
-            self.fallback_font = pygame.font.Font(self.font_info.ttf_path(), font_info.fallback_size)
+            self.fallback_font = FallbackFont(
+                pygame.font.Font(self.font_info.ttf_path(), font_info.fallback_size),
+                font_info.font_index.char_height,
+                font_info.outline_font,
+                headless=headless,
+            )
 
         self.index = font_info.font_index
 
         self.default_color = font_info.default_color or 'default'
         self.surfaces: Dict[str, engine.Surface] = {}
-        self.surfaces[font_info.default_color or 'default'] = engine.image_load(self.png_path)
-        # engine.set_colorkey(self.surface, (0, 0, 0), rleaccel=True)
+        base_surf = engine.image_load(self.png_path, convert_alpha=not headless)
+        self.surfaces[self.default_color] = base_surf
+        for color_name, palette in font_info.palettes.items():
+            if color_name == self.default_color:
+                self.surfaces[color_name] = base_surf
+            else:
+                palette_map = {orig: new for orig, new in zip(map(tuple, font_info.palettes[self.default_color]), map(tuple, palette))}
+                self.surfaces[color_name] = image_mods.color_convert_alpha(base_surf.copy(), palette_map)
 
     @property
     def all_uppercase(self) -> bool:
@@ -90,28 +136,20 @@ class BmpFont():
         if c in self.chartable:
             return self.chartable[c].char_width
         if self.fallback_font:
-            if self.font_info.outline_font:
-                return default_render_with_outline(self.fallback_font, c, self.height, (0, 0, 0), (0, 0, 0))[1]
-            else:
-                return default_render(self.fallback_font, c, self.height, (0, 0, 0))[1]
+            return self.fallback_font.char_width(c)
         return 8
 
     @lru_cache()
     def _get_char_from_surf(self, c: str, color: str = None) -> Tuple[engine.Surface, int]:
         if not color:
             color = self.default_color
-        if c not in self.chartable:
-            if self.fallback_font:
-                if self.font_info.outline_font:
-                    return default_render_with_outline(self.fallback_font, c, self.height, tuple(self.font_info.primary_color(color)), tuple(self.font_info.secondary_color(color)))
-                else:
-                    return default_render(self.fallback_font, c, self.height, tuple(self.font_info.primary_color(color)))
-            else:
-                cx, cy, cwidth = 0, 0, 8
-                print("unknown char: %s" % c)
-        else:
+        if c in self.chartable:
             c_info = self.chartable[c]
             cx, cy, cwidth = c_info.x, c_info.y, c_info.char_width
+        elif self.fallback_font:
+            return self.fallback_font.render_char(c, tuple(self.font_info.primary_color(color)), tuple(self.font_info.secondary_color(color)))
+        else:
+            cx, cy, cwidth = 0, 0, 8
         base_surf = self.surfaces.get(color, self.surfaces[self.default_color])
         char_surf = engine.subsurface(base_surf, (cx, cy, self._width, self.height))
         return (char_surf, cwidth)
@@ -122,11 +160,10 @@ class BmpFont():
             color = self.default_color
         if c not in self.chartable:
             cx, cy, cwidth = 0, 0, 8
-            print("unknown char: %s" % c)
         else:
             c_info = self.chartable[c]
             cx, cy, cwidth = c_info.x, c_info.y, c_info.char_width
-        base_surf = self.surfaces.get(color)
+        base_surf = self.surfaces.get(color, self.surfaces[self.default_color])
         high_surf = engine.subsurface(base_surf, (cx, cy, self._width, self.height))
         lowsurf = engine.subsurface(base_surf, (cx, cy + self.height, self._width, self.height))
         return (high_surf, lowsurf, cwidth)

@@ -63,11 +63,12 @@ if __name__ == '__main__':
     #                              'app/map_maker/palettes/monastery_outdoors/sparse_forest.png',
     #                              'app/map_maker/palettes/monastery_outdoors/thicket.png',
     #            
-    color_change_these_images = ['app/map_maker/palettes/greysnow_outdoors/desert.png',
-                                 'app/map_maker/palettes/greysnow_outdoors/desert_cliff.png',
-                                 'app/map_maker/palettes/greysnow_outdoors/desert_rock.png']
-    original_palette = 'app/map_maker/palettes/desert/ImprovedDesert.png'
-    new_palette = 'app/map_maker/palettes/greysnow_outdoors/Snow_Ruins.png'
+    # color_change_these_images = ['app/map_maker/palettes/greysnow_outdoors/desert.png',
+    #                              'app/map_maker/palettes/greysnow_outdoors/desert_cliff.png',
+    #                              'app/map_maker/palettes/greysnow_outdoors/desert_rock.png']
+    color_change_these_images = ['app/map_maker/palettes/desert_ruins/*.png']
+    original_palette = 'app/map_maker/palettes/monastery/main.png'
+    new_palette = 'app/map_maker/palettes/desert/ImprovedDesert.png'
 
     change_images = []
     for c in color_change_these_images:
@@ -85,9 +86,12 @@ if __name__ == '__main__':
                 palette_exchange.update(conv)
 
     # Remove 0, 0, 0 on both sides
-    palette_exchange.pop(qRgb(0, 0, 0))
+    black = qRgb(0, 0, 0)
+    # if black in palette_exchange:
+    print(palette_exchange)
+    palette_exchange.pop(black)
     for k, v in list(palette_exchange.items()):
-        if v == qRgb(0, 0, 0):
+        if v == black:
             palette_exchange.pop(k)
     # Print transfers
     for opalette, npalette in palette_exchange.items():

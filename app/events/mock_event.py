@@ -1,6 +1,8 @@
 from enum import Enum
 from typing import List
 
+from app.data.database.database import DB
+
 from app.engine import engine
 from app.events import speak_style, event_commands
 from app.events.event import Event
@@ -52,6 +54,17 @@ class MockEvent(Event):
         self.game = MockGame()
 
         self._generic_setup()
+
+        # Adding all in-game `speak_style;` commands, so that SpeakStyle can be used in both Test Event and Support Room
+        # Must be after _genetic_setup(), so that self.logger() is initialised
+        # Limit to Global events only
+        self.logger.debug("Loading speak styles from all event scripts")
+        inspector = DB.events.inspector
+        for command in inspector.find_all_calls_of_command(event_commands.SpeakStyle(), level_nid = None).values():
+            # We need to run convert_parse on these commands also!
+            parameters, flags = event_commands.convert_parse(command, None)
+            processed_command = event_commands.SpeakStyle(parameters, flags, command.display_values)
+            self.command_queue.append(processed_command)
 
         self.text_evaluator = TextEvaluator(self.logger, None)
         if event_prefab.version() != EventVersion.EVENT:

@@ -638,7 +638,7 @@ class ExtrasSupportDisplay(SupportDisplay):
             prefab = prefabs[0]
             bonus = prefab.requirements[self.rank_idx]
             rank = bonus.support_rank
-            if RECORDS.check_support_unlocked(prefab.nid, rank):
+            if self.fully_unlocked or RECORDS.check_support_unlocked(prefab.nid, rank):
                 self.trigger(triggers.OnSupport(DB.units.get(self.unit_nid),
                                                 DB.units.get(other_unit_nid),
                                                 None, rank, True))

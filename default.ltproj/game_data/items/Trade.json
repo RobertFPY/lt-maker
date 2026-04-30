@@ -71,6 +71,10 @@
             [
                 "menu_after_combat",
                 null
+            ],
+            [
+                "map_cast_pose",
+                null
             ]
         ]
     }

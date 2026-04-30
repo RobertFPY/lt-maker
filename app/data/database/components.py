@@ -150,8 +150,8 @@ class Component():
     def save(self):
         if isinstance(self.value, Data):
             return self.nid, self.value.save()
-        elif isinstance(self.value, list):
-            # Handle lists of lists with deepcopy
+        elif isinstance(self.value, list) or isinstance(self.value, dict):
+            # Handle lists of lists or dictionaries with deepcopy
             return self.nid, copy.deepcopy(self.value)
         else:
             return self.nid, self.value

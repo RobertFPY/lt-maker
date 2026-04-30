@@ -55,22 +55,17 @@ class MockEvent(Event):
 
         self._generic_setup()
 
-        # Adding all in-game `speak_style;` commands, so that SpeakStyle can be used in both Test Event and Support Room
-        # Must be after _genetic_setup(), so that self.logger() is initialised
-        # Limit to Global events only
-        self.logger.debug("Loading speak styles from all event scripts")
-        inspector = DB.events.inspector
-        for command in inspector.find_all_calls_of_command(event_commands.SpeakStyle(), level_nid = None).values():
-            # We need to run convert_parse on these commands also!
-            parameters, flags = event_commands.convert_parse(command, None)
-            processed_command = event_commands.SpeakStyle(parameters, flags, command.display_values)
-            self.command_queue.append(processed_command)
-
         self.text_evaluator = TextEvaluator(self.logger, None)
         if event_prefab.version() != EventVersion.EVENT:
             self.processor = MockPythonEventProcessor('Mock', event_prefab.source)
         else:
             self.processor = MockEventProcessor('Mock', event_prefab.source, self.text_evaluator, if_statement_strategy, command_idx)
+
+        # Runs the `on_startup` trigger event commands before running the main MockEvent (to load speak_style)
+        startup_event_prefabs = DB.events.get('on_startup', None)
+        for startup in startup_event_prefabs:
+            for line in startup.source.split('\n'):
+                self.queue_command(line)
 
     def update(self):
         # update all internal updates, remove the ones that are finished

@@ -131,7 +131,6 @@ class EventInspectorEngine():
             del self.parsed[event_nid]
 
     def get_commands(self, event_nid) -> List[EventCommand]:
-        # NOTE: Still need to run convert_parse on these commands if you want them to be processed!!
         if event_nid not in self.parsed:
             event = self.event_db.get_by_nid_or_name(event_nid)[0]
             if event:

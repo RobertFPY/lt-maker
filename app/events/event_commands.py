@@ -549,8 +549,8 @@ Automatically formats all `speak` commands with NID equal to the style's NID wit
 
 A style consists of all parameters that one can apply to individual speak commands, including flags.
 
-NOTE: Speak styles persist through events. If you load your speak styles in the `on_title_screen` trigger, you will be able to use them
-throughout the entire game.
+NOTE: Speak styles persist through events. It's recommended to load your speak styles in the `on_startup` trigger,
+so you will be able to use them throughout the entire game, even during *Test Event* or *Support Room*.
 
 NOTE: You can set the `__default` speak style, which will automatically apply to all speak commands thereafter.
 """

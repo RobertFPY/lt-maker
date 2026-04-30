@@ -2724,7 +2724,7 @@ class ChangeObjectiveSimple(EventCommand):
 Changes the simple version of the chapter's objective text to *EvaluableString*.
         """
 
-    keywords = ["EvaluableString"]
+    optional_keywords = ["EvaluableString"]
 
 class ChangeObjectiveWin(EventCommand):
     nid = 'change_objective_win'

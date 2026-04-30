@@ -319,7 +319,7 @@ class UIView():
         return bg_surf
 
     def create_obj_info(self):
-        obj = game.level.objective['simple']
+        obj = game.level.objective['simple'] or ""
         text_parser = TextEvaluator(logging.getLogger(), game)
         text_lines = text_parser._evaluate_all(obj).split(',')
         text_lines = [line.replace('{comma}', ',') for line in text_lines]

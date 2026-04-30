@@ -310,13 +310,17 @@ class OnTurnwheel(EventTrigger):
 class OnTitleScreen(EventTrigger):
     """
     Occurs before the title screen is shown.
+    Intended for title screen cutscenes and frontend presentation logic.
+    Use this instead of "OnStartup" for anything that should be visible on the title screen.
     """
     nid: ClassVar[NID] = 'on_title_screen'
 
 @dataclass(init=True)
 class OnStartup(EventTrigger):
     """
-    Occurs whenever the engine starts.
+    Occurs whenever the engine starts, before "OnTitleScreen".
+    Intended for backend setup steps (such as 'speak_style' configuration).
+    Should not contain cutscenes - use "OnTitleScreen" for those instead.
     """
     nid: ClassVar[NID] = 'on_startup'
 

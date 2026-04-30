@@ -222,11 +222,12 @@ class ShoveOnEndCombat(Shove):
     expose = ComponentType.Int
     value = 1
 
-    def end_combat(self, playback, unit, item, target, item2, mode):
+    def cleanup_combat(self, playback, unit, item, target, item2, mode):
         if target and not skill_system.ignore_forced_movement(target) and mode:
             new_position = game.query_engine.check_shove(target, unit.position, self.value)
             if new_position:
                 action.do(action.ForcedMovement(target, new_position))
+                playback.append(pb.ShoveHit(unit, item, target))
 
     def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         pass

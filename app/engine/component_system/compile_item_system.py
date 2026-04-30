@@ -113,6 +113,7 @@ ITEM_HOOKS: Dict[str, HookInfo] = {
     'on_upkeep':                                       HookInfo(['actions', 'playback', 'unit', 'item'], ResolvePolicy.NO_RETURN, inherits_parent=True),
     'on_endstep':                                      HookInfo(['actions', 'playback', 'unit', 'item'], ResolvePolicy.NO_RETURN, inherits_parent=True),
     'start_combat':                                    HookInfo(['playback', 'unit', 'item', 'target', 'item2', 'mode'], ResolvePolicy.NO_RETURN, inherits_parent=True),
+    'cleanup_combat':                                  HookInfo(['playback', 'unit', 'item', 'target', 'item2', 'mode'], ResolvePolicy.NO_RETURN, inherits_parent=True),
     'end_combat':                                      HookInfo(['playback', 'unit', 'item', 'target', 'item2', 'mode'], ResolvePolicy.NO_RETURN, inherits_parent=True),
 }
 

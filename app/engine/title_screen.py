@@ -1004,7 +1004,7 @@ class TitleSaveState(State):
                 saved_state = game.state.state[:]
                 game.state.state = game.state.state[:-1]  # All except this one
                 save.suspend_game(game, game.memory['save_kind'], slot=self.menu.current_index, 
-                                    display_name=game.game_vars.get('_save_name'))
+                                  display_name=game.game_vars.get('_save_name'))
                 # Put states back
                 game.state.state = saved_state
                 game.state.change('transition_pop')

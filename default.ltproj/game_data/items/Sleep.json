@@ -83,6 +83,10 @@
             [
                 "status_on_hold",
                 "Distance_Debuff"
+            ],
+            [
+                "map_cast_pose",
+                null
             ]
         ]
     }

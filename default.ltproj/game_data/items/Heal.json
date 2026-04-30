@@ -2,7 +2,7 @@
     {
         "nid": "Heal",
         "name": "Heal",
-        "desc": "Restores (User's MAG + 10) HP.",
+        "desc": "Restores (User's MAG + 10) HP.\n(Map Cast Pose is added to show the user staying in place while using the staff rather than \"attacking\" the target.)",
         "icon_nid": "Staff",
         "icon_index": [
             0,
@@ -71,6 +71,18 @@
             [
                 "magic",
                 null
+            ],
+            [
+                "map_cast_pose",
+                null
+            ],
+            [
+                "map_hit_sfx",
+                "MapHeal"
+            ],
+            [
+                "map_cast_anim",
+                "MapSmallHealTrans"
             ]
         ]
     }

@@ -71,6 +71,18 @@
                     144,
                     232
                 ]
+            ],
+            [
+                "map_cast_pose",
+                null
+            ],
+            [
+                "map_hit_sfx",
+                "MapHeal"
+            ],
+            [
+                "map_cast_anim",
+                "MapBigHealTrans"
             ]
         ]
     }

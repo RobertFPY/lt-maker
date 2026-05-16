@@ -180,7 +180,7 @@ class Restore(ItemComponent):
             return True
         for s_pos in splash:
             s = game.board.get_unit(s_pos)
-            if skill_system.check_ally(unit, s) and any(self._can_be_restored(skill) for skill in s.skills):
+            if s and skill_system.check_ally(unit, s) and any(self._can_be_restored(skill) for skill in s.skills):
                 return True
         return False
 

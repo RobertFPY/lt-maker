@@ -1,0 +1,9 @@
+{
+    "author": "rainlash",
+    "name": "Greysnow Ruins",
+    "floor1": "default",
+    "floor2": "ruins",
+    "floor3": "grass",
+    "location": "Snow_Ruins.png",
+    "outdoor": false
+}

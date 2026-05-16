@@ -1419,19 +1419,14 @@ class Convoy():
             new_menu.shimmer = 2
             self.menus[w_type] = new_menu
 
-        # Pick the height based on which sections this mode actually shows so
-        # the inventory panel doesn't leave a tall translucent strip of empty
-        # bg above the (single) accessory row when costume mode is active.
-        num_items = item_funcs.get_num_items(self.owner)
-        num_accessories = item_funcs.get_num_accessories(self.owner)
-        if self.mode == 'items':
-            slots = num_items
-        elif self.mode == 'costume':
-            slots = num_accessories
-        else:
-            slots = num_items + num_accessories
-        height = slots * 16 + 8
-        self.inventory = Inventory(self.owner, self._owner_items_for_mode(), (12, WINHEIGHT - height - 4))
+        # Anchor the inventory panel at the same Y position used by items
+        # mode (which sits cleanly beneath the unit portrait). The panel's
+        # background height is driven by len(options), so a costume-mode
+        # panel naturally renders short — we just don't want it pinned to
+        # the bottom of the screen, which is what would happen if we used
+        # its own (small) height in the Y calculation.
+        anchor_height = item_funcs.get_num_items(self.owner) * 16 + 8
+        self.inventory = Inventory(self.owner, self._owner_items_for_mode(), (12, WINHEIGHT - anchor_height - 4))
         self.inventory.set_mode(self.mode)
         # Rebuild option list now that mode is set so that the inventory only
         # renders the slot section appropriate for this mode.

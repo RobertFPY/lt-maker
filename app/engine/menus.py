@@ -743,10 +743,15 @@ class Inventory(Choice):
                 option = menu_options.ItemOption(idx, item)
                 option.help_box = option.get_help_box()
                 self.options.append(option)
-            # Get empty options at the end
-            for num in range(num_accessories - len(accessories)):
-                option = menu_options.EmptyOption(len(self.options) + num)
-                self.options.append(option)
+            # Get empty options at the end. In costume mode the panel should
+            # collapse to exactly the number of accessories the unit owns —
+            # otherwise the menu background renders 2-3 empty rows above/below
+            # the real row and shows up as a stray translucent block on top of
+            # the prep backdrop.
+            if self.mode != 'costume':
+                for num in range(num_accessories - len(accessories)):
+                    option = menu_options.EmptyOption(len(self.options) + num)
+                    self.options.append(option)
 
 class Shop(Choice):
     default_option = menu_options.ValueItemOption

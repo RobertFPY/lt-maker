@@ -3,13 +3,15 @@ import os, glob
 from typing import Optional
 
 from PyQt5.QtWidgets import QMessageBox
-from PyQt5.QtGui import QImage, QPixmap, qRgb, QColor, QPainter
+from PyQt5.QtGui import QPixmap, qRgb, QColor, QPainter
 
 from app.constants import COLORKEY
 from app.utilities import str_utils
 from app.data.resources.resources import RESOURCES
 from app.data.resources import combat_anims, combat_commands, combat_palettes
 
+from app.editor.combat_animation_editor.animation_import_utils import \
+    convert_gba, simple_crop, split_doubles, find_empty_pixmaps, combine_identical_commands, update_anim_full_image
 from app.editor.settings import MainSettingsController
 from app.editor.file_manager.project_file_backend import DEFAULT_PROJECT
 
@@ -228,45 +230,6 @@ def import_effect_from_legacy(fn: str):
     return current
 
 # === IMPORT FROM GBA ========================================================
-def update_weapon_anim_full_image(weapon_anim):
-    width_limit = 1200
-    left = 0
-    heights = []
-    max_heights = []
-    for frame in weapon_anim.frames:
-        width, height = frame.pixmap.width(), frame.pixmap.height()
-        if left + width > width_limit:
-            max_heights.append(max(heights))
-            frame.rect = (0, sum(max_heights), width, height)
-            heights = [height]
-            left = width
-        else:
-            frame.rect = (left, sum(max_heights), width, height)
-            left += width
-            heights.append(height)
-    if heights:
-        max_heights.append(max(heights))
-
-    total_width = min(width_limit, sum(frame.rect[2] for frame in weapon_anim.frames))
-    total_height = sum(max_heights)
-    new_pixmap = QPixmap(total_width, total_height)
-    new_pixmap.fill(QColor(0, 0, 0))
-    painter = QPainter()
-    painter.begin(new_pixmap)
-    for frame in weapon_anim.frames:
-        x, y, width, height = frame.rect
-        painter.drawPixmap(x, y, frame.pixmap)
-    painter.end()
-    weapon_anim.pixmap = new_pixmap
-    weapon_anim.full_path = None  # So we can save our changes
-
-def convert_gba(pixmap: QPixmap) -> QPixmap:
-    im = pixmap.toImage()
-    im.convertTo(QImage.Format_Indexed8)
-    im = editor_utilities.convert_gba(im)
-    pixmap = QPixmap.fromImage(im)
-    return pixmap
-
 def get_palette(pixmap: QPixmap) -> list:
     im = pixmap.toImage()
     w = im.width()
@@ -281,63 +244,6 @@ def get_palette(pixmap: QPixmap) -> list:
     palette = [QColor(color) for color in colors]
     palette = [(c.red(), c.green(), c.blue()) for c in palette]
     return palette
-
-def simple_crop(pixmap: QPixmap) -> QPixmap:
-    if pixmap.width() == 248:
-        pixmap = pixmap.copy(0, 0, 240, pixmap.height())
-    elif pixmap.width() == 488:
-        pixmap = pixmap.copy(0, 0, 480, pixmap.height())
-    return pixmap
-
-def split_doubles(pixmaps: dict) -> dict:
-    new_pixmaps = {}
-    for name in pixmaps.keys():
-        pix = pixmaps[name]
-        if pix.width() == 480:
-            pix1 = pix.copy(0, 0, 240, pix.height())
-            pix2 = pix.copy(240, 0, 240, pix.height())
-            new_pixmaps[name] = pix1
-            new_pixmaps[name + '_under'] = pix2
-    pixmaps.update(new_pixmaps)
-    return pixmaps
-
-def find_empty_pixmaps(pixmaps: dict) -> set:
-    empty_pixmaps = set()
-    for name, pixmap in pixmaps.items():
-        x, y, width, height = editor_utilities.get_bbox(pixmap.toImage())
-        if width > 0 and height > 0:
-            pass
-        else:
-            empty_pixmaps.add(name)
-    return empty_pixmaps
-
-def combine_identical_commands(pose):
-    """
-    The GBA import likes to put identical commands next to one another.
-    Like f;3;Unarmed0 will be followed by f;1;Unarmed0.
-    This could more simply be rendered as f;4;Unarmed0
-    """
-    last_command = None
-    new_timeline = []
-    for command in pose.timeline[:]:
-        if command.has_frames():
-            if last_command and last_command.nid == command.nid and last_command.value[1:] == command.value[1:]:
-                # Combine these two
-                last_command.value = (last_command.value[0] + command.value[0], *last_command.value[1:])
-            elif last_command:
-                new_timeline.append(last_command)
-                last_command = command
-            else:
-                last_command = command
-        elif last_command:
-            new_timeline.append(last_command)
-            last_command = None
-            new_timeline.append(command)
-        else:
-            new_timeline.append(command)
-    if last_command:
-        new_timeline.append(last_command)
-    pose.timeline = new_timeline
 
 def import_from_gba(current, fn):
     """
@@ -441,8 +347,8 @@ def import_from_gba(current, fn):
         combine_identical_commands(pose)
 
     # Animation collation
-    update_weapon_anim_full_image(melee_weapon_anim)
-    update_weapon_anim_full_image(ranged_weapon_anim)
+    update_anim_full_image(melee_weapon_anim)
+    update_anim_full_image(ranged_weapon_anim)
 
     def unarmed_pose_setup(weapon_anim):
         stand_pose = weapon_anim.poses.get('Stand')

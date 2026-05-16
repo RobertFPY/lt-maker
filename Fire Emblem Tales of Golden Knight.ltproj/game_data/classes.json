@@ -74,16 +74,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Death_Blow_T1"
-            ],
-            [
-                5,
-                "Noontime_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -652,12 +643,7 @@
             "CON": 25,
             "MOV": 15
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -799,16 +785,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Death_Blow_T1"
-            ],
-            [
-                5,
-                "Noontime_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -952,16 +929,7 @@
             "CON": 20,
             "MOV": 15
         },
-        "learned_skills": [
-            [
-                1,
-                "Death_Blow_T1"
-            ],
-            [
-                5,
-                "Noontime_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -1100,16 +1068,7 @@
             "CON": 20,
             "MOV": 15
         },
-        "learned_skills": [
-            [
-                1,
-                "Death_Blow_T1"
-            ],
-            [
-                5,
-                "Noontime_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -1249,12 +1208,7 @@
             "CON": 25,
             "MOV": 15
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -1535,20 +1489,7 @@
             "MOV": 30,
             "RES": 10
         },
-        "learned_skills": [
-            [
-                1,
-                "Duelist_Blow_T1"
-            ],
-            [
-                3,
-                "Vantage_T1"
-            ],
-            [
-                5,
-                "Flash_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -1690,20 +1631,7 @@
             "MOV": 30,
             "RES": 10
         },
-        "learned_skills": [
-            [
-                1,
-                "Duelist_Blow_T1"
-            ],
-            [
-                3,
-                "Vantage_T1"
-            ],
-            [
-                5,
-                "Flash_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -1843,20 +1771,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Duelist_Blow_T2"
-            ],
-            [
-                3,
-                "Vantage_T2"
-            ],
-            [
-                5,
-                "Phatasm_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 2,
@@ -1996,20 +1911,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Duelist_Blow_T2"
-            ],
-            [
-                3,
-                "Vantage_T2"
-            ],
-            [
-                5,
-                "Phatasm_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 2,
@@ -2149,20 +2051,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Master_Duelist_T3"
-            ],
-            [
-                3,
-                "Vantage_T3"
-            ],
-            [
-                5,
-                "Astra_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 2,
@@ -2302,20 +2191,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Master_Duelist_T3"
-            ],
-            [
-                3,
-                "Vantage_T3"
-            ],
-            [
-                5,
-                "Astra_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 2,
@@ -2458,20 +2334,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Heavy_Blade_T1"
-            ],
-            [
-                5,
-                "Daylight_T1"
-            ],
-            [
-                3,
-                "Axebreaker_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -2614,20 +2477,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Heavy_Blade_T1"
-            ],
-            [
-                5,
-                "Daylight_T1"
-            ],
-            [
-                3,
-                "Axebreaker_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -2767,20 +2617,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Heavy_Blade_T1"
-            ],
-            [
-                3,
-                "Axebreaker_T2"
-            ],
-            [
-                5,
-                "Noontime_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 2,
@@ -2923,20 +2760,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Thief_Techniques_T1"
-            ],
-            [
-                3,
-                "Acrobat_T1"
-            ],
-            [
-                5,
-                "Bane_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -3079,20 +2903,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Thief_Techniques_T1"
-            ],
-            [
-                3,
-                "Acrobat_T1"
-            ],
-            [
-                5,
-                "Bane_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -3234,20 +3045,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Thief_Techniques_T2"
-            ],
-            [
-                3,
-                "Acrobat_T2"
-            ],
-            [
-                5,
-                "Bane_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -3389,20 +3187,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Thief_Techniques_T2"
-            ],
-            [
-                3,
-                "Acrobat_T2"
-            ],
-            [
-                5,
-                "Bane_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -3543,20 +3328,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Lupin_Techniques_T3"
-            ],
-            [
-                3,
-                "Super_Acrobat_T3"
-            ],
-            [
-                5,
-                "Bane_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -3697,20 +3469,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Lupin_Techniques_T3"
-            ],
-            [
-                3,
-                "Super_Acrobat_T3"
-            ],
-            [
-                5,
-                "Bane_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -3852,20 +3611,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Fear_T2"
-            ],
-            [
-                3,
-                "Chill_Speed_T2"
-            ],
-            [
-                5,
-                "Lethality_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -4007,20 +3753,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Fear_T2"
-            ],
-            [
-                3,
-                "Chill_Speed_T2"
-            ],
-            [
-                5,
-                "Lethality_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -4160,20 +3893,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Fear_T3"
-            ],
-            [
-                3,
-                "Chill_Speed_T3"
-            ],
-            [
-                5,
-                "Lethality_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -4313,20 +4033,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Fear_T3"
-            ],
-            [
-                3,
-                "Chill_Speed_T3"
-            ],
-            [
-                5,
-                "Lethality_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -4610,20 +4317,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Sturdy_Stance_T1"
-            ],
-            [
-                3,
-                "Desperation_T1"
-            ],
-            [
-                5,
-                "New_Moon_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -4762,20 +4456,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Sturdy_Stance_T1"
-            ],
-            [
-                3,
-                "Desperation_T1"
-            ],
-            [
-                5,
-                "New_Moon_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -4914,20 +4595,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Sturdy_Stance_T2"
-            ],
-            [
-                3,
-                "Desperation_T2"
-            ],
-            [
-                5,
-                "Luna_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -5066,20 +4734,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Worthy_Opponent_T1"
-            ],
-            [
-                3,
-                "Seal_Speed_T1"
-            ],
-            [
-                5,
-                "New_Moon_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -5221,24 +4876,7 @@
             "MOV": 30,
             "RES": 10
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto"
-            ],
-            [
-                1,
-                "Outdoor_Fighter_T1"
-            ],
-            [
-                3,
-                "Armored_Blow_T1"
-            ],
-            [
-                5,
-                "Glowing_Ember_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -5380,24 +5018,7 @@
             "MOV": 30,
             "RES": 15
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto"
-            ],
-            [
-                1,
-                "Outdoor_Fighter_T2"
-            ],
-            [
-                3,
-                "Armored_Blow_T1"
-            ],
-            [
-                5,
-                "Bonfire_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -5539,24 +5160,7 @@
             "MOV": 30,
             "RES": 10
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto"
-            ],
-            [
-                1,
-                "Outdoor_Fighter_T1"
-            ],
-            [
-                3,
-                "Warding_Blow_T1"
-            ],
-            [
-                5,
-                "Chilling_Wind_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -5698,24 +5302,7 @@
             "MOV": 30,
             "RES": 15
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto"
-            ],
-            [
-                1,
-                "Outdoor_Fighter_T2"
-            ],
-            [
-                3,
-                "Warding_Blow_T1"
-            ],
-            [
-                5,
-                "Iceberg_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -5857,24 +5444,7 @@
             "MOV": 15,
             "RES": 10
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto"
-            ],
-            [
-                1,
-                "Outdoor_Fighter_T1"
-            ],
-            [
-                3,
-                "Darting_Blow_T1"
-            ],
-            [
-                5,
-                "New_Moon_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -6016,24 +5586,7 @@
             "MOV": 15,
             "RES": 15
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto"
-            ],
-            [
-                1,
-                "Outdoor_Fighter_T2"
-            ],
-            [
-                3,
-                "Darting_Blow_T1"
-            ],
-            [
-                5,
-                "Moonbow_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -6175,24 +5728,7 @@
             "MOV": 30,
             "RES": 16
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Outdoor_Fighter_T2"
-            ],
-            [
-                3,
-                "Armored_Blow_T2"
-            ],
-            [
-                5,
-                "Bonfire_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -6334,24 +5870,7 @@
             "MOV": 30,
             "RES": 24
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Outdoor_Warrior_T3"
-            ],
-            [
-                3,
-                "Armored_Blow_T2"
-            ],
-            [
-                5,
-                "Ignis_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -6493,24 +6012,7 @@
             "MOV": 30,
             "RES": 16
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Outdoor_Fighter_T2"
-            ],
-            [
-                3,
-                "Warding_Blow_T2"
-            ],
-            [
-                5,
-                "Iceberg_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -6652,24 +6154,7 @@
             "MOV": 30,
             "RES": 24
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Outdoor_Fighter_T2"
-            ],
-            [
-                3,
-                "Warding_Blow_T2"
-            ],
-            [
-                5,
-                "Iceberg_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -6811,24 +6296,7 @@
             "MOV": 30,
             "RES": 16
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Outdoor_Fighter_T2"
-            ],
-            [
-                3,
-                "Darting_Blow_T2"
-            ],
-            [
-                5,
-                "Moonbow_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -6970,24 +6438,7 @@
             "MOV": 30,
             "RES": 24
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Outdoor_Warrior_T3"
-            ],
-            [
-                3,
-                "Darting_Blow_T2"
-            ],
-            [
-                5,
-                "Luna_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -7127,20 +6578,7 @@
             "MOV": 30,
             "RES": 26
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Threaten_Speed_T1"
-            ],
-            [
-                5,
-                "Noontime_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -7281,24 +6719,7 @@
             "CON": 30,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Outdoor_Warrior_T3"
-            ],
-            [
-                3,
-                "Armored_Blow_T3"
-            ],
-            [
-                5,
-                "Ignis_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -7439,24 +6860,7 @@
             "CON": 30,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Outdoor_Warrior_T4"
-            ],
-            [
-                3,
-                "Armored_Blow_T3"
-            ],
-            [
-                5,
-                "Ignis_T4"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -7596,24 +7000,7 @@
             "CON": 30,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Outdoor_Warrior_T3"
-            ],
-            [
-                3,
-                "Warding_Blow_T3"
-            ],
-            [
-                5,
-                "Glacies_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -7753,24 +7140,7 @@
             "CON": 30,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Outdoor_Warrior_T4"
-            ],
-            [
-                3,
-                "Warding_Blow_T3"
-            ],
-            [
-                5,
-                "Glacies_T4"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -7910,24 +7280,7 @@
             "CON": 30,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Outdoor_Warrior_T3"
-            ],
-            [
-                3,
-                "Darting_Blow_T3"
-            ],
-            [
-                5,
-                "Luna_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -8067,24 +7420,7 @@
             "CON": 30,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Outdoor_Warrior_T4"
-            ],
-            [
-                3,
-                "Darting_Blow_T3"
-            ],
-            [
-                5,
-                "Luna_T4"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -8224,24 +7560,7 @@
             "CON": 30,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Outdoor_Warrior_T3"
-            ],
-            [
-                3,
-                "Darting_Blow_T3"
-            ],
-            [
-                5,
-                "Aether_T4"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -8388,22 +7707,6 @@
             [
                 1,
                 "Flying"
-            ],
-            [
-                1,
-                "Canto"
-            ],
-            [
-                1,
-                "Air_Control_T1"
-            ],
-            [
-                3,
-                "Pegasus_Flight_T1"
-            ],
-            [
-                5,
-                "New_Moon_T1"
             ]
         ],
         "wexp_gain": {
@@ -8552,22 +7855,6 @@
             [
                 1,
                 "Flying"
-            ],
-            [
-                1,
-                "Canto"
-            ],
-            [
-                1,
-                "Air_Control_T2"
-            ],
-            [
-                3,
-                "Pegasus_Flight_T1"
-            ],
-            [
-                5,
-                "Moonbow_T2"
             ]
         ],
         "wexp_gain": {
@@ -8715,22 +8002,6 @@
             [
                 1,
                 "Flying"
-            ],
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Air_Raid_T2"
-            ],
-            [
-                3,
-                "Pegasus_Flight_T2"
-            ],
-            [
-                5,
-                "Moonbow_T2"
             ]
         ],
         "wexp_gain": {
@@ -8878,22 +8149,6 @@
             [
                 1,
                 "Flying"
-            ],
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Air_Control_T2"
-            ],
-            [
-                3,
-                "Pegasus_Flight_T2"
-            ],
-            [
-                5,
-                "Iceberg_T2"
             ]
         ],
         "wexp_gain": {
@@ -9041,22 +8296,6 @@
             [
                 1,
                 "Flying"
-            ],
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Air_Raid_T3"
-            ],
-            [
-                3,
-                "Pegasus_Flight_T2"
-            ],
-            [
-                5,
-                "Luna_T3"
             ]
         ],
         "wexp_gain": {
@@ -9204,22 +8443,6 @@
             [
                 1,
                 "Flying"
-            ],
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Air_Superiority_T3"
-            ],
-            [
-                3,
-                "Pegasus_Flight_T2"
-            ],
-            [
-                5,
-                "Glacies_T3"
             ]
         ],
         "wexp_gain": {
@@ -9365,22 +8588,6 @@
             [
                 1,
                 "Flying"
-            ],
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Air_Raid_T3"
-            ],
-            [
-                3,
-                "Pegasus_Flight_T3"
-            ],
-            [
-                5,
-                "Luna_T3"
             ]
         ],
         "wexp_gain": {
@@ -9526,22 +8733,6 @@
             [
                 1,
                 "Flying"
-            ],
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Air_Superiority_T3"
-            ],
-            [
-                3,
-                "Pegasus_Flight_T3"
-            ],
-            [
-                5,
-                "Glacies_T3"
             ]
         ],
         "wexp_gain": {
@@ -9687,22 +8878,6 @@
             [
                 1,
                 "Flying"
-            ],
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Raid_of_the_Valkyria_T4"
-            ],
-            [
-                3,
-                "Pegasus_Flight_T3"
-            ],
-            [
-                5,
-                "Luna_T4"
             ]
         ],
         "wexp_gain": {
@@ -9848,22 +9023,6 @@
             [
                 1,
                 "Flying"
-            ],
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Air_Superiority_T4"
-            ],
-            [
-                3,
-                "Pegasus_Flight_T3"
-            ],
-            [
-                5,
-                "Glacies_T4"
             ]
         ],
         "wexp_gain": {
@@ -10006,20 +9165,7 @@
             "MOV": 30,
             "RES": 10
         },
-        "learned_skills": [
-            [
-                1,
-                "Indoor_Fighter_T1"
-            ],
-            [
-                3,
-                "Wary_Fighter_T1"
-            ],
-            [
-                5,
-                "Buckler_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -10160,20 +9306,7 @@
             "MOV": 30,
             "RES": 10
         },
-        "learned_skills": [
-            [
-                1,
-                "Indoor_Fighter_T1"
-            ],
-            [
-                3,
-                "Wary_Fighter_T1"
-            ],
-            [
-                5,
-                "Holy_Vestments_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -10314,20 +9447,7 @@
             "MOV": 30,
             "RES": 15
         },
-        "learned_skills": [
-            [
-                1,
-                "Indoor_Fighter_T2"
-            ],
-            [
-                3,
-                "Wary_Fighter_T1"
-            ],
-            [
-                5,
-                "Escutcheon_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -10468,20 +9588,7 @@
             "MOV": 30,
             "RES": 15
         },
-        "learned_skills": [
-            [
-                1,
-                "Indoor_Fighter_T2"
-            ],
-            [
-                3,
-                "Wary_Fighter_T1"
-            ],
-            [
-                5,
-                "Sacred_Cowl_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -10622,20 +9729,7 @@
             "MOV": 30,
             "RES": 10
         },
-        "learned_skills": [
-            [
-                1,
-                "Indoor_Fighter_T1"
-            ],
-            [
-                3,
-                "Wary_Fighter_T1"
-            ],
-            [
-                5,
-                "Buckler_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -10777,20 +9871,7 @@
             "MOV": 30,
             "RES": 10
         },
-        "learned_skills": [
-            [
-                1,
-                "Indoor_Fighter_T1"
-            ],
-            [
-                3,
-                "Wary_Fighter_T1"
-            ],
-            [
-                5,
-                "Holy_Vestments_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -10931,20 +10012,7 @@
             "MOV": 30,
             "RES": 15
         },
-        "learned_skills": [
-            [
-                1,
-                "Indoor_Fighter_T2"
-            ],
-            [
-                3,
-                "Wary_Fighter_T1"
-            ],
-            [
-                5,
-                "Escutcheon_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -11085,20 +10153,7 @@
             "MOV": 30,
             "RES": 15
         },
-        "learned_skills": [
-            [
-                1,
-                "Indoor_Fighter_T2"
-            ],
-            [
-                3,
-                "Wary_Fighter_T1"
-            ],
-            [
-                5,
-                "Sacred_Cowl_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -11239,20 +10294,7 @@
             "MOV": 30,
             "RES": 10
         },
-        "learned_skills": [
-            [
-                1,
-                "Indoor_Fighter_T1"
-            ],
-            [
-                3,
-                "Wary_Fighter_T1"
-            ],
-            [
-                5,
-                "Buckler_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -11393,20 +10435,7 @@
             "MOV": 30,
             "RES": 10
         },
-        "learned_skills": [
-            [
-                1,
-                "Indoor_Fighter_T1"
-            ],
-            [
-                3,
-                "Wary_Fighter_T1"
-            ],
-            [
-                5,
-                "Holy_Vestments_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -11547,20 +10576,7 @@
             "MOV": 30,
             "RES": 15
         },
-        "learned_skills": [
-            [
-                1,
-                "Indoor_Fighter_T2"
-            ],
-            [
-                3,
-                "Wary_Fighter_T1"
-            ],
-            [
-                5,
-                "Escutcheon_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -11701,20 +10717,7 @@
             "MOV": 30,
             "RES": 15
         },
-        "learned_skills": [
-            [
-                1,
-                "Indoor_Fighter_T2"
-            ],
-            [
-                3,
-                "Wary_Fighter_T1"
-            ],
-            [
-                5,
-                "Sacred_Cowl_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -11855,20 +10858,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Indoor_Fighter_T2"
-            ],
-            [
-                3,
-                "Wary_Fighter_T2"
-            ],
-            [
-                5,
-                "Escutcheon_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -12009,20 +10999,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Indoor_Fighter_T2"
-            ],
-            [
-                3,
-                "Wary_Fighter_T2"
-            ],
-            [
-                5,
-                "Sacred_Cowl_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -12163,20 +11140,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Indoor_Warrior_T3"
-            ],
-            [
-                3,
-                "Wary_Fighter_T2"
-            ],
-            [
-                5,
-                "Pasvise_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -12317,20 +11281,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Indoor_Warrior_T3"
-            ],
-            [
-                3,
-                "Wary_Fighter_T2"
-            ],
-            [
-                5,
-                "Aegis_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -12471,20 +11422,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Indoor_Fighter_T2"
-            ],
-            [
-                3,
-                "Wary_Fighter_T2"
-            ],
-            [
-                5,
-                "Escutcheon_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -12625,20 +11563,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Indoor_Fighter_T2"
-            ],
-            [
-                3,
-                "Wary_Fighter_T2"
-            ],
-            [
-                5,
-                "Sacred_Cowl_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -12779,20 +11704,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Indoor_Warrior_T3"
-            ],
-            [
-                3,
-                "Wary_Fighter_T2"
-            ],
-            [
-                5,
-                "Pasvise_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -12933,20 +11845,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Indoor_Warrior_T3"
-            ],
-            [
-                3,
-                "Wary_Fighter_T2"
-            ],
-            [
-                5,
-                "Aegis_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -13087,20 +11986,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Indoor_Fighter_T2"
-            ],
-            [
-                3,
-                "Wary_Fighter_T2"
-            ],
-            [
-                5,
-                "Escutcheon_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -13241,20 +12127,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Indoor_Fighter_T2"
-            ],
-            [
-                3,
-                "Wary_Fighter_T2"
-            ],
-            [
-                5,
-                "Sacred_Cowl_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -13395,20 +12268,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Indoor_Warrior_T3"
-            ],
-            [
-                3,
-                "Wary_Fighter_T2"
-            ],
-            [
-                5,
-                "Pasvise_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -13549,20 +12409,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Indoor_Warrior_T3"
-            ],
-            [
-                3,
-                "Wary_Fighter_T2"
-            ],
-            [
-                5,
-                "Aegis_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -13701,20 +12548,7 @@
             "CON": 30,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Indoor_Warrior_T3"
-            ],
-            [
-                3,
-                "Wary_Fighter_T3"
-            ],
-            [
-                5,
-                "Pasvise_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -13853,20 +12687,7 @@
             "CON": 30,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Indoor_Warrior_T3"
-            ],
-            [
-                3,
-                "Wary_Fighter_T3"
-            ],
-            [
-                5,
-                "Aegis_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -14005,20 +12826,7 @@
             "CON": 30,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Indoor_Warrior_T4"
-            ],
-            [
-                3,
-                "Wary_Fighter_T3"
-            ],
-            [
-                5,
-                "Pasvise_T4"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -14157,20 +12965,7 @@
             "CON": 30,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Indoor_Warrior_T4"
-            ],
-            [
-                3,
-                "Wary_Fighter_T3"
-            ],
-            [
-                5,
-                "Aegis_T4"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -14309,20 +13104,7 @@
             "CON": 30,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Indoor_Warrior_T3"
-            ],
-            [
-                3,
-                "Wary_Fighter_T3"
-            ],
-            [
-                5,
-                "Pasvise_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -14461,20 +13243,7 @@
             "CON": 30,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Indoor_Warrior_T3"
-            ],
-            [
-                3,
-                "Wary_Fighter_T3"
-            ],
-            [
-                5,
-                "Aegis_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -14613,20 +13382,7 @@
             "CON": 30,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Indoor_Warrior_T4"
-            ],
-            [
-                3,
-                "Wary_Fighter_T3"
-            ],
-            [
-                5,
-                "Pasvise_T4"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -14765,20 +13521,7 @@
             "CON": 30,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Indoor_Warrior_T4"
-            ],
-            [
-                3,
-                "Wary_Fighter_T3"
-            ],
-            [
-                5,
-                "Aegis_T4"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -14917,20 +13660,7 @@
             "CON": 30,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Indoor_Warrior_T3"
-            ],
-            [
-                3,
-                "Wary_Fighter_T3"
-            ],
-            [
-                5,
-                "Pasvise_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -15069,20 +13799,7 @@
             "CON": 30,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Indoor_Warrior_T3"
-            ],
-            [
-                3,
-                "Wary_Fighter_T3"
-            ],
-            [
-                5,
-                "Aegis_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -15221,20 +13938,7 @@
             "CON": 30,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Indoor_Warrior_T4"
-            ],
-            [
-                3,
-                "Wary_Fighter_T3"
-            ],
-            [
-                5,
-                "Pasvise_T4"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -15373,20 +14077,7 @@
             "CON": 30,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Indoor_Warrior_T4"
-            ],
-            [
-                3,
-                "Wary_Fighter_T3"
-            ],
-            [
-                5,
-                "Aegis_T4"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -15525,20 +14216,7 @@
             "CON": 30,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Indoor_Warrior_T3"
-            ],
-            [
-                3,
-                "Wary_Fighter_T3"
-            ],
-            [
-                5,
-                "Pasvise_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -15821,20 +14499,7 @@
             "MOV": 30,
             "RES": 10
         },
-        "learned_skills": [
-            [
-                5,
-                "Ire_T1"
-            ],
-            [
-                1,
-                "Small_Blind_T1"
-            ],
-            [
-                3,
-                "Zeal_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -15975,20 +14640,7 @@
             "MOV": 30,
             "RES": 15
         },
-        "learned_skills": [
-            [
-                5,
-                "Ire_T1"
-            ],
-            [
-                1,
-                "Big_Blind_T2"
-            ],
-            [
-                3,
-                "Zeal_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -16130,12 +14782,7 @@
             "MOV": 30,
             "RES": 10
         },
-        "learned_skills": [
-            [
-                5,
-                "Ire_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -16277,12 +14924,7 @@
             "MOV": 30,
             "RES": 10
         },
-        "learned_skills": [
-            [
-                5,
-                "Ire_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -16423,20 +15065,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Big_Blind_T2"
-            ],
-            [
-                3,
-                "Zeal_T2"
-            ],
-            [
-                5,
-                "Colossus_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -16577,20 +15206,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Big_Blind_T3"
-            ],
-            [
-                3,
-                "Zeal_T2"
-            ],
-            [
-                5,
-                "Colossus_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -16729,20 +15345,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Big_Blind_T3"
-            ],
-            [
-                3,
-                "Zeal_T3"
-            ],
-            [
-                5,
-                "Impale_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -16881,20 +15484,7 @@
             "CON": 30,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Super_Big_Blind_T4"
-            ],
-            [
-                3,
-                "Zeal_T3"
-            ],
-            [
-                5,
-                "Impale_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -17035,20 +15625,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Bloodthirst_T1"
-            ],
-            [
-                3,
-                "Fury_T1"
-            ],
-            [
-                5,
-                "Ire_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -17189,20 +15766,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Bloodthirst_T2"
-            ],
-            [
-                3,
-                "Fury_T2"
-            ],
-            [
-                5,
-                "Colossus_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -17341,20 +15905,7 @@
             "CON": 30,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Rupture_T3"
-            ],
-            [
-                3,
-                "Fury_T3"
-            ],
-            [
-                5,
-                "Impale_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -17495,20 +16046,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Roar_T1"
-            ],
-            [
-                5,
-                "Ire_T1"
-            ],
-            [
-                3,
-                "Life_and_Death_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -17649,20 +16187,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Roar_T2"
-            ],
-            [
-                5,
-                "Colossus_T2"
-            ],
-            [
-                3,
-                "Life_and_Death_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -17803,20 +16328,7 @@
             "CON": 30,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Howling_T3"
-            ],
-            [
-                5,
-                "Impale_T3"
-            ],
-            [
-                3,
-                "Life_and_Death_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -17957,20 +16469,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Quick_Draw_T1"
-            ],
-            [
-                3,
-                "Prescience_T1"
-            ],
-            [
-                5,
-                "Sure_Shot_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -18111,20 +16610,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Quick_Draw_T1"
-            ],
-            [
-                3,
-                "Prescience_T1"
-            ],
-            [
-                5,
-                "Sure_Shot_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -18265,20 +16751,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Quick_Draw_T2"
-            ],
-            [
-                5,
-                "Sure_Shot_T1"
-            ],
-            [
-                3,
-                "Prescience_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -18420,20 +16893,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Quick_Draw_T2"
-            ],
-            [
-                3,
-                "Prescience_T2"
-            ],
-            [
-                5,
-                "True_Strike_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -18575,20 +17035,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Quick_Draw_T2"
-            ],
-            [
-                3,
-                "Prescience_T2"
-            ],
-            [
-                5,
-                "True_Strike_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -18730,20 +17177,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Marksmanship_T3"
-            ],
-            [
-                3,
-                "Prescience_T2"
-            ],
-            [
-                5,
-                "True_Strike_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -18882,20 +17316,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Marksmanship_T3"
-            ],
-            [
-                3,
-                "Prescience_T3"
-            ],
-            [
-                5,
-                "Assassination_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -19034,20 +17455,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Marksmanship_T3"
-            ],
-            [
-                3,
-                "Prescience_T3"
-            ],
-            [
-                5,
-                "Assassination_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -19186,20 +17594,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Marksmanship_T4"
-            ],
-            [
-                3,
-                "Prescience_T3"
-            ],
-            [
-                5,
-                "Assassination_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -19339,24 +17734,7 @@
             "CON": 30,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Longbow_Master_T3"
-            ],
-            [
-                3,
-                "Bowbreaker_T3"
-            ],
-            [
-                5,
-                "Assassination_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -19496,24 +17874,7 @@
             "CON": 30,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Longbow_Master_T4"
-            ],
-            [
-                3,
-                "Bowbreaker_T3"
-            ],
-            [
-                5,
-                "Assassination_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -19654,20 +18015,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Lucky_Odd_T1"
-            ],
-            [
-                3,
-                "Bowbreaker_T1"
-            ],
-            [
-                5,
-                "Sure_Shot_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -19808,20 +18156,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Lucky_Odd_T1"
-            ],
-            [
-                3,
-                "Bowbreaker_T1"
-            ],
-            [
-                5,
-                "Sure_Shot_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -19963,24 +18298,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto"
-            ],
-            [
-                1,
-                "Lucky_Odd_T2"
-            ],
-            [
-                3,
-                "Bowbreaker_T2"
-            ],
-            [
-                5,
-                "True_Strike_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -20122,24 +18440,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto"
-            ],
-            [
-                1,
-                "Lucky_Odd_T2"
-            ],
-            [
-                3,
-                "Bowbreaker_T2"
-            ],
-            [
-                5,
-                "True_Strike_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -20279,24 +18580,7 @@
             "CON": 30,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Unlucky_Odd_T3"
-            ],
-            [
-                3,
-                "Bowbreaker_T3"
-            ],
-            [
-                5,
-                "Assassination_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -20436,24 +18720,7 @@
             "CON": 30,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Unlucky_Odd_T3"
-            ],
-            [
-                3,
-                "Bowbreaker_T3"
-            ],
-            [
-                5,
-                "Assassination_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -20595,24 +18862,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto"
-            ],
-            [
-                1,
-                "Swift_Arrow_T1"
-            ],
-            [
-                3,
-                "Quick_Riposte_T1"
-            ],
-            [
-                5,
-                "Sure_Shot_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -20754,24 +19004,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Swift_Arrow_T2"
-            ],
-            [
-                3,
-                "Quick_Riposte_T2"
-            ],
-            [
-                5,
-                "True_Strike_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -20911,24 +19144,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Swift_Sparrow_T3"
-            ],
-            [
-                3,
-                "Quick_Riposte_T3"
-            ],
-            [
-                5,
-                "Assassination_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -21070,20 +19286,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Light_Barrier_T1"
-            ],
-            [
-                3,
-                "Panic_Ploy_T1"
-            ],
-            [
-                5,
-                "Night_Sky_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -21225,20 +19428,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Light_Barrier_T2"
-            ],
-            [
-                3,
-                "Panic_Ploy_T1"
-            ],
-            [
-                5,
-                "Night_Sky_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -21380,20 +19570,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Light_Barrier_T2"
-            ],
-            [
-                3,
-                "Panic_Ploy_T2"
-            ],
-            [
-                5,
-                "Glimmer_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -21535,20 +19712,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Light_Aura_T3"
-            ],
-            [
-                3,
-                "Panic_Ploy_T2"
-            ],
-            [
-                5,
-                "Glimmer_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -21688,20 +19852,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Light_Aura_T3"
-            ],
-            [
-                3,
-                "Panic_Ploy_T3"
-            ],
-            [
-                5,
-                "Starlight_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -21841,20 +19992,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Light_Aura_T4"
-            ],
-            [
-                3,
-                "Panic_Ploy_T3"
-            ],
-            [
-                5,
-                "Starlight_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -21996,20 +20134,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Light_Blessing_T1"
-            ],
-            [
-                3,
-                "Guard_T1"
-            ],
-            [
-                5,
-                "Miracle_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -22151,20 +20276,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Light_Blessing_T2"
-            ],
-            [
-                3,
-                "Guard_T1"
-            ],
-            [
-                5,
-                "Miracle_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -22306,16 +20418,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Life_to_Serve_T1"
-            ],
-            [
-                5,
-                "Chilling_Wind_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -22457,20 +20560,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Light_Blessing_T2"
-            ],
-            [
-                3,
-                "Guard_T2"
-            ],
-            [
-                5,
-                "Glimmer_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -22612,20 +20702,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Divine_Blessing_T3"
-            ],
-            [
-                3,
-                "Guard_T2"
-            ],
-            [
-                5,
-                "Glimmer_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -22765,20 +20842,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Divine_Blessing_T3"
-            ],
-            [
-                3,
-                "Guard_T3"
-            ],
-            [
-                5,
-                "Starlight_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -22918,20 +20982,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Divine_Blessing_T4"
-            ],
-            [
-                3,
-                "Guard_T3"
-            ],
-            [
-                5,
-                "Starlight_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -23074,20 +21125,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Forcus_T1"
-            ],
-            [
-                3,
-                "Warding_Blow_T1"
-            ],
-            [
-                5,
-                "Chilling_Wind_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -23230,20 +21268,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Forcus_T1"
-            ],
-            [
-                3,
-                "Warding_Blow_T1"
-            ],
-            [
-                5,
-                "Chilling_Wind_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -23386,20 +21411,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Forcus_T2"
-            ],
-            [
-                3,
-                "Warding_Blow_T1"
-            ],
-            [
-                5,
-                "Iceberg_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -23541,20 +21553,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Forcus_T2"
-            ],
-            [
-                3,
-                "Warding_Blow_T2"
-            ],
-            [
-                5,
-                "Iceberg_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -23696,20 +21695,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Forcus_T2"
-            ],
-            [
-                3,
-                "Warding_Blow_T2"
-            ],
-            [
-                5,
-                "Iceberg_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -23851,20 +21837,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Master_Forcus_T3"
-            ],
-            [
-                3,
-                "Warding_Blow_T2"
-            ],
-            [
-                5,
-                "Glacies_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -24006,20 +21979,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Magic_Talent_T2"
-            ],
-            [
-                3,
-                "Warding_Blow_T2"
-            ],
-            [
-                5,
-                "Iceberg_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -24161,20 +22121,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Magic_Talent_T2"
-            ],
-            [
-                3,
-                "Warding_Blow_T2"
-            ],
-            [
-                5,
-                "Iceberg_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -24316,20 +22263,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Magic_Talent_T3"
-            ],
-            [
-                3,
-                "Warding_Blow_T2"
-            ],
-            [
-                5,
-                "Glacies_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -24469,20 +22403,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Master_Forcus_T3"
-            ],
-            [
-                3,
-                "Warding_Blow_T3"
-            ],
-            [
-                5,
-                "Glacies_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -24622,20 +22543,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Master_Forcus_T3"
-            ],
-            [
-                3,
-                "Warding_Blow_T3"
-            ],
-            [
-                5,
-                "Glacies_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -24775,20 +22683,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Master_Forcus_T4"
-            ],
-            [
-                3,
-                "Warding_Blow_T3"
-            ],
-            [
-                5,
-                "Glacies_T4"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -24928,20 +22823,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Magic_Talent_T3"
-            ],
-            [
-                3,
-                "Warding_Blow_T3"
-            ],
-            [
-                5,
-                "Glacies_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -25081,20 +22963,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Magic_Talent_T3"
-            ],
-            [
-                3,
-                "Warding_Blow_T3"
-            ],
-            [
-                5,
-                "Glacies_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -25234,20 +23103,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Rare_Magic_Talent_T4"
-            ],
-            [
-                3,
-                "Warding_Blow_T3"
-            ],
-            [
-                5,
-                "Glacies_T4"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -25390,20 +23246,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Hex_T1"
-            ],
-            [
-                3,
-                "Poison_Strike_T1"
-            ],
-            [
-                5,
-                "Retribution_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -25546,20 +23389,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Hex_T1"
-            ],
-            [
-                3,
-                "Poison_Strike_T1"
-            ],
-            [
-                5,
-                "Retribution_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -25702,20 +23532,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Hex_T2"
-            ],
-            [
-                3,
-                "Poison_Strike_T1"
-            ],
-            [
-                5,
-                "Retribution_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -25857,20 +23674,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Hex_T2"
-            ],
-            [
-                3,
-                "Poison_Strike_T2"
-            ],
-            [
-                5,
-                "Reprisal_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -26012,20 +23816,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Hex_T2"
-            ],
-            [
-                3,
-                "Poison_Strike_T2"
-            ],
-            [
-                5,
-                "Reprisal_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -26167,20 +23958,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Super_Hex_T3"
-            ],
-            [
-                3,
-                "Poison_Strike_T2"
-            ],
-            [
-                5,
-                "Reprisal_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -26322,20 +24100,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Call_of_the_Haunted_T2"
-            ],
-            [
-                3,
-                "Poison_Strike_T2"
-            ],
-            [
-                5,
-                "Reprisal_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -26477,20 +24242,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Call_of_the_Haunted_T2"
-            ],
-            [
-                3,
-                "Poison_Strike_T2"
-            ],
-            [
-                5,
-                "Reprisal_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -26632,20 +24384,7 @@
             "CON": 20,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Call_of_the_Haunted_T3"
-            ],
-            [
-                3,
-                "Poison_Strike_T2"
-            ],
-            [
-                5,
-                "Reprisal_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -26785,20 +24524,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Super_Hex_T3"
-            ],
-            [
-                3,
-                "Poison_Strike_T3"
-            ],
-            [
-                5,
-                "Vengence_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -26938,20 +24664,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Super_Hex_T3"
-            ],
-            [
-                3,
-                "Poison_Strike_T3"
-            ],
-            [
-                5,
-                "Vengence_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -27091,20 +24804,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Super_Hex_T4"
-            ],
-            [
-                3,
-                "Poison_Strike_T3"
-            ],
-            [
-                5,
-                "Vengence_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -27244,20 +24944,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Call_of_the_Haunted_T3"
-            ],
-            [
-                3,
-                "Poison_Strike_T3"
-            ],
-            [
-                5,
-                "Vengence_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -27397,20 +25084,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Call_of_the_Haunted_T3"
-            ],
-            [
-                3,
-                "Poison_Strike_T3"
-            ],
-            [
-                5,
-                "Vengence_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -27550,20 +25224,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Call_of_the_Haunted_T4"
-            ],
-            [
-                3,
-                "Poison_Strike_T3"
-            ],
-            [
-                5,
-                "Vengence_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -27706,24 +25367,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto"
-            ],
-            [
-                1,
-                "Magical_Shield_T1"
-            ],
-            [
-                3,
-                "Inspiration_T1"
-            ],
-            [
-                5,
-                "Miracle_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -27866,24 +25510,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto"
-            ],
-            [
-                1,
-                "Magical_Shield_T1"
-            ],
-            [
-                3,
-                "Inspiration_T1"
-            ],
-            [
-                5,
-                "Miracle_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -28026,24 +25653,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto"
-            ],
-            [
-                1,
-                "Magical_Shield_T2"
-            ],
-            [
-                3,
-                "Inspiration_T1"
-            ],
-            [
-                5,
-                "Miracle_T1"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -28184,24 +25794,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Magical_Shield_T2"
-            ],
-            [
-                3,
-                "Inspiration_T2"
-            ],
-            [
-                5,
-                "Reprisal_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -28342,24 +25935,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Magical_Shield_T2"
-            ],
-            [
-                3,
-                "Inspiration_T2"
-            ],
-            [
-                5,
-                "Reprisal_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -28500,24 +26076,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Magical_Barrier_T3"
-            ],
-            [
-                3,
-                "Inspiration_T2"
-            ],
-            [
-                5,
-                "Reprisal_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -28658,24 +26217,7 @@
             "CON": 30,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Magical_Barrier_T3"
-            ],
-            [
-                3,
-                "Inspiration_T3"
-            ],
-            [
-                5,
-                "Vengence_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -28816,24 +26358,7 @@
             "CON": 30,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Magical_Barrier_T3"
-            ],
-            [
-                3,
-                "Inspiration_T3"
-            ],
-            [
-                5,
-                "Vengence_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -28974,24 +26499,7 @@
             "CON": 30,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Magical_Barrier_T4"
-            ],
-            [
-                3,
-                "Inspiration_T3"
-            ],
-            [
-                5,
-                "Vengence_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -29132,24 +26640,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Magical_Aura_T2"
-            ],
-            [
-                3,
-                "Inspiration_T2"
-            ],
-            [
-                5,
-                "Glimmer_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -29290,24 +26781,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Magical_Aura_T2"
-            ],
-            [
-                3,
-                "Inspiration_T2"
-            ],
-            [
-                5,
-                "Glimmer_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -29448,24 +26922,7 @@
             "CON": 25,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Magical_Aura_T3"
-            ],
-            [
-                3,
-                "Inspiration_T2"
-            ],
-            [
-                5,
-                "Glimmer_T2"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 false,
@@ -29606,24 +27063,7 @@
             "CON": 30,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Magical_Aura_T3"
-            ],
-            [
-                3,
-                "Inspiration_T3"
-            ],
-            [
-                5,
-                "Starlight_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -29764,24 +27204,7 @@
             "CON": 30,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Magical_Aura_T3"
-            ],
-            [
-                3,
-                "Inspiration_T3"
-            ],
-            [
-                5,
-                "Starlight_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -29922,24 +27345,7 @@
             "CON": 30,
             "MOV": 30
         },
-        "learned_skills": [
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Magical_Aura_T4"
-            ],
-            [
-                3,
-                "Inspiration_T3"
-            ],
-            [
-                5,
-                "Starlight_T3"
-            ]
-        ],
+        "learned_skills": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -30088,22 +27494,6 @@
             [
                 1,
                 "Flying"
-            ],
-            [
-                1,
-                "Canto"
-            ],
-            [
-                1,
-                "Wyvern_Pack_T1"
-            ],
-            [
-                3,
-                "Axebreaker_T1"
-            ],
-            [
-                5,
-                "Glowing_Ember_T1"
             ]
         ],
         "wexp_gain": {
@@ -30254,22 +27644,6 @@
             [
                 1,
                 "Flying"
-            ],
-            [
-                1,
-                "Canto"
-            ],
-            [
-                1,
-                "Wyvern_Pack_T1"
-            ],
-            [
-                3,
-                "Lancebreaker_T1"
-            ],
-            [
-                5,
-                "Glowing_Ember_T1"
             ]
         ],
         "wexp_gain": {
@@ -30419,22 +27793,6 @@
             [
                 1,
                 "Flying"
-            ],
-            [
-                1,
-                "Canto"
-            ],
-            [
-                1,
-                "Wyvern_Pack_T2"
-            ],
-            [
-                3,
-                "Axebreaker_T1"
-            ],
-            [
-                5,
-                "Bonfire_T2"
             ]
         ],
         "wexp_gain": {
@@ -30584,22 +27942,6 @@
             [
                 1,
                 "Flying"
-            ],
-            [
-                1,
-                "Canto"
-            ],
-            [
-                1,
-                "Wyvern_Pack_T2"
-            ],
-            [
-                3,
-                "Lancebreaker_T1"
-            ],
-            [
-                5,
-                "Bonfire_T2"
             ]
         ],
         "wexp_gain": {
@@ -30748,22 +28090,6 @@
             [
                 1,
                 "Flying"
-            ],
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Quick_Burn_T2"
-            ],
-            [
-                3,
-                "Axebreaker_T2"
-            ],
-            [
-                5,
-                "Bonfire_T2"
             ]
         ],
         "wexp_gain": {
@@ -30912,22 +28238,6 @@
             [
                 1,
                 "Flying"
-            ],
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Quick_Burn_T2"
-            ],
-            [
-                3,
-                "Lancebreaker_T2"
-            ],
-            [
-                5,
-                "Bonfire_T2"
             ]
         ],
         "wexp_gain": {
@@ -31076,22 +28386,6 @@
             [
                 1,
                 "Flying"
-            ],
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Quick_Burn_T3"
-            ],
-            [
-                3,
-                "Axebreaker_T2"
-            ],
-            [
-                5,
-                "Ignis_T3"
             ]
         ],
         "wexp_gain": {
@@ -31240,22 +28534,6 @@
             [
                 1,
                 "Flying"
-            ],
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Quick_Burn_T3"
-            ],
-            [
-                3,
-                "Lancebreaker_T2"
-            ],
-            [
-                5,
-                "Ignis_T3"
             ]
         ],
         "wexp_gain": {
@@ -31402,18 +28680,6 @@
             [
                 1,
                 "Flying"
-            ],
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Threaten_Def_T1"
-            ],
-            [
-                5,
-                "Glowing_Ember_T1"
             ]
         ],
         "wexp_gain": {
@@ -31562,22 +28828,6 @@
             [
                 1,
                 "Flying"
-            ],
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Wyvern_Pack_T2"
-            ],
-            [
-                3,
-                "Axebreaker_T2"
-            ],
-            [
-                5,
-                "Moonbow_T2"
             ]
         ],
         "wexp_gain": {
@@ -31726,22 +28976,6 @@
             [
                 1,
                 "Flying"
-            ],
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Wyvern_Pack_T2"
-            ],
-            [
-                3,
-                "Lancebreaker_T2"
-            ],
-            [
-                5,
-                "Moonbow_T2"
             ]
         ],
         "wexp_gain": {
@@ -31890,22 +29124,6 @@
             [
                 1,
                 "Flying"
-            ],
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Dragon_Pack_T3"
-            ],
-            [
-                3,
-                "Axebreaker_T2"
-            ],
-            [
-                5,
-                "Luna_T3"
             ]
         ],
         "wexp_gain": {
@@ -32054,22 +29272,6 @@
             [
                 1,
                 "Flying"
-            ],
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Dragon_Pack_T3"
-            ],
-            [
-                3,
-                "Lancebreaker_T2"
-            ],
-            [
-                5,
-                "Luna_T3"
             ]
         ],
         "wexp_gain": {
@@ -32216,22 +29418,6 @@
             [
                 1,
                 "Flying"
-            ],
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Quick_Burn_T3"
-            ],
-            [
-                3,
-                "Axebreaker_T3"
-            ],
-            [
-                5,
-                "Ignis_T3"
             ]
         ],
         "wexp_gain": {
@@ -32378,22 +29564,6 @@
             [
                 1,
                 "Flying"
-            ],
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Quick_Burn_T3"
-            ],
-            [
-                3,
-                "Lancebreaker_T3"
-            ],
-            [
-                5,
-                "Ignis_T3"
             ]
         ],
         "wexp_gain": {
@@ -32540,22 +29710,6 @@
             [
                 1,
                 "Flying"
-            ],
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Dragon_Burn_T4"
-            ],
-            [
-                3,
-                "Axebreaker_T3"
-            ],
-            [
-                5,
-                "Ignis_T4"
             ]
         ],
         "wexp_gain": {
@@ -32702,22 +29856,6 @@
             [
                 1,
                 "Flying"
-            ],
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Dragon_Burn_T4"
-            ],
-            [
-                3,
-                "Lancebreaker_T3"
-            ],
-            [
-                5,
-                "Ignis_T4"
             ]
         ],
         "wexp_gain": {
@@ -32864,22 +30002,6 @@
             [
                 1,
                 "Flying"
-            ],
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Dragon_Pack_T3"
-            ],
-            [
-                3,
-                "Axebreaker_T3"
-            ],
-            [
-                5,
-                "Luna_T3"
             ]
         ],
         "wexp_gain": {
@@ -33026,22 +30148,6 @@
             [
                 1,
                 "Flying"
-            ],
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Dragon_Pack_T3"
-            ],
-            [
-                3,
-                "Lancebreaker_T3"
-            ],
-            [
-                5,
-                "Luna_T3"
             ]
         ],
         "wexp_gain": {
@@ -33188,22 +30294,6 @@
             [
                 1,
                 "Flying"
-            ],
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Dragon_Pack_T4"
-            ],
-            [
-                3,
-                "Axebreaker_T3"
-            ],
-            [
-                5,
-                "Luna_T4"
             ]
         ],
         "wexp_gain": {
@@ -33350,22 +30440,6 @@
             [
                 1,
                 "Flying"
-            ],
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Dragon_Pack_T4"
-            ],
-            [
-                3,
-                "Lancebreaker_T3"
-            ],
-            [
-                5,
-                "Luna_T4"
             ]
         ],
         "wexp_gain": {
@@ -33514,22 +30588,6 @@
             [
                 1,
                 "Flying"
-            ],
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Slow_Burn_T2"
-            ],
-            [
-                3,
-                "Tomebreaker_T2"
-            ],
-            [
-                5,
-                "Iceberg_T2"
             ]
         ],
         "wexp_gain": {
@@ -33678,22 +30736,6 @@
             [
                 1,
                 "Flying"
-            ],
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Slow_Burn_T2"
-            ],
-            [
-                3,
-                "Tomebreaker_T2"
-            ],
-            [
-                5,
-                "Iceberg_T2"
             ]
         ],
         "wexp_gain": {
@@ -33840,22 +30882,6 @@
             [
                 1,
                 "Flying"
-            ],
-            [
-                1,
-                "Canto_Plus"
-            ],
-            [
-                1,
-                "Slow_Burn_T3"
-            ],
-            [
-                3,
-                "Tomebreaker_T3"
-            ],
-            [
-                5,
-                "Glacies_T3"
             ]
         ],
         "wexp_gain": {

@@ -83,7 +83,7 @@ Finally, we can ask the player whether they actually want to fight. We set up th
 change_background;Arena
 draw_overlay_sprite;Dialogue;menu_bg_clear;-4,8;0
 draw_overlay_sprite;ArenaPortrait;arena_portrait;4,4;1
-table;GoldDisplay;[game.get_money()];;;60;right;funds_display;;center;FLAG(expression)
+table;GoldDisplay;[game.get_money()];;;60;right;funds_display;;center;expression
 # Fade to arena background
 t;open
 ```
@@ -162,7 +162,7 @@ give_item;{created_unit};{var:ArenaItem};no_banner
 change_background;Arena
 draw_overlay_sprite;Dialogue;menu_bg_clear;-4,8;0
 draw_overlay_sprite;ArenaPortrait;arena_portrait;4,4;1
-table;GoldDisplay;[game.get_money()];;;60;right;funds_display;;center;FLAG(expression)
+table;GoldDisplay;[game.get_money()];;;60;right;funds_display;;center;expression
 # Fade to arena background
 transition;open
 if;unit.get_weapon()

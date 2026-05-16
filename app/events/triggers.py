@@ -15,8 +15,11 @@ from app.utilities.typing import NID
 class EventTrigger():
     """
     A trigger called sometime during the engine that allows the user to execute events.
+
+    :meta private: # Hide from Sphinx
     """
     nid: ClassVar[NID]
+    hidden: ClassVar[bool] = False #: Whether or not this trigger is selectable. True for deprecated and utility triggers.
 
     def to_args(self):
         return self.__dict__.copy()
@@ -25,8 +28,11 @@ class EventTrigger():
 class GenericTrigger(EventTrigger):
     """A generic trigger containing common fields. Use to trigger
     anonymous events.
+
+    :meta private: # Hide from Sphinx
     """
     nid: ClassVar[NID] = None
+    hidden: ClassVar[bool] = True
     unit1: UnitObject = None
     unit2: UnitObject = None
     position: Tuple[int, int] = None
@@ -127,6 +133,20 @@ class OnRegionInteract(EventTrigger):
     region: RegionObject  #: the event region.
 
 @dataclass(init=True)
+class OnRoamInteract(EventTrigger):
+    """
+    Occurs when a unit interacts during free roam. If a Talk
+    or Region event exists, they will trigger instead. This
+    event will only trigger if Talk or Region events do not
+    exist at the given location during Free Roam.
+    Can be used for Generic NPC dialogue or for opening a menu
+    when not interacting with other NPC's or regions.
+    """
+    nid: ClassVar[NID] = 'on_roam_interact'
+    unit1: UnitObject #: The current roam unit.
+    units: List[UnitObject] #: the closest nearby other units.
+
+@dataclass(init=True)
 class CombatDeath(EventTrigger):
     """
     Occurs during combat when any unit dies, including generics.
@@ -196,6 +216,17 @@ class DuringUnitLevelUp(EventTrigger):
     unit1: UnitObject #: the unit that gained/lost stats.
     stat_changes: Dict[NID, int] #: a dict containing their stat changes.
     source: str #: One of ('exp_gain', 'stat_change', 'class_change', 'promote') describing how the unit got to this screen.
+
+@dataclass(init=True)
+class UnitWeaponRankUp(EventTrigger):
+    """
+    Occurs whenever a unit gains a weapon rank.
+    """
+    nid: ClassVar[NID] = 'unit_weapon_rank_up'
+    unit: UnitObject #: the unit that increased in weapon rank.
+    weapon_type: NID #: nid of weapon type object
+    old_wexp: int #: old wexp before gaining wexp
+    rank: str #: new weapon rank by letter
 
 @dataclass(init=True)
 class CombatStart(EventTrigger):
@@ -279,13 +310,17 @@ class OnTurnwheel(EventTrigger):
 class OnTitleScreen(EventTrigger):
     """
     Occurs before the title screen is shown.
+    Intended for title screen cutscenes and frontend presentation logic.
+    Use this instead of "OnStartup" for anything that should be visible on the title screen.
     """
     nid: ClassVar[NID] = 'on_title_screen'
 
 @dataclass(init=True)
 class OnStartup(EventTrigger):
     """
-    Occurs whenever the engine starts.
+    Occurs whenever the engine starts, before "OnTitleScreen".
+    Intended for backend setup steps (such as 'speak_style' configuration).
+    Should not contain cutscenes - use "OnTitleScreen" for those instead.
     """
     nid: ClassVar[NID] = 'on_startup'
 
@@ -357,9 +392,92 @@ class RegionTrigger(EventTrigger):
     event region.
     """
     nid: NID #: the nid of the region event
+    hidden: ClassVar[bool] = True
     unit1: UnitObject #: The unit triggering the region
     position: Tuple[int, int] #: The position of the unit triggering the region
     region: RegionObject #: the name of the region that was triggered
     item: ItemObject = None #: the item used to trigger this region (used with unlock staves and keys)
 
-ALL_TRIGGERS = [tclass for tclass in EventTrigger.__subclasses__() if hasattr(tclass, 'nid') and tclass is not GenericTrigger]
+@dataclass(init=True)
+class Preview(EventTrigger):
+    """
+    """
+    nid: ClassVar[NID] = 'preview'
+    position: Tuple[int, int]  #: the position of the user's cursor when triggering this event
+    region: RegionObject  #: the name of the region that was triggered
+
+@dataclass(init=True)
+class EventOnHit(EventTrigger):
+    """
+    Plays before a hit, if the unit will hit with this item.
+
+    Note: trigger is used nowhere in the engine, but is used in the EventOnHit component.
+    """
+    nid: ClassVar[NID] = 'event_on_hit'
+    hidden: ClassVar[bool] = True
+    unit1: UnitObject #: the unit bearing the item.
+    unit2: UnitObject #: the other unit in combat.
+    position: Tuple[int, int] #: the position of the unit bearing the item.
+    item: ItemObject #: the item/ability that the attacking unit is using.
+    target_pos: Tuple[int, int] #: the position of the other unit.
+    mode: str #: One of (`attack`, `defense`), depending on whether the bearer of the item is the one doing this attack, or the other unit is the one doing this attack.
+    attack_info: Tuple[int, int] #: The first element is the number of attacks that have occurred before this one. The second element is the number of subattacks (think brave attacks) that have occurred within this main attack.
+
+@dataclass(init=True)
+class EventAfterCombat(EventTrigger):
+    """
+    Plays after combat where unit is using this item.
+
+    Note: trigger is used nowhere in the engine, but is used in the EventAfterCombatOnHit and EventAfterCombatEvenMiss component.
+    """
+    nid: ClassVar[NID] = 'event_after_combat'
+    hidden: ClassVar[bool] = True
+    unit1: UnitObject #: the unit bearing the item.
+    unit2: UnitObject #: the other unit in combat.
+    position: Tuple[int, int] #: the position of the unit bearing the item.
+    item: ItemObject #: the item/ability that the attacking unit is using.
+    target_pos: Tuple[int, int] #: the position of the other unit.
+    mode: str #: One of (`attack`, `defense`), depending on whether the bearer of the skill/item is the one doing this attack, or the other unit is the one doing this attack.
+
+@dataclass(init=True)
+class EventAfterInitiatedCombat(EventTrigger):
+    """
+    Plays after combat initiated by unit bearing this skill.
+
+    Note: trigger is used nowhere in the engine, but is used in the EventAfterInitiatedCombat component.
+    """
+    nid: ClassVar[NID] = 'event_after_initiated_combat'
+    hidden: ClassVar[bool] = True
+    unit1: UnitObject #: the unit bearing the skill.
+    unit2: UnitObject #: the other unit in combat.
+    position: Tuple[int, int] #: the position of the unit bearing the skill.
+    item: ItemObject #: the item/ability that the attacking unit is using.
+    mode: str #: One of (`attack`, `defense`), depending on whether the bearer of the skill is the one doing this attack, or the other unit is the one doing this attack.
+
+@dataclass(init=True)
+class EventOnRemove(EventTrigger):
+    """
+    Plays after skill is removed from a unit.
+
+    Note: trigger is used nowhere in the engine, but is used in the EventOnRemove component.
+    """
+    nid: ClassVar[NID] = 'event_on_remove'
+    hidden: ClassVar[bool] = True
+    unit1: UnitObject #: the unit bearing the skill to be removed.
+
+@dataclass(init=True)
+class UnlockStaff(EventTrigger):
+    """
+    Plays when an unlock staff unlocks a region.
+
+    Note: trigger is used nowhere in the engine, but is used in the UnlockStaff component.
+    """
+    nid: ClassVar[NID] = 'unlock_staff'
+    hidden: ClassVar[bool] = True
+    unit1: UnitObject #: the unit that is unlocking.
+    position: Tuple[int, int] #: the position of the unlocking unit.
+    item: ItemObject #: the item/ability that the unlocking unit is using.
+    region: RegionObject #: the region being unlocked.
+
+
+ALL_TRIGGERS = [tclass for tclass in EventTrigger.__subclasses__() if (tclass is not EventTrigger and not tclass.hidden)]

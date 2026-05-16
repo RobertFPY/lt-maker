@@ -2,6 +2,7 @@ from app.data.database.skill_components import SkillComponent, SkillTags
 from app.data.database.components import ComponentType
 
 from app.engine import action
+from app.utilities import utils
 
 class BuildCharge(SkillComponent):
     nid = 'build_charge'
@@ -81,7 +82,7 @@ class ChargesPerTurn(DrainCharge):
 
 class UpkeepChargeIncrease(SkillComponent):
     nid = 'upkeep_charge_increase'
-    desc = "Increases charge of skill by the *value* set here each upkeep. Usually used in conjunction with `Build Charge` skill component."
+    desc = "Increases charge of skill by the *value* set here each upkeep. Usually used in conjunction with `Build Charge` skill component. Will not go below 0 or above `total_charge`"
     tag = SkillTags.CHARGE
 
     expose = ComponentType.Int
@@ -91,7 +92,7 @@ class UpkeepChargeIncrease(SkillComponent):
 
     def on_upkeep(self, actions, playback, unit):
         new_value = self.skill.data['charge'] + self.value
-        new_value = min(new_value, self.skill.data['total_charge'])
+        new_value = utils.clamp(new_value, 0, self.skill.data['total_charge'])
         action.do(action.SetObjData(self.skill, 'charge', new_value))
 
 def get_marks(playback, unit, item):
@@ -149,7 +150,7 @@ class GainMana(SkillComponent):
         from app.engine import evaluate
         try:
             if target:
-                mana_gain = int(evaluate.evaluate(self.value, unit, target, position=unit.position))
+                mana_gain = int(evaluate.evaluate(self.value, unit, target, position=unit.position, local_args={'item': item, 'skill': self.skill}))
                 action.do(action.ChangeMana(unit, mana_gain))
         except Exception as e:
             print("Could not evaluate %s (%s)" % (self.value, e))

@@ -101,6 +101,8 @@ class DialogLog():
         # x = re.sub(r'({\w*})|(\|)|(;)/', ' ', s)
         s = s.strip()
         s = s.replace('{semicolon}', ';')
+        s = s.replace("{lt}", "<").replace("{gt}", ">")
+        s = s.replace("{lcb}", "{").replace("{rcb}", "}")
         s = s.replace('|', '{br}')
         for nlc in NEWLINE_COMMANDS:
             s = s.replace(nlc, '<br>')  # Replace all newline commands with <br> so we don't remove them

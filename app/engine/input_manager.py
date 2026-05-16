@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Tuple
-
 from app.constants import WINWIDTH, WINHEIGHT
 from app.engine import engine
 from app.engine import config as cf
@@ -62,35 +60,46 @@ class InputManager():
         directional_inputs = ('UP', 'DOWN', 'LEFT', 'RIGHT')
         return any([input_pressed for input_pressed in directional_inputs if self.is_pressed(input_pressed)])
 
-    def screen_denominator(self) -> Tuple[float, float]:
-        if cf.SETTINGS['fullscreen']:  # Fullscreen
-            x, y = engine.get_screen_size()
-            return (x / WINWIDTH, y / WINHEIGHT)
-        else:
-            return float(cf.SETTINGS['screen_size']), float(cf.SETTINGS['screen_size'])
-
-    def get_mouse_position(self):
-        if self.current_mouse_position:
-            x, y = self.screen_denominator()
-            return (self.current_mouse_position[0] // x,
-                    self.current_mouse_position[1] // y)
-        else:
-            return None
-
-    def get_real_mouse_position(self):
+    def _raw_to_game_coords(self, raw_pos: tuple[int, int]) -> tuple[int, int]:
+        """Unifies conversion of raw OS pixel coordinates to game coordinates,
+        accounting for letterbox scaling and offset introduced by
+        modifications to `engine.push_display`.
         """
-        # Works whether or not mouse has been moved recently
+        win_w, win_h = engine.get_screen_size()
+        base_w, base_h = WINWIDTH, WINHEIGHT
+
+        scale = min(win_w / base_w, win_h / base_h)
+        offset_x = (win_w - int(base_w * scale)) // 2
+        offset_y = (win_h - int(base_h * scale)) // 2
+
+        mx = max(0, min(base_w - 1, int((raw_pos[0] - offset_x) / scale)))
+        my = max(0, min(base_h - 1, int((raw_pos[1] - offset_y) / scale)))
+        return mx, my
+
+    def get_mouse_position(self) -> tuple[int, int] | None:
+        if self.current_mouse_position:
+            return self._raw_to_game_coords(self.current_mouse_position)
+        return None
+
+    def get_real_mouse_position(self) -> tuple[int, int] | None:
+        """
+        Works whether or not mouse has been moved recently.
         """
         if not cf.SETTINGS['mouse']:
             return None
         mouse_pos = engine.get_mouse_pos()
-        x, y = self.screen_denominator()
-        mouse_pos = (mouse_pos[0] // x,
-                     mouse_pos[1] // y)
-        if engine.get_mouse_focus():
-            return mouse_pos
-        else:  # Returns None if mouse is not in screen
+        if not mouse_pos or not engine.get_mouse_focus():
             return None
+        return self._raw_to_game_coords(mouse_pos)
+
+    def get_mouse_pos_with_scaled_surf(self) -> tuple[int, int] | None:
+        """
+        Return mouse coordinates mapped to the game surface.
+        """
+        mouse_pos = engine.get_mouse_pos()
+        if not mouse_pos or not engine.get_mouse_focus():
+            return None
+        return self._raw_to_game_coords(mouse_pos)
 
     def update(self):
         self.update_key_map()

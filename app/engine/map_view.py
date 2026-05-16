@@ -60,13 +60,17 @@ class MapView():
             unit.sprite.update()
             unit.sound.update(volume=norm_dist_from_center)
 
-        pos_units = [unit for unit in update_units if unit is not game.cursor.cur_unit and unit.sprite.position]
+        # Determine main unit
+        cur_unit = game.cursor.cur_unit or game.cursor.get_hover()
+        if cur_unit and (cur_unit.team != 'player' or cur_unit.finished or not cur_unit.sprite.position):
+            cur_unit = None
+
+        pos_units = [unit for unit in update_units if not (unit is cur_unit) and unit.sprite.position]
         # Only draw units within 2 tiles of cull_rect
         culled_units = [unit for unit in pos_units if unit.sprite.draw_anyway() or
                         (cull_rect[0] - TILEWIDTH*2 < unit.sprite.position[0] * TILEWIDTH < cull_rect[0] + cull_rect[2] + TILEWIDTH*2 and
                          cull_rect[1] - TILEHEIGHT*2 < unit.sprite.position[1] * TILEHEIGHT < cull_rect[1] + cull_rect[3] + TILEHEIGHT*2)]
-        if game.level_vars.get('_fog_of_war') or game.board.fog_region_set:
-            culled_units = [unit for unit in culled_units if game.board.in_vision(unit.sprite.get_round_fake_pos() or unit.position)]
+        culled_units = [unit for unit in culled_units if game.board.in_vision(unit.sprite.get_round_fake_pos() or unit.position)]
         draw_units = sorted(culled_units, key=lambda unit: unit.sprite.position[1])
 
         topleft = cull_rect[0], cull_rect[1]
@@ -82,8 +86,7 @@ class MapView():
         game.cursor.draw_arrows(unit_surf, topleft)
 
         # Draw the main unit
-        cur_unit = game.cursor.cur_unit
-        if cur_unit and cur_unit.sprite.position:
+        if cur_unit:
             cur_unit.sprite.draw(unit_surf, topleft)
             cur_unit.sprite.draw_hp(unit_surf, topleft, event)
             if not event:
@@ -98,6 +101,8 @@ class MapView():
 
     def draw(self, camera_cull=None, subsurface_cull=None):
         game.tilemap.update()
+        if game.bg_tilemap:
+            game.bg_tilemap.update()
         # Camera Cull
         cull_rect = camera_cull
         shake = game.camera.get_shake()
@@ -109,12 +114,12 @@ class MapView():
             # cull calculations
             bg_size = game.bg_tilemap.width * TILEWIDTH, game.bg_tilemap.height * TILEHEIGHT
             x, y = cull_rect[:2]
-            if x:
+            if x and (full_size[0] - WINWIDTH) > 0:
                 x_proportion = float(x) / (full_size[0] - WINWIDTH)
                 bg_x = x_proportion * (bg_size[0] - WINWIDTH)
             else:
                 bg_x = 0
-            if y:
+            if y and (full_size[1] - WINHEIGHT) > 0:
                 y_proportion = float(y) / (full_size[1] - WINHEIGHT)
                 bg_y = y_proportion * (bg_size[1] - WINHEIGHT)
             else:
@@ -150,7 +155,7 @@ class MapView():
                 subsurface_rect = cull_rect[0] + subsurface_cull[0], cull_rect[1] + subsurface_cull[1], subsurface_cull[2], subsurface_cull[3]
                 self.draw_units(surf, cull_rect, subsurface_rect)
             else:
-                pass # Don't draw units
+                pass  # Don't draw units
         else:
             self.draw_units(surf, cull_rect)
 
@@ -178,11 +183,11 @@ class MapView():
         font = FONT['text-yellow']
         current_time = engine.get_time()
         for region in game.level.regions:
-            if region.time_left is not None and region.position:
+            if not region.hide_time and region.time_left is not None and region.position:
                 text = str(region.time_left)
                 w = font.width(text)
-                pos = (region.center[0] * TILEWIDTH - cull_rect[0], region.center[1] * TILEHEIGHT - cull_rect[1])
-                pos = (pos[0] + TILEWIDTH//2 - w//2, pos[1] - TILEHEIGHT//2 - 1 + 2 * math.sin(current_time//500))
+                pos = (region.draw_center()[0] * TILEWIDTH - cull_rect[0], region.draw_center()[1] * TILEHEIGHT - cull_rect[1])
+                pos = (pos[0] - w//2 - 1, pos[1] - 12 + 2 * math.sin(current_time//500))
                 font.blit(text, surf, pos)
 
     def draw_grid(self, surf, cull_rect):

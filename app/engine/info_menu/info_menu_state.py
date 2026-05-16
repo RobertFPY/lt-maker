@@ -1,6 +1,7 @@
+from __future__ import annotations
 
 import logging
-from typing import List, Tuple
+from typing import List, Optional, Tuple, TYPE_CHECKING
 
 from app.constants import WINHEIGHT, WINWIDTH
 from app.data.database.database import DB
@@ -9,7 +10,8 @@ from app.engine import (background, combat_calcs, engine, equations, gui,
                         help_menu, icons, image_mods, item_funcs, item_system,
                         skill_system, text_funcs, unit_funcs)
 from app.engine.fluid_scroll import FluidScroll
-from app.engine.game_menus.icon_options import BasicItemOption, ItemOptionModes, BasicCostumeOption
+from app.engine.game_menus.icon_options import BasicItemOption, BasicCostumeOption
+from app.engine.game_menus.uses_display_config import ItemOptionModes
 from app.engine.game_state import game
 from app.engine.graphics.ingame_ui.build_groove import build_groove
 from app.engine.graphics.text.text_renderer import render_text, text_width
@@ -23,12 +25,45 @@ from app.engine.state import State
 from app.engine.text_evaluator import TextEvaluator
 from app.utilities import utils
 from app.utilities.enums import HAlignment
+from app.engine.fonts import FONT
+from app.engine.info_menu.multi_desc import PageType, build_dialog_list
 
+if TYPE_CHECKING:
+    from app.engine.objects.item import ItemObject
 
 class InfoMenuState(State):
     name = 'info_menu'
     in_level = False
-    show_map = False
+    show_map = False 
+
+    def _init(self):
+        """
+        Determines which stats are left stats, right stats, and/or hidden stats
+        for use when drawing within this state.
+
+        Necessary to wrap this in a function that's called when the info menu starts up
+        because otherwise starting up the info menu, then changing the stat nids, and then
+        starting up the info menu again will break which stats are actually available
+        """
+        left_stats = [stat.nid for stat in DB.stats if stat.position == 'left']
+        if len(left_stats) >= 7:
+            _extra_stat_row = True
+            # If we have 7 or more left stats, use 7 rows
+            right_stats = left_stats[7:]
+        else:  # Otherwise, just use the 6 rows
+            _extra_stat_row = False
+            right_stats = left_stats[6:]
+        right_stats += [stat.nid for stat in DB.stats if stat.position == 'right']
+        # Make sure we only display up to 6 or 7 on each
+        if _extra_stat_row:
+            left_stats = left_stats[:7]
+            right_stats = right_stats[:7]
+        else:
+            left_stats = left_stats[:6]
+            right_stats = right_stats[:6]
+        self._extra_stat_row = _extra_stat_row
+        self.left_stats = left_stats
+        self.right_stats = right_stats
 
     def create_background(self):
         self.unit: UnitObject = game.memory.get('current_unit')
@@ -46,6 +81,7 @@ class InfoMenuState(State):
             self.bg = None
 
     def start(self):
+        self._init()
         self.mouse_indicator = gui.MouseIndicator()
         self.create_background()
 
@@ -146,22 +182,25 @@ class InfoMenuState(State):
                 self.info_graph.set_transition_out()
                 self.info_flag = False
                 return
+            
+            if event == 'AUX':
+                self.info_graph.switch_info()
+                get_sound_thread().play_sfx('Select 6')
 
             if 'RIGHT' in directions:
-                get_sound_thread().play_sfx('Select 6')
-                self.info_graph.move_right()
+                if self.info_graph.move_right():
+                    get_sound_thread().play_sfx('Select 6')
             elif 'LEFT' in directions:
-                get_sound_thread().play_sfx('Select 6')
-                self.info_graph.move_left()
+                if self.info_graph.move_left():
+                    get_sound_thread().play_sfx('Select 6')
             elif 'UP' in directions:
-                get_sound_thread().play_sfx('Select 6')
-                self.info_graph.move_up()
+                if self.info_graph.move_up():
+                    get_sound_thread().play_sfx('Select 6')
             elif 'DOWN' in directions:
-                get_sound_thread().play_sfx('Select 6')
-                self.info_graph.move_down()
+                if self.info_graph.move_down():
+                    get_sound_thread().play_sfx('Select 6')
 
         elif not self.transition:  # Only takes input when not transitioning
-
             if event == 'INFO':
                 get_sound_thread().play_sfx('Info In')
                 self.info_graph.set_transition_in()
@@ -258,6 +297,9 @@ class InfoMenuState(State):
         get_sound_thread().play_sfx('Status_Character')
         self.rescuer = self.unit
         self.next_unit = game.get_unit(self.unit.traveler)
+        if self.state == 'notes' and not (DB.constants.value('unit_notes') and self.next_unit.notes):
+            self.state = 'personal_data'
+            self.switch_logo('personal_data')
         self.transition = 'DOWN'
 
     def handle_mouse(self):
@@ -444,11 +486,20 @@ class InfoMenuState(State):
         render_text(surf, ['text'], [str(self.unit.exp)], ['blue'], (63, 120), HAlignment.RIGHT)
         desc = text_funcs.translate_and_text_evaluate('Exp_desc', unit=self.unit)
         self.info_graph.register((38, 120, 30, 16), desc, 'all')
-        render_text(surf, ['text'], [str(self.unit.get_hp())], ['blue'], (39, 136), HAlignment.RIGHT)
+        
+        # Draw HP
+        current_hp = str(self.unit.get_hp())
+        max_hp = str(self.unit.get_max_hp())
+        # 14 pixels is width of space available to draw current_hp or max_hp
+        if text_width('text', current_hp) > 14 or text_width('text', max_hp) > 14:
+            hp_font = 'narrow'
+        else:
+            hp_font = 'text'
+        render_text(surf, [hp_font], [current_hp], ['blue'], (39, 136), HAlignment.RIGHT)
         desc = text_funcs.translate_and_text_evaluate('HP_desc', unit=self.unit)
         self.info_graph.register((8, 136, 72, 16), desc, 'all')
-        max_hp = equations.parser.hitpoints(self.unit)
-        render_text(surf, ['text'], [str(max_hp)], ['blue'], (63, 136), HAlignment.RIGHT)
+        render_text(surf, [hp_font], [str(max_hp)], ['blue'], (63, 136), HAlignment.RIGHT)
+
         # Blit the white status platform
         surf.blit(SPRITES.get('status_platform'), (66, 131))
         # Blit affinity
@@ -462,19 +513,25 @@ class InfoMenuState(State):
         for idx, item in enumerate(self.unit.accessories):
             aidx = item_funcs.get_num_items(self.unit) + idx
             y_pos = 81
+            equipped_subitem: Optional[ItemObject] = None
             if item.multi_item and any(subitem is accessory for subitem in item.subitems):
+                surf.blit(SPRITES.get('equipment_highlight'), (8, y_pos + 8))
                 for subitem in item.subitems:
                     if subitem is accessory:
+                        equipped_subitem = subitem
                         item_option = create_item_option(aidx, subitem)
                         break
                 else:  # Shouldn't happen
                     item_option = create_item_option(aidx, item)
             else:
                 if item is accessory:
-                    item_option = create_item_option(aidx, item)
-                    item_option.draw(surf, 5, y_pos)
-                    first = (idx == 0 and not self.unit.nonaccessories)
-                    self.info_graph.register((5, y_pos, 120, 16), item_option.get_help_box(), 'all', first=first)
+                    surf.blit(SPRITES.get('equipment_highlight'), (8, y_pos + 8))
+                item_option = create_item_option(aidx, item)
+            item_option.draw(surf, 5, y_pos)
+            first = (idx == 0 and not self.unit.nonaccessories)
+            help_dlg = build_dialog_list(equipped_subitem if equipped_subitem else item, PageType.ITEM, unit=self.unit)
+            self.info_graph.register((5, y_pos, 120, 16), help_dlg, 'equipment', first=first)
+
         return surf
 
     def draw_top_arrows(self, surf):
@@ -509,10 +566,8 @@ class InfoMenuState(State):
             else:
                 if not self.personal_data_surf:
                     self.personal_data_surf = self.create_personal_data_surf()
+                self.draw_stat_surf(self.personal_data_surf)
                 self.draw_personal_data_surf(main_surf)
-            #if not self.class_skill_surf:
-                #self.class_skill_surf = self.create_class_skill_surf()
-            #self.draw_class_skill_surf(main_surf)
             if DB.constants.value('fatigue') and self.unit.team == 'player' and \
                     game.game_vars.get('_fatigue'):
                 if not self.fatigue_surf:
@@ -547,7 +602,14 @@ class InfoMenuState(State):
         surf.blit(main_surf, (max(96, 96 + self.scroll_offset_x), self.scroll_offset_y))
         if self.transparency:
             top_surf = image_mods.make_translucent(top_surf, self.transparency)
-        surf.blit(top_surf, (0, self.scroll_offset_y))
+        surf.blit(top_surf, (0, self.scroll_offset_y)) 
+
+    def draw_stat_surf(self, surf):
+        for idx, stat_nid in enumerate(self.left_stats):
+            icons.draw_stat(surf, stat_nid, self.unit, (47, 16 * idx + 24))
+
+        for idx, stat_nid in enumerate(self.right_stats):
+            icons.draw_stat(surf, stat_nid, self.unit, (111, 16 * idx + 24))
 
     def create_personal_data_surf(self, growths=False):
         if growths:
@@ -558,24 +620,7 @@ class InfoMenuState(State):
         menu_size = WINWIDTH - 96, WINHEIGHT
         surf = engine.create_surface(menu_size, transparent=True)
 
-        left_stats = [stat.nid for stat in DB.stats if stat.position == 'left']
-        if len(left_stats) >= 7:
-            self._extra_stat_row = True
-            # If we have 7 or more left stats, use 7 rows
-            right_stats = left_stats[7:]
-        else:  # Otherwise, just use the 6 rows
-            self._extra_stat_row = False
-            right_stats = left_stats[6:]
-        right_stats += [stat.nid for stat in DB.stats if stat.position == 'right']
-        # Make sure we only display up to 6 or 7 on each
-        if self._extra_stat_row:
-            left_stats = left_stats[:7]
-            right_stats = right_stats[:7]
-        else:
-            left_stats = left_stats[:6]
-            right_stats = right_stats[:6]
-
-        for idx, stat_nid in enumerate(left_stats):
+        for idx, stat_nid in enumerate(self.left_stats):
             curr_stat = DB.stats.get(stat_nid)
             # Value
             if growths:
@@ -584,10 +629,12 @@ class InfoMenuState(State):
                 highest_stat = curr_stat.maximum
                 max_stat = self.unit.get_stat_cap(stat_nid)
                 if max_stat > 0:
-                    total_length = int(max_stat / highest_stat * 42)
-                    frac = utils.clamp(self.unit.stats.get(stat_nid) / max_stat, 0, 1)
+                    total_length = min(42, int(max_stat / highest_stat * 42))
+                    base_value = self.unit.stats.get(stat_nid, 0)
+                    subtle_stat_bonus = self.unit.subtle_stat_bonus(stat_nid)
+                    base_value += subtle_stat_bonus
+                    frac = utils.clamp(base_value / max_stat, 0, 1)
                     build_groove(surf, (27, 16 * idx + 32), total_length, frac)
-                icons.draw_stat(surf, stat_nid, self.unit, (47, 16 * idx + 24))
 
             # Name
             name = curr_stat.name
@@ -607,12 +654,8 @@ class InfoMenuState(State):
             help_box = help_menu.StatDialog(desc_text or ('%s_desc' % stat_nid), contribution)
             self.info_graph.register((96 + 8, 16 * idx + 24, 64, 16), help_box, state, first=(idx == 0))
 
-        for idx, stat_nid in enumerate(right_stats):
+        for idx, stat_nid in enumerate(self.right_stats):
             curr_stat = DB.stats.get(stat_nid)
-            if growths:
-                icons.draw_growth(surf, stat_nid, self.unit, (111, 16 * idx + 24))
-            else:
-                icons.draw_stat(surf, stat_nid, self.unit, (111, 16 * idx + 24))
 
             # Name
             name = curr_stat.name
@@ -621,6 +664,7 @@ class InfoMenuState(State):
                 color = self.growth_colors(unit_funcs.growth_rate(self.unit, stat_nid))
             render_text(surf, ['text'], [name], [color], (72, 16 * idx + 24))
             if growths:
+                icons.draw_growth(surf, stat_nid, self.unit, (111, 16 * idx + 24))
                 contribution = unit_funcs.growth_contribution(self.unit, stat_nid)
             else:
                 base_value = self.unit.stats.get(stat_nid, 0)
@@ -632,7 +676,9 @@ class InfoMenuState(State):
             help_box = help_menu.StatDialog(desc_text or ('%s_desc' % stat_nid), contribution)
             self.info_graph.register((96 + 72, 16 * idx + 24, 64, 16), help_box, state)
 
-        other_stats = ['RAT']
+        other_stats = []
+        if DB.constants.value('enable_rating'):
+            other_stats.append('RAT')
         if DB.constants.value('talk_display'):
             other_stats.insert(0, 'TALK')
         if DB.constants.value('pairup') and DB.constants.value('attack_stance_only'):
@@ -647,17 +693,17 @@ class InfoMenuState(State):
         if DB.constants.value('lead'):
             other_stats.append('LEAD')
 
-        other_stats = other_stats[:8 - len(right_stats)]
+        other_stats = other_stats[:8 - len(self.right_stats)]
 
         for idx, stat in enumerate(other_stats):
-            true_idx = idx + len(right_stats)
+            true_idx = idx + len(self.right_stats)
 
             if stat == 'TRV':
                 if self.unit.traveler:
                     trav = game.get_unit(self.unit.traveler)
                     render_text(surf, ['text'], [trav.name], ['blue'], (96, 16 * true_idx + 24))
                 else:
-                    render_text(surf, ['text'], ['--'], ['blue'], (96, 16 * true_idx + 24))
+                    render_text(surf, ['text'], ['--'], ['blue'], (111, 16 * true_idx + 24), HAlignment.RIGHT)
                 render_text(surf, ['text'], [text_funcs.translate('Trv')], ['yellow'], (72, 16 * true_idx + 24))
                 desc = text_funcs.translate_and_text_evaluate('Trv_desc', unit=self.unit)
                 self.info_graph.register((96 + 72, 16 * true_idx + 24, 64, 16), desc, state)
@@ -716,11 +762,11 @@ class InfoMenuState(State):
                 self.info_graph.register((96 + 72, 16 * true_idx + 24, 64, 16), desc, state)
 
             elif stat == 'TALK':
-                if (len([talk for talk in game.talk_options if talk[0] == self.unit.nid]) != 0):
+                if (len([talk for talk in game.talk_options if talk[0] == self.unit.nid and talk not in game.talk_hidden]) != 0):
                     talkee = [talk for talk in game.talk_options if talk[0] == self.unit.nid][0][1]
                     render_text(surf, ['text'], [game.get_unit(talkee).name], ['blue'], (96, 16 * true_idx + 24))
                 else:
-                    render_text(surf, ['text'], ['--'], ['blue'], (98, 16 * true_idx + 24))
+                    render_text(surf, ['text'], ['--'], ['blue'], (111, 16 * true_idx + 24), HAlignment.RIGHT)
                 render_text(surf, ['text'], [text_funcs.translate('Talk')], ['yellow'], (72, 16 * true_idx + 24))
                 desc = text_funcs.translate_and_text_evaluate('Talk_desc', unit=self.unit)
                 self.info_graph.register((96 + 72, 16 * true_idx + 24, 64, 16), desc, state)
@@ -734,7 +780,7 @@ class InfoMenuState(State):
                     icons.draw_growth(surf, 'LEAD', self.unit, (111, 16 * true_idx + 24))
                 else:
                     icons.draw_stat(surf, 'LEAD', self.unit, (111, 16 * true_idx + 24))
-                    lead_surf = engine.subsurface(SPRITES.get('lead_star'), (0, 16, 16, 16))
+                    lead_surf = engine.subsurface(SPRITES.get('lead_star'), (0, 0, 16, 16))
                     surf.blit(lead_surf, (111, 16 * true_idx + 24))
 
         return surf
@@ -748,7 +794,8 @@ class InfoMenuState(State):
     def create_wexp_surf(self):
         wexp_to_draw: List[Tuple[str, int]] = []
         for weapon, wexp in self.unit.wexp.items():
-            if wexp > 0 and weapon in unit_funcs.usable_wtypes(self.unit):
+            if wexp > 0 and weapon in unit_funcs.usable_wtypes(self.unit) \
+                and weapon in DB.weapons.get_visible_weapon_types():
                 wexp_to_draw.append((weapon, wexp))
         width = (WINWIDTH - 102) // 2
         height = 16 * 2 + 4
@@ -776,7 +823,10 @@ class InfoMenuState(State):
                 build_groove(surf, (offset + 18, 10 + y), width - 24, perc)
                 # Add text
                 pos = (offset + 7 + width//2, 4 + y)
-                render_text(surf, ['text'], [weapon_rank.nid], ['blue'], pos, HAlignment.CENTER)
+                if FONT.get('rank'):
+                    render_text(surf, ['rank'], [weapon_rank.nid], ['blue'], pos, HAlignment.CENTER)
+                else:
+                    render_text(surf, ['text'], [weapon_rank.nid], ['blue'], pos, HAlignment.CENTER)
                 self.info_graph.register((96 + pos[0] - width//2 - 8, 24 + pos[1], width, 16), "%s mastery level: %d" % (DB.weapons.get(weapon).name, value), 'support_skills', first=(counter==0))
                 counter += 1
                 if counter >= len(wexp_to_draw):
@@ -800,10 +850,12 @@ class InfoMenuState(State):
 
         # Blit items
         for idx, item in enumerate(self.unit.nonaccessories):
+            equipped_subitem: Optional[ItemObject] = None
             if item.multi_item and any(subitem is weapon for subitem in item.subitems):
                 surf.blit(SPRITES.get('equipment_highlight'), (8, idx * 16 + 24 + 8))
                 for subitem in item.subitems:
                     if subitem is weapon:
+                        equipped_subitem = subitem
                         item_option = create_item_option(idx, subitem)
                         break
                 else:  # Shouldn't happen
@@ -813,7 +865,8 @@ class InfoMenuState(State):
                     surf.blit(SPRITES.get('equipment_highlight'), (8, idx * 16 + 24 + 8))
                 item_option = create_item_option(idx, item)
             item_option.draw(surf, 8, idx * 16 + 24)
-            self.info_graph.register((96 + 8, idx * 16 + 24, 120, 16), item_option.get_help_box(), 'equipment', first=(idx == 0))
+            help_dlg = build_dialog_list(equipped_subitem if equipped_subitem else item, PageType.ITEM, unit=self.unit)
+            self.info_graph.register((96 + 8, idx * 16 + 24, 120, 16), help_dlg, 'equipment', first=(idx == 0))
 
         # Battle stats
         battle_surf = SPRITES.get('battle_info')
@@ -888,15 +941,12 @@ class InfoMenuState(State):
             if skill_counter[skill.nid] > 1:
                 text = str(skill_counter[skill.nid])
                 render_text(surf, ['small'], [text], ['white'], (left_pos + 20 - 4 * len(text), 6))
-            if skill.data.get('total_charge'):
-                charge = ' %d / %d' % (skill.data['charge'], skill.data['total_charge'])
-            else:
-                charge = ''
             text = text_funcs.translate_and_text_evaluate(
                 skill.desc,
                 unit=game.get_unit(skill.owner_nid),
                 self=skill)
-            self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 28, 16, 16), help_menu.HelpDialog(text, name=skill.name + charge), 'support_skills')
+            help_dlg = build_dialog_list(skill, PageType.SKILL, unit=self.unit)
+            self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 28, 16, 16), help_dlg, 'support_skills')
 
         return surf
 
@@ -922,20 +972,17 @@ class InfoMenuState(State):
             if skill_counter[skill.nid] > 1:
                 text = str(skill_counter[skill.nid])
                 render_text(surf, ['small'], [text], ['white'], (left_pos + 20 - 4 * len(text), 6))
-            if skill.data.get('total_charge'):
-                charge = ' %d / %d' % (skill.data['charge'], skill.data['total_charge'])
-            else:
-                charge = ''
             text = text_funcs.translate_and_text_evaluate(
                 skill.desc,
                 unit=game.get_unit(skill.owner_nid),
                 self=skill)
+            help_dlg = build_dialog_list(skill, PageType.SKILL, unit=self.unit)
             if self._extra_stat_row:
-                self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 22, 16, 16), help_menu.HelpDialog(text, name=skill.name + charge), 'personal_data')
-                self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 22, 16, 16), help_menu.HelpDialog(text, name=skill.name + charge), 'growths')
+                self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 22, 16, 16), help_dlg, 'personal_data')
+                self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 22, 16, 16), help_dlg, 'growths')
             else:
-                self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 32, 16, 16), help_menu.HelpDialog(text, name=skill.name + charge), 'personal_data')
-                self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 32, 16, 16), help_menu.HelpDialog(text, name=skill.name + charge), 'growths')
+                self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 32, 16, 16), help_dlg, 'personal_data')
+                self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 32, 16, 16), help_dlg, 'growths')
 
         return surf
 
@@ -999,256 +1046,88 @@ class InfoMenuState(State):
         surf.blit(self.fatigue_surf, (96, 0))
 
     def create_notes_surf(self):
-
+        import pygame
         surf = engine.create_surface((WINWIDTH - 96, WINHEIGHT), transparent=True)
 
-        class_skills = [skill for skill in self.unit.skills if skill.class_skill and skill.class_skill2 and not skill_system.hidden(skill, self.unit)]
-        char_skills = [skill for skill in self.unit.skills if skill.class_skill and skill.char_skill and not skill_system.hidden(skill, self.unit)]
-        special_skills = [skill for skill in self.unit.skills if skill.class_skill and skill.special_skill and not skill_system.hidden(skill, self.unit)]
-        slota_skills = [skill for skill in self.unit.skills if skill.class_skill and skill.slota_skill and not skill_system.hidden(skill, self.unit)]
-        slotb_skills = [skill for skill in self.unit.skills if skill.class_skill and skill.slotb_skill and not skill_system.hidden(skill, self.unit)]
-        slotc_skills = [skill for skill in self.unit.skills if skill.class_skill and skill.slotc_skill and not skill_system.hidden(skill, self.unit)]
-        text_parser = TextEvaluator(logging.getLogger(), game)
-        render_text(surf, ['text'], [text_funcs.translate('Character Skill:')], ['white'], (8, 8))
-        my_notes = self.unit.notes
-        render_text(surf, ['text'], [text_funcs.translate('Class Skill:')], ['white'], (8, 28))
-        render_text(surf, ['text'], [text_funcs.translate('Special Skill:')], ['white'], (8, 48))
-        render_text(surf, ['text'], [text_funcs.translate('Slot A:')], ['white'], (8, 68))
-        render_text(surf, ['text'], [text_funcs.translate('Slot B:')], ['white'], (8, 88))
-        render_text(surf, ['text'], [text_funcs.translate('Slot C:')], ['white'], (8, 108))
-        # stacked skills appear multiple times, but should be drawn only once
-        if char_skills:
-            char_skill_counter = {}
-            char_skills_list = list()
-            for skill in char_skills:
-                if skill.nid not in char_skill_counter:
-                    char_skill_counter[skill.nid] = 1
-                    char_skills_list.append(skill)
-                else:
-                    char_skill_counter[skill.nid] += 1
-            for idx, skill in enumerate(char_skills_list):
-                if 'T1' in skill.nid:
-                    surf.blit(SPRITES.get('T1SkillBG'), (79, 7))
-                    tier = ' (T1)'
-                elif 'T2' in skill.nid:
-                    surf.blit(SPRITES.get('T2SkillBG'), (79, 7))
-                    tier = ' (T2)'
-                elif 'T3' in skill.nid:
-                    surf.blit(SPRITES.get('T3SkillBG'), (79, 7))
-                    tier = ' (T3)'
-                elif 'T4' in skill.nid:
-                    surf.blit(SPRITES.get('T4SkillBG'), (79, 7))
-                    tier = ' (Ultra)'
-                elif 'Personal' in skill.nid:
-                    surf.blit(SPRITES.get('PersonalSkillBG'), (79, 7))
-                    tier = ' (Personal)'
-                left_pos = idx * 24
-                icons.draw_skill(surf, skill, (left_pos + 80, 8), compact=False, grey=skill_system.is_grey(skill, self.unit))
-                if char_skill_counter[skill.nid] > 1:
-                    text = str(char_skill_counter[skill.nid])
-                    render_text(surf, ['small'], [text], ['white'], (left_pos + 20 - 4 * len(text), 6))
-                if skill.data.get('total_charge'):
-                    charge = ' %d / %d' % (skill.data['charge'], skill.data['total_charge'])
-                else:
-                    charge = ''
-                self.info_graph.register((96 + left_pos + 80, 30, 16, 16), help_menu.SkillHelpDialog(skill.desc, name=skill.name + tier + charge), 'notes')
-        if class_skills:
-            class_skill_counter = {}
-            class_skills_list = list()
-            max_number = -1
-            for skill in class_skills:
-                if skill.nid not in class_skill_counter:
-                    if skill.priority.int() > max_number:
-                        max_number = skill.priority.int()
-                        class_skill_counter[skill.nid] = 1
-                        class_skills_list.clear()
-                        class_skills_list.append(skill)
-                else:
-                    class_skill_counter[skill.nid] += 1
-            for idx, skill in enumerate(class_skills_list):
-                if 'T1' in skill.nid:
-                    surf.blit(SPRITES.get('T1SkillBG'), (59, 27))
-                    tier = ' (T1)'
-                elif 'T2' in skill.nid:
-                    surf.blit(SPRITES.get('T2SkillBG'), (59, 27))
-                    tier = ' (T2)'
-                elif 'T3' in skill.nid:
-                    surf.blit(SPRITES.get('T3SkillBG'), (59, 27))
-                    tier = ' (T3)'
-                elif 'T4' in skill.nid:
-                    surf.blit(SPRITES.get('T4SkillBG'), (59, 27))
-                    tier = ' (Ultra)'
-                elif 'Personal' in skill.nid:
-                    surf.blit(SPRITES.get('PersonalSkillBG'), (59, 27))
-                    tier = ' (Personal)'
-                left_pos = idx * 24
-                icons.draw_skill(surf, skill, (left_pos + 60, 28), compact=False, grey=skill_system.is_grey(skill, self.unit))
-                if class_skill_counter[skill.nid] > 1:
-                    text = str(class_skill_counter[skill.nid])
-                    render_text(surf, ['small'], [text], ['white'], (left_pos + 20 - 4 * len(text), 6))
-                if skill.data.get('total_charge'):
-                    charge = ' %d / %d' % (skill.data['charge'], skill.data['total_charge'])
-                else:
-                    charge = ''
-                self.info_graph.register((96 + left_pos + 60, 50, 16, 16), help_menu.SkillHelpDialog(skill.desc, name=skill.name + tier + charge), 'notes')
-        if special_skills:
-            special_skill_counter = {}
-            special_skills_list = list()
-            max_number = -1
-            for skill in special_skills:
-                if skill.nid not in special_skill_counter:
-                    if skill.priority.int() > max_number:
-                        max_number = skill.priority.int()
-                        special_skill_counter[skill.nid] = 1
-                        special_skills_list.clear()
-                        special_skills_list.append(skill)
-                else:
-                    special_skill_counter[skill.nid] += 1
-            for idx, skill in enumerate(special_skills_list):
-                if 'T1' in skill.nid:
-                    surf.blit(SPRITES.get('T1SkillBG'), (65, 47))
-                    tier = ' (T1)'
-                elif 'T2' in skill.nid:
-                    surf.blit(SPRITES.get('T2SkillBG'), (65, 47))
-                    tier = ' (T2)'
-                elif 'T3' in skill.nid:
-                    surf.blit(SPRITES.get('T3SkillBG'), (65, 47))
-                    tier = ' (T3)'
-                elif 'T4' in skill.nid:
-                    surf.blit(SPRITES.get('T4SkillBG'), (65, 47))
-                    tier = ' (Ultra)'
-                elif 'Personal' in skill.nid:
-                    surf.blit(SPRITES.get('PersonalSkillBG'), (65, 47))
-                    tier = ' (Personal)'
-                left_pos = idx * 24
-                icons.draw_skill(surf, skill, (left_pos + 66, 48), compact=False, grey=skill_system.is_grey(skill, self.unit))
-                if special_skill_counter[skill.nid] > 1:
-                    text = str(special_skill_counter[skill.nid])
-                    render_text(surf, ['small'], [text], ['white'], (left_pos + 20 - 4 * len(text), 6))
-                if skill.data.get('total_charge'):
-                    charge = ' %d / %d' % (skill.data['charge'], skill.data['total_charge'])
-                else:
-                    charge = ''
-                self.info_graph.register((96 + left_pos + 66, 70, 16, 16), help_menu.SkillHelpDialog(skill.desc, name=skill.name + tier + charge), 'notes')
-        if slota_skills:
-            slota_skill_counter = {}
-            slota_skills_list = list()
-            max_number = -1
-            for skill in slota_skills:
-                if skill.nid not in slota_skill_counter:
-                    if skill.priority.int() > max_number:
-                        max_number = skill.priority.int()
-                        slota_skill_counter[skill.nid] = 1
-                        slota_skills_list.clear()
-                        slota_skills_list.append(skill)
-                else:
-                    slota_skill_counter[skill.nid] += 1
-            for idx, skill in enumerate(slota_skills_list):
-                if 'T1' in skill.nid:
-                    surf.blit(SPRITES.get('T1SkillBG'), (39, 67))
-                    tier = ' (T1)'
-                elif 'T2' in skill.nid:
-                    surf.blit(SPRITES.get('T2SkillBG'), (39, 67))
-                    tier = ' (T2)'
-                elif 'T3' in skill.nid:
-                    surf.blit(SPRITES.get('T3SkillBG'), (39, 67))
-                    tier = ' (T3)'
-                elif 'T4' in skill.nid:
-                    surf.blit(SPRITES.get('T4SkillBG'), (39, 67))
-                    tier = ' (Ultra)'
-                elif 'Personal' in skill.nid:
-                    surf.blit(SPRITES.get('PersonalSkillBG'), (39, 67))
-                    tier = ' (Personal)'
-                left_pos = idx * 24
-                icons.draw_skill(surf, skill, (left_pos + 40, 68), compact=False, grey=skill_system.is_grey(skill, self.unit))
-                if slota_skill_counter[skill.nid] > 1:
-                    text = str(slota_skill_counter[skill.nid])
-                    render_text(surf, ['small'], [text], ['white'], (left_pos + 20 - 4 * len(text), 6))
-                if skill.data.get('total_charge'):
-                    charge = ' %d / %d' % (skill.data['charge'], skill.data['total_charge'])
-                else:
-                    charge = ''
-                self.info_graph.register((96 + left_pos + 40, 90, 16, 16), help_menu.SkillHelpDialog(skill.desc, name=skill.name + tier + charge), 'notes')
-        if slotb_skills:
-            slotb_skill_counter = {}
-            slotb_skills_list = list()
-            max_number = -1
-            for skill in slotb_skills:
-                if skill.nid not in slotb_skill_counter:
-                    if skill.priority.int() > max_number:
-                        max_number = skill.priority.int()
-                        slotb_skill_counter[skill.nid] = 1
-                        slotb_skills_list.clear()
-                        slotb_skills_list.append(skill)
-                else:
-                    slotb_skill_counter[skill.nid] += 1
-            for idx, skill in enumerate(slotb_skills_list):
-                if 'T1' in skill.nid:
-                    surf.blit(SPRITES.get('T1SkillBG'), (39, 87))
-                    tier = ' (T1)'
-                elif 'T2' in skill.nid:
-                    surf.blit(SPRITES.get('T2SkillBG'), (39, 87))
-                    tier = ' (T2)'
-                elif 'T3' in skill.nid:
-                    surf.blit(SPRITES.get('T3SkillBG'), (39, 87))
-                    tier = ' (T3)'
-                elif 'T4' in skill.nid:
-                    surf.blit(SPRITES.get('T4SkillBG'), (39, 87))
-                    tier = ' (Ultra)'
-                elif 'Personal' in skill.nid:
-                    surf.blit(SPRITES.get('PersonalSkillBG'), (39, 87))
-                    tier = ' (Personal)'
-                left_pos = idx * 24
-                icons.draw_skill(surf, skill, (left_pos + 40, 88), compact=False, grey=skill_system.is_grey(skill, self.unit))
-                if slotb_skill_counter[skill.nid] > 1:
-                    text = str(slotb_skill_counter[skill.nid])
-                    render_text(surf, ['small'], [text], ['white'], (left_pos + 20 - 4 * len(text), 6))
-                if skill.data.get('total_charge'):
-                    charge = ' %d / %d' % (skill.data['charge'], skill.data['total_charge'])
-                else:
-                    charge = ''
-                self.info_graph.register((96 + left_pos + 40, 110, 16, 16), help_menu.SkillHelpDialog(skill.desc, name=skill.name + tier + charge), 'notes')
-        if slotc_skills:
-            slotc_skill_counter = {}
-            slotc_skills_list = list()
-            max_number = -1
-            for skill in slotc_skills:
-                if skill.nid not in slotc_skill_counter:
-                    if skill.priority.int() > max_number:
-                        max_number = skill.priority.int()
-                        slotc_skill_counter[skill.nid] = 1
-                        slotc_skills_list.clear()
-                        slotc_skills_list.append(skill)
-                else:
-                    slotc_skill_counter[skill.nid] += 1
-            for idx, skill in enumerate(slotc_skills_list):
-                if 'T1' in skill.nid:
-                    surf.blit(SPRITES.get('T1SkillBG'), (39, 107))
-                    tier = ' (T1)'
-                elif 'T2' in skill.nid:
-                    surf.blit(SPRITES.get('T2SkillBG'), (39, 107))
-                    tier = ' (T2)'
-                elif 'T3' in skill.nid:
-                    surf.blit(SPRITES.get('T3SkillBG'), (39, 107))
-                    tier = ' (T3)'
-                elif 'T4' in skill.nid:
-                    surf.blit(SPRITES.get('T4SkillBG'), (39, 87))
-                    tier = ' (Ultra)'
-                elif 'Personal' in skill.nid:
-                    surf.blit(SPRITES.get('PersonalSkillBG'), (39, 107))
-                    tier = ' (Personal)'
-                left_pos = idx * 24
-                icons.draw_skill(surf, skill, (left_pos + 40, 108), compact=False, grey=skill_system.is_grey(skill, self.unit))
-                if slotc_skill_counter[skill.nid] > 1:
-                    text = str(slotc_skill_counter[skill.nid])
-                    render_text(surf, ['small'], [text], ['white'], (left_pos + 20 - 4 * len(text), 6))
-                if skill.data.get('total_charge'):
-                    charge = ' %d / %d' % (skill.data['charge'], skill.data['total_charge'])
-                else:
-                    charge = ''
-                self.info_graph.register((96 + left_pos + 40, 130, 16, 16), help_menu.SkillHelpDialog(skill.desc, name=skill.name + tier + charge), 'notes')
+        def pick_skill(skill_list):
+            """Return the top-priority skill (deduped by nid) from the filtered list."""
+            if not skill_list:
+                return None
+            best = None
+            best_prio = -1
+            for skill in skill_list:
+                prio = skill.priority.int()
+                if prio > best_prio:
+                    best_prio = prio
+                    best = skill
+            return best
+
+        char_skills = [s for s in self.unit.skills if s.class_skill and s.char_skill and not skill_system.hidden(s, self.unit)]
+        class_skills = [s for s in self.unit.skills if s.class_skill and s.class_skill2 and not skill_system.hidden(s, self.unit)]
+        special_skills = [s for s in self.unit.skills if s.class_skill and s.special_skill and not skill_system.hidden(s, self.unit)]
+        slota_skills = [s for s in self.unit.skills if s.class_skill and s.slota_skill and not skill_system.hidden(s, self.unit)]
+        slotb_skills = [s for s in self.unit.skills if s.class_skill and s.slotb_skill and not skill_system.hidden(s, self.unit)]
+        slotc_skills = [s for s in self.unit.skills if s.class_skill and s.slotc_skill and not skill_system.hidden(s, self.unit)]
+        assist_skill = [s for s in self.unit.skills if s.class_skill and s.assist_skill and not skill_system.hidden(s, self.unit)]
+
+        # FEH-style pill layout: 7 horizontal pills, each with a category color,
+        # the skill icon at the left, and the skill name in the middle.
+        # (label, fill color, border color, top skill)
+        rows = [
+            ('Personal', (190, 60, 80),   (110, 30, 50),  pick_skill(char_skills),    'Personal'),
+            ('Class',    (180, 70, 150),  (100, 35, 90),  pick_skill(class_skills),   'Class'),
+            ('Special',  (200, 150, 40),  (120, 80, 20),  pick_skill(special_skills), 'Special'),
+            ('A',        (70, 140, 90),   (35, 80, 50),   pick_skill(slota_skills),   'Slot A'),
+            ('B',        (170, 60, 60),   (95, 30, 30),   pick_skill(slotb_skills),   'Slot B'),
+            ('C',        (60, 130, 200),  (30, 70, 120),  pick_skill(slotc_skills),   'Slot C'),
+            ('S',        (200, 170, 60),  (115, 95, 25),  pick_skill(assist_skill),   'Assist'),
+        ]
+
+        pill_x = 4
+        pill_w = (WINWIDTH - 96) - 8  # 136 px
+        pill_h = 18
+        start_y = 14
+        gap = 2
+
+        for idx, (label, fill_color, border_color, skill, category) in enumerate(rows):
+            y = start_y + idx * (pill_h + gap)
+
+            # Draw rounded pill background (filled, with 1px darker border)
+            pygame.draw.rect(surf, fill_color, (pill_x, y, pill_w, pill_h), border_radius=pill_h // 2)
+            pygame.draw.rect(surf, border_color, (pill_x, y, pill_w, pill_h), width=1, border_radius=pill_h // 2)
+
+            # Category badge (single letter, on the left side, inside a small circle)
+            badge_cx = pill_x + 9
+            badge_cy = y + pill_h // 2
+            pygame.draw.circle(surf, border_color, (badge_cx, badge_cy), 7)
+            badge_w = text_width('text', label[0])
+            render_text(surf, ['text'], [label[0]], ['white'], (badge_cx - badge_w // 2, y + 2))
+
+            # Skill icon (16x16) right after the badge
+            icon_x = pill_x + 18
+            icon_y = y + 1
+            if skill is not None:
+                icons.draw_skill(surf, skill, (icon_x, icon_y), compact=False,
+                                 grey=skill_system.is_grey(skill, self.unit))
+                # Skill name, truncated to fit
+                name = skill.name
+                max_name_w = pill_w - (icon_x - pill_x) - 18 - 4
+                truncated = name
+                while truncated and text_width('text', truncated) > max_name_w:
+                    truncated = truncated[:-1]
+                if truncated != name and len(truncated) > 1:
+                    truncated = truncated[:-1] + '.'
+                name_x = icon_x + 18
+                render_text(surf, ['text'], [truncated], ['white'], (name_x, y + 2))
+                # Register the whole pill for info graph hover help
+                self.info_graph.register((96 + pill_x, y, pill_w, pill_h),
+                                         help_menu.SkillHelpDialog(skill, category=category), 'notes')
+            else:
+                # Empty slot indicator
+                dash_x = icon_x + 18
+                render_text(surf, ['text'], ['---'], ['white'], (dash_x, y + 2))
 
         return surf
 
     def draw_notes_surf(self, surf):
-        surf.blit(self.notes_surf, (96, 20))
+        surf.blit(self.notes_surf, (96, 0))

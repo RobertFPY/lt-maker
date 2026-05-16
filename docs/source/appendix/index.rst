@@ -17,3 +17,4 @@ These functions and objects can be refrenced in your own events and conditions.
    unit_funcs-reference
    item_funcs-reference
    query_funcs-reference
+   constants-reference

@@ -60,7 +60,7 @@ class EmpowerHeal(SkillComponent):
     def empower_heal(self, unit, target):
         from app.engine import evaluate
         try:
-            return int(evaluate.evaluate(self.value, unit, target, unit.position))
+            return int(evaluate.evaluate(self.value, unit, target, unit.position, local_args={'skill': self.skill}))
         except:
             print("Couldn't evaluate %s conditional" % self.value)
             return 0
@@ -73,6 +73,36 @@ class EmpowerHealReceived(SkillComponent):
     expose = ComponentType.String
 
     def empower_heal_received(self, target, unit):
+        from app.engine import evaluate
+        try:
+            return int(evaluate.evaluate(self.value, target, unit, local_args={'skill': self.skill}))
+        except:
+            print("Couldn't evaluate %s conditional" % self.value)
+            return 0
+
+class EmpowerMana(SkillComponent):
+    nid = 'empower_mana'
+    desc = "Gives +X extra mana gain"
+    tag = SkillTags.ADVANCED
+
+    expose = ComponentType.String
+
+    def empower_mana(self, unit, target):
+        from app.engine import evaluate
+        try:
+            return int(evaluate.evaluate(self.value, unit, target, unit.position))
+        except:
+            print("Couldn't evaluate %s conditional" % self.value)
+            return 0
+
+class EmpowerManaReceived(SkillComponent):
+    nid = 'empower_mana_received'
+    desc = "Gives +X extra mana gain received"
+    tag = SkillTags.ADVANCED
+
+    expose = ComponentType.String
+
+    def empower_mana_received(self, target, unit):
         from app.engine import evaluate
         try:
             return int(evaluate.evaluate(self.value, target, unit))
@@ -119,3 +149,39 @@ class EventAfterInitiatedCombat(SkillComponent):
     def end_combat(self, playback, unit: UnitObject, item, target: UnitObject, item2, mode):
         if mode == 'attack':
             game.events.trigger_specific_event(self.value, unit, target, unit.position, {'item': item, 'item2': item2, 'mode': mode})
+
+class Nihil(SkillComponent):
+    nid = 'nihil'
+    desc = "Takes a list of skills as its value. If a skill from this list is present on `target`, then *this* skill does not work."
+    tag = SkillTags.CUSTOM
+    author = 'Eretein/rainlash'
+
+    expose = (ComponentType.List, ComponentType.Skill)
+    value = []
+
+    ignore_conditional = True
+    _condition = True
+
+    def pre_combat(self, playback, unit, item, target, item2, mode):
+        all_target_nihils = set(self.value)
+        if target:
+            for skill in target.skills:
+                if skill.nid in all_target_nihils:
+                    self._condition = False
+                    return
+        self._condition = True
+
+    def post_combat_unconditional(self, playback, unit, item, target, item2, mode):
+        game.on_alter_game_state()
+        self._condition = True
+
+    def condition(self, unit, item):
+        return self._condition
+
+    def test_on(self, playback, unit, item, target, item2, mode):
+        game.on_alter_game_state()
+        self.pre_combat(playback, unit, item, target, item2, mode)
+
+    def test_off(self, playback, unit, item, target, item2, mode):
+        game.on_alter_game_state()
+        self._condition = True

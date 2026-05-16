@@ -1,9 +1,13 @@
 from typing import Any
+from enum import Enum, StrEnum
 
 def is_primitive_or_primitive_collection(value: Any) -> bool:
     primitive_types = (int, float, str, bool)
     collection_types = (tuple, list, dict, set)
+    enum_types = (Enum, StrEnum)
     if value is None:
+        return True
+    if any(isinstance(value, enum_type) for enum_type in enum_types):
         return True
     if any(isinstance(value, primitive) for primitive in primitive_types):
         return True

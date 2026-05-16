@@ -4,7 +4,8 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon, QColor, QPixmap
 
 from app.data.database.database import DB
-from app.events.regions import RegionType
+from app.editor.code_line_edit import CodeLineEdit
+from app.events.regions import Region, RegionType, RegionHighlight
 
 from app.utilities import utils, str_utils
 from app.utilities.data import Data
@@ -106,7 +107,7 @@ class RegionMenu(QWidget):
                 self.map_view.center_on_pos(reg.center)
             self.modify_region_widget.set_current(reg)
 
-    def get_current(self):
+    def get_current(self) -> Region:
         for index in self.view.selectionModel().selectedIndexes():
             idx = index.row()
             if len(self._data) > 0 and idx < len(self._data):
@@ -206,10 +207,16 @@ class ModifyRegionWidget(QWidget):
         #     self.sub_nid_box.edit.setText(self.current.sub_nid)
         self.sub_nid_box.edit.textChanged.connect(self.sub_nid_changed)
         layout.addWidget(self.sub_nid_box)
+        
+        self.highlight_box = PropertyBox("Highlight", ComboBox, self)
+        self.highlight_box.edit.addItems(list(RegionHighlight))
+        self.highlight_box.edit.currentIndexChanged.connect(
+            self.highlight_changed)
+        layout.addWidget(self.highlight_box)
 
-        self.condition_box = PropertyBox("Condition", QLineEdit, self)
+        self.condition_box = PropertyBox("Condition", CodeLineEdit, self)
         # self.condition_box.edit.setText(self.current.condition)
-        self.condition_box.edit.textChanged.connect(self.condition_changed)
+        self.condition_box.edit.textChanged.connect(lambda: self.condition_changed(self.condition_box.edit.toPlainText()))
         layout.addWidget(self.condition_box)
 
         self.time_left_box = PropertyBox("Num Turns", QLineEdit, self)
@@ -219,10 +226,14 @@ class ModifyRegionWidget(QWidget):
         self.only_once_box = PropertyCheckBox("Only once?", QCheckBox, self)
         self.only_once_box.edit.stateChanged.connect(self.only_once_changed)
         layout.addWidget(self.only_once_box)
-        
+
         self.interrupt_move_box = PropertyCheckBox("Interrupts Movement?", QCheckBox, self)
         self.interrupt_move_box.edit.stateChanged.connect(self.interrupt_move_changed)
         layout.addWidget(self.interrupt_move_box)
+        
+        self.hide_time_box = PropertyCheckBox("Hide time?", QCheckBox, self)
+        self.hide_time_box.edit.stateChanged.connect(self.hide_time_changed)
+        layout.addWidget(self.hide_time_box)
 
         self.status_box = SkillBox(self)
         self.status_box.edit.currentIndexChanged.connect(self.status_changed)
@@ -233,9 +244,11 @@ class ModifyRegionWidget(QWidget):
         layout.addWidget(self.terrain_box)
 
         self.sub_nid_box.hide()
+        self.highlight_box.hide()
         self.condition_box.hide()
         self.only_once_box.hide()
         self.interrupt_move_box.hide()
+        self.hide_time_box.hide()
         self.status_box.hide()
         self.terrain_box.hide()
 
@@ -264,11 +277,14 @@ class ModifyRegionWidget(QWidget):
         self.current.region_type = self.region_type_box.edit.currentText().lower()
         # Just hide them all
         self.sub_nid_box.hide()
+        self.highlight_box.hide()
         self.condition_box.hide()
         self.only_once_box.hide()
         self.interrupt_move_box.hide()
         self.status_box.hide()
         self.terrain_box.hide()
+        if self.current.region_type in (RegionType.NORMAL, RegionType.STATUS, RegionType.TERRAIN, RegionType.EVENT):
+            self.highlight_box.show()
         if self.current.region_type in (RegionType.NORMAL, RegionType.FORMATION):
             pass
         elif self.current.region_type == RegionType.STATUS:
@@ -284,10 +300,18 @@ class ModifyRegionWidget(QWidget):
         elif self.current.region_type in (RegionType.VISION, RegionType.FOG):
             self.sub_nid_box.label.setText("Range")
             self.sub_nid_box.show()
+            
+        self.hide_time_box.show()
 
     def sub_nid_changed(self, text):
         self.current.sub_nid = text
         self.window.update_list()
+
+    def highlight_changed(self, index):
+        if self.highlight_box.edit.currentText() != 'none':
+            self.current.highlight = self.highlight_box.edit.currentText()
+        else:
+            self.current.highlight = None
 
     def condition_changed(self, text):
         self.current.condition = text
@@ -301,9 +325,12 @@ class ModifyRegionWidget(QWidget):
 
     def only_once_changed(self, state):
         self.current.only_once = bool(state)
-        
+
     def interrupt_move_changed(self, state):
         self.current.interrupt_move = bool(state)
+        
+    def hide_time_changed(self, state):
+        self.current.hide_time = bool(state)
 
     def status_changed(self, index):
         self.current.sub_nid = self.status_box.edit.currentText()
@@ -318,14 +345,16 @@ class ModifyRegionWidget(QWidget):
         self.current = current
         self.nid_box.edit.setText(current.nid)
         self.region_type_box.edit.setValue(current.region_type)
-        self.condition_box.edit.setText(current.condition)
+        self.highlight_box.edit.setValue(current.highlight)
+        self.condition_box.edit.setPlainText(current.condition)
         self.time_left_box.edit.setText(str(current.time_left) if current.time_left is not None else '')
         self.only_once_box.edit.setChecked(bool(current.only_once))
         self.interrupt_move_box.edit.setChecked(bool(current.interrupt_move))
+        self.hide_time_box.edit.setChecked(bool(current.hide_time))
         if current.region_type == RegionType.STATUS:
             self.status_box.edit.setValue(str(current.sub_nid))
         elif current.region_type == RegionType.TERRAIN:
-            self.terrain_box.edit.setValue(str(current.sub_nid))
+            self.terrain_box.setValue(str(current.sub_nid))
         elif current.region_type in (RegionType.EVENT, RegionType.FOG, RegionType.VISION):
             self.sub_nid_box.edit.setText(str(current.sub_nid))
         else:

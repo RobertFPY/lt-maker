@@ -33,7 +33,8 @@ class MusicDict(dict):
             if prefab:
                 try:
                     self[val] = SongObject(prefab)
-                except pygame.error as e:
+                except Exception as e:
+                    self[val] = None
                     logging.warning(e)
                     return None
             else:
@@ -651,7 +652,7 @@ class DefaultSoundController(SoundController):
     def _set_next_song(self, song, num_plays, fade_in=DEFAULT_FADE_TIME_MS):
         # Clear the oldest channel and use it
         # to play the next song
-        logging.info("Set Next Song: %s" % song)
+        logging.info("Set Next Song: %s" % song.nid)
         oldest_channel = self.channel_stack[0]
         oldest_channel.clear()
         self.channel_stack.remove(oldest_channel)
@@ -659,16 +660,16 @@ class DefaultSoundController(SoundController):
         oldest_channel.set_fade_in_time(fade_in)
         oldest_channel.set_current_song(song, num_plays)
 
-    def battle_fade_in(self, next_song, fade=DEFAULT_FADE_TIME_MS, from_start=True) -> Optional[SongObject]:
-        song = MUSIC.get(next_song)
+    def battle_fade_in(self, next_song_nid, fade=DEFAULT_FADE_TIME_MS, from_start=True) -> Optional[SongObject]:
+        song = MUSIC.get(next_song_nid)
         if not song:
-            logging.warning("Song does not exist")
+            logging.warning("Song '%s' does not exist", next_song_nid)
             return None
         if song.battle:
             self.crossfade(fade)
             return song
         else:
-            return self.fade_in(next_song, fade_in=fade, from_start=from_start)
+            return self.fade_in(next_song_nid, fade_in=fade, from_start=from_start)
 
     def battle_fade_back(self, song, from_start=True):
         if song.battle:
@@ -688,11 +689,11 @@ class DefaultSoundController(SoundController):
             return self.song_stack[-1]
         return None
 
-    def fade_in(self, next_song: NID, num_plays=-1, fade_in=DEFAULT_FADE_TIME_MS, from_start=False) -> Optional[SongObject]:
-        logging.info("Fade in %s" % next_song)
-        next_song = MUSIC.get(next_song)
+    def fade_in(self, next_song_nid: NID, num_plays=-1, fade_in=DEFAULT_FADE_TIME_MS, from_start=False) -> Optional[SongObject]:
+        logging.info("Fade in '%s'" % next_song_nid)
+        next_song = MUSIC.get(next_song_nid)
         if not next_song:
-            logging.warning("Song does not exist")
+            logging.warning("Song '%s' does not exist", next_song_nid)
             return None
 
         any_music_is_playing = self.is_playing()
@@ -742,7 +743,7 @@ class DefaultSoundController(SoundController):
                     self._set_next_song(song, num_plays, fade_in)
                 break
         else: # Song is not in stack
-            logging.info("New song %s" % next_song)
+            logging.info("New song %s" % next_song.nid)
             self.song_stack.append(next_song)
             logging.debug("Any music is playing? %s", any_music_is_playing)
             # Clear the oldest channel and use it
@@ -839,7 +840,7 @@ class DefaultSoundController(SoundController):
     def load_songs(self, nids: Set[NID]):
         MUSIC.preload(nids)
 
-    def flush(self, should_interrupt_current_song=True):
+    def flush(self, should_interrupt_current_song:bool=True) -> None:
         """Simply flushes the song cache from memory - this prevents memory bloat.
 
         Args:
@@ -850,7 +851,7 @@ class DefaultSoundController(SoundController):
         if not should_interrupt_current_song:
             current_song = self.get_current_song()
             if current_song:
-                print(current_song.nid)
+                logging.info(current_song.nid)
                 current_song_nid = current_song.nid
         MUSIC.clear(current_song_nid)
         SFX.clear()

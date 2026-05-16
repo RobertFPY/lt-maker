@@ -96,9 +96,8 @@ class RoamAIMovementComponent(RoamPlayerMovementComponent):
 
         # Move the unit's true position if necessary
         if rounded_pos != self.unit.position:
-            action.PickUnitUp(self.unit).do()
-            self.unit.position = rounded_pos
-            action.PutUnitDown(self.unit).do()
+            action.QuickLeave(self.unit).do()
+            action.QuickArrive(self.unit, rounded_pos).do()
             action.UpdateFogOfWar(self.unit).do()
 
         if self.path and self.unit.position == self.path[-1]:

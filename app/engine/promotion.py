@@ -68,7 +68,7 @@ class PromotionChoiceState(State):
             platform_type = DB.terrain.get(terrain).platform
         else:
             platform_type = 'Floor'
-        platform = RESOURCES.platforms[platform_type + '-Melee']
+        platform = RESOURCES.platforms.get(platform_type + '-Melee', RESOURCES.platforms.get('Arena-Melee'))
         self.left_platform = engine.image_load(platform)
         self.right_platform = engine.flip_horiz(self.left_platform.copy())
 
@@ -96,19 +96,21 @@ class PromotionChoiceState(State):
             self.current_desc = self._get_desc()
 
         if 'DOWN' in directions:
-            get_sound_thread().play_sfx('Select 6')
             if self.child_menu:
-                self.child_menu.move_down(first_push)
+                if self.child_menu.move_down(first_push):
+                    get_sound_thread().play_sfx('Select 6')
             else:
-                self.menu.move_down(first_push)
+                if self.menu.move_down(first_push):
+                    get_sound_thread().play_sfx('Select 6')
                 self.target_anim_offset = True
                 self.current_desc = self._get_desc()
         elif 'UP' in directions:
-            get_sound_thread().play_sfx('Select 6')
             if self.child_menu:
-                self.child_menu.move_up(first_push)
+                if self.child_menu.move_up(first_push):
+                    get_sound_thread().play_sfx('Select 6')
             else:
-                self.menu.move_up(first_push)
+                if self.menu.move_up(first_push):
+                    get_sound_thread().play_sfx('Select 6')
                 self.target_anim_offset = True
                 self.current_desc = self._get_desc()
 
@@ -253,7 +255,7 @@ class PromotionState(State, MockCombat):
                 get_sound_thread().fade_in(DB.constants.value(music), fade_in=50)
 
         self.unit = game.memory['current_unit']
-        color = DB.teams.get(self.unit.team).combat_color
+        color = game.teams.get(self.unit.team).combat_color
 
         # Old Right Animation
         self.right_battle_anim = battle_animation.get_battle_anim(self.unit, None)

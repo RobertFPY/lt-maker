@@ -67,6 +67,14 @@
             [
                 "repair",
                 null
+            ],
+            [
+                "magic",
+                null
+            ],
+            [
+                "map_cast_pose",
+                null
             ]
         ]
     }

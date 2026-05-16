@@ -1,8 +1,8 @@
 [
     {
-        "nid": "Mage Knight",
+        "nid": "Mage_Knight",
         "name": "Mage Knight",
-        "desc": "",
+        "desc": "Knights trained in both anima and staves.",
         "tier": 2,
         "movement_group": "Light Cav",
         "promotes_from": "Mage",
@@ -100,12 +100,12 @@
                 251
             ],
             "Bow": [
-                0,
+                false,
                 0,
                 251
             ],
             "Staff": [
-                2,
+                true,
                 31,
                 251
             ],
@@ -115,7 +115,7 @@
                 251
             ],
             "Anima": [
-                2,
+                true,
                 71,
                 251
             ],
@@ -136,7 +136,7 @@
             0
         ],
         "map_sprite_nid": "MageKnight",
-        "combat_anim_nid": "Strategist",
+        "combat_anim_nid": "Mage_Knight",
         "fields": []
     }
 ]

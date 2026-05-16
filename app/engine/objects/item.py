@@ -39,13 +39,18 @@ class ItemObject():
         self.subitem_uids = []
         self.subitems = []
         self.parent_item = None
+        
+        # For command items
+        self.command_item_uid = None
+        self.command_item = None
+        self.command_parent_item = None
 
     @property
     def tags(self) -> set:
         all_tags = set()
-        for component in self.components:
-            if component.nid == 'item_tags':
-                all_tags |= set(self.components.get('item_tags').value)
+        tag_comp: Optional[ItemComponent] = self.components.get('item_tags')
+        if tag_comp:
+            all_tags |= set(tag_comp.value)
         return all_tags
 
     def change_owner(self, nid):
@@ -114,6 +119,7 @@ class ItemObject():
         serial_dict['droppable'] = self.droppable
         serial_dict['data'] = self.data
         serial_dict['subitems'] = self.subitem_uids
+        serial_dict['command_item'] = self.command_item_uid
         components = [(component.nid, component.value) for component in self.components]
         serial_dict['components'] = components
         return serial_dict
@@ -134,4 +140,5 @@ class ItemObject():
         self.droppable = dat['droppable']
         self.data = dat['data']
         self.subitem_uids = dat.get('subitems', [])
+        self.command_item_uid = dat.get('command_item')
         return self

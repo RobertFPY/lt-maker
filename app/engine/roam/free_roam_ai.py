@@ -63,10 +63,17 @@ class FreeRoamAIHandler:
                 continue
             if not roam_ai.state:
                 roam_ai.think()
+            self.components[roam_ai.unit.nid].set_speed(roam_ai.speed_mult)
             roam_ai.act()
             # Every frame, make sure our movement component has the right path
             # if roam_ai.path:
             self.components[roam_ai.unit.nid].set_path(roam_ai.path)
+
+    def stop(self, unit: UnitObject):
+        mc = self.components.get(unit.nid)
+        if not mc:
+            return
+        mc.finish()
 
     def stop_all_units(self):
         self.active = False
@@ -185,8 +192,8 @@ class RoamAI:
         target_positions = ai_controller.get_targets(self.unit, self.behaviour)
 
         zero_move = item_funcs.get_max_range(self.unit)
-        single_move = zero_move + equations.parser.movement(self.unit)
-        double_move = single_move + equations.parser.movement(self.unit)
+        single_move = zero_move + self.unit.get_movement()
+        double_move = single_move + self.unit.get_movement()
 
         target_positions = [(pos, utils.calculate_distance(self.unit.position, pos)) for pos in target_positions]
 

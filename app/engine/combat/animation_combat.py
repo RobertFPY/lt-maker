@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import random
-from typing import List
+from typing import List, Optional
 
 import logging
 
@@ -43,6 +43,11 @@ class AnimationCombat(BaseCombat, MockCombat):
         self.defender = defender
         self.main_item = main_item
         self.def_item = def_item
+        self.attack_partner_weapon: Optional[ItemObject] = resolve_weapon(self.attacker.strike_partner)
+        if self.defender:
+            self.defense_partner_weapon: Optional[ItemObject] = resolve_weapon(self.defender.strike_partner)
+        else:
+            self.defense_partner_weapon: Optional[ItemObject] = None
 
         if self.defender.team == 'player' and self.attacker.team != 'player':
             self.right = self.defender
@@ -424,8 +429,19 @@ class AnimationCombat(BaseCombat, MockCombat):
 
         elif self.state == 'combat_hit':
             self.clean_up0()
-            self.state = 'hp_change'
+            
+            # Set up on-hit effects for magic stuff
+            attacker, item, defender, d_item, self.current_battle_anim = self.get_actors()   
+            if item:
+                effect_nid = item_system.on_hit_effect(attacker, item, defender, d_item, 'attack')
+                if effect_nid:
+                    # Must designate a pose called `Effect` that has no `SpellHit` and `BreakParentLoop` (unsure about this) in the editor so we don't hang
+                    # I used the `Legend` effect from the discord as a template to format other effects
+                    effect = self.current_battle_anim.get_effect(effect_nid, pose='Effect')
+                    self.current_battle_anim.add_effect(effect)
 
+            self.state = 'hp_change'
+                
         elif self.state == 'hp_change':
             proceed = self.current_battle_anim.can_proceed()
             if current_time > utils.frames2ms(27) and self.left_hp_bar.done() and self.right_hp_bar.done() and proceed:
@@ -668,9 +684,9 @@ class AnimationCombat(BaseCombat, MockCombat):
         else:
             suffix = '-Melee'
 
-        left_platform_full_loc = RESOURCES.platforms.get(left_platform_type + suffix)
+        left_platform_full_loc = RESOURCES.platforms.get(left_platform_type + suffix, RESOURCES.platforms.get('Arena' + suffix))
         self.left_platform = engine.image_load(left_platform_full_loc)
-        right_platform_full_loc = RESOURCES.platforms.get(right_platform_type + suffix)
+        right_platform_full_loc = RESOURCES.platforms.get(right_platform_type + suffix, RESOURCES.platforms.get('Arena' + suffix))
         self.right_platform = engine.flip_horiz(engine.image_load(right_platform_full_loc))
 
         if self.arena_combat:
@@ -795,7 +811,7 @@ class AnimationCombat(BaseCombat, MockCombat):
         return self.right.team
 
     def get_color(self, team: NID) -> str:
-        return DB.teams.get(team).combat_color
+        return game.teams.get(team).combat_color
 
     def _set_stats(self, playback: List[PlaybackBrush]):
         a_hit = combat_calcs.compute_hit(self.attacker, self.defender, self.main_item, self.def_item, 'attack', self.state_machine.get_attack_info())
@@ -960,7 +976,7 @@ class AnimationCombat(BaseCombat, MockCombat):
             if damage <= 0:
                 return
             str_damage = str(damage)
-            left = brush.defender == self.left
+            left = brush.defender == self.left or (self.left.strike_partner and brush.defender == self.left.strike_partner)
             for idx, num in enumerate(str_damage):
                 d = gui.DamageNumber(int(num), idx, len(str_damage), left, 'red')
                 self.damage_numbers.append(d)
@@ -969,7 +985,7 @@ class AnimationCombat(BaseCombat, MockCombat):
             if damage <= 0:
                 return
             str_damage = str(damage)
-            left = brush.defender == self.left
+            left = brush.defender == self.left or (self.left.strike_partner and brush.defender == self.left.strike_partner)
             for idx, num in enumerate(str_damage):
                 d = gui.DamageNumber(int(num), idx, len(str_damage), left, 'yellow')
                 self.damage_numbers.append(d)
@@ -1002,7 +1018,9 @@ class AnimationCombat(BaseCombat, MockCombat):
                 item = brush.item
                 magic = item_funcs.is_magic(unit, item, self.distance)
                 if damage > 0:
-                    if magic:
+                    if self.special_boss_crit(brush.defender):
+                        self._shake(4)
+                    elif magic:
                         self._shake(3)
                     else:
                         self._shake(1)
@@ -1228,8 +1246,6 @@ class AnimationCombat(BaseCombat, MockCombat):
             if unit.get_hp() <= 0:
                 game.death.should_die(unit)
 
-        self.handle_records(self.full_playback, all_units)
-
         self._delay_death = self.combat_death_should_trigger(all_units)
 
     def clean_up1(self):
@@ -1246,47 +1262,62 @@ class AnimationCombat(BaseCombat, MockCombat):
 
         self.cleanup_combat()
 
+        self.handle_unusable_items()
+        self.handle_broken_items()
+        
         # handle wexp & skills
         if not self.attacker.is_dying:
             self.handle_wexp(self.attacker, self.main_item, self.defender)
+
+        if DB.constants.value('pairup') and self.main_item:
+            if self.attacker.strike_partner:
+                self.handle_wexp(self.attacker.strike_partner, self.main_item, self.defender)
+            if self.attacker.traveler:
+                self.handle_wexp(game.get_unit(self.attacker.traveler), self.main_item, self.defender)
+
         if self.defender and self.def_item and not self.defender.is_dying:
             self.handle_wexp(self.defender, self.def_item, self.attacker)
+
+        if DB.constants.value('pairup') and self.def_item:
+            if self.defender and self.defender.strike_partner:
+                self.handle_wexp(self.defender.strike_partner, self.def_item, self.attacker)
+            if self.defender and self.defender.traveler:
+                self.handle_wexp(game.get_unit(self.defender.traveler), self.def_item, self.attacker)
 
         self.handle_mana(all_units)
         self.handle_exp(self)
 
     def clean_up2(self):
+        """
+        This clean up function handles updates done after combat stops being shown.
+        """
+        all_units = self._all_units()
+        
         game.state.back()
 
         # attacker has attacked
         action.do(action.HasAttacked(self.attacker))
+        
+        self.handle_records(self.full_playback, all_units)
 
         self.handle_messages()
-        all_units = self._all_units()
         self.turnwheel_death_messages(all_units)
 
         self.handle_state_stack()
+        
         game.events.trigger(triggers.CombatEnd(self.attacker, self.defender, self.attacker.position, self.main_item, self.full_playback))
+
         self.handle_item_gain(all_units)
 
         pairs = self.handle_supports(all_units)
         self.handle_support_pairs(pairs)
 
-        asp = self.attacker.strike_partner
-        dsp = None
-        if self.defender:
-            dsp = self.defender.strike_partner
-
         self.end_combat()
 
         self.handle_death(all_units)
 
-        self.handle_unusable_items(asp, dsp)
-        self.handle_broken_items(asp, dsp)
-
         self.attacker.built_guard = True
         if self.defender:
-            self.defender.strike_partner = None
             self.defender.built_guard = True
 
         # Clean up battle anims so we can re-use them later

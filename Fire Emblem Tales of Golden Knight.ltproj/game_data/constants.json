@@ -45,11 +45,11 @@
     ],
     [
         "lead",
-        false
+        true
     ],
     [
         "bexp",
-        false
+        true
     ],
     [
         "rd_bexp_lvl",
@@ -69,7 +69,7 @@
     ],
     [
         "unit_notes",
-        false
+        true
     ],
     [
         "crit",
@@ -192,6 +192,14 @@
         true
     ],
     [
+        "roam_dir_pose",
+        false
+    ],
+    [
+        "roam_dir_anim",
+        false
+    ],
+    [
         "autogenerate_grey_map_sprites",
         true
     ],
@@ -201,6 +209,10 @@
     ],
     [
         "talk_display",
+        true
+    ],
+    [
+        "enable_rating",
         true
     ],
     [
@@ -276,6 +288,14 @@
         true
     ],
     [
+        "title_credits",
+        true
+    ],
+    [
+        "title_full_support",
+        false
+    ],
+    [
         "music_main",
         "Main Theme"
     ],
@@ -298,6 +318,10 @@
     [
         "restart_battle_music",
         true
+    ],
+    [
+        "locked_soundroom",
+        false
     ],
     [
         "kill_wexp",

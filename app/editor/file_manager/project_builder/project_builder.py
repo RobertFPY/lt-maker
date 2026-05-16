@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import shlex
 import shutil
 import subprocess
 import time
@@ -15,9 +16,11 @@ from app.data.database.database import DB
 from app.editor.file_manager.project_file_backend import DEFAULT_PROJECT, ProjectFileBackend
 from app.engine import config as cf
 from app.utilities import file_utils
+from app.utilities.file_manager import FileManager
 
-def execute(cmd):
-    popen = subprocess.Popen(cmd, stdout=subprocess.PIPE, universal_newlines=True)
+def execute(cmd: str):
+    args = shlex.split(cmd)
+    popen = subprocess.Popen(args, stdout=subprocess.PIPE, universal_newlines=True)
     for stdout_line in iter(popen.stdout.readline, ""):
         yield stdout_line
     popen.stdout.close()
@@ -26,7 +29,6 @@ def execute(cmd):
         raise subprocess.CalledProcessError(return_code, cmd)
 
 PROGRESS_SENTINEL = "__PROGRESS_SENTINEL_STR__"
-
 
 def icon_path(current_proj: Path, curr_plat: file_utils.Pltfm) -> Path:
     """Returns the icon path for a project. Pltfm is presently unused,
@@ -37,7 +39,6 @@ def icon_path(current_proj: Path, curr_plat: file_utils.Pltfm) -> Path:
     if os.path.exists(project_icon_path):
         return project_icon_path
     return Path('favicon.ico')
-
 
 class LTProjectBuilder():
     def __init__(self, proj_file_manager: ProjectFileBackend):
@@ -52,7 +53,7 @@ class LTProjectBuilder():
                                 "before attempting to build.")
             return False
         # since it's not default, force a save. if save fails, we can't build.
-        if not self.proj_file_manager.save():
+        if not self.proj_file_manager.save(new=False, as_chunks=False):
             QMessageBox.warning(None, "Cannot build project",
                                 "Cannot build project without saving! Please save the project "
                                 "before attempting to build.")
@@ -72,11 +73,6 @@ class LTProjectBuilder():
         return output_dir
 
     def _build_game(self, current_proj: Path, dist_cmd: str, work_cmd: str, path_to_icon: Path):
-        # disable debug settings
-        current_debug = cf.SETTINGS['debug']
-        cf.SETTINGS['debug'] = 0
-        cf.save_settings()
-
         kwargs: List[str] = []
         kwargs.append(dist_cmd)
         kwargs.append(work_cmd)
@@ -91,9 +87,6 @@ class LTProjectBuilder():
             if PROGRESS_SENTINEL in line:
                 progress = int(line.replace(PROGRESS_SENTINEL, ""))
                 self.progress_dialog.setValue(progress)
-
-        cf.SETTINGS['debug'] = current_debug
-        cf.save_settings()
 
     def _build_executable_wrapper(self, current_proj: Path, dist_cmd: str, work_cmd: str, path_to_icon: Path):
         project_name = current_proj.name.replace('.ltproj', '')
@@ -116,6 +109,14 @@ class LTProjectBuilder():
         subprocess.check_call(executable_build_cmd, shell=True)
         os.remove(tmp_run_exe_fname)
         os.remove(project_name + '.spec')
+
+    def _preload_config(self, current_proj: Path, output_dir: Path):
+        project_name = current_proj.name.replace('.ltproj', '')
+        config = cf.base_config()
+        config['debug'] = 0
+
+        fman = FileManager(output_dir / 'dist' / project_name)
+        cf.save_config(config, fman.get_path('saves/config.ini'))
 
     def build(self, current_proj: str):
         curr_proj_path: Path = Path(current_proj)
@@ -143,8 +144,14 @@ class LTProjectBuilder():
         self._build_game(curr_proj_path, dist_cmd, work_cmd, icon)
         self.progress_dialog.setValue(80)
         self._build_executable_wrapper(curr_proj_path, dist_cmd, work_cmd, icon)
+        self._preload_config(curr_proj_path, Path(output_dir))
         shutil.rmtree(output_dir + "/build")
         self.progress_dialog.setValue(100)
+        
+        # just save again to restore state
+        # and leave project data seemingly untouched after auto-unchunking
+        # for git users who can see diffs after building
+        self.proj_file_manager.save()
 
         # finally, for ease of use, open the folder for the user
         file_utils.startfile(f"{output_dir}/dist")

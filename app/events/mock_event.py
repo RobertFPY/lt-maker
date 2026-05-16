@@ -1,6 +1,8 @@
 from enum import Enum
 from typing import List
 
+from app.data.database.database import DB
+
 from app.engine import engine
 from app.events import speak_style, event_commands
 from app.events.event import Event
@@ -31,14 +33,14 @@ class MockEvent(Event):
     # These are the only commands that will be processed by this event
     available = {"finish", "wait", "end_skip", "music", "music_clear",
                  "sound", "stop_sound", "add_portrait", "multi_add_portrait",
-                 "remove_portrait", "multi_remove_portrait",
+                 "remove_portrait", "multi_remove_portrait", "remove_all_portraits",
                  "move_portrait", "mirror_portrait", "bop_portrait",
                  "expression", "speak_style", "speak", "unhold",
                  "transition", "change_background", "table",
-                 "remove_table", "draw_overlay_sprite",
+                 "remove_table", "draw_overlay_sprite", "narrate",
                  "remove_overlay_sprite", "location_card", "credits",
                  "ending", "paired_ending", "pop_dialog", "unpause", 
-                 "screen_shake"}
+                 "screen_shake", "toggle_narration_mode"}
 
     def __init__(self, nid, event_prefab: EventPrefab, command_idx=0, if_statement_strategy=IfStatementStrategy.ALWAYS_TRUE):
         self._transition_speed = 250
@@ -58,6 +60,12 @@ class MockEvent(Event):
             self.processor = MockPythonEventProcessor('Mock', event_prefab.source)
         else:
             self.processor = MockEventProcessor('Mock', event_prefab.source, self.text_evaluator, if_statement_strategy, command_idx)
+
+        # Runs the `on_startup` trigger event commands before running the main MockEvent (to load speak_style)
+        startup_event_prefabs = DB.events.get('on_startup', None)
+        for startup in startup_event_prefabs:
+            for line in startup.source.split('\n'):
+                self.queue_command(line)
 
     def update(self):
         # update all internal updates, remove the ones that are finished

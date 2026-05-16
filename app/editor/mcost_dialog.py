@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import QDialogButtonBox, QTableView, QInputDialog, QHeaderV
 from PyQt5.QtGui import QDoubleValidator, QFontMetrics, QBrush, QColor, QPalette
 from PyQt5.QtWidgets import QStyle, QProxyStyle
 from PyQt5.QtCore import QAbstractTableModel
-from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtCore import Qt, QSize, QLocale
 
 from app.utilities.data import Data
 from app.data.database.database import DB
@@ -383,7 +383,10 @@ class GridModel(QAbstractTableModel):
     def setData(self, index, value, role):
         if not index.isValid():
             return False
-        self._data.set((index.column(), index.row()), float(value))
+        locale = QLocale()
+        value, ok = locale.toDouble(value)
+        value = float(value)
+        self._data.set((index.column(), index.row()), value)
         self.dataChanged.emit(index, index)
         return True
 

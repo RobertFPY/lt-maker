@@ -186,10 +186,17 @@ class IgnoreLineOfSight(ItemComponent):
     def ignore_line_of_sight(self, unit, item) -> bool:
         return True
 
-class IgnoreFogOfWar(ItemComponent):
-    nid = 'ignore_fog_of_war'
-    desc = 'Item can target positions even if they are in fog of war.'
+class TargetFogOfWar(ItemComponent):
+    nid = 'target_fog_of_war'
+    desc = 'Item can target positions (not units) even if they are in fog of war.'
     tag = ItemTags.TARGET
+
+    def allow_target_in_fog_of_war(self, unit, item) -> bool:
+        return True
+
+class IgnoreFogOfWar(TargetFogOfWar):
+    nid = 'ignore_fog_of_war'
+    desc = 'Item can target positions and units even if they are in fog of war.'
 
     def ignore_fog_of_war(self, unit, item) -> bool:
         return True

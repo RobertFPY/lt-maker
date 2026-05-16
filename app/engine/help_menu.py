@@ -1,10 +1,12 @@
-from typing import List
+from __future__ import annotations
+
+from typing import List, Optional, TYPE_CHECKING
 
 import app.engine.config as cf
 from app.constants import WINHEIGHT, WINWIDTH
 from app.data.database.database import DB
 from app.engine import (base_surf, engine, icons, item_funcs,
-                        item_system, text_funcs)
+                        item_system, skill_system, text_funcs)
 from app.engine.fonts import FONT
 from app.engine.game_state import game
 from app.engine.graphics.text.text_renderer import (fix_tags, font_height, render_text,
@@ -14,20 +16,57 @@ from app.utilities import utils
 from app.utilities.enums import HAlignment
 from app.utilities.typing import NID
 
+if TYPE_CHECKING:
+    from app.engine.objects.skill import SkillObject
+    from app.engine.objects.unit import UnitObject
+    from app.engine.objects.item import ItemObject
+    
 MAX_TEXT_WIDTH = WINWIDTH - 40
+
+def stretch_skill_bg(sprite, desired_width):
+    """Stretch a skill info background sprite horizontally by tiling a 1px middle column.
+
+    Preserves the left endcap (including left rivet + start of diagonal) and the
+    right endcap (including right rivet + end of diagonal) while repeating a 1px
+    column from the middle of the sprite to fill any extra width.
+
+    If desired_width <= sprite width, returns the sprite unchanged.
+    """
+    base_w = sprite.get_width()
+    base_h = sprite.get_height()
+
+    if desired_width <= base_w:
+        return sprite
+
+    # Split point: take a 1px column from the geometric middle of the sprite.
+    # Endcaps preserve everything to the left/right of that column.
+    mid_x = base_w // 2
+    left_w = mid_x
+    right_w = base_w - mid_x - 1
+
+    left = engine.subsurface(sprite, (0, 0, left_w, base_h))
+    middle = engine.subsurface(sprite, (mid_x, 0, 1, base_h))
+    right = engine.subsurface(sprite, (mid_x + 1, 0, right_w, base_h))
+
+    surf = engine.create_surface((desired_width, base_h), transparent=True)
+    surf.blit(left, (0, 0))
+    middle_end = desired_width - right_w
+    for x in range(left_w, middle_end):
+        surf.blit(middle, (x, 0))
+    surf.blit(right, (middle_end, 0))
+
+    return surf
 
 class HelpDialog():
     help_logo = SPRITES.get('help_logo')
     font: NID = 'convo'
 
-    def __init__(self, desc, name=False):
+    def __init__(self, desc:str='', name:str=''):
         self.name = name
         self.last_time = self.start_time = 0
         self.transition_in = False
         self.transition_out = 0
 
-        if not desc:
-            desc = ''
         desc = text_funcs.translate(desc)
         lines = self.build_lines(desc)
         num_lines = len(lines)
@@ -120,6 +159,8 @@ class HelpDialog():
             pos = (WINWIDTH - self.help_surf.get_width() - 8, pos[1])
         if pos[1] + self.help_surf.get_height() >= WINHEIGHT:
             pos = (pos[0], max(0, pos[1] - self.help_surf.get_height() - 16))
+        if pos[0] < 0:
+            pos = (0, pos[1])
         return pos
 
     def final_draw(self, surf, pos, time, help_surf):
@@ -218,17 +259,30 @@ class StatDialog(HelpDialog):
         surf = self.final_draw(surf, self.top_left(pos, right), time, help_surf)
         return surf
 
+ITEM_HELP_WIDTH = 160
 
 class ItemHelpDialog(HelpDialog):
     text_font: NID = 'text'
 
-    def __init__(self, item):
+    def __init__(self, item: ItemObject, first: bool = True, unit_override: Optional[UnitObject]=None):
         self.last_time = self.start_time = 0
         self.transition_in = False
         self.transition_out = 0
-
+            
         self.item = item
-        self.unit = game.get_unit(item.owner_nid) if item.owner_nid else None
+        self.unit = self._resolve_unit(self.item, unit_override)
+        
+        show_name: bool = item_system.show_item_name_in_help_dlg(self.unit, self.item)
+        self.name_override: Optional[str] = None
+        self.v_offset: int = 0
+        if not first or show_name:
+            self.name_override = item_system.multi_desc_name_override(self.unit, self.item)
+            if self.name_override is None:
+                self.name_override = self.item.name # We still want to show the name, so just show the default.
+            else:
+                # maintain parity with item evals allowing reference to the item object via the 'item' name
+                self.name_override = text_funcs.translate_and_text_evaluate(self.name_override, self.unit, self=self.item, local_args={'item': self.item})
+            self.v_offset += 16
 
         weapon_rank = item_system.weapon_rank(self.unit, self.item)
         if not weapon_rank:
@@ -249,39 +303,50 @@ class ItemHelpDialog(HelpDialog):
 
         self.vals = [weapon_rank, rng, weight, might, hit, crit]
 
-        desc = self.item.desc
-        if self.item.desc:
-            desc = text_funcs.translate_and_text_evaluate(
-                self.item.desc,
-                unit=self.unit,
-                self=self.item)
-            self.build_lines(desc, 144)
-        else:
-            self.lines = []
+        desc = text_funcs.translate_and_text_evaluate(
+            self.item.desc,
+            unit=self.unit,
+            self=self.item)
 
         self.num_present = len([v for v in self.vals if v is not None])
 
-        if self.num_present > 3:
-            height = 48 + font_height(self.font) * len(self.lines)
+        self.dlg = self.create_dialog(desc)
+        fake_dlg = self.create_dialog(desc)
+        if fake_dlg:
+            fake_dlg.warp_speed()
+            num_lines = len(fake_dlg.text_indices)
         else:
-            height = 32 + font_height(self.font) * len(self.lines)
+            num_lines = 0
 
-        self.create_dialog(desc)
+        if self.num_present > 3:
+            height = 48 + font_height(self.font) * num_lines
+        else:
+            height = 32 + font_height(self.font) * num_lines
+            
+        height += self.v_offset
 
-        self.help_surf = base_surf.create_base_surf(160, height, 'help_bg_base')
-        self.h_surf = engine.create_surface((160, height + 3), transparent=True)
+        self.help_surf = base_surf.create_base_surf(ITEM_HELP_WIDTH, height, 'help_bg_base')
+        self.h_surf = engine.create_surface((ITEM_HELP_WIDTH, height + 3), transparent=True)
 
-    def create_dialog(self, desc):
+    def _resolve_unit(self, item: ItemObject, unit: Optional[UnitObject]) -> Optional[UnitObject]:
+        if unit:
+            return unit
+        if item.owner_nid:
+            return game.get_unit(item.owner_nid)
+        return None
+            
+    def create_dialog(self, desc: str):
         if desc:
             from app.engine import dialog
             desc = desc.replace('\n', '{br}')
-            self.dlg = \
+            dlg: dialog.Dialog = \
                 dialog.Dialog.from_style(game.speak_styles.get('__default_help'), desc,
-                                         width=160)
+                                         width=ITEM_HELP_WIDTH)
             y_height = 32 if self.num_present > 3 else 16
-            self.dlg.position = (0, y_height)
+            dlg.position = (0, y_height + self.v_offset)
         else:
-            self.dlg = None
+            dlg = None
+        return dlg
 
     def build_lines(self, desc, width):
         if not desc:
@@ -310,103 +375,98 @@ class ItemHelpDialog(HelpDialog):
         help_surf = engine.copy_surface(self.help_surf)
         weapon_type = item_system.weapon_type(self.unit, self.item)
         if weapon_type:
-            icons.draw_weapon(help_surf, weapon_type, (8, 6))
-        render_text(help_surf, [self.text_font], [str(self.vals[0])], ['blue'], (50, 6), HAlignment.RIGHT)
+            icons.draw_weapon(help_surf, weapon_type, (8, 8 + self.v_offset))
+        render_text(help_surf, [self.text_font], [str(self.vals[0])], ['blue'], (50, 8 + self.v_offset), HAlignment.RIGHT)
 
-        name_positions = [(56, 6), (106, 6), (8, 22), (56, 22), (106, 22)]
+        if self.name_override is not None:
+            render_text(help_surf, ['text'], [self.name_override], ['blue'], (8, 6))
+            
+        name_positions = [(56, 8), (106, 8), (8, 24), (56, 24), (106, 24)]
         name_positions.reverse()
-        val_positions = [(100, 6), (144, 6), (50, 22), (100, 22), (144, 22)]
+        val_positions = [(100, 8), (144, 8), (50, 24), (100, 24), (144, 24)]
         val_positions.reverse()
         names = ['Rng', 'Wt', 'Mt', 'Hit', 'Crit']
         for v, n in zip(self.vals[1:], names):
             if v is not None:
                 name_pos = name_positions.pop()
-                render_text(help_surf, [self.text_font], [n], ['yellow'], name_pos)
+                render_text(help_surf, [self.text_font], [n], ['yellow'], (name_pos[0], name_pos[1] + self.v_offset))
                 val_pos = val_positions.pop()
-                render_text(help_surf, [self.text_font], [str(v)], ['blue'], val_pos, HAlignment.RIGHT)
+                render_text(help_surf, [self.text_font], [str(v)], ['blue'], (val_pos[0], val_pos[1] + self.v_offset), HAlignment.RIGHT)
 
         if self.dlg:
             self.dlg.update()
             self.dlg.draw(help_surf)
 
         surf = self.final_draw(surf, self.top_left(pos, right), time, help_surf)
-        return surfclass SkillHelpDialog(HelpDialog):
-    def __init__(self, desc, name=False):
-        self.name = name
+        return surf
+
+class SkillHelpDialog(HelpDialog):
+    def __init__(self, skill: SkillObject, first:bool=True, unit_override:Optional[UnitObject]=None, category: str = ''):
+        # old behavior where the charge is just shown next to the name
+        self.name = ' ' + skill.name + self._get_charge_str(skill)
+        if category:
+            self.name = self.name + ' (' + category + ')'
         self.last_time = self.start_time = 0
         self.transition_in = False
         self.transition_out = 0
-        self.help_text = False
         self.bg_sprite = 'skill_info'
-        self.panel_width = SPRITES.get(self.bg_sprite).get_width()
-        
-        if not desc:
-            desc = ''
-        desc = text_funcs.translate_and_text_evaluate(desc)
+
+        unit = self._resolve_unit(skill, unit_override)
+
+        name_override: Optional[str] = skill_system.get_multi_desc_name_override(skill, unit)
+        if not first and name_override is not None:
+            # maintain parity with skill evals allowing access to the skill object via the 'skill' name
+            self.name = text_funcs.translate_and_text_evaluate(name_override, unit, self=skill, local_args={'skill': skill})
+
+        desc = skill.desc
+        desc = text_funcs.translate_and_text_evaluate(desc, unit=unit_override, self=skill, local_args={'skill': skill})
         lines = self.build_lines(desc)
         num_lines = len(lines)
-        self.create_dialog(desc)
-        if num_lines == 1:
-            self.bg_sprite = 'skill_info_small'
-        elif num_lines == 3:
-            self.bg_sprite = 'skill_info_large'
-        elif num_lines == 4:
-            self.bg_sprite = 'skill_info_xlarge'
-        elif num_lines == 5:
-            self.bg_sprite = 'skill_info_xxlarge'
-        #height = font_height(self.font) * num_lines + 16
-        height = SPRITES.get(self.bg_sprite).get_height()
-        width = SPRITES.get(self.bg_sprite).get_width()
-        self.help_surf = base_surf.create_base_surf(width, height, self.bg_sprite)
-        self.h_surf = engine.create_surface((self.panel_width, height + 3), transparent=True)
-    def find_num_lines(self, desc: str) -> int:
-        '''Returns the number of lines in the description'''
-        # Split on \n, then go through each element in the list
-        # and break it into further strings if too long
-        desc = desc.replace('{br}', '\n')
-        lines = desc.split("\n")
-        total_lines = len(lines)
-        for line in lines:
-            desc_length = text_width(self.font, line)
-            total_lines += desc_length // (self.panel_width - 18)            
-        return total_lines
-    def build_lines(self, desc: str) -> List[str]:
-        # Hard set num lines if desc is very short
-        if '\n' in desc:
-            desc_lines = desc.splitlines()
-            lines = []
-            for line in desc_lines:
-                num = self.find_num_lines(line)
-                line = text_funcs.split(self.font, line, num, self.panel_width)
-                lines.extend(line)
+
+        if lines:
+            self.greatest_line_len = text_funcs.get_max_width(self.font, lines)
         else:
-            num = self.find_num_lines(desc)
-            lines = text_funcs.split(self.font, desc, num, self.panel_width)
-        lines = fix_tags(lines)
-        return lines
-    def create_dialog(self, desc):
-        from app.engine import dialog
-        desc = desc.replace('\n', '{br}')
-        #self.dlg = \
-        #    dialog.Dialog.from_style(game.speak_styles.get('__default_help'), desc,
-        #                             width=self.greatest_line_len + 16)
-        self.dlg = \
-             dialog.Dialog.from_style(game.speak_styles.get('__default_help'), desc,
-                                      width = self.panel_width)
-        self.dlg.position = (0, (16 if self.name else 0))
-    def draw(self, surf, pos, right=False):
-        time = engine.get_time()
-        if time > self.last_time + 1000:  # If it's been at least a second since last update
-            self.start_time = time - 16
-            self.transition_in = True
-            self.transition_out = 0
-            self.create_dialog(self.dlg.plain_text)
-        self.last_time = time
-        help_surf = engine.copy_surface(self.help_surf)
+            self.greatest_line_len = 8
         if self.name:
-            #render_text(help_surf, [self.font], [self.name], [game.speak_styles.get('__default_help').font_color], (8, 8))
-            render_text(help_surf, ['bconvo'], [self.name], ['brown'], (10, 8))
-        self.dlg.update()
-        self.dlg.draw(help_surf)
-        surf = self.final_draw(surf, self.top_left(pos, right), time, help_surf)
-        return surf
+            self.greatest_line_len = max(self.greatest_line_len, text_width(self.font, self.name))
+            num_lines += 1
+
+        self.create_dialog(desc)
+
+        # Pick vertical sprite based on number of lines (height tiers).
+        if num_lines == 2:
+            self.bg_sprite = 'skill_info_small'
+        elif num_lines == 4:
+            self.bg_sprite = 'skill_info_large'
+        elif num_lines == 5:
+            self.bg_sprite = 'skill_info_xlarge'
+        elif num_lines >= 6:
+            self.bg_sprite = 'skill_info_xxlarge'
+        else:
+            self.bg_sprite = 'skill_info'
+
+        sprite = SPRITES.get(self.bg_sprite)
+        base_width = sprite.get_width()
+        height = sprite.get_height()
+
+        # Horizontal: stretch if content needs more room than the base sprite provides.
+        desired_width = self.greatest_line_len + 16
+        width = max(base_width, desired_width)
+
+        self.panel_width = width
+        self.help_surf = stretch_skill_bg(sprite, width)
+        self.h_surf = engine.create_surface((width, height + 3), transparent=True)
+
+    def _get_charge_str(self, skill: SkillObject) -> str:
+        if skill.data.get('total_charge'): # this is so programmer-coded
+            charge = ' %d / %d' % (skill.data['charge'], skill.data['total_charge'])
+        else:
+            charge = ''
+        return charge
+
+    def _resolve_unit(self, skill: SkillObject, unit: Optional[UnitObject]) -> Optional[UnitObject]:
+        if unit:
+            return unit
+        if skill.owner_nid:
+            return game.get_unit(skill.owner_nid)
+        return None

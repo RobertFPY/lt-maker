@@ -1,6 +1,8 @@
-from PyQt5.QtWidgets import QStyle
+from PyQt5.QtWidgets import QStyle, QStyledItemDelegate, QPlainTextEdit
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QFont
 
+from app.editor.settings.preference_definitions import Preference
 from app.utilities import str_utils
 from app.data.database.database import DB
 
@@ -12,6 +14,9 @@ from app.data.database import equations, item_components, skill_components
 from app.data.database.components import ComponentType, swap_values
 
 import logging
+
+from app.editor.settings import MainSettingsController
+from app.editor.code_line_edit import CodeLineEdit
 
 class EquationMultiModel(MultiAttrListModel):
     descs = {
@@ -38,6 +43,8 @@ class EquationMultiModel(MultiAttrListModel):
         "THRACIA_CRIT": "Multiplicative damage bonus on crits, before def/res",
     }
 
+    settings = MainSettingsController()
+
     def data(self, index, role):
         if not index.isValid():
             return None
@@ -45,6 +52,12 @@ class EquationMultiModel(MultiAttrListModel):
             data = self._data[index.row()]
             attr = self._headers[index.column()]
             return getattr(data, attr)
+        # no easy way of showing syntax highlighting via a role...
+        if index.column() == 1 and role == Qt.FontRole:
+            if self.settings.get_preference(Preference.CODE_FONT_IN_BOXES):
+                return QFont(self.settings.get_preference(Preference.CODE_FONT))
+            else:
+                return QFont()
         if index.column() == 1 and role == Qt.DecorationRole:
             equation = self._data[index.row()]
             good = self.test_equation(equation)
@@ -123,6 +136,10 @@ class EquationMultiModel(MultiAttrListModel):
             affected_skills = skill_components.get_skills_using(ComponentType.Equation, old_value, DB)
             swap_values(affected_skills, ComponentType.Equation, old_value, new_value)
 
+class EquationDelegate(QStyledItemDelegate):
+    def createEditor(self, parent, option, index):
+        return CodeLineEdit(parent)
+
 class EquationDialog(MultiAttrListDialog):
     locked_vars = {"HIT", "AVOID", "CRIT_HIT", "CRIT_AVOID",
                    "DAMAGE", "DEFENSE", "MAGIC_DAMAGE", "MAGIC_DEFENSE",
@@ -137,6 +154,10 @@ class EquationDialog(MultiAttrListDialog):
 
         dlg = cls(DB.equations, "Equation", ("nid", "expression"),
                   EquationMultiModel, (deletion_func, None, deletion_func), cls.locked_vars)
+
+        equation_delegate = EquationDelegate(dlg.view)
+        dlg.view.setItemDelegateForColumn(1, equation_delegate)
+
         return dlg
 
     def accept(self):

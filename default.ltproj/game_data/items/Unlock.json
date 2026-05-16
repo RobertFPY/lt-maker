@@ -55,6 +55,10 @@
             [
                 "unlock_staff",
                 null
+            ],
+            [
+                "map_cast_pose",
+                null
             ]
         ]
     }

@@ -2,106 +2,127 @@
     [
         "Chapter Sound",
         false,
-        false
+        false,
+        0
     ],
     [
         "Distant Roads",
         false,
-        false
+        false,
+        0
     ],
     [
         "Quiet Burn",
         false,
-        true
+        true,
+        0
     ],
     [
         "Shadow of the Enemy",
         false,
-        false
+        false,
+        0
     ],
     [
         "Main Theme",
         false,
-        false
+        false,
+        0
     ],
     [
         "Grasp at Victory",
         false,
-        false
+        false,
+        0
     ],
     [
         "Attack",
         false,
-        false
+        false,
+        0
     ],
     [
         "Defense",
         false,
-        false
+        false,
+        0
     ],
     [
         "The Battle Must Be Won",
         false,
-        false
+        false,
+        0
     ],
     [
         "Healing",
         false,
-        false
+        false,
+        0
     ],
     [
         "Combat Preparation",
         false,
-        false
+        false,
+        0
     ],
     [
         "Shops",
         false,
-        false
+        false,
+        0
     ],
     [
         "Armory",
         false,
-        false
+        false,
+        0
     ],
     [
         "Game Over",
         false,
-        false
+        false,
+        0
     ],
     [
         "In Sorrows Shroud",
         false,
-        false
+        false,
+        0
     ],
     [
         "To A Higher Place",
         false,
-        false
+        false,
+        0
     ],
     [
         "Victory Now!",
         false,
-        false
+        false,
+        0
     ],
     [
         "Winning Road",
         false,
-        false
+        false,
+        0
     ],
     [
         "Rise to the Challenge",
         false,
-        false
+        false,
+        0
     ],
     [
         "Strike",
         false,
-        false
+        false,
+        0
     ],
     [
         "Safeguard",
         false,
-        false
+        false,
+        0
     ]
 ]

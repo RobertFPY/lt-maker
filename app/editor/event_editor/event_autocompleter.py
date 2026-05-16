@@ -17,6 +17,7 @@ from app import dark_theme
 from app.data.database.database import DB
 from app.data.resources.resources import RESOURCES
 from app.editor.settings import MainSettingsController
+from app.editor.settings.preference_definitions import Preference
 from app.events import event_commands, event_validators
 from app.events.event_version import EventVersion
 from app.events.event_structs import ParseMode
@@ -94,9 +95,10 @@ class EventScriptCompleter(QCompleter):
 
     def handleKeyPressEvent(self, event) -> bool:
         # If completer is up, Tab/Enter can auto-complete
-        if event.key() == self.settings.get_autocomplete_button(Qt.Key_Tab):
-            if self.popup().isVisible() and len(self.popup().selectedIndexes()) > 0:
-                self.do_complete(self.popup().selectedIndexes()[0])
+        if event.key() == self.settings.get_preference(Preference.AUTOCOMPLETE_BUTTON):
+            if self.popup().isVisible() and len(self.popup().selectionModel().selectedIndexes()) > 0:
+                choice = self.popup().selectionModel().selectedIndexes()[0]
+                self.do_complete(choice)
                 return True  # should not enter a tab
         elif event.key() == Qt.Key_Backspace:
             self.popup().hide()
@@ -139,7 +141,7 @@ class EventScriptCompleter(QCompleter):
 
         def initStyleOption(self, option: QStyleOptionViewItem, index: QModelIndex) -> None:
             super().initStyleOption(option, index)
-            option.font.setFamily(self.settings.get_code_font())
+            option.font.setFamily(self.settings.get_preference(Preference.CODE_FONT))
             option.font.setBold(True)
             completion: CompletionEntry = index.data(COMPLETION_DATA_ROLE)
 
@@ -259,7 +261,7 @@ def generate_pyev1_completions(line: str, level_nid: NID) -> List[CompletionEntr
         arg_validator = event_validators.get(command_t.get_validator_from_keyword(arg_name))
         completions = []
         if arg_validator:
-            valids = arg_validator(DB, RESOURCES).valid_entries(level_nid)
+            valids = arg_validator(DB, RESOURCES).valid_entries(level_nid, arg)
             completions += [create_completion(nid, name) for name, nid in valids]
         # add positional args only if we're likely searching for them
         if not as_tokens.tokens[-1] or as_tokens.tokens[-1].isalpha():
@@ -315,10 +317,10 @@ def get_arg_name(command_t: Type[event_commands.EventCommand], arg_text: str, ar
     return command_t.get_keyword_from_index(arg_idx)
 
 def trim_arg_match(arg_text: str) -> str:
-    return re.split('[^a-zA-Z0-9_]', arg_text)[-1]
+    return re.split('[^a-zA-Z0-9_ ]', arg_text)[-1]
 
 def trim_arg_text(arg_text: str) -> str:
-    return re.split('[^a-zA-Z0-9_"\'\{]', arg_text)[-1]
+    return re.split('[^a-zA-Z0-9_ "\'\{]', arg_text)[-1]
 
 def trim_arg_text_python(arg_text: str) -> str:
-    return re.split('[^a-zA-Z0-9_"\']', arg_text)[-1]
+    return re.split('[^a-zA-Z0-9_ "\']', arg_text)[-1]

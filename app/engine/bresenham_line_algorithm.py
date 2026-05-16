@@ -1,4 +1,6 @@
-def get_line(start: tuple, end: tuple, get_opacity) -> bool:
+from typing import Callable
+
+def get_line(start: tuple[int, int], end: tuple[int, int], get_opacity: Callable[[tuple[int, int]], bool]) -> bool:
     """
     # Takes in two positions
     # and a function that takes in a position and returns

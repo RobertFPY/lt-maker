@@ -1,4 +1,6 @@
 from __future__ import annotations
+from typing import Optional
+from app.data.database.skill_components import SkillComponent
 from app.utilities.data import Data
 
 from app.data.database.database import DB
@@ -32,6 +34,14 @@ class SkillObject():
         self.subskill = None
         self.subskill_uid = None
         self.parent_skill = None
+
+    @property
+    def tags(self) -> set:
+        all_tags = set()
+        tag_comp: Optional[SkillComponent] = self.components.get('skill_tags')
+        if tag_comp:
+            all_tags |= set(tag_comp.value)
+        return all_tags
 
     @classmethod
     def from_prefab(cls, prefab, component_data=None):

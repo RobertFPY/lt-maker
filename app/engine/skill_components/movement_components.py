@@ -2,10 +2,11 @@ from typing import Set, Tuple
 from app.data.database.skill_components import SkillComponent, SkillTags
 from app.data.database.components import ComponentType
 
-from app.engine import equations, action
+from app.engine import equations, action, gui
 from app.engine.game_state import game
 from app.engine.movement import movement_funcs
 from app.engine.objects.unit import UnitObject
+from app.engine.sound import get_sound_thread
 
 import logging
 
@@ -43,7 +44,7 @@ class CantoSharp(SkillComponent):
         return unit.movement_left
 
     def has_canto(self, unit, unit2) -> bool:
-        return not unit.has_attacked or unit.movement_left >= equations.parser.movement(unit)
+        return not unit.has_attacked or unit.movement_left >= unit.get_movement()
 
 class Canter(SkillComponent):
     nid = 'canter'
@@ -89,6 +90,17 @@ class IgnoreTerrain(SkillComponent):
         return True
 
     def ignore_region_status(self, unit):
+        return True
+        
+    def ignore_terrain_traversal(self, unit, effect):
+        return True
+        
+class IgnoreTerrainTraversal(SkillComponent):
+    nid = 'ignore_terrain_traversal'
+    desc = "This unit is not affected by terrain traversal effects."
+    tag = SkillTags.MOVEMENT
+            
+    def ignore_terrain_traversal(self, unit, effect):
         return True
 
 class IgnoreRescuePenalty(SkillComponent):
@@ -171,7 +183,7 @@ class WitchWarpExpression(SkillComponent):
         for target in game.units:
             if target.position:
                 try:
-                    if evaluate.evaluate(self.value, target, unit, target.position):
+                    if evaluate.evaluate(self.value, target, unit, target.position, local_args={'skill': self.skill}):
                         positions += [
                             pos for pos in game.target_system.get_adjacent_positions(target.position)
                             if movement_funcs.check_weakly_traversable(unit, pos) and
@@ -182,14 +194,94 @@ class WitchWarpExpression(SkillComponent):
                     return positions
         return positions
 
-class Galeforce(SkillComponent):
-    nid = 'galeforce'
-    desc = "After killing an enemy on player phase, unit can move again."
+
+class SimpleGaleforce(SkillComponent):
+    nid = 'simple_galeforce'
+    desc = "Unit can move again."
     tag = SkillTags.MOVEMENT
+
+    def on_wait(self, unit, actively_chosen):
+        action.do(action.TriggerCharge(unit, self.skill))
+        action.do(action.Reset(unit))
+
+
+class ModernGaleforce(SkillComponent):
+    nid = 'modern_galeforce'
+    desc = "After killing an enemy on player phase, unit can move again. Allows `on_wait` event triggers and post-combat reposition skills that wrap `Canto` & variants to run before the unit is refreshed."
+    tag = SkillTags.MOVEMENT
+    
+    author = 'Eretein'
+    
+    _should_refresh: bool = False
 
     def end_combat(self, playback, unit, item, target, item2, mode):
         mark_playbacks = [p for p in playback if p.nid in ('mark_miss', 'mark_hit', 'mark_crit')]
         if target and target.get_hp() <= 0 and \
                 any(p.main_attacker is unit for p in mark_playbacks):  # Unit is overall attacker
+            self._should_refresh = True
+    
+    def on_wait(self, unit, actively_chosen):
+        if self._should_refresh:
             action.do(action.Reset(unit))
             action.do(action.TriggerCharge(unit, self.skill))
+            self._should_refresh = False
+
+class XCOMMovement(SkillComponent):
+    nid = 'xcom_movement'
+    desc = "Unit can forfeit other actions to move a number of tiles beyond regular movement."
+    tag = SkillTags.MOVEMENT
+    
+    author = 'Eretein'
+    
+    expose = ComponentType.Int
+    value: int = 1
+    
+    def xcom_movement(self, unit: UnitObject) -> int:
+        return self.value
+
+class EvalXCOMMovement(SkillComponent):
+    nid = 'eval_xcom_movement'
+    desc = "Unit can forfeit other actions to move an evaluated number of tiles beyond regular movement."
+    tag = SkillTags.MOVEMENT
+    
+    author = 'Eretein'
+
+    expose = ComponentType.String
+    value: str = "1"
+    
+    def xcom_movement(self, unit: UnitObject) -> int:
+        from app.engine.evaluate import evaluate
+        try:
+            local_args = {'skill': self.skill}
+            movement: int = int(evaluate(self.value, unit, local_args=local_args))
+            return movement
+        except Exception as e:
+            logging.error(f"Could not evaluate {self.value}, ({e})")
+            return 0
+            
+class DamageTerrain(SkillComponent):
+    nid = 'damage_terrain'
+    desc = 'Causes units to take the specified amount of damage when crossing terrain with this status.  Cannot be lethal.'
+    tag = SkillTags.MOVEMENT
+    
+    expose = ComponentType.Int
+    
+    def terrain_move_effect(self, unit, pos, is_final_pos):
+        true_damage = min(unit.get_hp()-1, self.value)
+        action.do(action.ChangeHP(unit, -true_damage))
+        str_damage = str(true_damage)
+        for idx, num in enumerate(str_damage):
+            d = gui.MovementDamageNumber(int(num), idx, len(str_damage), pos, 'small_red', origin_pos = pos)
+            unit.sprite.damage_numbers.append(d)
+        unit.sprite.start_flicker(0, unit.sprite.default_transition_time / 4, (255, 0, 0), fade_out = True)
+        get_sound_thread().play_sfx("Attack Hit 1", volume = 0.5)
+            
+class StatusInflictTerrain(SkillComponent):
+    nid = 'status_inflict_terrain'
+    desc = 'Causes units to receive the specified status when passing through this terrain.'
+    tag = SkillTags.MOVEMENT
+    
+    expose = ComponentType.Skill
+    
+    def terrain_move_effect(self, unit, pos, is_final_pos):
+        action.do(action.AddSkill(unit, self.value))

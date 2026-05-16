@@ -36,6 +36,10 @@ class MapCombat(SimpleCombat):
         self.health_bars = {}
 
         self.first_phase = True
+        self.cast_pose = False
+
+    def set_state(self, state: str):
+        self.state = state
 
     def skip(self):
         self._skip = True
@@ -50,23 +54,25 @@ class MapCombat(SimpleCombat):
     def update(self) -> bool:
         current_time = engine.get_time() - self.last_update
         current_state = self.state
-
         # Only for the very first phase
         if self.state == 'init':
+            game.highlight.remove_highlights()
             self.start_combat()
             self.start_event()
-            self.state = 'init_pause'
+            self.set_state('init_pause')
 
         elif self.state == 'init_pause':
             if self._skip or current_time > 200:
-                self.state = 'begin_phase'
+                self.set_state('begin_phase')
 
         # print("Map Combat %s" % self.state)
         elif self.state == 'begin_phase':
             # Get playback
             if not self.state_machine.get_state():
-                self.clean_up()
-                return True
+                self.clean_up0()
+                self.set_state('exp_wait')
+                return False
+
             self.actions, self.playback = self.state_machine.do()
             self.full_playback += self.playback
             if not self.actions and not self.playback:
@@ -118,25 +124,46 @@ class MapCombat(SimpleCombat):
                     if self.defender.strike_partner:
                         self.defender.strike_partner.sprite.change_state(
                             'combat_defender')
-            self.state = 'red_cursor'
 
-        elif self.state == 'red_cursor':
-            if self.defender:
-                game.cursor.combat_show()
-            else:
-                game.cursor.hide()
+            # handle cast pose 
+            if self.defender and self.defender.sprite.state == 'combat_attacker' and \
+                    self.def_item and item_system.map_cast_pose(self.defender, self.def_item) and\
+                    self.get_from_playback('defender_phase'):
+                self.defender.sprite.change_state("start_cast")
+                self.cast_pose = True
+            elif self.defender and self.defender.strike_partner and \
+                    self.defender.strike_partner.sprite.state == 'combat_attacker' and \
+                    self.defense_partner_weapon and \
+                    item_system.map_cast_pose(self.defender.strike_partner, self.defense_partner_weapon) and \
+                    self.get_from_playback('defender_partner_phase'):
+                self.defender.strike_partner.sprite.change_state(
+                    "start_cast")
+                self.cast_pose = True
+            elif self.attacker.strike_partner and self.attack_partner_weapon and \
+                    item_system.map_cast_pose(self.attacker.strike_partner, self.attack_partner_weapon) and \
+                    self.get_from_playback('attacker_partner_phase'):
+                self.attacker.strike_partner.sprite.change_state(
+                    "start_cast")
+                self.cast_pose = True
+            elif self.attacker.position and self.main_item and \
+                    not self.get_from_playback('attacker_partner_phase') and \
+                    item_system.map_cast_pose(self.attacker, self.main_item):
+                self.attacker.sprite.change_state("start_cast")
+                self.cast_pose = True
+            
+            self.set_state('proc_animations')
+
+        elif self.state == 'proc_animations':
             # Handle proc effects
             self.set_up_proc_animation('attack_proc')
             self.set_up_proc_animation('attack_hit_proc')
             self.set_up_proc_animation('defense_proc')
             self.set_up_proc_animation('defense_hit_proc')
 
-            self.state = 'start_anim'
+            self.set_state('start_anim')
 
         elif self.state == 'start_anim':
-            if self._skip or current_time > 400:
-                game.cursor.hide()
-                game.highlight.remove_highlights()
+            if self._skip or current_time > 200:
                 animation_brushes = self.get_from_playback('cast_anim')
                 for brush in animation_brushes:
                     anim = RESOURCES.animations.get(brush.anim)
@@ -151,29 +178,30 @@ class MapCombat(SimpleCombat):
                     if anim:
                         anim = MapAnimation(anim, brush.pos)
                         self.animations.append(anim)
-
-                self.state = 'sound'
+                self.set_state('sound')
 
         elif self.state == 'sound':
             if self._skip or current_time > 250:
                 if self.defender and self.defender.sprite.state == 'combat_attacker' and \
                         self.get_from_playback('defender_phase'):
-                    self.defender.sprite.change_state('combat_anim')
+                    self.defender.sprite.change_state("combat_anim")
                 elif self.defender and self.defender.strike_partner and \
                         self.defender.strike_partner.sprite.state == 'combat_attacker' and \
                         self.get_from_playback('defender_partner_phase'):
                     self.defender.strike_partner.sprite.change_state(
-                        'combat_anim')
-                elif self.get_from_playback('attacker_partner_phase'):
+                        "combat_anim")
+                elif self.get_from_playback('attacker_partner_phase') and \
+                        not self.attacker.strike_partner.sprite.state == 'start_cast':
                     self.attacker.strike_partner.sprite.change_state(
-                        'combat_anim')
-                elif self.attacker.position:
-                    self.attacker.sprite.change_state('combat_anim')
+                        "combat_anim")
+                elif self.attacker.position and not self.attacker.sprite.state == 'start_cast' and \
+                        not self.get_from_playback('attacker_partner_phase'):
+                    self.attacker.sprite.change_state("combat_anim")
                 sound_brushes = self.get_from_playback('cast_sound')
                 for brush in sound_brushes:
                     get_sound_thread().play_sfx(brush.sound)
-
-                self.state = 'anim'
+                
+                self.set_state('anim')
 
         elif self.state == 'anim':
             if self._skip or current_time > 83:
@@ -188,34 +216,60 @@ class MapCombat(SimpleCombat):
                                            for hp_bar in self.health_bars.values())
                 else:
                     self.hp_bar_time = 0
-                self.state = 'hp_bar_wait'
+                self.set_state('hp_bar_wait')
 
         elif self.state == 'hp_bar_wait':
             if self._skip or current_time > self.hp_bar_time:
-                self.state = 'end_phase'
+                self.set_state('end_phase_anim')
 
-        elif self.state == 'end_phase':
-            if self._skip or current_time > 550:
+        elif self.state == 'end_phase_anim':
+            if self._skip or (self.cast_pose and current_time > 250) or current_time > 550:
                 if self.defender and self.defender.sprite.state == 'combat_anim':
                     self.defender.sprite.change_state('combat_attacker')
+                elif self.defender and self.defender.sprite.state == 'start_cast':
+                    self.defender.sprite.change_state('end_cast')
                 elif self.defender and self.defender.strike_partner and \
                         self.defender.strike_partner.sprite.state == 'combat_anim':
                     self.defender.strike_partner.sprite.change_state(
                         'combat_attacker')
+                elif self.defender and self.defender.strike_partner and \
+                        self.defender.strike_partner.sprite.state == 'start_cast':
+                    self.defender.strike_partner.sprite.change_state(
+                        'end_cast')
                 elif self.attacker.strike_partner and \
                         self.attacker.strike_partner.sprite.state == 'combat_anim':
                     self.attacker.strike_partner.sprite.change_state(
                         'combat_attacker')
-                elif self.attacker.position:
+                elif self.attacker.strike_partner and \
+                        self.attacker.strike_partner.sprite.state == 'start_cast':
+                    self.attacker.strike_partner.sprite.change_state(
+                        'end_cast')
+                elif self.attacker.position and self.attacker.sprite.state == 'combat_anim':
                     self.attacker.sprite.change_state('combat_attacker')
+                elif self.attacker.position and self.attacker.sprite.state == 'start_cast':
+                    self.attacker.sprite.change_state('end_cast')
+                self.set_state('end_phase')
+        
+        elif self.state == 'end_phase':
+            if self._skip or not self.cast_pose or (self.cast_pose and current_time > 550):
+                self.cast_pose = False
                 self._end_phase()
                 self.state_machine.setup_next_state()
-                self.state = 'begin_phase'
+                self.set_state('begin_phase')
+                
+        elif self.state == 'exp_wait':
+            self.health_bars.clear()
+            self.clean_up1()
+            self.set_state('post_combat')
+            
+        elif self.state == 'post_combat':
+            self.clean_up2()
+            return True
 
         if self.state != current_state:
             self.last_update = engine.get_time()
 
-        if self.state not in ('begin_phase', 'red_cursor'):
+        if self.state not in ('begin_phase', 'proc_animations'):
             for hp_bar in self.health_bars.values():
                 hp_bar.update()
 

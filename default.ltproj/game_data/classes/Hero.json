@@ -2,7 +2,7 @@
     {
         "nid": "Hero",
         "name": "Hero",
-        "desc": "",
+        "desc": "Seasoned veteran with remarkable skill.",
         "tier": 2,
         "movement_group": "Light Foot",
         "promotes_from": "Mercenary",
@@ -80,7 +80,7 @@
         "learned_skills": [],
         "wexp_gain": {
             "Sword": [
-                2,
+                true,
                 40,
                 251
             ],
@@ -90,7 +90,7 @@
                 251
             ],
             "Axe": [
-                2,
+                true,
                 31,
                 251
             ],
@@ -131,7 +131,7 @@
             0
         ],
         "map_sprite_nid": "Hero",
-        "combat_anim_nid": "Vanguard",
+        "combat_anim_nid": "Hero",
         "fields": []
     }
 ]

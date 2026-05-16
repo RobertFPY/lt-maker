@@ -5,8 +5,10 @@ from app.constants import TILEWIDTH, TILEHEIGHT
 
 from app.data.database.database import DB
 from app.engine.sprites import SPRITES
-from app.engine import engine, equations, image_mods, aura_funcs
+from app.engine import engine, equations, image_mods, aura_funcs, line_of_sight, skill_system
 from app.engine.game_state import game
+
+from app.utilities import utils
 
 class BoundaryInterface():
     draw_order = ('all_spell', 'all_attack', 'spell', 'attack')
@@ -140,7 +142,7 @@ class BoundaryInterface():
         self._set(valid_attacks, 'attack', unit.nid)
         self._set(valid_spells, 'spell', unit.nid)
 
-        area_of_influence = game.target_system.find_manhattan_spheres(set(range(1, equations.parser.movement(unit) + 1)), *unit.position)
+        area_of_influence = game.target_system.find_manhattan_spheres(set(range(1, unit.get_movement() + 1)), *unit.position)
         area_of_influence = {pos for pos in area_of_influence if game.board.check_bounds(pos)}
         self._set(area_of_influence, 'movement', unit.nid)
 
@@ -227,9 +229,17 @@ class BoundaryInterface():
         if not self.aura_surf:
             self.aura_surf = engine.create_surface(full_size, transparent=True)
             # draw permanent auras
-            for aura_origin, aura_radius, aura_color in self.registered_auras.values():
-                tiles_to_color = game.target_system.find_manhattan_spheres(set(range(1, aura_radius + 1)), *aura_origin)
+            for k, v in self.registered_auras.items():
+                unit_nid, skill_nid = k
+                sk = game.get_unit(unit_nid).get_skill(skill_nid)
+                aura_origin, aura_radius, aura_color = v
+                tiles_to_color = game.board.get_aura_positions(sk.subskill)
                 tiles_to_color.add(aura_origin)
+                if DB.constants.value('aura_los'):
+                    aura_range = skill_system.get_max_shape_range(sk)
+                    if aura_range is None: #Use default behavior
+                        aura_range = sk.aura_range.value
+                    tiles_to_color = set(line_of_sight.line_of_sight({aura_origin}, tiles_to_color, aura_range))
                 for x, y in tiles_to_color:
                     image = self.get_color_square(aura_color)
                     self.aura_surf.blit(image, (x * TILEWIDTH, y * TILEHEIGHT))
@@ -265,7 +275,7 @@ class BoundaryInterface():
 
                 # Remove all units that we shouldn't be able to see from the boundary
                 # Fog of War application
-                if game.level_vars.get('_fog_of_war') or game.board.fog_region_set:
+                if game.get_current_fog_info().is_active or game.board.fog_region_set:
                     new_grid = []
                     for cell in grid:
                         new_grid.append({nid for nid in cell if game.board.in_vision(game.get_unit(nid).position)})
@@ -333,17 +343,17 @@ class BoundaryInterface():
         return engine.subsurface(self.modes[grid_name], (idx * TILEWIDTH, 0, TILEWIDTH, TILEHEIGHT))
 
     def draw_fog_of_war(self, surf, full_size, cull_rect):
-        if game.level_vars.get('_fog_of_war', False) or game.board.fog_region_set:
+        if game.get_current_fog_info().is_active or game.board.fog_region_set:
             if not self.fog_of_war_surf:
                 self.fog_of_war_surf = engine.create_surface(full_size, transparent=True)
-                for y in range(self.height):
-                    for x in range(self.width):
-                        if not game.board.in_vision((x, y)):
-                            if game.level_vars.get('_fog_of_war_type', 0) == 2:
-                                image = self.fog_of_war_tile2
-                            else:
-                                image = self.fog_of_war_tile1
-                            self.fog_of_war_surf.blit(image, (x * TILEWIDTH, y * TILEHEIGHT))
+                for (y, x) in utils.itergrid(self.height, self.width):
+                    is_in_vision = game.board.in_vision((x, y))
+                    if not is_in_vision:
+                        if game.board.terrain_known((x, y), is_in_vision):
+                            image = self.fog_of_war_tile1
+                        else:
+                            image = self.fog_of_war_tile2
+                        self.fog_of_war_surf.blit(image, (x * TILEWIDTH, y * TILEHEIGHT))
 
             im = engine.subsurface(self.fog_of_war_surf, cull_rect)
             surf.blit(im, (0, 0))

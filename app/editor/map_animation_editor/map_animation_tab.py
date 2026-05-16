@@ -31,7 +31,8 @@ if __name__ == '__main__':
     import sys
     from PyQt5.QtWidgets import QApplication
     app = QApplication(sys.argv)
-    RESOURCES.load('default.ltproj')
+    from app.data.serialization.versions import CURRENT_SERIALIZATION_VERSION
+    RESOURCES.load('default.ltproj', CURRENT_SERIALIZATION_VERSION)
     window = SingleResourceEditor(MapAnimationDatabase, ['animations'])
     window.show()
     app.exec_()

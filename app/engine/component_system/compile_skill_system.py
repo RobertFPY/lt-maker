@@ -6,11 +6,13 @@ from app.engine.component_system.utils import ARG_TYPE_MAP, HookInfo, ResolvePol
 SKILL_HOOKS: Dict[str, HookInfo] = {
     # true priority (set to False if result is False in any component, True if not defined)
     'available':                            HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_TRUE),
+    'can_counter':                          HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_TRUE),
     # false priority (set to False if result is False in any component, False if not defined)
     'pass_through':                         HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'vantage':                              HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'desperation':                          HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'ignore_terrain':                       HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'ignore_terrain_traversal':             HookInfo(['unit', 'effect'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'crit_anyway':                          HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'ignore_region_status':                 HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'no_double':                            HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
@@ -39,10 +41,10 @@ SKILL_HOOKS: Dict[str, HookInfo] = {
     'has_immune':                           HookInfo(['unit'], ResolvePolicy.ANY_DEFAULT_FALSE),
     # exclusive (returns last component value, returns None if not defined)
     'alternate_splash':                     HookInfo(['unit'], ResolvePolicy.UNIQUE),
+    'change_map_palette':                   HookInfo(['unit'], ResolvePolicy.UNIQUE),
     # exclusive (returns last component value, has default value if not defined)
     'can_select':                           HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
     'movement_type':                        HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
-    'sight_range':                          HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
     'num_items_offset':                     HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
     'num_accessories_offset':               HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
     'change_variant':                       HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
@@ -50,6 +52,9 @@ SKILL_HOOKS: Dict[str, HookInfo] = {
     'change_ai':                            HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
     'change_roam_ai':                       HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
     'witch_warp':                           HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True, is_cached=True),
+    # numeric accum (adds together all values. 0 if no values are defined)
+    'sight_range':                          HookInfo(['unit'], ResolvePolicy.NUMERIC_ACCUM, has_default_value=True),
+    'xcom_movement':                        HookInfo(['unit'], ResolvePolicy.NUMERIC_ACCUM, has_default_value=True),
     # formula (as exclusive)
     'damage_formula':                       HookInfo(['unit'], ResolvePolicy.UNIQUE),
     'resist_formula':                       HookInfo(['unit'], ResolvePolicy.UNIQUE),
@@ -88,6 +93,8 @@ SKILL_HOOKS: Dict[str, HookInfo] = {
     'empower_splash':                       HookInfo(['unit'], ResolvePolicy.NUMERIC_ACCUM),
     'empower_heal':                         HookInfo(['unit', 'target'], ResolvePolicy.NUMERIC_ACCUM),
     'empower_heal_received':                HookInfo(['unit', 'target'], ResolvePolicy.NUMERIC_ACCUM),
+    'empower_mana':                         HookInfo(['unit', 'target'], ResolvePolicy.NUMERIC_ACCUM),
+    'empower_mana_received':                HookInfo(['unit', 'target'], ResolvePolicy.NUMERIC_ACCUM),
     'modify_damage':                        HookInfo(['unit', 'item'], ResolvePolicy.NUMERIC_ACCUM),
     'modify_resist':                        HookInfo(['unit', 'item'], ResolvePolicy.NUMERIC_ACCUM),
     'modify_accuracy':                      HookInfo(['unit', 'item'], ResolvePolicy.NUMERIC_ACCUM),
@@ -115,6 +122,7 @@ SKILL_HOOKS: Dict[str, HookInfo] = {
     'mana':                                 HookInfo(['playback', 'unit', 'item', 'target'], ResolvePolicy.NUMERIC_ACCUM),
     # multipliers (takes product of component values, default 1 if not defined)
     'damage_multiplier':                    HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_MULTIPLY),
+    'defense_multiplier':                   HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_MULTIPLY),
     'resist_multiplier':                    HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_MULTIPLY),
     'reduce_resist_multiplier':             HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_MULTIPLY),
     'crit_multiplier':                      HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_MULTIPLY),
@@ -122,14 +130,15 @@ SKILL_HOOKS: Dict[str, HookInfo] = {
     'battle_music':                         HookInfo(['playback', 'unit', 'item', 'target', 'item2', 'mode'], ResolvePolicy.UNIQUE),
     # events (runs all components, does not return anything)
     'on_death':                             HookInfo(['unit'], ResolvePolicy.NO_RETURN),
+    'on_wait':                              HookInfo(['unit', 'actively_chosen'], ResolvePolicy.NO_RETURN),
     # item events
     'on_add_item':                          HookInfo(['unit', 'item'], ResolvePolicy.NO_RETURN),
     'on_remove_item':                       HookInfo(['unit', 'item'], ResolvePolicy.NO_RETURN),
     'on_equip_item':                        HookInfo(['unit', 'item'], ResolvePolicy.NO_RETURN),
     'on_unequip_item':                      HookInfo(['unit', 'item'], ResolvePolicy.NO_RETURN),
     # sub-combat events
-    'start_sub_combat':                     HookInfo(['actions', 'playback', 'unit', 'item', 'target', 'item2', 'mode', 'attack_info'], ResolvePolicy.NO_RETURN),
-    'end_sub_combat':                       HookInfo(['actions', 'playback', 'unit', 'item', 'target', 'item2', 'mode', 'attack_info'], ResolvePolicy.NO_RETURN),
+    'start_sub_combat':                     HookInfo(['actions', 'playback', 'unit', 'item', 'target', 'item2', 'mode', 'attack_info'], ResolvePolicy.NO_RETURN, has_unconditional=True),
+    'end_sub_combat':                       HookInfo(['actions', 'playback', 'unit', 'item', 'target', 'item2', 'mode', 'attack_info'], ResolvePolicy.NO_RETURN, has_unconditional=True),
     # after strike events
     'after_strike':                         HookInfo(['actions', 'playback', 'unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'strike'], ResolvePolicy.NO_RETURN),
     'after_take_strike':                    HookInfo(['actions', 'playback', 'unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'strike'], ResolvePolicy.NO_RETURN),
@@ -145,6 +154,9 @@ SKILL_HOOKS: Dict[str, HookInfo] = {
     'test_on':                              HookInfo(['playback', 'unit', 'item', 'target', 'item2', 'mode'], ResolvePolicy.NO_RETURN, has_unconditional=True),
     'test_off':                             HookInfo(['playback', 'unit', 'item', 'target', 'item2', 'mode'], ResolvePolicy.NO_RETURN, has_unconditional=True),
     # list hooks (returns a list of all hook return values)
+    'combat_sprite_flicker_tint':           HookInfo(['unit'], ResolvePolicy.LIST),
+    # simple multiply hooks
+    'unit_sprite_alpha_tint':               HookInfo(['unit'], ResolvePolicy.NUMERIC_MULTIPLY, has_default_value=True),
     # union hooks (returns a set containing every unique hook return)
     'usable_wtypes':                        HookInfo(['unit'], ResolvePolicy.UNION),
     'forbidden_wtypes':                     HookInfo(['unit'], ResolvePolicy.UNION),
@@ -170,7 +182,7 @@ def generate_skill_hook_str(hook_name: str, hook_info: HookInfo):
 """.format(hook_name=hook_name, args=', '.join(args))
     if hook_info.is_cached:
         cache_handling = """
-@lru_cache(65535)"""
+@ltcached"""
 
     func_text = """{cache_handling}
 def {hook_name}({func_signature}):
@@ -208,20 +220,10 @@ def compile_skill_system():
     # copy skill system base
     for line in skill_system_base.readlines():
         compiled_skill_system.write(line)
-        
-    cache_func_text = """
-def reset_cache():
-    condition.cache_clear()
-"""
 
     for hook_name, hook_info in SKILL_HOOKS.items():
         func = generate_skill_hook_str(hook_name, hook_info)
         compiled_skill_system.write(func)
-        if hook_info.is_cached:
-            cache_func_text += '    ' + hook_name + """.cache_clear()
-"""
-
-    compiled_skill_system.write(cache_func_text)
 
     skill_system_base.close()
     compiled_skill_system.close()

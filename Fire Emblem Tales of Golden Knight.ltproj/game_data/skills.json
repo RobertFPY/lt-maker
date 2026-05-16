@@ -18,12 +18,20 @@
                 []
             ],
             [
-                "hidden",
+                "condition",
+                "not has_skill(unit, 'Canto_Plus')"
+            ],
+            [
+                "assist_skill",
                 null
             ],
             [
-                "condition",
-                "not has_skill(unit, 'Canto_Plus')"
+                "class_skill",
+                null
+            ],
+            [
+                "priority",
+                0
             ]
         ]
     },
@@ -46,8 +54,16 @@
                 []
             ],
             [
-                "hidden",
+                "assist_skill",
                 null
+            ],
+            [
+                "class_skill",
+                null
+            ],
+            [
+                "priority",
+                1
             ]
         ]
     },
@@ -70,8 +86,16 @@
                 []
             ],
             [
-                "hidden",
+                "assist_skill",
                 null
+            ],
+            [
+                "class_skill",
+                null
+            ],
+            [
+                "priority",
+                3
             ]
         ]
     },
@@ -100,6 +124,14 @@
             [
                 "gba_steal_icon",
                 null
+            ],
+            [
+                "assist_skill",
+                null
+            ],
+            [
+                "priority",
+                0
             ]
         ]
     },
@@ -120,6 +152,14 @@
             [
                 "locktouch",
                 null
+            ],
+            [
+                "assist_skill",
+                null
+            ],
+            [
+                "priority",
+                0
             ]
         ]
     },
@@ -140,6 +180,14 @@
             [
                 "ability",
                 "Summon_T2"
+            ],
+            [
+                "assist_skill",
+                null
+            ],
+            [
+                "priority",
+                0
             ]
         ]
     },
@@ -154,12 +202,16 @@
         ],
         "components": [
             [
-                "hidden",
+                "ability",
+                "Refresh"
+            ],
+            [
+                "assist_skill",
                 null
             ],
             [
-                "ability",
-                "Refresh"
+                "priority",
+                0
             ]
         ]
     },
@@ -296,6 +348,10 @@
             [
                 "char_skill",
                 null
+            ],
+            [
+                "priority",
+                0
             ]
         ]
     },
@@ -328,6 +384,10 @@
             [
                 "char_skill",
                 null
+            ],
+            [
+                "priority",
+                0
             ]
         ]
     },
@@ -423,6 +483,10 @@
             [
                 "copysafe",
                 []
+            ],
+            [
+                "priority",
+                0
             ]
         ]
     },
@@ -488,6 +552,10 @@
             [
                 "event_on_remove",
                 "Global Gain Dragon Blood"
+            ],
+            [
+                "priority",
+                0
             ]
         ]
     },
@@ -553,6 +621,10 @@
             [
                 "event_on_remove",
                 "Global Gain Dragon Blood"
+            ],
+            [
+                "priority",
+                0
             ]
         ]
     },
@@ -618,6 +690,10 @@
             [
                 "event_on_remove",
                 "Global Gain Dragon Blood"
+            ],
+            [
+                "priority",
+                0
             ]
         ]
     },
@@ -683,6 +759,10 @@
             [
                 "event_on_remove",
                 "Global Gain Dragon Blood"
+            ],
+            [
+                "priority",
+                0
             ]
         ]
     },
@@ -748,6 +828,10 @@
             [
                 "event_on_remove",
                 "Global Gain Dragon Blood"
+            ],
+            [
+                "priority",
+                0
             ]
         ]
     },
@@ -813,6 +897,10 @@
             [
                 "event_on_remove",
                 "Global Gain Dragon Blood"
+            ],
+            [
+                "priority",
+                0
             ]
         ]
     },
@@ -878,6 +966,10 @@
             [
                 "event_on_remove",
                 "Global Gain Dragon Blood"
+            ],
+            [
+                "priority",
+                0
             ]
         ]
     },
@@ -943,6 +1035,10 @@
             [
                 "event_on_remove",
                 "Global Gain Dragon Blood"
+            ],
+            [
+                "priority",
+                0
             ]
         ]
     },
@@ -1008,6 +1104,10 @@
             [
                 "event_on_remove",
                 "Global Gain Dragon Blood"
+            ],
+            [
+                "priority",
+                0
             ]
         ]
     },
@@ -1069,6 +1169,10 @@
             [
                 "char_skill",
                 null
+            ],
+            [
+                "priority",
+                0
             ]
         ]
     },
@@ -1097,6 +1201,10 @@
             [
                 "char_skill",
                 null
+            ],
+            [
+                "priority",
+                0
             ]
         ]
     },
@@ -1144,6 +1252,10 @@
                     "Untouchable_chil_0",
                     "Untouchable_child_1"
                 ]
+            ],
+            [
+                "priority",
+                0
             ]
         ]
     },
@@ -1216,6 +1328,10 @@
             [
                 "event_on_death",
                 "Global PhantomDefeated"
+            ],
+            [
+                "priority",
+                0
             ]
         ]
     },
@@ -6004,7 +6120,8 @@
                     "lost_on_self": true,
                     "lost_on_ally": true,
                     "lost_on_enemy": true,
-                    "lost_on_splash": true
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
                 }
             ]
         ]
@@ -12402,7 +12519,8 @@
                     "lost_on_self": true,
                     "lost_on_ally": true,
                     "lost_on_enemy": true,
-                    "lost_on_splash": true
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
                 }
             ]
         ]
@@ -12684,7 +12802,8 @@
                     "lost_on_self": true,
                     "lost_on_ally": true,
                     "lost_on_enemy": true,
-                    "lost_on_splash": true
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
                 }
             ]
         ]
@@ -12962,7 +13081,8 @@
                     "lost_on_self": true,
                     "lost_on_ally": true,
                     "lost_on_enemy": true,
-                    "lost_on_splash": true
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
                 }
             ]
         ]
@@ -13240,7 +13360,8 @@
                     "lost_on_self": true,
                     "lost_on_ally": true,
                     "lost_on_enemy": true,
-                    "lost_on_splash": true
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
                 }
             ]
         ]
@@ -15043,7 +15164,8 @@
                     "lost_on_self": true,
                     "lost_on_ally": true,
                     "lost_on_enemy": true,
-                    "lost_on_splash": true
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
                 }
             ]
         ]
@@ -15133,7 +15255,8 @@
                     "lost_on_self": true,
                     "lost_on_ally": true,
                     "lost_on_enemy": true,
-                    "lost_on_splash": true
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
                 }
             ],
             [
@@ -15604,7 +15727,8 @@
                     "lost_on_self": true,
                     "lost_on_ally": true,
                     "lost_on_enemy": true,
-                    "lost_on_splash": true
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
                 }
             ],
             [
@@ -15682,7 +15806,8 @@
                     "lost_on_self": true,
                     "lost_on_ally": true,
                     "lost_on_enemy": true,
-                    "lost_on_splash": true
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
                 }
             ],
             [
@@ -15760,7 +15885,8 @@
                     "lost_on_self": true,
                     "lost_on_ally": true,
                     "lost_on_enemy": true,
-                    "lost_on_splash": true
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
                 }
             ],
             [
@@ -15830,7 +15956,8 @@
                     "lost_on_self": true,
                     "lost_on_ally": true,
                     "lost_on_enemy": true,
-                    "lost_on_splash": true
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
                 }
             ],
             [
@@ -15908,7 +16035,8 @@
                     "lost_on_self": true,
                     "lost_on_ally": true,
                     "lost_on_enemy": true,
-                    "lost_on_splash": true
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
                 }
             ],
             [
@@ -15986,7 +16114,8 @@
                     "lost_on_self": true,
                     "lost_on_ally": true,
                     "lost_on_enemy": true,
-                    "lost_on_splash": true
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
                 }
             ],
             [
@@ -16056,7 +16185,8 @@
                     "lost_on_self": true,
                     "lost_on_ally": true,
                     "lost_on_enemy": true,
-                    "lost_on_splash": true
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
                 }
             ],
             [
@@ -16134,7 +16264,8 @@
                     "lost_on_self": true,
                     "lost_on_ally": true,
                     "lost_on_enemy": true,
-                    "lost_on_splash": true
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
                 }
             ],
             [
@@ -16212,7 +16343,8 @@
                     "lost_on_self": true,
                     "lost_on_ally": true,
                     "lost_on_enemy": true,
-                    "lost_on_splash": true
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
                 }
             ],
             [
@@ -16282,7 +16414,8 @@
                     "lost_on_self": true,
                     "lost_on_ally": true,
                     "lost_on_enemy": true,
-                    "lost_on_splash": true
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
                 }
             ],
             [
@@ -16360,7 +16493,8 @@
                     "lost_on_self": true,
                     "lost_on_ally": true,
                     "lost_on_enemy": true,
-                    "lost_on_splash": true
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
                 }
             ],
             [
@@ -16438,7 +16572,8 @@
                     "lost_on_self": true,
                     "lost_on_ally": true,
                     "lost_on_enemy": true,
-                    "lost_on_splash": true
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
                 }
             ],
             [
@@ -16508,7 +16643,8 @@
                     "lost_on_self": true,
                     "lost_on_ally": true,
                     "lost_on_enemy": true,
-                    "lost_on_splash": true
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
                 }
             ],
             [
@@ -16586,7 +16722,8 @@
                     "lost_on_self": true,
                     "lost_on_ally": true,
                     "lost_on_enemy": true,
-                    "lost_on_splash": true
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
                 }
             ],
             [
@@ -16664,7 +16801,8 @@
                     "lost_on_self": true,
                     "lost_on_ally": true,
                     "lost_on_enemy": true,
-                    "lost_on_splash": true
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
                 }
             ],
             [
@@ -17494,7 +17632,8 @@
                     "lost_on_self": true,
                     "lost_on_ally": true,
                     "lost_on_enemy": true,
-                    "lost_on_splash": true
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
                 }
             ]
         ]
@@ -17572,7 +17711,8 @@
                     "lost_on_self": true,
                     "lost_on_ally": true,
                     "lost_on_enemy": true,
-                    "lost_on_splash": true
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
                 }
             ]
         ]
@@ -17742,7 +17882,8 @@
                     "lost_on_self": true,
                     "lost_on_ally": true,
                     "lost_on_enemy": true,
-                    "lost_on_splash": true
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
                 }
             ]
         ]
@@ -20843,21 +20984,41 @@
                 "True"
             ],
             [
-                "priority",
-                3
-            ],
-            [
                 "aether_proc",
                 {
                     "extra_attacks": 1,
-                    "dynamic_damage": "(unit2.get_stat('RES')*0.7) if item_funcs.is_magic(unit, unit.get_weapon()) else (unit2.get_stat('DEF')*0.7)",
                     "lifelink": 0.7,
+                    "luna_def_multiplier": 0.5,
                     "show_proc_effects": true
                 }
             ],
             [
+                "priority",
+                3
+            ],
+            [
                 "proc_rate",
                 "HALF_SKILL"
+            ]
+        ]
+    },
+    {
+        "nid": "Aether_Luna_Temp",
+        "name": "Aether_Luna_Temp",
+        "desc": "",
+        "icon_nid": "All_Skills",
+        "icon_index": [
+            7,
+            34
+        ],
+        "components": [
+            [
+                "hidden",
+                null
+            ],
+            [
+                "dynamic_damage",
+                "(unit2.stats['RES']*0.5) if item_funcs.is_magic(unit, unit.get_weapon()) else (unit2.stats['DEF']*0.5)"
             ]
         ]
     },
@@ -21778,7 +21939,8 @@
                     "lost_on_self": false,
                     "lost_on_ally": false,
                     "lost_on_enemy": true,
-                    "lost_on_splash": true
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
                 }
             ],
             [
@@ -22017,7 +22179,8 @@
                     "lost_on_self": true,
                     "lost_on_ally": true,
                     "lost_on_enemy": true,
-                    "lost_on_splash": true
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
                 }
             ]
         ]
@@ -22110,7 +22273,8 @@
                     "lost_on_self": true,
                     "lost_on_ally": true,
                     "lost_on_enemy": true,
-                    "lost_on_splash": true
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
                 }
             ]
         ]
@@ -22639,7 +22803,8 @@
                     "lost_on_self": true,
                     "lost_on_ally": true,
                     "lost_on_enemy": true,
-                    "lost_on_splash": true
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
                 }
             ]
         ]
@@ -22664,7 +22829,8 @@
                     "lost_on_self": true,
                     "lost_on_ally": true,
                     "lost_on_enemy": true,
-                    "lost_on_splash": true
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
                 }
             ]
         ]
@@ -24347,7 +24513,8 @@
                     "lost_on_self": false,
                     "lost_on_ally": false,
                     "lost_on_enemy": true,
-                    "lost_on_splash": true
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
                 }
             ],
             [
@@ -25043,7 +25210,8 @@
                     "lost_on_self": true,
                     "lost_on_ally": true,
                     "lost_on_enemy": true,
-                    "lost_on_splash": true
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
                 }
             ]
         ]
@@ -25831,7 +25999,12 @@
             0,
             0
         ],
-        "components": []
+        "components": [
+            [
+                "modify_self_proc_rate",
+                40
+            ]
+        ]
     },
     {
         "nid": "Test2",
@@ -25842,13 +26015,45 @@
             0,
             0
         ],
-        "components": []
+        "components": [
+            [
+                "stat_change",
+                [
+                    [
+                        "HP",
+                        50
+                    ]
+                ]
+            ]
+        ]
     },
     {
         "nid": "Test3",
         "name": "Test2",
         "desc": "",
         "icon_nid": "Skills",
+        "icon_index": [
+            0,
+            0
+        ],
+        "components": []
+    },
+    {
+        "nid": "Add_New_Skill",
+        "name": "Add New Skill",
+        "desc": "",
+        "icon_nid": null,
+        "icon_index": [
+            0,
+            0
+        ],
+        "components": []
+    },
+    {
+        "nid": "Empty_Skill_List",
+        "name": "Empty Skill List",
+        "desc": "",
+        "icon_nid": null,
         "icon_index": [
             0,
             0

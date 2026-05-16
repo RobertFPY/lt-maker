@@ -37,6 +37,7 @@ from app.editor.lib.components.validated_line_edit import \
     NoParentheticalLineEdit
 from app.editor.map_view import SimpleMapView
 from app.editor.settings import MainSettingsController
+from app.editor.settings.preference_definitions import Preference
 from app.events import event_commands, event_validators
 from app.events.event_prefab import EventPrefab
 from app.events.event_version import EventVersion
@@ -47,6 +48,8 @@ from app.extensions.custom_gui import (ComboBox, PropertyBox, PropertyCheckBox,
                                        QHLine, TableView)
 from app.extensions.markdown2 import Markdown
 from app.utilities import str_utils
+
+from app.editor.code_line_edit import CodeLineEdit
 
 class EventCollection(QWidget):
     def __init__(self, deletion_criteria, collection_model, parent,
@@ -317,7 +320,7 @@ class EventProperties(QWidget):
         # Text setup
         self.cursor = self.text_box.textCursor()
         self.code_font = QFont()
-        self.code_font.setFamily(self.settings.get_code_font())
+        self.code_font.setFamily(self.settings.get_preference(Preference.CODE_FONT))
         self.code_font.setFixedPitch(True)
         self.code_font.setPointSize(10)
         self.text_box.setFont(self.code_font)
@@ -345,9 +348,9 @@ class EventProperties(QWidget):
         self.level_nid_box.edit.addItems(DB.levels.keys())
         self.level_nid_box.edit.currentIndexChanged.connect(self.level_nid_changed)
 
-        self.condition_box = PropertyBox("Condition", QLineEdit, self)
+        self.condition_box = PropertyBox("Condition", CodeLineEdit, self)
         self.condition_box.edit.setPlaceholderText("Condition required for event to fire")
-        self.condition_box.edit.textChanged.connect(self.condition_changed)
+        self.condition_box.edit.textChanged.connect(lambda: self.condition_changed(self.condition_box.edit.toPlainText()))
 
         self.only_once_box = PropertyCheckBox("Trigger only once?", QCheckBox, self)
         self.only_once_box.edit.stateChanged.connect(self.only_once_changed)
@@ -576,7 +579,7 @@ class EventProperties(QWidget):
             self.trigger_box.edit.setValue(current.trigger)
         else:
             self.trigger_box.edit.setValue("None")
-        self.condition_box.edit.setText(current.condition)
+        self.condition_box.edit.setPlainText(current.condition)
         self.only_once_box.edit.setChecked(bool(current.only_once))
         self.priority_box.edit.setValue(current.priority)
 
@@ -589,6 +592,8 @@ class EventProperties(QWidget):
             self.text_box.setPlainText(self.current.source)
             self.set_editor_language(self.current.version())
         self.set_test_event_button_visible()
+        # Reset red dot
+        self.text_box.debug_point_line_number = None
 
     def hideEvent(self, event):
         self.close_map()
@@ -613,6 +618,7 @@ class ShowMapDialog(QDialog):
         self.map_view = SimpleMapView(self)
         self.map_view.position_clicked.connect(self.position_clicked)
         self.map_view.position_moved.connect(self.position_moved)
+        self.map_view.position_right_clicked_float.connect(self.position_right_clicked_float)
         if self.current_level:
             self.map_view.set_current_level(self.current_level)
         else:
@@ -644,6 +650,9 @@ class ShowMapDialog(QDialog):
 
     def position_clicked(self, x, y):
         self.window.insert_text("%d,%d" % (x, y))
+
+    def position_right_clicked_float(self, x: float, y: float):
+        self.window.insert_text("%0.1f,%0.1f" % (x, y))
 
     def position_moved(self, x, y):
         if x >= 0 and y >= 0:

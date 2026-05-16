@@ -28,7 +28,7 @@ class StatChangeExpression(SkillComponent):
     desc = "Gives stat bonuses based on expression"
     tag = SkillTags.COMBAT
 
-    expose = (ComponentType.StringDict, ComponentType.Stat)
+    expose = (ComponentType.StringDict, ComponentType.StatString)
     value = []
 
     def stat_change(self, unit=None):
@@ -44,7 +44,7 @@ class StatMultiplier(SkillComponent):
     desc = "Gives stat bonuses"
     tag = SkillTags.COMBAT
 
-    expose = (ComponentType.FloatDict, ComponentType.Stat)
+    expose = (ComponentType.FloatDict, ComponentType.StatFloat)
     value = []
 
     def stat_change(self, unit):
@@ -107,7 +107,7 @@ class EvalDamage(SkillComponent):
     def modify_damage(self, unit, item):
         from app.engine import evaluate
         try:
-            return int(evaluate.evaluate(self.value, unit, local_args={'item': item}))
+            return int(evaluate.evaluate(self.value, unit, local_args={'item': item, 'skill': self.skill}))
         except Exception as e:
             logging.error("Couldn't evaluate %s conditional (%s)", self.value, e)
         return 0
@@ -120,7 +120,7 @@ class Resist(SkillComponent):
     expose = ComponentType.Int
     value = 2
 
-    def modify_resist(self, unit, item_to_avoid):
+    def modify_resist(self, unit, item):
         return self.value
 
 class Hit(SkillComponent):
@@ -144,7 +144,7 @@ class EvalHit(SkillComponent):
     def modify_accuracy(self, unit, item):
         from app.engine import evaluate
         try:
-            return int(evaluate.evaluate(self.value, unit, local_args={'item': item}))
+            return int(evaluate.evaluate(self.value, unit, local_args={'item': item, 'skill': self.skill}))
         except Exception as e:
             logging.error("Couldn't evaluate %s conditional (%s)", self.value, e)
         return 0
@@ -157,7 +157,7 @@ class Avoid(SkillComponent):
     expose = ComponentType.Int
     value = 20
 
-    def modify_avoid(self, unit, item_to_avoid):
+    def modify_avoid(self, unit, item):
         return self.value
 
     def tile_avoid(self):
@@ -173,7 +173,7 @@ class EvalAvoid(SkillComponent):
     def modify_avoid(self, unit, item):
         from app.engine import evaluate
         try:
-            return int(evaluate.evaluate(self.value, unit, local_args={'item': item}))
+            return int(evaluate.evaluate(self.value, unit, local_args={'item': item, 'skill': self.skill}))
         except Exception as e:
             logging.error("Couldn't evaluate %s conditional (%s)", self.value, e)
         return 0
@@ -199,7 +199,7 @@ class EvalCrit(SkillComponent):
     def modify_crit_accuracy(self, unit, item):
         from app.engine import evaluate
         try:
-            return int(evaluate.evaluate(self.value, unit, local_args={'item': item}))
+            return int(evaluate.evaluate(self.value, unit, local_args={'item': item, 'skill': self.skill}))
         except Exception as e:
             logging.error("Couldn't evaluate %s conditional (%s)", self.value, e)
         return 0
@@ -212,7 +212,7 @@ class CritAvoid(SkillComponent):
     expose = ComponentType.Int
     value = 10
 
-    def modify_crit_avoid(self, unit, item_to_avoid):
+    def modify_crit_avoid(self, unit, item):
         return self.value
 
 class AttackSpeed(SkillComponent):
@@ -234,7 +234,7 @@ class DefenseSpeed(SkillComponent):
     expose = ComponentType.Int
     value = 4
 
-    def modify_defense_speed(self, unit, item_to_avoid):
+    def modify_defense_speed(self, unit, item):
         return self.value
 
 class DamageMultiplier(SkillComponent):

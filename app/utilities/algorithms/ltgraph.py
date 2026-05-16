@@ -1,6 +1,6 @@
 from __future__ import annotations
 import math
-from typing import Dict, Generic, Iterable, List, Set, Tuple, TypeVar
+from typing import Dict, Generic, Iterable, List, Optional, Set, Tuple, TypeVar
 
 V = TypeVar("V")
 D = TypeVar("D")
@@ -9,7 +9,7 @@ E = TypeVar("E")
 class LTEdge(Generic[V, E]):
     """An edge implementation.
     """
-    def __init__(self, endpoints: Tuple[V, V], data: E = None, weight: float = 1):
+    def __init__(self, endpoints: Tuple[V, V], data: Optional[E] = None, weight: float = 1):
         self.endpoints = endpoints
         self.data = data
         self.weight = max(weight, 0)
@@ -17,31 +17,30 @@ class LTEdge(Generic[V, E]):
 class LTVertex(Generic[V, D, E]):
     """A vertex implementation.
     """
-    def __init__(self, value: V, data: D = None):
+    def __init__(self, value: V, data: Optional[D] = None):
         self.value = value
         self.data = data
-        self.edges: Dict[V, LTEdge] = {}
+        self.edges: Dict[V, LTEdge[V, E]] = {}
 
     def __getitem__(self, value: V) -> LTEdge[V, E]:
         return self.edges[value]
 
-    def __setitem__(self, index: V, edge: LTEdge[V, E]):
+    def __setitem__(self, index: V, edge: LTEdge[V, E]) -> None:
         self.edges[index] = edge
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return repr(self.edges.keys())
 
 class LTGraph(Generic[V, D, E]):
-    """An undirected graph implementation for the LT engine, since installing
-    external dependencies is extremely cringe.
+    """An undirected graph implementation for the LT engine to avoid ext dependencies.
 
     Does not support negative edge weights.
     """
 
-    def __init__(self, vertices: Iterable[V]=None, edges: Iterable[Tuple[V, V]] = None):
-        self.vertices: Dict[V, LTVertex] = {}
+    def __init__(self, vertices: Optional[Iterable[V]] = None, edges: Optional[Iterable[Tuple[V, V]]] = None):
+        self.vertices: Dict[V, LTVertex[V, D, E]] = {}
         self.adj: Dict[V, Set[V]] = {}
-        self._path_dict: Dict[V, Dict[V, List[Tuple[V, V]]]] = {}
+        self._path_dict: Dict[V, Dict[V, Optional[List[V]]]] = {}
         if vertices:
             for vertex in vertices:
                 self.add_vertex(vertex)
@@ -50,12 +49,12 @@ class LTGraph(Generic[V, D, E]):
                 v1, v2 = edge
                 self.add_edge(v1, v2)
 
-    def add_vertex(self, vertex_val: V, vertex_data: D = None):
+    def add_vertex(self, vertex_val: V, vertex_data: Optional[D] = None) -> None:
         self[vertex_val] = LTVertex(vertex_val, vertex_data)
         self.adj[vertex_val] = set()
         self.clear_cache()
 
-    def add_edge(self, v1: V, v2: V, data: E = None, weight: float = 1):
+    def add_edge(self, v1: V, v2: V, data: Optional[E] = None, weight: float = 1) -> None:
         """Add edge to graph between two vertices (they do not necessarily have to be predefined)
 
         Args:
@@ -84,21 +83,20 @@ class LTGraph(Generic[V, D, E]):
 
     def has_path(self, v1: V, v2: V) -> bool:
         """Determines whether or not a path exists between the two nodes.
-        NOTE: I don't give a rat's ass about performance, but
-        if you, reader, do, turn this into bfs or use a cache or something.
+        NOTE: not performant. use bfs or cache results for improved performance.
         """
         if self.shortest_path(v1, v2):
             return True
         return False
 
-    def shortest_path(self, v1: V, v2: V) -> List[V]:
+    def shortest_path(self, v1: V, v2: V) -> Optional[List[V]]:
         """Fetches the shortest path between two vertices.
 
         Args:
             v1, v2 (V): vertices to fetch path for
 
         Returns:
-            List[Tuple[V, V]]: Shortest path, represented in vertex connections
+            Optional[List[V]]: Shortest path as list of vertices, or None if no path exists
         """
         # some sanity checks
         if v1 not in self.vertices.keys() or v2 not in self.vertices.keys():
@@ -141,8 +139,8 @@ class LTGraph(Generic[V, D, E]):
             self._path_dict[v2][v1] = None
             return None
         # reconstruct it
-        path = []
-        reverse_path = []
+        path: List[V] = []
+        reverse_path: List[V] = []
         curr_vert = v2
         while curr_vert != v1:
             best_neighbor = prev_step[curr_vert]
@@ -156,7 +154,7 @@ class LTGraph(Generic[V, D, E]):
         self._path_dict[v2][v1] = reverse_path
         return path
 
-    def clear_cache(self):
+    def clear_cache(self) -> None:
         # usually we want to regenerate all paths after adding nodes
         self._path_dict.clear()
 
@@ -169,8 +167,8 @@ class LTGraph(Generic[V, D, E]):
     def __getitem__(self, value: V) -> LTVertex[V, D, E]:
         return self.vertices[value]
 
-    def __setitem__(self, index: V, vertex: LTVertex[V, D, E]):
+    def __setitem__(self, index: V, vertex: LTVertex[V, D, E]) -> None:
         self.vertices[index] = vertex
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return repr(self.vertices)

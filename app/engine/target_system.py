@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import FrozenSet, TYPE_CHECKING, List, Optional, Set, Tuple
+from typing import FrozenSet, TYPE_CHECKING, List, Literal, Optional, Set, Tuple
 from functools import lru_cache
 
 from app.data.database.database import DB
@@ -75,7 +75,7 @@ class TargetSystem():
     def get_nearest_open_tile(self, unit: UnitObject, position: Pos, check_for_valid_path: bool = False) -> Optional[Pos]:
         """Given a unit and their position, determines the nearest tile without a unit on it.
 
-        The nearest tile must be weakly traversable by the unit and not have a unit on it or in the process of moving to it.
+        The nearest tile must be weakly traversable by the unit and not have another unit on it or in the process of moving to it.
         If all tiles within 10 tiles of the starting point do not meet the requirements, returns None
 
         Args:
@@ -90,24 +90,28 @@ class TargetSystem():
         _abs = abs
         while r < 10:
             for x in range(-r, r + 1):
-                magn = _abs(x)
-                n1 = position[0] + x, position[1] + r - magn
-                n2 = position[0] + x, position[1] - r + magn
-                if movement_funcs.check_weakly_traversable(unit, n1) \
-                        and not self.game.board.get_unit(n1) \
-                        and not self.game.movement.check_if_occupied_in_future(n1) \
-                        and (not check_for_valid_path or not unit.position or self.game.path_system.get_path(unit, n1)):
-                    return n1
-                elif movement_funcs.check_weakly_traversable(unit, n2) \
-                        and not self.game.board.get_unit(n2) \
-                        and not self.game.movement.check_if_occupied_in_future(n2) \
-                        and (not check_for_valid_path or not unit.position or self.game.path_system.get_path(unit, n2)):
-                    return n2
+                magn: int = _abs(x)
+                n1: Pos = position[0] + x, position[1] + r - magn
+                n2: Pos = position[0] + x, position[1] - r + magn
+                if self.game.board.check_bounds(n1):
+                    u1: Optional[UnitObject] = self.game.board.get_unit(n1)
+                    if movement_funcs.check_weakly_traversable(unit, n1) \
+                            and (not u1 or u1 is unit) \
+                            and not self.game.movement.check_if_occupied_in_future(n1) \
+                            and (not check_for_valid_path or not unit.position or self.game.path_system.get_path(unit, n1)):
+                        return n1
+                if self.game.board.check_bounds(n2):
+                    u2: Optional[UnitObject] = self.game.board.get_unit(n2)
+                    if movement_funcs.check_weakly_traversable(unit, n2) \
+                            and (not u2 or u2 is unit) \
+                            and not self.game.movement.check_if_occupied_in_future(n2) \
+                            and (not check_for_valid_path or not unit.position or self.game.path_system.get_path(unit, n2)):
+                        return n2
             r += 1
         return None
 
     def get_closest_reachable_tile(self, unit: UnitObject, position: Pos) -> Optional[Pos]:
-        """Identical to self.get_nearest_open_tile, except it alsqo checks that the unit can find a valid path to the position
+        """Identical to self.get_nearest_open_tile, except it also checks that the unit can find a valid path to the position
         """
         return self.get_nearest_open_tile(unit, position, check_for_valid_path=True)
 
@@ -146,7 +150,7 @@ class TargetSystem():
 
     def apply_fog_of_war(self, unit: UnitObject, item: ItemObject) -> bool:
         """Returns whether fog of war applies to this unit and item combination"""
-        return (unit.team == 'player' or DB.constants.value('ai_fog_of_war')) and not item_system.ignore_fog_of_war(unit, item)
+        return (unit.team == 'player' or DB.constants.value('ai_fog_of_war')) and not item_system.allow_target_in_fog_of_war(unit, item)
 
     def _filter_splash_through_fog_of_war(self, unit, main_target_pos: Optional[Pos],
                                           splash_positions: List[Pos]
@@ -514,15 +518,15 @@ class TargetSystem():
         attacker_partner = None
         defender_partner = None
         attacker_adj_allies = self.get_adj_allies(attacker)
-        attacker_adj_allies = [ally for ally in attacker_adj_allies if ally.get_weapon() and not item_system.cannot_dual_strike(ally, ally.get_weapon())]
+        attacker_adj_allies = [ally for ally in attacker_adj_allies if ally.get_weapon() and not item_system.cannot_be_dual_strike_partner(ally, ally.get_weapon())]
         defender_adj_allies = self.get_adj_allies(defender)
-        defender_adj_allies = [ally for ally in defender_adj_allies if ally.get_weapon() and not item_system.cannot_dual_strike(ally, ally.get_weapon())]
+        defender_adj_allies = [ally for ally in defender_adj_allies if ally.get_weapon() and not item_system.cannot_be_dual_strike_partner(ally, ally.get_weapon())]
         attacker_partner = self.strike_partner_formula(attacker_adj_allies, attacker, defender, 'attack', (0, 0))
         defender_partner = self.strike_partner_formula(defender_adj_allies, defender, attacker, 'defense', (0, 0))
 
-        if item_system.cannot_dual_strike(attacker, item):
+        if item_system.cannot_have_dual_strike_partner(attacker, item):
             attacker_partner = None
-        if defender.get_weapon() and item_system.cannot_dual_strike(defender, defender.get_weapon()):
+        if defender.get_weapon() and item_system.cannot_have_dual_strike_partner(defender, defender.get_weapon()):
             defender_partner = None
         if DB.constants.value('player_pairup_only'):
             if attacker.team != 'player':
@@ -535,13 +539,14 @@ class TargetSystem():
             return None, None
         return attacker_partner, defender_partner
 
-    def strike_partner_formula(self, allies: list, attacker, defender, mode, attack_info):
-        """This is the formula for the best choice to make when autoselecting strike partners"""
+    def strike_partner_formula(self, allies: list[UnitObject], attacker: UnitObject, defender: UnitObject,
+                               mode: Literal['attack', 'defense', 'splash'], attack_info: list[int]) -> Optional[UnitObject]:
+        """This is the formula for the best choice to make when autoselecting strike partners."""
         if not allies:
             return None
-        damage = [combat_calcs.compute_assist_damage(ally, defender, ally.get_weapon(), resolve_weapon(defender), mode, attack_info) for ally in allies]
-        accuracy = [utils.clamp(combat_calcs.compute_hit(ally, defender, ally.get_weapon(), resolve_weapon(defender), mode, attack_info)/100., 0, 1) for ally in allies]
-        score = [dam * acc for dam, acc in zip(damage, accuracy)]
-        max_score = max(score)
-        max_index = score.index(max_score)
+        damage: list[int] = [(combat_calcs.compute_assist_damage(ally, defender, ally.get_weapon(), resolve_weapon(defender), mode, attack_info) or 0) for ally in allies]
+        accuracy: list[int] = [utils.clamp((combat_calcs.compute_hit(ally, defender, ally.get_weapon(), resolve_weapon(defender), mode, attack_info) or 0)/100., 0, 1) for ally in allies]
+        scores: list[int] = [dam * acc for dam, acc in zip(damage, accuracy)] 
+        max_score = max(scores)
+        max_index = scores.index(max_score)
         return allies[max_index]

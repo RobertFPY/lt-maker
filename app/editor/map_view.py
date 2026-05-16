@@ -1,19 +1,24 @@
 from enum import Enum
+from typing import TYPE_CHECKING
 
 from app.constants import TILEHEIGHT, TILEWIDTH, WINHEIGHT, WINWIDTH
 from app.data.database.database import DB
 from app.data.database.levels import LevelPrefab
 from app.data.resources.tiles import TileMapPrefab
 from app.editor import tilemap_editor, timer
-from app.editor.class_editor import class_model
+from app.editor.map_sprite_editor import map_sprite_model
 from app.editor.overworld_editor.road_sprite_wrapper import RoadSpriteWrapper
 from app.editor.settings import MainSettingsController
 from app.data.resources.resources import RESOURCES
+from app.editor.settings.preference_definitions import Preference
 from app.sprites import SPRITES
 from app.utilities import utils
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QBrush, QColor, QPainter, QPixmap
 from PyQt5.QtWidgets import QGraphicsScene, QGraphicsView
+
+if TYPE_CHECKING:
+    from app.editor.level_editor.level_editor import LevelEditor
 
 class SimpleMapView(QGraphicsView):
     min_scale = 1
@@ -25,10 +30,11 @@ class SimpleMapView(QGraphicsView):
     position_moved = pyqtSignal(int, int)
 
     position_clicked_float = pyqtSignal(float, float)
+    position_right_clicked_float = pyqtSignal(float, float)
 
     def __init__(self, window=None):
         super().__init__()
-        self.main_editor = window
+        self.main_editor: LevelEditor = window
         self.settings = MainSettingsController()
         self.scene = QGraphicsScene(self)
         self.setScene(self.scene)
@@ -88,13 +94,12 @@ class SimpleMapView(QGraphicsView):
         klass = DB.classes.get(klass_nid)
         if not klass:
             klass = DB.classes[0]
-        pixmap = class_model.get_map_sprite_icon(
-            klass, num, False, unit.team, unit.variant)
+        pixmap = map_sprite_model.get_map_sprite_icon(klass.map_sprite_nid, num, False, unit.team, unit.variant)
         coord = position
         if pixmap:
             if opacity:
                 painter.setOpacity(0.33)
-            painter.drawImage(int(coord[0] * TILEWIDTH - 9),
+            painter.drawImage(int(coord[0] * TILEWIDTH - 8),
                               int(coord[1] * TILEHEIGHT - 8), pixmap.toImage())
             painter.setOpacity(1.0)
         else:
@@ -138,6 +143,7 @@ class SimpleMapView(QGraphicsView):
         if self.current_map and self.current_map.check_bounds(pos):
             if(event.buttons() == Qt.RightButton):
                 self.position_right_clicked.emit(*pos)
+                self.position_right_clicked_float.emit(*pos_float)
             else:
                 self.position_clicked.emit(*pos)
                 self.position_clicked_float.emit(*pos_float)
@@ -482,7 +488,7 @@ class NewMapView(SimpleMapView):
         if self.current_map and self.current_map.check_bounds(pos):
             # Units
             if self.edit_mode == EditMode.UNITS:
-                if event.button() == self.settings.get_place_button(Qt.RightButton):
+                if event.button() == self.settings.get_preference(Preference.PLACE_BUTTON):
                     current_unit = self.main_editor.unit_painter_menu.get_current()
                     if current_unit:
                         under_unit = self.check_position(
@@ -508,7 +514,7 @@ class NewMapView(SimpleMapView):
                                     unit.starting_traveler = None
                             self.main_editor.set_message(message)
                         self.update_view()
-                elif event.button() == self.settings.get_select_button(Qt.LeftButton):
+                elif event.button() == self.settings.get_preference(Preference.SELECT_BUTTON):
                     under_unit = self.check_position(self.current_level, pos)
                     if under_unit:
                         idx = self.current_level.units.index(under_unit.nid)
@@ -517,7 +523,7 @@ class NewMapView(SimpleMapView):
                         self.main_editor.unit_painter_menu.deselect()
             # Groups
             elif self.edit_mode == EditMode.GROUPS:
-                if event.button() == self.settings.get_place_button(Qt.RightButton):
+                if event.button() == self.settings.get_preference(Preference.PLACE_BUTTON):
                     current_group = self.main_editor.group_painter_menu.get_current()
                     current_unit = self.main_editor.group_painter_menu.get_current_unit()
                     if current_unit:
@@ -531,7 +537,7 @@ class NewMapView(SimpleMapView):
                                 current_group.nid, current_unit.nid, pos[0], pos[1])
                         self.main_editor.set_message(message)
                         self.update_view()
-                elif event.button() == self.settings.get_select_button(Qt.LeftButton):
+                elif event.button() == self.settings.get_preference(Preference.SELECT_BUTTON):
                     current_group = self.main_editor.group_painter_menu.get_current()
                     under_unit_nid = None
                     if current_group:
@@ -552,7 +558,7 @@ class NewMapView(SimpleMapView):
                     else:
                         self.main_editor.group_painter_menu.deselect()
             elif self.edit_mode == EditMode.REGIONS:
-                if event.button() == self.settings.get_place_button(Qt.RightButton):
+                if event.button() == self.settings.get_preference(Preference.PLACE_BUTTON):
                     current_region = self.main_editor.region_painter_menu.get_current()
                     if current_region:
                         # Remove position for current region if it has one
@@ -611,7 +617,7 @@ class NewMapView(SimpleMapView):
 
         if self.current_map and self.current_map.check_bounds(pos):
             if self.region_select and self.edit_mode == EditMode.REGIONS:
-                if event.button() == self.settings.get_place_button(Qt.RightButton):
+                if event.button() == self.settings.get_preference(Preference.PLACE_BUTTON):
                     current_region = self.main_editor.region_painter_menu.get_current()
                     if current_region:
                         prev_pos = self.region_select

@@ -1,13 +1,14 @@
 import logging
 import functools
 import math
-from typing import Collection, List
+from typing import List, Set
 
 from app.constants import FRAMERATE
 from app.data.database.database import DB
 from app.engine import (action, combat_calcs, engine, equations, evaluate,
                         item_funcs, item_system, line_of_sight,
                         skill_system)
+from app.engine.objects.unit import UnitObject
 from app.engine.pathfinding import pathfinding
 from app.engine.combat import interaction
 from app.engine.game_state import game
@@ -44,6 +45,10 @@ class AIController():
         self.move_ai_complete = False
         self.attack_ai_complete = False
         self.canto_ai_complete = False
+
+    def finalize(self):
+        # Anything that needs to be done when the AI is finished with the unit
+        action.do(action.MarkActionGroupEnd('ai'))
 
     def load_unit(self, unit):
         self.reset()
@@ -83,7 +88,7 @@ class AIController():
         logging.info("AI Act!")
 
         change = False
-        if movement_funcs.check_region_interrupt(self.unit.position):
+        if movement_funcs.check_region_interrupt(self.unit):
             self.interrupt()
 
         if not self.move_ai_complete:
@@ -113,6 +118,7 @@ class AIController():
                 game.state.change('movement')
                 # If we pass in speed=0 to Move it'll use your unit_speed setting
                 speedup = 10 if self.do_skip else 0
+                action.do(action.MarkActionGroupStart(self.unit, 'ai'))
                 action.do(action.Move(self.unit, self.goal_position, path, speed=speedup))
             return True
         else:
@@ -191,8 +197,8 @@ class AIController():
         target_positions = get_targets(self.unit, self.behaviour)
 
         zero_move = item_funcs.get_max_range(self.unit)
-        single_move = zero_move + equations.parser.movement(self.unit)
-        double_move = single_move + equations.parser.movement(self.unit)
+        single_move = zero_move + self.unit.get_movement()
+        double_move = single_move + self.unit.get_movement()
 
         targets_and_dist = {(pos, utils.calculate_distance(self.unit.position, pos)) for pos in target_positions}
 
@@ -213,7 +219,7 @@ class AIController():
         else:
             return False
 
-    def get_true_valid_moves(self) -> Collection[Point]:
+    def get_true_valid_moves(self) -> Set[Pos]:
         # Guard AI
         if self.behaviour and self.behaviour.view_range == -1 and not game.ai_group_active(self.unit.ai_group):
             return {self.unit.position}
@@ -342,10 +348,10 @@ class AIController():
         return SecondaryAI(self.unit, self.behaviour)
 
 class PrimaryAI():
-    def __init__(self, unit, valid_moves, behaviour):
+    def __init__(self, unit: UnitObject, valid_moves: Set[Pos], behaviour):
         self.max_tp = 0
 
-        self.unit = unit
+        self.unit: UnitObject = unit
         self.orig_pos = self.unit.position
         self.orig_item = self.unit.items[0] if self.unit.items else None
         self.behaviour = behaviour
@@ -353,15 +359,21 @@ class PrimaryAI():
         if self.behaviour.action == "Attack":
             self.items = [item for item in item_funcs.get_all_items(self.unit) if
                           item_funcs.available(self.unit, item)]
+            self.items += [item_system.extra_command(self.unit, item) for item in item_funcs.get_all_items(self.unit) if
+                           item_system.extra_command(self.unit, item) and item_funcs.available(self.unit, item_system.extra_command(self.unit, item))]
             self.extra_abilities = skill_system.get_extra_abilities(self.unit)
             for ability in self.extra_abilities.values():
                 self.items.append(ability)
+
         elif self.behaviour.action == 'Support':
             self.items = [item for item in item_funcs.get_all_items(self.unit) if
                           item_funcs.available(self.unit, item)]
+            self.items = self.items + [item_system.extra_command(self.unit, item) for item in item_funcs.get_all_items(self.unit) if
+                                       item_system.extra_command(self.unit, item) and item_funcs.available(self.unit, item_system.extra_command(self.unit, item))]
             self.extra_abilities = skill_system.get_extra_abilities(self.unit)
             for ability in self.extra_abilities.values():
                 self.items.append(ability)
+                
         elif self.behaviour.action == 'Steal':
             self.items = []
             self.extra_abilities = skill_system.get_extra_abilities(self.unit)
@@ -417,9 +429,8 @@ class PrimaryAI():
             return []
 
     def quick_move(self, move):
-        action.PickUnitUp(self.unit, True).do()
-        self.unit.position = move
-        action.PutUnitDown(self.unit, True).do()
+        action.QuickLeave(self.unit, True).do()
+        action.QuickArrive(self.unit, move, True).do()
 
     def run(self):
         if self.item_index >= len(self.items):
@@ -608,7 +619,7 @@ class PrimaryAI():
 
         # Only here to break ties
         # Tries to minimize how far the unit should move
-        max_distance = equations.parser.movement(self.unit)
+        max_distance = self.unit.get_movement()
         if max_distance > 0:
             distance_term = (max_distance - utils.calculate_distance(move, self.orig_pos)) / float(max_distance)
         else:
@@ -703,8 +714,8 @@ class SecondaryAI():
         self.all_targets = get_targets(self.unit, behaviour)
 
         self.zero_move = item_funcs.get_max_range(self.unit)
-        self.single_move = self.zero_move + equations.parser.movement(self.unit)
-        self.double_move = self.single_move + equations.parser.movement(self.unit)
+        self.single_move = self.zero_move + self.unit.get_movement()
+        self.double_move = self.single_move + self.unit.get_movement()
 
         movement_group = movement_funcs.get_movement_group(self.unit)
         self.grid = game.board.get_movement_grid(movement_group)
@@ -715,7 +726,7 @@ class SecondaryAI():
         self.reset()
 
     def reset(self):
-        self.max_tp = 0
+        self.max_tp = None  # Not 0, to entertain the possible case of non-positive tp
         self.best_target = 0
         self.best_path = None
 
@@ -752,7 +763,7 @@ class SecondaryAI():
             # We found a path
             tp = self.compute_priority(target, len(path))
             logging.info("Path to %s. -- %s", target, tp)
-            if tp > self.max_tp:
+            if tp is not None and (self.max_tp is None or tp > self.max_tp):
                 self.max_tp = tp
                 self.best_target = target
                 self.best_path = path
@@ -790,7 +801,8 @@ class SecondaryAI():
             can_move_through = lambda adj: True
         else:
             can_move_through = functools.partial(game.board.can_move_through, self.unit.team)
-        path = self.pathfinder.process(can_move_through, adj_good_enough=adj_good_enough, limit=limit)
+        max_movement_limit = self.unit.get_movement()
+        path = self.pathfinder.process(can_move_through, adj_good_enough=adj_good_enough, limit=limit, max_movement_limit=max_movement_limit)
         self.pathfinder.reset()
         return path
 
@@ -802,30 +814,30 @@ class SecondaryAI():
                  item_funcs.available(self.unit, item)]
 
         terms = []
-        tp, highest_damage_term, highest_status_term = 0, 0, 0
+        tp = None   # Not 0, to entertain the possible case of non-positive tp
+        highest_damage_term, highest_status_term = 0, 0
 
         for item in items:
             status_term = 1 if item.status_on_hit else 0
-            true_damage = 0
+            true_damage = None
             if item_system.is_weapon(self.unit, item) or item_system.is_spell(self.unit, item):
                 raw_damage = combat_calcs.compute_damage(self.unit, enemy, item, enemy.get_weapon(), 'attack', (0, 0))
                 hit = utils.clamp(combat_calcs.compute_hit(self.unit, enemy, item, enemy.get_weapon(), 'attack', (0, 0))/100., 0, 1)
-                if raw_damage:
+                if raw_damage is not None and \
+                        (raw_damage > 0 or DB.constants.value('attack_zero_dam')) and \
+                        (hit > 0 or DB.constants.value('attack_zero_hit')):
                     true_damage = raw_damage * hit
-                else:
-                    true_damage = 0
 
-            if true_damage <= 0 and status_term <= 0:
-                continue  # If no damage could be dealt, ignore
-            damage_term = min(float(true_damage / hp_max), 1.)
+            if true_damage is None and status_term <= 0:
+                continue  # If no damage could be dealt and AI is smart, ignore
+            damage_term = min(float(true_damage / hp_max), 1.) if true_damage else 0
             new_tp = damage_term + status_term/2
-            if new_tp > tp:
+            if tp is None or new_tp > tp:
                 tp = new_tp
                 highest_damage_term = damage_term
                 highest_status_term = status_term
 
-        if highest_status_term == 0 and highest_damage_term == 0:
-            # Just don't include any of this
+        if tp is None:
             return terms
         terms.append((highest_damage_term, 15))
         terms.append((highest_status_term, 10))
@@ -847,13 +859,13 @@ class SecondaryAI():
             if new_terms:
                 terms += new_terms
             else:
-                return 0
+                return None
 
         elif self.behaviour.action == 'Support' and enemy:
             ally = enemy
             # Try to help others since we already checked ourself in Primary AI
             if ally is self.unit:
-                return 0
+                return None
             else:
                 max_hp = ally.get_max_hp()
                 missing_health = max_hp - ally.get_hp()
@@ -861,7 +873,7 @@ class SecondaryAI():
                 terms.append((help_term, 100))
 
         elif self.behaviour.action == "Steal" and enemy:
-            return 0  # TODO: For now, Steal just won't work with secondary AI
+            return None  # TODO: For now, Steal just won't work with secondary AI
 
         elif self.behaviour.action == "Interact":
             # Lower the quality of positions where there is already a unit

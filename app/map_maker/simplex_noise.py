@@ -149,6 +149,15 @@ def get(x, y, seed):
 def get_full_noise(x, y, seed,
                    starting_frequency=1.0, starting_amplitude=0.5,
                    octaves=4, lacunarity=2.0, gain=0.5):
+    """
+    Gets the noise value at the given position (x, y) for the given seed
+    frequency is how close together samples are on the noise wave
+        Smaller frequency is closer sampling
+    amplitude is how much to multiply the values by
+    octaves is many noise maps to sample from
+    lacunarity is how much the frequency changes for each octave (multiplicatively)
+    gain is how the amplitude changes for each octave (multiplicatively)
+    """
     total = 0
     freq = starting_frequency
     amp = starting_amplitude
@@ -162,9 +171,23 @@ def get_full_noise(x, y, seed,
     total /= denominator
     return total
 
+def normalize_noise_map(noise_map: dict) -> dict:
+    """
+    Given a noise map, normalize it so its value are between 0 and 1
+    Simplex noise seems to output mostly between 0.15 and 0.85
+    So multiply to make it 0 and 1
+    """
+    new_noise_map = {}
+    for k, v in noise_map.items():
+        new_noise_map[k] = max(min((v - 0.135) / 0.73, 1), 0)
+    return new_noise_map
+
 def gen_noise_map(size: tuple, seed,
                   starting_frequency=1.0, starting_amplitude=0.5,
                   octaves=4, lacunarity=2.0, gain=0.5) -> dict:
+    """
+    Generates a full noise map of size (size)
+    """
     width, height = size
     noise_map = {}
     for x in range(width):
@@ -180,6 +203,9 @@ def gen_noise_map(size: tuple, seed,
 def gen_double_noise_map(size: tuple, seed,
                          starting_frequency=1.0, starting_amplitude=0.5,
                          octaves=4, lacunarity=2.0, gain=0.5) -> dict:
+    """
+    Generates 3 noise maps to be used for RGB?
+    """
     width, height = size
     noise_map1, noise_map2, noise_map3 = {}, {}, {}
     for x in range(width):

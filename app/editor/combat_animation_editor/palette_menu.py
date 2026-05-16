@@ -8,6 +8,8 @@ from app.data.resources.resources import RESOURCES
 from app.extensions.custom_gui import ComboBox
 from app.editor.combat_animation_editor.palette_model import PaletteModel
 
+import logging
+
 class PaletteWidget(QWidget):
     palette_name_changed = pyqtSignal(int)
     palette_nid_changed = pyqtSignal(int)
@@ -123,7 +125,10 @@ class PaletteMenu(QListWidget):
         return self.palette_widgets[self.current_idx]
 
     def change_palette_name(self, idx):
-        self.combat_anim.palettes[idx][0] = self.palette_widgets[idx].name_label.text()
+        if idx < len(self.combat_anim.palettes):
+            self.combat_anim.palettes[idx][0] = self.palette_widgets[idx].name_label.text()
+        else:
+            logging.error(f"Attempted to change palette name of non-existent palette at idx {idx}!")
 
     def change_palette_nid(self, idx):
         if len(self.palette_widgets) <= idx:

@@ -191,7 +191,7 @@ class BaseCursor():
             self.mouse_mode = True
         if self.mouse_mode:
             # Get the actual mouse position, irrespective if actually used recently
-            mouse_pos = get_input_manager().get_real_mouse_position()
+            mouse_pos = get_input_manager().get_mouse_pos_with_scaled_surf()
             if mouse_pos:
                 from_mouse = True
                 new_pos_x = (mouse_pos[0] + self.camera.get_x() * TILEWIDTH) // TILEWIDTH

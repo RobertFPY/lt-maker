@@ -1,16 +1,24 @@
+from __future__ import annotations
+
 from PyQt5.QtWidgets import QWidget, QLabel, QLineEdit, \
     QMessageBox, QSpinBox, QHBoxLayout, QGroupBox, QRadioButton, \
     QVBoxLayout, QComboBox, QStackedWidget, QDoubleSpinBox, QCheckBox, \
-    QGridLayout, QListWidget, QListWidgetItem, QPushButton
+    QGridLayout, QListWidget, QListWidgetItem, QPushButton, QPlainTextEdit
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QFont
 
 import app.data.database.ai as ai
 from app.data.database.database import DB
 
+from app.editor.event_editor.py_syntax import PythonHighlighter
 from app.extensions.custom_gui import PropertyBox, ComboBox, PropertyCheckBox
 from app.editor.custom_widgets import ClassBox, UnitBox, TeamBox, FactionBox, PartyBox, TerrainBox
 from app.editor.lib.components.validated_line_edit import NidLineEdit
 from app.utilities import str_utils
+
+from app.editor.code_line_edit import CodeLineEdit
+
+from typing import TYPE_CHECKING, Optional
 
 # Target Specifications
 class NullSpecification(QWidget):
@@ -189,7 +197,6 @@ class PositionSpecification(QWidget):
 
         self.layout = QVBoxLayout()
         self.starting = QRadioButton("Starting", self)
-        self.starting.toggled.connect(self.starting_toggled)
         self.custom = QRadioButton("Custom", self)
 
         bottom = QHBoxLayout()
@@ -202,43 +209,67 @@ class PositionSpecification(QWidget):
         self.y_spinbox.setRange(0, 255)
         self.x_spinbox.setEnabled(False)
         self.y_spinbox.setEnabled(False)
-        self.x_spinbox.valueChanged.connect(self.change_spinbox)
-        self.y_spinbox.valueChanged.connect(self.change_spinbox)
         bottom.addWidget(self.x_spinbox)
         bottom.addWidget(self.y_spinbox)
+        
+        self.x_spinbox.valueChanged.connect(self.change_spinbox)
+        self.y_spinbox.valueChanged.connect(self.change_spinbox)
+        self.custom.toggled.connect(self.custom_toggled)
+        self.starting.toggled.connect(self.starting_toggled)
 
         self.layout.addWidget(self.starting)
         self.layout.addLayout(bottom)
 
         self.setLayout(self.layout)
 
-    def starting_toggled(self, checked):
+    def starting_toggled(self, checked: bool) -> None:
         if checked:
             self.x_spinbox.setEnabled(False)
             self.y_spinbox.setEnabled(False)
             self.window.current.target_spec = "Starting"
         else:
+            self.custom_toggled(True)
+    
+    def custom_toggled(self, checked: bool) -> None:
+        if checked:
             self.x_spinbox.setEnabled(True)
             self.y_spinbox.setEnabled(True)
             x, y = int(self.x_spinbox.value()), int(self.y_spinbox.value())
             self.window.current.target_spec = (x, y)
+        else:
+            self.starting_toggled(True)
 
     def change_spinbox(self, value):
         x, y = int(self.x_spinbox.value()), int(self.y_spinbox.value())
         self.window.current.target_spec = (x, y)
 
-    def set_current(self, target_spec):
+    def set_current(self, target_spec: Optional[tuple[int, int] | list | str]) -> None:
+        # just explicitly set everything for each case #
         if target_spec == "Starting":
-            self.window.current.target_spec = "Starting"
             self.starting.setChecked(True)
-        elif target_spec:
-            self.starting.setChecked(False)
-            self.x_spinbox.setValue(int(target_spec[0]))
-            self.y_spinbox.setValue(int(target_spec[1]))
-        else:
-            self.starting.setChecked(False)
+            self.custom.setChecked(False)
+            self.x_spinbox.setEnabled(False)
+            self.y_spinbox.setEnabled(False)
             self.x_spinbox.setValue(0)
             self.y_spinbox.setValue(0)
+            self.window.current.target_spec = "Starting"
+        # json has no support for tuple, so not checking for an array here is an obscure gotcha
+        elif isinstance(target_spec, tuple) or isinstance(target_spec, list):
+            self.starting.setChecked(False)
+            self.custom.setChecked(True)
+            self.x_spinbox.setEnabled(True)
+            self.y_spinbox.setEnabled(True)
+            self.x_spinbox.setValue(int(target_spec[0]))
+            self.y_spinbox.setValue(int(target_spec[1]))
+            self.window.current.target_spec = (int(target_spec[0]), int(target_spec[1]))
+        else:
+            self.starting.setChecked(False)
+            self.custom.setChecked(False)
+            self.x_spinbox.setEnabled(False)
+            self.y_spinbox.setEnabled(False)
+            self.x_spinbox.setValue(0)
+            self.y_spinbox.setValue(0)
+            self.window.current.target_spec = None
 
 class TerrainSpecification(QWidget):
     def __init__(self, parent=None):
@@ -323,11 +354,11 @@ class BehaviourBox(QGroupBox):
         self.proximity_box.edit.setAlignment(Qt.AlignRight)
         self.proximity_box.edit.valueChanged.connect(self.set_desired_proximity)
 
-        self.condition_box = PropertyBox("Condition", QLineEdit, self)
+        self.condition_box = PropertyBox("Condition", CodeLineEdit, self)
         self.condition_box.setToolTip("If Condition is false, behaviour is skipped.")
         self.condition_box.edit.setMaximumWidth(200)
-        self.condition_box.edit.textChanged.connect(self.set_condition)
-
+        self.condition_box.edit.textChanged.connect(lambda: self.set_condition(self.condition_box.edit.toPlainText()))
+        
         self.within_label = QLabel(" within ")
 
         left_layout = QGridLayout()
@@ -458,9 +489,9 @@ class BehaviourBox(QGroupBox):
             self.view_range.setCurrentIndex(4)
 
         if behaviour.condition:
-            self.condition_box.edit.setText(behaviour.condition)
+            self.condition_box.edit.setPlainText(behaviour.condition)
         else:
-            self.condition_box.edit.setText("")
+            self.condition_box.edit.setPlainText("")
 
 class AIProperties(QWidget):
     def __init__(self, parent, current=None):

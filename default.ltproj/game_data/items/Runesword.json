@@ -71,6 +71,14 @@
             [
                 "max_range",
                 2
+            ],
+            [
+                "battle_cast_anim",
+                "Nosferatu"
+            ],
+            [
+                "status_on_equip",
+                "DarkOverride"
             ]
         ]
     }

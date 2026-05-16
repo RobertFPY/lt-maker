@@ -4,6 +4,7 @@ import traceback
 
 from app.editor.data_editor import DB
 from app.editor.settings import MainSettingsController
+from app.editor.settings.preference_definitions import Preference
 from app.engine import driver, engine, game_state
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtGui import QFont
@@ -19,7 +20,7 @@ def handle_exception(e: Exception):
     else:
         msg = "Engine crashed. \nFor more detailed logs, please click View Logs in the Extra menu.\n" + traceback.format_exc()
     settings = MainSettingsController()
-    if settings.get_should_display_crash_logs():
+    if settings.get_preference(Preference.CRASH_LOGS):
         error_msg = QMessageBox()
         error_msg.setFont(QFont("consolas"))
         error_msg.setFixedWidth(1200)
@@ -76,9 +77,6 @@ def test_combat(left_combat_anim, left_weapon_anim, left_palette_name, left_pale
         driver.start("Combat Test", from_editor=True)
         from app.engine import battle_animation
         from app.engine.combat.mock_combat import MockCombat
-        # Clear out old battle animations that we might have tested with earlier,
-        # because they could have changed.
-        battle_animation.battle_anim_registry.clear()
         right = battle_animation.BattleAnimation.get_anim(right_combat_anim, right_weapon_anim, right_palette_name, right_palette, None, right_item_nid)
         left = battle_animation.BattleAnimation.get_anim(right_weapon_anim, left_weapon_anim, left_palette_name, left_palette, None, left_item_nid)
         at_range = 1 if 'Ranged' in right_weapon_anim.nid else 0

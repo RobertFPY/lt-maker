@@ -1476,7 +1476,12 @@ class SlotBSkillSlot(SkillComponent):
 class SlotCSkillSlot(SkillComponent):
     nid = 'slotc_skill'
     desc = "SlotC Skill Slot"
-    tag = SkillTags.ATTRIBUTEclass Priority (SkillComponent):
+    tag = SkillTags.ATTRIBUTE
+class AssistSkillSlot(SkillComponent):
+    nid = 'assist_skill'
+    desc = "Assist Skill Slot"
+    tag = SkillTags.ATTRIBUTE
+class Priority (SkillComponent):
     nid = 'priority'
     desc = "Priority for skill display."
     tag = SkillTags.ATTRIBUTE

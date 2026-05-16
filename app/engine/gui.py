@@ -6,6 +6,7 @@ from app.utilities import utils
 from app.engine.sprites import SPRITES
 from app.engine.fonts import FONT
 from app.engine.input_manager import get_input_manager
+from app.engine.game_state import game
 
 from app.engine import engine, image_mods, icons
 from app.engine.graphics.text.text_renderer import render_text, text_width
@@ -162,6 +163,15 @@ class SkillIcon():
             else:
                 x_pos = self.left_pos + 4
             surf.blit(self.image, (x_pos, 32))
+            
+class MovementDamageNumber(DamageNumber):
+    #Used for damage numbers generated while the unit is moving.  Numbers remain at the tile they originated from, rather than following the unit.
+    def __init__(self, num, idx, length, left, color, origin_pos = None):
+        super().__init__(num, idx, length, left, color)
+        self.origin_pos = origin_pos
+    
+    def draw(self, surf, pos=None):
+        super().draw(surf,((self.origin_pos[0] - game.camera.get_x()) * 16 + 4, (self.origin_pos[1] - game.camera.get_y()) * 16))
 
 class ScrollArrow():
     def __init__(self, direction, topleft, offset=0):
@@ -255,6 +265,7 @@ class Logo():
             [self.num_frames - 1, self.num_frames - 1] + list(reversed(range(1, self.num_frames - 1)))
         self.last_update = engine.get_time()
         self.transition_counter = 0
+        self.transition_speed = 3
 
         self.image = self.get_image()
         self.draw_image = self.image
@@ -279,10 +290,11 @@ class Logo():
             self.draw_image = self.image
 
         elif self.state == 'out':
-            self.transition_counter -= 1
-            self.draw_image = engine.subsurface(self.image, (0, self.height//2 - self.transition_counter, self.width, self.transition_counter * 2))
+            self.transition_counter = max(self.transition_counter - self.transition_speed, 0)
 
-            if self.transition_counter <= 0:
+            self.draw_image = engine.transform_scale(self.image, (self.width, self.transition_counter))
+
+            if self.transition_counter == 0:
                 self.state = 'in'
                 self.texture = self.next_texture
                 self.height = self.texture.get_height()//self.num_frames
@@ -290,19 +302,19 @@ class Logo():
                 self.image = self.get_image()
 
         elif self.state == 'in':
-            self.transition_counter += 1
-            if self.transition_counter >= self.height//2:
-                self.transition_counter = self.height//2
+            self.transition_counter = min(self.transition_counter + self.transition_speed, self.height)
+
+            if self.transition_counter == self.height:
                 self.state = 'idle'
 
-            self.draw_image = engine.subsurface(self.image, (0, self.height//2 - self.transition_counter, self.width, self.transition_counter * 2))
+            self.draw_image = engine.transform_scale(self.image, (self.width, self.transition_counter))
 
     def draw(self, surf):
         engine.blit_center(surf, self.draw_image, self.center)
 
     def switch_image(self, new_image):
         self.next_texture = new_image
-        self.transition_counter = self.height//2
+        self.transition_counter = self.height
         self.state = 'out'
 
 class PopUpDisplay():

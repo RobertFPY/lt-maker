@@ -1,3 +1,4 @@
+(Item-Component-Dictionary)=
 # Item Component Dictionary
 
 The item components in this dictionary are broken down by icon going from left to right, with each icon's aspects being explained top to bottom.

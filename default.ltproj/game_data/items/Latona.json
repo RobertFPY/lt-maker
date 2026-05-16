@@ -55,6 +55,10 @@
             [
                 "all_allies_except_self_aoe",
                 null
+            ],
+            [
+                "map_cast_pose",
+                null
             ]
         ]
     }

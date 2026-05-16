@@ -70,6 +70,10 @@
             [
                 "target_tile",
                 null
+            ],
+            [
+                "map_cast_pose",
+                null
             ]
         ]
     }

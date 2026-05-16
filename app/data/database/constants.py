@@ -13,6 +13,7 @@ class ConstantType(Enum):
     STR = 4
     MUSIC = 5
     POSITIVE_INT = 6
+    NID = 7
 
 class ConstantTag(str, Enum):
     MAJOR_FEATURES = 'major_features'
@@ -89,7 +90,7 @@ constants = ConstantCatalog([
     Constant('allow_negative_as', "Allow Attack Speed to be negative", ConstantType.BOOL, False, ConstantTag.OTHER),
     Constant('trade', "Can trade items on map", ConstantType.BOOL, True, ConstantTag.OTHER),
     Constant('growth_info', "Can view unit growths in Info Menu", ConstantType.BOOL, True, ConstantTag.OTHER),
-    Constant('alt_growth_format', "Base growths include class growths in Info Menu", ConstantType.BOOL, False, ConstantTag.OTHER),
+    Constant('alt_growth_format', "Base growths include class bonus growths in Info Menu", ConstantType.BOOL, False, ConstantTag.OTHER),
     Constant('glancing_hit', "Chance (%) to score a glancing hit", ConstantType.INT, 0, ConstantTag.MAJOR_FEATURES),
     Constant('backpropagate_difficulty_growths', "Apply difficulty bonus growths to past levels", ConstantType.BOOL, True, ConstantTag.OTHER),
     Constant('traveler_time_decrement', "Timed skills applied to traveler units will decrease.", ConstantType.BOOL, False, ConstantTag.OTHER),
@@ -98,9 +99,9 @@ constants = ConstantCatalog([
     Constant('fog_los', "Fog of War will also be affected by line of sight", ConstantType.BOOL, False, ConstantTag.LINE_OF_SIGHT),
     Constant('ai_fog_of_war', "AI will also be affected by Fog of War", ConstantType.BOOL, False, ConstantTag.AI),
     Constant('def_double', "Defender can double counterattack", ConstantType.BOOL, True, ConstantTag.OTHER),
-    Constant('unit_stats_as_bonus', "Add class stats to non-generic base stats", ConstantType.BOOL, False, ConstantTag.LEVELING),
+    Constant('unit_stats_as_bonus', "Add generic class stats to non-generic base stats", ConstantType.BOOL, False, ConstantTag.LEVELING),
     Constant('enemy_leveling', "Method for autoleveling generic units", [growth.value for growth in GrowthOption if growth != GrowthOption.PLAYER_CHOICE] + ["Match"], "Match", ConstantTag.LEVELING),
-    Constant('auto_promote', "Units will promote automatically upon reaching max level", ConstantType.BOOL, False, ConstantTag.LEVELING),
+    Constant('auto_promote', "Units will promote automatically upon exceeding max level", ConstantType.BOOL, False, ConstantTag.LEVELING),
     Constant('promote_skill_inheritance', "Promoted units will have the skills of their previous classes", ConstantType.BOOL, True, ConstantTag.LEVELING),
     Constant('promote_level_reset', "Promotion resets level back to 1", ConstantType.BOOL, True, ConstantTag.LEVELING),
     Constant('class_change_level_reset', "Class Change resets level back to 1", ConstantType.BOOL, False, ConstantTag.LEVELING),
@@ -113,9 +114,12 @@ constants = ConstantCatalog([
     Constant('boss_crit', "Final blow on boss will use critical animation", ConstantType.BOOL, False, ConstantTag.AESTHETIC),
     Constant('battle_platforms', "Use battle platforms when battle backgrounds are on", ConstantType.BOOL, True, ConstantTag.AESTHETIC),
     Constant('roam_hide_hp', "Hide hp bars during free roam", ConstantType.BOOL, False, ConstantTag.AESTHETIC),
+    Constant('roam_dir_pose', "Keep direction after moving in free roam.", ConstantType.BOOL, False, ConstantTag.AESTHETIC),
+    Constant('roam_dir_anim', 'If "Keep Direction" enabled, stop pose will animate.', ConstantType.BOOL, False, ConstantTag.AESTHETIC),
     Constant('autogenerate_grey_map_sprites', 'Automatically generate grey "wait" map sprites', ConstantType.BOOL, True, ConstantTag.AESTHETIC),
     Constant('translucent_unit_sprite', "A phantom of current unit will appear at cursor's position", ConstantType.BOOL, False, ConstantTag.AESTHETIC),
     Constant('talk_display', "If enough room, display who a unit can talk to in info menu", ConstantType.BOOL, False, ConstantTag.AESTHETIC),
+    Constant('enable_rating', "Enable rating display in info menu", ConstantType.BOOL, True, ConstantTag.AESTHETIC),
     Constant('show_abilities', "Display range of extra abilities", ConstantType.BOOL, False, ConstantTag.AESTHETIC),
     Constant('info_menu_blink', "Portraits will blink in info menu", ConstantType.BOOL, False, ConstantTag.AESTHETIC),
     Constant('convoy_on_death', "Items held by dead player units are sent to convoy", ConstantType.BOOL, ConstantTag.OTHER),
@@ -130,16 +134,19 @@ constants = ConstantCatalog([
     Constant('attack_zero_hit', "Enemy AI attacks even if Hit is 0", ConstantType.BOOL, True, ConstantTag.AI),
     Constant('attack_zero_dam', "Enemy AI attacks even if Damage is 0", ConstantType.BOOL, True, ConstantTag.AI),
     Constant('zero_move', "Show Movement as 0 if AI does not move", ConstantType.BOOL, False, ConstantTag.AI),
-    Constant('game_nid', "Game Unique Identifier", ConstantType.STR, "LT", ConstantTag.TITLE),
+    Constant('game_nid', "Game Unique Identifier", ConstantType.NID, "LT", ConstantTag.TITLE),
     Constant('title', "Game Title", ConstantType.STR, "Lex Talionis Game", ConstantTag.TITLE),
     Constant('title_particles', "Display particle effect on title screen", ConstantType.BOOL, True, ConstantTag.TITLE),
     Constant('title_sound', "Access sound room in Extras on title screen", ConstantType.BOOL, True, ConstantTag.TITLE),
+    Constant('title_credits', "Show Credits option on title screen", ConstantType.BOOL, True, ConstantTag.TITLE),
+    Constant('title_full_support', "Support room in Extras on title screen when unlocked will have all entries available to view", ConstantType.BOOL, False, ConstantTag.TITLE),
     Constant('music_main', "Music to play on title screen", ConstantType.MUSIC, None, ConstantTag.MUSIC),
     Constant('music_promotion', "Music to play on promotion", ConstantType.MUSIC, None, ConstantTag.MUSIC),
     Constant('music_class_change', "Music to play on class change", ConstantType.MUSIC, None, ConstantTag.MUSIC),
     Constant('music_game_over', "Music to play on game over", ConstantType.MUSIC, 'Game Over', ConstantTag.MUSIC),
     Constant('restart_phase_music', "Restart phase music at beginning of new phase", ConstantType.BOOL, True, ConstantTag.MUSIC),
     Constant('restart_battle_music', "Restart battle music at beginning of each combat", ConstantType.BOOL, True, ConstantTag.MUSIC),
+    Constant('locked_soundroom', "Lock all music in the sound room by default", ConstantType.BOOL, False, ConstantTag.MUSIC),
     Constant('kill_wexp', "Kills give double weapon exp", ConstantType.BOOL, True, ConstantTag.WEXP),
     Constant('double_wexp', "Each hit when doubling grants weapon exp", ConstantType.BOOL, True, ConstantTag.WEXP),
     Constant('miss_wexp', "Gain weapon exp even on miss", ConstantType.BOOL, True, ConstantTag.WEXP),

@@ -19,18 +19,21 @@ class EventError(Exception):
     event_name: str | List[str]
     line_num: int | List[int]
     line: str | List[str]
-    what = "generic event error"
+    what: Optional[str] = "generic event error"
     original_exception: Optional[Exception] = None
 
     def __str__(self) -> str:
         if isinstance(self.event_name, list):
             # all three should be list
+            assert isinstance(self.line_num, list)
+            assert isinstance(self.line, list)
             msg = ''
             for i in range(len(self.event_name) - 1):
                 msg += STACK_ERROR_TEMPLATE.format(event_name=self.event_name[i], lnum=self.line_num[i], line=self.line[i].strip())
             msg += ERROR_TEMPLATE.format(event_name=self.event_name[-1], lnum=self.line_num[-1], line=self.line[-1].strip(),
                                          error_name=self.__class__.__name__, what=self.what)
         else:
+            assert isinstance(self.line, str)
             msg = ERROR_TEMPLATE.format(event_name=self.event_name, lnum=self.line_num, line=self.line.strip(),
                                         error_name=self.__class__.__name__, what=self.what)
         if self.original_exception:

@@ -29,8 +29,8 @@ class StyledTextParsingTest(unittest.TestCase):
 
     def setUp(self):
         from app.data.resources.resources import RESOURCES
-
-        RESOURCES.load("testing_proj.ltproj")
+        from app.data.serialization.versions import CURRENT_SERIALIZATION_VERSION
+        RESOURCES.load("testing_proj.ltproj", CURRENT_SERIALIZATION_VERSION)
 
     def test_tagged_text_chunk_does_not_override_eq(self):
         self.assertEqual(id(TaggedTextChunk.__eq__), id(object.__eq__))

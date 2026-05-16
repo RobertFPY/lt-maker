@@ -2,7 +2,7 @@ from app.editor.lib.components.database_delegate import UnitFieldDelegate
 from app.extensions.key_value_delegate import KeyValueDelegate, KeyValueDoubleListModel
 from app.data.database.database import DB
 from app.editor.custom_widgets import AffinityBox, ClassBox
-from app.editor.component_editor_properties import T
+from app.editor.component_editor_types import T
 from app.editor.icons import UnitPortrait
 from app.editor.item_list_widget import ItemListWidget
 from app.editor.learned_skill_delegate import LearnedSkillDelegate
@@ -316,8 +316,9 @@ class NewUnitProperties(QWidget):
             view.selectionModel().select(selection, QItemSelectionModel.Select)
             selected_indexes = view.selectionModel().selectedIndexes()
 
+        visible_stat_nids = list(DB.stats.get_visible_stats().keys())
         for index in selected_indexes:
-            stat_nid = DB.stats[index.column()].nid
+            stat_nid = visible_stat_nids[index.column()]
             if index.row() == 0:
                 class_value = my_klass.bases.get(stat_nid, 0)
             elif index.row() == 1:

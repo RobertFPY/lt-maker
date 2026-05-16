@@ -233,15 +233,15 @@ class MiniMap(object):
                 self.surf.blit(sprite, (x*self.scale_factor, y*self.scale_factor))
 
         # Fog of War
-        if game.level_vars.get('_fog_of_war', False) or game.board.fog_region_set:
-            for x in range(self.width):
-                for y in range(self.height):
-                    if not game.board.in_vision((x, y)):
-                        mask = (x * self.scale_factor, y * self.scale_factor, self.scale_factor, self.scale_factor)
-                        if game.level_vars.get('_fog_of_war_type', 0) == 2:
-                            engine.fill(self.surf, (12, 12, 12), mask)
-                        else:
-                            engine.fill(self.surf, (128, 128, 128), mask, engine.BLEND_RGB_MULT)
+        if game.get_current_fog_info().is_active or game.board.fog_region_set:
+            for (x, y) in utils.itergrid(self.width, self.height):
+                is_in_vision = game.board.in_vision((x, y))
+                if not is_in_vision:
+                    mask = (x * self.scale_factor, y * self.scale_factor, self.scale_factor, self.scale_factor)
+                    if game.board.terrain_known((x, y), is_in_vision):
+                        engine.fill(self.surf, (128, 128, 128), mask, engine.BLEND_RGB_MULT)
+                    else:
+                        engine.fill(self.surf, (12, 12, 12), mask)
 
             self.surf = self.surf.convert()
 
@@ -279,7 +279,7 @@ class MiniMap(object):
             return self.coast(position)
         # Lava Coast
         elif key == 'Lava_Coast':
-            return self.coast(position, sea_keys=('Lava',), coast=key, offset=(0, 2))
+            return self.coast(position, sea_keys=('Lava',), coast_key=key, offset=(0, 3))
         # Cliff
         elif key in self.cliffs:
             pos = self.cliff_manager.get_orientation(position)
@@ -468,6 +468,9 @@ class MiniMap(object):
         else:
             keys = (key, )
 
+        if key == 'Lava':
+            column += 2
+
         row = 0
 
         left_pos = position[0] - 1, position[1]
@@ -489,7 +492,7 @@ class MiniMap(object):
     def get_sprite(self, pos):
         return engine.subsurface(self.minimap_tiles, (pos[0]*self.scale_factor, pos[1]*self.scale_factor, self.scale_factor, self.scale_factor))
 
-    def draw(self, surf, camera_offset, progress=1):
+    def draw(self, surf, camera_offset, progress=1, is_exiting=False):
         current_time = engine.get_time()%2000
 
         progress = utils.clamp(progress, 0, 1)
@@ -502,7 +505,7 @@ class MiniMap(object):
         image.blit(units, (0, 0))
 
         if progress != 1:
-            image = self.occlude(engine.copy_surface(image), progress)
+            image = self.occlude(engine.copy_surface(image), progress, is_exiting)
 
         # Minimap is now scrollable!
         x = camera_offset.current_x
@@ -533,7 +536,7 @@ class MiniMap(object):
                 minimap_cursor = image_mods.make_white(minimap_cursor, whiteness)
             surf.blit(minimap_cursor, cursor_pos)
 
-    def occlude(self, surf, progress):
+    def occlude(self, surf, progress: float, is_exiting: bool):
         # Generate Mask
         bg = engine.copy_surface(self.bg) # Copy background area for mask
         # Scale mask to correct size
@@ -546,8 +549,8 @@ class MiniMap(object):
         h_add = int(self.width*self.scale_factor*(1-self.starting_scale)*progress)
         # Actually scale mask
         mask = engine.transform_scale(self.base_mask, (width + w_add, height + h_add))
-        # Rotate mask by -90 degrees at max
-        mask = engine.transform_rotate(mask, progress*-90)
+        # Rotate mask by -90 degrees at max (or 90deg if exiting)
+        mask = engine.transform_rotate(mask, progress * (90 if is_exiting else -90))
         # Place mask within center of minimap
         bg.blit(mask, (bg.get_width()//2 - mask.get_width()//2, bg.get_height()//2 - mask.get_height()//2))
 
@@ -595,5 +598,5 @@ class MinimapState(MapState):
 
     def draw(self, surf):
         perc = self.progress/float(self.transition_time)
-        self.minimap.draw(surf, game.camera, perc)
+        self.minimap.draw(surf, game.camera, perc, self.exit_flag)
         return surf

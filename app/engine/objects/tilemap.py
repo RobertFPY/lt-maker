@@ -1,5 +1,6 @@
-from app.utilities.typing import NID
-from typing import List
+from typing import Dict, List, Tuple
+from app.utilities.typing import NID, Pos
+
 from app.constants import TILEWIDTH, TILEHEIGHT, AUTOTILE_FRAMES, COLORKEY
 from app.utilities.data import Data, Prefab
 
@@ -167,10 +168,6 @@ class TileMapObject(Prefab):
                     tileset.autotile_image = engine.image_load(tileset.autotile_full_path)
                 pos = tile_sprite.tileset_position
 
-                rect = (pos[0] * TILEWIDTH, pos[1] * TILEHEIGHT, TILEWIDTH, TILEHEIGHT)
-                sub_image = engine.subsurface(tileset.image, rect)
-                image.blit(sub_image, (coord[0] * TILEWIDTH, coord[1] * TILEHEIGHT))
-
                 # Handle Autotiles
                 if pos in tileset.autotiles and tileset.autotile_image:
                     has_autotiles = True
@@ -179,6 +176,12 @@ class TileMapObject(Prefab):
                         rect = (column * TILEWIDTH, idx * TILEHEIGHT, TILEWIDTH, TILEHEIGHT)
                         sub_image = engine.subsurface(tileset.autotile_image, rect)
                         im.blit(sub_image, (coord[0] * TILEWIDTH, coord[1] * TILEHEIGHT))
+                else:
+                    # Only blit on base image if there isn't autotile
+                    # So that transparent autotiles are displayed correctly
+                    rect = (pos[0] * TILEWIDTH, pos[1] * TILEHEIGHT, TILEWIDTH, TILEHEIGHT)
+                    sub_image = engine.subsurface(tileset.image, rect)
+                    image.blit(sub_image, (coord[0] * TILEWIDTH, coord[1] * TILEHEIGHT))
 
             new_layer.image = image
             if has_autotiles:
@@ -192,6 +195,40 @@ class TileMapObject(Prefab):
 
         self.weather = []
         self.animations = []
+
+        return self
+
+    @classmethod
+    def build_from_scratch(cls, nid: NID, size: Tuple[int, int], 
+                           terrain_grid: Dict[Pos, NID], surf: engine.Surface, 
+                           scratch_data: Dict):
+        self = cls()
+        self.nid = nid
+        self.width = size[0]
+        self.height = size[1]
+        self.autotile_fps = 0
+        self.layers = Data()
+        self.scratch_data = scratch_data
+
+        # Build a layer
+        base_layer = LayerObject('base', False, self)
+        
+        for coord, terrain_nid in terrain_grid.items():
+            base_layer.terrain[coord] = terrain_nid
+
+        image = engine.create_surface((self.width * TILEWIDTH, self.height * TILEHEIGHT))
+        engine.fill(image, COLORKEY)
+        engine.set_colorkey(image, COLORKEY, rleaccel=True)
+        image.blit(surf, (0, 0))
+
+        right_bound = (self.width + 1) * TILEWIDTH
+        bottom_bound = (self.height + 1) * TILEHEIGHT
+        base_layer.pixel_bounds = [0, 0, right_bound, bottom_bound]
+
+        base_layer.image = image
+        base_layer.visible = True
+
+        self.layers.append(base_layer)
 
         return self
 
@@ -247,17 +284,22 @@ class TileMapObject(Prefab):
                     image.blit(autotile_image, (0, 0))
         return image
 
-    def save_screenshot(self):
+    def save_screenshot(self, fn: str = None):
         import os
         from datetime import datetime
 
         if not os.path.isdir('screenshots'):
             os.mkdir('screenshots')
-        current_time = str(datetime.now()).replace(' ', '_').replace(':', '.')
 
-        image = self.get_full_image((0, 0, self.width * TILEWIDTH, self.height * TILEHEIGHT))
-        image.blit(self.get_foreground_image((0, 0, self.width * TILEWIDTH, self.height * TILEHEIGHT)))
-        engine.save_surface(image, 'screenshots/LT_%s_tilemap.png' % current_time)
+        cull_rect = (0, 0, self.width * TILEWIDTH, self.height * TILEHEIGHT)
+        image = self.get_full_image(cull_rect)
+        image.blit(self.get_foreground_image(cull_rect), (0, 0))
+        if fn:
+            ss_fn = os.path.join('screenshots', fn)
+        else:
+            current_time = str(datetime.now()).replace(' ', '_').replace(':', '.')
+            ss_fn = 'screenshots/LT_%s_tilemap.png' % current_time
+        engine.save_surface(image, ss_fn)
 
     def update(self):
         for layer in self.layers:

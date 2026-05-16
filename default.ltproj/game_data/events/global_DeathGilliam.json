@@ -1,7 +1,7 @@
 [
     {
         "name": "DeathGilliam",
-        "trigger": "unit_death",
+        "trigger": "combat_death",
         "level_nid": null,
         "condition": "unit.nid == 'Gilliam'",
         "commands": [],
@@ -12,6 +12,7 @@
             "speak;Gilliam;I was prepared for...{br}anything...",
             "expression;Gilliam;CloseEyes",
             "remove_portrait;Gilliam"
-        ]
+        ],
+        "nid": "Global DeathGilliam"
     }
 ]

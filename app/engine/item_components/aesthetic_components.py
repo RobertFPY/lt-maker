@@ -90,6 +90,14 @@ class MapTargetCastAnim(ItemComponent):
         if target:
             playback.append(pb.TargetCastAnim(self.value, target.position))
 
+class MapCastPose(ItemComponent):
+    nid = 'map_cast_pose'
+    desc = "Forces map animation to use the active pose for combat. (Think GBA map staff animations, item use animations)"
+    tag = ItemTags.AESTHETIC
+
+    def map_cast_pose(self, unit, item):
+        return True
+
 class BattleCastAnim(ItemComponent):
     nid = 'battle_cast_anim'
     desc = "Adds a specific animation effect when the item is used. This does not change the battle animation used, think instead of the spell's effect."
@@ -127,6 +135,18 @@ class PreCombatEffect(ItemComponent):
     expose = ComponentType.EffectAnimation
 
     def combat_effect(self, unit, item, target, item2, mode):
+        return self.value
+
+class OnHitEffect(ItemComponent):
+    nid = 'on_hit_effect'
+    desc = "Item plays an on-hit effect."
+    tag = ItemTags.AESTHETIC
+    
+    author = 'Eretein'
+
+    expose = ComponentType.EffectAnimation
+
+    def on_hit_effect(self, unit, item, target, item2, mode):
         return self.value
 
 class Warning(ItemComponent):
@@ -186,3 +206,23 @@ class HoverDescription(ItemComponent):
 
     def hover_description(self, unit, item):
         return self.value
+
+class ShowAdvantageArrow(ItemComponent):
+    nid = 'show_advantage_arrow'
+    desc = 'Shows the advantage arrow in combat.'
+    tag = ItemTags.AESTHETIC
+    
+    author = 'Eretein'
+    
+    def show_weapon_advantage(self, unit, item, target, item2):
+        return True
+    
+class ShowDisadvantageArrow(ItemComponent):
+    nid = 'show_disadvantage_arrow'
+    desc = 'Shows the disadvantage arrow in combat.'
+    tag = ItemTags.AESTHETIC
+    
+    author = 'Eretein'
+    
+    def show_weapon_disadvantage(self, unit, item, target, item2):
+        return True

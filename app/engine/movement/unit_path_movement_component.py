@@ -45,7 +45,7 @@ class UnitPathMovementComponent(MovementComponent):
             next_position = self.path[-1]
             net_position = (next_position[0] - self.unit.position[0], next_position[1] - self.unit.position[1])
             self.unit.sprite.handle_net_position(net_position)
-        action.PickUnitUp(self.unit).do()
+        action.QuickLeave(self.unit, keep_position=True).do()
         if not self.muted:
             self.unit.sound.play()
         self._last_update = engine.get_time()
@@ -79,7 +79,7 @@ class UnitPathMovementComponent(MovementComponent):
             if self.path:
                 self._handle_path()
             if not self.path:  # Path is empty, we are done
-                surprise = movement_funcs.check_region_interrupt(self.unit.position)
+                surprise = movement_funcs.check_region_interrupt(self.unit)
                 self.finish(surprise=surprise)
 
     def _handle_path(self):
@@ -91,6 +91,7 @@ class UnitPathMovementComponent(MovementComponent):
                 logging.debug("%s moved to %s", self.unit, next_position)
                 mcost = movement_funcs.get_mcost(self.unit, next_position)
                 self.unit.consume_movement(mcost)
+                movement_funcs.handle_terrain_traversal(self.unit, next_position, self.goal == next_position)
             else:  # This new position ain't valid
                 logging.debug("%s can't move any further", self.unit)
                 self.finish(surprise=True)
@@ -111,6 +112,9 @@ class UnitPathMovementComponent(MovementComponent):
             self.unit.sprite.change_state('normal')
             self.unit.sprite.reset()
             self.unit.sprite.add_animation('MapSurprise', loop=False)
+            # Necessary so that turnwheeling backwards and then forwards 
+            # doesn't put you in the position you tried to go to originally
+            action.do(action.SetPosition(self.unit, self.unit.position))  
             action.do(action.HasAttacked(self.unit))
             if self.unit.team == 'player':
                 game.state.clear()
@@ -122,7 +126,7 @@ class UnitPathMovementComponent(MovementComponent):
             if game.ai.unit is self.unit:
                 game.ai.interrupt()
 
-        action.PutUnitDown(self.unit).do()
+        action.QuickArrive(self.unit, self.unit.position).do()
         if self.unit.sound:
             self.unit.sound.stop()
 

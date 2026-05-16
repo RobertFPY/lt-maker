@@ -12,6 +12,7 @@ class MockUnit():
     position: Tuple[int, int] = (0, 0)
     distant_counter = False
     close_counter = False
+    can_counter = True
     can_be_seen = True
 
 @dataclass
@@ -37,6 +38,9 @@ def _distant_counter(unit: MockUnit):
 
 def _close_counter(unit: MockUnit):
     return unit.close_counter
+    
+def _can_counter_skill(unit: MockUnit):
+    return unit.can_counter
 
 def _ignore_los(_, item: MockItem):
     return item.ignore_los
@@ -59,6 +63,7 @@ class CombatCalcTests(unittest.TestCase):
             patch('app.engine.item_system.ignore_line_of_sight', _ignore_los),
             patch('app.engine.skill_system.distant_counter', _distant_counter),
             patch('app.engine.skill_system.close_counter', _close_counter),
+            patch('app.engine.skill_system.can_counter', _can_counter_skill),
             patch('app.engine.line_of_sight.line_of_sight', self.does_defender_have_los_on_attacker),
         ]
         for patcher in self.patchers:
@@ -106,6 +111,9 @@ class CombatCalcTests(unittest.TestCase):
         self.aweapon.counterable = True
         self.dweapon.can_counter = False
         self.check_counter(False, "Incorrect counter with weapon that cannot counter")
+        self.dweapon.can_counter = True
+        self.defender.can_counter = False
+        self.check_counter(False, "Incorrect counter even though defender has cannot counter skill")
 
         self.reset_state()
         self.dweapon.min_range = 2

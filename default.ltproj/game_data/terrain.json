@@ -448,5 +448,35 @@
         "mtype": "Fort",
         "opaque": false,
         "status": null
+    },
+    {
+        "nid": "Sand",
+        "name": "Sand",
+        "color": [
+            255,
+            255,
+            127
+        ],
+        "minimap": "Sand",
+        "platform": "Sand",
+        "background": "combat_sea",
+        "mtype": "Normal",
+        "opaque": false,
+        "status": "Avoid5"
+    },
+    {
+        "nid": "Desert",
+        "name": "Desert",
+        "color": [
+            255,
+            255,
+            127
+        ],
+        "minimap": "Desert",
+        "platform": "Sand",
+        "background": "combat_desert",
+        "mtype": "Desert",
+        "opaque": false,
+        "status": "Avoid5"
     }
 ]

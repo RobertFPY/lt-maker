@@ -20,7 +20,7 @@ I want a skill that:
 <span dir="">Open the event editor and navigate to global events</span>. In a new event, enter the following code.
 
 ~~~
-move_unit;{unit2};{unit};normal;stack;FLAG(no_follow)
+move_unit;{unit2};{unit};normal;stack;no_follow
 pair_up;{unit2};{unit}
 ~~~
 

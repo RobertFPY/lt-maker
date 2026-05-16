@@ -12,8 +12,8 @@ import logging
 
 class EventManager():
     def __init__(self):
-        self.all_events = []  # Keeps all events, both in use and not yet used
-        self.event_stack = []  # A stack of events that haven't been used yet
+        self.all_events: list[Event] = []  # Keeps all events, both in use and not yet used
+        self.event_stack: list[Event] = []  # A stack of events that haven't been used yet
 
     def get_triggered_events(self, trigger: EventTrigger, level_nid=None):
         """returns a list of all events that are triggered according to the conditions supplied in the arg
@@ -22,7 +22,7 @@ class EventManager():
         if level_nid:
             event_source_nid = level_nid
         else:
-            if game.level_nid:
+            if game.level_nid and not game.is_displaying_overworld():
                 event_source_nid = game.level_nid
             else:
                 event_source_nid = None

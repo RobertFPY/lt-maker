@@ -153,10 +153,16 @@ class Camera():
         self.set_center(mid_x, mid_y)
 
     def get_x(self):
-        return self.current_x
+        """
+        Returns the current x position of the camera. Normalizes to pixel proportion, e.g. if a tile is 16 pixels, can only return floats equal to 0/16, 1/16, 2/16, etc.
+        """
+        return int(self.current_x * TILEWIDTH) / TILEWIDTH
 
     def get_y(self):
-        return self.current_y
+        """
+        Returns the current y position of the camera. Normalizes to pixel proportion, e.g. if a tile is 16 pixels, can only return floats equal to 0/16, 1/16, 2/16, etc.
+        """
+        return int(self.current_y * TILEHEIGHT) / TILEHEIGHT
 
     def get_xy(self):
         return self.get_x(), self.get_y()

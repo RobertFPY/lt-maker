@@ -6,7 +6,7 @@ from app.constants import WINHEIGHT, WINWIDTH
 from app.engine import config, engine
 from app.engine.fonts import FONT
 from app.engine.game_state import game
-from app.engine.graphics.text.text_renderer import render_text
+from app.engine.graphics.text.text_renderer import render_text, text_width
 from app.engine.input_manager import get_input_manager
 from app.engine.objects.unit import UnitObject
 from app.engine.sound import get_sound_thread
@@ -33,6 +33,7 @@ class DebugState(MapState):
         self.backspace_down = 0
 
         self.quit_commands += engine.get_key_name(get_input_manager().key_map['BACK'])
+        self.overflow = False
 
     def take_input(self, event):
         current_time = engine.get_time()
@@ -56,6 +57,7 @@ class DebugState(MapState):
                     self.current_command = self.commands[-self.buffer_count]
                 else:
                     self.current_command += event.unicode
+                self.overflow = text_width('text', self.current_command) >= WINWIDTH
 
             elif event.type == engine.KEYUP:
                 if event.key == engine.key_map['backspace']:
@@ -64,6 +66,7 @@ class DebugState(MapState):
         if self.backspace_down and current_time - self.backspace_down > self.backspace_time:
             self.current_command = self.current_command[:-1]
             self.backspace_down = current_time
+            self.overflow = text_width('text', self.current_command) >= WINWIDTH
 
     def parse_command(self, command):
         if command in self.quit_commands:
@@ -82,7 +85,10 @@ class DebugState(MapState):
         self.draw_hover_info(surf)
         for idx, command in enumerate(reversed(self.commands[-self.num_back:])):
             FONT['text'].blit(command, surf, (0, WINHEIGHT - idx * 16 - 32))
-        FONT['text'].blit(self.current_command, surf, (0, WINHEIGHT - 16))
+        if self.overflow:
+            FONT['text'].blit_right(self.current_command, surf, (WINWIDTH, WINHEIGHT - 16))
+        else:
+            FONT['text'].blit(self.current_command, surf, (0, WINHEIGHT - 16))
         return surf
 
     def draw_bg(self, surf):

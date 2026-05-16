@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
 
 from app.data.database.database import DB
-from app.data.database.difficulty_modes import GrowthOption
 from app.data.database.level_units import GenericUnit, UniqueUnit
 from app.data.database.units import UnitPrefab
 from app.engine import (combat_calcs, equations, item_funcs, item_system,
@@ -71,13 +70,13 @@ class UnitObject(Prefab):
 
     name: str = None  #: This unit's name. Usually only used by non-generic units. Generic units use their faction's name.
     desc: str = None  #: This unit's description. Usually only used by non-generic units. Generic units use their faction's description.
-    _tags: List[str] = field(default_factory=list)
+    _tags: Set[str] = field(default_factory=set)
     party: NID = None  #: NID of the unit's party
     level: int = 1  #: The unit's level
     exp: int = 0  #: The unit's current exp (out of 100)
     stats: Dict[NID, int] = field(default_factory=dict)  #: Current stats without bonuses
     growths: Dict[NID, int] = field(default_factory=dict)  #: Current growths without bonuses
-    growth_points: Dict[NID, int] = field(default_factory=dict)  #: Used for Fixed and Dynamic leveling. Do not modify directly
+    growth_points: Dict[NID, int] = field(default_factory=dict)  #: Used for Dynamic leveling. Do not modify directly
     stat_cap_modifiers: Dict[NID, int] = field(default_factory=dict)  #: Personal stat cap modifiers
     wexp: Dict[NID, int] = field(default_factory=dict)  #: Current wexp in each weapon type
 
@@ -164,7 +163,7 @@ class UnitObject(Prefab):
 
         self.name = prefab.name
         self.desc = prefab.desc
-        self._tags = [tag for tag in prefab.tags] if not self.generic else []
+        self._tags = {tag for tag in prefab.tags} if not self.generic else set()
         self.party = None
 
         if is_level_unit:
@@ -230,15 +229,7 @@ class UnitObject(Prefab):
 
         self.current_move = None
 
-        if is_level_unit:
-            method = unit_funcs.get_leveling_method(self)
-        else:
-            method = GrowthOption.FIXED
-
-        if method == GrowthOption.FIXED:
-            self.growth_points = {k: 50 for k in self.stats.keys()}
-        else:
-            self.growth_points = {k: 0 for k in self.stats.keys()}
+        self.growth_points = {k: 0 for k in self.stats.keys()}
 
         self.traveler = prefab.starting_traveler if is_level_unit else None  # Always a nid of a unit
         self.strike_partner = None
@@ -248,7 +239,7 @@ class UnitObject(Prefab):
         self.current_hp = self.get_max_hp()
         self.current_mana = self.get_max_mana()
         self.current_fatigue = 0
-        self._movement_left = equations.parser.movement(self)
+        self._movement_left = self.get_movement()
         self.current_guard_gauge = 0
 
         # Handle items
@@ -278,6 +269,7 @@ class UnitObject(Prefab):
             for s in all_skills:
                 skill_system.before_add(self, s.get())
                 self._skills.append(s)
+            self._visible_skills_cache.clear()
 
         klass = DB.classes.get(self.klass)
         if klass.tier == 0:
@@ -400,6 +392,12 @@ class UnitObject(Prefab):
 
     def get_gauge_inc(self):
         return equations.parser.get_gauge_inc(self)
+
+    def get_movement(self):
+        return equations.parser.movement(self)
+
+    def get_xcom_movement(self):
+        return equations.parser.get_xcom_movement(self) + skill_system.xcom_movement(self)
 
     def get_field(self, key: str, default: str = None) -> str:
         if key in self._fields:
@@ -618,16 +616,16 @@ class UnitObject(Prefab):
         return self._sound
 
     @property
-    def tags(self) -> List[str]:
+    def tags(self) -> Set[str]:
         """Returns all tags this unit has.
 
         Gathers tags from the unit itself, its current class, and any additional tags given by the unit's skills.
         Never includes any duplicates.
 
         Returns:
-            A List of Tags (strs)
+            A Set of Tags (strs)
         """
-        return set(self._tags) | set(DB.classes.get(self.klass).tags) | skill_system.additional_tags(self)
+        return self._tags | set(DB.classes.get(self.klass).tags) | skill_system.additional_tags(self)
 
     def get_ai(self) -> NID:
         """Returns the NID of the unit's current combat AI."""
@@ -650,7 +648,7 @@ class UnitObject(Prefab):
     @property
     def movement_left(self) -> int:
         if not self.has_moved:
-            return equations.parser.movement(self)
+            return self.get_movement()
         else:
             return self._movement_left
 
@@ -963,7 +961,7 @@ class UnitObject(Prefab):
         self.faction = s_dict['faction']
         self.name = s_dict['name']
         self.desc = s_dict['desc']
-        self._tags = s_dict['tags']
+        self._tags = set(s_dict['tags'])
         self.stats = s_dict['stats']
         self.growths = s_dict['growths']
         self.growth_points = s_dict['growth_points']
@@ -987,7 +985,7 @@ class UnitObject(Prefab):
         self.current_hp = s_dict['current_hp']
         self.current_mana = s_dict['current_mana']
         self.current_fatigue = s_dict['current_fatigue']
-        self._movement_left = equations.parser.movement(self)
+        self._movement_left = self.get_movement()
         self.current_guard_gauge = s_dict.get('current_guard_gauge', 0)
 
         self.traveler = s_dict['traveler']

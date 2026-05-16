@@ -1,7 +1,7 @@
 [
     {
         "name": "DeathEirika",
-        "trigger": "unit_death",
+        "trigger": "combat_death",
         "level_nid": null,
         "condition": "unit.nid == 'Eirika'",
         "commands": [],
@@ -14,6 +14,7 @@
             "remove_portrait;Eirika",
             "remove_unit;Eirika",
             "lose_game"
-        ]
+        ],
+        "nid": "Global DeathEirika"
     }
 ]

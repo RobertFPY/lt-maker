@@ -7,7 +7,7 @@ from __future__ import annotations
 from typing import Tuple, TYPE_CHECKING
 
 from app.data.database.database import DB
-from app.engine import equations, skill_system
+from app.engine import equations, skill_system, evaluate
 from app.engine.game_state import game
 
 if TYPE_CHECKING:
@@ -38,14 +38,14 @@ def check_traversable(unit_to_move: UnitObject, pos: Tuple[int, int]) -> bool:
     if not game.board.check_bounds(pos):
         return False
     mcost = get_mcost(unit_to_move, pos)
-    movement = equations.parser.movement(unit_to_move)
+    movement = unit_to_move.get_movement()
     return mcost <= movement
 
 def check_weakly_traversable(unit_to_move: UnitObject, pos: Tuple[int, int]) -> bool:
     if not game.board.check_bounds(pos):
         return False
     mcost = get_mcost(unit_to_move, pos)
-    movement = equations.parser.movement(unit_to_move)
+    movement = unit_to_move.get_movement()
     return mcost <= 5 or mcost <= movement
 
 def check_simple_traversable(pos: Tuple[int, int]) -> bool:
@@ -63,7 +63,7 @@ def check_position(unit: UnitObject, new_position: Tuple[int, int],
     # Interruption regions take precedence, even over event movements
     # Only applies if there's not already a unit standing on the position
     if not game.board.get_unit(unit.position):
-        interrupted = check_region_interrupt(unit.position)
+        interrupted = check_region_interrupt(unit)
         if interrupted:
             return False
     # Event movement is nearly always valid
@@ -82,12 +82,26 @@ def check_position(unit: UnitObject, new_position: Tuple[int, int],
         else:  # Enemies
             return False
 
-def check_region_interrupt(pos: Tuple[int, int]):
+def check_region_interrupt(unit: UnitObject) -> List[RegionObject]:
     """
     # Checks if the position is in a region that interrupts.
-    # Returns region that would interrupt
+    # Returns regions that would interrupt, empty list if none
     """
+    interrupts: List[RegionObject] = []
     for region in game.level.regions:
-        if region.contains(pos) and region.interrupt_move:
-            return region
-    return False
+        if unit.position and region.contains(unit.position) and region.interrupt_move and evaluate.evaluate(region.condition, unit, local_args={'region': region}):
+            interrupts += [region]
+    return interrupts
+    
+def handle_terrain_traversal(unit: UnitObject, next_position: Tuple, is_final_pos: Bool):
+    """
+    # Determine any effects which would occur upon entering the next tile, and apply them if valid.
+    """
+    terrain_nid = game.get_terrain_nid(game.tilemap, next_position)
+    terrain_status = DB.terrain.get(terrain_nid).status
+    if terrain_status:
+        status = DB.skills.get(terrain_status)
+        if not skill_system.ignore_terrain_traversal(unit, status):
+            for component in status.components:
+                if component.defines('terrain_move_effect'):
+                    component.terrain_move_effect(unit, next_position, is_final_pos)

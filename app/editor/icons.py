@@ -1,11 +1,17 @@
 from typing import Type
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QPushButton
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel, QPushButton
 from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtCore import Qt, pyqtSignal
 
+from app import dark_theme
+
 from app.data.resources.resources import RESOURCES
+from app.editor.map_sprite_editor import new_map_sprite_tab, map_sprite_model
 
 import app.editor.utilities as editor_utilities
+
+from app.utilities.enums import Orientation
+from app.utilities.typing import NID
 
 class PushableIcon16(QPushButton):
     sourceChanged = pyqtSignal(str, int, int)
@@ -37,7 +43,7 @@ class PushableIcon16(QPushButton):
             if res.pixmap.width() > 0 and res.pixmap.height() > 0:
                 pic = res.pixmap.copy(self.x*self.width, self.y*self.height, self.width, self.height)
                 pic = QPixmap.fromImage(editor_utilities.convert_colorkey(pic.toImage()))
-                pic = pic.scaled(self.display_width, self.display_width)
+                pic = pic.scaled(self.display_width, self.display_width * self.height // self.width)
                 pic = QIcon(pic)
                 self.setIcon(pic)
         else:
@@ -66,6 +72,7 @@ class PushableIcon80(PushableIcon16):
     database = RESOURCES.icons80
 
 class ItemIcon16(QWidget):
+    sourceChanged = pyqtSignal(str)
     width, height = 16, 16
     child_icon = PushableIcon16
 
@@ -98,6 +105,12 @@ class ItemIcon32(ItemIcon16):
 class ItemIcon80(ItemIcon16):
     width, height = 80, 72
     child_icon = PushableIcon80
+
+    def on_icon_changed(self, nid, x, y):
+        if self.window.current:
+            self.window.current.icon_nid = nid
+            self.window.current.icon_index = (x, y)
+        return False
 
 class UnitPortrait(QPushButton):
     sourceChanged = pyqtSignal(str)
@@ -141,8 +154,8 @@ class UnitPortrait(QPushButton):
         self.change_icon(nid)
 
     def onIconSourcePicker(self):
-        from app.editor.portrait_editor import portrait_tab
-        res, ok = portrait_tab.get()
+        from app.editor.portrait_editor import new_portrait_tab
+        res, ok = new_portrait_tab.get()
         if res and ok:
             self.change_icon(res.nid)
 
@@ -193,3 +206,73 @@ class MapIconButton(QPushButton):
         res, ok = icon_tab.get_map_icon_editor()
         if res and ok:
             self.change_icon(res.nid)
+
+class MapSpriteBox(QWidget):
+    sourceChanged = pyqtSignal(str)
+
+    def __init__(self, parent=None, current=None, display_width=32, orient: Orientation = Orientation.HORIZONTAL):
+        super().__init__(parent)
+        self.window = parent
+        self.current = current
+        self.display_width = display_width
+
+        self.map_sprite_label = QLabel()
+        self.map_sprite_label.setMaximumWidth(display_width)
+
+        self.map_sprite_box = QPushButton(("Choose Map Sprite..."))
+        self.map_sprite_box.clicked.connect(self.select_map_sprite)
+
+        theme = dark_theme.get_theme()
+        icon_folder = theme.icon_dir()
+
+        self.map_sprite_auto_box = QPushButton()
+        self.map_sprite_auto_box.setIcon(QIcon(f"{icon_folder}/autoassign.png"))
+        self.map_sprite_auto_box.setMaximumWidth(32)
+        self.map_sprite_auto_box.setToolTip(_("Auto-assign map sprite with the same unique ID"))
+        self.map_sprite_auto_box.clicked.connect(self.autoselect_map_sprite)
+
+        if orient == Orientation.VERTICAL:
+            self.buttons_tab = QHBoxLayout()
+            self.buttons_tab.addWidget(self.map_sprite_box)    
+            self.buttons_tab.addWidget(self.map_sprite_auto_box)
+
+            self.layout = QVBoxLayout()
+            self.layout.addWidget(self.map_sprite_label)
+            self.layout.addLayout(self.buttons_tab)
+            self.setLayout(self.layout)
+
+        else:
+            self.layout = QHBoxLayout()           
+            self.layout.addWidget(self.map_sprite_label)
+            self.layout.addWidget(self.map_sprite_box)
+            self.layout.addWidget(self.map_sprite_auto_box)
+            self.setLayout(self.layout)
+
+    def select_map_sprite(self):
+        res, ok = new_map_sprite_tab.get()
+        if ok:
+            if res:
+                nid = res.nid
+                pix = map_sprite_model.get_map_sprite_icon(nid, num=0)
+                self.map_sprite_label.setPixmap(pix)
+                self.sourceChanged.emit(nid)
+            else:
+                self.map_sprite_label.clear()
+                self.sourceChanged.emit(None)
+
+    def autoselect_map_sprite(self):        
+        nid = self.current.nid
+        res = RESOURCES.map_sprites.get(nid)
+        if res:
+            nid = res.nid
+            pix = map_sprite_model.get_map_sprite_icon(nid, num=0)
+            self.map_sprite_label.setPixmap(pix)
+            self.sourceChanged.emit(nid)
+
+    def set_current(self, current, nid):
+        self.current = current
+        pix = map_sprite_model.get_map_sprite_icon(nid, num=0)
+        if pix:
+            self.map_sprite_label.setPixmap(pix)
+        else:
+            self.map_sprite_label.clear()

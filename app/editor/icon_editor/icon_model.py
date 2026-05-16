@@ -66,6 +66,7 @@ class IconModel(ResourceCollectionModel):
         raise NotImplementedError
 
     def append(self):
+        self.layoutAboutToBeChanged.emit()
         self.create_new()
         view = self.window.view
         # self.dataChanged.emit(self.index(0), self.index(self.rowCount()))
@@ -83,6 +84,12 @@ class IconModel(ResourceCollectionModel):
 
     def on_nid_changed(self, old_nid, new_nid):
         pass
+
+    def do_add(self, icon: IconSheet):
+        self._data.append(icon)
+        new_icons = icon_view.icon_slice(icon, self.width, self.height)
+        for i in new_icons:
+            self.sub_data.append(i)
 
     def do_delete(self, nid):
         self.layoutAboutToBeChanged.emit()
@@ -112,17 +119,23 @@ class Icon16Model(IconModel):
                         nid = str_utils.get_next_name(nid, [d.nid for d in self.database])
                         icon = IconSheet(nid, fn)
                         icon.pixmap = pix
-                        self._data.append(icon)
-                        new_icons = icon_view.icon_slice(icon, self.width, self.height)
-                        for i in new_icons:
-                            self.sub_data.append(i)
+                        self.do_add(icon)
                     else:
                         QMessageBox.critical(self.window, "File Size Error!", "Icon width and height must be exactly divisible by %dx%d pixels!" % (self.width, self.height))
                 else:
                     QMessageBox.critical(self.window, "File Type Error!", "Icon must be PNG format!")
             parent_dir = os.path.split(fns[-1])[0]
             settings.set_last_open_path(parent_dir)
-            self.window.update_list()
+            """
+            # This `self.window.update_list` has been removed to fix a bug where
+            # 1. Create a new icon
+            # 2. rename the icon
+            # 3. Create another new icon
+            # 4. Segmentation fault with error `QSortFilterProxyModel: index from wrong model passed to mapFromSource`
+            It doesn't seem to be necessary????
+            """
+            # self.window.update_list()  
+
         return icon
 
     def delete(self, idx):

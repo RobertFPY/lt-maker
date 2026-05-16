@@ -104,7 +104,7 @@ class Animation():
                 else:
                     self.counter = self.num_frames - 1
                     done = True
-        else:  
+        else:
             # Constant ms timing
             self.counter = int(current_time - self.first_update) // self.speed
             if self.counter >= self.num_frames:

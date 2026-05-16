@@ -21,7 +21,7 @@ class NarrationDialogue(uif.UIComponent):
         self.acknowledged: bool = False
 
         # TODO This should be configurable instead of magic number
-        self.text_vertical_offset = 35
+        self.text_vertical_offset = 32
         self.text_horizontal_area = 200
         self.text_horizontal_margin = 20
 
@@ -160,3 +160,17 @@ class NarrationDialogue(uif.UIComponent):
 
     def to_surf(self, no_cull=False, should_not_cull_on_redraw=True) -> engine.Surface:
         return super().to_surf(no_cull=no_cull, should_not_cull_on_redraw=should_not_cull_on_redraw)
+
+    def quick_enter(self):
+        for child in self.children:
+            child.enabled = True
+            child._should_redraw = True
+        self.enabled = True
+        self._should_redraw = True
+
+    def quick_exit(self, is_top_level=True) -> bool:
+        self._should_redraw = True
+        for child in self.children:
+            child._should_redraw = True
+            child.enabled = False
+        # self.enabled = False

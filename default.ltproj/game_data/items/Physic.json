@@ -71,6 +71,18 @@
             [
                 "equation_heal",
                 "HEAL"
+            ],
+            [
+                "map_cast_pose",
+                null
+            ],
+            [
+                "map_hit_sfx",
+                "MapHeal"
+            ],
+            [
+                "map_cast_anim",
+                "MapSmallHealTrans"
             ]
         ]
     }

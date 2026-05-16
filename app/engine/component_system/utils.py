@@ -10,7 +10,8 @@ ARG_TYPE_MAP: Dict[str, str] = {
     'unit': "UnitObject",
     'item': "ItemObject",
     'target': "UnitObject",
-    'item2': "ItemObject"
+    'item2': "ItemObject",
+    'skill': "SkillObject",
 }
 
 class ResolvePolicy(Enum):
@@ -26,6 +27,8 @@ class ResolvePolicy(Enum):
     NUMERIC_MULTIPLY = 'numeric_multiply'
     MAXIMUM = 'maximum'
     MINIMUM = 'minimum'
+
+    OBJECT_MERGE = 'object_merge'  # Calls "+" on all objects; objects must override __add__
 
     NO_RETURN = 'no_return'
 
@@ -83,3 +86,11 @@ def maximum(vals: List[int | float]):
 
 def minimum(vals: List[int | float]):
     return min(vals, default=0)
+
+
+def object_merge(vals: List[Any]):
+    # Calls the "+" operator on all objects in the list sequentially.
+    # Objects are expected to override __add__ so they can be concatenated meaningfully.
+    if not vals:
+        return None
+    return reduce(operator.add, vals)

@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 import logging
 from enum import Enum
-from typing import Callable, List, Dict, Optional, Set, Tuple, Type
+from typing import Callable, List, Dict, Optional, Self, Set, Tuple, Type
 from app.events.event_version import EventVersion
 from app.events.event_structs import EOL, EventCommandTokens
 
@@ -63,7 +63,7 @@ class EventCommand(Prefab):
             else:
                 self.display_values = []
 
-    def set_flags(self, *args) -> EventCommand:
+    def set_flags(self, *args: str) -> Self:
         self.chosen_flags |= set(args)
         return self
 
@@ -72,6 +72,7 @@ class EventCommand(Prefab):
 
     def to_plain_text(self) -> str:
         as_string = [str(self.parameters.get(kwd) or "") for kwd in (self.keywords + self.optional_keywords)]
+        as_string += [flag for flag in self.chosen_flags]
         return ';'.join([self.nid] + as_string).rstrip(';')
 
     def __repr__(self):
@@ -407,12 +408,13 @@ Extra flags:
 2. *low_priority*: Portrait will appear behind all other portraits on the screen.
 3. *immediate*: Portrait will not fade in.
 4. *no_block*: Portrait will fade in, but will not pause execution of event script while doing so.
+5. *low_saturation*: Portrait will spawn in with low saturation.
         """
 
     keywords = ['Portrait', 'ScreenPosition']
     optional_keywords = ['Slide', 'ExpressionList', 'SpeedMult']
     keyword_types = ['Portrait', 'ScreenPosition', 'Slide', 'ExpressionList', 'Float']
-    _flags = ["mirror", "low_priority", "immediate", "no_block"]
+    _flags = ["mirror", "low_priority", "immediate", "no_block", "low_saturation"]
 
 class MultiAddPortrait(EventCommand):
     nid = "multi_add_portrait"
@@ -462,6 +464,16 @@ Removes multiple portraits from the screen simultaneously.
     optional_keywords = ['Portrait3', 'Portrait4']
     keyword_types = ['Portrait', 'Portrait', 'Portrait', 'Portrait']
 
+class RemoveAllPortraits(EventCommand):
+    nid = "remove_all_portraits"
+    nickname = "rrr"
+    tag = Tags.PORTRAIT
+
+    desc = \
+        """
+Removes all portraits from the screen simultaneously.
+        """
+
 class MovePortrait(EventCommand):
     nid = "move_portrait"
     tag = Tags.PORTRAIT
@@ -489,10 +501,15 @@ class BopPortrait(EventCommand):
     desc = \
         """
 Causes a portrait to briefly bob up and down. Often used to illustrate a surprised or shocked reaction.
+
+*NumBops* determines how many bops to perform, and defaults to 2 bops in a row. 
+*Time* controls how long each bop will take. By default, this is 132 ms.
 If the *no_block* flag is set, portrait bopping will not pause execution of event script.
         """
 
     keywords = ['Portrait']
+    optional_keywords = ['NumBops', 'Time']
+    keyword_types = ['Portrait', 'PositiveInteger', 'Time']
     _flags = ["no_block"]
 
 class MirrorPortrait(EventCommand):
@@ -532,8 +549,8 @@ Automatically formats all `speak` commands with NID equal to the style's NID wit
 
 A style consists of all parameters that one can apply to individual speak commands, including flags.
 
-NOTE: Speak styles persist through events. If you load your speak styles in the `on_title_screen` trigger, you will be able to use them
-throughout the entire game.
+NOTE: Speak styles persist through events. It's recommended to load your speak styles in the `on_startup` trigger,
+so you will be able to use them throughout the entire game, even during *Test Event* or *Support Room*.
 
 NOTE: You can set the `__default` speak style, which will automatically apply to all speak commands thereafter.
 """
@@ -541,7 +558,7 @@ NOTE: You can set the `__default` speak style, which will automatically apply to
     keywords = ['Style']
     optional_keywords = ['Speaker', 'Position', 'Width', 'Speed', 'FontColor', 'FontType', 'Background', 'NumLines', 'DrawCursor', 'MessageTail', 'Transparency', 'NameTagBg', 'BoopSound']
     keyword_types = ['Nid', 'Speaker', 'AlignOrPosition', 'Width', 'Float', 'FontColor', 'Font', 'MaybeSprite', 'WholeNumber', 'Bool', 'MaybeSprite', 'Float', 'MaybeSprite', 'Sound']
-    _flags = ['low_priority', 'hold', 'no_popup', 'fit', 'no_talk', 'no_sound']
+    _flags = ['low_priority', 'hold', 'no_popup', 'fit', 'no_talk', 'no_sound', 'autogray']
 
 class Speak(EventCommand):
     nid = "speak"
@@ -576,12 +593,13 @@ Extra flags:
 5. *no_block*: the speak command will not block event execution.
 6. *no_talk*: The speaker's portrait will not "talk".
 7. *no_sound*: The normal boop sound of dialog will be turned off
+8. *autogray*: When a portrait is talking, fully saturate the talking portrait and desaturate all others
         """
 
     keywords = ['SpeakerOrStyle', 'Text']
     optional_keywords = ['TextPosition', 'Width', 'StyleNid', 'TextSpeed', 'FontColor', 'FontType', 'DialogBox', 'NumLines', 'DrawCursor', 'MessageTail', 'Transparency', 'NameTagBg', 'BoopSound']
     keyword_types = ['Speaker', 'String', 'AlignOrPosition', 'Width', 'DialogVariant', 'Float', 'FontColor', 'Font', 'MaybeSprite', 'WholeNumber', 'Bool', 'MaybeSprite', 'Float', 'MaybeSprite', 'Sound']
-    _flags = ['low_priority', 'hold', 'no_popup', 'fit', 'no_block', 'no_talk', 'no_sound']
+    _flags = ['low_priority', 'hold', 'no_popup', 'fit', 'no_block', 'no_talk', 'no_sound', 'autogray']
 
 class Say(EventCommand):
     nid = "say"
@@ -615,12 +633,13 @@ Extra flags:
 5. *no_block*: the speak command will not block event execution.
 6. *no_talk*: The speaker's portrait will not "talk".
 7. *no_sound*: The normal boop sound of dialog will be turned off
+8. *autogray*: When a portrait is talking, fully saturate the talking portrait and desaturate all others
         """
 
     keywords = ['SpeakerOrStyle', '*Text']
     optional_keywords = ['TextPosition', 'Width', 'StyleNid', 'TextSpeed', 'FontColor', 'FontType', 'DialogBox', 'NumLines', 'DrawCursor', 'MessageTail', 'Transparency', 'NameTagBg', 'BoopSound']
     keyword_types = ['Speaker', '*String', 'AlignOrPosition', 'Width', 'DialogVariant', 'Float', 'FontColor', 'Font', 'MaybeSprite', 'WholeNumber', 'Bool', 'MaybeSprite', 'Float', 'MaybeSprite', 'Sound']
-    _flags = ['low_priority', 'hold', 'no_popup', 'fit', 'no_block', 'no_talk', 'no_sound']
+    _flags = ['low_priority', 'hold', 'no_popup', 'fit', 'no_block', 'no_talk', 'no_sound', 'autogray']
 
 class Unhold(EventCommand):
     nid = "unhold"
@@ -694,12 +713,18 @@ class ChangeBackground(EventCommand):
     desc = \
         """
 Changes the dialogue scene's background image to *Panorama*. If no *Panorama* is specified,
-the current background is removed without being replaced.
+the current background is removed without being replaced. 
+
+*Speed* controls the moving speed when paired with *scroll* flag. 
+Higher speed makes it move slower. Exact meaning: milliseconds it takes to move 1 px.
+
 Displayed portraits are also removed unless the *keep_portraits* flag is set.
+The *Scroll* flag determines whether the background image will move.
         """
 
-    optional_keywords = ['Panorama']
-    _flags = ["keep_portraits"]
+    optional_keywords = ['Panorama', 'Speed']
+    keyword_types = ['Panorama', 'WholeNumber']
+    _flags = ["keep_portraits", "scroll"]
 
 class PauseBackground(EventCommand):
     nid = "pause_background"
@@ -838,6 +863,39 @@ Increments a game variable by one, or by a Python expression provided using the 
     optional_keywords = ["Expression"]
     keyword_types = ["GeneralVar", "Expression"]
 
+class ModifyGameVar(EventCommand):
+    nid = 'modify_game_var'
+    nickname = 'mgvar'
+    tag = Tags.GAME_VARS
+
+    desc = \
+        """
+Mutates a game variable in-place, maintaining turnwheel compatibility and allowing scripts like:
+
+```
+game_var;GameVar;["A", "B", "C"]
+...
+game_var;Dummy;v('GameVar').remove("C")
+game_var;GameVar;v('GameVar')
+```
+
+To be written concisely:
+
+```
+game_var;GameVar;["A", "B", "C"]
+...
+modify_game_var;GameVar;it.remove("C")
+```
+
+The *Nid* is the variable's identifier, and the *Expression* mutates the variable in-place.
+You MUST refer to the variable as `it` inside the *Expression*. If the *Expression* does not
+mutate the variable in-place, this command does nothing.
+
+This command does not work in #pyev1.
+        """
+    keywords = ['Nid', 'Expression']
+    keyword_types = ["GeneralVar", "Expression"]
+
 class LevelVar(EventCommand):
     nid = 'level_var'
     nickname = 'lvar'
@@ -868,6 +926,38 @@ Increments a level variable by one, or by a Python expression provided using the
     optional_keywords = ["Expression"]
     keyword_types = ["GeneralVar", "Expression"]
 
+class ModifyLevelVar(EventCommand):
+    nid = 'modify_level_var'
+    nickname = 'mlvar'
+    tag = Tags.LEVEL_VARS
+
+    desc = \
+        """
+Mutates a level variable in-place, maintaining turnwheel compatibility and allowing scripts like:
+
+```
+level_var;LevelVar;["A", "B", "C"]
+...
+level_var;Dummy;v('LevelVar').remove("C")
+level_var;LevelVar;v('LevelVar')
+```
+
+To be written concisely:
+```
+level_var;LevelVar;["A", "B", "C"]
+...
+modify_level_var;LevelVar;it.remove("C")
+```
+
+The *Nid* is the variable's identifier, and the *Expression* mutates the variable in-place.
+You MUST refer to the variable as `it` inside the *Expression*. If the *Expression* does not
+mutate the variable in-place, this command does nothing.
+
+This command does not work in #pyev1.
+        """
+    keywords = ['Nid', 'Expression']
+    keyword_types = ["GeneralVar", "Expression"]
+
 class SetNextChapter(EventCommand):
     nid = 'set_next_chapter'
     tag = Tags.GAME_VARS
@@ -890,7 +980,7 @@ Activates or deactivates convoy access.
 
     keywords = ["Activated"]
     keyword_types = ['Bool']
-    
+
 class EnableRepairShop(EventCommand):
     nid = 'enable_repair_shop'
     tag = Tags.GAME_VARS
@@ -1058,6 +1148,8 @@ By default, the prompt for a battle save will not occur until the end of this ev
 The optional flag *immediately* will cause the prompt to appear immediately.
         """
 
+    optional_keywords = ['SaveName']
+    keyword_types = ['String']
     _flags = ["immediately"]
 
 class DeleteSave(EventCommand):
@@ -1283,7 +1375,7 @@ The *no_follow* flag prevents the camera from tracking the unit as it moves.
 
     keywords = ["Unit"]
     optional_keywords = ["Position", "MovementType", "Placement", "Speed"]
-    _flags = ['no_block', 'no_follow']
+    _flags = ['no_block', 'no_follow', 'silent']
 
 class RemoveUnit(EventCommand):
     nid = 'remove_unit'
@@ -1353,6 +1445,19 @@ The *immediate* flag will cause the combat to happen as quickly as possible, oft
     keyword_types = ["Unit", "Position", "CombatScript", "Ability", "PositiveInteger"]
     _flags = ["arena", "force_animation", "force_no_animation", "immediate"]
 
+class PoseUnit(EventCommand):
+    nid = 'pose_unit'
+    tag = Tags.ADD_REMOVE_INTERACT_WITH_UNITS
+
+    desc = \
+        """
+Changes current pose (state) of unit's map sprite.
+        """
+
+    keywords = ["Unit", "Pose"]
+    optional_keywords = ["Direction"]
+    keyword_types = ["Unit", "SpritePose", "SpriteDirection"]
+
 class SetName(EventCommand):
     nid = 'set_name'
     tag = Tags.MODIFY_UNIT_PROPERTIES
@@ -1383,10 +1488,14 @@ class SetCurrentHP(EventCommand):
     desc = \
         """
 Sets *Unit*'s hit points to *HP*.
+
+If the flag `damage_numbers` is supplied, the change in HP will appear
+as a damage number on the unit's sprite.
         """
 
     keywords = ["Unit", "HP"]
     keyword_types = ["Unit", "PositiveInteger"]
+    _flags = ['damage_numbers']
 
 class SetCurrentMana(EventCommand):
     nid = 'set_current_mana'
@@ -1496,6 +1605,20 @@ Sets the unit's state as having already traded this turn. The unit can still att
 
     keywords = ['Unit']
 
+class HasVisited(EventCommand):
+    nid = 'has_visited'
+    tag = Tags.MODIFY_UNIT_PROPERTIES
+
+    desc = \
+        """
+Sets the unit's state as having already traded this turn, then triggers Canto if the unit has Canto. Once Canto is completed, or if the unit does not have Canto, the unit will be grayed out.
+
+If the *attacked* flag is set, the unit's state is set as having already attacked this turn. As such, canto will only work if the unit has CantoPlus. This is useful for the arena or similar situations.
+        """
+
+    keywords = ['Unit']
+    _flags = ["attacked"]
+
 class HasFinished(EventCommand):
     nid = 'has_finished'
     tag = Tags.MODIFY_UNIT_PROPERTIES
@@ -1599,15 +1722,16 @@ class GiveItem(EventCommand):
 Gives a new copy of *Item* to *GlobalUnitOrConvoy*.
 If `convoy` is chosen as the recipient, may optionally specify a specific *Party*'s convoy.
 
- If the *no_banner* flag is set, there will not be a banner announcing that "X unit got a Y item!".
+If the *no_banner* flag is set, there will not be a banner announcing that "X unit got a Y item!".
 If the unit's inventory is full, the player will be given the option of which item to send to the convoy.
 If the *no_choice* flag is set, the new item will be automatically sent to the convoy in this case without prompting the player.
+If the *force_give* flag is set, the new item will be forced into the inventory and another must be discarded instead. *no_choice* takes priority over *force_give*.
 The *droppable* flag determines whether the item is set as a "droppable" item (generally only given to enemy units).
         """
 
     keywords = ["GlobalUnitOrConvoy", "Item"]
     optional_keywords = ["Party"]
-    _flags = ['no_banner', 'no_choice', 'droppable']
+    _flags = ['no_banner', 'no_choice', 'force_give', 'droppable']
 
 class EquipItem(EventCommand):
     nid = 'equip_item'
@@ -2234,7 +2358,18 @@ class SetModeAutolevels(EventCommand):
 
     desc = \
         """
-Changes the number of additional levels that enemy units gain from the difficulty mode setting. This can be used to grant a higher number of bonus levels to enemies later in the game to maintain a resonable difficulty curve. *Level* specifies the number of levels to be granted. If the *hidden* flag is set, enemy units will still gain the effects of the indicated level-ups, but their actual level is not incremented. In other words, the units get more powerful but remains at the same level. If the *boss* flag is included, this will only affect units with the "Boss" tag.
+Changes the number of additional levels that enemy units gain from the difficulty mode setting.
+
+This can be used to increase enemy bonus levels later in the game to maintain a reasonable difficulty curve. *Level* specifies the number of levels to be granted.
+
+Enemies *loaded in after* this command gain stats based on the **sum** of visible and invisible levels you select.
+
+If the *hidden* flag is set, it sets the invisible level count. In other words, the units get more powerful but remain at the same level.
+
+If the *boss* flag is set, this will only affect units with the "Boss" tag (but applies even if they are not enemies). This stacks with the value for normal enemies.
+
+This does not modify values in the Difficulty Editor directly, but rather sets the value for the current game the player is playing.
+
 Cannot be undone by the turnwheel.
         """
 
@@ -2325,6 +2460,30 @@ class RemoveTalk(EventCommand):
     desc = \
         """
 Removes the ability for the two indicated units to "Talk" in the current chapter. You probably want to use this after the dialogue scene between the two units.
+        """
+
+    keywords = ["Unit1", "Unit2"]
+    keyword_types = ["Unit", "Unit"]
+
+class HideTalk(EventCommand):
+    nid = 'hide_talk'
+    tag = Tags.LEVEL_VARS
+
+    desc = \
+        """
+Hides the "Talk" marker from maps matching the Unit1 and Unit2 selected, making it a secret conversation.
+        """
+
+    keywords = ["Unit1", "Unit2"]
+    keyword_types = ["Unit", "Unit"]
+
+class UnhideTalk(EventCommand):
+    nid = 'unhide_talk'
+    tag = Tags.LEVEL_VARS
+
+    desc = \
+        """
+Removes the hidden flag for the "Talk" marker from maps matching the Unit1 and Unit2 selected, making it visible again.
         """
 
     keywords = ["Unit1", "Unit2"]
@@ -2460,6 +2619,15 @@ class ClearMarketItems(EventCommand):
 Removes all items from the list of purchaseable goods in the base's market.
         """
 
+class DumpVars(EventCommand):
+    nid = 'dump_vars'
+    tag = Tags.GAME_VARS
+
+    desc = \
+        """
+Prints all level and game variables to a file, then opens the file.
+        """
+
 class AddRegion(EventCommand):
     nid = 'add_region'
     tag = Tags.REGION
@@ -2474,8 +2642,8 @@ When set, the *only_once* flag applies only to event region, preventing them fro
         """
 
     keywords = ["Region", "Position", "Size", "RegionType"]
-    optional_keywords = ["String", "TimeLeft"]
-    keyword_types = ["Region", "Position", "Size", "RegionType", "String", "PositiveInteger"]
+    optional_keywords = ["String", "TimeLeft", "HideTime", "Highlight"]
+    keyword_types = ["Region", "Position", "Size", "RegionType", "String", "PositiveInteger", "Bool", "HighlightType"]
     _flags = ["only_once", "interrupt_move"]
 
 class RegionCondition(EventCommand):
@@ -2568,7 +2736,7 @@ class ChangeObjectiveSimple(EventCommand):
 Changes the simple version of the chapter's objective text to *EvaluableString*.
         """
 
-    keywords = ["EvaluableString"]
+    optional_keywords = ["EvaluableString"]
 
 class ChangeObjectiveWin(EventCommand):
     nid = 'change_objective_win'
@@ -2628,7 +2796,7 @@ class RemoveMapAnim(EventCommand):
     tag = Tags.TILEMAP
     desc = ('Removes a map animation denoted by the nid *MapAnim* at *Position*. Only removes MapAnims that were created using'
             ' the "permanent" flag. Must include "overlay" flag to remove an overlaid map animation.')
-    keywords = ["MapAnim", "Position"]
+    keywords = ["MapAnim", "FloatPosition"]
     _flags = ['overlay']
 
 class AddUnitMapAnim(EventCommand):
@@ -2688,11 +2856,17 @@ Optional args:
 * *OtherOptions* is a list of strings (Option1, Option2, Option3) that specify additional option names to display in the base.
 * *OtherOptionsEnabled* is a list of string bools (e.g. true, false, false) that specify which of the OtherOptions are enabled. If blank, all OtherOptions will be enabled by default.
 * *OtherOptionsOnSelect* is a list of Event NIDs or Event Names. These events will be triggered when the corresponding OtherOptions are selected.
+* *OtherOptionsDesciption* is a list of strings that provide description to the Option in gba prep screen.
 
+Flags:
+* *gba* uses gba prep screen layout instead.
+* *no_chap_disp* removes chapter display when using gba mode
+* *no_obj_disp* removes objective display when using gba mode
         """
 
-    optional_keywords = ['PickUnitsEnabled', 'Music', 'OtherOptions', 'OtherOptionsEnabled', 'OtherOptionsOnSelect']
-    keyword_types = ["Bool", "Music", "StringList", "BoolList", "StringList"]
+    optional_keywords = ['PickUnitsEnabled', 'Music', 'OtherOptions', 'OtherOptionsEnabled', 'OtherOptionsOnSelect', 'OtherOptionsDescription']
+    keyword_types = ["Bool", "Music", "StringList", "BoolList", "StringList", "StringList"]
+    _flags = ["gba", "no_chap_disp", "no_obj_disp"]
 
 
 class Base(EventCommand):
@@ -2749,11 +2923,15 @@ Causes *Unit* to enter a shop that sells *ItemList* items.
 The optional *ShopFlavor* keyword determines whether the shop appears as a vendor, armory, or your own custom flavor.
 The optional *StockList* keyword determines if an item should have a limited stock. The order will be the same as ItemList. Use -1 for unlimited stock.
 The optional *ShopId* keyword is available if you want to save what was bought from the shop in future shops. Memory will be preserved across shops with the same *ShopId*.
+
+Flags:
+*preview* determines whether this shop interaction will be treated as a preview shop. In a preview shop, the player will be able to look at the stock, but not buy or sell. Usually used only with a Preview Trigger.
         """
 
     keywords = ["Unit", "ItemList"]
     optional_keywords = ["ShopFlavor", "StockList", "ShopId"]
     keyword_types = ["Unit", "ItemList", "ShopFlavor", "IntegerList", "Nid"]
+    _flags = ["preview"]
 
 class Choice(EventCommand):
     nid = 'choice'
@@ -2778,7 +2956,7 @@ What is the difference? The Python Expression will be constantly updated, which 
 **NOTE: Use the flags to determine the correct type.**
 
 **NOTE:** You can use the `|` delimiter to mark a distinction between the nid of a choice, and the text of a choice, if the nid is not meant to be read.
-For example, suppose you give the player a choice between two klasses, and these klasses are called ArmorKnight\_Sun and ArmorKnight\_Moon. Obviously, you don't
+For example, suppose you give the player a choice between two klasses, and these klasses are called ArmorKnight_Sun and ArmorKnight_Moon. Obviously, you don't
 want the player to be forced to read the weird nid. You can instead populate the choices like so:
 
 `choice;ClassSelection;Choose Class; ArmorKnight_Sun|Solar Knight,ArmorKnight_Moon|Lunar Knight;...`
@@ -2813,7 +2991,7 @@ via hitting the back button, and the event will go on as normal.
 * *no_cursor* removes the cursor.
 * Horizontal pulsing left/right arrows will appear by default if you have a single row and it has more options than will fit inside the menu without scrolling. You can use *arrows* to force the arrows to display, or use *no_arrows* to forcibly remove them.
 * A vertical scroll bar will appear by default if you have more rows than will fit in the menu. Use *scroll_bar* to force this bar to appear when it wouldn't otherwise, or use *no_scroll_bar* to forcibly remote it.
-* *backable* allows you to exit out of the menu without making a choice - similarly to *persist*. If backed out in this way, will set `BACK` as the chosen option.
+* *backable* allows you to exit out of the menu without making a choice - similarly to *persist*. If backed out in this way, will set `BACK` as the chosen option. NOTE: This does not affect *_last_choice*. If backed out, _last_choice will retain its value from a previous Choice or be set as *0* if no other Choice was made beforehand.
  """
 
     keywords = ['Nid', 'Title', 'Choices']
@@ -2924,14 +3102,16 @@ Presents the player with a menu in which they can enter text. An example use-cas
 *Nid* is the name of this entry, which can be checked later to recall the player's input.
 For instance, if nid was "tactician", use `{var:tactician}` anywhere in events to replace it with the user's entry.
 *String* is the text describing the choice, such as "Please enter a name."
-*PositiveInteger* is the character limit. If not set, defaults to 16.
+*CharacterLimit* is the maximum character limit. If not set, defaults to 16.
 *StringList* specifies which characters to ban. Only accepts 'uppercase', 'lowercase', 'uppercase_UTF8', 'lowercase_UTF8', 'numbers_and_punctuation'
-
+*DefaultString* specifies an optional string already loaded into the menu when it starts. If this default string violates character limit or contains illegal characters, it won't work.
+*MinimumCharacterLimit* is the minimum character limit. If not set, defaults to 1.
 If the force_entry flag is set, the player will not be able to exit text entry before assigning a value to the game variables. (i.e., they must hit 'Yes' in the entry confirmation to end text entry)
         """
 
     keywords = ['Nid', 'String']
-    optional_keywords = ['PositiveInteger', 'IllegalCharacterList']
+    optional_keywords = ['CharacterLimit', 'IllegalCharacterList', 'DefaultString', 'MinimumCharacterLimit']
+    keyword_types = ['Nid', 'String', 'PositiveInteger', 'IllegalCharacterList', 'String', 'PositiveInteger']
     _flags = ['force_entry']
 
 class ChapterTitle(EventCommand):
@@ -3047,6 +3227,23 @@ Displays the game's guide screen.
 
     _flags = ["immediate"]
 
+class OpenCredits(EventCommand):
+    nid = 'open_credits'
+    tag = Tags.MISCELLANEOUS
+
+    desc = \
+        """
+Displays the game's credits module.
+If given, uses the (*Panorama*) as the background image.
+The (*Scroll*) flag determines whether the background image will move.
+1. *immediate* flag skips the transition between screens
+2. *show_map* determines whether or not the background will simply be the map of the mission.
+        """
+
+    optional_keywords = ['Panorama']
+    keyword_types = ['Panorama']
+    _flags = ["immediate", "scroll", "show_map"]
+
 class OpenUnitManagement(EventCommand):
     nid = 'open_unit_management'
     tag = Tags.MISCELLANEOUS
@@ -3089,7 +3286,7 @@ Optional args:
 
 1. *immediate* flag skips the transition between screens
         """
-    
+
     optional_keywords = ['Panorama', 'Music']
     keyword_types = ['Panorama', 'Music']
 
@@ -3115,6 +3312,22 @@ Opens the achivements screen with the given background.
 
     keywords = ["Background"]
     keyword_types = ['Panorama']
+
+class Soundroom(EventCommand):
+    nid = 'soundroom'
+    tag = Tags.MISCELLANEOUS
+
+    desc = \
+        """
+Displays the game's sound room. Last song being played in the sound room can be accessed through game var '_soundroom_choice'.
+If given, uses the (*Panorama*) as the background image.
+1. *immediate* flag skips the transition between screens
+        """
+
+    optional_keywords = ['Panorama']
+    keyword_types = ['Panorama']
+
+    _flags = ["immediate"]
 
 class LocationCard(EventCommand):
     nid = 'location_card'
@@ -3146,11 +3359,18 @@ class Ending(EventCommand):
 
     desc = \
         """
-Displays the epilogue text for a character. *Portrait* is the portrait to be displayed, *Title* is the name displayed (ex: "Marcus, Badass Paladin"), the *Text* is the block of text describing what happened to the character.
+Displays the epilogue text for a character. 
+*Portrait* is the portrait to be displayed, 
+*Title* is the name displayed (ex: "Marcus, Badass Paladin"), 
+the *Text* is the block of text describing what happened to the character.
+If *wait_for_input* flag is set, the dialog will wait for the player to press SELECT
+before preceding. Use this if you plan to have {w} or | commands in your text.
+Without the *wait_for_input* flag, the Ending will just wait 5 seconds after the first {w}.
         """
 
     keywords = ["Portrait", "Title", "Text"]
     keyword_types = ["Portrait", "String", "String"]
+    _flags = ['wait_for_input']
 
 class PairedEnding(EventCommand):
     nid = 'paired_ending'
@@ -3158,11 +3378,18 @@ class PairedEnding(EventCommand):
 
     desc = \
         """
-Displays paired epilogue text for two characters. *LeftPortrait* and *RightPortrait* are the portraits to be displayed, *LeftTitle* and *RightTitle* are the names displayed (ex: "Marcus, Badass Paladin"), the *Text* is the block of text describing what happened to the characters.
+Displays paired epilogue text for two characters. 
+*LeftPortrait* and *RightPortrait* are the portraits to be displayed, 
+*LeftTitle* and *RightTitle* are the names displayed (ex: "Marcus, Badass Paladin"), 
+the *Text* is the block of text describing what happened to the characters.
+If *wait_for_input* flag is set, the dialog will wait for the player to press SELECT
+before preceding. Use this if you plan to have {w} or | commands in your text.
+Without the *wait_for_input* flag, the Ending will just wait 5 seconds after the first {w}.
         """
 
     keywords = ["LeftPortrait", "RightPortrait", "LeftTitle", "RightTitle", "Text"]
     keyword_types = ["Portrait", "Portrait", "String", "String", "String"]
+    _flags = ['wait_for_input']
 
 class PopDialog(EventCommand):
     nid = 'pop_dialog'
@@ -3346,7 +3573,7 @@ class OverworldMoveUnit(EventCommand):
 class RevealOverworldNode(EventCommand):
     nid = 'reveal_overworld_node'
     tag = Tags.OVERWORLD
-    desc = ('Reveals an overworld node on the map: moves the camera to the new location, plays the animation, and fades in the nodes.'
+    desc = ('Reveals an overworld node on the map by playing an animation, and fading in the node.'
             'By default, fades in via animation; use the *immediate* flag to skip this anim.')
 
     keywords = ['OverworldNodeNid']
@@ -3405,16 +3632,16 @@ class SetOverworldMenuOptionEnabled(EventCommand):
     tag = Tags.OVERWORLD
     desc = ('Toggle whether the specified node menu option can be accessed by the player. Note that even if enabled, it must also be visible for the player to access it.')
 
-    keywords = ['OverworldNodeNid', 'OverworldNodeMenuOption', 'Setting']
-    keyword_types = ['OverworldNodeNID', 'OverworldNodeMenuOption', 'Bool']
+    keywords = ['OverworldNID', 'OverworldNodeNid', 'OverworldNodeMenuOption', 'Setting']
+    keyword_types = ['OverworldNID', 'OverworldNodeNID', 'OverworldNodeMenuOption', 'Bool']
 
 class SetOverworldMenuOptionVisible(EventCommand):
     nid = 'set_overworld_menu_option_visible'
     tag = Tags.OVERWORLD
     desc = ('Toggle whether the specified node menu option can be seen by the player. Note that even if visible, it must also be enabled for the player to access it.')
 
-    keywords = ['OverworldNodeNID', 'OverworldNodeMenuOption', 'Setting']
-    keyword_types = ['OverworldNodeNID', 'OverworldNodeMenuOption', 'Bool']
+    keywords = ['OverworldNID', 'OverworldNodeNID', 'OverworldNodeMenuOption', 'Setting']
+    keyword_types = ['OverworldNID', 'OverworldNodeNID', 'OverworldNodeMenuOption', 'Bool']
 
 class EnterLevelFromOverworld(EventCommand):
     nid = 'enter_level_from_overworld'
@@ -3445,7 +3672,7 @@ class UpdateAchievement(EventCommand):
 class CompleteAchievement(EventCommand):
     nid = 'complete_achievement'
     tag = Tags.ACHIEVEMENT
-    desc = ('True marks the achievement as complete. False marks it as incomplete. No effect if achievement doesn\'t exist.\n\nYou can check an achievement\'s completion status with `check_achievement("nid")`\n\nbanner flag determines whether a pop-up box will appear notifying the player.')
+    desc = ('True marks the achievement as complete. False marks it as incomplete. No effect if achievement doesn\'t exist.\n\nYou can check an achievement\'s completion status with `has_achievement("nid")`\n\nbanner flag determines whether a pop-up box will appear notifying the player.')
 
     keywords = ['Achievement', 'Completed']
     keyword_types = ['Achievement', 'Bool']
@@ -3492,6 +3719,57 @@ class UnlockDifficulty(EventCommand):
 
     keywords = ['DifficultyMode']
     keyword_types = ['DifficultyMode']
+
+class UnlockSong(EventCommand):
+    nid = 'unlock_song'
+    tag = Tags.PERSISTENT_RECORDS
+    desc = ("Unlocks the specified song to be viewed in the Sound Room.")
+
+    keywords = ['Music']
+    keyword_types = ['Music']
+
+class UnlockSupportRoom(EventCommand):
+    nid = 'unlock_support_room'
+    tag = Tags.PERSISTENT_RECORDS
+    desc = ("Allows Support Room to be viewed from Title Screen > Extras."
+            "Once unlocked, Support Room will remain opened permanently across all save files.")
+
+class PartyTransfer(EventCommand):
+    nid = 'party_transfer'
+    tag = Tags.MISCELLANEOUS
+
+    desc = \
+        """
+Presents the player with a menu in which they can move units between two parties.
+
+The *Party* entries are existing parties (the second can be empty but still must exist).
+*FixedUnits* is an optional Python expression that evaluates to a list of unit nids. This specifies units that are locked into their current party.
+*Party1Name* and *Party2Name* optionally display a title above either party on the menu.
+*Party1Limit* and *Party2Limit* set optional caps on the number of units in either party.
+        """
+
+    keywords = ["Party1","Party2"]
+    optional_keywords = ["FixedUnits","Party1Name","Party2Name","Party1Limit","Party2Limit"]
+    keyword_types = ["Party","Party","Expression","String","String","PositiveInteger","PositiveInteger"]
+
+class ChangeTeamPalette(EventCommand):
+    nid = 'change_team_palette'
+    tag = Tags.MISCELLANEOUS
+
+    desc = \
+        """
+Change the palettes of the given team.
+
+*MapSpritePalette* is the nid of combat palette for map sprites.
+*CombatVariantPalette* is the suffix for nid of combat palette for battle animation.
+*CombatColor* is the color for miscellaneous team-based assets, such as rescue icon, menu, combat display. 
+
+Example: change_team_palette;player;map_sprite_green;GenericGreen;green
+        """
+
+    keywords = ["Team"]
+    optional_keywords = ['MapSpritePalette', 'CombatVariantPalette', 'CombatColor']
+    keyword_types = ['Team', 'Palette', 'String', 'String']
 
 class ChestLootItem(EventCommand):
     nid = 'chest_loot_item'
@@ -3674,7 +3952,8 @@ ALL_EVENT_COMMANDS.update({
 
 
 FORBIDDEN_PYTHON_COMMANDS: List[EventCommand] = [Comment, If, Elif, Else,
-                                                 End, For, Endf, LoopUnits]
+                                                 End, For, Endf, LoopUnits,
+                                                 ModifyGameVar, ModifyLevelVar]
 FORBIDDEN_PYTHON_COMMAND_NIDS: List[str] = [cmd.nid for cmd in FORBIDDEN_PYTHON_COMMANDS] + [cmd.nickname for cmd in FORBIDDEN_PYTHON_COMMANDS]
 def get_all_event_commands(version: EventVersion) -> Dict[NID, Type[EventCommand]]:
     if version == EventVersion.EVENT:

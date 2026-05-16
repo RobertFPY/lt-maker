@@ -194,6 +194,10 @@
             "give_item;Michalis;Armor_of_Iote",
             "transition;close",
             "remove_all_units",
+            "unload_unit;Naga;no_warn",
+            "unload_unit;Gotoh;no_warn",
+            "unload_unit;Jake;no_warn",
+            "unload_unit;Anna;no_warn",
             "change_tilemap;Prologue Cutsence 2",
             "center_cursor;8,1;immediate",
             "end_skip",
@@ -222,7 +226,7 @@
             "wait;300",
             "end_skip",
             "move_unit;Lucina;14,7;normal;no_follow",
-            "remove_unit;Lucina",
+            "unload_unit;Lucina;no_warn",
             "wait;300",
             "end_skip",
             "add_unit;Camus;8,1",
@@ -362,12 +366,14 @@
             "speak;Mari;Sir, I would like to stay and help. I'm a cleric, I can help to heal you if you got wounded.",
             "speak;Camus;If you insist. But you have to stay behind me so I can protect you, clear?",
             "speak;Mari;Yes sir.",
+            "prep;True;;Skill Swap;True;Global Skill_Swap_Select",
             "transition;close",
             "change_background",
             "trigger_script;Global DifficultyModeAdjustments",
             "recall_regions",
             "transition;open"
-        ]
+        ],
+        "nid": "0 Intro"
     },
     {
         "name": "DeathCamus",
@@ -384,7 +390,8 @@
             "remove_portrait;Camus",
             "remove_unit;Camus",
             "lose_game"
-        ]
+        ],
+        "nid": "Global DeathCamus"
     },
     {
         "name": "DeathMichalis",
@@ -399,7 +406,8 @@
             "speak;Michalis;This... is... impossible...",
             "expression;Michalis;CloseEyes",
             "remove_portrait;Michalis"
-        ]
+        ],
+        "nid": "Global DeathMichalis"
     },
     {
         "name": "DeathMartin",
@@ -416,7 +424,8 @@
             "remove_portrait;Martin",
             "remove_unit;Martin",
             "lose_game"
-        ]
+        ],
+        "nid": "Global DeathMartin"
     },
     {
         "name": "DeathMari",
@@ -440,7 +449,8 @@
             "    game_var;resurrect_mari;1",
             "end",
             "end"
-        ]
+        ],
+        "nid": "Global DeathMari"
     },
     {
         "name": "DeathNeimi",
@@ -455,7 +465,8 @@
             "speak;Neimi;You were right, Colm...|I am a klutz. Sorry...",
             "expression;Neimi;CloseEyes",
             "remove_portrait;Neimi"
-        ]
+        ],
+        "nid": "Global DeathNeimi"
     },
     {
         "name": "DeathArtur",
@@ -470,7 +481,8 @@
             "speak;Artur;The rest... is up to you.",
             "expression;Artur;CloseEyes",
             "remove_portrait;Artur"
-        ]
+        ],
+        "nid": "Global DeathArtur"
     },
     {
         "name": "DeathNatasha",
@@ -489,7 +501,8 @@
             "end",
             "expression;Natasha;CloseEyes",
             "remove_portrait;Natasha"
-        ]
+        ],
+        "nid": "Global DeathNatasha"
     },
     {
         "name": "DeathLute",
@@ -504,7 +517,8 @@
             "speak;Lute;I...{br}I don't want to die...",
             "expression;Lute;CloseEyes",
             "remove_portrait;Lute"
-        ]
+        ],
+        "nid": "Global DeathLute"
     },
     {
         "name": "DeathVanessa",
@@ -519,7 +533,8 @@
             "speak;Vanessa;Please...|Forgive me...",
             "expression;Vanessa;CloseEyes",
             "remove_portrait;Vanessa"
-        ]
+        ],
+        "nid": "Global DeathVanessa"
     },
     {
         "name": "DeathMoulder",
@@ -534,7 +549,8 @@
             "speak;Moulder;I am sorry. I believe this is as far as I go...",
             "expression;Moulder;CloseEyes",
             "remove_portrait;Moulder"
-        ]
+        ],
+        "nid": "Global DeathMoulder"
     },
     {
         "name": "DeathRoss",
@@ -549,7 +565,8 @@
             "speak;Ross;I... am a warrior to the very end.",
             "expression;Ross;CloseEyes",
             "remove_portrait;Ross"
-        ]
+        ],
+        "nid": "Global DeathRoss"
     },
     {
         "name": "DeathGarcia",
@@ -564,7 +581,8 @@
             "speak;Garcia;I have no regrets.{br}This was always my fate.",
             "expression;Garcia;CloseEyes",
             "remove_portrait;Garcia"
-        ]
+        ],
+        "nid": "Global DeathGarcia"
     },
     {
         "name": "DeathFranz",
@@ -579,7 +597,8 @@
             "speak;Franz;I'm sorry, General Seth...",
             "expression;Franz;CloseEyes",
             "remove_portrait;Franz"
-        ]
+        ],
+        "nid": "Global DeathFranz"
     },
     {
         "name": "DeathGilliam",
@@ -594,7 +613,8 @@
             "speak;Gilliam;I was prepared for...{br}anything...",
             "expression;Gilliam;CloseEyes",
             "remove_portrait;Gilliam"
-        ]
+        ],
+        "nid": "Global DeathGilliam"
     },
     {
         "name": "DeathONeill",
@@ -609,7 +629,8 @@
             "speak;O'Neill;What? How?",
             "expression;O'Neill;CloseEyes",
             "remove_portrait;O'Neill"
-        ]
+        ],
+        "nid": "Global DeathONeill"
     },
     {
         "name": "DeathSaar",
@@ -624,7 +645,8 @@
             "speak;Saar;Emperor Vigarde...{br}Glory to His...Majesty...",
             "expression;Saar;CloseEyes",
             "remove_portrait;Saar"
-        ]
+        ],
+        "nid": "5 DeathSaar"
     },
     {
         "name": "Outro",
@@ -668,7 +690,8 @@
             "speak;Martin;Sir, help me carry him, this way sir.",
             "speak;Michalis;Very well, let's hurry!",
             "transition;Close"
-        ]
+        ],
+        "nid": "0 Outro"
     },
     {
         "name": "FightBandit",
@@ -694,7 +717,8 @@
             "remove_portrait;Bandit",
             "end",
             "show_combat_ui"
-        ]
+        ],
+        "nid": "0 FightBandit"
     },
     {
         "name": "Defeat Boss",
@@ -707,7 +731,8 @@
         "_source": [
             "level_var;OnlyMartinFightBoss;0",
             "win_game"
-        ]
+        ],
+        "nid": "0 Defeat Boss"
     },
     {
         "name": "Defeat Boss",
@@ -719,7 +744,8 @@
         "priority": 20,
         "_source": [
             "win_game"
-        ]
+        ],
+        "nid": "5 Defeat Boss"
     },
     {
         "name": "StartFight",
@@ -777,7 +803,8 @@
             "speak;Michalis;Yeah. But do not be a burden.",
             "speak;Martin;Hmm...",
             "multi_remove_portrait;Martin;Michalis"
-        ]
+        ],
+        "nid": "0 StartFight"
     },
     {
         "name": "FightSaar",
@@ -791,7 +818,8 @@
             "add_portrait;Saar;Left",
             "speak;Saar;Enemy of the empire!{br}Death's too good for you!",
             "remove_portrait;Saar"
-        ]
+        ],
+        "nid": "5 FightSaar"
     },
     {
         "name": "Seize",
@@ -803,7 +831,8 @@
         "priority": 20,
         "_source": [
             "win_game"
-        ]
+        ],
+        "nid": "3 Seize"
     },
     {
         "name": "Intro",
@@ -969,7 +998,8 @@
             "trigger_script;Global DifficultyModeAdjustments",
             "trigger_script;Global Prologue2Adjustments",
             "recall_regions"
-        ]
+        ],
+        "nid": "1 Intro"
     },
     {
         "name": "Outro",
@@ -1012,7 +1042,8 @@
             "speak;Camus;Don't do it! Capture him without killing him, remember?|So that we can bring him to Naga.",
             "speak;Michalis;Very well, let's chase him, brother.",
             "transition;close"
-        ]
+        ],
+        "nid": "1 Outro"
     },
     {
         "name": "Intro",
@@ -1112,7 +1143,8 @@
             "trigger_script;Global DifficultyModeAdjustments",
             "trigger_script;Global Chap1Adjustments",
             "transition"
-        ]
+        ],
+        "nid": "2 Intro"
     },
     {
         "name": "Armory",
@@ -1126,7 +1158,8 @@
             "transition;Close",
             "shop;{unit};Iron Sword,Slim Sword,Iron Lance,Slim Lance,Iron Axe",
             "transition;Open"
-        ]
+        ],
+        "nid": "3 Armory"
     },
     {
         "name": "Armory",
@@ -1140,7 +1173,8 @@
             "transition;Close",
             "shop;{unit};Iron Sword,Slim Sword,Steel Sword,Iron Lance,Slim Lance,Steel Lance,Iron Axe,Steel Axe,Iron Bow,Steel Bow",
             "transition;Open"
-        ]
+        ],
+        "nid": "5 Armory"
     },
     {
         "name": "Vendor",
@@ -1154,7 +1188,8 @@
             "transition;Close",
             "shop;{unit};Heal,Vulnerary,Fire,Shine;Vendor",
             "transition;Open"
-        ]
+        ],
+        "nid": "5 Vendor"
     },
     {
         "name": "Village1",
@@ -1177,7 +1212,8 @@
             "give_item;{unit};Dragonshield",
             "show_layer;Village1",
             "has_traded;{unit}"
-        ]
+        ],
+        "nid": "5 Village1"
     },
     {
         "name": "Village2",
@@ -1200,7 +1236,8 @@
             "give_item;{unit};Armorslayer",
             "show_layer;Village2",
             "has_traded;{unit}"
-        ]
+        ],
+        "nid": "5 Village2"
     },
     {
         "name": "Village3",
@@ -1223,7 +1260,8 @@
             "give_item;{unit};Secret Book",
             "show_layer;Village3",
             "has_traded;{unit}"
-        ]
+        ],
+        "nid": "5 Village3"
     },
     {
         "name": "Village4",
@@ -1248,7 +1286,8 @@
             "give_item;{unit};Torch",
             "show_layer;Village4",
             "has_traded;{unit}"
-        ]
+        ],
+        "nid": "5 Village4"
     },
     {
         "name": "Village1",
@@ -1271,7 +1310,8 @@
             "transition;Open",
             "give_item;{unit};Iron Axe",
             "has_traded;{unit}"
-        ]
+        ],
+        "nid": "4 Village1"
     },
     {
         "name": "Village2",
@@ -1318,7 +1358,8 @@
             "add_unit;Lute;1,12;immediate;closest",
             "transition;Open",
             "has_traded;{unit}"
-        ]
+        ],
+        "nid": "4 Village2"
     },
     {
         "name": "NatashaJoshuaTalk",
@@ -1352,7 +1393,8 @@
             "remove_portrait;Natasha;no_block",
             "remove_portrait;Joshua",
             "change_team;Joshua;player"
-        ]
+        ],
+        "nid": "5 NatashaJoshuaTalk"
     },
     {
         "name": "FightGazabin",
@@ -1369,7 +1411,8 @@
             "speak;Gazabin;There ya are.... |Here comes the man's revenge, ya bastards!!!",
             "remove_portrait;Gazabin",
             "show_combat_ui"
-        ]
+        ],
+        "nid": "2 FightGazabin"
     },
     {
         "name": "DeathGazabin",
@@ -1387,7 +1430,8 @@
             "remove_portrait;Gazabin",
             "show_combat_ui",
             "win_game"
-        ]
+        ],
+        "nid": "2 DeathGazabin"
     },
     {
         "name": "DeathBazba",
@@ -1401,7 +1445,8 @@
             "add_portrait;Bazba;Left",
             "speak;Bazba;I'm the...mighty...Bazba...{br}This...ain't--",
             "remove_portrait;Bazba"
-        ]
+        ],
+        "nid": "3 DeathBazba"
     },
     {
         "name": "Outro",
@@ -1434,7 +1479,8 @@
             "speak;Camus;Very well.|Please lead us the way, my lady.",
             "transition;close",
             "lose_game"
-        ]
+        ],
+        "nid": "2 Outro"
     },
     {
         "name": "Test",
@@ -1464,8 +1510,15 @@
             "#music;Attack;2000",
             "#wait;5000",
             "give_skill;109;Test2;;no_banner",
-            "set_current_hp;104;10"
-        ]
+            "set_current_hp;Martin;10",
+            "enable_supports;true;no_warn",
+            "unlock_support_rank;Martin;Camus;C;no_warn",
+            "unlock_support_rank;Martin;Michalis;C;no_warn",
+            "unlock_support_rank;Martin;Mari;C;no_warn",
+            "base;;;Skill Swap;;Global Skill_Swap_Select",
+            "prep;;;Skill Swap;;Global Skill_Swap_Select"
+        ],
+        "nid": "DEBUG Test"
     },
     {
         "name": "DestroyVillage1",
@@ -1479,7 +1532,8 @@
             "flicker_cursor;{position}",
             "show_layer;Ruin1",
             "wait;500"
-        ]
+        ],
+        "nid": "5 DestroyVillage1"
     },
     {
         "name": "DestroyVillage2",
@@ -1493,7 +1547,8 @@
             "flicker_cursor;{position}",
             "show_layer;Ruin2",
             "wait;500"
-        ]
+        ],
+        "nid": "5 DestroyVillage2"
     },
     {
         "name": "DestroyVillage3",
@@ -1507,7 +1562,8 @@
             "flicker_cursor;{position}",
             "show_layer;Ruin3",
             "wait;500"
-        ]
+        ],
+        "nid": "5 DestroyVillage3"
     },
     {
         "name": "DestroyVillage4",
@@ -1521,7 +1577,8 @@
             "flicker_cursor;{position}",
             "show_layer;Ruin4",
             "wait;500"
-        ]
+        ],
+        "nid": "5 DestroyVillage4"
     },
     {
         "name": "Turn2",
@@ -1533,7 +1590,8 @@
         "priority": 20,
         "_source": [
             "set_current_hp;UnitTest;10"
-        ]
+        ],
+        "nid": "DEBUG Turn2"
     },
     {
         "name": "Turn3",
@@ -1545,7 +1603,8 @@
         "priority": 20,
         "_source": [
             "heal_unit;UnitTest;60"
-        ]
+        ],
+        "nid": "DEBUG Turn3"
     },
     {
         "name": "Armory",
@@ -1559,7 +1618,8 @@
             "transition;Close",
             "shop;{unit};Iron Sword,Slim Sword,Iron Lance,Slim Lance,Iron Axe;armory",
             "transition;Open"
-        ]
+        ],
+        "nid": "DEBUG Armory"
     },
     {
         "name": "Rout",
@@ -1571,7 +1631,8 @@
         "priority": 20,
         "_source": [
             "win_game"
-        ]
+        ],
+        "nid": "4 Rout"
     },
     {
         "name": "Rout (1)",
@@ -1583,7 +1644,8 @@
         "priority": 20,
         "_source": [
             "win_game"
-        ]
+        ],
+        "nid": "DEBUG Rout (1)"
     },
     {
         "name": "Door1",
@@ -1596,7 +1658,8 @@
         "_source": [
             "unlock;{unit}",
             "give_item;{unit};Iron Sword"
-        ]
+        ],
+        "nid": "DEBUG Door1"
     },
     {
         "name": "Chest1",
@@ -1610,7 +1673,8 @@
             "unlock;{unit}",
             "show_layer;Chest1",
             "give_item;{unit};Javelin"
-        ]
+        ],
+        "nid": "3 Chest1"
     },
     {
         "name": "Chest4",
@@ -1624,7 +1688,8 @@
             "unlock;{unit}",
             "show_layer;Chest4",
             "give_item;{unit};Iron Sword"
-        ]
+        ],
+        "nid": "3 Chest4"
     },
     {
         "name": "Chest3",
@@ -1638,7 +1703,8 @@
             "unlock;{unit}",
             "show_layer;Chest3",
             "give_item;{unit};Hand Axe"
-        ]
+        ],
+        "nid": "3 Chest3"
     },
     {
         "name": "Chest2",
@@ -1652,7 +1718,8 @@
             "unlock;{unit}",
             "show_layer;Chest2",
             "give_item;{unit};Iron Lance"
-        ]
+        ],
+        "nid": "3 Chest2"
     },
     {
         "name": "Door1",
@@ -1665,7 +1732,8 @@
         "_source": [
             "unlock;{unit}",
             "show_layer;Door1"
-        ]
+        ],
+        "nid": "3 Door1"
     },
     {
         "name": "Door2",
@@ -1678,7 +1746,8 @@
         "_source": [
             "unlock;{unit}",
             "show_layer;Door2"
-        ]
+        ],
+        "nid": "3 Door2"
     },
     {
         "name": "Door3",
@@ -1691,7 +1760,8 @@
         "_source": [
             "unlock;{unit}",
             "show_layer;Door3"
-        ]
+        ],
+        "nid": "3 Door3"
     },
     {
         "name": "Breakable1",
@@ -1704,7 +1774,8 @@
         "_source": [
             "map_anim;Snag;{position}",
             "show_layer;Breakable1"
-        ]
+        ],
+        "nid": "3 Breakable1"
     },
     {
         "name": "Snag",
@@ -1717,7 +1788,8 @@
         "_source": [
             "map_anim;Snag;{position}",
             "show_layer;Snag"
-        ]
+        ],
+        "nid": "4 Snag"
     },
     {
         "name": "Breakable2",
@@ -1730,7 +1802,8 @@
         "_source": [
             "map_anim;Snag;{position}",
             "show_layer;Breakable2"
-        ]
+        ],
+        "nid": "3 Breakable2"
     },
     {
         "name": "Breakable3",
@@ -1743,7 +1816,8 @@
         "_source": [
             "map_anim;Snag;{position}",
             "show_layer;Breakable3"
-        ]
+        ],
+        "nid": "3 Breakable3"
     },
     {
         "name": "Intro",
@@ -1827,7 +1901,8 @@
             "show_layer;Breakable1",
             "show_layer;Breakable2",
             "show_layer;Breakable3"
-        ]
+        ],
+        "nid": "3 Intro"
     },
     {
         "name": "Turn2",
@@ -1845,7 +1920,8 @@
             "add_portrait;Colm;Left",
             "speak;Colm;And here we go!|Ha! And not a soul saw me. These bandits are easy picking.|I guess I might as well start with these chests here.",
             "move_unit;Colm;2,4"
-        ]
+        ],
+        "nid": "3 Turn2"
     },
     {
         "name": "NeimiColmTalk",
@@ -1871,7 +1947,8 @@
             "remove_portrait;Neimi;no_block",
             "remove_portrait;Colm",
             "change_team;Colm;player"
-        ]
+        ],
+        "nid": "3 NeimiColmTalk"
     },
     {
         "name": "Outro",
@@ -2073,7 +2150,8 @@
             "remove_portrait;Glen;no_block",
             "remove_portrait;Valter",
             "transition;Close"
-        ]
+        ],
+        "nid": "3 Outro"
     },
     {
         "name": "FightBazba",
@@ -2087,7 +2165,8 @@
             "add_portrait;Bazba;Left",
             "speak;Bazba;I'm the head of this bandit pack, the mighty Bazba!{w}{clear}Hope you've enjoyed your life, 'cuz it's about to end!",
             "remove_portrait;Bazba"
-        ]
+        ],
+        "nid": "3 FightBazba"
     },
     {
         "name": "Eirika/Bazba",
@@ -2105,7 +2184,8 @@
             "speak;Bazba;You'll regret taking that tone with me.|I'm the mighty Bazba, after all!|The likes of you can hardly even scratch me.",
             "remove_portrait;Bazba;no_block",
             "remove_portrait;Eirika"
-        ]
+        ],
+        "nid": "3 Eirika/Bazba"
     },
     {
         "name": "Intro",
@@ -2215,7 +2295,8 @@
             "add_portrait;Artur;Right",
             "speak;Artur;One of my companions is in that village to the south.|If you can get there swiftly, I implore you to watch over her safety.",
             "remove_portrait;Artur"
-        ]
+        ],
+        "nid": "4 Intro"
     },
     {
         "name": "Turn2",
@@ -2228,7 +2309,8 @@
         "_source": [
             "move_cursor;14,8",
             "spawn_group;Turn2Rein;East;Turn2Rein"
-        ]
+        ],
+        "nid": "4 Turn2"
     },
     {
         "name": "Turn2",
@@ -2245,7 +2327,8 @@
             "add_portrait;Bandit1;FarRight",
             "speak;Bandit1;Look at this. Now's our chance!|C'mon, lads!|Let's join the fights and steal our way through this pathetic town!",
             "remove_portrait;Bandit1"
-        ]
+        ],
+        "nid": "5 Turn2"
     },
     {
         "name": "Turn4",
@@ -2258,7 +2341,8 @@
         "_source": [
             "center_cursor;14,7",
             "add_group;Brigand2;Brigand2"
-        ]
+        ],
+        "nid": "5 Turn4"
     },
     {
         "name": "Turn8",
@@ -2271,7 +2355,8 @@
         "_source": [
             "center_cursor;14,0",
             "add_group;Brigand3;Brigand3"
-        ]
+        ],
+        "nid": "5 Turn8"
     },
     {
         "name": "Turn3",
@@ -2307,7 +2392,8 @@
             "move_unit;Dozla;14,1;;closest;no_block",
             "remove_unit;L'arachel",
             "remove_unit;Dozla"
-        ]
+        ],
+        "nid": "4 Turn3"
     },
     {
         "name": "Trigger",
@@ -2321,7 +2407,8 @@
             "move_cursor;0,0",
             "add_group;RevenantRein;0,0;immediate;stack",
             "move_group;RevenantRein;RevenantRein"
-        ]
+        ],
+        "nid": "4 Trigger"
     },
     {
         "name": "Outro",
@@ -2416,7 +2503,8 @@
             "remove_portrait;Rennac",
             "# (They leave)",
             "speak;Eirika;...What was that about?"
-        ]
+        ],
+        "nid": "4 Outro"
     },
     {
         "name": "Intro",
@@ -2616,7 +2704,8 @@
             "remove_portrait;Natasha",
             "# Now actually start!",
             "add_talk;Natasha;Joshua"
-        ]
+        ],
+        "nid": "5 Intro"
     },
     {
         "name": "Outro",
@@ -2628,7 +2717,8 @@
         "priority": 20,
         "_source": [
             ""
-        ]
+        ],
+        "nid": "5 Outro"
     },
     {
         "name": "AddPlaceholder",
@@ -2640,7 +2730,8 @@
         "priority": 20,
         "_source": [
             "add_unit;Placeholder;16,15;immediate"
-        ]
+        ],
+        "nid": "3 AddPlaceholder"
     },
     {
         "name": "Debug Setup",
@@ -2654,7 +2745,8 @@
             "# Give access to the convoy",
             "change_background;BlackBackground",
             "game_var;_convoy;True"
-        ]
+        ],
+        "nid": "Global Debug Setup"
     },
     {
         "name": "Dreams of Home",
@@ -2668,7 +2760,8 @@
             "multi_add_portrait;Eirika;Left;Seth;Right",
             "speak;Eirika;I miss home",
             "multi_remove_portrait;Eirika;Seth"
-        ]
+        ],
+        "nid": "DEBUG Dreams of Home"
     },
     {
         "name": "Wait",
@@ -2680,7 +2773,8 @@
         "priority": 20,
         "_source": [
             "reset;UnitTest"
-        ]
+        ],
+        "nid": "DEBUG Wait"
     },
     {
         "name": "Trigger",
@@ -2694,7 +2788,8 @@
             "add_portrait;Eirika;Left",
             "speak;Eirika;This is a test",
             "remove_portrait;Eirika"
-        ]
+        ],
+        "nid": "DEBUG Trigger"
     },
     {
         "name": "Summon Phantom",
@@ -2716,7 +2811,8 @@
             "endf",
             "add_unit;{created_unit};{e:target_pos};warp;closest",
             "set_current_hp;{unit};{e:unit.get_hp()-10}"
-        ]
+        ],
+        "nid": "Global Summon Phantom"
     },
     {
         "name": "Summon Soldiers",
@@ -2736,7 +2832,8 @@
             "make_generic;;Soldier;1;other;Pursue",
             "add_unit;{created_unit};{position};warp;closest",
             "wait;200"
-        ]
+        ],
+        "nid": "Global Summon Soldiers"
     },
     {
         "name": "Support Gain",
@@ -2756,7 +2853,8 @@
             "else",
             "alert;Support increased!",
             "end"
-        ]
+        ],
+        "nid": "Global Support Gain"
     },
     {
         "name": "Item_Arms_Scroll",
@@ -2772,7 +2870,8 @@
             "        give_wexp;{unit};{wep_type};40",
             "    end",
             "endf"
-        ]
+        ],
+        "nid": "Global Item_Arms_Scroll"
     },
     {
         "name": "Dragon Blood",
@@ -2814,7 +2913,8 @@
             "    remove_skill;{unit};Dragon_Blood_Personal_10;no_banner",
             "    give_skill;{unit};Dragon_Blood_Personal_11;;no_banner",
             "end"
-        ]
+        ],
+        "nid": "Global Dragon Blood"
     },
     {
         "name": "Gain Dragon Blood",
@@ -2826,7 +2926,8 @@
         "priority": 20,
         "_source": [
             "give_skill;{unit};Dragon_Blood_Personal_1;;no_banner"
-        ]
+        ],
+        "nid": "Global Gain Dragon Blood"
     },
     {
         "name": "lv_up_scroll",
@@ -2838,7 +2939,8 @@
         "priority": 20,
         "_source": [
             "give_exp;{unit};100;silent"
-        ]
+        ],
+        "nid": "Global lv_up_scroll"
     },
     {
         "name": "Remove_Skill_Duplicate",
@@ -2875,7 +2977,8 @@
             "    #give_skill;{unit};Wind_Ward_Alt_SS;no_banner",
             "#end",
             ""
-        ]
+        ],
+        "nid": "Global Remove_Skill_Duplicate"
     },
     {
         "name": "ModAdjustments",
@@ -2889,7 +2992,8 @@
             "for;unit_id;[unit.nid for unit in game.units if unit.position]",
             "    trigger_script;Global Remove_Skill_Duplicate;{unit_id}",
             "endf"
-        ]
+        ],
+        "nid": "Global ModAdjustments"
     },
     {
         "name": "Max_6_skill",
@@ -2911,7 +3015,8 @@
             "        #end",
             "    #endf",
             "#end"
-        ]
+        ],
+        "nid": "Global Max_6_skill"
     },
     {
         "name": "DeathBandit",
@@ -2928,7 +3033,8 @@
             "expression;Bandit;CloseEyes",
             "remove_portrait;Bandit",
             "show_combat_ui"
-        ]
+        ],
+        "nid": "0 DeathBandit"
     },
     {
         "name": "ItemIlluminate",
@@ -2942,7 +3048,8 @@
             "#This is the event that fires when an Illuminate staff is used.",
             "",
             "add_region;Illuminate;{eval:target_pos};1,1;vision;7;3"
-        ]
+        ],
+        "nid": "Global ItemIlluminate"
     },
     {
         "name": "ItemAIRescue",
@@ -2959,7 +3066,8 @@
             "#sound;Warp",
             "move_unit;{unit2};{unit};warp;closest",
             "wait;250"
-        ]
+        ],
+        "nid": "Global ItemAIRescue"
     },
     {
         "name": "ItemObstruct",
@@ -2975,7 +3083,8 @@
             "add_region;Obstruct;{eval:target_pos};1,1;terrain;99;3",
             "make_generic;;LightRune;1;{eval:unit.team};None;Wall",
             "add_unit;{created_unit};{eval:target_pos};fade;stack;fade"
-        ]
+        ],
+        "nid": "Global ItemObstruct"
     },
     {
         "name": "SkillSelfDestruct",
@@ -2987,7 +3096,8 @@
         "priority": 20,
         "_source": [
             "remove_unit;{unit};fade;fade"
-        ]
+        ],
+        "nid": "Global SkillSelfDestruct"
     },
     {
         "name": "Martin Defeat Boss",
@@ -3032,7 +3142,8 @@
             "end",
             "transition",
             "win_game"
-        ]
+        ],
+        "nid": "0 Martin Defeat Boss"
     },
     {
         "name": "CheckIfNotMartinFightBoss",
@@ -3044,7 +3155,8 @@
         "priority": 20,
         "_source": [
             "level_var;OnlyMartinFightBoss;0"
-        ]
+        ],
+        "nid": "0 CheckIfNotMartinFightBoss"
     },
     {
         "name": "ChangeDragonMedalDesc",
@@ -3056,7 +3168,8 @@
         "priority": 20,
         "_source": [
             "change_item_desc;Camus;Bronze_Sword;hahahihi"
-        ]
+        ],
+        "nid": "Global ChangeDragonMedalDesc"
     },
     {
         "name": "GiveBackDragonMedalDesc",
@@ -3069,7 +3182,8 @@
         "_source": [
             "level_var;item_desc;item.desc",
             "change_item_desc;{unit};Bronze_Sword;{var:item_desc}"
-        ]
+        ],
+        "nid": "Global GiveBackDragonMedalDesc"
     },
     {
         "name": "Reinforcements",
@@ -3090,7 +3204,8 @@
             "    flicker_cursor;123",
             "else",
             "end"
-        ]
+        ],
+        "nid": "0 Reinforcements"
     },
     {
         "name": "Level_Start",
@@ -3103,7 +3218,8 @@
         "_source": [
             "#Show mission",
             "set_custom_options;Missions;true;Optional missions that can be complete to unlock secrets in game.;Menu_Mission"
-        ]
+        ],
+        "nid": "Global Level_Start"
     },
     {
         "name": "Menu_Mission",
@@ -3127,7 +3243,8 @@
             "textbox;MissionList;No Mission For This Chap!;top;;1",
             "end",
             "choice;Quit;;Quit;23;;bottom;backable"
-        ]
+        ],
+        "nid": "Global Menu_Mission"
     },
     {
         "name": "ShowMission",
@@ -3154,7 +3271,8 @@
             "transition",
             "change_background",
             "transition"
-        ]
+        ],
+        "nid": "0 ShowMission"
     },
     {
         "name": "ClearAll",
@@ -3175,7 +3293,8 @@
             "change_objective_win;Defeat Boss!",
             "change_music;player_phase;Victory Now!",
             "level_var;Bossappear;1"
-        ]
+        ],
+        "nid": "1 ClearAll"
     },
     {
         "name": "DifficultyModeAdjustments",
@@ -3237,7 +3356,8 @@
             "end",
             "else",
             "end"
-        ]
+        ],
+        "nid": "Global DifficultyModeAdjustments"
     },
     {
         "name": "PrologueHardMode",
@@ -3255,7 +3375,8 @@
             "set_wexp;Bandit;Axe;71;no_banner",
             "give_item;Bandit;Steel_Axe;no_banner",
             "equip_item;Bandit;Steel_Axe"
-        ]
+        ],
+        "nid": "Global PrologueHardMode"
     },
     {
         "name": "DragonMedalTransForm",
@@ -3285,7 +3406,8 @@
             "change_class;{unit};Martin_Great_Lord;silent",
             "remove_item;{unit};Divine_Breath;no_banner",
             "end"
-        ]
+        ],
+        "nid": "Global DragonMedalTransForm"
     },
     {
         "name": "VictoryMusic",
@@ -3297,7 +3419,8 @@
         "priority": 20,
         "_source": [
             "change_music;player_phase;Victory Now!"
-        ]
+        ],
+        "nid": "0 VictoryMusic"
     },
     {
         "name": "GenericVictorySeize",
@@ -3314,7 +3437,8 @@
             "",
             "reset;{unit}",
             "win_game"
-        ]
+        ],
+        "nid": "Global GenericVictorySeize"
     },
     {
         "name": "GenericThiefEscape",
@@ -3333,7 +3457,8 @@
             "",
             "remove_unit;{unit};fade",
             "wait;500"
-        ]
+        ],
+        "nid": "Global GenericThiefEscape"
     },
     {
         "name": "GenericVendor",
@@ -3356,7 +3481,8 @@
             "",
             "end",
             "transition;Open"
-        ]
+        ],
+        "nid": "Global GenericVendor"
     },
     {
         "name": "GenericArena",
@@ -3471,7 +3597,8 @@
             "remove_overlay_sprite;Dialogue",
             "remove_overlay_sprite;ArenaPortrait",
             "transition;open"
-        ]
+        ],
+        "nid": "Global GenericArena"
     },
     {
         "name": "GenericArmory",
@@ -3584,7 +3711,8 @@
             "",
             "transition;Open",
             "#elif;game.mod_settings['revised_shops'] == 'Random'"
-        ]
+        ],
+        "nid": "Global GenericArmory"
     },
     {
         "name": "GenericCombatEnd",
@@ -3638,7 +3766,8 @@
             "elif;'Vendetta_PS_SS' in [skill.nid for skill in unit2.skills] or 'SatoriVendetta_PS_SS' in [skill.nid for skill in unit2.skills]",
             "    set_unit_field;{unit};HeathVendetta;1",
             "end"
-        ]
+        ],
+        "nid": "Global GenericCombatEnd"
     },
     {
         "name": "GenericCombatStart",
@@ -3677,7 +3806,8 @@
             "",
             "## Set field so skills can track if unit has attacked",
             "set_unit_field;{unit};AttackedThisTurn;True"
-        ]
+        ],
+        "nid": "Global GenericCombatStart"
     },
     {
         "name": "GenericOutro",
@@ -3721,7 +3851,8 @@
             "    end",
             "endf",
             ""
-        ]
+        ],
+        "nid": "Global GenericOutro"
     },
     {
         "name": "Prologue2Adjustments",
@@ -3749,7 +3880,8 @@
             "set_name;109;Ike",
             "set_name;110;Cereza",
             "set_name;111;Aegir"
-        ]
+        ],
+        "nid": "Global Prologue2Adjustments"
     },
     {
         "name": "BattleWithBoss",
@@ -3801,7 +3933,8 @@
             "remove_portrait;Martin",
             "transition;open",
             "win_game"
-        ]
+        ],
+        "nid": "1 BattleWithBoss"
     },
     {
         "name": "DropGold",
@@ -3821,7 +3954,8 @@
             "level_var;GoldDrop;static_random.get_other(50,150)",
             "give_money;{v:GoldDrop}",
             "end"
-        ]
+        ],
+        "nid": "2 DropGold"
     },
     {
         "name": "DeathMiniBoss",
@@ -3901,7 +4035,8 @@
             "remove_portrait;Aegir_Dark",
             "end",
             "show_combat_ui"
-        ]
+        ],
+        "nid": "1 DeathMiniBoss"
     },
     {
         "name": "PanicPloySkill",
@@ -3947,7 +4082,8 @@
             "level_var;{e:'panic_ploy_res_' + '{unit2}'};game.get_unit('{unit2}').stat_bonus('RES')*2",
             "change_stats;{unit2};RES,-{eval:game.get_unit('{unit2}').stat_bonus('RES')*2};immediate",
             "end"
-        ]
+        ],
+        "nid": "Global PanicPloySkill"
     },
     {
         "name": "WilyFighterSkill",
@@ -3993,7 +4129,8 @@
             "level_var;{e:'willy_fighter_res_' + '{unit2}'};game.get_unit('{unit2}').stat_bonus('RES')",
             "change_stats;{unit2};RES,-{eval:game.get_unit('{unit2}').stat_bonus('RES')};immediate",
             "end"
-        ]
+        ],
+        "nid": "Global WilyFighterSkill"
     },
     {
         "name": "DeathMartinClone",
@@ -4010,7 +4147,8 @@
             "remove_portrait;Martin",
             "remove_unit;Martin",
             "lose_game"
-        ]
+        ],
+        "nid": "Global DeathMartinClone"
     },
     {
         "name": "PanicPloySkill2",
@@ -4042,7 +4180,8 @@
             "if;{v:{unit}_change_res_bonus}",
             "change_stats;{unit};RES,{v:panic_ploy_res_{unit}};immediate",
             "end"
-        ]
+        ],
+        "nid": "Global PanicPloySkill2"
     },
     {
         "name": "WilyFighterSkill2",
@@ -4074,7 +4213,8 @@
             "if;{v:{unit}_change_res_bonus}",
             "change_stats;{unit};RES,{v:willy_fighter_res_{unit}};immediate",
             "end"
-        ]
+        ],
+        "nid": "Global WilyFighterSkill2"
     },
     {
         "name": "StallPloySkill",
@@ -4090,7 +4230,8 @@
             "level_var;{e:'stall_ploy_mov_' + '{unit2}'};game.get_unit('{unit2}').get_stat('MOV') - 1",
             "change_stats;{unit2};MOV,-{eval:game.get_unit('{unit2}').get_stat('MOV') - 1};immediate",
             "end"
-        ]
+        ],
+        "nid": "Global StallPloySkill"
     },
     {
         "name": "StallPloySkill2",
@@ -4104,7 +4245,8 @@
             "if;{v:{unit}_change_mov_to_1}",
             "change_stats;{unit};MOV,{v:stall_ploy_mov_{unit}};immediate",
             "end"
-        ]
+        ],
+        "nid": "Global StallPloySkill2"
     },
     {
         "name": "ChangeAI",
@@ -4125,7 +4267,8 @@
             "    change_ai;117;Attack2Range;no_warn",
             "end",
             "    "
-        ]
+        ],
+        "nid": "0 ChangeAI"
     },
     {
         "name": "DefeatBoss",
@@ -4137,7 +4280,8 @@
         "priority": 20,
         "_source": [
             "win_game"
-        ]
+        ],
+        "nid": "2 DefeatBoss"
     },
     {
         "name": "Chap1Adjustments",
@@ -4151,7 +4295,8 @@
             "for;Enemy;[unit.nid for unit in game.get_enemy_units()]",
             "    add_tag;{Enemy};DropGold",
             "endf"
-        ]
+        ],
+        "nid": "Global Chap1Adjustments"
     },
     {
         "name": "Reinforcements",
@@ -4169,7 +4314,8 @@
             "elif;game.turncount == 7",
             "    spawn_group;Rein3;south;Rein3;;stack;no_follow;no_block",
             "end"
-        ]
+        ],
+        "nid": "2 Reinforcements"
     },
     {
         "name": "Chap1HardMode",
@@ -4189,7 +4335,8 @@
             "change_item_name;Gazabin;Steel_Axe;<blue>Steel Axe</> ",
             "modify_item_component;Gazabin;Short_Axe;damage;3;additive",
             "change_item_name;Gazabin;Short_Axe;<blue>Short Axe</> "
-        ]
+        ],
+        "nid": "Global Chap1HardMode"
     },
     {
         "name": "DefeatWarrior",
@@ -4201,7 +4348,8 @@
         "priority": 20,
         "_source": [
             "game_var;_unlock_something_1;1"
-        ]
+        ],
+        "nid": "2 DefeatWarrior"
     },
     {
         "name": "Summon Phantom 2",
@@ -4224,7 +4372,8 @@
             "endf",
             "add_unit;{created_unit};{e:target_pos};warp;closest",
             "set_current_hp;{unit};{e:unit.get_hp()-10}"
-        ]
+        ],
+        "nid": "Global Summon Phantom 2"
     },
     {
         "name": "Summon Phantom 3",
@@ -4247,7 +4396,8 @@
             "endf",
             "add_unit;{created_unit};{e:target_pos};warp;closest",
             "set_current_hp;{unit};{e:unit.get_hp()-5}"
-        ]
+        ],
+        "nid": "Global Summon Phantom 3"
     },
     {
         "name": "PhantomDefeated",
@@ -4259,7 +4409,8 @@
         "priority": 20,
         "_source": [
             "heal_unit;{eval:game.get_unit('{unit}').get_field('Summoner')};10"
-        ]
+        ],
+        "nid": "Global PhantomDefeated"
     },
     {
         "name": "LearnMultiSkill",
@@ -4274,7 +4425,8 @@
             "#choice;lean_new_skill;Choose Skill To Learn;{eval:unit.get_field(unit.klass + str(unit.level))};;;center;;;type_skill;{eval:int(unit.get_field('NumSkill' + str(unit.level)))},1;left",
             "#give_skill;{unit};{v:_last_choice}",
             "#end"
-        ]
+        ],
+        "nid": "Global LearnMultiSkill"
     },
     {
         "name": "SkillChillSpeed",
@@ -4302,7 +4454,8 @@
             "give_skill;{v:chill_speed_unit};Chill_Speed_T3_Effect;no_banner",
             "else",
             "end"
-        ]
+        ],
+        "nid": "Global SkillChillSpeed"
     },
     {
         "name": "SkillChillStrength",
@@ -4330,7 +4483,8 @@
             "give_skill;{v:chill_strength_unit};Chill_Strength_T3_Effect;no_banner",
             "else",
             "end"
-        ]
+        ],
+        "nid": "Global SkillChillStrength"
     },
     {
         "name": "SkillChillMagic",
@@ -4358,7 +4512,8 @@
             "give_skill;{v:chill_magic_unit};Chill_Magic_T3_Effect;no_banner",
             "else",
             "end"
-        ]
+        ],
+        "nid": "Global SkillChillMagic"
     },
     {
         "name": "SkillChillDefense",
@@ -4386,7 +4541,8 @@
             "give_skill;{v:chill_defense_unit};Chill_Denfense_T3_Effect;no_banner",
             "else",
             "end"
-        ]
+        ],
+        "nid": "Global SkillChillDefense"
     },
     {
         "name": "SkillChillResistance",
@@ -4414,7 +4570,8 @@
             "give_skill;{v:chill_resistance_unit};Chill_Resistance_T3_Effect;no_banner",
             "else",
             "end"
-        ]
+        ],
+        "nid": "Global SkillChillResistance"
     },
     {
         "name": "SkillDazzlingDiscord",
@@ -4428,7 +4585,8 @@
             "for;enemy_unit;[u.nid for u, _ in get_closest_enemies(unit, 1)]",
             "give_skill;{enemy_unit};Dazzling_Staff_T4_2_Effect;;no_banner",
             "endf"
-        ]
+        ],
+        "nid": "Global SkillDazzlingDiscord"
     },
     {
         "name": "SkillSabotageStrength",
@@ -4452,7 +4610,8 @@
             "else",
             "end",
             "endf"
-        ]
+        ],
+        "nid": "Global SkillSabotageStrength"
     },
     {
         "name": "SkillSabotageMagic",
@@ -4476,7 +4635,8 @@
             "else",
             "end",
             "endf"
-        ]
+        ],
+        "nid": "Global SkillSabotageMagic"
     },
     {
         "name": "SkillSabotageSpeed",
@@ -4500,7 +4660,8 @@
             "else",
             "end",
             "endf"
-        ]
+        ],
+        "nid": "Global SkillSabotageSpeed"
     },
     {
         "name": "SkillSabotageDefense",
@@ -4524,7 +4685,8 @@
             "else",
             "end",
             "endf"
-        ]
+        ],
+        "nid": "Global SkillSabotageDefense"
     },
     {
         "name": "SkillSabotageResistance",
@@ -4548,6 +4710,496 @@
             "else",
             "end",
             "endf"
-        ]
+        ],
+        "nid": "Global SkillSabotageResistance"
+    },
+    {
+        "name": "Check_Skill_Unlock",
+        "trigger": "unit_level_up",
+        "level_nid": null,
+        "condition": "True",
+        "commands": [],
+        "only_once": false,
+        "priority": 20,
+        "_source": [
+            "#pyev1",
+            "cur_unit=unit",
+            "skillnid=None",
+            "",
+            "skltmp=[]",
+            "if len(cur_unit.get_field('LearnedSkills')):",
+            "    skltmp=cur_unit.get_field('LearnedSkills')",
+            "",
+            "clstmp=[]",
+            "if len(cur_unit.get_field('MasteredClasses')):",
+            "    clstmp=cur_unit.get_field('MasteredClasses')",
+            "",
+            "equtmp=[]",
+            "if len(cur_unit.get_field('EquippedSkills')):",
+            "    equtmp=cur_unit.get_field('EquippedSkills')",
+            "",
+            "",
+            "if cur_unit.level==1:",
+            "    for line in game.get_data('ClassData'):",
+            "        if unit.klass==line.nid:",
+            "            skltmp.append(line.Class)",
+            "            skillnid=line.Class",
+            "            $set_unit_field cur_unit 'LearnedSkills' skltmp",
+            "            skltmp.append(line.Assit)",
+            "            skillnid=line.Assit",
+            "            $set_unit_field cur_unit 'LearnedSkills' skltmp",
+            "",
+            "",
+            "elif cur_unit.level==3:",
+            "    for line in game.get_data('ClassData'):",
+            "        if unit.klass==line.nid:",
+            "            if line.SlotA:",
+            "                skltmp.append(line.SlotA)",
+            "                skillnid=line.SlotA",
+            "            elif line.SlotB:",
+            "                skltmp.append(line.SlotB)",
+            "                skillnid=line.SlotB",
+            "            elif line.SlotC:",
+            "                skltmp.append(line.SlotC)",
+            "                skillnid=line.SlotC",
+            "            $set_unit_field cur_unit 'LearnedSkills' skltmp",
+            "",
+            "elif cur_unit.level==5:",
+            "    for line in game.get_data('ClassData'):",
+            "        if unit.klass==line.nid:",
+            "            skltmp.append(line.Special)",
+            "            skillnid=line.Special",
+            "            $set_unit_field cur_unit 'LearnedSkills' skltmp",
+            "",
+            "            clstmp.append(line.nid)",
+            "            $set_unit_field cur_unit 'MasteredClasses' clstmp",
+            "",
+            "if skillnid is not None:",
+            "    if str(skillnid) not in unit.get_field('EquippedSkills') and len(unit.get_field('EquippedSkills')) < game.game_vars.get('SKILL_SWAP_CAP'):",
+            "",
+            "        equtmp.append(skillnid)",
+            "",
+            "        $set_unit_field cur_unit 'EquippedSkills' equtmp",
+            "        $give_skill cur_unit skillnid",
+            "",
+            "    else:",
+            "        $gvar 'NEW_SKILL_TO_SWAP_IN' skillnid",
+            "        $trigger_script 'Global Skill_Swap_Level_Up' cur_unit"
+        ],
+        "nid": "Global Check_Skill_Unlock"
+    },
+    {
+        "name": "Target_Fix",
+        "trigger": null,
+        "level_nid": null,
+        "condition": "True",
+        "commands": [],
+        "only_once": false,
+        "priority": 20,
+        "_source": [
+            "trigger_script;Global Skill_Swap_Setup;{v:SELECTED_UNIT}"
+        ],
+        "nid": "Global Target_Fix"
+    },
+    {
+        "name": "Skill_Swap_Unit_Initializer",
+        "trigger": "level_start",
+        "level_nid": null,
+        "condition": "True",
+        "commands": [],
+        "only_once": false,
+        "priority": 30,
+        "_source": [
+            "game_var;SKILL_SWAP_CAP;7",
+            "game_var;MY_CLASS;\"\"",
+            "",
+            "for;FETCHED_UNIT;[u for u in game.get_all_units()]",
+            "",
+            "    #u() is short for game.get_unit",
+            "    if;not u('{FETCHED_UNIT}').get_field('Initialized')",
+            "",
+            "        game_var;MY_CLASS;u('{FETCHED_UNIT}').klass",
+            "",
+            "        trigger_script;Global Skill_Swap_Class_Data;{FETCHED_UNIT}",
+            "",
+            "        set_unit_field;{FETCHED_UNIT};Initialized;True",
+            "    end",
+            "",
+            "endf"
+        ],
+        "nid": "Global Skill_Swap_Unit_Initializer"
+    },
+    {
+        "name": "Skill_Swap_Class_Data",
+        "trigger": null,
+        "level_nid": null,
+        "condition": "True",
+        "commands": [],
+        "only_once": false,
+        "priority": 20,
+        "_source": [
+            "# Kh\u1edfi t\u1ea1o c\u00e1c game var",
+            "game_var;AUX_SKILL;\"\"",
+            "game_var;LEARNED_SKILLS;\"\"",
+            "game_var;EQUIPPED_SKILLS;\"\"",
+            "game_var;AUX_STR;\"\"",
+            "game_var;AUX_BOL;False",
+            "",
+            "game_var;C_INDEX;[c.nid for c in game.get_data('ClassData')].index(unit.klass)",
+            "",
+            "# --- Thu th\u1eadp skill t\u1eeb c\u00e1c class \u0111\u00e3 mastered ---",
+            "set_unit_field;{unit};MasteredClasses;[]",
+            "set_unit_field;{unit};LearnedSkills;[]",
+            "set_unit_field;{unit};EquippedSkills;[]",
+            "",
+            "for;MASTERED;[c for c in u('{unit}').get_field('MasteredClasses')]",
+            "    for;LINE;[d for d in game.get_data('ClassData') if d.nid == '{MASTERED}']",
+            "        game_var;AUX_STR;\",\".join([\"'\" + s + \"'\" for s in u('{unit}').get_field('LearnedSkills') if s])",
+            "        if;\"{v:AUX_STR}\" != \"\"",
+            "            set_unit_field;{unit};LearnedSkills;[{v:AUX_STR},'{LINE.Class}','{LINE.Special}','{LINE.SlotA}','{LINE.SlotB}','{LINE.SlotC}','{LINE.Assit}']",
+            "        else",
+            "            set_unit_field;{unit};LearnedSkills;['{LINE.Class}','{LINE.Special}','{LINE.SlotA}','{LINE.SlotB}','{LINE.SlotC}','{LINE.Assit}']",
+            "        end",
+            "    endf",
+            "endf",
+            "",
+            "# --- Thu th\u1eadp skill t\u1eeb class hi\u1ec7n t\u1ea1i ---",
+            "game_var;AUX_SKILL;game.get_data('ClassData')[{v:C_INDEX}].Class",
+            "game_var;LEARNED_SKILLS;\"{v:LEARNED_SKILLS}\" + \"'{v:AUX_SKILL}',\"",
+            "game_var;AUX_SKILL;game.get_data('ClassData')[{v:C_INDEX}].Special",
+            "game_var;LEARNED_SKILLS;\"{v:LEARNED_SKILLS}\" + \"'{v:AUX_SKILL}',\"",
+            "game_var;AUX_SKILL;game.get_data('ClassData')[{v:C_INDEX}].SlotA",
+            "game_var;LEARNED_SKILLS;\"{v:LEARNED_SKILLS}\" + \"'{v:AUX_SKILL}',\"",
+            "game_var;AUX_SKILL;game.get_data('ClassData')[{v:C_INDEX}].SlotB",
+            "game_var;LEARNED_SKILLS;\"{v:LEARNED_SKILLS}\" + \"'{v:AUX_SKILL}',\"",
+            "game_var;AUX_SKILL;game.get_data('ClassData')[{v:C_INDEX}].SlotC",
+            "game_var;LEARNED_SKILLS;\"{v:LEARNED_SKILLS}\" + \"'{v:AUX_SKILL}',\"",
+            "game_var;AUX_SKILL;game.get_data('ClassData')[{v:C_INDEX}].Assit",
+            "game_var;LEARNED_SKILLS;\"{v:LEARNED_SKILLS}\" + \"'{v:AUX_SKILL}',\"",
+            " ",
+            "",
+            "game_var;EQUIPPED_SKILLS;[s for s in [{v:LEARNED_SKILLS}] if s]",
+            "game_var;LEARNED_SKILLS;[s for s in [{v:LEARNED_SKILLS}] if s]",
+            "",
+            "if;len({v:EQUIPPED_SKILLS}) > {v:SKILL_SWAP_CAP}",
+            "    game_var;EQUIPPED_SKILLS;{v:EQUIPPED_SKILLS}[0:{v:SKILL_SWAP_CAP}]",
+            "end",
+            "",
+            "# --- G\u00e1n l\u1ea1i v\u00e0o unit ---",
+            "set_unit_field;{unit};LearnedSkills;{v:LEARNED_SKILLS}",
+            "set_unit_field;{unit};EquippedSkills;{v:EQUIPPED_SKILLS}",
+            "",
+            "# --- Give skill v\u00e0o unit.skills ---",
+            "for;FETCHED_SKILL;{v:EQUIPPED_SKILLS}",
+            "    give_skill;{unit};{FETCHED_SKILL};no_banner",
+            "endf"
+        ],
+        "nid": "Global Skill_Swap_Class_Data"
+    },
+    {
+        "name": "Skill_Swap_Select",
+        "trigger": null,
+        "level_nid": null,
+        "condition": "True",
+        "commands": [],
+        "only_once": false,
+        "priority": 20,
+        "_source": [
+            "game_var;AUX_STR;','.join([u.nid for u in game.units if u.team == 'player' and not u.dead and not u.is_dying])",
+            "if;len('{v:AUX_STR}') > 0",
+            "    choice;SELECTED_UNIT;Swap skills from which unit?;{v:AUX_STR};73;;top_left;;Global Skill_Swap_Target_Fix;type_unit;8,3;scroll_bar;persist;backable",
+            "end"
+        ],
+        "nid": "Global Skill_Swap_Select"
+    },
+    {
+        "name": "Skill_Swap_Target_Fix",
+        "trigger": null,
+        "level_nid": null,
+        "condition": "True",
+        "commands": [],
+        "only_once": false,
+        "priority": 20,
+        "_source": [
+            "trigger_script;Global Skill_Swap_Setup;{v:SELECTED_UNIT}"
+        ],
+        "nid": "Global Skill_Swap_Target_Fix"
+    },
+    {
+        "name": "Skill_Swap_Setup",
+        "trigger": null,
+        "level_nid": null,
+        "condition": "True",
+        "commands": [],
+        "only_once": false,
+        "priority": 20,
+        "_source": [
+            "game_var;EXIT_SKILL_SWAP;True",
+            "",
+            "#Create a list of equipped skills",
+            "game_var;EQUIPPED_SKILLS;','.join([s for s in u('{unit}').get_field('EquippedSkills')])",
+            "",
+            "#If you have no equipped skills, add a dummy skill called 'Add_New_Skill'",
+            "if;len(unit.get_field('EquippedSkills')) == 0",
+            "    game_var;EQUIPPED_SKILLS;\"Add_New_Skill\"",
+            "",
+            "#Or, if you have skills, but you don't have the max number of swappable skills, also add the dummy skill.",
+            "elif;len(unit.get_field('EquippedSkills')) < {v:SKILL_SWAP_CAP}",
+            "    game_var;EQUIPPED_SKILLS;\"{v:EQUIPPED_SKILLS},Add_New_Skill\"",
+            "end",
+            "",
+            "#Create a list of every skill that you can learn (that you don't have equipped.",
+            "if;len(unit.get_field('LearnedSkills')) > len(unit.get_field('EquippedSkills'))",
+            "    game_var;LEARNED_SKILLS;','.join([s for s in u('{unit}').get_field('LearnedSkills') if s not in unit.get_field('EquippedSkills')])",
+            "else",
+            "    game_var;LEARNED_SKILLS;\"Empty_Skill_List\"",
+            "end",
+            "",
+            "",
+            "#Make a table of the learned skills so you can see your options for swapping skills",
+            "table;UNIT_RIGHT_SKILLS;{v:LEARNED_SKILLS};Learned Skills;{v:SKILL_SWAP_CAP},1;100;top_right;menu_bg_base;type_skill;center",
+            "",
+            "#Make a choice for the player to select which skill to swap",
+            "choice;UNIT_SELECTED_SKILL;Equipped Skills;{v:EQUIPPED_SKILLS};100;vert;top_left;;Global Skill_Swap_Operations;type_skill;{v:SKILL_SWAP_CAP},1;center;backable",
+            "rmtable;UNIT_RIGHT_SKILLS",
+            "",
+            "if;not {v:EXIT_SKILL_SWAP}",
+            "    trigger_script;Global Skill_Swap_Setup",
+            "end"
+        ],
+        "nid": "Global Skill_Swap_Setup"
+    },
+    {
+        "name": "Skill_Swap_Operations",
+        "trigger": null,
+        "level_nid": null,
+        "condition": "True",
+        "commands": [],
+        "only_once": false,
+        "priority": 20,
+        "_source": [
+            "game_var;EXIT_SKILL_SWAP;False",
+            "game_var;AUX_STR;\"\"",
+            "",
+            "if;\"{v:LEARNED_SKILLS}\" != \"Empty_Skill_List\"",
+            "    if;\"{v:UNIT_SELECTED_SKILL}\" == 'Add_New_Skill'",
+            "        game_var;AUX_STR;\"Add,\"",
+            "    else",
+            "        game_var;AUX_STR;\"Swap,\"",
+            "    end",
+            "end",
+            "",
+            "if;'{v:UNIT_SELECTED_SKILL}' != 'Add_New_Skill'",
+            "    game_var;AUX_STR;\"{v:AUX_STR}\" + \"Remove,\"",
+            "    if;unit.get_field('EquippedSkills')[0] != \"{v:AUX_SKILL}\"",
+            "        game_var;AUX_STR;\"{v:AUX_STR}\" + \"Reorder,\"",
+            "    end",
+            "end",
+            "",
+            "choice;SKILL_SWAP_OPERATION;;{v:AUX_STR}Cancel;40;backable",
+            "",
+            "if;'{v:SKILL_SWAP_OPERATION}' == 'Remove'",
+            "    trigger_script;Global Skill_Swap_Remove;{unit}",
+            "elif;'{v:SKILL_SWAP_OPERATION}' == 'Reorder'",
+            "    trigger_script;Global Skill_Swap_Reorder;{unit}",
+            "elif;'{v:SKILL_SWAP_OPERATION}' == 'Add'",
+            "    trigger_script;Global Skill_Swap_Add;{unit}",
+            "elif;'{v:SKILL_SWAP_OPERATION}' == 'Swap'",
+            "    trigger_script;Global Skill_Swap_Replace;{unit}",
+            "end"
+        ],
+        "nid": "Global Skill_Swap_Operations"
+    },
+    {
+        "name": "Skill_Swap_Add",
+        "trigger": null,
+        "level_nid": null,
+        "condition": "True",
+        "commands": [],
+        "only_once": false,
+        "priority": 20,
+        "_source": [
+            "choice;UNIT_LEARNED_SKILLS;Learned Skills;{v:LEARNED_SKILLS};100;vert;top_right;;;type_skill;{v:SKILL_SWAP_CAP},1;scroll_bar;backable",
+            "if;'{v:UNIT_LEARNED_SKILLS}' != 'BACK'",
+            "",
+            "    give_skill;{unit};{v:UNIT_LEARNED_SKILLS};no_banner",
+            "    if;len(unit.get_field('EquippedSkills')) > 0",
+            "        game_var;AUX_STR;\",'{v:UNIT_LEARNED_SKILLS}'\"",
+            "    else",
+            "        game_var;AUX_STR;\"'{v:UNIT_LEARNED_SKILLS}'\"",
+            "    end",
+            "",
+            "    game_var;AUX_STR;','.join(\"'\" + s + \"'\" for s in unit.get_field('EquippedSkills')) + \"{v:AUX_STR}\"",
+            "    set_unit_field;{unit};EquippedSkills;[{v:AUX_STR}]",
+            "end"
+        ],
+        "nid": "Global Skill_Swap_Add"
+    },
+    {
+        "name": "Skill_Swap_Remove",
+        "trigger": null,
+        "level_nid": null,
+        "condition": "True",
+        "commands": [],
+        "only_once": false,
+        "priority": 20,
+        "_source": [
+            "game_var;AUX_STR;\"\"",
+            "game_var;BUFFER;\"\"",
+            "",
+            "for;FETCHED_SKILL;[s for s in u('{unit}').get_field('EquippedSkills')]",
+            "    remove_skill;{unit};{FETCHED_SKILL};no_banner",
+            "endf",
+            "",
+            "for;FETCHED_SKILL;[s for s in u('{unit}').get_field('EquippedSkills')]",
+            "    if;'{FETCHED_SKILL}' != '{v:UNIT_SELECTED_SKILL}' and '{FETCHED_SKILL}' != 'Add_New_Skill'",
+            "        game_var;AUX_STR;\"{v:AUX_STR}\" + \"'{FETCHED_SKILL}',\"",
+            "        give_skill;{unit};{FETCHED_SKILL};no_banner",
+            "    end",
+            "endf",
+            "",
+            "set_unit_field;{unit};EquippedSkills;[{v:AUX_STR}]"
+        ],
+        "nid": "Global Skill_Swap_Remove"
+    },
+    {
+        "name": "Skill_Swap_Replace",
+        "trigger": null,
+        "level_nid": null,
+        "condition": "True",
+        "commands": [],
+        "only_once": false,
+        "priority": 20,
+        "_source": [
+            "choice;SKILL_TO_LEARN;Learned Skills;{v:LEARNED_SKILLS};100;vert;top_right;;;type_skill;{v:SKILL_SWAP_CAP},1;center;backable",
+            "",
+            "if;'{v:SKILL_TO_LEARN}' != 'BACK'",
+            "    game_var;AUX_STR;\"\"",
+            "",
+            "    for;FETCHED_SKILL;[s for s in u('{unit}').get_field('EquippedSkills')]",
+            "        remove_skill;{unit};{FETCHED_SKILL};no_banner",
+            "        if;'{FETCHED_SKILL}' == '{v:UNIT_SELECTED_SKILL}'",
+            "            game_var;AUX_STR;\"{v:AUX_STR}\" + \"'{v:SKILL_TO_LEARN}',\"",
+            "            give_skill;{unit};{v:SKILL_TO_LEARN};no_banner",
+            "        else",
+            "            game_var;AUX_STR;\"{v:AUX_STR}\" + \"'{FETCHED_SKILL}',\"",
+            "            give_skill;{unit};{FETCHED_SKILL};no_banner",
+            "        end",
+            "",
+            "    endf",
+            "",
+            "    set_unit_field;{unit};EquippedSkills;[{v:AUX_STR}]",
+            "end"
+        ],
+        "nid": "Global Skill_Swap_Replace"
+    },
+    {
+        "name": "Skill_Swap_Reorder",
+        "trigger": null,
+        "level_nid": null,
+        "condition": "True",
+        "commands": [],
+        "only_once": false,
+        "priority": 20,
+        "_source": [
+            "#Rebuild the equipped skills list so that the player can't swap real skills with the dummy skill",
+            "game_var;CURRENT_SKILLS_NO_EMPTY_SLOT;','.join([s for s in u('{unit}').get_field('EquippedSkills') if s != 'Add_New_Skill'])",
+            "",
+            "choice;SKILL_TO_REORDER;Learned Skills;{v:EQUIPPED_SKILLS};100;vert;top_right;;;type_skill;{v:SKILL_SWAP_CAP},1;scroll_bar;backable",
+            "if;'{v:SKILL_TO_REORDER}' != 'BACK'",
+            "    game_var;AUX_STR;\"\"",
+            "",
+            "    for;FETCHED_SKILL;[s for s in u('{unit}').get_field('EquippedSkills')]",
+            "        remove_skill;{unit};{FETCHED_SKILL};no_banner",
+            "    endf",
+            "",
+            "    for;FETCHED_SKILL;[s for s in u('{unit}').get_field('EquippedSkills')]",
+            "        if;'{FETCHED_SKILL}' == '{v:UNIT_SELECTED_SKILL}'",
+            "            game_var;AUX_STR;\"{v:AUX_STR}\" + \"'{v:SKILL_TO_REORDER}',\"",
+            "            give_skill;{unit};{v:SKILL_TO_REORDER};no_banner",
+            "",
+            "        elif;'{FETCHED_SKILL}' == '{v:SKILL_TO_REORDER}'",
+            "            game_var;AUX_STR;\"{v:AUX_STR}\" + \"'{v:UNIT_SELECTED_SKILL}',\"",
+            "            give_skill;{unit};{v:UNIT_SELECTED_SKILL};no_banner",
+            "",
+            "        else",
+            "            game_var;AUX_STR;\"{v:AUX_STR}\" + \"'{FETCHED_SKILL}',\"",
+            "            give_skill;{unit};{FETCHED_SKILL};no_banner",
+            "        end",
+            "",
+            "    endf",
+            "",
+            "    set_unit_field;{unit};EquippedSkills;[{v:AUX_STR}]",
+            "end"
+        ],
+        "nid": "Global Skill_Swap_Reorder"
+    },
+    {
+        "name": "Skill_Swap_Level_Up",
+        "trigger": null,
+        "level_nid": null,
+        "condition": "True",
+        "commands": [],
+        "only_once": false,
+        "priority": 20,
+        "_source": [
+            "game_var;AUX_STR;\"\"",
+            "",
+            "#Create a list of equipped skills",
+            "game_var;EQUIPPED_SKILLS;','.join([s for s in u('{unit}').get_field('EquippedSkills')])",
+            "",
+            "#If you have no equipped skills, add a dummy skill called 'Add_New_Skill'",
+            "if;len(unit.get_field('EquippedSkills')) == 0",
+            "    game_var;EQUIPPED_SKILLS;\"Add_New_Skill\"",
+            "",
+            "#Or, if you have skills, but you don't have the max number of swappable skills, also add the summy skill.",
+            "elif;len(unit.get_field('EquippedSkills')) < {v:SKILL_SWAP_CAP}",
+            "    game_var;EQUIPPED_SKILLS;\"{v:EQUIPPED_SKILLS},Add_New_Skill\"",
+            "end",
+            "",
+            "#Make a table of the learned skills so you can see your options for swapping skills",
+            "table;UNIT_RIGHT_SKILLS;{v:NEW_SKILL_TO_SWAP_IN};Learn New Skill?;{v:SKILL_SWAP_CAP},1;100;top_right;menu_bg_base;type_skill;center",
+            "",
+            "#Make a choice for the player to select which skill to swap out",
+            "choice;UNIT_SELECTED_SKILL;Equipped Skills;{v:EQUIPPED_SKILLS};100;vert;top_left;;;type_skill;{v:SKILL_SWAP_CAP},1;center;backable",
+            "",
+            "#Make a table with the new skill as the only selection",
+            "choice;SKILL_TO_LEARN;Learn New Skill?;{v:NEW_SKILL_TO_SWAP_IN};100;vert;top_right;;;type_skill;{v:SKILL_SWAP_CAP},1;center;backable",
+            "",
+            "rmtable;UNIT_RIGHT_SKILLS",
+            "",
+            "if;'{v:SKILL_TO_LEARN}' != 'BACK'",
+            "    game_var;AUX_STR;\"\"",
+            "",
+            "    for;FETCHED_SKILL;[s for s in u('{unit}').get_field('EquippedSkills')]",
+            "        remove_skill;{unit};{FETCHED_SKILL};no_banner",
+            "        if;'{FETCHED_SKILL}' == '{v:UNIT_SELECTED_SKILL}'",
+            "            game_var;AUX_STR;\"{v:AUX_STR}\" + \"'{v:SKILL_TO_LEARN}',\"",
+            "            give_skill;{unit};{v:SKILL_TO_LEARN}",
+            "        else",
+            "            game_var;AUX_STR;\"{v:AUX_STR}\" + \"'{FETCHED_SKILL}',\"",
+            "            give_skill;{unit};{FETCHED_SKILL};no_banner",
+            "        end",
+            "",
+            "    endf",
+            "",
+            "    set_unit_field;{unit};EquippedSkills;[{v:AUX_STR}]",
+            "end"
+        ],
+        "nid": "Global Skill_Swap_Level_Up"
+    },
+    {
+        "name": "Skill_Swap_Base",
+        "trigger": null,
+        "level_nid": null,
+        "condition": "True",
+        "commands": [],
+        "only_once": false,
+        "priority": 15,
+        "_source": [
+            "base;;;Skill Swap;;Global Skill_Swap_Select;show_map",
+            "prep;True;;Skill Swap;;Global Skill_Swap_Select"
+        ],
+        "nid": "Global Skill_Swap_Base"
     }
 ]

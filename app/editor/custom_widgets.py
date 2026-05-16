@@ -149,7 +149,8 @@ class TerrainBox(ObjBox):
 
     def setValue(self, nid):
         terrain = DB.terrain.get(nid)
-        self.edit.setValue(terrain.nid + " : " + terrain.name)
+        if terrain:
+            self.edit.setValue(terrain.nid + " : " + terrain.name)
 
 class TilemapBox(ObjBox):
     def __init__(self, parent=None, button=False):

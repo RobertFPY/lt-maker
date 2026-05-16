@@ -1,7 +1,7 @@
 import os, math
 
 from PyQt5.QtWidgets import QFileDialog, QMessageBox, QDialog
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSignal
 
 from app.utilities import str_utils
 from app.data.resources.sounds import SFXPrefab, SongPrefab
@@ -24,6 +24,8 @@ class SoundModel(TableModel):
                 return 'Name'
             elif val == 'extra':
                 return "Variant"
+            elif val == 'soundroom_idx':
+                return 'Sound Room Number'
             else:
                 return val.capitalize()
         return None
@@ -47,10 +49,11 @@ class SoundModel(TableModel):
             #     seconds = math.ceil(attr % 60)
             #     return "%02d:%02d" % (minutes, seconds)
             return attr
-        # elif role == Qt.TextAlignmentRole:
-        #     str_attr = self.rows[index.column()]
-        #     if str_attr == 'length':
-        #         return Qt.AlignRight + Qt.AlignVCenter
+        elif role == Qt.TextAlignmentRole:
+            str_attr = self.rows[index.column()]
+            # if str_attr == 'length':
+            if str_attr == 'soundroom_idx':
+                return Qt.AlignRight + Qt.AlignVCenter
         return None
 
     def flags(self, index):
@@ -102,7 +105,7 @@ class SFXModel(SoundModel):
         return main_flags
 
 class MusicModel(SoundModel):
-    rows = ['nid', 'extra']
+    rows = ['nid', 'extra', 'soundroom_idx']
 
     def create_new(self) -> bool:
         settings = MainSettingsController()
@@ -142,4 +145,24 @@ class MusicModel(SoundModel):
                 c.nid = saved_d[idx][0]
                 c.intro_full_path = saved_d[idx][1]
                 c.battle_full_path = saved_d[idx][2]
+                c.soundroom_idx = saved_d[idx][3]
                 self._data.update_nid(c, c.nid)
+
+    def autofill(self):
+        curr_idx = max(song_prefab.soundroom_idx for song_prefab in self._data)
+        for song_prefab in self._data:
+            if song_prefab.soundroom_idx == 0:
+                curr_idx += 1
+                song_prefab.soundroom_idx = curr_idx
+        self.dataChanged.emit(self.index(0, 2), self.index(self.rowCount()-1, 2), [])
+
+    def delete(self, index):
+        if idx := self._data[index.row()].soundroom_idx:
+            sorted_db = sorted(self._data, key=lambda x: x.soundroom_idx)
+            max_idx = sorted_db[-1].soundroom_idx
+            soundroom = sorted_db[-max_idx:]
+
+            for song_prefab in soundroom[idx:]:
+                song_prefab.soundroom_idx -= 1
+
+        super().delete(index)

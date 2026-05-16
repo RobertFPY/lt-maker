@@ -1,6 +1,13 @@
-from app.data.resources.base_catalog import ManifestCatalog
+from pathlib import Path
+from typing import List, Optional, Set
+from typing_extensions import override
 
-class PortraitPrefab():
+from app.data.category import CategorizedCatalog
+from app.data.resources.base_catalog import ManifestCatalog
+from app.data.resources.resource_prefab import WithResources
+from app.utilities.data import Prefab
+
+class PortraitPrefab(WithResources, Prefab):
     def __init__(self, nid, full_path=None, pix=None):
         self.nid = nid
         self.full_path = full_path
@@ -11,8 +18,13 @@ class PortraitPrefab():
         self.smiling_offset = [0, 0]
         self.info_offset = 0
 
+    @override
     def set_full_path(self, full_path):
         self.full_path = full_path
+
+    @override
+    def used_resources(self) -> List[Optional[Path]]:
+        return [Path(self.full_path)]
 
     def save(self):
         s_dict = {}
@@ -30,7 +42,7 @@ class PortraitPrefab():
         self.info_offset = int(s_dict.get('info_offset', 0))
         return self
 
-class PortraitCatalog(ManifestCatalog[PortraitPrefab]):
+class PortraitCatalog(ManifestCatalog[PortraitPrefab], CategorizedCatalog[PortraitPrefab]):
     manifest = 'portraits.json'
     title = 'portraits'
     datatype = PortraitPrefab

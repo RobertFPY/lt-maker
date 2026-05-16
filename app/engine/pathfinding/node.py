@@ -1,3 +1,6 @@
+from __future__ import annotations
+from typing import Optional
+
 class Node():
     __slots__ = ['reachable', 'cost', 'x', 'y', 'parent', 'g', 'h', 'f', 'true_f']
 
@@ -13,18 +16,18 @@ class Node():
         self.y: int = y
         self.reset()
 
-    def reset(self):
-        self.parent: Node = None
+    def reset(self) -> None:
+        self.parent: Optional[Node] = None
         self.g: float = 0  # True distance to starting position (takes into account movement costs)
         self.h: float = 0  # Approximate distance to goal position (only Euclidean/Manhattan)
         self.f: float = 0  # Final heuristic (g + h)
         self.true_f: float = 0  # f but does not include minor adjustment for preferring a straight line path
 
-    def __gt__(self, n) -> bool:
+    def __gt__(self, n: float) -> bool:
         return self.cost > n
 
-    def __lt__(self, n) -> bool:
+    def __lt__(self, n: float) -> bool:
         return self.cost < n
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "Node(%d, %d): cost=%d, g=%d, h=%d, f=%f, %s" % (self.x, self.y, self.cost, self.g, self.h, self.f, self.reachable)

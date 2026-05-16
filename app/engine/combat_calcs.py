@@ -1,3 +1,5 @@
+from typing import List, Optional, Tuple
+from app.engine.utils.ltcache import ltcached
 from app.engine.combat_calcs_utils import resolve_defensive_formula, resolve_offensive_formula
 from app.engine.game_state import game
 from app.utilities import utils
@@ -68,11 +70,12 @@ def get_support_rank_bonus(unit, target=None):
     bonuses = [_[0] for _ in bonuses]
     return bonuses, allies
 
-def compute_advantage(unit1, unit2, item1, item2, advantage=True):
+@ltcached
+def compute_advantage(unit1, unit2, item1, item2, advantage=True) -> Optional[weapons.CombatBonus]:
     if not item1 or not item2:
         return None
-    item1_weapontype = item_system.weapon_type(unit1, item1)
-    item2_weapontype = item_system.weapon_type(unit2, item2)
+    item1_weapontype = item_system.weapon_triangle_override(unit1, item1) or item_system.weapon_type(unit1, item1)
+    item2_weapontype = item_system.weapon_triangle_override(unit2, item2) or item_system.weapon_type(unit2, item2)
     if not item1_weapontype or not item2_weapontype:
         return None
     if item_system.ignore_weapon_advantage(unit1, item1) or \
@@ -104,6 +107,16 @@ def compute_advantage(unit1, unit2, item1, item2, advantage=True):
                 new_adv.modify(final_w_mod)
     return new_adv
 
+def compute_advantage_attr(attacker, defender, weapon, def_weapon, attribute: str) -> int:
+    adv = compute_advantage(attacker, defender, weapon, def_weapon)
+    disadv = compute_advantage(attacker, defender, weapon, def_weapon, False)
+    mod = 0
+    if adv:
+        mod += int(getattr(adv, attribute))
+    if disadv:
+        mod += int(getattr(disadv, attribute))
+    return mod
+
 def can_counterattack(attacker, aweapon, defender, dweapon) -> bool:
     if not dweapon:
         return False
@@ -112,6 +125,8 @@ def can_counterattack(attacker, aweapon, defender, dweapon) -> bool:
     if not item_system.can_be_countered(attacker, aweapon) and not skill_system.negate_cannot_be_countered(defender):
         return False
     if not item_system.can_counter(defender, dweapon):
+        return False
+    if not skill_system.can_counter(defender):
         return False
     if DB.constants.value('line_of_sight'):
         if not item_system.ignore_line_of_sight(defender, dweapon) and len(line_of_sight.line_of_sight([defender.position], [attacker.position], 99)) == 0:
@@ -155,7 +170,7 @@ def accuracy(unit, item=None):
     accuracy = int(accuracy)
 
     if DB.constants.value('lead'):
-        stars = sum(u.stats.get('LEAD', 0) for u in game.get_all_units() if u.team == unit.team)
+        stars = sum(u.get_stat('LEAD') for u in game.get_all_units() if u.team == unit.team)
         accuracy += stars * equations.parser.get('LEAD_HIT', unit)
 
     accuracy += item_system.modify_accuracy(unit, item)
@@ -181,12 +196,12 @@ def avoid(unit, item, item_to_avoid=None):
     avoid = int(avoid)
 
     if DB.constants.value('lead'):
-        target_stars = sum(u.stats.get('LEAD', 0) for u in game.get_all_units() if u.team == unit.team)
+        target_stars = sum(u.get_stat('LEAD') for u in game.get_all_units() if u.team == unit.team)
         avoid += target_stars * equations.parser.get('LEAD_AVOID', unit)
 
     if item:
         avoid += item_system.modify_avoid(unit, item)
-    avoid += skill_system.modify_avoid(unit, item_to_avoid)
+    avoid += skill_system.modify_avoid(unit, item)
     return avoid
 
 def crit_accuracy(unit, item=None):
@@ -239,7 +254,7 @@ def crit_avoid(unit, item, item_to_avoid=None):
 
     if item:
         avoid += item_system.modify_crit_avoid(unit, item)
-    avoid += skill_system.modify_crit_avoid(unit, item_to_avoid)
+    avoid += skill_system.modify_crit_avoid(unit, item)
     return avoid
 
 def damage(unit, item=None):
@@ -293,7 +308,7 @@ def defense(atk_unit, def_unit, item, item_to_avoid=None):
 
     if item:
         res += item_system.modify_resist(def_unit, item)
-    res += skill_system.modify_resist(def_unit, item_to_avoid)
+    res += skill_system.modify_resist(def_unit, item)
     return res
 
 def attack_speed(unit, item=None):
@@ -347,14 +362,14 @@ def defense_speed(unit, item, item_to_avoid=None):
 
     if item:
         speed += item_system.modify_defense_speed(unit, item)
-    speed += skill_system.modify_defense_speed(unit, item_to_avoid)
+    speed += skill_system.modify_defense_speed(unit, item)
 
     if not DB.constants.value('allow_negative_as') and speed < 0:
         speed = 0
 
     return speed
 
-def compute_hit(unit, target, item, def_item, mode, attack_info):
+def compute_hit(unit, target, item, def_item, mode, attack_info, *, clamp_hit=True):
     if not item:
         return None
 
@@ -367,19 +382,8 @@ def compute_hit(unit, target, item, def_item, mode, attack_info):
 
     # Weapon Triangle
     triangle_bonus = 0
-    adv = compute_advantage(unit, target, item, def_item)
-    disadv = compute_advantage(unit, target, item, def_item, False)
-    if adv:
-        triangle_bonus += int(adv.accuracy)
-    if disadv:
-        triangle_bonus += int(disadv.accuracy)
-
-    adv = compute_advantage(target, unit, def_item, item)
-    disadv = compute_advantage(target, unit, def_item, item, False)
-    if adv:
-        triangle_bonus -= int(adv.avoid)
-    if disadv:
-        triangle_bonus -= int(disadv.avoid)
+    triangle_bonus += compute_advantage_attr(unit, target, item, def_item, 'accuracy')
+    triangle_bonus -= compute_advantage_attr(target, unit, def_item, item, 'avoid')
     hit += triangle_bonus
 
     # Three Houses style support bonus (only works on attack)
@@ -400,7 +404,10 @@ def compute_hit(unit, target, item, def_item, mode, attack_info):
     hit += skill_system.dynamic_accuracy(unit, item, target, resolve_weapon(target), mode, attack_info, hit)
     hit -= skill_system.dynamic_avoid(target, resolve_weapon(target), unit, item, mode, attack_info, hit)
 
-    return utils.clamp(hit, 0, 100)
+    if clamp_hit:
+        return utils.clamp(hit, 0, 100)
+    else:
+        return max(hit, 0)
 
 def compute_crit(unit, target, item, def_item, mode, attack_info):
     if not item:
@@ -415,19 +422,8 @@ def compute_crit(unit, target, item, def_item, mode, attack_info):
 
     # Weapon Triangle
     triangle_bonus = 0
-    adv = compute_advantage(unit, target, item, def_item)
-    disadv = compute_advantage(unit, target, item, def_item, False)
-    if adv:
-        triangle_bonus += int(adv.crit)
-    if disadv:
-        triangle_bonus += int(disadv.crit)
-
-    adv = compute_advantage(target, unit, def_item, item)
-    disadv = compute_advantage(target, unit, def_item, item, False)
-    if adv:
-        triangle_bonus -= int(adv.dodge)
-    if disadv:
-        triangle_bonus -= int(disadv.dodge)
+    triangle_bonus += compute_advantage_attr(unit, target, item, def_item, 'crit')
+    triangle_bonus -= compute_advantage_attr(target, unit, def_item, item, 'dodge')
     crit += triangle_bonus
 
     # Three Houses style support bonus (only works on attack)
@@ -467,19 +463,8 @@ def compute_damage(unit, target, item, def_item, mode, attack_info, crit=False, 
 
     # Weapon Triangle
     triangle_bonus = 0
-    adv = compute_advantage(unit, target, item, def_item)
-    disadv = compute_advantage(unit, target, item, def_item, False)
-    if adv:
-        triangle_bonus += int(adv.damage)
-    if disadv:
-        triangle_bonus += int(disadv.damage)
-
-    adv = compute_advantage(target, unit, def_item, item)
-    disadv = compute_advantage(target, unit, def_item, item, False)
-    if adv:
-        triangle_bonus -= int(adv.resist)
-    if disadv:
-        triangle_bonus -= int(disadv.resist)
+    triangle_bonus += compute_advantage_attr(unit, target, item, def_item, 'damage')
+    triangle_bonus -= compute_advantage_attr(target, unit, def_item, item, 'resist')
     might += triangle_bonus
 
     # Three Houses style support bonus (only works on attack)
@@ -497,7 +482,9 @@ def compute_damage(unit, target, item, def_item, mode, attack_info, crit=False, 
 
     total_might = might
 
-    might -= defense(unit, target, def_item, item)
+    def_value = defense(unit, target, def_item, item)
+    def_value *= skill_system.defense_multiplier(unit, item, target, def_item, mode, attack_info, def_value)
+    might -= def_value
     might -= skill_system.dynamic_resist(target, resolve_weapon(target), unit, item, mode, attack_info, might)
 
     if assist:
@@ -531,7 +518,7 @@ def compute_damage(unit, target, item, def_item, mode, attack_info, crit=False, 
     else:
         might *= 1 - ((1 - skill_system.resist_multiplier(target, resolve_weapon(target), unit, item, mode, attack_info, might)) * skill_system.reduce_resist_multiplier(unit, item, target, resolve_weapon(target), mode, attack_info, might))
 
-    return int(max(DB.constants.get('min_damage').value, might))
+    return int(max(int(DB.constants.get('min_damage').value), might))
 
 def compute_assist_damage(unit, target, item, def_item, mode, attack_info, crit=False):
     return compute_damage(unit, target, item, def_item, mode, attack_info, crit, assist=True)
@@ -544,20 +531,9 @@ def compute_true_speed(unit, target, item, def_item, mode, attack_info) -> int:
 
     # Weapon Triangle
     triangle_bonus = 0
-
-    adv = compute_advantage(unit, target, item, def_item)
-    disadv = compute_advantage(unit, target, item, def_item, False)
-    if adv:
-        triangle_bonus += int(adv.attack_speed)
-    if disadv:
-        triangle_bonus += int(disadv.attack_speed)
-
-    adv = compute_advantage(target, unit, def_item, item)
-    disadv = compute_advantage(target, unit, def_item, item, False)
-    if adv:
-        triangle_bonus -= int(adv.defense_speed)
-    if disadv:
-        triangle_bonus -= int(disadv.defense_speed)
+    triangle_bonus += compute_advantage_attr(unit, target, item, def_item, 'attack_speed')
+    triangle_bonus -= compute_advantage_attr(target, unit, def_item, item, 'defense_speed')
+    speed += triangle_bonus
 
     # Three Houses style support bonus (only works on attack)
     if mode in ('attack', 'splash'):

@@ -24,9 +24,20 @@ class UnitAnim(SkillComponent):
     def should_draw_anim(self, unit, skill):
         return self.value
 
+class UnitAlphaTint(SkillComponent):
+    nid = 'unit_alpha_tint'
+    desc = "Modifies the unit's sprite to be translucent (0.0 = fully opaque, 1.0 = fully transparent)"
+    tag = SkillTags.AESTHETIC
+
+    expose = ComponentType.Float
+    value = 0.0
+
+    def unit_sprite_alpha_tint(self, unit) -> float:
+        return self.value
+
 class UnitTint(SkillComponent):
     nid = 'unit_tint'
-    desc = "Displays a tint on the unit"
+    desc = "Displays a tint on the unit sprite on map"
     tag = SkillTags.AESTHETIC
 
     expose = ComponentType.Color3
@@ -37,12 +48,34 @@ class UnitTint(SkillComponent):
 
 class UnitFlickeringTint(SkillComponent):
     nid = 'unit_flickering_tint'
-    desc = "Displays a flickering tint on the unit"
+    desc = "Displays a flickering tint on the unit sprite on map"
     tag = SkillTags.AESTHETIC
 
     expose = ComponentType.Color3
 
     def unit_sprite_flicker_tint(self, unit, skill) -> tuple:
+        # Color, Period, Width, Add Tint or Subtract Tint
+        return (self.value, 900, 300, True)
+
+class CombatTint(SkillComponent):
+    nid = 'combat_tint'
+    desc = "Displays a tint on the unit during combat animation"
+    tag = SkillTags.AESTHETIC
+
+    expose = ComponentType.Color3
+
+    def combat_sprite_flicker_tint(self, unit) -> tuple:
+        # Color, Period, Width, Add Tint or Subtract Tint
+        return (self.value, 0, 0, True)
+
+class CombatFlickeringTint(SkillComponent):
+    nid = 'combat_flickering_tint'
+    desc = "Displays a flickering tint on the unit during combat animation"
+    tag = SkillTags.AESTHETIC
+
+    expose = ComponentType.Color3
+
+    def combat_sprite_flicker_tint(self, unit) -> tuple:
         # Color, Period, Width, Add Tint or Subtract Tint
         return (self.value, 900, 300, True)
 
@@ -153,14 +186,33 @@ class ChangeVariant(SkillComponent):
 
     def change_variant(self, unit):
         return self.value
-
-class ChangeAnimation(SkillComponent):
-    nid = 'change_animation'
-    desc = "Change the unit's animation"
+        
+class ChangeMapPalette(SkillComponent):
+    nid = 'change_map_palette'
+    desc = "Change the unit's map palette."
     tag = SkillTags.AESTHETIC
 
     expose = ComponentType.String
     value = ''
+
+    def after_add(self, unit, skill):
+        unit.sprite.load_sprites()
+
+    def after_add_from_restore(self, unit, skill):
+        unit.sprite.load_sprites()
+
+    def after_remove(self, unit, skill):
+        unit.sprite.load_sprites()
+
+    def change_map_palette(self, unit):
+        return self.value
+
+class ChangeAnimation(SkillComponent):
+    nid = 'change_animation'
+    desc = "Change the unit's animation to the specified NID"
+    tag = SkillTags.AESTHETIC
+
+    expose = ComponentType.CombatAnimation
 
     def change_animation(self, unit):
         return self.value

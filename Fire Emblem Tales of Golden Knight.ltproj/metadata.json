@@ -1,5 +1,8 @@
 {
-    "date": "2024-08-10 21:30:50.351332",
-    "version": "2024.07.27a",
-    "project": "FETOGK"
+    "date": "2026-05-16 21:11:28.009774",
+    "engine_version": "2026.02.17a",
+    "serialization_version": 0,
+    "project": "FETOGK",
+    "has_fatal_errors": false,
+    "as_chunks": false
 }

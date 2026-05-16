@@ -6,7 +6,9 @@ from PyQt5.QtCore import Qt
 from app.data.resources.resources import RESOURCES
 from app.data.database.database import DB
 
+from app.data.serialization.versions import CURRENT_SERIALIZATION_VERSION
 from app.editor.settings import MainSettingsController
+from app.editor.settings.preference_definitions import Preference
 
 class SingleDatabaseEditor(QDialog):
     def __init__(self, tab, parent=None):
@@ -31,7 +33,7 @@ class SingleDatabaseEditor(QDialog):
             self.tab.splitter.restoreState(state)
 
     def keyPressEvent(self, keypress: QtGui.QKeyEvent) -> None:
-        if keypress.key() == self.settings.get_editor_close_button():
+        if keypress.key() == self.settings.get_preference(Preference.EDITOR_CLOSE_BUTTON):
             self.reject()
         else:
             pass
@@ -191,6 +193,8 @@ class SingleResourceEditor(QDialog):
         self.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
         self.setWindowFlag(Qt.WindowMinMaxButtonsHint, True)
 
+        self.save()
+
         self.grid = QGridLayout(self)
         self.setLayout(self.grid)
 
@@ -217,7 +221,7 @@ class SingleResourceEditor(QDialog):
     def accept(self):
         current_proj = self.settings.get_current_project()
         # RESOURCES must be saved here because if we grabbed a file from somewhere else
-        # on our computer not under the project tree, we must transfer it under the project 
+        # on our computer not under the project tree, we must transfer it under the project
         # tree. The project does not and should not know the absolute path of every one of its
         # resources, just where the resources should be.
         if current_proj and current_proj != 'default.ltproj':
@@ -229,7 +233,8 @@ class SingleResourceEditor(QDialog):
     def reject(self):
         current_proj = self.settings.get_current_project()
         if current_proj:
-            RESOURCES.load(current_proj)
+            RESOURCES.load(current_proj, CURRENT_SERIALIZATION_VERSION)
+        DB.restore(self.saved_data)
         self.save_geometry()
         super().reject()
         self.close()
@@ -238,6 +243,7 @@ class SingleResourceEditor(QDialog):
         current_proj = self.settings.get_current_project()
         if current_proj and current_proj != 'default.ltproj':
             RESOURCES.save(current_proj, self.resource_types)
+        self.save()
         self.save_geometry()
 
     def closeEvent(self, event):
@@ -246,6 +252,10 @@ class SingleResourceEditor(QDialog):
 
     def _type(self):
         return self.tab.__class__.__name__
+
+    def save(self):
+        self.saved_data = DB.save()
+        return self.saved_data
 
     def save_geometry(self):
         self.settings.component_controller.set_geometry(self._type(), self.saveGeometry())
@@ -261,6 +271,8 @@ class MultiResourceEditor(SingleResourceEditor):
         self.setStyleSheet("font: 10pt;")
         self.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
         self.setWindowFlag(Qt.WindowMinMaxButtonsHint, True)
+
+        self.save()
 
         self.grid = QGridLayout(self)
         self.setLayout(self.grid)
@@ -334,3 +346,16 @@ class MultiResourceEditor(SingleResourceEditor):
         for tab in self.tabs:
             tab.closeEvent(event)
         super().closeEvent(event)
+
+class NewMultiResourceEditor(MultiResourceEditor):
+    def on_tab_changed(self, idx):
+        # Make each tab individually resizable
+        for i in range(self.tab_bar.count()):
+            if i == idx:
+                self.tab_bar.widget(i).setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+            else:
+                self.tab_bar.widget(i).setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
+
+        new_tab = self.tab_bar.currentWidget()
+        self.current_tab = new_tab
+        self.current_tab.reset()

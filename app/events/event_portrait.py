@@ -18,6 +18,9 @@ class EventPortrait():
 
     halfblink = (width - 32, 48, 32, 16)
     fullblink = (width - 32, 64, 32, 16)
+    
+    leftwink = (width - 32, 64, 16, 16)
+    rightwink = (width - 16, 64, 16, 16)
 
     openmouth = (0, height - 16, 32, 16)
     halfmouth = (32, height - 16, 32, 16)
@@ -101,7 +104,8 @@ class EventPortrait():
     def desaturate(self):
         self.saturation_direction = -1
 
-    def bop(self, num=2, height=2):
+    def bop(self, num: int = 2, height: int = 2, speed: int = utils.frames2ms(8)):
+        self.bop_time = speed
         self.bops_remaining = num
         self.bop_state = False
         self.bop_height = height
@@ -128,7 +132,7 @@ class EventPortrait():
             distance -= change
         return utils.frames2ms(counter)
 
-    def talk(self):
+    def start_talking(self):
         self.talk_on = True
 
     def stop_talking(self):
@@ -197,7 +201,8 @@ class EventPortrait():
             elif self.talk_state == 2:
                 mouth_image = engine.subsurface(self.portrait.image, self.openmouth)
 
-        # For blink image
+        # For blink image.
+        blink_image: Optional[engine.Surface] = None
         if "CloseEyes" in self.expressions:
             blink_image = engine.subsurface(self.portrait.image, self.fullblink)
         elif "HalfCloseEyes" in self.expressions:
@@ -211,11 +216,25 @@ class EventPortrait():
                 blink_image = engine.subsurface(self.portrait.image, self.halfblink)
             elif self.blink_counter.count == 2:
                 blink_image = engine.subsurface(self.portrait.image, self.fullblink)
+        
+        # For wink image.
+        wink_image: Optional[engine.Surface] = None
+        wink_offset = 0 # For right-winking purposes.
+        if "LeftWink" in self.expressions or "FarWink" in self.expressions:
+            wink_image = engine.subsurface(self.portrait.image, self.leftwink)
+        elif "RightWink" in self.expressions or "NearWink" in self.expressions:
+            wink_image = engine.subsurface(self.portrait.image, self.rightwink)
+            wink_offset = 16
 
         # Piece together image
         if blink_image:
             main_image.blit(blink_image, self.portrait.blinking_offset)
+            
+        if wink_image:
+            main_image.blit(wink_image, [self.portrait.blinking_offset[0] + wink_offset, self.portrait.blinking_offset[1]])
+            
         main_image.blit(mouth_image, self.portrait.smiling_offset)
+        
         return main_image
 
     def update(self) -> bool:

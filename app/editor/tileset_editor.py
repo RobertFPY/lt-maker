@@ -109,7 +109,6 @@ class TileSetEditor(QDialog):
         view_layout.addWidget(self.view)
         view_frame.setLayout(view_layout)
 
-
         self.main_splitter.addWidget(self.terrain_painter_menu)
         self.main_splitter.addWidget(view_frame)
 
@@ -169,7 +168,6 @@ class TileSetEditor(QDialog):
         theme = dark_theme.get_theme()
         icon_folder = theme.icon_dir()
 
-
         paint_group = QActionGroup(self)
         self.brush_action = QAction(QIcon(f"{icon_folder}/brush.png"), "&Brush", self, shortcut="B", triggered=self.set_brush)
         self.brush_action.setCheckable(True)
@@ -181,6 +179,9 @@ class TileSetEditor(QDialog):
         self.show_gridlines_action = QAction(QIcon(f"{icon_folder}/gridlines.png"), "Show GridLines", self, triggered=self.gridline_toggle)
         self.show_gridlines_action.setCheckable(True)
         self.show_gridlines_action.setChecked(True)
+
+    def void_right_selection(self):
+        pass
 
     def check_brush(self):
         self.brush_action.setChecked(True)

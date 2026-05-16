@@ -649,11 +649,11 @@ class LevelUpScreen():
         return surf
 
 class ExpBar():
-    background = engine.subsurface(SPRITES.get('expbar'), (0, 0, 136, 24))
+    background = engine.subsurface(SPRITES.get('expbar'), (0, 0, 144, 24))
     begin = engine.subsurface(SPRITES.get('expbar'), (0, 24, 3, 7))
     middle = engine.subsurface(SPRITES.get('expbar'), (3, 24, 1, 7))
     end = engine.subsurface(SPRITES.get('expbar'), (4, 24, 2, 7))
-    width = 136
+    width = 144
     height = 24
     bar_max = 100
 
@@ -701,7 +701,7 @@ class ExpBar():
         new_surf.blit(self.end, (10 + idx, 9))
 
         # Blit current amount of exp
-        FONT['number_small3'].blit_right(str(int(self.num)), new_surf, (self.width - 4, 4))
+        FONT['number_small3'].blit_right(str(int(self.num)), new_surf, (self.width - 8, 4))
 
         # Transition
         new_surf = engine.subsurface(new_surf, (0, self.offset, self.width, self.height - self.offset * 2))

@@ -1,13 +1,17 @@
 from __future__ import annotations
-from functools import lru_cache
 
-from typing import TYPE_CHECKING
+from collections import defaultdict
+from typing import TYPE_CHECKING, Callable, Optional
 
 from app.engine.component_system import utils
+from app.engine.utils.ltcache import ltcached
 
 if TYPE_CHECKING:
     from app.engine.objects.item import ItemObject
     from app.engine.objects.unit import UnitObject
+    from app.engine.objects.skill import SkillObject
+    from app.data.database.components import ComponentType
+    from app.engine.info_menu.multi_desc_utils import RawPages
 
 class Defaults():
     @staticmethod
@@ -72,7 +76,7 @@ class Defaults():
 
     @staticmethod
     def change_animation(unit) -> str:
-        return unit.klass
+        return None
 
     @staticmethod
     def change_ai(unit) -> str:
@@ -95,6 +99,14 @@ class Defaults():
         return 0
 
     @staticmethod
+    def empower_mana(unit1, unit2) -> int:
+        return 0
+
+    @staticmethod
+    def empower_mana_received(unit2, unit1) -> int:
+        return 0
+
+    @staticmethod
     def limit_maximum_range(unit, item) -> int:
         return 1000
 
@@ -107,8 +119,16 @@ class Defaults():
         return 0
 
     @staticmethod
+    def xcom_movement(unit):
+        return 0
+
+    @staticmethod
     def empower_splash(unit):
         return 0
+
+    @staticmethod
+    def unit_sprite_alpha_tint(unit) -> float:
+        return 0.0
 
     @staticmethod
     def modify_buy_price(unit, item) -> float:
@@ -162,8 +182,9 @@ class Defaults():
     def thracia_critical_multiplier_formula(unit) -> str:
         return 'THRACIA_CRIT'
 
-@lru_cache(65535)
+@ltcached
 def condition(skill, unit: UnitObject, item=None) -> bool:
+    # print('Checking condition for', skill, unit, item)
     if not item:
         item = unit.equipped_weapon
     for component in skill.components:
@@ -341,6 +362,21 @@ def get_text(skill) -> str:
             return component.text()
     return None
 
+@ltcached
+def get_multi_desc(skill, unit) -> list[RawPages]:
+    all_descs: list[RawPages] = []
+    for component in skill.components:
+        if component.defines('multi_desc'):
+            all_descs.append(component.multi_desc(skill, unit))
+    return all_descs
+
+@ltcached
+def get_multi_desc_name_override(skill, unit) -> Optional[str]:
+    for component in skill.components:
+        if component.defines('multi_desc_name_override'):
+            return component.multi_desc_name_override(skill, unit)
+    return None
+
 def get_cooldown(skill) -> float:
     for component in skill.components:
         if component.defines('cooldown'):
@@ -358,24 +394,61 @@ def get_hide_skill_icon(unit, skill) -> bool:
 def get_show_skill_icon(unit, skill) -> bool:
     for component in skill.components:
         if component.defines('show_skill_icon') and \
+                (component.ignore_conditional or condition(skill, unit)) and \
                 component.show_skill_icon(unit):
             return True
     return False
-
+    
+def get_shape(unit, skill) -> set[tuple]:
+    #Get a set of all tiles this skill should affect
+    for component in skill.components:
+        if component.defines('get_shape'):
+            return component.get_shape(unit, skill)
+    return None
+    
+def get_max_shape_range(skill) -> int:
+    #Get the maximum manhattan distance to tiles skill affects
+    for component in skill.components:
+        if component.defines('get_max_shape_range'):
+            return component.get_max_shape_range(skill)
+    return None
+    
 def trigger_charge(unit, skill):
     for component in skill.components:
         if component.defines('trigger_charge'):
             component.trigger_charge(unit, skill)
     return None
 
-def get_extra_abilities(unit):
-    abilities = {}
+def get_extra_abilities(unit: UnitObject, categorized: bool = False):
+    """Returns a dict of extra ability names to corresponding skill item.
+
+    Args:
+        unit (UnitObject): Unit extra ability belong to.
+        categorized (bool, optional): Whether to categorize extra abilities. Defaults to False.
+
+    Returns:
+        ExtraAbilityDict | CategorizedExtraAbilityDict: A dict that defines extra abilities,
+        or a dict with category names defined by a MenuCategory component that map to extra
+        abilities that belong in that category.
+    """
+    abilities = defaultdict(dict) if categorized else {}
     for skill in unit.skills:
+        ability_comps = []  # keep behavior from previous implementation
+        category = None
         for component in skill.components:
             if component.defines('extra_ability'):
                 if component.ignore_conditional or condition(skill, unit):
                     new_item = component.extra_ability(unit)
                     ability_name = new_item.name
+                    ability_comps.append((ability_name, new_item))
+            if component.defines('menu_category'):
+                category = component.menu_category()
+        if ability_comps:
+            for ability_name, new_item in ability_comps:
+                category = '_uncategorized' if category is None else category
+                if categorized:
+                    abilities[category][ability_name] = new_item
+                else:
                     abilities[ability_name] = new_item
     return abilities
 
@@ -388,22 +461,36 @@ def ai_priority_multiplier(unit) -> float:
                     ai_priority_multiplier *= component.ai_priority_multiplier(unit)
     return ai_priority_multiplier
 
-def get_combat_arts(unit):
+def get_combat_arts(unit: UnitObject, categorized: bool = False):
+    """Returns a dict of combat art names to corresponding skill and weapons.
+
+    Args:
+        unit (UnitObject): Unit combat arts belong to.
+        categorized (bool, optional): Whether to categorize combat arts. Defaults to False.
+
+    Returns:
+        CombatArtDict | CategorizedCombatArtDict: A dict that defines combat arts, or a dict
+        with category names defined by a MenuCategory component that map to combat arts that
+        belong in that category.
+    """
     from app.engine import action, item_funcs
     from app.engine.game_state import game
-    combat_arts = {}
+    combat_arts = defaultdict(dict) if categorized else {}
     unit_skills = unit.skills[:]
     for skill in unit_skills:
         if not condition(skill, unit):
             continue
         combat_art = None
         combat_art_weapons = [item for item in item_funcs.get_all_items(unit) if item_funcs.available(unit, item)]
+        category = None
         for component in skill.components:
             if component.defines('combat_art'):
                 combat_art = component.combat_art(unit)
             if component.defines('weapon_filter'):
                 combat_art_weapons = \
                     [item for item in combat_art_weapons if component.weapon_filter(unit, item)]
+            if component.defines('menu_category'):
+                category = component.menu_category()
 
         if combat_art and combat_art_weapons:
             good_weapons = []
@@ -419,7 +506,11 @@ def get_combat_arts(unit):
                     good_weapons.append(weapon)
 
             if good_weapons:
-                combat_arts[skill.name] = (skill, good_weapons)
+                category = '_uncategorized' if category is None else category
+                if categorized:
+                    combat_arts[category][skill.name] = (skill, good_weapons)
+                else:
+                    combat_arts[skill.name] = (skill, good_weapons)
 
     return combat_arts
 

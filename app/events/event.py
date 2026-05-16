@@ -29,6 +29,7 @@ from app.events.event_version import EventVersion
 from app.events.python_eventing.errors import EventError
 from app.events.python_eventing.python_event_processor import PythonEventProcessor
 from app.events.python_eventing.utils import SAVE_COMMAND_NIDS
+from app.events.python_eventing.python_proxy import PythonProxy
 from app.events.speak_style import SpeakStyle
 from app.events.utils import TableRows
 from app.utilities import str_utils, utils, static_random
@@ -58,7 +59,11 @@ class Event():
             event_args['unit'] = event_args['unit1']
         self.unit = event_args.get('unit1', None)
         self.unit2 = event_args.get('unit2', None)
+        if 'unit2' in event_args:
+            event_args['target'] = event_args['unit2']
         self.created_unit = None
+        event_args['created_unit'] = PythonProxy('created_unit', self.nid)
+        self.it = None # Can't be used in #pyev1 due to architectural caveats.
         self.position = event_args.get('position', None)
         self.local_args = event_args or {}
         if game:
@@ -133,13 +138,20 @@ class Event():
     def unit1(self):
         return self.unit
 
+    # these keys in local_args shouldn't be saved because they
+    # contain non-serializable ephemereal data ('playback' contains
+    # PlaybackBrush objects with nested game object references
+    # that may cache pygame surfaces), hence our mysterious pickle bug...
+    _EXCLUDE_FROM_SAVE = frozenset({'playback'})
+
     def save(self):
         ser_dict = {}
         ser_dict['nid'] = self.nid
         ser_dict['unit1'] = self.unit.nid if self.unit else None
         ser_dict['unit2'] = self.unit2.nid if self.unit2 else None
         ser_dict['position'] = self.position
-        ser_dict['local_args'] = {k: action.Action.save_obj(v) for k, v in self.local_args.items()}
+        ser_dict['local_args'] = {k: action.Action.save_obj(v) for k, v in self.local_args.items()
+                                  if k not in self._EXCLUDE_FROM_SAVE}
         ser_dict['processor_state'] = self.processor.save()
         return ser_dict
 
@@ -374,7 +386,11 @@ class Event():
         parameters, flags = command.parameters, command.chosen_flags
         parameters = {str_utils.camel_to_snake(k): v for k, v in parameters.items()}
         self.logger.debug("%s, %s", parameters, flags)
+        if 'no_warn' in flags:  # Disable all logging up to warning
+            logging.disable(logging.WARNING)
         get_catalog()[command.nid](self, **parameters, flags=flags)
+        if 'no_warn' in flags:  # Reenable all logging
+            logging.disable(logging.NOTSET)
 
     def _object_to_str(self, obj) -> str:
         if hasattr(obj, 'uid'):
@@ -396,7 +412,7 @@ class Event():
             exc.what = str(e)
             raise exc
 
-    def _queue_command(self, event_command_str: str):
+    def queue_command(self, event_command_str: str):
         try:
             command, _ = event_commands.parse_text_to_command(event_command_str, strict=True)
             if not command:
@@ -406,7 +422,7 @@ class Event():
             processed_command = command.__class__(parameters, flags, command.display_values)
             self.command_queue.append(processed_command)
         except Exception as e:
-            logging.error('_queue_command: Unable to parse command "%s". %s', event_command_str, e)
+            logging.error('queue_command: Unable to parse command "%s". %s', event_command_str, e)
 
     def _place_unit(self, unit, position, entry_type, entry_direc=None):
         position = tuple(position)

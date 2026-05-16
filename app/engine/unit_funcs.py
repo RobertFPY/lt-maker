@@ -155,36 +155,47 @@ def _dynamic_levelup(unit, level) -> dict:
     for nid in DB.stats.keys():
         growth = growth_rate(unit, nid)
         if growth > 0:
-            start_growth = growth + unit.growth_points[nid]
-            if start_growth <= 0:
-                unit.growth_points[nid] += growth / 5.
+            free_stat_ups = growth // 100
+            stat_changes[nid] += free_stat_ups
+            new_growth = growth % 100
+            start_growth = new_growth + unit.growth_points[nid]
+            if rng.randint(0, 99) < int(start_growth):
+                stat_changes[nid] += 1
+                unit.growth_points[nid] -= (100 - new_growth) / variance
             else:
-                free_stat_ups = growth // 100
-                stat_changes[nid] += free_stat_ups
-                new_growth = growth % 100
-                start_growth = new_growth + unit.growth_points[nid]
-                if rng.randint(0, 99) < int(start_growth):
-                    stat_changes[nid] += 1
-                    unit.growth_points[nid] -= (100 - new_growth) / variance
-                else:
-                    unit.growth_points[nid] += new_growth / variance
+                unit.growth_points[nid] += new_growth / variance
 
         elif growth < 0 and DB.constants.value('negative_growths'):
             growth = -growth
-            start_growth = growth + unit.growth_points[nid]
-            if start_growth <= 0:
-                unit.growth_points[nid] += growth / 5.
+            free_stat_downs = growth // 100
+            stat_changes[nid] -= free_stat_downs
+            new_growth = growth % 100
+            start_growth = new_growth + unit.growth_points[nid]
+            if rng.randint(0, 99) < int(start_growth):
+                stat_changes[nid] -= 1
+                unit.growth_points[nid] -= (100 - new_growth) / variance
             else:
-                free_stat_downs = growth // 100
-                stat_changes[nid] -= free_stat_downs
-                new_growth = growth % 100
-                start_growth = new_growth + unit.growth_points[nid]
-                if rng.randint(0, 99) < int(start_growth):
-                    stat_changes[nid] -= 1
-                    unit.growth_points[nid] -= (100 - new_growth) / variance
-                else:
-                    unit.growth_points[nid] += new_growth / variance
+                unit.growth_points[nid] += new_growth / variance
 
+    return stat_changes
+    
+def _lucky_levelup(unit, level) -> dict:
+    rng = static_random.get_levelup(unit.nid, level)
+    stat_changes = {nid: 0 for nid in DB.stats.keys()}
+
+    for nid in DB.stats.keys():
+        growth = growth_rate(unit, nid)
+        counter = 0
+        if growth > 0:
+            while growth > 0:
+                counter += 1
+                growth -= 100
+        elif growth < 0 and DB.constants.value('negative_growths'):
+            growth = -growth
+            while growth > 0:
+                counter -= 1 if growth >= 100 else 0
+                growth -= 100
+        stat_changes[nid] += counter
     return stat_changes
 
 def _rd_bexp_levelup(unit, level):
@@ -245,6 +256,8 @@ def get_next_level_up(unit: UnitObject, level: int, custom_method: Optional[str]
         stat_changes = _random_levelup(unit, level)
     elif method == GrowthOption.DYNAMIC:
         stat_changes = _dynamic_levelup(unit, level)
+    elif method == GrowthOption.LUCKY:
+        stat_changes = _lucky_levelup(unit, level)
     else:
         logging.error("Could not find level_up method matching %s", method)
 
@@ -587,6 +600,7 @@ def wait(unit: UnitObject, actively_chosen: bool = False):
         # To prevent double-waiting
         game.events.trigger(triggers.UnitWait(unit, unit.position, game.get_region_under_pos(unit.position), actively_chosen))
         action.do(action.Wait(unit))
+        skill_system.on_wait(unit, actively_chosen)
 
 def usable_wtypes(unit: UnitObject) -> Set[NID]:
     """

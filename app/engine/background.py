@@ -44,13 +44,13 @@ class SpriteBackground():
         self.state = 'out'
 
 class PanoramaBackground():
-    def __init__(self, panorama, speed=125, loop=True):
+    def __init__(self, panorama, speed=125, loop=True, autoscale=True):
         self.counter = 0
         self.panorama = panorama
         if not self.panorama.images:
             for path in self.panorama.get_all_paths():
                 image = engine.image_load(path)
-                if image.get_size() != (WINWIDTH, WINHEIGHT):
+                if autoscale and image.get_size() != (WINWIDTH, WINHEIGHT):
                     image = engine.transform_scale(image, (WINWIDTH, WINHEIGHT))
                 self.panorama.images.append(image)
 
@@ -188,7 +188,7 @@ class ScrollingBackground(PanoramaBackground):
     scroll_speed = 25
 
     def __init__(self, panorama, speed=125, loop=True):
-        super().__init__(panorama, speed, loop)
+        super().__init__(panorama, speed, loop, autoscale=False)
         self.x_index = 0
         self.scroll_counter = 0
         self.last_scroll_update = 0

@@ -164,6 +164,7 @@ anim_commands = Data([
     CombatAnimationCommand('miss', 'Miss', None, None, 'process'),
     CombatAnimationCommand('spell', 'Cast Spell', ('effect',), (None,), 'process'),
     CombatAnimationCommand('spell_hit', 'Spell Hit', None, None, 'process'),
+    CombatAnimationCommand('spell_hit_2', 'Spell Hit (Crit)', None, None, 'process'),
 
     CombatAnimationCommand('self_tint', 'Tint Self', (int, 'color'), (0, (248, 248, 248)), 'aesthetic1'),
     CombatAnimationCommand('parent_tint', 'Tint Parent', (int, 'color'), (0, (248, 248, 248)), 'aesthetic1'),
@@ -175,15 +176,17 @@ anim_commands = Data([
     CombatAnimationCommand('foreground_blend', 'Tint Foreground', (int, 'color'), (0, (248, 248, 248)), 'aesthetic1'),
     CombatAnimationCommand('screen_blend', 'Tint Entire Screen', (int, 'color'), (0, (248, 248, 248)), 'aesthetic1'),
     CombatAnimationCommand('screen_blend_with_fade_out', 'Tint Entire Screen (Fade Out Tint)', (int, int, 'color'), (0, 0, (248, 248, 248)), 'aesthetic1'),
-    CombatAnimationCommand('opacity', 'Set Opacity', (int,), (0,), 'aesthetic1'),
-    CombatAnimationCommand('parent_opacity', 'Set Parent Opacity', (int,), (0,), 'aesthetic1'),
+    CombatAnimationCommand('opacity', 'Set Opacity (0 - 255)', (int,), (0,), 'aesthetic1'),
+    CombatAnimationCommand('parent_opacity', 'Set Parent Opacity (0 - 255)', (int,), (0,), 'aesthetic1'),
 
     CombatAnimationCommand('platform_shake', 'Shake Platform', None, None, 'aesthetic2'),
-    CombatAnimationCommand('screen_shake', 'Shake Screen', None, None, 'aesthetic2'),
+    CombatAnimationCommand('screen_shake', 'Shake Screen (Light)', None, None, 'aesthetic2'),
+    CombatAnimationCommand('screen_shake_2', 'Shake Screen (Heavy)', None, None, 'aesthetic2'),
     CombatAnimationCommand('hit_spark', 'Show Hit Spark', None, None, 'aesthetic2'),
     CombatAnimationCommand('crit_spark', 'Show Crit Spark', None, None, 'aesthetic2'),
     CombatAnimationCommand('darken', 'Darken Background', None, None, 'aesthetic2'),
     CombatAnimationCommand('lighten', 'Lighten Background', None, None, 'aesthetic2'),
+    CombatAnimationCommand('set_brightness', 'Set Brightness (0 - 255)', (int,), (0,), 'aesthetic2'),
 
     CombatAnimationCommand('effect', 'Show Effect On Self', ('effect',), (None,), 'effect'),
     CombatAnimationCommand('under_effect', 'Show Effect Under Self', ('effect',), (None,), 'effect'),
@@ -195,9 +198,11 @@ anim_commands = Data([
     CombatAnimationCommand('clear_all_effects', 'Clear All Effects', None, None, 'effect'),
 
     CombatAnimationCommand('pan', 'Pan Screen', None, None, 'aesthetic3'),
-    CombatAnimationCommand('blend', 'Set Frame Blending', (bool,), (True,), 'aesthetic3'),
+    CombatAnimationCommand('blend', 'Set Additive Frame Blending', (bool,), (True,), 'aesthetic3'),
+    CombatAnimationCommand('blend2', 'Set Subtractive Frame Blending', (bool,), (True,), 'aesthetic3'),
     CombatAnimationCommand('static', 'Set Has Static Position', (bool,), (True,), 'aesthetic3'),
     CombatAnimationCommand('ignore_pan', 'Set Ignore Pan', (bool,), (True,), 'aesthetic3'),
+    CombatAnimationCommand('partial_blend', 'Set Partial Blend', (int,), (0,), 'aesthetic3'),
     
     CombatAnimationCommand('start_loop', 'Start Loop', None, None, 'loop'),
     CombatAnimationCommand('end_loop', 'End Loop', None, None, 'loop'),

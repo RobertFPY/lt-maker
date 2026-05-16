@@ -12,9 +12,8 @@
 #
 import os
 import sys
-# sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('../'))
-
 # Run the source generation step before we do the final import of item_system and skill_system
 from app.engine.codegen import source_generator
 source_generator.generate_all()
@@ -31,7 +30,7 @@ author = 'rainlash'
 autodoc_member_order = 'bysource'  # Not alphabetical
 # Not needed as long as you do UnitObject() with those parentheses on the end
 # It gets rid of the init call
-# autodoc_class_signature = 'separated'  
+# autodoc_class_signature = 'separated'
 
 # -- General configuration ---------------------------------------------------
 
@@ -64,5 +63,20 @@ html_theme = 'sphinx_rtd_theme'
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
+# Allow anchors for up to h2
+myst_heading_anchors = 2
+
+html_context = {
+    "display_gitlab": True, # Integrate Gitlab
+    "gitlab_user": "rainlash", # Username
+    "gitlab_repo": "lt-maker", # Repo name
+    "gitlab_version": "master", # Version
+    "conf_py_path": "/docs/", # Path in the checkout to the docs root
+}
+
 def setup(app):
     app.add_css_file("theme_overrides.css")
+    from custom_directives.document_constants import DocumentConstantsList
+    from custom_directives.test_directive import TestDirectiveClass
+    app.add_directive('document_constants', DocumentConstantsList)
+    app.add_directive('test_directive', TestDirectiveClass)

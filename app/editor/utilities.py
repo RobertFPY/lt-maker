@@ -3,14 +3,16 @@ from __future__ import annotations
 from PyQt5 import QtGui
 from PyQt5.QtCore import Qt
 
-from typing import Dict
+from typing import Dict, Set, Optional
 from app.utilities.typing import Color3
 
 from app.constants import COLORKEY
 from app.data.resources.combat_palettes import Palette
 from app.data.resources.combat_anims import Frame
+from app.data.resources.default_palettes import blue as default_blue_palette
 
 qCOLORKEY = QtGui.qRgb(*COLORKEY)
+qEFFECT_COLORKEY = QtGui.qRgb(0, 0, 0)
 qAlpha = QtGui.qRgba(0, 0, 0, 0)
 
 def rgb_convert(conversion: Dict[Color3, Color3]) -> Dict[QtGui.qRgb, QtGui.qRgb]:
@@ -51,10 +53,16 @@ def color_convert(image, conversion_dict):
     num_colors = new_image.colorCount()
     if num_colors > 192:
         return color_convert_slow(image, conversion_dict)
+    # Figure out what color conversions to make
+    color_conv = {}
     for old_color, new_color in conversion_dict.items():
         for i in range(new_image.colorCount()):
             if new_image.color(i) == old_color:
-                new_image.setColor(i, new_color)
+                color_conv[i] = new_color
+    # Actually make them
+    # Got to do this so swapped colors don't just replace all of one of the color with the second color swapped
+    for i, new_color in color_conv.items():
+        new_image.setColor(i, new_color)
     return new_image.convertToFormat(QtGui.QImage.Format_RGB32)
 
 def color_convert_pixmap(pixmap: QtGui.QPixmap, convert_dict: dict) -> QtGui.QPixmap:
@@ -130,16 +138,57 @@ def convert_gba(image):
         image.setColor(i, QtGui.qRgb(*new_color))
     return image
 
-def get_bbox(image):
+def find_closest_match(color: QtGui.QColor, palette: Set[Color3]) -> Optional[Color3]:
+    #   Given a color and a palette, find the palette color that closest matches the color
+    #   Return None if color is present in the palette
+
+    rgb = (color.red(), color.green(), color.blue())
+    if rgb in palette:
+        return None
+
+    closest_diff = (256 ** 2) * 3   # Largest value possible
+    for c in palette:
+        diff = sum((c[i] - rgb[i])**2 for i in range(3))
+        if diff < closest_diff:
+            closest_rgb = c
+            closest_diff = diff
+    return closest_rgb
+
+def convert_default_palette(image: QtGui.QImage) -> Optional[QtGui.QImage]:
+    #   Recolor the given image using only colors from the default palette
+    #   Return None if no recolor needed (the image already uses only colors from default palette)
+
+    did_something = False
+    palette = set(default_blue_palette)
+    for i in range(image.colorCount()):
+        color = QtGui.QColor(image.color(i))
+        if new_color := find_closest_match(color, palette):
+            image.setColor(i, QtGui.qRgb(*new_color))
+            did_something = True
+    if did_something:
+        return image
+
+def convert_default_palette_pixmap(pixmap: QtGui.QPixmap) -> Optional[QtGui.QPixmap]:
+    #   Recolor the given image using only colors from the default palette
+    #   Return None if no recolor needed (the image already uses only colors from default palette)
+
+    im = pixmap.toImage()
+    im.convertTo(QtGui.QImage.Format_Indexed8)
+    if im := convert_default_palette(im):
+        pixmap = QtGui.QPixmap.fromImage(im)
+        return pixmap
+
+def get_bbox(image, exclude_color: Optional[QtGui.qRgb] = None):
     min_x, max_x = image.width(), 0
     min_y, max_y = image.height(), 0
 
     # Assumes topleft color is exclude color
     # unless top right is qCOLORKEY, then uses qCOLORKEY
-    exclude_color = image.pixel(0, 0)
-    test_color = image.pixel(image.width() - 1, 0)
-    if test_color == qCOLORKEY:
-        exclude_color = qCOLORKEY
+    if not exclude_color:
+        exclude_color = image.pixel(0, 0)
+        test_color = image.pixel(image.width() - 1, 0)
+        if test_color == qCOLORKEY:
+            exclude_color = qCOLORKEY
 
     for x in range(image.width()):
         for y in range(image.height()):

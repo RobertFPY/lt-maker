@@ -133,15 +133,8 @@ class StatusUpkeepState(MapState):
                 damage = brush.damage
                 if damage == 0:
                     continue
-                str_damage = str(abs(damage))
                 target = brush.unit
-                if damage < 0:
-                    color = 'small_cyan'
-                else:
-                    color = 'small_red'
-                for idx, num in enumerate(str_damage):
-                    d = gui.DamageNumber(int(num), idx, len(str_damage), target.position, color)
-                    target.sprite.damage_numbers.append(d)
+                target.sprite.add_damage_number(damage)
 
     def check_death(self):
         if self.cur_unit.get_hp() <= 0:

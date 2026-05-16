@@ -34,8 +34,8 @@ config = [('animation', ['Always', 'Your Turn', 'Combat Only', 'Never'], 0),
           ('autocursor', bool, 13),
           ('hp_map_team', ['All', 'Ally', 'Enemy'], 10),
           ('hp_map_cull', ['None', 'Wounded', 'All'], 10),
-          ('music_volume', [x/10.0 for x in range(0, 11, 1)], 15),
-          ('sound_volume', [x/10.0 for x in range(0, 11, 1)], 16),
+          ('music_volume', [0, 0.01, 0.02, 0.03, 0.0625, 0.125, 0.25, 0.5, 1], 15),
+          ('sound_volume', [0, 0.01, 0.02, 0.03, 0.0625, 0.125, 0.25, 0.5, 1], 16),
           ('talk_boop', bool, 16),
           ('show_bounds', bool, 7),
           ('grid_opacity', [int(255 * x / 10.0) for x in range(11)], 7),
@@ -157,26 +157,27 @@ class SettingsMenuState(State):
         else:
             self.handle_mouse()
             if 'DOWN' in directions:
-                get_sound_thread().play_sfx('Select 6')
-                self.current_menu.move_down(first_push)
+                if self.current_menu.move_down(first_push):
+                    get_sound_thread().play_sfx('Select 6')
             elif 'UP' in directions:
-                get_sound_thread().play_sfx('Select 6')
                 if self.current_menu.get_current_index() <= 0:
                     self.current_menu.takes_input = False
                     if self.state == 'config':
                         self.state = 'top_menu_left'
                     else:
                         self.state = 'top_menu_right'
+                    get_sound_thread().play_sfx('Select 6')
                 else:
-                    self.current_menu.move_up(first_push)
+                    if self.current_menu.move_up(first_push):
+                        get_sound_thread().play_sfx('Select 6')
             elif 'LEFT' in directions:
-                get_sound_thread().play_sfx('Select 6')
-                self.current_menu.move_left()
+                if self.current_menu.move_left():
+                    get_sound_thread().play_sfx('Select 6')
                 if self.current_menu.get_current_option().name in ('music_volume', 'sound_volume'):
                     self.update_sound()
             elif 'RIGHT' in directions:
-                get_sound_thread().play_sfx('Select 6')
-                self.current_menu.move_right()
+                if self.current_menu.move_right():
+                    get_sound_thread().play_sfx('Select 6')
                 if self.current_menu.get_current_option().name in ('music_volume', 'sound_volume'):
                     self.update_sound()
 

@@ -1419,7 +1419,18 @@ class Convoy():
             new_menu.shimmer = 2
             self.menus[w_type] = new_menu
 
-        height = DB.constants.total_items() * 16 + 8
+        # Pick the height based on which sections this mode actually shows so
+        # the inventory panel doesn't leave a tall translucent strip of empty
+        # bg above the (single) accessory row when costume mode is active.
+        num_items = item_funcs.get_num_items(self.owner)
+        num_accessories = item_funcs.get_num_accessories(self.owner)
+        if self.mode == 'items':
+            slots = num_items
+        elif self.mode == 'costume':
+            slots = num_accessories
+        else:
+            slots = num_items + num_accessories
+        height = slots * 16 + 8
         self.inventory = Inventory(self.owner, self._owner_items_for_mode(), (12, WINHEIGHT - height - 4))
         self.inventory.set_mode(self.mode)
         # Rebuild option list now that mode is set so that the inventory only

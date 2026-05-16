@@ -857,16 +857,10 @@ class PrepManageSelectState(State):
             ignore[3] = not game.game_vars.get('_repair_shop', True) or not item_funcs.has_repair(self.unit)
         if skill_system.no_trade(self.unit):
             ignore[0] = True
-        # Costume: enabled when convoy is unlocked OR unit already has a
-        # costume on. Without convoy the player can still swap among owned
-        # accessories, but if there are none and no convoy to draw from we
-        # grey it out.
-        has_convoy = bool(game.game_vars.get('_convoy'))
-        owns_accessory = bool(self.unit.accessories)
-        convoy_has_accessory = False
-        if has_convoy:
-            convoy_has_accessory = any(item_system.is_accessory(self.unit, item) for item in game.party.convoy)
-        ignore[6] = not (owns_accessory or convoy_has_accessory)
+        # Costume is always accessible — even with an empty convoy the player
+        # may want to open the menu to inspect their current accessory or
+        # unequip it, so we never grey this option out.
+        ignore[6] = False
         return ignore
 
     def begin(self):

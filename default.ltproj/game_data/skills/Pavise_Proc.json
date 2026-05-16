@@ -1,0 +1,18 @@
+[
+    {
+        "nid": "Pavise_Proc",
+        "name": "Pavise",
+        "desc": "Nullifies damage done to unit.",
+        "icon_nid": "Skills",
+        "icon_index": [
+            10,
+            3
+        ],
+        "components": [
+            [
+                "resist",
+                1000
+            ]
+        ]
+    }
+]

@@ -1,0 +1,30 @@
+[
+    {
+        "nid": "Armorcrush_Override",
+        "name": "Armorcrush Override",
+        "desc": "(Used in the Armorcrush Combat Art in the Skills editor.)",
+        "icon_nid": "Skills",
+        "icon_index": [
+            10,
+            5
+        ],
+        "components": [
+            [
+                "effective_damage",
+                {
+                    "effective_tags": [
+                        "Armor"
+                    ],
+                    "effective_multiplier": 3,
+                    "effective_bonus_damage": 0,
+                    "show_effectiveness_flash": true,
+                    "weapon_effectiveness_multiplied": true
+                }
+            ],
+            [
+                "mana_cost",
+                4
+            ]
+        ]
+    }
+]

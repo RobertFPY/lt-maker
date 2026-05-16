@@ -1,0 +1,26 @@
+[
+    {
+        "nid": "AnimaOverride",
+        "name": "AnimaOverride",
+        "desc": "(Allows Wind Sword to count as Anima magic at range.)",
+        "icon_nid": "wexp_icons",
+        "icon_index": [
+            0,
+            6
+        ],
+        "components": [
+            [
+                "hidden",
+                null
+            ],
+            [
+                "combat_condition",
+                "unit.position and (utils.calculate_distance(unit.position, unit2.position) > 1)"
+            ],
+            [
+                "item_override",
+                "AnimaOverride"
+            ]
+        ]
+    }
+]

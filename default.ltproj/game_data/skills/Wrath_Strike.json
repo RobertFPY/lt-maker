@@ -1,0 +1,22 @@
+[
+    {
+        "nid": "Wrath_Strike",
+        "name": "Wrath Strike",
+        "desc": "Combat Art, Axes Only (Cost: 3 Uses): Increases Might, and Hit. Cannot perform follow-up attacks.",
+        "icon_nid": "Skills",
+        "icon_index": [
+            6,
+            8
+        ],
+        "components": [
+            [
+                "combat_art",
+                "Wrath_Strike_CA"
+            ],
+            [
+                "allowed_weapons",
+                "item and item_system.is_weapon(unit, item) and item_system.weapon_type(unit, item) == 'Axe'"
+            ]
+        ]
+    }
+]

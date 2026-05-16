@@ -1,0 +1,26 @@
+[
+    {
+        "nid": "LightOverride",
+        "name": "LightOverride",
+        "desc": "(Allows Light Brand to count as Light magic at range.)",
+        "icon_nid": "wexp_icons",
+        "icon_index": [
+            0,
+            5
+        ],
+        "components": [
+            [
+                "hidden",
+                null
+            ],
+            [
+                "combat_condition",
+                "unit.position and (utils.calculate_distance(unit.position, unit2.position) > 1)"
+            ],
+            [
+                "item_override",
+                "LightOverride"
+            ]
+        ]
+    }
+]

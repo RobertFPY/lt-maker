@@ -1,0 +1,4 @@
+Constants
+-----------------------------------
+
+.. document_constants::

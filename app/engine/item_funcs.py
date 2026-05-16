@@ -379,6 +379,44 @@ def get_all_tradeable_items(unit: UnitObject) -> List[ItemObject]:
             items.append(item)
     return items
 
+def get_all_tradeable_nonaccessories(unit: UnitObject) -> List[ItemObject]:
+    """
+    Retrieves all tradeable non-accessory items possessed by a unit.
+    Used by the prep/base Manage menu so that costume accessories are not
+    swept into Trade/Give all/Restock flows.
+
+    Args:
+        unit (UnitObject): The unit whose tradeable items to retrieve.
+
+    Returns:
+        List[ItemObject]: A list of all tradeable non-accessory items possessed by the unit.
+    """
+    items = []
+    for item in unit.items:
+        if item_system.is_accessory(unit, item):
+            continue
+        if item_system.tradeable(unit, item):
+            items.append(item)
+    return items
+
+def get_all_tradeable_accessories(unit: UnitObject) -> List[ItemObject]:
+    """
+    Retrieves all tradeable accessory items (costumes) possessed by a unit.
+
+    Args:
+        unit (UnitObject): The unit whose tradeable accessories to retrieve.
+
+    Returns:
+        List[ItemObject]: A list of all tradeable accessory items possessed by the unit.
+    """
+    items = []
+    for item in unit.items:
+        if not item_system.is_accessory(unit, item):
+            continue
+        if item_system.tradeable(unit, item):
+            items.append(item)
+    return items
+
 def get_all_storeable_items(unit: UnitObject) -> List[ItemObject]:
     """
     Retrieves all storeable items possessed by a unit. Storeable items can be placed into the convoy

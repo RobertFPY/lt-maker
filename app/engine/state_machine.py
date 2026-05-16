@@ -137,6 +137,8 @@ class StateMachine():
              'prep_items': prep.PrepItemsState,
              'base_items': prep.PrepItemsState,
              'supply_items': prep.PrepItemsState,
+             'prep_costume': prep.PrepCostumeState,
+             'base_costume': prep.PrepCostumeState,
              'prep_restock': prep.PrepRestockState,
              'prep_use': prep.PrepUseState,
              'prep_market': prep.PrepMarketState,

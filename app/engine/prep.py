@@ -756,7 +756,7 @@ class PrepManageState(State):
         if self.bg:
             self.bg.draw(surf)
         self.menu.draw(surf)
-        menus.draw_unit_items(surf, (6, 72), self.menu.get_current(), include_face=True, shimmer=2)
+        menus.draw_unit_items(surf, (6, 72), self.menu.get_current(), include_face=True, shimmer=2, include_accessories=False)
         surf.blit(self.quick_disp, (WINWIDTH//2 + 10, WINHEIGHT//2 + 9))
         draw_funds(surf)
         return surf
@@ -818,7 +818,9 @@ class PrepManageSelectState(State):
         self.unit = game.memory['current_unit']
         self.current_index = self.menu.current_index
 
-        options = ['Trade', 'Restock', 'Give all', 'Optimize', 'Use', 'Market']
+        # 4x2 layout: row 1 [Trade, Restock, Give all, Optimize/Repair]
+        #             row 2 [Use/Items, Market, Costume, '']
+        options = ['Trade', 'Restock', 'Give all', 'Optimize', 'Use', 'Market', 'Costume', '']
         # Replace Optimize with Repair when the repair shop is available
         if DB.constants.value('repair_shop'):
             options[3] = 'Repair'
@@ -826,21 +828,23 @@ class PrepManageSelectState(State):
         if game.game_vars.get('_convoy'):
             options[4] = 'Items'
         ignore = self.get_ignore()
-        self.select_menu = menus.Table(self.unit, options, (3, 2), (120, 80))
+        self.select_menu = menus.Table(self.unit, options, (4, 2), (120, 80))
         self.select_menu.set_ignore(ignore)
 
     def get_ignore(self) -> list:
-        ignore = [False, True, True, True, True, True]
+        # Indexes: 0 Trade, 1 Restock, 2 Give all, 3 Optimize/Repair,
+        #          4 Use/Items, 5 Market, 6 Costume, 7 placeholder
+        ignore = [False, True, True, True, True, True, True, True]
         if game.game_vars.get('_convoy'):
             # Turn Optimize and Items on
-            ignore = [False, True, True, False, False, True]
-            tradeable_items = item_funcs.get_all_tradeable_items(self.unit)
+            ignore = [False, True, True, False, False, True, True, True]
+            tradeable_items = item_funcs.get_all_tradeable_nonaccessories(self.unit)
             if tradeable_items:
                 ignore[2] = False  # Give all
             if any(convoy_funcs.can_restock(item) for item in tradeable_items):
                 ignore[1] = False  # Restock
         else:  # Handle Use
-            if any((item_funcs.can_be_used_in_base(self.unit, item) for item in self.unit.items)):
+            if any((item_funcs.can_be_used_in_base(self.unit, item) for item in self.unit.nonaccessories)):
                 ignore[4] = False
         if self.name == 'base_manage_select':
             if game.game_vars.get('_base_market') and game.market_items:
@@ -852,6 +856,16 @@ class PrepManageSelectState(State):
             ignore[3] = not game.game_vars.get('_repair_shop', True) or not item_funcs.has_repair(self.unit)
         if skill_system.no_trade(self.unit):
             ignore[0] = True
+        # Costume: enabled when convoy is unlocked OR unit already has a
+        # costume on. Without convoy the player can still swap among owned
+        # accessories, but if there are none and no convoy to draw from we
+        # grey it out.
+        has_convoy = bool(game.game_vars.get('_convoy'))
+        owns_accessory = bool(self.unit.accessories)
+        convoy_has_accessory = False
+        if has_convoy:
+            convoy_has_accessory = any(item_system.is_accessory(self.unit, item) for item in game.party.convoy)
+        ignore[6] = not (owns_accessory or convoy_has_accessory)
         return ignore
 
     def begin(self):
@@ -879,12 +893,17 @@ class PrepManageSelectState(State):
                 get_sound_thread().play_sfx('Select 6')
 
         if event == 'SELECT':
-            get_sound_thread().play_sfx('Select 1')
             choice = self.select_menu.get_current()
+            # Skip the placeholder padding slot silently
+            if choice == '':
+                return
+            get_sound_thread().play_sfx('Select 1')
             if choice == 'Trade':
                 game.state.change('prep_trade_select')
             elif choice == 'Give all':
-                tradeable_items = item_funcs.get_all_tradeable_items(self.unit)
+                # Costumes are managed in the Costume menu and never swept
+                # away by Give all, even if they happen to be tradeable.
+                tradeable_items = item_funcs.get_all_tradeable_nonaccessories(self.unit)
                 for item in tradeable_items:
                     convoy_funcs.store_item(item, self.unit)
                 # Could have given away an item that would let us Restock/Repair/Use etc.
@@ -895,6 +914,12 @@ class PrepManageSelectState(State):
                     game.memory['next_state'] = 'base_items'
                 else:
                     game.memory['next_state'] = 'prep_items'
+                game.state.change('transition_to')
+            elif choice == 'Costume':
+                if self.name.startswith('base'):
+                    game.memory['next_state'] = 'base_costume'
+                else:
+                    game.memory['next_state'] = 'prep_costume'
                 game.state.change('transition_to')
             elif choice == 'Restock':
                 game.state.change('prep_restock')
@@ -921,7 +946,7 @@ class PrepManageSelectState(State):
         if self.bg:
             self.bg.draw(surf)
         self.menu.draw(surf)
-        menus.draw_unit_items(surf, (6, 72), self.unit, include_face=True, include_top=True, shimmer=2)
+        menus.draw_unit_items(surf, (6, 72), self.unit, include_face=True, include_top=True, shimmer=2, include_accessories=False)
         self.select_menu.draw(surf)
         draw_funds(surf)
         return surf
@@ -990,8 +1015,8 @@ class PrepTradeSelectState(State):
     def draw(self, surf):
         if self.bg:
             self.bg.draw(surf)
-        menus.draw_unit_items(surf, (6, 72), self.unit, include_face=True, shimmer=2)
-        menus.draw_unit_items(surf, (126, 72), self.menu.get_current(), include_face=True, right=False, shimmer=2)
+        menus.draw_unit_items(surf, (6, 72), self.unit, include_face=True, shimmer=2, include_accessories=False)
+        menus.draw_unit_items(surf, (126, 72), self.menu.get_current(), include_face=True, right=False, shimmer=2, include_accessories=False)
 
         self.menu.draw(surf)
 
@@ -1005,6 +1030,11 @@ class PrepItemsState(State):
 
     trade_name_surf = SPRITES.get('trade_name')
 
+    # Mode passed to the underlying Convoy widget.
+    # 'items'   -> hide accessories everywhere in this menu (current Items behavior).
+    # 'costume' -> show only accessories (PrepCostumeState).
+    convoy_mode = 'items'
+
     def start(self):
         self.fluid = FluidScroll()
 
@@ -1014,7 +1044,7 @@ class PrepItemsState(State):
         self.unit = game.memory['current_unit']
         include_other_units_items = game.memory.get('include_other_units', False) or (self.name != 'supply_items')
         game.memory['include_other_units'] = False  # Reset
-        self.menu = menus.Convoy(self.unit, (WINWIDTH - 116, 40), include_other_units_items)
+        self.menu = menus.Convoy(self.unit, (WINWIDTH - 116, 40), include_other_units_items, mode=self.convoy_mode)
 
         self.state = 'free'
         self.sub_menu = None
@@ -1251,6 +1281,15 @@ class PrepItemsState(State):
         if self.menu.info_flag:
             self.menu.draw_info(surf)
         return surf
+
+class PrepCostumeState(PrepItemsState):
+    """Costume manager. Mirrors PrepItemsState but the underlying Convoy
+    widget only loads accessory-type items (costumes). Used from the Manage
+    menu via the dedicated 'Costume' button so that costumes stay isolated
+    from the regular item / trade flow.
+    """
+    name = 'prep_costume'
+    convoy_mode = 'costume'
 
 class PrepRestockState(State):
     name = 'prep_restock'

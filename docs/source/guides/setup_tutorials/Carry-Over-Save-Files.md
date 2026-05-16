@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Carry Over Save Files
 
 _last updated 2026-04-01_
@@ -7,4 +8,15 @@ If an LT game you're currently playing gets an update and you would like to tran
 1. Open the GAMENAME folder of the older version.
 2. Open the saves folder.
 3. Move all the files within the saves folder into the saves folder of the newer version.
+=======
+# Carry Over Save Files
+
+_last updated 2026-04-01_
+
+If an LT game you're currently playing gets an update and you would like to transfer your saves to its newer version, follow these steps:
+
+1. Open the GAMENAME folder of the older version.
+2. Open the saves folder.
+3. Move all the files within the saves folder into the saves folder of the newer version.
+>>>>>>> 506cfb846caa69d7353468720a710f94dba592ba
 4. Restart the chapter to ensure the changes are implemented.

@@ -4,6 +4,7 @@ from dataclasses import dataclass
 import logging
 from enum import Enum
 from typing import Callable, List, Dict, Optional, Self, Set, Tuple, Type
+from typing import Callable, List, Dict, Optional, Self, Set, Tuple, Type
 from app.events.event_version import EventVersion
 from app.events.event_structs import EOL, EventCommandTokens
 

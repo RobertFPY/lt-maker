@@ -3,6 +3,7 @@ import logging
 from typing import TYPE_CHECKING, Any, List, Optional, Tuple
 from app.utilities.str_utils import is_int
 
+
 if TYPE_CHECKING:
     from app.data.database.klass import Klass
     from app.engine.game_state import GameState
@@ -224,10 +225,12 @@ class GameQueryEngine():
         if position:
             return sorted([(unit, utils.calculate_distance(unit.position, position)) for unit in self.game.get_enemy_units()],
                             key=lambda pair: pair[1])[:num]
-        return []
+        return []
+
     def get_units_within_distance(self, position, dist: int = 1, nid=None, team=None, tag=None, party=None) -> List[Tuple[UnitObject, int]]:
         """Return a list containing all units within `dist` distance to the specific position
         that match specific criteria
+
 
         Args:
             position: position or unit
@@ -270,7 +273,8 @@ class GameQueryEngine():
             within the specified `dist`.
         """
         return self.get_units_within_distance(position, dist, team='player')
-    def get_enemies_within_distance(self, position, dist: int = 1) -> List[Tuple[UnitObject, int]]:
+
+    def get_enemies_within_distance(self, position, dist: int = 1) -> List[Tuple[UnitObject, int]]:
         """Return a list containing all enemy units within `dist` distance to the specific position.
         Args:
             position: position or unit

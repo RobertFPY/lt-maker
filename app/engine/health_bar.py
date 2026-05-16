@@ -3,6 +3,8 @@ from functools import lru_cache
 
 from typing import Tuple, List
 from enum import Enum
+from typing import Tuple, List
+from enum import Enum
 
 import app.utilities as utils
 from app.constants import (TILEHEIGHT, TILEWIDTH, TILEX, TILEY, WINHEIGHT,
@@ -69,6 +71,8 @@ class GenericBar():
             new_val = int(utils.lerp(self.old_val, self.get_val(), time))
             self.set_val(new_val)
             if time >= 1:
+                self.set_val(self.get_val())
+                self.old_val = self.get_val()
                 self.set_val(self.get_val())
                 self.old_val = self.get_val()
                 self.transition_flag = False

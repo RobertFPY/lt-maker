@@ -333,7 +333,7 @@ class PrepPickUnitsState(State):
         if self.bg:
             self.bg.draw(surf)
         if self.menu.get_current():
-            menus.draw_unit_items(surf, (4, 44), self.menu.get_current(), include_top=True)
+            menus.draw_unit_items(surf, (4, 44), self.menu.get_current(), include_top=True, include_accessories=False)
 
         self.draw_pick_units_card(surf)
         if DB.constants.value('fatigue') and game.game_vars.get('_fatigue'):
@@ -644,11 +644,12 @@ class PrepFormationMenuState(MapState):
         surf = self.menu.draw(surf)
         return surf
 
-def draw_funds(surf):
+def draw_funds(surf, show_info_hint=True):
     # Draw R: Info display
-    helper = engine.get_key_name(cf.SETTINGS['key_INFO']).upper()
-    FONT['text-yellow'].blit(helper, surf, (123, 143))
-    FONT['text'].blit(': Info', surf, (123 + FONT['text-blue'].width(helper), 143))
+    if show_info_hint:
+        helper = engine.get_key_name(cf.SETTINGS['key_INFO']).upper()
+        FONT['text-yellow'].blit(helper, surf, (123, 143))
+        FONT['text'].blit(': Info', surf, (123 + FONT['text-blue'].width(helper), 143))
     # Draw Funds display
     surf.blit(SPRITES.get('funds_display'), (168, 137))
     money = str(game.get_money())
@@ -948,7 +949,7 @@ class PrepManageSelectState(State):
         self.menu.draw(surf)
         menus.draw_unit_items(surf, (6, 72), self.unit, include_face=True, include_top=True, shimmer=2, include_accessories=False)
         self.select_menu.draw(surf)
-        draw_funds(surf)
+        draw_funds(surf, show_info_hint=False)
         return surf
 
 class PrepTradeSelectState(State):
@@ -1034,6 +1035,15 @@ class PrepItemsState(State):
     # 'items'   -> hide accessories everywhere in this menu (current Items behavior).
     # 'costume' -> show only accessories (PrepCostumeState).
     convoy_mode = 'items'
+
+    def _handle_take(self, item):
+        """Default behavior: take the item into the unit's inventory. Costumes
+        override this to also auto-equip."""
+        if item.owner_nid:
+            owner = game.get_unit(item.owner_nid)
+            convoy_funcs.give_item(item, owner, self.unit)
+        else:
+            convoy_funcs.take_item(item, self.unit)
 
     def start(self):
         self.fluid = FluidScroll()
@@ -1187,11 +1197,7 @@ class PrepItemsState(State):
                 item = self.menu.get_current()
                 if current == 'Take':
                     action.do(action.HasTraded(self.unit))
-                    if item.owner_nid:
-                        unit = game.get_unit(item.owner_nid)
-                        convoy_funcs.give_item(item, unit, self.unit)
-                    else:
-                        convoy_funcs.take_item(item, self.unit)
+                    self._handle_take(item)
                     self.state = 'free'
                 elif current == 'Trade':
                     self.state = 'trade_inventory'
@@ -1290,6 +1296,11 @@ class PrepCostumeState(PrepItemsState):
     """
     name = 'prep_costume'
     convoy_mode = 'costume'
+
+    def _handle_take(self, item):
+        """Auto-equip costumes when taken so the player doesn't have to open
+        Trade afterwards. Swaps out any accessory currently equipped."""
+        convoy_funcs.take_costume(item, self.unit)
 
 class PrepRestockState(State):
     name = 'prep_restock'

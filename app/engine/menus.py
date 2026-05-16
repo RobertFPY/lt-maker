@@ -1371,11 +1371,22 @@ class Convoy():
         self.topleft = topleft
         self.disp_value = disp_value
         self.takes_input = True
+        # In costume mode, always pool accessories from every party unit so
+        # that a player can take a costume held by another character without
+        # going through Trade.
+        if mode == 'costume':
+            include_other_units = True
         self.include_other_units = include_other_units
         # mode: 'all' (default), 'items' (hide accessories), 'costume' (only accessories)
         self.mode = mode
 
-        self.order = [w.nid for w in DB.weapons.get_convoy_visible_weapon_types().values()]
+        if mode == 'costume':
+            # Costume menu only ever needs a single bucket — accessories don't
+            # have weapon types, so collapse all tabs into 'Default' and we'll
+            # hide the scroll arrows below.
+            self.order = ['Default']
+        else:
+            self.order = [w.nid for w in DB.weapons.get_convoy_visible_weapon_types().values()]
         self.build_menus()
 
         self._info_flag = False  # Whether to show item info
@@ -1647,20 +1658,23 @@ class Convoy():
         if item:
             unit = game.get_unit(item.owner_nid)
 
-        # Draw item icons
-        dist = (self.menu_width - 10)/len(self.order)
-        for idx, weapon_nid in enumerate(reversed(self.order)):
-            true_idx = len(self.order) - idx - 1
-            if true_idx == self.selection_index - 1:
-                pass
-            else:
-                topleft = self.topleft[0] + 3 + int(true_idx * dist), self.topleft[1] - 14
-                icons.draw_weapon(surf, weapon_nid, topleft, gray=True)
-        for idx, weapon_nid in enumerate(self.order):
-            if idx == self.selection_index - 1:
-                topleft = (self.topleft[0] + 3 + int(idx * dist), self.topleft[1] - 14)
-                icons.draw_weapon(surf, weapon_nid, topleft)
-                surf.blit(SPRITES.get('weapon_shine'), topleft)
+        # Draw item icons (skip the weapon-type tab strip in costume mode —
+        # accessories don't belong to any weapon type so there's nothing
+        # meaningful to render there).
+        if self.mode != 'costume':
+            dist = (self.menu_width - 10)/len(self.order)
+            for idx, weapon_nid in enumerate(reversed(self.order)):
+                true_idx = len(self.order) - idx - 1
+                if true_idx == self.selection_index - 1:
+                    pass
+                else:
+                    topleft = self.topleft[0] + 3 + int(true_idx * dist), self.topleft[1] - 14
+                    icons.draw_weapon(surf, weapon_nid, topleft, gray=True)
+            for idx, weapon_nid in enumerate(self.order):
+                if idx == self.selection_index - 1:
+                    topleft = (self.topleft[0] + 3 + int(idx * dist), self.topleft[1] - 14)
+                    icons.draw_weapon(surf, weapon_nid, topleft)
+                    surf.blit(SPRITES.get('weapon_shine'), topleft)
 
         self.get_menu().draw(surf)
         if self.inventory:
@@ -1673,8 +1687,9 @@ class Convoy():
             unit_str = "Owner: ---"
         FONT['text'].blit(unit_str, surf, (160, 4))
 
-        self.left_arrow.draw(surf)
-        self.right_arrow.draw(surf)
+        if self.mode != 'costume':
+            self.left_arrow.draw(surf)
+            self.right_arrow.draw(surf)
         return surf
 
     def handle_mouse(self) -> bool:

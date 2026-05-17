@@ -719,6 +719,17 @@ class Inventory(Choice):
         self.mode = mode
 
     def vert_draw(self, surf, offset=None):
+        # [v0] DEBUG: log every frame what the inventory panel actually
+        # measures right before it draws — so we can correlate the on-screen
+        # "blue block" with the real options/menu_height in use.
+        try:
+            real_count = sum(1 for o in self.options if not isinstance(o, menu_options.EmptyOption))
+            empty_count = sum(1 for o in self.options if isinstance(o, menu_options.EmptyOption))
+            print("[v0] Inventory.vert_draw mode=%s options=%d (real=%d empty=%d) menu_height=%d topleft=%s" % (
+                self.mode, len(self.options), real_count, empty_count,
+                self.get_menu_height(), self.get_topleft()))
+        except Exception as exc:
+            print("[v0] Inventory.vert_draw debug log failed:", exc)
         surf = super().vert_draw(surf, offset)
         # [v0] DEBUG: outline the inventory panel with a red border so we can
         # visually confirm whether the "blue block" is part of the inventory

@@ -62,7 +62,7 @@ def draw_unit_face(surf, topleft, unit, right):
     top = y + (16 * DB.constants.total_items() + 8) - 4 - 76
     engine.blit(surf, face_image, (left, top))
 
-def draw_unit_items(surf, topleft, unit, include_top=False, include_bottom=True, include_face=False, right=True, shimmer=0):
+def draw_unit_items(surf, topleft, unit, include_top=False, include_bottom=True, include_face=False, right=True, shimmer=0, include_accessories=True):
     x, y = topleft
     if include_top:
         draw_unit_top(surf, topleft, unit)
@@ -78,9 +78,12 @@ def draw_unit_items(surf, topleft, unit, include_top=False, include_bottom=True,
         for idx, item in enumerate(unit.nonaccessories):
             item_option = menu_options.ItemOption(idx, item)
             item_option.draw(surf, topleft[0], topleft[1] + idx * 16 + 4)
-        for idx, item in enumerate(unit.accessories):
-            item_option = menu_options.ItemOption(idx, item)
-            item_option.draw(surf, topleft[0], topleft[1] + item_funcs.get_num_items(unit) * 16 + idx * 16 + 4)
+        # Costume slot (accessory) is intentionally hidden in places where
+        # accessories are managed by the dedicated Costume menu instead.
+        if include_accessories:
+            for idx, item in enumerate(unit.accessories):
+                item_option = menu_options.ItemOption(idx, item)
+                item_option.draw(surf, topleft[0], topleft[1] + item_funcs.get_num_items(unit) * 16 + idx * 16 + 4)
 
 
 def draw_unit_bexp(surf, topleft, unit, new_exp, new_bexp, current_bexp, include_top=False, include_bottom=True,
@@ -707,6 +710,14 @@ class Choice(Simple):
         return idxs, rects
 
 class Inventory(Choice):
+    # mode: 'all' shows both sections, 'items' only the non-accessory section,
+    # 'costume' only the accessory section. Set via set_mode() before
+    # create_options is invoked (or update_options afterwards).
+    mode = 'all'
+
+    def set_mode(self, mode):
+        self.mode = mode
+
     def create_options(self, options, info_desc=None):
         self.options.clear()
         # Assumes all options are Item Objects
@@ -714,24 +725,37 @@ class Inventory(Choice):
         items = [option for option in options if option not in accessories]
         num_items = item_funcs.get_num_items(self.owner)
         num_accessories = item_funcs.get_num_accessories(self.owner)
+        show_items = self.mode in ('all', 'items')
+        show_accessories = self.mode in ('all', 'costume')
         # Get items
-        for idx, item in enumerate(items):
-            option = menu_options.ItemOption(idx, item)
-            option.help_box = option.get_help_box()
-            self.options.append(option)
-        # Get empty options in the middle
-        for num in range(num_items - len(items)):
-            option = menu_options.EmptyOption(len(self.options) + num)
-            self.options.append(option)
+        if show_items:
+            for idx, item in enumerate(items):
+                option = menu_options.ItemOption(idx, item)
+                option.help_box = option.get_help_box()
+                self.options.append(option)
+            # Get empty options in the middle
+            for num in range(num_items - len(items)):
+                option = menu_options.EmptyOption(len(self.options) + num)
+                self.options.append(option)
         # Get accessories
-        for idx, item in enumerate(accessories):
-            option = menu_options.ItemOption(idx, item)
-            option.help_box = option.get_help_box()
-            self.options.append(option)
-        # Get empty options at the end
-        for num in range(num_accessories - len(accessories)):
-            option = menu_options.EmptyOption(len(self.options) + num)
-            self.options.append(option)
+        if show_accessories:
+            for idx, item in enumerate(accessories):
+                option = menu_options.ItemOption(idx, item)
+                option.help_box = option.get_help_box()
+                self.options.append(option)
+            # Get empty options at the end. Plan B: in costume mode cap the
+            # padding so the panel never shows more rows than the unit
+            # actually owns (with a single empty placeholder when zero).
+            if self.mode == 'costume':
+                # Match the user's exact Plan B: pad up to
+                # min(num_accessories, max(1, len(accessories))) total rows
+                # (NOT minus len(accessories)).
+                pad_count = min(num_accessories, max(1, len(accessories)))
+            else:
+                pad_count = num_accessories - len(accessories)
+            for num in range(pad_count):
+                option = menu_options.EmptyOption(len(self.options) + num)
+                self.options.append(option)
 
 class Shop(Choice):
     default_option = menu_options.ValueItemOption
@@ -812,13 +836,13 @@ class Trade(Simple):
         self._selected_option = None
 
     def get_items(self, unit):
+        # Accessories are intentionally excluded from unit-to-unit trade.
+        # Costumes are managed exclusively through the dedicated Costume menu
+        # in prep/base Manage, not through Trade.
         items = unit.nonaccessories
-        accessories = unit.accessories
         if len(items) < item_funcs.get_num_items(unit):
             items = items[:] + [''] * (item_funcs.get_num_items(unit) - len(items))
-        if len(accessories) < item_funcs.get_num_accessories(unit):
-            accessories = accessories[:] + [''] * (item_funcs.get_num_accessories(unit) - len(accessories))
-        return items + accessories
+        return items
 
     def selected_option(self):
         return self._selected_option
@@ -1351,14 +1375,27 @@ class Table(Simple):
 class Convoy():
     trade_name_surf = SPRITES.get('trade_name')
 
-    def __init__(self, owner, topleft, include_other_units=True, disp_value=False):
+    def __init__(self, owner, topleft, include_other_units=True, disp_value=False, mode='all'):
         self.unit = self.owner = owner  # Unit that's at the convoy
         self.topleft = topleft
         self.disp_value = disp_value
         self.takes_input = True
+        # In costume mode, always pool accessories from every party unit so
+        # that a player can take a costume held by another character without
+        # going through Trade.
+        if mode == 'costume':
+            include_other_units = True
         self.include_other_units = include_other_units
+        # mode: 'all' (default), 'items' (hide accessories), 'costume' (only accessories)
+        self.mode = mode
 
-        self.order = [w.nid for w in DB.weapons.get_convoy_visible_weapon_types().values()]
+        if mode == 'costume':
+            # Costume menu only ever needs a single bucket — accessories don't
+            # have weapon types, so collapse all tabs into 'Default' and we'll
+            # hide the scroll arrows below.
+            self.order = ['Default']
+        else:
+            self.order = [w.nid for w in DB.weapons.get_convoy_visible_weapon_types().values()]
         self.build_menus()
 
         self._info_flag = False  # Whether to show item info
@@ -1391,10 +1428,34 @@ class Convoy():
             new_menu.shimmer = 2
             self.menus[w_type] = new_menu
 
-        height = DB.constants.total_items() * 16 + 8
-        self.inventory = Inventory(self.owner, self.owner.items, (12, WINHEIGHT - height - 4))
+        # Anchor the inventory panel at the same Y position used by items
+        # mode (which sits cleanly beneath the unit portrait). The panel's
+        # background height is driven by len(options), so a costume-mode
+        # panel naturally renders short — we just don't want it pinned to
+        # the bottom of the screen, which is what would happen if we used
+        # its own (small) height in the Y calculation.
+        anchor_height = item_funcs.get_num_items(self.owner) * 16 + 8
+        self.inventory = Inventory(self.owner, self._owner_items_for_mode(), (12, WINHEIGHT - anchor_height - 4))
+        self.inventory.set_mode(self.mode)
+        # Rebuild option list now that mode is set so that the inventory only
+        # renders the slot section appropriate for this mode.
+        self.inventory.update_options(self._owner_items_for_mode())
         self.inventory.gem = False
         self.inventory.shimmer = 2
+
+    def _owner_items_for_mode(self):
+        if self.mode == 'items':
+            return self.owner.nonaccessories
+        elif self.mode == 'costume':
+            return self.owner.accessories
+        return self.owner.items
+
+    def _filter_items_by_mode(self, items):
+        if self.mode == 'items':
+            return [it for it in items if not item_system.is_accessory(self.unit, it)]
+        elif self.mode == 'costume':
+            return [it for it in items if item_system.is_accessory(self.unit, it)]
+        return items
 
     def get_sorted_dict(self):
         convoy = game.party.convoy
@@ -1405,6 +1466,9 @@ class Convoy():
                 if unit.nid != self.unit.nid:
                     items = item_funcs.get_all_tradeable_items(unit)
                     all_items += items
+        # Filter convoy + other-unit pool according to current mode so that
+        # 'items' mode hides costumes and 'costume' mode hides regular gear.
+        all_items = self._filter_items_by_mode(all_items)
 
         sorted_dict = {}
         for w_type in self.order:
@@ -1422,7 +1486,8 @@ class Convoy():
 
     def update_options(self):
         if self.inventory:
-            self.inventory.update_options(self.owner.items)
+            self.inventory.set_mode(self.mode)
+            self.inventory.update_options(self._owner_items_for_mode())
         sorted_dict = self.get_sorted_dict()
         for name, menu in self.menus.items():
             menu.update_options(sorted_dict[name])
@@ -1608,20 +1673,23 @@ class Convoy():
         if item:
             unit = game.get_unit(item.owner_nid)
 
-        # Draw item icons
-        dist = (self.menu_width - 10)/len(self.order)
-        for idx, weapon_nid in enumerate(reversed(self.order)):
-            true_idx = len(self.order) - idx - 1
-            if true_idx == self.selection_index - 1:
-                pass
-            else:
-                topleft = self.topleft[0] + 3 + int(true_idx * dist), self.topleft[1] - 14
-                icons.draw_weapon(surf, weapon_nid, topleft, gray=True)
-        for idx, weapon_nid in enumerate(self.order):
-            if idx == self.selection_index - 1:
-                topleft = (self.topleft[0] + 3 + int(idx * dist), self.topleft[1] - 14)
-                icons.draw_weapon(surf, weapon_nid, topleft)
-                surf.blit(SPRITES.get('weapon_shine'), topleft)
+        # Draw item icons (skip the weapon-type tab strip in costume mode —
+        # accessories don't belong to any weapon type so there's nothing
+        # meaningful to render there).
+        if self.mode != 'costume':
+            dist = (self.menu_width - 10)/len(self.order)
+            for idx, weapon_nid in enumerate(reversed(self.order)):
+                true_idx = len(self.order) - idx - 1
+                if true_idx == self.selection_index - 1:
+                    pass
+                else:
+                    topleft = self.topleft[0] + 3 + int(true_idx * dist), self.topleft[1] - 14
+                    icons.draw_weapon(surf, weapon_nid, topleft, gray=True)
+            for idx, weapon_nid in enumerate(self.order):
+                if idx == self.selection_index - 1:
+                    topleft = (self.topleft[0] + 3 + int(idx * dist), self.topleft[1] - 14)
+                    icons.draw_weapon(surf, weapon_nid, topleft)
+                    surf.blit(SPRITES.get('weapon_shine'), topleft)
 
         self.get_menu().draw(surf)
         if self.inventory:
@@ -1634,8 +1702,9 @@ class Convoy():
             unit_str = "Owner: ---"
         FONT['text'].blit(unit_str, surf, (160, 4))
 
-        self.left_arrow.draw(surf)
-        self.right_arrow.draw(surf)
+        if self.mode != 'costume':
+            self.left_arrow.draw(surf)
+            self.right_arrow.draw(surf)
         return surf
 
     def handle_mouse(self) -> bool:

@@ -300,6 +300,11 @@ class BasicCostumeOption(BaseOption[Optional[ItemObject]]):
         self._color = text_color
         self._font = font
         self._mode = mode
+
+        self._uses_config = UsesDisplayConfig.from_item(self._value)
+        if self._uses_config and self._uses_config.get_uses() is not None:
+            self._mode = ItemOptionModes.CUSTOM
+
     @classmethod
     def from_nid(cls, idx, item_nid: NID, display_value: str | None = None, width: int = 0,
                  height: int = 0, ignore: bool = False, font: NID = 'text', text_color: Optional[NID] = None,
@@ -387,107 +392,6 @@ class BasicCostumeOption(BaseOption[Optional[ItemObject]]):
         elif self._mode == ItemOptionModes.FULL_USES:
             ItemOptionUtils.draw_only_icon(
                 surf, x, y, self._value, self._font, main_color, uses_color, self.width(), self._align, self._disp_value)
-
-
-class BasicCostumeOption(BaseOption[Optional[ItemObject]]):
-    def __init__(self, idx: int, item: Optional[ItemObject] = None, display_value: str | None = None,  width: int = 0,
-                 height: int = 0, ignore: bool = False, font: NID = 'text', text_color: Optional[NID] = None,
-                 align: HAlignment = HAlignment.LEFT, mode: ItemOptionModes = ItemOptionModes.NO_USES):
-        super().__init__(idx, item, display_value, width, height, ignore)
-        self._disp_value = text_funcs.translate(
-            display_value or (self._value.name if self._value else "None"))
-        self._align = align
-        self._color = text_color
-        self._font = font
-        self._mode = mode
-    @classmethod
-    def from_nid(cls, idx, item_nid: NID, display_value: str | None = None, width: int = 0,
-                 height: int = 0, ignore: bool = False, font: NID = 'text', text_color: Optional[NID] = None,
-                 align: HAlignment = HAlignment.LEFT, mode: ItemOptionModes = ItemOptionModes.NO_USES):
-        item_prefab = DB.items.get(item_nid, None)
-        if not item_prefab:
-            raise ValueError("%s is not an item" % item_nid)
-        as_item = ItemObject.from_prefab(item_prefab)
-        return cls(idx, as_item, display_value, width, height, ignore, font, text_color, align, mode)
-    @classmethod
-    def from_uid(cls, idx, item_uid: int, display_value: str | None = None, width: int = 0,
-                 height: int = 0, ignore: bool = False, font: NID = 'text', text_color: Optional[NID] = None,
-                 align: HAlignment = HAlignment.LEFT, mode: ItemOptionModes = ItemOptionModes.NO_USES):
-        item_object = game.item_registry.get(item_uid)
-        if not item_object:
-            raise ValueError("%s is not a valid item uid" % item_uid)
-        return cls(idx, item_object, display_value, width, height, ignore, font, text_color, align, mode)
-    @classmethod
-    def from_item(cls, idx, value: ItemObject, display_value: str | None = None, width: int = 0,
-                  height: int = 0, ignore: bool = False, font: NID = 'text', text_color: Optional[NID] = None,
-                  align: HAlignment = HAlignment.LEFT, mode: ItemOptionModes = ItemOptionModes.NO_USES):
-        return cls(idx, value, display_value, width, height, ignore, font, text_color, align, mode)
-    @classmethod
-    def empty_option(cls, idx, display_value: str | None = "None", width: int = 0,
-                     height: int = 0, ignore: bool = False, font: NID = 'text', text_color: Optional[NID] = None,
-                     align: HAlignment = HAlignment.LEFT, mode: ItemOptionModes = ItemOptionModes.NO_USES):
-        return cls(idx, None, display_value, width, height, ignore, font, text_color, align, mode)
-    def width(self):
-        return self._width or 104
-    def set(self, val: Optional[ItemObject], disp_val: Optional[str] = None):
-        self._value = val
-        self._disp_value = text_funcs.translate(
-            disp_val or (self._value.name if self._value else "None"))
-    def get_color(self) -> Tuple[str, str]:
-        if not self._value:
-            return 'grey', 'grey'
-        owner = game.get_unit(self._value.owner_nid)
-        main_color = 'grey'
-        custom_color = self._uses_config.get_color() if self._uses_config else None
-        uses_color = custom_color or 'grey'
-        if self.get_ignore():
-            pass
-        elif self._color:
-            main_color = self._color
-            if not custom_color:
-                if owner and not item_funcs.available(owner, self._value):
-                    pass
-                else:
-                    uses_color = 'blue'
-        elif self._value.droppable:
-            main_color = 'green'
-            if not custom_color:
-                uses_color = 'green'
-        elif not owner or item_funcs.available(owner, self._value):
-            main_color = 'white'
-            if not custom_color:
-                uses_color = 'blue'
-        return main_color, uses_color
-    def get_help_box(self):
-        if not self._help_box and self._value:
-            if item_system.is_weapon(None, self._value) or item_system.is_spell(None, self._value):
-                self._help_box = help_menu.ItemHelpDialog(self._value)
-            else:
-                text = text_funcs.translate_and_text_evaluate(
-                    self._value.desc,
-                    unit=game.get_unit(self._value.owner_nid),
-                    self=self._value)
-                self._help_box = help_menu.HelpDialog(text)
-        return self._help_box
-
-    def draw(self, surf, x, y):
-        main_color, uses_color = self.get_color()
-        if not self._value:
-            blit_loc = anchor_align(x, self.width(), self._align, (5, 5)), y
-            render_text(surf, [self._font], [self._disp_value], [main_color], blit_loc, self._align)
-        elif self._mode == ItemOptionModes.CUSTOM:
-            ItemOptionUtils.draw_with_custom_uses(surf, x, y, self._value, self._uses_config, self._font,
-                                           main_color, uses_color, self.width(), self._align, self._disp_value)
-        elif self._mode == ItemOptionModes.NO_USES:
-            ItemOptionUtils.draw_only_icon(
-                surf, x, y, self._value, self._font, main_color, self.width(), self._align, self._disp_value)
-        elif self._mode == ItemOptionModes.USES:
-            ItemOptionUtils.draw_only_icon(surf, x, y, self._value, self._font,
-                                           main_color, uses_color, self.width(), self._align, self._disp_value)
-        elif self._mode == ItemOptionModes.FULL_USES:
-            ItemOptionUtils.draw_only_icon(
-                surf, x, y, self._value, self._font, main_color, uses_color, self.width(), self._align, self._disp_value)
-
 
 class BasicSkillOption(BaseOption[SkillObject]):
     def __init__(self, idx: int, skill: SkillObject, display_value: str | None = None,  width: int = 0,

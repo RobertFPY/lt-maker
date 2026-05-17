@@ -714,17 +714,9 @@ class Inventory(Choice):
     # 'costume' only the accessory section. Set via set_mode() before
     # create_options is invoked (or update_options afterwards).
     mode = 'all'
-    # In costume mode, override how many accessory slots get padded with
-    # EmptyOption. None means "fall back to item_funcs.get_num_accessories".
-    # The Convoy menu sets this to 1 so the panel collapses to a single row,
-    # matching the "single costume bag" UX.
-    _costume_max_slots = None
 
     def set_mode(self, mode):
         self.mode = mode
-
-    def set_costume_max_slots(self, n):
-        self._costume_max_slots = n
 
     def create_options(self, options, info_desc=None):
         self.options.clear()
@@ -751,16 +743,25 @@ class Inventory(Choice):
                 option = menu_options.ItemOption(idx, item)
                 option.help_box = option.get_help_box()
                 self.options.append(option)
-            # Get empty options at the end. In costume mode the panel only
-            # ever shows a single accessory slot, so cap padding at
-            # _costume_max_slots (1 by default for the Convoy costume menu).
-            if self.mode == 'costume' and self._costume_max_slots is not None:
-                slot_target = self._costume_max_slots
-            else:
-                slot_target = num_accessories
-            for num in range(slot_target - len(accessories)):
+            # Get empty options at the end
+            for num in range(num_accessories - len(accessories)):
                 option = menu_options.EmptyOption(len(self.options) + num)
                 self.options.append(option)
+        # Plan F: in costume mode, the panel should collapse to exactly the
+        # rows that actually hold an accessory. Strip the trailing EmptyOption
+        # padding (which exists so item-mode width/cursor logic stays happy)
+        # so the background panel doesn't render extra phantom rows that show
+        # up as a translucent block over the prep backdrop. Always keep at
+        # least one option in the list so menu width / cursor calculations
+        # don't crash on an empty sequence.
+        if self.mode == 'costume':
+            real = [o for o in self.options if not isinstance(o, menu_options.EmptyOption)]
+            if real:
+                self.options = real
+            else:
+                # Keep a single placeholder EmptyOption (the one we just built)
+                # so the menu still has something to render and measure.
+                self.options = self.options[:1]
 
 class Shop(Choice):
     default_option = menu_options.ValueItemOption
@@ -1442,11 +1443,6 @@ class Convoy():
         anchor_height = item_funcs.get_num_items(self.owner) * 16 + 8
         self.inventory = Inventory(self.owner, self._owner_items_for_mode(), (12, WINHEIGHT - anchor_height - 4))
         self.inventory.set_mode(self.mode)
-        if self.mode == 'costume':
-            # Costume bag holds exactly one accessory at a time — cap padding
-            # so the panel collapses to a single row instead of leaving 2-3
-            # phantom EmptyOption rows that show as a translucent block.
-            self.inventory.set_costume_max_slots(1)
         # Rebuild option list now that mode is set so that the inventory only
         # renders the slot section appropriate for this mode.
         self.inventory.update_options(self._owner_items_for_mode())

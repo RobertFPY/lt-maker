@@ -743,25 +743,25 @@ class Inventory(Choice):
                 option = menu_options.ItemOption(idx, item)
                 option.help_box = option.get_help_box()
                 self.options.append(option)
-            # Get empty options at the end
-            for num in range(num_accessories - len(accessories)):
+            # Get empty options at the end. Plan B: in costume mode cap the
+            # padding so the panel never shows more rows than the unit
+            # actually owns (with a single empty placeholder when zero).
+            if self.mode == 'costume':
+                slot_target = min(num_accessories, max(1, len(accessories)))
+            else:
+                slot_target = num_accessories
+            for num in range(slot_target - len(accessories)):
                 option = menu_options.EmptyOption(len(self.options) + num)
                 self.options.append(option)
-        # Plan F: in costume mode, the panel should collapse to exactly the
-        # rows that actually hold an accessory. Strip the trailing EmptyOption
-        # padding (which exists so item-mode width/cursor logic stays happy)
-        # so the background panel doesn't render extra phantom rows that show
-        # up as a translucent block over the prep backdrop. Always keep at
-        # least one option in the list so menu width / cursor calculations
-        # don't crash on an empty sequence.
-        if self.mode == 'costume':
-            real = [o for o in self.options if not isinstance(o, menu_options.EmptyOption)]
-            if real:
-                self.options = real
-            else:
-                # Keep a single placeholder EmptyOption (the one we just built)
-                # so the menu still has something to render and measure.
-                self.options = self.options[:1]
+        # [v0] DEBUG: trace option list shape so we can see exactly what
+        # get_menu_height / create_bg_surf will be measuring.
+        try:
+            real_count = sum(1 for o in self.options if not isinstance(o, menu_options.EmptyOption))
+            empty_count = sum(1 for o in self.options if isinstance(o, menu_options.EmptyOption))
+            print("[v0] Inventory.create_options mode=%s owner=%s options=%d (real=%d empty=%d) accessories=%d num_accessories=%d" % (
+                self.mode, getattr(self.owner, 'nid', '?'), len(self.options), real_count, empty_count, len(accessories), num_accessories))
+        except Exception as exc:
+            print("[v0] Inventory.create_options debug log failed:", exc)
 
 class Shop(Choice):
     default_option = menu_options.ValueItemOption
@@ -1448,6 +1448,21 @@ class Convoy():
         self.inventory.update_options(self._owner_items_for_mode())
         self.inventory.gem = False
         self.inventory.shimmer = 2
+        # [v0] DEBUG: log panel size + topleft so we can see whether the
+        # "blue block" matches inventory bg or comes from something else.
+        try:
+            print("[v0] Convoy.build_menus mode=%s owner=%s anchor_h=%d topleft=%s width=%d height=%d limit=%d hard_limit=%s" % (
+                self.mode,
+                getattr(self.owner, 'nid', '?'),
+                anchor_height,
+                self.inventory.topleft,
+                self.inventory.get_menu_width(),
+                self.inventory.get_menu_height(),
+                self.inventory.limit,
+                self.inventory.hard_limit,
+            ))
+        except Exception as exc:
+            print("[v0] Convoy.build_menus debug log failed:", exc)
 
     def _owner_items_for_mode(self):
         if self.mode == 'items':

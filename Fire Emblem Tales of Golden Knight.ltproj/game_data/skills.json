@@ -26059,5 +26059,60 @@
             0
         ],
         "components": []
+    },
+    {
+        "nid": "Empty_Special",
+        "name": "Special Slot",
+        "desc": "Empty special skill slot. Add a special skill here.",
+        "icon_nid": null,
+        "icon_index": [
+            0,
+            0
+        ],
+        "components": []
+    },
+    {
+        "nid": "Empty_SlotA",
+        "name": "Slot A",
+        "desc": "Empty slot A skill slot. Add a slot A skill here.",
+        "icon_nid": null,
+        "icon_index": [
+            0,
+            0
+        ],
+        "components": []
+    },
+    {
+        "nid": "Empty_SlotB",
+        "name": "Slot B",
+        "desc": "Empty slot B skill slot. Add a slot B skill here.",
+        "icon_nid": null,
+        "icon_index": [
+            0,
+            0
+        ],
+        "components": []
+    },
+    {
+        "nid": "Empty_SlotC",
+        "name": "Slot C",
+        "desc": "Empty slot C skill slot. Add a slot C skill here.",
+        "icon_nid": null,
+        "icon_index": [
+            0,
+            0
+        ],
+        "components": []
+    },
+    {
+        "nid": "Empty_Assist",
+        "name": "Assist Slot",
+        "desc": "Empty assist skill slot. Add an assist skill here.",
+        "icon_nid": null,
+        "icon_index": [
+            0,
+            0
+        ],
+        "components": []
     }
 ]

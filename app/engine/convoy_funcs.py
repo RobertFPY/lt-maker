@@ -132,6 +132,32 @@ def optimize(unit):
 def take_item(item, unit):
     action.do(action.TakeItemFromConvoy(unit, item))
 
+def take_costume(item, unit):
+    """Take an accessory out of the convoy (or from another party unit) and
+    automatically equip it on `unit`. If `unit` already has an accessory
+    equipped, that previous accessory is swapped into the convoy so the slot
+    stays singular.
+    """
+    # First, evict whoever currently holds the costume so it ends up in the
+    # convoy, mirroring the normal take/give logic.
+    if item.owner_nid and item.owner_nid != unit.nid:
+        prev_owner = game.get_unit(item.owner_nid)
+        if prev_owner:
+            if item is prev_owner.equipped_accessory:
+                action.do(action.UnequipItem(prev_owner, item))
+            action.do(action.StoreItem(prev_owner, item))
+
+    # Swap out whatever the receiving unit currently has equipped, if any.
+    current = unit.equipped_accessory
+    if current and current is not item:
+        action.do(action.UnequipItem(unit, current))
+        action.do(action.StoreItem(unit, current))
+
+    # Move the costume from the convoy into the unit and equip it.
+    action.do(action.TakeItemFromConvoy(unit, item))
+    if item_system.is_accessory(unit, item) and unit.can_equip(item):
+        action.do(action.EquipItem(unit, item))
+
 def give_item(item, owner, unit):
     action.do(action.MoveItem(owner, unit, item))
 

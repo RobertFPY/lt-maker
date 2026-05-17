@@ -1267,7 +1267,9 @@ class ItemState(MapState):
     def _get_options(self):
         # items = item_funcs.get_all_items(self.cur_unit)
         # items = [item for item in items if (item in self.cur_unit.items or item_funcs.can_use(self.cur_unit, item))]
-        items = self.cur_unit.items
+        # Hide accessories (costumes) from the in-battle Item menu — they are
+        # managed exclusively via the prep/base Costume menu.
+        items = self.cur_unit.nonaccessories
         return items
 
     def start(self):

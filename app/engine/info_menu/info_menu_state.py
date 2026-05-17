@@ -510,27 +510,27 @@ class InfoMenuState(State):
             self.info_graph.register((76, 80, 16, 16), affinity_desc, 'all')
 
         # Blit accessories
-        for idx, item in enumerate(self.unit.accessories):
-            aidx = item_funcs.get_num_items(self.unit) + idx
-            y_pos = 81
-            equipped_subitem: Optional[ItemObject] = None
-            if item.multi_item and any(subitem is accessory for subitem in item.subitems):
-                surf.blit(SPRITES.get('equipment_highlight'), (8, y_pos + 8))
-                for subitem in item.subitems:
-                    if subitem is accessory:
-                        equipped_subitem = subitem
-                        item_option = create_item_option(aidx, subitem)
-                        break
-                else:  # Shouldn't happen
+        if accessory:
+            for idx, item in enumerate(self.unit.accessories):
+                aidx = item_funcs.get_num_items(self.unit) + idx
+                y_pos = 81
+                equipped_subitem: Optional[ItemObject] = None
+                if item.multi_item and any(subitem is accessory for subitem in item.subitems):
+                    for subitem in item.subitems:
+                        if subitem is accessory:
+                            equipped_subitem = subitem
+                            item_option = create_item_option(aidx, subitem)
+                            break
+                    else:  # Shouldn't happen
+                        item_option = create_item_option(aidx, item)
+                else:
                     item_option = create_item_option(aidx, item)
-            else:
-                if item is accessory:
-                    surf.blit(SPRITES.get('equipment_highlight'), (8, y_pos + 8))
-                item_option = create_item_option(aidx, item)
-            item_option.draw(surf, 5, y_pos)
-            first = (idx == 0 and not self.unit.nonaccessories)
-            help_dlg = build_dialog_list(equipped_subitem if equipped_subitem else item, PageType.ITEM, unit=self.unit)
-            self.info_graph.register((5, y_pos, 120, 16), help_dlg, 'equipment', first=first)
+                item_option.draw(surf, 5, y_pos)
+                first = (idx == 0 and not self.unit.nonaccessories)
+                help_dlg = build_dialog_list(equipped_subitem if equipped_subitem else item, PageType.ITEM, unit=self.unit)
+                self.info_graph.register((5, y_pos, 120, 16), help_dlg, 'all', first=first)
+        else:
+            self.info_graph.register((5, 81, 120, 16), 'Costume', 'all')
 
         return surf
 
@@ -1101,7 +1101,7 @@ class InfoMenuState(State):
             badge_cy = y + pill_h // 2
             pygame.draw.circle(surf, border_color, (badge_cx, badge_cy), 7)
             badge_w = text_width('text', label[0])
-            render_text(surf, ['text'], [label[0]], ['white'], (badge_cx - badge_w // 2, y + 2))
+            render_text(surf, ['text'], [label[0]], ['white'], ((badge_cx - badge_w // 2) - 1, y + 1))
 
             # Skill icon (16x16) right after the badge
             icon_x = pill_x + 18

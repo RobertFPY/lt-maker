@@ -747,21 +747,15 @@ class Inventory(Choice):
             # padding so the panel never shows more rows than the unit
             # actually owns (with a single empty placeholder when zero).
             if self.mode == 'costume':
-                slot_target = min(num_accessories, max(1, len(accessories)))
+                # Match the user's exact Plan B: pad up to
+                # min(num_accessories, max(1, len(accessories))) total rows
+                # (NOT minus len(accessories)).
+                pad_count = min(num_accessories, max(1, len(accessories)))
             else:
-                slot_target = num_accessories
-            for num in range(slot_target - len(accessories)):
+                pad_count = num_accessories - len(accessories)
+            for num in range(pad_count):
                 option = menu_options.EmptyOption(len(self.options) + num)
                 self.options.append(option)
-        # [v0] DEBUG: trace option list shape so we can see exactly what
-        # get_menu_height / create_bg_surf will be measuring.
-        try:
-            real_count = sum(1 for o in self.options if not isinstance(o, menu_options.EmptyOption))
-            empty_count = sum(1 for o in self.options if isinstance(o, menu_options.EmptyOption))
-            print("[v0] Inventory.create_options mode=%s owner=%s options=%d (real=%d empty=%d) accessories=%d num_accessories=%d" % (
-                self.mode, getattr(self.owner, 'nid', '?'), len(self.options), real_count, empty_count, len(accessories), num_accessories))
-        except Exception as exc:
-            print("[v0] Inventory.create_options debug log failed:", exc)
 
 class Shop(Choice):
     default_option = menu_options.ValueItemOption
@@ -1448,21 +1442,6 @@ class Convoy():
         self.inventory.update_options(self._owner_items_for_mode())
         self.inventory.gem = False
         self.inventory.shimmer = 2
-        # [v0] DEBUG: log panel size + topleft so we can see whether the
-        # "blue block" matches inventory bg or comes from something else.
-        try:
-            print("[v0] Convoy.build_menus mode=%s owner=%s anchor_h=%d topleft=%s width=%d height=%d limit=%d hard_limit=%s" % (
-                self.mode,
-                getattr(self.owner, 'nid', '?'),
-                anchor_height,
-                self.inventory.topleft,
-                self.inventory.get_menu_width(),
-                self.inventory.get_menu_height(),
-                self.inventory.limit,
-                self.inventory.hard_limit,
-            ))
-        except Exception as exc:
-            print("[v0] Convoy.build_menus debug log failed:", exc)
 
     def _owner_items_for_mode(self):
         if self.mode == 'items':
@@ -1712,7 +1691,13 @@ class Convoy():
                     icons.draw_weapon(surf, weapon_nid, topleft)
                     surf.blit(SPRITES.get('weapon_shine'), topleft)
 
-        self.get_menu().draw(surf)
+        # In costume mode the convoy is browsed only through the inventory
+        # panel — there is no weapon-type list to show. Skip drawing
+        # self.get_menu() so its (much taller) background surface doesn't
+        # overlap the inventory panel and render as a translucent blue block
+        # above the accessory row.
+        if self.mode != 'costume':
+            self.get_menu().draw(surf)
         if self.inventory:
             self.inventory.draw(surf)
 

@@ -718,6 +718,21 @@ class Inventory(Choice):
     def set_mode(self, mode):
         self.mode = mode
 
+    def get_menu_height(self):
+        # In costume mode the option list still contains EmptyOption padding so
+        # cursor / width calculations work, but we don't want those padding
+        # rows to be reflected in the background panel height — otherwise an
+        # extra translucent strip is drawn above/below the real accessory row.
+        if self.mode == 'costume':
+            real = [o for o in self.options[:self.limit]
+                    if not isinstance(o, menu_options.EmptyOption)]
+            if not real:
+                # Keep one row's worth of background so the empty panel is
+                # still visible (matches behaviour of an empty inventory).
+                return self.y_offset + 16 + 8
+            return self.y_offset + sum(o.height() for o in real) + 8
+        return super().get_menu_height()
+
     def create_options(self, options, info_desc=None):
         self.options.clear()
         # Assumes all options are Item Objects
@@ -743,21 +758,10 @@ class Inventory(Choice):
                 option = menu_options.ItemOption(idx, item)
                 option.help_box = option.get_help_box()
                 self.options.append(option)
-            # Get empty options at the end. In costume mode the panel should
-            # collapse to exactly the number of accessories the unit owns —
-            # otherwise the menu background renders 2-3 empty rows above/below
-            # the real row and shows up as a stray translucent block on top of
-            # the prep backdrop. We still need at least one placeholder row
-            # when the unit owns zero accessories so get_menu_width() / draw
-            # cursor don't crash on an empty option list.
-            if self.mode == 'costume':
-                if not accessories:
-                    option = menu_options.EmptyOption(len(self.options))
-                    self.options.append(option)
-            else:
-                for num in range(num_accessories - len(accessories)):
-                    option = menu_options.EmptyOption(len(self.options) + num)
-                    self.options.append(option)
+            # Get empty options at the end
+            for num in range(num_accessories - len(accessories)):
+                option = menu_options.EmptyOption(len(self.options) + num)
+                self.options.append(option)
 
 class Shop(Choice):
     default_option = menu_options.ValueItemOption

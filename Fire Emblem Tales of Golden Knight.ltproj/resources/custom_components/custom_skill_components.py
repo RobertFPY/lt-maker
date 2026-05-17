@@ -1459,29 +1459,93 @@ class CharacterSkillSlot(SkillComponent):
     desc = "Char Skill Slot"
     tag = SkillTags.ATTRIBUTE
 
+
+# Helper: when two skills sharing the same slot category land on a unit, keep the higher-priority one and shelve the loser into the unit's LearnedSkills field so it can be re-equipped from the Skill Swap menu later.
+_SLOT_NIDS = ('special_skill', 'slota_skill', 'slotb_skill', 'slotc_skill', 'assist_skill')
+
+
+def _skill_priority(skill):
+    for c in skill.components:
+        if c.nid == 'priority':
+            try:
+                return int(c.value)
+            except (TypeError, ValueError):
+                return 0
+    return 0
+
+
+def _resolve_slot_conflict(slot_nid, existing_skill, unit, other_skill):
+    if other_skill is existing_skill:
+        return
+    if not any(c.nid == slot_nid for c in other_skill.components):
+        return
+    if existing_skill not in unit.skills or other_skill not in unit.skills:
+        return
+    if _skill_priority(other_skill) > _skill_priority(existing_skill):
+        loser = existing_skill
+    else:
+        loser = other_skill
+    if loser not in unit.skills:
+        return
+    learned = list(unit.get_field('LearnedSkills') or [])
+    if loser.nid and loser.nid not in learned:
+        learned.append(loser.nid)
+        action.do(action.ChangeField(unit, 'LearnedSkills', learned))
+    action.do(action.RemoveSkill(unit, loser))
+
+
 class ClassSkillSlot(SkillComponent):
     nid = 'class_skill2'
     desc = "Class Skill Slot"
-    tag = SkillTags.ATTRIBUTEclass SpecialSkillSlot(SkillComponent):
+    tag = SkillTags.ATTRIBUTE
+
+
+class SpecialSkillSlot(SkillComponent):
     nid = 'special_skill'
     desc = "Special Skill Slot"
-    tag = SkillTags.ATTRIBUTEclass SlotASkillSlot(SkillComponent):
+    tag = SkillTags.ATTRIBUTE
+
+    def after_gain_skill(self, unit, other_skill):
+        _resolve_slot_conflict(self.nid, self.skill, unit, other_skill)
+
+
+class SlotASkillSlot(SkillComponent):
     nid = 'slota_skill'
     desc = "SlotA Skill Slot"
-    tag = SkillTags.ATTRIBUTE
+    tag = SkillTags.ATTRIBUTE
+
+    def after_gain_skill(self, unit, other_skill):
+        _resolve_slot_conflict(self.nid, self.skill, unit, other_skill)
+
+
 class SlotBSkillSlot(SkillComponent):
     nid = 'slotb_skill'
     desc = "SlotB Skill Slot"
-    tag = SkillTags.ATTRIBUTE
+    tag = SkillTags.ATTRIBUTE
+
+    def after_gain_skill(self, unit, other_skill):
+        _resolve_slot_conflict(self.nid, self.skill, unit, other_skill)
+
+
 class SlotCSkillSlot(SkillComponent):
     nid = 'slotc_skill'
     desc = "SlotC Skill Slot"
-    tag = SkillTags.ATTRIBUTE
+    tag = SkillTags.ATTRIBUTE
+
+    def after_gain_skill(self, unit, other_skill):
+        _resolve_slot_conflict(self.nid, self.skill, unit, other_skill)
+
+
 class AssistSkillSlot(SkillComponent):
     nid = 'assist_skill'
     desc = "Assist Skill Slot"
     tag = SkillTags.ATTRIBUTE
-class Priority (SkillComponent):
+
+    def after_gain_skill(self, unit, other_skill):
+        _resolve_slot_conflict(self.nid, self.skill, unit, other_skill)
+
+
+class Priority (SkillComponent):
     nid = 'priority'
     desc = "Priority for skill display."
     tag = SkillTags.ATTRIBUTE

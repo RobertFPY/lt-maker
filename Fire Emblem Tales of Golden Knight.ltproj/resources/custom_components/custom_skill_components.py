@@ -1545,6 +1545,37 @@ class AssistSkillSlot(SkillComponent):
         _resolve_slot_conflict(self.nid, self.skill, unit, other_skill)
 
 
+# Weapon skill markers: skills granted by an equipped weapon. They share the same five categories as regular slot skills but always override the regular skill in that slot while the weapon is equipped. They have no priority and do not conflict with each other since a unit only equips one weapon at a time.
+class WeaponSpecialSkillSlot(SkillComponent):
+    nid = 'weapon_special_skill'
+    desc = "Weapon-granted skill occupying the Special slot."
+    tag = SkillTags.ATTRIBUTE
+
+
+class WeaponSlotASkillSlot(SkillComponent):
+    nid = 'weapon_slota_skill'
+    desc = "Weapon-granted skill occupying SlotA."
+    tag = SkillTags.ATTRIBUTE
+
+
+class WeaponSlotBSkillSlot(SkillComponent):
+    nid = 'weapon_slotb_skill'
+    desc = "Weapon-granted skill occupying SlotB."
+    tag = SkillTags.ATTRIBUTE
+
+
+class WeaponSlotCSkillSlot(SkillComponent):
+    nid = 'weapon_slotc_skill'
+    desc = "Weapon-granted skill occupying SlotC."
+    tag = SkillTags.ATTRIBUTE
+
+
+class WeaponAssistSkillSlot(SkillComponent):
+    nid = 'weapon_assist_skill'
+    desc = "Weapon-granted skill occupying the Assist slot."
+    tag = SkillTags.ATTRIBUTE
+
+
 class Priority (SkillComponent):
     nid = 'priority'
     desc = "Priority for skill display."

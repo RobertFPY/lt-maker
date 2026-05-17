@@ -12,6 +12,7 @@ from app.data.database.difficulty_modes import RNGOption
 from app.engine.combat import playback as pb
 from app.engine.movement import movement_funcs
 import logging
+from app.engine.source_type import SourceType
 def ai_status_priority(unit, target, item, move, status_nid) -> float:
     if target and status_nid not in [skill.nid for skill in target.skills]:
         accuracy_term = utils.clamp(combat_calcs.compute_hit(unit, target, item, target.get_weapon(), "attack", (0, 0))/100., 0, 1)
@@ -1366,3 +1367,77 @@ class ChangeAnimation(ItemComponent):
             if damage == 0:
                 playback.append(pb.HitSound('No Damage'))
                 playback.append(pb.HitAnim('MapNoDamage', target))
+
+
+# --- Weapon-granted slot skills -------------------------------------------------
+# Maps the regular skill-category nid -> matching weapon skill-category nid. A skill
+# whose components contain the regular nid occupies that category in the Skill Swap
+# UI; a skill whose components contain the weapon nid is treated as the same
+# category but takes precedence whenever the weapon is equipped.
+_WEAPON_SLOT_PAIRS = (
+    ('special_skill', 'weapon_special_skill'),
+    ('slota_skill', 'weapon_slota_skill'),
+    ('slotb_skill', 'weapon_slotb_skill'),
+    ('slotc_skill', 'weapon_slotc_skill'),
+    ('assist_skill', 'weapon_assist_skill'),
+)
+
+
+def _category_of_weapon_skill(skill_prefab):
+    """Return the regular-category nid that a weapon skill prefab maps to, or None."""
+    if not skill_prefab:
+        return None
+    comp_nids = {c.nid for c in skill_prefab.components}
+    for regular_nid, weapon_nid in _WEAPON_SLOT_PAIRS:
+        if weapon_nid in comp_nids:
+            return regular_nid
+    return None
+
+
+def _find_displaced_skill(unit, regular_nid):
+    """Find the regular slot skill currently on the unit for that category, if any."""
+    for sk in unit.skills:
+        prefab = DB.skills.get(sk.nid)
+        if not prefab:
+            continue
+        if any(c.nid == regular_nid for c in prefab.components):
+            return sk
+    return None
+
+
+class WeaponSkillsOnEquip(ItemComponent):
+    nid = 'weapon_skills_on_equip'
+    desc = ("Item grants the listed skills while equipped. Each weapon skill must "
+            "carry one of the weapon_*_skill components; it overrides whatever "
+            "regular slot skill currently occupies that category. The displaced "
+            "regular skill is shelved on the unit's WeaponDisplacedSkills field "
+            "and restored automatically when the weapon is unequipped.")
+    tag = ItemTags.EXTRA
+
+    expose = (ComponentType.List, ComponentType.Skill)  # list of skill nids
+    value = []
+
+    def on_equip_item(self, unit, item):
+        displaced_map = dict(unit.get_field('WeaponDisplacedSkills') or {})
+        for skill_nid in self.value:
+            prefab = DB.skills.get(skill_nid)
+            regular_nid = _category_of_weapon_skill(prefab)
+            if regular_nid:
+                # Shelve any regular skill currently in that category before adding the weapon skill.
+                existing = _find_displaced_skill(unit, regular_nid)
+                if existing is not None and existing.nid != skill_nid:
+                    displaced_map[skill_nid] = existing.nid
+                    action.do(action.RemoveSkill(unit, existing))
+            action.do(action.AddSkill(unit, skill_nid, source=item.uid, source_type=SourceType.ITEM))
+        action.do(action.ChangeField(unit, 'WeaponDisplacedSkills', displaced_map))
+
+    def on_unequip_item(self, unit, item):
+        displaced_map = dict(unit.get_field('WeaponDisplacedSkills') or {})
+        for skill_nid in self.value:
+            action.do(action.RemoveSkill(unit, skill_nid, count=1, source=item.uid, source_type=SourceType.ITEM))
+            restored = displaced_map.pop(skill_nid, None)
+            if restored:
+                # Restore the displaced regular skill via give_skill semantics so the
+                # after_gain_skill hooks resolve any other conflicts naturally.
+                action.do(action.AddSkill(unit, restored))
+        action.do(action.ChangeField(unit, 'WeaponDisplacedSkills', displaced_map))

@@ -718,6 +718,25 @@ class Inventory(Choice):
     def set_mode(self, mode):
         self.mode = mode
 
+    def vert_draw(self, surf, offset=None):
+        surf = super().vert_draw(surf, offset)
+        # [v0] DEBUG: outline the inventory panel with a red border so we can
+        # visually confirm whether the "blue block" is part of the inventory
+        # bg_surf or comes from some other surface drawn at the same area.
+        try:
+            import pygame
+            topleft = self.get_topleft()
+            if offset:
+                topleft = (topleft[0] + offset[0], topleft[1] + offset[1])
+            w = self.get_menu_width() + 4
+            h = self.get_menu_height() + 8
+            pygame.draw.rect(surf, (255, 0, 0), (topleft[0] - 2, topleft[1] - 4, w, h), 1)
+            # Marker line at y = topleft[1] (where the first row should start).
+            pygame.draw.line(surf, (0, 255, 0), (topleft[0] - 2, topleft[1]), (topleft[0] - 2 + w, topleft[1]), 1)
+        except Exception as exc:
+            print("[v0] Inventory.vert_draw debug border failed:", exc)
+        return surf
+
     def create_options(self, options, info_desc=None):
         self.options.clear()
         # Assumes all options are Item Objects
@@ -1691,13 +1710,7 @@ class Convoy():
                     icons.draw_weapon(surf, weapon_nid, topleft)
                     surf.blit(SPRITES.get('weapon_shine'), topleft)
 
-        # In costume mode the convoy is browsed only through the inventory
-        # panel — there is no weapon-type list to show. Skip drawing
-        # self.get_menu() so its (much taller) background surface doesn't
-        # overlap the inventory panel and render as a translucent blue block
-        # above the accessory row.
-        if self.mode != 'costume':
-            self.get_menu().draw(surf)
+        self.get_menu().draw(surf)
         if self.inventory:
             self.inventory.draw(surf)
 

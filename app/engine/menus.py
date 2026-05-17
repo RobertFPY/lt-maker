@@ -747,8 +747,14 @@ class Inventory(Choice):
             # collapse to exactly the number of accessories the unit owns —
             # otherwise the menu background renders 2-3 empty rows above/below
             # the real row and shows up as a stray translucent block on top of
-            # the prep backdrop.
-            if self.mode != 'costume':
+            # the prep backdrop. We still need at least one placeholder row
+            # when the unit owns zero accessories so get_menu_width() / draw
+            # cursor don't crash on an empty option list.
+            if self.mode == 'costume':
+                if not accessories:
+                    option = menu_options.EmptyOption(len(self.options))
+                    self.options.append(option)
+            else:
                 for num in range(num_accessories - len(accessories)):
                     option = menu_options.EmptyOption(len(self.options) + num)
                     self.options.append(option)

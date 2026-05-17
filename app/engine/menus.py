@@ -718,36 +718,6 @@ class Inventory(Choice):
     def set_mode(self, mode):
         self.mode = mode
 
-    def vert_draw(self, surf, offset=None):
-        # [v0] DEBUG: log every frame what the inventory panel actually
-        # measures right before it draws — so we can correlate the on-screen
-        # "blue block" with the real options/menu_height in use.
-        try:
-            real_count = sum(1 for o in self.options if not isinstance(o, menu_options.EmptyOption))
-            empty_count = sum(1 for o in self.options if isinstance(o, menu_options.EmptyOption))
-            print("[v0] Inventory.vert_draw mode=%s options=%d (real=%d empty=%d) menu_height=%d topleft=%s" % (
-                self.mode, len(self.options), real_count, empty_count,
-                self.get_menu_height(), self.get_topleft()))
-        except Exception as exc:
-            print("[v0] Inventory.vert_draw debug log failed:", exc)
-        surf = super().vert_draw(surf, offset)
-        # [v0] DEBUG: outline the inventory panel with a red border so we can
-        # visually confirm whether the "blue block" is part of the inventory
-        # bg_surf or comes from some other surface drawn at the same area.
-        try:
-            import pygame
-            topleft = self.get_topleft()
-            if offset:
-                topleft = (topleft[0] + offset[0], topleft[1] + offset[1])
-            w = self.get_menu_width() + 4
-            h = self.get_menu_height() + 8
-            pygame.draw.rect(surf, (255, 0, 0), (topleft[0] - 2, topleft[1] - 4, w, h), 1)
-            # Marker line at y = topleft[1] (where the first row should start).
-            pygame.draw.line(surf, (0, 255, 0), (topleft[0] - 2, topleft[1]), (topleft[0] - 2 + w, topleft[1]), 1)
-        except Exception as exc:
-            print("[v0] Inventory.vert_draw debug border failed:", exc)
-        return surf
-
     def create_options(self, options, info_desc=None):
         self.options.clear()
         # Assumes all options are Item Objects
@@ -1722,7 +1692,16 @@ class Convoy():
 
         self.get_menu().draw(surf)
         if self.inventory:
-            self.inventory.draw(surf)
+            # In costume mode, the inventory panel only shows accessories.
+            # When the unit owns zero accessories we still keep one empty
+            # option in the menu (so cursor logic stays valid), but drawing
+            # an empty blue panel looks broken — skip the draw in that case.
+            skip_inventory = (
+                self.mode == 'costume'
+                and all(isinstance(o, menu_options.EmptyOption) for o in self.inventory.options)
+            )
+            if not skip_inventory:
+                self.inventory.draw(surf)
 
         # Draw item owner
         if unit and self.takes_input:

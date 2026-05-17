@@ -714,24 +714,17 @@ class Inventory(Choice):
     # 'costume' only the accessory section. Set via set_mode() before
     # create_options is invoked (or update_options afterwards).
     mode = 'all'
+    # In costume mode, override how many accessory slots get padded with
+    # EmptyOption. None means "fall back to item_funcs.get_num_accessories".
+    # The Convoy menu sets this to 1 so the panel collapses to a single row,
+    # matching the "single costume bag" UX.
+    _costume_max_slots = None
 
     def set_mode(self, mode):
         self.mode = mode
 
-    def get_menu_height(self):
-        # In costume mode the option list still contains EmptyOption padding so
-        # cursor / width calculations work, but we don't want those padding
-        # rows to be reflected in the background panel height — otherwise an
-        # extra translucent strip is drawn above/below the real accessory row.
-        if self.mode == 'costume':
-            real = [o for o in self.options[:self.limit]
-                    if not isinstance(o, menu_options.EmptyOption)]
-            if not real:
-                # Keep one row's worth of background so the empty panel is
-                # still visible (matches behaviour of an empty inventory).
-                return self.y_offset + 16 + 8
-            return self.y_offset + sum(o.height() for o in real) + 8
-        return super().get_menu_height()
+    def set_costume_max_slots(self, n):
+        self._costume_max_slots = n
 
     def create_options(self, options, info_desc=None):
         self.options.clear()
@@ -758,8 +751,14 @@ class Inventory(Choice):
                 option = menu_options.ItemOption(idx, item)
                 option.help_box = option.get_help_box()
                 self.options.append(option)
-            # Get empty options at the end
-            for num in range(num_accessories - len(accessories)):
+            # Get empty options at the end. In costume mode the panel only
+            # ever shows a single accessory slot, so cap padding at
+            # _costume_max_slots (1 by default for the Convoy costume menu).
+            if self.mode == 'costume' and self._costume_max_slots is not None:
+                slot_target = self._costume_max_slots
+            else:
+                slot_target = num_accessories
+            for num in range(slot_target - len(accessories)):
                 option = menu_options.EmptyOption(len(self.options) + num)
                 self.options.append(option)
 
@@ -1443,6 +1442,11 @@ class Convoy():
         anchor_height = item_funcs.get_num_items(self.owner) * 16 + 8
         self.inventory = Inventory(self.owner, self._owner_items_for_mode(), (12, WINHEIGHT - anchor_height - 4))
         self.inventory.set_mode(self.mode)
+        if self.mode == 'costume':
+            # Costume bag holds exactly one accessory at a time — cap padding
+            # so the panel collapses to a single row instead of leaving 2-3
+            # phantom EmptyOption rows that show as a translucent block.
+            self.inventory.set_costume_max_slots(1)
         # Rebuild option list now that mode is set so that the inventory only
         # renders the slot section appropriate for this mode.
         self.inventory.update_options(self._owner_items_for_mode())

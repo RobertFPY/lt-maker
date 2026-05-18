@@ -1064,11 +1064,19 @@ class InfoMenuState(State):
 
         char_skills = [s for s in self.unit.skills if s.class_skill and s.char_skill and not skill_system.hidden(s, self.unit)]
         class_skills = [s for s in self.unit.skills if s.class_skill and s.class_skill2 and not skill_system.hidden(s, self.unit)]
-        special_skills = [s for s in self.unit.skills if s.class_skill and s.special_skill and not skill_system.hidden(s, self.unit)]
-        slota_skills = [s for s in self.unit.skills if s.class_skill and s.slota_skill and not skill_system.hidden(s, self.unit)]
-        slotb_skills = [s for s in self.unit.skills if s.class_skill and s.slotb_skill and not skill_system.hidden(s, self.unit)]
-        slotc_skills = [s for s in self.unit.skills if s.class_skill and s.slotc_skill and not skill_system.hidden(s, self.unit)]
-        assist_skill = [s for s in self.unit.skills if s.class_skill and s.assist_skill and not skill_system.hidden(s, self.unit)]
+        # Weapon-granted skills (weapon_*_skill components) take precedence in their
+        # respective category rows. If no weapon skill is present, fall back to the
+        # regular class_skill in that category.
+        special_skills = [s for s in self.unit.skills if s.weapon_special_skill and not skill_system.hidden(s, self.unit)] \
+            or [s for s in self.unit.skills if s.class_skill and s.special_skill and not skill_system.hidden(s, self.unit)]
+        slota_skills = [s for s in self.unit.skills if s.weapon_slota_skill and not skill_system.hidden(s, self.unit)] \
+            or [s for s in self.unit.skills if s.class_skill and s.slota_skill and not skill_system.hidden(s, self.unit)]
+        slotb_skills = [s for s in self.unit.skills if s.weapon_slotb_skill and not skill_system.hidden(s, self.unit)] \
+            or [s for s in self.unit.skills if s.class_skill and s.slotb_skill and not skill_system.hidden(s, self.unit)]
+        slotc_skills = [s for s in self.unit.skills if s.weapon_slotc_skill and not skill_system.hidden(s, self.unit)] \
+            or [s for s in self.unit.skills if s.class_skill and s.slotc_skill and not skill_system.hidden(s, self.unit)]
+        assist_skill = [s for s in self.unit.skills if s.weapon_assist_skill and not skill_system.hidden(s, self.unit)] \
+            or [s for s in self.unit.skills if s.class_skill and s.assist_skill and not skill_system.hidden(s, self.unit)]
 
         # FEH-style pill layout: 7 horizontal pills, each with a category color,
         # the skill icon at the left, and the skill name in the middle.

@@ -2002,16 +2002,28 @@ _ALL_SKILL_SLOT_NIDS = (
 )
 
 
+_WEAPON_SLOT_NIDS = (
+    'weapon_special_skill', 'weapon_slota_skill', 'weapon_slotb_skill',
+    'weapon_slotc_skill', 'weapon_assist_skill',
+)
+
+
 def _has_any_slot_component(skill_obj) -> bool:
     return any(getattr(skill_obj, nid, None) for nid in _ALL_SKILL_SLOT_NIDS)
 
 
+def _is_weapon_skill(skill_obj) -> bool:
+    return any(getattr(skill_obj, nid, None) for nid in _WEAPON_SLOT_NIDS)
+
+
 def _is_priority_active(self_skill, unit) -> bool:
-    """Returns True if self_skill is the highest-priority skill among all slot skills
-    the unit currently owns. Mirrors the loop_skill_counter / priority comparison
-    used by the legacy per-category combat_condition_* components, but generalized
-    to the full set of slot categories so a single component covers them all."""
-    list_skills = [s for s in unit.skills if _has_any_slot_component(s)]
+    """Returns True if self_skill is the highest-priority skill among the unit's
+    slot skills. Weapon-granted skills (weapon_*_skill) are unconditionally active
+    while their weapon is equipped: they have no priority value and always override
+    the regular skill that occupies their category, so we short-circuit to True."""
+    if _is_weapon_skill(self_skill):
+        return True
+    list_skills = [s for s in unit.skills if _has_any_slot_component(s) and not _is_weapon_skill(s)]
     loop_skill_counter = {}
     skill_priority = self_skill.priority.int()
     active = True

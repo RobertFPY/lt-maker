@@ -5047,7 +5047,7 @@
                 "nid": "104",
                 "variant": null,
                 "level": 20,
-                "klass": "Pegasus_Knight",
+                "klass": "Falcoknight",
                 "faction": "Soldier",
                 "starting_items": [
                     [
@@ -5338,6 +5338,11 @@
             }
         ],
         "unit_groups": [],
-        "ai_groups": []
+        "ai_groups": [
+            {
+                "nid": "",
+                "trigger_threshold": 1
+            }
+        ]
     }
 ]

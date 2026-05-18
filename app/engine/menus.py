@@ -743,14 +743,13 @@ class Inventory(Choice):
                 option = menu_options.ItemOption(idx, item)
                 option.help_box = option.get_help_box()
                 self.options.append(option)
-            # Get empty options at the end. Plan B: in costume mode cap the
-            # padding so the panel never shows more rows than the unit
-            # actually owns (with a single empty placeholder when zero).
+            # Get empty options at the end. In costume mode the panel must
+            # collapse to exactly the rows that hold a real accessory; only
+            # add a single empty placeholder when the unit owns no accessory
+            # at all (so the menu still has something to measure / draw a
+            # cursor on without crashing).
             if self.mode == 'costume':
-                # Match the user's exact Plan B: pad up to
-                # min(num_accessories, max(1, len(accessories))) total rows
-                # (NOT minus len(accessories)).
-                pad_count = min(num_accessories, max(1, len(accessories)))
+                pad_count = 1 if len(accessories) == 0 else 0
             else:
                 pad_count = num_accessories - len(accessories)
             for num in range(pad_count):

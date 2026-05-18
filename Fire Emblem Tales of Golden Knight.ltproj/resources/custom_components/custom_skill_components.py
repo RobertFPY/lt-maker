@@ -1988,7 +1988,114 @@ class ConditionSlotC(SkillComponent):
             except Exception as e:
                 print("%s: Could not evaluate condition %s for skill %s" % (e, self.value, self.skill.nid))
         else:
-            return False
+            return False
+
+
+# Universal slot list used by combat_condition_all / condition_all. Covers every
+# slot a skill can occupy (regular, char, class, weapon variants) so a single
+# component replaces the per-category combat_condition_* / condition_* family.
+_ALL_SKILL_SLOT_NIDS = (
+    'char_skill', 'class_skill2',
+    'special_skill', 'slota_skill', 'slotb_skill', 'slotc_skill', 'assist_skill',
+    'weapon_special_skill', 'weapon_slota_skill', 'weapon_slotb_skill',
+    'weapon_slotc_skill', 'weapon_assist_skill',
+)
+
+
+def _has_any_slot_component(skill_obj) -> bool:
+    return any(getattr(skill_obj, nid, None) for nid in _ALL_SKILL_SLOT_NIDS)
+
+
+def _is_priority_active(self_skill, unit) -> bool:
+    """Returns True if self_skill is the highest-priority skill among all slot skills
+    the unit currently owns. Mirrors the loop_skill_counter / priority comparison
+    used by the legacy per-category combat_condition_* components, but generalized
+    to the full set of slot categories so a single component covers them all."""
+    list_skills = [s for s in unit.skills if _has_any_slot_component(s)]
+    loop_skill_counter = {}
+    skill_priority = self_skill.priority.int()
+    active = True
+    for s in list_skills:
+        if s.nid not in loop_skill_counter:
+            if s.nid != self_skill.nid:
+                if skill_priority < s.priority.int():
+                    active = False
+            loop_skill_counter[s.nid] = 1
+        else:
+            loop_skill_counter[s.nid] += 1
+    return active
+
+
+class CombatConditionAll(SkillComponent):
+    nid = 'combat_condition_all'
+    desc = ("Status is conditional based on combat properties. Replaces the per-"
+            "category combat_condition_class / _special / _slota / _slotb / _slotc "
+            "components with a single component that works for every slot category.")
+    tag = SkillTags.CUSTOM
+
+    expose = ComponentType.String
+    value = 'True'
+
+    ignore_conditional = True
+    _condition = False
+
+    def pre_combat(self, playback, unit, item, target, item2, mode):
+        game.on_alter_game_state()
+        if _is_priority_active(self.skill, unit):
+            from app.engine import evaluate
+            try:
+                x = bool(evaluate.evaluate(self.value, unit, target,
+                                           unit.position, {'item': item, 'item2': item2, 'mode': mode}))
+                self._condition = x
+                return x
+            except Exception as e:
+                print("%s: Could not evaluate combat condition %s" % (e, self.value))
+        else:
+            self._condition = False
+
+    def post_combat_unconditional(self, playback, unit, item, target, item2, mode):
+        game.on_alter_game_state()
+        self._condition = False
+
+    def condition(self, unit, item):
+        return self._condition
+
+    def test_on(self, playback, unit, item, target, item2, mode):
+        game.on_alter_game_state()
+        self.pre_combat(playback, unit, item, target, item2, mode)
+
+    def test_off(self, playback, unit, item, target, item2, mode):
+        game.on_alter_game_state()
+        self._condition = False
+
+
+class ConditionAll(SkillComponent):
+    nid = 'condition_all'
+    desc = ("Status is conditional. Replaces the per-category condition_class / "
+            "_slota / _slotb / _slotc components with a single component that "
+            "works for every slot category.")
+    tag = SkillTags.CUSTOM
+
+    expose = ComponentType.String
+    value = 'True'
+
+    ignore_conditional = True
+    active = True
+
+    def on_upkeep(self, actions, playback, unit):
+        self.active = _is_priority_active(self.skill, unit)
+
+    def condition(self, unit, item):
+        if self.active:
+            from app.engine import evaluate
+            try:
+                return bool(evaluate.evaluate(self.value, unit, position=unit.position, local_args={'item': item}))
+            except Exception as e:
+                print("%s: Could not evaluate condition %s for skill %s" % (e, self.value, self.skill.nid))
+        else:
+            return False
+
+
 class LupinStealIcon(SkillComponent):
     nid = 'lupin_steal_icon'
     desc = "Displays icon above units with stealable items"

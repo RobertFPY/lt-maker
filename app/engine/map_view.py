@@ -81,6 +81,7 @@ class MapView():
             unit.sprite.draw_hp(unit_surf, topleft, event)
         for unit in draw_units:
             unit.sprite.draw_markers(unit_surf, topleft)
+            unit.sprite.draw_event_markers(unit_surf, topleft)
 
         # Draw the movement arrows
         game.cursor.draw_arrows(unit_surf, topleft)
@@ -91,6 +92,7 @@ class MapView():
             cur_unit.sprite.draw_hp(unit_surf, topleft, event)
             if not event:
                 cur_unit.sprite.draw_markers(unit_surf, topleft)
+            cur_unit.sprite.draw_event_markers(unit_surf, topleft)
 
         if subsurface_rect:
             left, top = (subsurface_rect[0] - cull_rect[0], subsurface_rect[1] - cull_rect[1])

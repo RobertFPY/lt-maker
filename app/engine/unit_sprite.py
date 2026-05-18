@@ -712,19 +712,38 @@ class UnitSprite():
             for item in item_funcs.get_all_items(self.unit):
                 markers += item_system.target_icon(self.unit, item, cur_unit)
             markers += skill_system.target_icon(cur_unit, self.unit)
-        # Event-driven marker: visible regardless of cur_unit, with optional TTL
-        ev_marker = game.unit_markers.get(self.unit.nid) if hasattr(game, 'unit_markers') else None
-        if ev_marker:
-            expire = ev_marker.get('expire')
-            if expire is not None and engine.get_time() >= expire:
-                game.unit_markers.pop(self.unit.nid, None)
-            else:
-                markers.append(ev_marker.get('sprite'))
         markers = [SPRITES.get('marker_%s' % marker) for marker in markers if marker]
         markers = [_ for _ in markers if _]  # Only include non-None
         if markers:
             icon_frame = (engine.get_time() // 500) % len(markers)
             surf.blit(markers[icon_frame], (topleft[0], topleft[1] + offset))
+        return surf
+
+    def draw_event_markers(self, surf, cull_rect):
+        """Render markers do event command đặt lên unit. Hiển thị độc lập với
+        cur_unit (luôn nhìn thấy kể cả khi đang chạy event hoặc không trỏ
+        chuột vào unit). Tự xoá nếu hết TTL.
+        """
+        if not getattr(game, 'unit_markers', None):
+            return surf
+        ev_marker = game.unit_markers.get(self.unit.nid)
+        if not ev_marker:
+            return surf
+        expire = ev_marker.get('expire')
+        if expire is not None and engine.get_time() >= expire:
+            game.unit_markers.pop(self.unit.nid, None)
+            return surf
+        sprite_nid = ev_marker.get('sprite')
+        if not sprite_nid:
+            return surf
+        marker_surf = SPRITES.get('marker_%s' % sprite_nid)
+        if not marker_surf:
+            return surf
+        left, top = self.get_topleft(cull_rect)
+        topleft = (left - 2, top - 14)
+        frame = (engine.get_time() // 100) % 8
+        offset = [0, 0, 0, 1, 2, 2, 2, 1][frame]
+        surf.blit(marker_surf, (topleft[0], topleft[1] + offset))
         return surf
 
     def check_draw_hp(self) -> bool:

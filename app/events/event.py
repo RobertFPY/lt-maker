@@ -329,6 +329,12 @@ class Event():
         return surf
 
     def end(self):
+        # Auto-cleanup any non-permanent unit markers added during this event
+        markers_to_clear = getattr(self, '_unit_markers_to_clear', None)
+        if markers_to_clear and getattr(self.game, 'unit_markers', None) is not None:
+            for nid in markers_to_clear:
+                self.game.unit_markers.pop(nid, None)
+            markers_to_clear.clear()
         self.state = 'almost_complete'
 
     def process(self):

@@ -2900,6 +2900,40 @@ def remove_unit_map_anim(self: Event, map_anim, unit, flags=None):
         return
     action.do(action.RemoveAnimFromUnit(map_anim, unit))
 
+def add_unit_marker(self: Event, unit, marker_nid: NID, sound: NID = None, time: int = None, flags=None):
+    flags = flags or set()
+    unit_obj = self._get_unit(unit)
+    if not unit_obj:
+        self.logger.error("add_unit_marker: Could not find unit %s" % unit)
+        return
+    expire = None
+    if time is not None:
+        try:
+            expire = engine.get_time() + int(time)
+        except (TypeError, ValueError):
+            self.logger.error("add_unit_marker: invalid time %s" % time)
+            expire = None
+    self.game.unit_markers[unit_obj.nid] = {
+        'sprite': marker_nid,
+        'expire': expire,
+    }
+    # Đánh dấu để cleanup khi event end (trừ khi permanent)
+    if 'permanent' not in flags:
+        if not hasattr(self, '_unit_markers_to_clear'):
+            self._unit_markers_to_clear = set()
+        self._unit_markers_to_clear.add(unit_obj.nid)
+    if sound:
+        get_sound_thread().play_sfx(sound)
+
+def remove_unit_marker(self: Event, unit, flags=None):
+    unit_obj = self._get_unit(unit)
+    if not unit_obj:
+        self.logger.error("remove_unit_marker: Could not find unit %s" % unit)
+        return
+    self.game.unit_markers.pop(unit_obj.nid, None)
+    if hasattr(self, '_unit_markers_to_clear'):
+        self._unit_markers_to_clear.discard(unit_obj.nid)
+
 def merge_parties(self: Event, party1, party2, flags=None):
     host, guest = party1, party2
     if host not in DB.parties:

@@ -712,6 +712,14 @@ class UnitSprite():
             for item in item_funcs.get_all_items(self.unit):
                 markers += item_system.target_icon(self.unit, item, cur_unit)
             markers += skill_system.target_icon(cur_unit, self.unit)
+        # Event-driven marker: visible regardless of cur_unit, with optional TTL
+        ev_marker = game.unit_markers.get(self.unit.nid) if hasattr(game, 'unit_markers') else None
+        if ev_marker:
+            expire = ev_marker.get('expire')
+            if expire is not None and engine.get_time() >= expire:
+                game.unit_markers.pop(self.unit.nid, None)
+            else:
+                markers.append(ev_marker.get('sprite'))
         markers = [SPRITES.get('marker_%s' % marker) for marker in markers if marker]
         markers = [_ for _ in markers if _]  # Only include non-None
         if markers:

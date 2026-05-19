@@ -2817,6 +2817,27 @@ class RemoveUnitMapAnim(EventCommand):
             ' the "permanent" flag')
     keywords = ["MapAnim", "Unit"]
 
+class AddUnitMarker(EventCommand):
+    nid = 'add_unit_marker'
+    tag = Tags.MODIFY_UNIT_PROPERTIES
+    desc = \
+        """
+Hiển thị một marker (sprite tên `marker_<MarkerNid>`) ngay trên *Unit*, luôn nhìn thấy bất kể đang trỏ vào unit nào.
+Tùy chọn *Sound* để phát SFX khi marker xuất hiện. Tùy chọn *Time* (ms) để marker tự xoá sau khoảng thời gian đó.
+Nếu không truyền *Time*, marker tồn tại tới khi gọi `remove_unit_marker` hoặc khi event kết thúc (trừ khi có flag `permanent`).
+        """
+    keywords = ["Unit", "MarkerNid"]
+    optional_keywords = ["Sound", "Time"]
+    keyword_types = ["Unit", "Nid", "Sound", "Time"]
+    _flags = ["permanent"]
+
+class RemoveUnitMarker(EventCommand):
+    nid = 'remove_unit_marker'
+    tag = Tags.MODIFY_UNIT_PROPERTIES
+    desc = ('Xoá marker được tạo bởi `add_unit_marker` trên *Unit*.')
+    keywords = ["Unit"]
+    keyword_types = ["Unit"]
+
 class MergeParties(EventCommand):
     nid = 'merge_parties'
     tag = Tags.MISCELLANEOUS

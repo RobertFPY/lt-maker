@@ -134,6 +134,9 @@ class GameState():
         self.action_log: turnwheel.ActionLog = None
         self.events: EventManager = None
         self.map_sprite_registry: Dict[NID, unit_sprite.MapSprite] = {}
+        # Event-driven unit markers (always visible regardless of cur_unit)
+        # {unit_nid: {"sprite": marker_sprite_nid, "expire": engine_time_ms_or_None}}
+        self.unit_markers: Dict[NID, dict] = {}
 
         # current-level controllers and game objects
         self.board: game_board.GameBoard = None

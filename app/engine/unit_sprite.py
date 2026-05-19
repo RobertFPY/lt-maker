@@ -719,6 +719,33 @@ class UnitSprite():
             surf.blit(markers[icon_frame], (topleft[0], topleft[1] + offset))
         return surf
 
+    def draw_event_markers(self, surf, cull_rect):
+        """Render markers do event command đặt lên unit. Hiển thị độc lập với
+        cur_unit (luôn nhìn thấy kể cả khi đang chạy event hoặc không trỏ
+        chuột vào unit). Tự xoá nếu hết TTL.
+        """
+        if not getattr(game, 'unit_markers', None):
+            return surf
+        ev_marker = game.unit_markers.get(self.unit.nid)
+        if not ev_marker:
+            return surf
+        expire = ev_marker.get('expire')
+        if expire is not None and engine.get_time() >= expire:
+            game.unit_markers.pop(self.unit.nid, None)
+            return surf
+        sprite_nid = ev_marker.get('sprite')
+        if not sprite_nid:
+            return surf
+        marker_surf = SPRITES.get('marker_%s' % sprite_nid)
+        if not marker_surf:
+            return surf
+        left, top = self.get_topleft(cull_rect)
+        topleft = (left - 2, top - 14)
+        frame = (engine.get_time() // 100) % 8
+        offset = [0, 0, 0, 1, 2, 2, 2, 1][frame]
+        surf.blit(marker_surf, (topleft[0], topleft[1] + offset))
+        return surf
+
     def check_draw_hp(self) -> bool:
         if game.is_roam() and DB.constants.value('roam_hide_hp'):
             return False

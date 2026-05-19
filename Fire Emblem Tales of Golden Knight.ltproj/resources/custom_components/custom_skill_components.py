@@ -1703,3 +1703,11 @@ class NegateCannotBeCountered(SkillComponent):
 
     def reduce_resist_multiplier(self, unit, item, target, item2, mode, attack_info, base_value):
         return self.value
+
+class MarkerWarningIcon(SkillComponent):
+    nid = 'maker_warning_icon'
+    desc = "Displays warning icons above units"
+    tag = SkillTags.AESTHETIC
+
+    def target_icon(self, hovered_unit, icon_unit) -> str:
+        return 'warning'

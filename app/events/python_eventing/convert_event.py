@@ -95,6 +95,83 @@ def _strip_quotes(token: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Event-script expression -> Python expression
+# ---------------------------------------------------------------------------
+
+# {v:NAME}, {d:NAME}, {e:EXPR} -> v('NAME'), d('NAME'), e('EXPR')
+# Các helper này nằm trong query_engine.func_dict được merge vào globals khi
+# pyev1 chạy (xem app/engine/evaluate.py:get_context).
+_VAR_GETTER_RE = re.compile(r"\{([vde]):([^{}]+)\}")
+
+
+def _convert_script_expr_to_python(expr: str) -> str:
+    """Chuyển 1 biểu thức event-script (dùng `{v:X}`, `{d:X}`, `{e:X}`) sang
+    biểu thức Python tương đương (`v('X')`, ...).
+
+    Cũng convert toán tử event-script sang Python:
+        =   ->  ==
+    Nhưng giữ nguyên `==`, `!=`, `<=`, `>=` đã là Python.
+    """
+    if not expr:
+        return expr
+
+    def repl(match: "re.Match") -> str:
+        kind = match.group(1)
+        inner = match.group(2).strip()
+        # Inner có thể là 'NAME' hoặc 'NAME,fallback'. Chỉ lấy NAME.
+        if "," in inner and kind in ("v", "d"):
+            name, fallback = inner.split(",", 1)
+            return f"{kind}('{name.strip()}', '{fallback.strip()}')"
+        if kind == "e":
+            # Cho expr nguyên văn
+            return f"e({inner!r})"
+        return f"{kind}('{inner}')"
+
+    converted = _VAR_GETTER_RE.sub(repl, expr)
+
+    # Convert single `=` thành `==` (chỉ khi không phải ==, !=, <=, >=, := và
+    # không phải gán biến trong context Python). Trong expression sau if/elif
+    # event-script vẫn dùng `=` cho so sánh.
+    converted = re.sub(r"(?<![=!<>:])=(?!=)", "==", converted)
+
+    return converted
+
+
+def _convert_script_value_to_python(value: str) -> Tuple[str, bool]:
+    """Convert 1 giá trị arg event-script sang biểu thức Python.
+
+    Trả về `(converted, is_expression)`. Nếu `is_expression=True` thì giá trị
+    được hiểu là expression (không quote), ngược lại là chuỗi literal.
+
+    Quy tắc:
+        - Chứa `{v:..}/{d:..}/{e:..}` -> Python expression.
+        - Là số nguyên/float thuần -> Python expression (không quote).
+        - Mặc định: chuỗi (sẽ được quote).
+    """
+    if not value:
+        return "", False
+    if _VAR_GETTER_RE.search(value):
+        # Toàn bộ value chỉ là 1 getter -> expression. Có chuỗi đệm -> f-string.
+        m = _VAR_GETTER_RE.fullmatch(value)
+        if m:
+            return _convert_script_expr_to_python(value), True
+        # Hỗn hợp text + var -> dùng f-string với getter
+        # Thay {v:X} -> {v('X')}
+        def _fstr(m2):
+            kind, inner = m2.group(1), m2.group(2).strip()
+            if kind == "e":
+                return "{" + f"e({inner!r})" + "}"
+            return "{" + f"{kind}('{inner}')" + "}"
+        body = _VAR_GETTER_RE.sub(_fstr, value)
+        return f'f"{body}"', True
+    if re.fullmatch(r"-?\d+", value):
+        return value, True
+    if re.fullmatch(r"-?\d+\.\d+", value):
+        return value, True
+    return value, False
+
+
+# ---------------------------------------------------------------------------
 # script -> python (pyev1)
 # ---------------------------------------------------------------------------
 
@@ -120,9 +197,17 @@ def _command_to_pyev1_line(cmd: event_commands.EventCommand) -> str:
             continue
         if "=" in raw and raw.split("=", 1)[0] in (cmd.keywords + cmd.optional_keywords):
             key, val = raw.split("=", 1)
-            args_part.append(f"{key}={_quote_for_python(val)}")
+            converted, is_expr = _convert_script_value_to_python(val)
+            if is_expr:
+                args_part.append(f"{key}={converted}")
+            else:
+                args_part.append(f"{key}={_quote_for_python(val)}")
         else:
-            args_part.append(_quote_for_python(raw))
+            converted, is_expr = _convert_script_value_to_python(raw)
+            if is_expr:
+                args_part.append(converted)
+            else:
+                args_part.append(_quote_for_python(raw))
 
     line = " ".join(parts + args_part)
     if flags_part:
@@ -139,9 +224,31 @@ def script_to_python(source: str) -> str:
     Các flow-control command (`if`, `elif`, `else`, `for`, `end`, `endf`) được
     chuyển thành **Python statement** (không phải `$...`), đồng thời thân block
     được thụt lề bằng 4 spaces × độ sâu hiện tại.
+
+    Tự động chèn `pass` cho block rỗng để code Python hợp lệ. Cũng convert
+    `{v:NAME}`, `{d:NAME}`, `{e:EXPR}` trong cả expression flow-control và
+    arg của command.
     """
     out_lines: List[str] = [PYEV1_HEADER]
     depth = 0  # số block đang mở
+    # Stack đếm: với mỗi block đang mở, lưu chỉ số dòng "header" (if/elif/else/for)
+    # và biến đếm số statement đã thêm vào block đó. Khi đóng block mà count==0
+    # thì chèn `pass`.
+    block_stack: List[List[int]] = []  # [count]
+
+    def _bump_block_count():
+        if block_stack:
+            block_stack[-1][0] += 1
+
+    def _close_one_block():
+        nonlocal depth
+        if not block_stack:
+            return
+        count = block_stack.pop()[0]
+        if count == 0:
+            out_lines.append(INDENT_STR * depth + "pass")
+        depth = max(0, depth - 1)
+
     for raw_line in source.splitlines():
         stripped = raw_line.strip()
         if not stripped:
@@ -150,22 +257,36 @@ def script_to_python(source: str) -> str:
         cmd, _ = event_commands.parse_text_to_command(raw_line)
         if cmd is None:
             out_lines.append(INDENT_STR * depth + f"# [UNPARSED] {raw_line}")
+            _bump_block_count()
             continue
 
         nid = cmd.nid
 
-        # end/endf: đóng block, không xuất dòng nào
+        # end/endf: đóng block, tự chèn pass nếu rỗng
         if nid in ("end", "endf"):
-            depth = max(0, depth - 1)
+            _close_one_block()
             continue
 
-        # elif/else: cùng cấp với if, dòng được dedent 1 cấp
+        # elif/else: cùng cấp với if. Trước khi xuất, đóng block cũ (rỗng -> pass)
         if nid == "elif":
+            # Đóng block hiện tại (vì elif tạo branch mới ở cùng cấp `if`)
+            if block_stack:
+                count = block_stack[-1][0]
+                if count == 0:
+                    outer = max(0, depth - 1)
+                    out_lines.append(INDENT_STR * depth + "pass")
+                block_stack[-1][0] = 0  # reset đếm cho branch mới
             expr = cmd.display_values[0] if cmd.display_values else ""
+            expr = _convert_script_expr_to_python(expr)
             outer = max(0, depth - 1)
             out_lines.append(INDENT_STR * outer + f"elif {expr}:")
             continue
         if nid == "else":
+            if block_stack:
+                count = block_stack[-1][0]
+                if count == 0:
+                    out_lines.append(INDENT_STR * depth + "pass")
+                block_stack[-1][0] = 0
             outer = max(0, depth - 1)
             out_lines.append(INDENT_STR * outer + "else:")
             continue
@@ -173,8 +294,10 @@ def script_to_python(source: str) -> str:
         # if: mở block mới
         if nid == "if":
             expr = cmd.display_values[0] if cmd.display_values else "False"
+            expr = _convert_script_expr_to_python(expr)
             out_lines.append(INDENT_STR * depth + f"if {expr}:")
             depth += 1
+            block_stack.append([0])
             continue
 
         # for: `for;NID;EXPR` -> `for NID in EXPR:`
@@ -182,8 +305,10 @@ def script_to_python(source: str) -> str:
             vals = cmd.display_values
             var_nid = vals[0] if len(vals) >= 1 else "_item"
             expr = vals[1] if len(vals) >= 2 else "[]"
+            expr = _convert_script_expr_to_python(expr)
             out_lines.append(INDENT_STR * depth + f"for {var_nid} in {expr}:")
             depth += 1
+            block_stack.append([0])
             continue
 
         # Comment giữ nguyên, vẫn thụt lề theo depth
@@ -193,10 +318,17 @@ def script_to_python(source: str) -> str:
                 out_lines.append(INDENT_STR * depth + line)
             else:
                 out_lines.append("")
+            # Comment KHÔNG tính là statement -> không bump count
             continue
 
         # Default: chuyển thành dòng `$...` với indent
         out_lines.append(INDENT_STR * depth + _command_to_pyev1_line(cmd))
+        _bump_block_count()
+
+    # Đóng nốt các block còn mở (khuyến nghị nguồn nên có end, nhưng phòng hờ)
+    while block_stack:
+        _close_one_block()
+
     return "\n".join(out_lines)
 
 

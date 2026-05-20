@@ -228,19 +228,29 @@ def _command_to_pyev1_line(cmd: event_commands.EventCommand) -> str:
         converted, is_expr = _convert_script_value_to_python(str(val))
         args_part.append(converted if is_expr else _quote_for_python(str(val)))
 
-    # Optional keywords: emit Key=Value, bỏ qua giá trị rỗng/None
+    # Optional keywords: liền mạch sau required (chưa gặp gap nào) -> positional;
+    # sau khi gặp 1 optional bị bỏ trống thì các optional có giá trị tiếp theo
+    # mới chuyển sang dạng Key=Value.
+    seen_gap = False
     for kwd in cmd.optional_keywords:
         clean_kwd = kwd.lstrip("*")
-        if clean_kwd not in params and kwd not in params:
+        has_value = (clean_kwd in params or kwd in params)
+        if has_value:
+            val = params.get(clean_kwd, params.get(kwd, ""))
+            if val is None or val == "":
+                has_value = False
+
+        if not has_value:
+            seen_gap = True
             continue
+
         val = params.get(clean_kwd, params.get(kwd, ""))
-        if val is None or val == "":
-            continue
         converted, is_expr = _convert_script_value_to_python(str(val))
-        if is_expr:
-            args_part.append(f"{clean_kwd}={converted}")
+        token = converted if is_expr else _quote_for_python(str(val))
+        if seen_gap:
+            args_part.append(f"{clean_kwd}={token}")
         else:
-            args_part.append(f"{clean_kwd}={_quote_for_python(str(val))}")
+            args_part.append(token)
 
     line = " ".join(parts + args_part)
     if flags_part:

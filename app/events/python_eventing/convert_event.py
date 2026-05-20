@@ -130,9 +130,18 @@ def _command_to_pyev1_line(cmd: event_commands.EventCommand) -> str:
     return line
 
 
+INDENT_STR = "    "
+
+
 def script_to_python(source: str) -> str:
-    """Chuyển nội dung event script -> pyev1."""
+    """Chuyển nội dung event script -> pyev1.
+
+    Các flow-control command (`if`, `elif`, `else`, `for`, `end`, `endf`) được
+    chuyển thành **Python statement** (không phải `$...`), đồng thời thân block
+    được thụt lề bằng 4 spaces × độ sâu hiện tại.
+    """
     out_lines: List[str] = [PYEV1_HEADER]
+    depth = 0  # số block đang mở
     for raw_line in source.splitlines():
         stripped = raw_line.strip()
         if not stripped:
@@ -140,9 +149,54 @@ def script_to_python(source: str) -> str:
             continue
         cmd, _ = event_commands.parse_text_to_command(raw_line)
         if cmd is None:
-            out_lines.append(f"# [UNPARSED] {raw_line}")
+            out_lines.append(INDENT_STR * depth + f"# [UNPARSED] {raw_line}")
             continue
-        out_lines.append(_command_to_pyev1_line(cmd))
+
+        nid = cmd.nid
+
+        # end/endf: đóng block, không xuất dòng nào
+        if nid in ("end", "endf"):
+            depth = max(0, depth - 1)
+            continue
+
+        # elif/else: cùng cấp với if, dòng được dedent 1 cấp
+        if nid == "elif":
+            expr = cmd.display_values[0] if cmd.display_values else ""
+            outer = max(0, depth - 1)
+            out_lines.append(INDENT_STR * outer + f"elif {expr}:")
+            continue
+        if nid == "else":
+            outer = max(0, depth - 1)
+            out_lines.append(INDENT_STR * outer + "else:")
+            continue
+
+        # if: mở block mới
+        if nid == "if":
+            expr = cmd.display_values[0] if cmd.display_values else "False"
+            out_lines.append(INDENT_STR * depth + f"if {expr}:")
+            depth += 1
+            continue
+
+        # for: `for;NID;EXPR` -> `for NID in EXPR:`
+        if nid == "for":
+            vals = cmd.display_values
+            var_nid = vals[0] if len(vals) >= 1 else "_item"
+            expr = vals[1] if len(vals) >= 2 else "[]"
+            out_lines.append(INDENT_STR * depth + f"for {var_nid} in {expr}:")
+            depth += 1
+            continue
+
+        # Comment giữ nguyên, vẫn thụt lề theo depth
+        if isinstance(cmd, event_commands.Comment):
+            line = _command_to_pyev1_line(cmd)
+            if line:
+                out_lines.append(INDENT_STR * depth + line)
+            else:
+                out_lines.append("")
+            continue
+
+        # Default: chuyển thành dòng `$...` với indent
+        out_lines.append(INDENT_STR * depth + _command_to_pyev1_line(cmd))
     return "\n".join(out_lines)
 
 
@@ -207,15 +261,114 @@ def _pyev1_line_to_script(line: str) -> Tuple[str, bool]:
     return (f"# [UNCONVERTIBLE] {line}", False)
 
 
+_FLOW_RE = re.compile(r"^\s*(if|elif|else|for)\b(.*?):\s*$")
+
+
+def _measure_indent(line: str) -> int:
+    """Trả về số ký tự indent ở đầu dòng (đếm space; tab = 4)."""
+    n = 0
+    for ch in line:
+        if ch == " ":
+            n += 1
+        elif ch == "\t":
+            n += 4
+        else:
+            break
+    return n
+
+
 def python_to_script(source: str) -> str:
-    """Chuyển pyev1 -> event script. Cảnh báo các dòng không convert được."""
+    """Chuyển pyev1 -> event script.
+
+    Flow-control Python (`if EXPR:`, `elif EXPR:`, `else:`, `for X in Y:`) được
+    chuyển ngược thành lệnh script `if;EXPR`, `elif;EXPR`, `else`, `for;X;Y`.
+    Các `end`/`endf` tương ứng được tự động chèn dựa trên indent dedent.
+
+    Các dòng Python khác (gán biến, gọi hàm thuần Python, list comprehension
+    đứng riêng...) sẽ được đánh dấu `# [UNCONVERTIBLE]`.
+    """
+    lines = source.splitlines()
     out_lines: List[str] = []
     warnings = 0
-    for raw_line in source.splitlines():
-        converted, ok = _pyev1_line_to_script(raw_line)
-        if not ok:
+
+    # Stack lưu (indent_level, kind) với kind ∈ {'if', 'for'}
+    block_stack: List[Tuple[int, str]] = []
+
+    def close_blocks_to(target_indent: int):
+        """Đóng các block có indent > target_indent bằng end/endf phù hợp."""
+        while block_stack and block_stack[-1][0] >= target_indent:
+            _, kind = block_stack.pop()
+            out_lines.append("endf" if kind == "for" else "end")
+
+    for raw_line in lines:
+        stripped = raw_line.strip()
+
+        # Header / dòng trống
+        if stripped == PYEV1_HEADER:
+            continue
+        if not stripped:
+            out_lines.append("")
+            continue
+
+        # Comment thuần
+        if stripped.startswith("#"):
+            out_lines.append(stripped)
+            continue
+
+        cur_indent = _measure_indent(raw_line)
+
+        # Nếu indent hiện tại nhỏ hơn block trên cùng -> đóng block
+        # (trước khi xử lý dòng hiện tại). Với elif/else cùng cấp với if,
+        # ta xử lý đặc biệt: KHÔNG đóng block đó.
+        flow_match = _FLOW_RE.match(raw_line)
+        if flow_match:
+            kw = flow_match.group(1)
+            tail = flow_match.group(2).strip()
+            # elif/else: đóng các block sâu hơn (bên trong block if hiện tại),
+            # nhưng không đóng chính block if đang mở ở cùng indent.
+            if kw in ("elif", "else"):
+                while block_stack and block_stack[-1][0] > cur_indent:
+                    _, kind = block_stack.pop()
+                    out_lines.append("endf" if kind == "for" else "end")
+                if kw == "elif":
+                    out_lines.append(f"elif;{tail}")
+                else:
+                    out_lines.append("else")
+                # Không push thêm vào stack — tái dùng entry của if đã có
+                continue
+            # if / for: đóng các block ngang hoặc sâu hơn rồi mở block mới
+            close_blocks_to(cur_indent)
+            if kw == "if":
+                out_lines.append(f"if;{tail}")
+                block_stack.append((cur_indent, "if"))
+            else:  # for
+                # Cú pháp Python: `for VAR in EXPR`
+                m = re.match(r"^\s*([A-Za-z_][A-Za-z_0-9]*)\s+in\s+(.+)$", tail)
+                if m:
+                    var_nid, expr = m.group(1), m.group(2).strip()
+                    out_lines.append(f"for;{var_nid};{expr}")
+                else:
+                    out_lines.append(f"# [UNCONVERTIBLE] {raw_line}")
+                    warnings += 1
+                block_stack.append((cur_indent, "for"))
+            continue
+
+        # Đóng block khi gặp dòng có indent thấp hơn
+        close_blocks_to(cur_indent)
+
+        if stripped.startswith("$"):
+            converted, ok = _pyev1_line_to_script(raw_line)
+            if not ok:
+                warnings += 1
+            out_lines.append(converted)
+        else:
+            # Python logic thuần (gán biến, gọi hàm...) -> không convert
+            out_lines.append(f"# [UNCONVERTIBLE] {stripped}")
             warnings += 1
-        out_lines.append(converted)
+
+    # Đóng nốt mọi block còn mở
+    close_blocks_to(-1)
+
     if warnings:
         sys.stderr.write(
             f"[convert_event] WARNING: {warnings} dòng không convert được "

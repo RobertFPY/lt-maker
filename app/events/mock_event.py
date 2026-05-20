@@ -30,9 +30,68 @@ class MockGame():
         self.movement = None
         self.action_log = None
         self.camera = None
-        # query_engine cung cap cac ham nhu get_item, u, v, ... cho python eventing.
-        # Khong co no, exec context se NameError khi event Python goi get_item(...).
+        # Empty/stub data so query_engine functions don't AttributeError when called
+        # from "Test Event". Real game state is unavailable in test mode, so most
+        # queries simply return nothing instead of crashing.
+        self.units = []
+        self.level = None
+        self.current_level = None
+        self.tilemap = None
+        self.boundary = None
+        self.cursor = None
+        self.combat_instance = None
+        self.events = None
+        self.records = None
+        self.party = None
+        self.parties = {}
+        self.game_vars = {}
+        self.level_vars = {}
+        self.item_registry = {}
+        self.skill_registry = {}
+        self.unit_registry = {}
+        # query_engine provides get_item, u, v, ... helpers to python eventing.
+        # Without it, exec context throws NameError when event Python calls get_item(...).
         self.query_engine = GameQueryEngine(logging.Logger('mock_query_engine'), self)
+
+    # --- Stub accessors used by query_engine ---------------------------------
+    def get_unit(self, nid):
+        return None
+
+    def get_region(self, nid):
+        return None
+
+    def get_item(self, uid):
+        return None
+
+    def get_skill(self, uid):
+        return None
+
+    def get_convoy_inventory(self, party=None):
+        return []
+
+    def get_money(self, party=None):
+        return 0
+
+    def get_bexp(self, party=None):
+        return 0
+
+    def check_alive(self, nid):
+        return False
+
+    def check_dead(self, nid):
+        return False
+
+    def get_terrain_at_pos(self, pos):
+        return None
+
+    def get_all_units(self):
+        return []
+
+    def get_all_units_in_party(self, party=None):
+        return []
+
+    def get_player_units(self):
+        return []
 
 class MockEvent(Event):
     # These are the only commands that will be processed by this event

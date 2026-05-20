@@ -24,10 +24,15 @@ class MockGame():
     Mock game object that stores the speak styles, so they work even though the rest of the game isn't present
     """
     def __init__(self):
+        import logging
+        from app.engine.query_engine import GameQueryEngine
         self.speak_styles = speak_style.SpeakStyleLibrary()
         self.movement = None
         self.action_log = None
         self.camera = None
+        # query_engine cung cap cac ham nhu get_item, u, v, ... cho python eventing.
+        # Khong co no, exec context se NameError khi event Python goi get_item(...).
+        self.query_engine = GameQueryEngine(logging.Logger('mock_query_engine'), self)
 
 class MockEvent(Event):
     # These are the only commands that will be processed by this event

@@ -1,4 +1,4 @@
-"""
+ """
 Bộ chuyển đổi qua lại giữa **event script** (format `nid;arg1;arg2`) và
 **Python eventing pyev1** (`$nid "arg1" "arg2" ..., flag`).
 

@@ -255,11 +255,169 @@ def convert(source: str, target: str) -> str:
     raise ValueError(f"Unknown target: {target}")
 
 
+def _output_path_for(input_path: Path, target: str) -> Path:
+    """Tính path output mặc định: cùng folder, thêm hậu tố theo định dạng đích."""
+    suffix = ".pyev1" if target == "python" else ".script"
+    stem = input_path.stem
+    # Bỏ hậu tố cũ nếu có để tránh chain `.script.pyev1.script.pyev1...`
+    for old in (".pyev1", ".script"):
+        if stem.endswith(old):
+            stem = stem[: -len(old)]
+            break
+    return input_path.with_name(f"{stem}{suffix}{input_path.suffix}")
+
+
+def convert_file(input_path: Path, force_target: str = "auto") -> Tuple[Path, str]:
+    """Convert một file và ghi ra cùng thư mục. Trả về (output_path, target)."""
+    source = input_path.read_text(encoding="utf-8")
+    if force_target == "auto":
+        src_fmt = detect_format(source)
+        target = "python" if src_fmt == "script" else "script"
+    else:
+        target = force_target
+    result = convert(source, target)
+    out_path = _output_path_for(input_path, target)
+    out_path.write_text(result, encoding="utf-8")
+    return out_path, target
+
+
+# ---------------------------------------------------------------------------
+# GUI
+# ---------------------------------------------------------------------------
+
+def run_gui() -> int:
+    """Mở GUI tkinter. Hỗ trợ chọn nhiều file HOẶC paste text trực tiếp."""
+    import tkinter as tk
+    from tkinter import filedialog, messagebox, ttk, scrolledtext
+
+    root = tk.Tk()
+    root.title("Event Converter — script <-> pyev1")
+    root.geometry("900x720")
+
+    selected_files: List[Path] = []
+
+    # --- Top: chế độ chuyển đổi ----------------------------------------------
+    top = ttk.Frame(root, padding=10)
+    top.pack(fill="x")
+    ttk.Label(top, text="Chế độ:").pack(side="left")
+    mode_var = tk.StringVar(value="auto")
+    for label, value in (("Auto detect", "auto"), ("→ pyev1", "python"), ("→ script", "script")):
+        ttk.Radiobutton(top, text=label, variable=mode_var, value=value).pack(side="left", padx=4)
+
+    # --- File picker ---------------------------------------------------------
+    file_frame = ttk.LabelFrame(root, text="1) Chọn file (có thể nhiều file)", padding=8)
+    file_frame.pack(fill="x", padx=10, pady=5)
+
+    files_label = ttk.Label(file_frame, text="(Chưa chọn file)", foreground="gray")
+    files_label.pack(side="left", fill="x", expand=True)
+
+    def pick_files():
+        paths = filedialog.askopenfilenames(
+            title="Chọn event file",
+            filetypes=[("Text files", "*.txt *.event *.pyev1 *.script"), ("All", "*.*")],
+        )
+        if not paths:
+            return
+        selected_files.clear()
+        selected_files.extend(Path(p) for p in paths)
+        files_label.config(
+            text=f"Đã chọn {len(selected_files)} file: " + ", ".join(p.name for p in selected_files[:3]) + ("..." if len(selected_files) > 3 else ""),
+            foreground="black",
+        )
+
+    ttk.Button(file_frame, text="Chọn file...", command=pick_files).pack(side="right")
+
+    # --- Text paste area -----------------------------------------------------
+    paste_frame = ttk.LabelFrame(root, text="2) HOẶC dán event vào đây", padding=8)
+    paste_frame.pack(fill="both", expand=True, padx=10, pady=5)
+    input_text = scrolledtext.ScrolledText(paste_frame, height=12, font=("Consolas", 10), wrap="none")
+    input_text.pack(fill="both", expand=True)
+
+    # --- Output area ---------------------------------------------------------
+    out_frame = ttk.LabelFrame(root, text="Kết quả (khi dùng paste)", padding=8)
+    out_frame.pack(fill="both", expand=True, padx=10, pady=5)
+    output_text = scrolledtext.ScrolledText(out_frame, height=12, font=("Consolas", 10), wrap="none")
+    output_text.pack(fill="both", expand=True)
+
+    status_var = tk.StringVar(value="Sẵn sàng.")
+    status_bar = ttk.Label(root, textvariable=status_var, anchor="w", relief="sunken")
+    status_bar.pack(fill="x", side="bottom")
+
+    # --- Convert action ------------------------------------------------------
+    def do_convert():
+        mode = mode_var.get()
+        try:
+            if selected_files:
+                results = []
+                for fp in selected_files:
+                    out_path, target = convert_file(fp, force_target=mode)
+                    results.append(f"{fp.name} → {out_path.name} ({target})")
+                status_var.set(f"Convert xong {len(results)} file.")
+                messagebox.showinfo("Hoàn tất", "\n".join(results))
+                return
+
+            pasted = input_text.get("1.0", "end").strip()
+            if not pasted:
+                messagebox.showwarning(
+                    "Thiếu input",
+                    "Vui lòng chọn file hoặc dán event vào ô bên trên.",
+                )
+                return
+
+            if mode == "auto":
+                src_fmt = detect_format(pasted)
+                target = "python" if src_fmt == "script" else "script"
+            else:
+                target = mode
+            result = convert(pasted, target)
+            output_text.delete("1.0", "end")
+            output_text.insert("1.0", result)
+            status_var.set(f"Convert sang {target}. Kết quả {len(result)} ký tự.")
+        except Exception as e:  # pylint: disable=broad-except
+            status_var.set(f"Lỗi: {e}")
+            messagebox.showerror("Lỗi convert", str(e))
+
+    def clear_all():
+        selected_files.clear()
+        files_label.config(text="(Chưa chọn file)", foreground="gray")
+        input_text.delete("1.0", "end")
+        output_text.delete("1.0", "end")
+        status_var.set("Đã xoá.")
+
+    def copy_output():
+        text = output_text.get("1.0", "end-1c")
+        if not text:
+            return
+        root.clipboard_clear()
+        root.clipboard_append(text)
+        status_var.set("Đã copy kết quả vào clipboard.")
+
+    button_bar = ttk.Frame(root, padding=(10, 0, 10, 10))
+    button_bar.pack(fill="x")
+    ttk.Button(button_bar, text="Convert", command=do_convert).pack(side="left")
+    ttk.Button(button_bar, text="Copy kết quả", command=copy_output).pack(side="left", padx=5)
+    ttk.Button(button_bar, text="Xoá", command=clear_all).pack(side="left")
+
+    root.mainloop()
+    return 0
+
+
+# ---------------------------------------------------------------------------
+# CLI entry
+# ---------------------------------------------------------------------------
+
 def main(argv: List[str] = None) -> int:
+    if argv is None:
+        argv = sys.argv[1:]
+
+    # Không có argument -> mở GUI
+    if not argv:
+        return run_gui()
+
     parser = argparse.ArgumentParser(
         description="Chuyển đổi event qua lại giữa event script và pyev1."
     )
-    parser.add_argument("input", type=Path, help="File input (event script hoặc pyev1)")
+    parser.add_argument("input", type=Path, nargs="?", help="File input. Bỏ trống để mở GUI.")
     parser.add_argument(
         "--to",
         choices=("python", "script", "auto"),
@@ -267,7 +425,11 @@ def main(argv: List[str] = None) -> int:
         help="Định dạng đích. 'auto' tự suy luận: nếu input là script -> python, ngược lại.",
     )
     parser.add_argument("-o", "--output", type=Path, help="File output (mặc định stdout)")
+    parser.add_argument("--gui", action="store_true", help="Bắt buộc mở GUI")
     args = parser.parse_args(argv)
+
+    if args.gui or args.input is None:
+        return run_gui()
 
     source = args.input.read_text(encoding="utf-8")
 

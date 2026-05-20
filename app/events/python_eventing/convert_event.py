@@ -105,12 +105,18 @@ _VAR_GETTER_RE = re.compile(r"\{([vde]):([^{}]+)\}")
 
 
 def _convert_script_expr_to_python(expr: str) -> str:
-    """Chuyển 1 biểu thức event-script (dùng `{v:X}`, `{d:X}`, `{e:X}`) sang
-    biểu thức Python tương đương (`v('X')`, ...).
+    """Chuyển 1 biểu thức event-script (`{v:X}`, `{d:X}`, `{e:X}`) sang
+    biểu thức Python — sử dụng truy cập trực tiếp `game.level_vars` /
+    `game.game_vars` vì các biến đó luôn có trong globals của pyev1
+    (không phụ thuộc query_engine func_dict, vốn không phải lúc nào cũng load).
 
-    Cũng convert toán tử event-script sang Python:
-        =   ->  ==
-    Nhưng giữ nguyên `==`, `!=`, `<=`, `>=` đã là Python.
+    Mapping:
+        {v:X}    -> game.level_vars.get('X', game.game_vars.get('X'))
+        {v:X,Y}  -> game.level_vars.get('X', game.game_vars.get('X', Y))
+        {d:X}    -> game.level_vars.get('X')
+        {e:EXPR} -> (EXPR)
+
+    Cũng convert toán tử event-script `=` thành Python `==`.
     """
     if not expr:
         return expr
@@ -118,50 +124,64 @@ def _convert_script_expr_to_python(expr: str) -> str:
     def repl(match: "re.Match") -> str:
         kind = match.group(1)
         inner = match.group(2).strip()
-        # Inner có thể là 'NAME' hoặc 'NAME,fallback'. Chỉ lấy NAME.
-        if "," in inner and kind in ("v", "d"):
-            name, fallback = inner.split(",", 1)
-            return f"{kind}('{name.strip()}', '{fallback.strip()}')"
         if kind == "e":
-            # Cho expr nguyên văn
-            return f"e({inner!r})"
-        return f"{kind}('{inner}')"
+            return f"({inner})"
+        if "," in inner:
+            name, fallback = inner.split(",", 1)
+            name = name.strip()
+            fallback = fallback.strip()
+            if kind == "v":
+                return (
+                    f"game.level_vars.get('{name}', "
+                    f"game.game_vars.get('{name}', {fallback!r}))"
+                )
+            return f"game.level_vars.get('{name}', {fallback!r})"
+        if kind == "v":
+            return (
+                f"game.level_vars.get('{inner}', "
+                f"game.game_vars.get('{inner}'))"
+            )
+        return f"game.level_vars.get('{inner}')"
 
     converted = _VAR_GETTER_RE.sub(repl, expr)
-
-    # Convert single `=` thành `==` (chỉ khi không phải ==, !=, <=, >=, := và
-    # không phải gán biến trong context Python). Trong expression sau if/elif
-    # event-script vẫn dùng `=` cho so sánh.
     converted = re.sub(r"(?<![=!<>:])=(?!=)", "==", converted)
-
     return converted
 
 
 def _convert_script_value_to_python(value: str) -> Tuple[str, bool]:
     """Convert 1 giá trị arg event-script sang biểu thức Python.
 
-    Trả về `(converted, is_expression)`. Nếu `is_expression=True` thì giá trị
-    được hiểu là expression (không quote), ngược lại là chuỗi literal.
-
-    Quy tắc:
-        - Chứa `{v:..}/{d:..}/{e:..}` -> Python expression.
-        - Là số nguyên/float thuần -> Python expression (không quote).
-        - Mặc định: chuỗi (sẽ được quote).
+    Trả về `(converted, is_expression)`. `is_expression=True` -> không quote.
     """
     if not value:
         return "", False
     if _VAR_GETTER_RE.search(value):
-        # Toàn bộ value chỉ là 1 getter -> expression. Có chuỗi đệm -> f-string.
         m = _VAR_GETTER_RE.fullmatch(value)
         if m:
             return _convert_script_expr_to_python(value), True
-        # Hỗn hợp text + var -> dùng f-string với getter
-        # Thay {v:X} -> {v('X')}
+        # Hỗn hợp text + var -> dùng f-string
         def _fstr(m2):
             kind, inner = m2.group(1), m2.group(2).strip()
             if kind == "e":
-                return "{" + f"e({inner!r})" + "}"
-            return "{" + f"{kind}('{inner}')" + "}"
+                return "{" + f"({inner})" + "}"
+            if "," in inner and kind == "v":
+                name, fb = inner.split(",", 1)
+                name = name.strip()
+                fb = fb.strip()
+                return (
+                    "{"
+                    f"game.level_vars.get('{name}', "
+                    f"game.game_vars.get('{name}', {fb!r}))"
+                    "}"
+                )
+            if kind == "v":
+                return (
+                    "{"
+                    f"game.level_vars.get('{inner}', "
+                    f"game.game_vars.get('{inner}'))"
+                    "}"
+                )
+            return "{" f"game.level_vars.get('{inner}')" "}"
         body = _VAR_GETTER_RE.sub(_fstr, value)
         return f'f"{body}"', True
     if re.fullmatch(r"-?\d+", value):
@@ -176,7 +196,14 @@ def _convert_script_value_to_python(value: str) -> Tuple[str, bool]:
 # ---------------------------------------------------------------------------
 
 def _command_to_pyev1_line(cmd: event_commands.EventCommand) -> str:
-    """Chuyển 1 EventCommand đã parse thành dòng pyev1."""
+    """Chuyển 1 EventCommand đã parse thành dòng pyev1.
+
+    - Required keyword (từ `cmd.keywords`): luôn dạng positional, theo thứ tự.
+    - Optional keyword (từ `cmd.optional_keywords`): nếu được set và không
+      rỗng, emit dạng `Key=Value`. Bỏ qua các optional rỗng. Điều này tránh
+      sinh ra chuỗi `"" "" "" ""` không cần thiết và đúng convention pyev1.
+    - Flags: gom sau `,`.
+    """
     # Comment hoặc dòng rỗng giữ nguyên
     if isinstance(cmd, event_commands.Comment):
         if not cmd.display_values:
@@ -187,27 +214,33 @@ def _command_to_pyev1_line(cmd: event_commands.EventCommand) -> str:
         return text if text.startswith("#") else f"# {text}"
 
     parts: List[str] = [f"${cmd.nid}"]
-
-    # Dùng display_values vì giữ nguyên thứ tự gốc và format `Key=Value`
     args_part: List[str] = []
-    flags_part: List[str] = []
-    for raw in cmd.display_values:
-        if raw in cmd.chosen_flags:
-            flags_part.append(raw)
+    flags_part: List[str] = sorted(cmd.chosen_flags)
+
+    params = cmd.parameters or {}
+
+    # Required keywords: positional. Bao gồm cả `*Text`/`*String` (variadic).
+    for kwd in cmd.keywords:
+        clean_kwd = kwd.lstrip("*")
+        val = params.get(clean_kwd, params.get(kwd, ""))
+        if val is None:
+            val = ""
+        converted, is_expr = _convert_script_value_to_python(str(val))
+        args_part.append(converted if is_expr else _quote_for_python(str(val)))
+
+    # Optional keywords: emit Key=Value, bỏ qua giá trị rỗng/None
+    for kwd in cmd.optional_keywords:
+        clean_kwd = kwd.lstrip("*")
+        if clean_kwd not in params and kwd not in params:
             continue
-        if "=" in raw and raw.split("=", 1)[0] in (cmd.keywords + cmd.optional_keywords):
-            key, val = raw.split("=", 1)
-            converted, is_expr = _convert_script_value_to_python(val)
-            if is_expr:
-                args_part.append(f"{key}={converted}")
-            else:
-                args_part.append(f"{key}={_quote_for_python(val)}")
+        val = params.get(clean_kwd, params.get(kwd, ""))
+        if val is None or val == "":
+            continue
+        converted, is_expr = _convert_script_value_to_python(str(val))
+        if is_expr:
+            args_part.append(f"{clean_kwd}={converted}")
         else:
-            converted, is_expr = _convert_script_value_to_python(raw)
-            if is_expr:
-                args_part.append(converted)
-            else:
-                args_part.append(_quote_for_python(raw))
+            args_part.append(f"{clean_kwd}={_quote_for_python(str(val))}")
 
     line = " ".join(parts + args_part)
     if flags_part:

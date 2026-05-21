@@ -32,8 +32,14 @@ def {command_name}({command_params}{command_optional_params}) -> event_commands.
             if param_name is None:
                 continue
             param_validator = event_validators.get(param_name)
-            if param_validator and issubclass(param_validator, event_validators.EnumValidator):
-                parameters[k] = event_validators.convert(param_name, v)
+            if param_validator and (
+                issubclass(param_validator, event_validators.EnumValidator)
+                or hasattr(param_validator, 'convert')
+            ):
+                try:
+                    parameters[k] = event_validators.convert(param_name, v)
+                except Exception:
+                    pass
     return command_t(parameters=parameters).set_flags('from_python')
 """.format(command_name=command_name, command_type=command_t.__name__, command_params_list=command_params_list,
            command_params=command_params, command_optional_params=command_optional_params,

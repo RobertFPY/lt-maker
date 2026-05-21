@@ -1,0 +1,11 @@
+Hãy nâng cấp script của chúng ta lên một tầm cao mới nữa nào, đầu tiên tôi sẽ đưa ra những câu ví dụ được chuyển đổi, từ đó đưa ra ý kiến của mình ở dưới để cải thiện:
+Ví dụ chuyển đổi:
+    1.speak;;Total {var:awake_martin}/16 star to Awake Martin!;center;100;hint;;;;;2 được chuyển thành $speak "" "Total {var:awake_martin}/16 star to Awake Martin!" TextPosition="center" Width=100 StyleNid="hint" NumLines=2
+    2.transition;Close được chuyển thành $transition Direction="Close" và transition;Open được chuyển thành $transition Direction="Open"
+Ý kiến:
+    1. Khi chuyển đổi command có nhiều keyword ở sau, thì với những keyword liền mạch, không cần liệt kê ra kiểu TextPosition="center" Width=100 mà nên là "center" 100 khi xác định được các keywords này gần nhau dựa vào command của event script. Chỉ nên dùng kiểu Keyword=Value khi keyword tiếp theo có khoảng cách với keyword ban đầu, ví dụ như StyleNid và NumLines xa cách nhau, nhưng mà Width và StyleNid thì gần nhau nên cấu trúc StyleNid NumLines sau khi chuyển đổi sẽ là "hint" NumLines=2 mới là cách chuyển đổi đúng.
+    1. Câu chuyển đổi đúng nhất của 1.:
+        speak;;Total {var:awake_martin}/16 star to Awake Martin!;center;100;hint;;;;;2 được chuyển thành $speak "" "Total {var:awake_martin}/16 star to Awake Martin!" "center" 100 "hint" NumLines=2
+    2. Cũng giống như mục 1. thì ở 2. cũng mắc lỗi là keyword liền kề với lệnh command nhưng vẫn dùng dạng Keyword=Value, chỉ nên dùng khi Keyword cách xa command mà những Keyword ở giữa không có giá trị. Còn ở đây keyword đang gần command nên là nên dùng "Open" thay vì Direction="Open", "Close" thay vì Direction="Close"
+    2. Câu chuyển đổi đúng của 2.:
+        transition;Close được chuyển thành $transition "Close" và transition;Open được chuyển thành $transition "Open"

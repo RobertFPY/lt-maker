@@ -24,10 +24,77 @@ class MockGame():
     Mock game object that stores the speak styles, so they work even though the rest of the game isn't present
     """
     def __init__(self):
+        import logging
+        from app.engine.query_engine import GameQueryEngine
         self.speak_styles = speak_style.SpeakStyleLibrary()
         self.movement = None
         self.action_log = None
         self.camera = None
+        # Empty/stub data so query_engine functions don't AttributeError when called
+        # from "Test Event". Real game state is unavailable in test mode, so most
+        # queries simply return nothing instead of crashing.
+        self.units = []
+        self.level = None
+        self.current_level = None
+        self.tilemap = None
+        self.boundary = None
+        self.cursor = None
+        self.combat_instance = None
+        self.events = None
+        self.records = None
+        self.party = None
+        self.parties = {}
+        self.game_vars = {}
+        self.level_vars = {}
+        self.item_registry = {}
+        self.skill_registry = {}
+        self.unit_registry = {}
+        self.unit_markers = {}   # cho add_unit_marker
+        self.target_system = None
+        # Tránh crash khi check_default/check_pair eval
+        # query_engine provides get_item, u, v, ... helpers to python eventing.
+        # Without it, exec context throws NameError when event Python calls get_item(...).
+        self.query_engine = GameQueryEngine(logging.Logger('mock_query_engine'), self)
+
+    # --- Stub accessors used by query_engine ---------------------------------
+    def get_unit(self, nid):
+        return None
+
+    def get_region(self, nid):
+        return None
+
+    def get_item(self, uid):
+        return None
+
+    def get_skill(self, uid):
+        return None
+
+    def get_convoy_inventory(self, party=None):
+        return []
+
+    def get_money(self, party=None):
+        return 0
+
+    def get_bexp(self, party=None):
+        return 0
+
+    def check_alive(self, nid):
+        return False
+
+    def check_dead(self, nid):
+        return False
+
+    def get_terrain_at_pos(self, pos):
+        return None
+
+    def get_all_units(self):
+        return []
+
+    def get_all_units_in_party(self, party=None):
+        return []
+
+    def get_player_units(self):
+        return []
 
 class MockEvent(Event):
     # These are the only commands that will be processed by this event
@@ -35,11 +102,11 @@ class MockEvent(Event):
                  "sound", "stop_sound", "add_portrait", "multi_add_portrait",
                  "remove_portrait", "multi_remove_portrait", "remove_all_portraits",
                  "move_portrait", "mirror_portrait", "bop_portrait",
-                 "expression", "speak_style", "speak", "unhold",
+                 "expression", "speak_style", "speak", "say", "unhold",   # +say
                  "transition", "change_background", "table",
                  "remove_table", "draw_overlay_sprite", "narrate",
                  "remove_overlay_sprite", "location_card", "credits",
-                 "ending", "paired_ending", "pop_dialog", "unpause", 
+                 "ending", "paired_ending", "pop_dialog", "unpause",
                  "screen_shake", "toggle_narration_mode"}
 
     def __init__(self, nid, event_prefab: EventPrefab, command_idx=0, if_statement_strategy=IfStatementStrategy.ALWAYS_TRUE):
@@ -57,7 +124,7 @@ class MockEvent(Event):
 
         self.text_evaluator = TextEvaluator(self.logger, None)
         if event_prefab.version() != EventVersion.EVENT:
-            self.processor = MockPythonEventProcessor('Mock', event_prefab.source)
+            self.processor = MockPythonEventProcessor('Mock', event_prefab.source, self.game)
         else:
             self.processor = MockEventProcessor('Mock', event_prefab.source, self.text_evaluator, if_statement_strategy, command_idx)
 
@@ -106,5 +173,5 @@ class MockEventProcessor(EventProcessor):
         return truth
 
 class MockPythonEventProcessor(PythonEventProcessor):
-    def __init__(self, nid: NID, source: str, command_pointer: int = 0):
-        super().__init__(nid, source, None)
+    def __init__(self, nid, source, mock_game=None, command_pointer: int = 0):
+        super().__init__(nid, source, mock_game)

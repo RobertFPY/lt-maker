@@ -329,6 +329,12 @@ class Event():
         return surf
 
     def end(self):
+        # Auto-cleanup any non-permanent unit markers added during this event
+        markers_to_clear = getattr(self, '_unit_markers_to_clear', None)
+        if markers_to_clear and getattr(self.game, 'unit_markers', None) is not None:
+            for nid in markers_to_clear:
+                self.game.unit_markers.pop(nid, None)
+            markers_to_clear.clear()
         self.state = 'almost_complete'
 
     def process(self):
@@ -384,6 +390,14 @@ class Event():
         from app.events.function_catalog import get_catalog
         self.logger.info('%s: %s, %s', command.nid, command.parameters, command.chosen_flags)
         parameters, flags = command.parameters, command.chosen_flags
+        # Python eventing bypasses EventProcessor, so {var:X}, {e:..}, {d:..}
+        # interpolation that event-script gets for free is missing. Apply it
+        # here for any string parameter when called from python.
+        if 'from_python' in flags and parameters:
+            parameters = {
+                k: (self.text_evaluator._evaluate_all(v) if isinstance(v, str) else v)
+                for k, v in parameters.items()
+            }
         parameters = {str_utils.camel_to_snake(k): v for k, v in parameters.items()}
         self.logger.debug("%s, %s", parameters, flags)
         if 'no_warn' in flags:  # Disable all logging up to warning

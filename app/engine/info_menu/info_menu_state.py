@@ -1047,6 +1047,7 @@ class InfoMenuState(State):
 
     def create_notes_surf(self):
         import pygame
+        import re
         surf = engine.create_surface((WINWIDTH - 96, WINHEIGHT), transparent=True)
 
         def pick_skill(skill_list):
@@ -1117,8 +1118,18 @@ class InfoMenuState(State):
             if skill is not None:
                 icons.draw_skill(surf, skill, (icon_x, icon_y), compact=False,
                                  grey=skill_system.is_grey(skill, self.unit))
-                # Skill name, truncated to fit
-                name = skill.name
+                # Detect tier/rarity tag from the skill nid (T1/T2/T3/T4/Ultra). The
+                # tag is inserted between the category label and the skill name so
+                # players can tell apart upgrade tiers at a glance.
+                tier_tag = ''
+                nid_upper = (skill.nid or '').upper()
+                for marker in ('ULTRA', 'T4', 'T3', 'T2', 'T1'):
+                    # Match as a delimited token so 'T1' inside 'TEST1' is not picked up.
+                    if re.search(r'(?:^|[^A-Z0-9])' + marker + r'(?:[^A-Z0-9]|$)', nid_upper):
+                        tier_tag = 'Ultra' if marker == 'ULTRA' else marker
+                        break
+                # Skill name with optional tier tag prefix, truncated to fit.
+                name = (tier_tag + ' ' + skill.name) if tier_tag else skill.name
                 max_name_w = pill_w - (icon_x - pill_x) - 18 - 4
                 truncated = name
                 while truncated and text_width('text', truncated) > max_name_w:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from typing import List, Optional, Tuple, TYPE_CHECKING
 
 from app.constants import WINHEIGHT, WINWIDTH
@@ -1047,7 +1048,6 @@ class InfoMenuState(State):
 
     def create_notes_surf(self):
         import pygame
-        import re
         surf = engine.create_surface((WINWIDTH - 96, WINHEIGHT), transparent=True)
 
         def pick_skill(skill_list):

@@ -1433,6 +1433,14 @@ The *immediate* flag will cause the combat to happen as quickly as possible, oft
     keyword_types = ["Unit", "Position", "CombatScript", "Ability", "PositiveInteger"]
     _flags = ["arena", "force_animation", "force_no_animation", "immediate"]
 
+class SetCombatScript(EventCommand):
+    nid = 'set_combat_script'
+    tag = Tags.ADD_REMOVE_INTERACT_WITH_UNITS
+
+    desc = "Modify the current combat with a combat script."
+
+    keywords = ["CombatScript"]
+
 class PoseUnit(EventCommand):
     nid = 'pose_unit'
     tag = Tags.ADD_REMOVE_INTERACT_WITH_UNITS

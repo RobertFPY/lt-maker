@@ -294,7 +294,11 @@ class InventoryDelegate(QStyledItemDelegate):
             text = str(unit.nid) + ' (' + str(unit.ai) + group + ' Lv ' + str(unit.level) + ')'
             font = QApplication.font()
             fm = QFontMetrics(font)
-            left = rect.left() + 48 + fm.width(text)
+            # Add an extra padding so the faction icon does not overlap the trailing
+            # "Lv X" portion of the row text. The QApplication font used to measure
+            # text width is not the exact font used by the underlying delegate, so
+            # the icon would otherwise creep onto the level number for generic units.
+            left = rect.left() + 48 + fm.width(text) + 16
             if pixmap:
                 painter.drawImage(left, rect.center().y() - 24//2 + 2, pixmap.toImage())
 

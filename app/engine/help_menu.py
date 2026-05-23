@@ -447,11 +447,18 @@ class ItemHelpDialog(HelpDialog):
         val_positions.reverse()
         names = ['Rng', 'Wt', 'Mt', 'Hit', 'Crit']
 
-        # Glow pulse: flash modified stats to white on a 600 ms cycle. The previous
-        # green<->yellow / red<->orange toggle was too subtle in the 'text' font
-        # palette; flashing to white gives an unmistakable pulse.
-        _phase = (engine.get_time() // 300) % 2  # 0 = base color, 1 = white flash
-        _bright_map = {'green': 'white', 'red': 'white'}
+        # Glow pulse: flash modified stats on a 600 ms cycle.
+        _phase = (engine.get_time() // 300) % 2  # 0 = base color, 1 = bright flash
+        # Try yellow (universally present) instead of white in case the text_font
+        # palette doesn't include 'white' (would silently fall back to default).
+        _bright_map = {'green': 'yellow', 'red': 'yellow'}
+
+        # [v0] DEBUG: log font name AND the actually-applied color for stat #3 (Mt)
+        _mt_color_dbg = self.val_colors[3] if len(self.val_colors) > 3 else '?'
+        if _phase and _mt_color_dbg in _bright_map:
+            _mt_color_dbg = _bright_map[_mt_color_dbg]
+        print("[v0] ItemHelpDialog.draw nid=%s time=%s phase=%s text_font=%r mt_applied=%s val_colors=%s" % (
+            self.item.nid, engine.get_time(), _phase, self.text_font, _mt_color_dbg, self.val_colors))
 
         # Use val_colors[1:] for stats after weapon_rank (rng, weight, might, hit, crit)
         for idx, (v, n) in enumerate(zip(self.vals[1:], names)):

@@ -362,21 +362,6 @@ class ItemHelpDialog(HelpDialog):
         self.val_colors.append(_color_for(_get_raw(self.item, 'crit'),
                                           _get_raw(prefab, 'crit')))
 
-        # [v0] DEBUG: log prefab vs current raw values to diagnose color computation
-        try:
-            print("[v0] ItemHelpDialog item.nid=%s prefab_found=%s" % (self.item.nid, bool(prefab)))
-            print("[v0]   current raw: damage=%s hit=%s crit=%s weight=%s min_range=%s max_range=%s" % (
-                _get_raw(self.item, 'damage'), _get_raw(self.item, 'hit'),
-                _get_raw(self.item, 'crit'), _get_raw(self.item, 'weight'),
-                _get_raw(self.item, 'min_range'), _get_raw(self.item, 'max_range')))
-            print("[v0]   prefab  raw: damage=%s hit=%s crit=%s weight=%s min_range=%s max_range=%s" % (
-                _get_raw(prefab, 'damage'), _get_raw(prefab, 'hit'),
-                _get_raw(prefab, 'crit'), _get_raw(prefab, 'weight'),
-                _get_raw(prefab, 'min_range'), _get_raw(prefab, 'max_range')))
-            print("[v0]   val_colors=%s vals=%s" % (self.val_colors, self.vals))
-        except Exception as _e:
-            print("[v0] ItemHelpDialog debug log failed: %s" % _e)
-
         desc = text_funcs.translate_and_text_evaluate(
             self.item.desc,
             unit=self.unit,
@@ -447,10 +432,6 @@ class ItemHelpDialog(HelpDialog):
         self.last_time = time
 
         help_surf = engine.copy_surface(self.help_surf)
-        # [v0] DEBUG: log what is actually being drawn this frame
-        print("[v0] ItemHelpDialog.draw nid=%s id=%s owner=%s vals=%s val_colors=%s" % (
-            self.item.nid, id(self.item), getattr(self.item, 'owner_nid', None),
-            self.vals, self.val_colors))
         weapon_type = item_system.weapon_type(self.unit, self.item)
         if weapon_type:
             icons.draw_weapon(help_surf, weapon_type, (8, 8 + self.v_offset))

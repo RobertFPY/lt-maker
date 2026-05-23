@@ -23976,7 +23976,7 @@
             ],
             [
                 "dynamic_damage_multiplier",
-                "2 if 'Monster' in unit2.tags else 0.5"
+                "1.5 if 'Monster' in unit2.tags else 0.3"
             ]
         ]
     },

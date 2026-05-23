@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import math
+import pygame
 from typing import List, Optional, TYPE_CHECKING
 
 import app.engine.config as cf
@@ -446,15 +448,29 @@ class ItemHelpDialog(HelpDialog):
         val_positions = [(100, 8), (144, 8), (50, 24), (100, 24), (144, 24)]
         val_positions.reverse()
         names = ['Rng', 'Wt', 'Mt', 'Hit', 'Crit']
+
+        # Glow pulse: a sin-wave alpha (0..180) over a 1200 ms period gives a smooth
+        # breathing effect. We blit a white copy of the text with BLEND_RGBA_ADD on
+        # top of the colored text, creating a bright pulse without changing the hue.
+        _glow_alpha = int((math.sin(engine.get_time() / 1200.0 * math.pi * 2) * 0.5 + 0.5) * 180)
+
         # Use val_colors[1:] for stats after weapon_rank (rng, weight, might, hit, crit)
         for idx, (v, n) in enumerate(zip(self.vals[1:], names)):
             if v is not None:
                 name_pos = name_positions.pop()
                 render_text(help_surf, [self.text_font], [n], ['yellow'], (name_pos[0], name_pos[1] + self.v_offset))
                 val_pos = val_positions.pop()
-                # idx+1 because val_colors[0] is weapon_rank, so val_colors[1] is for first stat (rng)
                 color = self.val_colors[idx + 1] if idx + 1 < len(self.val_colors) else 'blue'
                 render_text(help_surf, [self.text_font], [str(v)], [color], (val_pos[0], val_pos[1] + self.v_offset), HAlignment.RIGHT)
+                # Glow overlay only for modified stats (non-blue)
+                if color != 'blue' and _glow_alpha > 0:
+                    # Measure rendered text width to align the glow overlay right edge
+                    _tw = text_width(self.text_font, str(v))
+                    _glow_surf = engine.create_surface((_tw + 2, 10), transparent=True)
+                    render_text(_glow_surf, [self.text_font], [str(v)], ['white'], (_tw + 2, 0), HAlignment.RIGHT)
+                    _glow_surf.set_alpha(_glow_alpha)
+                    _x = val_pos[0] - _tw + self.v_offset  # align right edge
+                    help_surf.blit(_glow_surf, (_x, val_pos[1] + self.v_offset), special_flags=pygame.BLEND_RGBA_ADD)
 
         if self.dlg:
             self.dlg.update()

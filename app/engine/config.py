@@ -24,6 +24,7 @@ def base_config() -> OrderedDict:
                         ('mouse', 1),
                         ('show_terrain', 1),
                         ('show_objective', 1),
+                        ('show_mission_info', 1),
                         ('autocursor', 1),
                         ('music_volume', 0.3),
                         ('sound_volume', 0.3),

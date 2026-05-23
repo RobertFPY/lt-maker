@@ -38,6 +38,7 @@ class UIView():
         self.attack_info_disp = None
         self.spell_info_disp = None
         self.initiative_info_disp = None
+        self.mission_info_disp = None
 
         self.cursor_right: bool = False
 
@@ -45,6 +46,7 @@ class UIView():
         self.obj_info_offset = 0
         self.attack_info_offset = 0
         self.initiative_info_offset = 0
+        self.mission_info_offset = 0
 
         # Tile Info Offset
         self.tile_transition_state = 'normal'
@@ -55,6 +57,11 @@ class UIView():
         self.remove_unit_info = True
         self.prev_unit_info_top = False
         self.obj_top = False
+        self.mission_top = True
+        # Tracks the previous show_mission flag so we can fire a "new mission" alert
+        self._prev_show_mission = False
+        # Tracks per-mission status to detect red->green transitions
+        self._prev_mission_statuses = {}
 
     def remove_unit_display(self):
         self.remove_unit_info = True
@@ -115,6 +122,18 @@ class UIView():
             self.obj_info_offset += 10
             if self.obj_info_offset >= 100:
                 self.obj_info_disp = None
+
+        # Mission info handling (mirrors objective info but lives in top-left)
+        self._check_mission_alerts()
+        if game.state.current() in self.legal_states and \
+                cf.SETTINGS.get('show_mission_info', 1) and self._mission_info_active():
+            self.mission_info_disp = self.create_mission_info()
+            self.mission_info_offset -= 10
+            self.mission_info_offset = max(0, self.mission_info_offset)
+        elif self.mission_info_disp:
+            self.mission_info_offset += 10
+            if self.mission_info_offset >= 100:
+                self.mission_info_disp = None
 
         if (game.state.current() in self.legal_states or game.state.current() in self.initiative_states) \
                 and DB.constants.value('initiative') \

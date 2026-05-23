@@ -414,5 +414,9 @@
     {
         "nid": "Dynamic_desc",
         "text": "Pseudo-random stat gains to help prevent extreme outcomes."
+    },
+    {
+        "nid": "Nightmare_desc",
+        "text": "Enemies are comically powerful. Hell!!!"
     }
 ]

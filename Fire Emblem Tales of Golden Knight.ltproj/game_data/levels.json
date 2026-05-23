@@ -129,7 +129,7 @@
                 "generic": false
             },
             {
-                "nid": "101",
+                "nid": "Event_0",
                 "variant": null,
                 "level": 1,
                 "klass": "Brigand",
@@ -165,163 +165,15 @@
                 "generic": false
             },
             {
-                "nid": "102",
+                "nid": "Normal_0",
                 "variant": null,
-                "level": 3,
-                "klass": "Brigand",
+                "level": 4,
+                "klass": "Mercenary",
                 "faction": "Bandit",
                 "starting_items": [
                     [
-                        "Hand_Axe",
+                        "Iron_Sword",
                         false
-                    ]
-                ],
-                "starting_skills": [],
-                "team": "enemy",
-                "ai": "Defend",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": [
-                    31,
-                    7
-                ],
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "103",
-                "variant": null,
-                "level": 2,
-                "klass": "Brigand",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Short_Axe",
-                        false
-                    ]
-                ],
-                "starting_skills": [],
-                "team": "enemy",
-                "ai": "Defend",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": [
-                    19,
-                    7
-                ],
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "104",
-                "variant": null,
-                "level": 2,
-                "klass": "Brigand",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Poison_Axe",
-                        false
-                    ]
-                ],
-                "starting_skills": [],
-                "team": "enemy",
-                "ai": "Attack2Range",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": [
-                    19,
-                    10
-                ],
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "105",
-                "variant": null,
-                "level": 2,
-                "klass": "Brigand",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Iron_Axe",
-                        false
-                    ]
-                ],
-                "starting_skills": [],
-                "team": "enemy",
-                "ai": "Pursue",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": [
-                    43,
-                    7
-                ],
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "106",
-                "variant": null,
-                "level": 3,
-                "klass": "Brigand",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Bronze_Axe",
-                        false
-                    ]
-                ],
-                "starting_skills": [],
-                "team": "enemy",
-                "ai": "Defend",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": [
-                    37,
-                    8
-                ],
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "107",
-                "variant": null,
-                "level": 3,
-                "klass": "Archer",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Bronze_Bow",
-                        false
-                    ]
-                ],
-                "starting_skills": [],
-                "team": "enemy",
-                "ai": "Attack2Range",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": [
-                    31,
-                    10
-                ],
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "108",
-                "variant": null,
-                "level": 3,
-                "klass": "Archer",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Steel_Bow",
-                        false
-                    ],
-                    [
-                        "Vulnerary",
-                        true
                     ]
                 ],
                 "starting_skills": [],
@@ -331,216 +183,20 @@
                 "ai_group": "",
                 "starting_position": [
                     25,
-                    8
-                ],
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "109",
-                "variant": null,
-                "level": 3,
-                "klass": "Fighter",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Hand_Axe",
-                        false
-                    ]
-                ],
-                "starting_skills": [],
-                "team": "enemy",
-                "ai": "Defend",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": [
-                    35,
-                    7
-                ],
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "110",
-                "variant": null,
-                "level": 3,
-                "klass": "Fighter",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Devil_Axe",
-                        false
-                    ]
-                ],
-                "starting_skills": [],
-                "team": "enemy",
-                "ai": "Defend",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": [
-                    24,
-                    7
-                ],
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "111",
-                "variant": null,
-                "level": 3,
-                "klass": "Fighter",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Hand_Axe",
-                        false
-                    ],
-                    [
-                        "Vulnerary",
-                        false
-                    ]
-                ],
-                "starting_skills": [],
-                "team": "enemy",
-                "ai": "Defend",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": [
-                    17,
-                    10
-                ],
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "112",
-                "variant": null,
-                "level": 2,
-                "klass": "Mercenary",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Bronze_Sword",
-                        false
-                    ]
-                ],
-                "starting_skills": [],
-                "team": "enemy",
-                "ai": "Defend",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": [
-                    8,
                     9
                 ],
                 "starting_traveler": null,
                 "generic": true
             },
             {
-                "nid": "113",
+                "nid": "Normal_1",
                 "variant": null,
-                "level": 2,
-                "klass": "Mercenary",
+                "level": 4,
+                "klass": "Lance_Fighter",
                 "faction": "Bandit",
                 "starting_items": [
                     [
-                        "Iron_Sword",
-                        false
-                    ]
-                ],
-                "starting_skills": [],
-                "team": "enemy",
-                "ai": "Attack2Range",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": [
-                    11,
-                    7
-                ],
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "114",
-                "variant": null,
-                "level": 3,
-                "klass": "Mercenary",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Iron_Sword",
-                        true
-                    ]
-                ],
-                "starting_skills": [],
-                "team": "enemy",
-                "ai": "Attack2Range",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": [
-                    37,
-                    6
-                ],
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "115",
-                "variant": null,
-                "level": 2,
-                "klass": "Fighter",
-                "faction": "Soldier",
-                "starting_items": [
-                    [
-                        "Steel_Axe",
-                        false
-                    ]
-                ],
-                "starting_skills": [],
-                "team": "enemy",
-                "ai": "Pursue",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": [
-                    14,
-                    11
-                ],
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "116",
-                "variant": null,
-                "level": 2,
-                "klass": "Mercenary",
-                "faction": "Soldier",
-                "starting_items": [
-                    [
-                        "Iron_Blade",
-                        false
-                    ]
-                ],
-                "starting_skills": [],
-                "team": "enemy",
-                "ai": "Attack2Range",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": [
-                    15,
-                    7
-                ],
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "117",
-                "variant": null,
-                "level": 2,
-                "klass": "Archer",
-                "faction": "Soldier",
-                "starting_items": [
-                    [
-                        "Bronze_Bow",
+                        "Iron_Lance",
                         false
                     ]
                 ],
@@ -550,166 +206,16 @@
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": [
-                    17,
-                    5
+                    22,
+                    7
                 ],
                 "starting_traveler": null,
                 "generic": true
             },
             {
-                "nid": "118",
+                "nid": "Normal_2",
                 "variant": null,
-                "level": 2,
-                "klass": "Brigand",
-                "faction": "Soldier",
-                "starting_items": [
-                    [
-                        "Bronze_Axe",
-                        false
-                    ]
-                ],
-                "starting_skills": [],
-                "team": "enemy",
-                "ai": "Pursue",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "119",
-                "variant": null,
-                "level": 2,
-                "klass": "Fighter",
-                "faction": "Soldier",
-                "starting_items": [
-                    [
-                        "Iron_Axe",
-                        false
-                    ]
-                ],
-                "starting_skills": [],
-                "team": "enemy",
-                "ai": "Pursue",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "120",
-                "variant": null,
-                "level": 2,
-                "klass": "Brigand",
-                "faction": "Soldier",
-                "starting_items": [
-                    [
-                        "Bronze_Axe",
-                        false
-                    ]
-                ],
-                "starting_skills": [],
-                "team": "enemy",
-                "ai": "Pursue",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "121",
-                "variant": null,
-                "level": 2,
-                "klass": "Mercenary",
-                "faction": "Soldier",
-                "starting_items": [
-                    [
-                        "Bronze_Sword",
-                        false
-                    ]
-                ],
-                "starting_skills": [],
-                "team": "enemy",
-                "ai": "Pursue",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "122",
-                "variant": null,
-                "level": 2,
-                "klass": "Mercenary",
-                "faction": "Soldier",
-                "starting_items": [
-                    [
-                        "Bronze_Sword",
-                        false
-                    ]
-                ],
-                "starting_skills": [],
-                "team": "enemy",
-                "ai": "Pursue",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "123",
-                "variant": null,
-                "level": 2,
-                "klass": "Fighter",
-                "faction": "Soldier",
-                "starting_items": [
-                    [
-                        "Iron_Axe",
-                        false
-                    ]
-                ],
-                "starting_skills": [],
-                "team": "enemy",
-                "ai": "Pursue",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "136",
-                "variant": null,
-                "level": 2,
-                "klass": "Mercenary",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Steel_Sword",
-                        false
-                    ]
-                ],
-                "starting_skills": [],
-                "team": "enemy",
-                "ai": "Defend",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": [
-                    21,
-                    10
-                ],
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "137",
-                "variant": null,
-                "level": 2,
+                "level": 4,
                 "klass": "Archer",
                 "faction": "Bandit",
                 "starting_items": [
@@ -720,25 +226,25 @@
                 ],
                 "starting_skills": [],
                 "team": "enemy",
-                "ai": "Defend",
+                "ai": "Attack2Range",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": [
-                    18,
-                    12
+                    23,
+                    3
                 ],
                 "starting_traveler": null,
                 "generic": true
             },
             {
-                "nid": "138",
+                "nid": "Normal_3",
                 "variant": null,
-                "level": 2,
-                "klass": "Archer",
+                "level": 4,
+                "klass": "Fighter",
                 "faction": "Bandit",
                 "starting_items": [
                     [
-                        "Steel_Bow",
+                        "Iron_Axe",
                         false
                     ]
                 ],
@@ -748,21 +254,69 @@
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": [
-                    31,
-                    5
+                    27,
+                    8
                 ],
                 "starting_traveler": null,
                 "generic": true
             },
             {
-                "nid": "139",
+                "nid": "Normal_4",
                 "variant": null,
-                "level": 2,
-                "klass": "Fighter",
-                "faction": "Soldier",
+                "level": 3,
+                "klass": "Mercenary",
+                "faction": "Bandit",
                 "starting_items": [
                     [
-                        "Steel_Axe",
+                        "Bronze_Sword",
+                        false
+                    ]
+                ],
+                "starting_skills": [],
+                "team": "enemy",
+                "ai": "Defend",
+                "roam_ai": null,
+                "ai_group": "",
+                "starting_position": [
+                    36,
+                    7
+                ],
+                "starting_traveler": null,
+                "generic": true
+            },
+            {
+                "nid": "Normal_5",
+                "variant": null,
+                "level": 3,
+                "klass": "Lance_Fighter",
+                "faction": "Bandit",
+                "starting_items": [
+                    [
+                        "Bronze_Lance",
+                        false
+                    ]
+                ],
+                "starting_skills": [],
+                "team": "enemy",
+                "ai": "Defend",
+                "roam_ai": null,
+                "ai_group": "",
+                "starting_position": [
+                    37,
+                    8
+                ],
+                "starting_traveler": null,
+                "generic": true
+            },
+            {
+                "nid": "Normal_6",
+                "variant": null,
+                "level": 3,
+                "klass": "Archer",
+                "faction": "Bandit",
+                "starting_items": [
+                    [
+                        "Bronze_Bow",
                         false
                     ]
                 ],
@@ -772,9 +326,126 @@
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": [
-                    28,
-                    7
+                    38,
+                    3
                 ],
+                "starting_traveler": null,
+                "generic": true
+            },
+            {
+                "nid": "Normal_7",
+                "variant": null,
+                "level": 3,
+                "klass": "Fighter",
+                "faction": "Bandit",
+                "starting_items": [
+                    [
+                        "Bronze_Axe",
+                        false
+                    ]
+                ],
+                "starting_skills": [],
+                "team": "enemy",
+                "ai": "Defend",
+                "roam_ai": null,
+                "ai_group": "",
+                "starting_position": [
+                    37,
+                    10
+                ],
+                "starting_traveler": null,
+                "generic": true
+            },
+            {
+                "nid": "Normal_8",
+                "variant": null,
+                "level": 3,
+                "klass": "Brigand",
+                "faction": "Bandit",
+                "starting_items": [
+                    [
+                        "Bronze_Axe",
+                        false
+                    ]
+                ],
+                "starting_skills": [],
+                "team": "enemy",
+                "ai": "Defend",
+                "roam_ai": null,
+                "ai_group": "",
+                "starting_position": [
+                    41,
+                    6
+                ],
+                "starting_traveler": null,
+                "generic": true
+            },
+            {
+                "nid": "Normal_9",
+                "variant": null,
+                "level": 3,
+                "klass": "Brigand",
+                "faction": "Bandit",
+                "starting_items": [
+                    [
+                        "Bronze_Axe",
+                        false
+                    ]
+                ],
+                "starting_skills": [],
+                "team": "enemy",
+                "ai": "Defend",
+                "roam_ai": null,
+                "ai_group": "",
+                "starting_position": [
+                    17,
+                    10
+                ],
+                "starting_traveler": null,
+                "generic": true
+            },
+            {
+                "nid": "Normal_10",
+                "variant": null,
+                "level": 2,
+                "klass": "Brigand",
+                "faction": "Bandit",
+                "starting_items": [
+                    [
+                        "Bronze_Axe",
+                        false
+                    ]
+                ],
+                "starting_skills": [],
+                "team": "enemy",
+                "ai": "Defend",
+                "roam_ai": null,
+                "ai_group": "",
+                "starting_position": [
+                    46,
+                    4
+                ],
+                "starting_traveler": null,
+                "generic": true
+            },
+            {
+                "nid": "Normal_11",
+                "variant": null,
+                "level": 2,
+                "klass": "Brigand",
+                "faction": "Bandit",
+                "starting_items": [
+                    [
+                        "Bronze_Axe",
+                        false
+                    ]
+                ],
+                "starting_skills": [],
+                "team": "enemy",
+                "ai": "Defend",
+                "roam_ai": null,
+                "ai_group": "",
+                "starting_position": null,
                 "starting_traveler": null,
                 "generic": true
             }
@@ -802,67 +473,66 @@
         ],
         "unit_groups": [
             {
-                "nid": "Enemy1",
+                "nid": "Enemy1Normal",
                 "units": [
                     "Bandit",
-                    "102",
-                    "103",
-                    "104",
-                    "105",
-                    "106",
-                    "107",
-                    "108",
-                    "109",
-                    "110",
-                    "111",
-                    "113",
-                    "112",
-                    "114",
-                    "115",
-                    "116",
-                    "117"
+                    "Normal_0",
+                    "Normal_1",
+                    "Normal_2",
+                    "Normal_3",
+                    "Normal_4",
+                    "Normal_5",
+                    "Normal_6",
+                    "Normal_7",
+                    "Normal_8",
+                    "Normal_9",
+                    "Normal_10"
                 ],
                 "positions": {}
             },
             {
                 "nid": "Rein1",
                 "units": [
-                    "118",
-                    "119",
-                    "120"
+                    "Normal_11",
+                    "Normal_10",
+                    "Normal_9"
                 ],
                 "positions": {
-                    "118": [
-                        50,
+                    "Normal_8": [
+                        49,
                         5
                     ],
-                    "119": [
-                        50,
+                    "Normal_9": [
+                        49,
                         6
                     ],
-                    "120": [
-                        50,
+                    "Normal_10": [
+                        49,
                         7
+                    ],
+                    "Normal_11": [
+                        49,
+                        5
                     ]
                 }
             },
             {
                 "nid": "Rein2",
                 "units": [
-                    "121",
-                    "122",
-                    "123"
+                    "Normal_11",
+                    "Normal_10",
+                    "Normal_9"
                 ],
                 "positions": {
-                    "121": [
+                    "Normal_11": [
                         7,
                         14
                     ],
-                    "122": [
+                    "Normal_10": [
                         9,
                         14
                     ],
-                    "123": [
+                    "Normal_9": [
                         8,
                         14
                     ]
@@ -870,12 +540,7 @@
             },
             {
                 "nid": "Enemy1Hard",
-                "units": [
-                    "136",
-                    "137",
-                    "138",
-                    "139"
-                ],
+                "units": [],
                 "positions": {}
             }
         ],

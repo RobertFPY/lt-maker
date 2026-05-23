@@ -39,7 +39,7 @@ class DifficultyModeProperties(QWidget):
         self.name_box.edit.textChanged.connect(self.name_changed)
 
         self.color_box = PropertyBox("Color", ComboBox, self)
-        for color in ['blue', 'green', 'red']:
+        for color in ['blue', 'green', 'red', 'dark']:
             icon = QIcon('sprites/menus/chapter_select_%s' % color)
             self.color_box.edit.addItem(icon, color)
         self.color_box.edit.setIconSize(QSize(192, 30))

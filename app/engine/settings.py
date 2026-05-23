@@ -41,7 +41,11 @@ config = [('animation', ['Always', 'Your Turn', 'Combat Only', 'Never'], 0),
           ('grid_opacity', [int(255 * x / 10.0) for x in range(11)], 7),
           ('autoend_turn', bool, 14),
           ('confirm_end', bool, 14),
-          ('display_hints', bool, 3)]
+          ('display_hints', bool, 3),
+          # Debug toggle: persisted via cf.SETTINGS['debug'] (default 1). Placed
+          # last so players don't accidentally flip it; engine code already gates
+          # cheats / load-all-saves / debug overlays on this flag.
+          ('debug', bool, 2)]
 
 config_icons = [engine.subsurface(SPRITES.get('settings_icons'), (0, c[2] * 16, 16, 16)) for c in config]
 

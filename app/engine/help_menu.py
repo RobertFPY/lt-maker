@@ -303,6 +303,65 @@ class ItemHelpDialog(HelpDialog):
 
         self.vals = [weapon_rank, rng, weight, might, hit, crit]
 
+        # Build color list for each stat. Compare raw `component.value` between the
+        # current item instance and its prefab in DB.items to detect modifications by
+        # the `modify_item_component` event command (which mutates the live item but
+        # leaves the prefab untouched). This avoids comparing post-bonus values from
+        # item_system.* hooks, which would otherwise color stats based on skill /
+        # terrain bonuses rather than the actual modify_item_component change.
+        # - blue : unchanged or no prefab to compare against
+        # - green: increased (or for weight: decreased, since lower weight is better)
+        # - red  : decreased (or for weight: increased)
+        self.val_colors = ['blue']  # weapon_rank: no prefab comparison
+
+        prefab = DB.items.get(self.item.nid)
+
+        def _get_raw(item_or_prefab, comp_nid):
+            """Return raw `component.value` for a given component nid, or None."""
+            if not item_or_prefab:
+                return None
+            comps = getattr(item_or_prefab, 'components', None)
+            if not comps:
+                return None
+            for c in comps:
+                if c.nid == comp_nid:
+                    return c.value
+            return None
+
+        def _color_for(current, original, lower_is_better=False):
+            if current is None or original is None or current == original:
+                return 'blue'
+            if lower_is_better:
+                return 'green' if current < original else 'red'
+            return 'green' if current > original else 'red'
+
+        # Range: green if max increased OR min decreased, red for the opposite.
+        cur_min = _get_raw(self.item, 'min_range')
+        cur_max = _get_raw(self.item, 'max_range')
+        pre_min = _get_raw(prefab, 'min_range')
+        pre_max = _get_raw(prefab, 'max_range')
+        rng_color = 'blue'
+        if None not in (cur_min, cur_max, pre_min, pre_max):
+            if cur_max > pre_max or cur_min < pre_min:
+                rng_color = 'green'
+            elif cur_max < pre_max or cur_min > pre_min:
+                rng_color = 'red'
+        self.val_colors.append(rng_color)
+
+        # Weight (lower is better)
+        self.val_colors.append(_color_for(_get_raw(self.item, 'weight'),
+                                          _get_raw(prefab, 'weight'),
+                                          lower_is_better=True))
+        # Might (damage component)
+        self.val_colors.append(_color_for(_get_raw(self.item, 'damage'),
+                                          _get_raw(prefab, 'damage')))
+        # Hit
+        self.val_colors.append(_color_for(_get_raw(self.item, 'hit'),
+                                          _get_raw(prefab, 'hit')))
+        # Crit
+        self.val_colors.append(_color_for(_get_raw(self.item, 'crit'),
+                                          _get_raw(prefab, 'crit')))
+
         desc = text_funcs.translate_and_text_evaluate(
             self.item.desc,
             unit=self.unit,
@@ -376,7 +435,8 @@ class ItemHelpDialog(HelpDialog):
         weapon_type = item_system.weapon_type(self.unit, self.item)
         if weapon_type:
             icons.draw_weapon(help_surf, weapon_type, (8, 8 + self.v_offset))
-        render_text(help_surf, [self.text_font], [str(self.vals[0])], ['blue'], (50, 8 + self.v_offset), HAlignment.RIGHT)
+        # Weapon rank uses val_colors[0] (always blue)
+        render_text(help_surf, [self.text_font], [str(self.vals[0])], [self.val_colors[0]], (50, 8 + self.v_offset), HAlignment.RIGHT)
 
         if self.name_override is not None:
             render_text(help_surf, ['text'], [self.name_override], ['blue'], (8, 6))
@@ -386,12 +446,16 @@ class ItemHelpDialog(HelpDialog):
         val_positions = [(100, 8), (144, 8), (50, 24), (100, 24), (144, 24)]
         val_positions.reverse()
         names = ['Rng', 'Wt', 'Mt', 'Hit', 'Crit']
-        for v, n in zip(self.vals[1:], names):
+
+        # Use val_colors[1:] for stats after weapon_rank (rng, weight, might, hit, crit)
+        for idx, (v, n) in enumerate(zip(self.vals[1:], names)):
             if v is not None:
                 name_pos = name_positions.pop()
                 render_text(help_surf, [self.text_font], [n], ['yellow'], (name_pos[0], name_pos[1] + self.v_offset))
                 val_pos = val_positions.pop()
-                render_text(help_surf, [self.text_font], [str(v)], ['blue'], (val_pos[0], val_pos[1] + self.v_offset), HAlignment.RIGHT)
+                # idx+1 because val_colors[0] is weapon_rank, so val_colors[1] is for first stat (rng)
+                color = self.val_colors[idx + 1] if idx + 1 < len(self.val_colors) else 'blue'
+                render_text(help_surf, [self.text_font], [str(v)], [color], (val_pos[0], val_pos[1] + self.v_offset), HAlignment.RIGHT)
 
         if self.dlg:
             self.dlg.update()
@@ -402,8 +466,21 @@ class ItemHelpDialog(HelpDialog):
 
 class SkillHelpDialog(HelpDialog):
     def __init__(self, skill: SkillObject, first:bool=True, unit_override:Optional[UnitObject]=None, category: str = ''):
+        import re
+        # Detect tier/rarity tag from the skill nid (T1/T2/T3/T4/Ultra). The
+        # tag is inserted between the category label and the skill name so
+        # players can tell apart upgrade tiers at a glance.
+        tier_tag = ''
+        nid_upper = (skill.nid or '').upper()
+        for marker in ('ULTRA', 'T4', 'T3', 'T2', 'T1'):
+            # Match as a delimited token so 'T1' inside 'TEST1' is not picked up.
+            if re.search(r'(?:^|[^A-Z0-9])' + marker + r'(?:[^A-Z0-9]|$)', nid_upper):
+                tier_tag = 'Ultra' if marker == 'ULTRA' else marker
+                break
+        # Skill name with optional tier tag prefix, truncated to fit.
+        self.name = (skill.name + ' ' + tier_tag) if tier_tag else skill.name
         # old behavior where the charge is just shown next to the name
-        self.name = ' ' + skill.name + self._get_charge_str(skill)
+        self.name = ' ' + self.name + self._get_charge_str(skill)
         if category:
             self.name = self.name + ' (' + category + ')'
         self.last_time = self.start_time = 0

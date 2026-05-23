@@ -303,83 +303,79 @@ class ItemHelpDialog(HelpDialog):
 
         self.vals = [weapon_rank, rng, weight, might, hit, crit]
 
-        # Build color list for each stat. Compare with prefab to detect modifications:
-        # - blue: unchanged or no change expected (weapon_rank)
-        # - green: increased from prefab
-        # - red: decreased from prefab
-        self.val_colors = ['blue']  # weapon_rank always blue (no prefab comparison)
-        
+        # Build color list for each stat. Compare raw `component.value` between the
+        # current item instance and its prefab in DB.items to detect modifications by
+        # the `modify_item_component` event command (which mutates the live item but
+        # leaves the prefab untouched). This avoids comparing post-bonus values from
+        # item_system.* hooks, which would otherwise color stats based on skill /
+        # terrain bonuses rather than the actual modify_item_component change.
+        # - blue : unchanged or no prefab to compare against
+        # - green: increased (or for weight: decreased, since lower weight is better)
+        # - red  : decreased (or for weight: increased)
+        self.val_colors = ['blue']  # weapon_rank: no prefab comparison
+
         prefab = DB.items.get(self.item.nid)
-        if prefab:
-            # Helper to get component value by nid
-            def get_comp_value(item_obj, comp_nid):
-                if not item_obj:
-                    return None
-                for comp in item_obj.components:
-                    if comp.nid == comp_nid:
-                        return comp.value
+
+        def _get_raw(item_or_prefab, comp_nid):
+            """Return raw `component.value` for a given component nid, or None."""
+            if not item_or_prefab:
                 return None
-            
-            # Compare each stat: [rng, weight, might, hit, crit]
-            # Rng: compare both min_range and max_range
-            prefab_rng = item_funcs.get_range_string(self.unit, prefab) if prefab else None
-            rng_color = 'blue' if (rng == prefab_rng) else ('green' if rng and prefab_rng and rng > prefab_rng else 'red' if rng and prefab_rng and rng < prefab_rng else 'blue')
-            self.val_colors.append(rng_color)
-            
-            # Weight: compare weight component
-            prefab_weight = prefab.weight.value if prefab.weight else None
-            current_weight = self.item.weight.value if self.item.weight else None
-            if current_weight is None or prefab_weight is None:
-                weight_color = 'blue'
-            elif current_weight < prefab_weight:
-                weight_color = 'green'  # Lower weight is better
-            elif current_weight > prefab_weight:
-                weight_color = 'red'
-            else:
-                weight_color = 'blue'
-            self.val_colors.append(weight_color)
-            
-            # Might: compare damage component (modified by event command)
-            prefab_might = item_system.damage(self.unit, prefab) if prefab else None
-            if might is None or prefab_might is None:
-                might_color = 'blue'
-            elif might > prefab_might:
-                might_color = 'green'
-            elif might < prefab_might:
-                might_color = 'red'
-            else:
-                might_color = 'blue'
-            self.val_colors.append(might_color)
-            
-            # Hit: compare hit component
-            prefab_hit = item_system.hit(self.unit, prefab) if prefab else None
-            if hit is None or prefab_hit is None:
-                hit_color = 'blue'
-            elif hit > prefab_hit:
-                hit_color = 'green'
-            elif hit < prefab_hit:
-                hit_color = 'red'
-            else:
-                hit_color = 'blue'
-            self.val_colors.append(hit_color)
-            
-            # Crit: compare crit component
-            if DB.constants.value('crit') and crit is not None:
-                prefab_crit = item_system.crit(self.unit, prefab) if prefab else None
-                if prefab_crit is None:
-                    crit_color = 'blue'
-                elif crit > prefab_crit:
-                    crit_color = 'green'
-                elif crit < prefab_crit:
-                    crit_color = 'red'
-                else:
-                    crit_color = 'blue'
-            else:
-                crit_color = 'blue'
-            self.val_colors.append(crit_color)
-        else:
-            # No prefab found, all stats default to blue
-            self.val_colors = ['blue'] * len(self.vals)
+            comps = getattr(item_or_prefab, 'components', None)
+            if not comps:
+                return None
+            for c in comps:
+                if c.nid == comp_nid:
+                    return c.value
+            return None
+
+        def _color_for(current, original, lower_is_better=False):
+            if current is None or original is None or current == original:
+                return 'blue'
+            if lower_is_better:
+                return 'green' if current < original else 'red'
+            return 'green' if current > original else 'red'
+
+        # Range: green if max increased OR min decreased, red for the opposite.
+        cur_min = _get_raw(self.item, 'min_range')
+        cur_max = _get_raw(self.item, 'max_range')
+        pre_min = _get_raw(prefab, 'min_range')
+        pre_max = _get_raw(prefab, 'max_range')
+        rng_color = 'blue'
+        if None not in (cur_min, cur_max, pre_min, pre_max):
+            if cur_max > pre_max or cur_min < pre_min:
+                rng_color = 'green'
+            elif cur_max < pre_max or cur_min > pre_min:
+                rng_color = 'red'
+        self.val_colors.append(rng_color)
+
+        # Weight (lower is better)
+        self.val_colors.append(_color_for(_get_raw(self.item, 'weight'),
+                                          _get_raw(prefab, 'weight'),
+                                          lower_is_better=True))
+        # Might (damage component)
+        self.val_colors.append(_color_for(_get_raw(self.item, 'damage'),
+                                          _get_raw(prefab, 'damage')))
+        # Hit
+        self.val_colors.append(_color_for(_get_raw(self.item, 'hit'),
+                                          _get_raw(prefab, 'hit')))
+        # Crit
+        self.val_colors.append(_color_for(_get_raw(self.item, 'crit'),
+                                          _get_raw(prefab, 'crit')))
+
+        # [v0] DEBUG: log prefab vs current raw values to diagnose color computation
+        try:
+            print("[v0] ItemHelpDialog item.nid=%s prefab_found=%s" % (self.item.nid, bool(prefab)))
+            print("[v0]   current raw: damage=%s hit=%s crit=%s weight=%s min_range=%s max_range=%s" % (
+                _get_raw(self.item, 'damage'), _get_raw(self.item, 'hit'),
+                _get_raw(self.item, 'crit'), _get_raw(self.item, 'weight'),
+                _get_raw(self.item, 'min_range'), _get_raw(self.item, 'max_range')))
+            print("[v0]   prefab  raw: damage=%s hit=%s crit=%s weight=%s min_range=%s max_range=%s" % (
+                _get_raw(prefab, 'damage'), _get_raw(prefab, 'hit'),
+                _get_raw(prefab, 'crit'), _get_raw(prefab, 'weight'),
+                _get_raw(prefab, 'min_range'), _get_raw(prefab, 'max_range')))
+            print("[v0]   val_colors=%s vals=%s" % (self.val_colors, self.vals))
+        except Exception as _e:
+            print("[v0] ItemHelpDialog debug log failed: %s" % _e)
 
         desc = text_funcs.translate_and_text_evaluate(
             self.item.desc,

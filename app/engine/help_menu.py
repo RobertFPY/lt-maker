@@ -447,12 +447,11 @@ class ItemHelpDialog(HelpDialog):
         val_positions.reverse()
         names = ['Rng', 'Wt', 'Mt', 'Hit', 'Crit']
 
-        # Glow pulse: alternate the color tag between the base color and a brighter
-        # variant on a 600 ms cycle. Surface-alpha additive blending was unreliable
-        # (pygame ignores set_alpha() under BLEND_RGBA_ADD), so we toggle color tags
-        # instead -- rock-solid and gives a clear "this stat was modified" pulse.
-        _phase = (engine.get_time() // 300) % 2  # 0 = base, 1 = bright
-        _bright_map = {'green': 'yellow', 'red': 'orange'}
+        # Glow pulse: flash modified stats to white on a 600 ms cycle. The previous
+        # green<->yellow / red<->orange toggle was too subtle in the 'text' font
+        # palette; flashing to white gives an unmistakable pulse.
+        _phase = (engine.get_time() // 300) % 2  # 0 = base color, 1 = white flash
+        _bright_map = {'green': 'white', 'red': 'white'}
 
         # Use val_colors[1:] for stats after weapon_rank (rng, weight, might, hit, crit)
         for idx, (v, n) in enumerate(zip(self.vals[1:], names)):

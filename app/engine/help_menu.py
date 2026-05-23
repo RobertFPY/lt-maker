@@ -303,6 +303,84 @@ class ItemHelpDialog(HelpDialog):
 
         self.vals = [weapon_rank, rng, weight, might, hit, crit]
 
+        # Build color list for each stat. Compare with prefab to detect modifications:
+        # - blue: unchanged or no change expected (weapon_rank)
+        # - green: increased from prefab
+        # - red: decreased from prefab
+        self.val_colors = ['blue']  # weapon_rank always blue (no prefab comparison)
+        
+        prefab = DB.items.get(self.item.nid)
+        if prefab:
+            # Helper to get component value by nid
+            def get_comp_value(item_obj, comp_nid):
+                if not item_obj:
+                    return None
+                for comp in item_obj.components:
+                    if comp.nid == comp_nid:
+                        return comp.value
+                return None
+            
+            # Compare each stat: [rng, weight, might, hit, crit]
+            # Rng: compare both min_range and max_range
+            prefab_rng = item_funcs.get_range_string(self.unit, prefab) if prefab else None
+            rng_color = 'blue' if (rng == prefab_rng) else ('green' if rng and prefab_rng and rng > prefab_rng else 'red' if rng and prefab_rng and rng < prefab_rng else 'blue')
+            self.val_colors.append(rng_color)
+            
+            # Weight: compare weight component
+            prefab_weight = prefab.weight.value if prefab.weight else None
+            current_weight = self.item.weight.value if self.item.weight else None
+            if current_weight is None or prefab_weight is None:
+                weight_color = 'blue'
+            elif current_weight < prefab_weight:
+                weight_color = 'green'  # Lower weight is better
+            elif current_weight > prefab_weight:
+                weight_color = 'red'
+            else:
+                weight_color = 'blue'
+            self.val_colors.append(weight_color)
+            
+            # Might: compare damage component (modified by event command)
+            prefab_might = item_system.damage(self.unit, prefab) if prefab else None
+            if might is None or prefab_might is None:
+                might_color = 'blue'
+            elif might > prefab_might:
+                might_color = 'green'
+            elif might < prefab_might:
+                might_color = 'red'
+            else:
+                might_color = 'blue'
+            self.val_colors.append(might_color)
+            
+            # Hit: compare hit component
+            prefab_hit = item_system.hit(self.unit, prefab) if prefab else None
+            if hit is None or prefab_hit is None:
+                hit_color = 'blue'
+            elif hit > prefab_hit:
+                hit_color = 'green'
+            elif hit < prefab_hit:
+                hit_color = 'red'
+            else:
+                hit_color = 'blue'
+            self.val_colors.append(hit_color)
+            
+            # Crit: compare crit component
+            if DB.constants.value('crit') and crit is not None:
+                prefab_crit = item_system.crit(self.unit, prefab) if prefab else None
+                if prefab_crit is None:
+                    crit_color = 'blue'
+                elif crit > prefab_crit:
+                    crit_color = 'green'
+                elif crit < prefab_crit:
+                    crit_color = 'red'
+                else:
+                    crit_color = 'blue'
+            else:
+                crit_color = 'blue'
+            self.val_colors.append(crit_color)
+        else:
+            # No prefab found, all stats default to blue
+            self.val_colors = ['blue'] * len(self.vals)
+
         desc = text_funcs.translate_and_text_evaluate(
             self.item.desc,
             unit=self.unit,
@@ -376,7 +454,8 @@ class ItemHelpDialog(HelpDialog):
         weapon_type = item_system.weapon_type(self.unit, self.item)
         if weapon_type:
             icons.draw_weapon(help_surf, weapon_type, (8, 8 + self.v_offset))
-        render_text(help_surf, [self.text_font], [str(self.vals[0])], ['blue'], (50, 8 + self.v_offset), HAlignment.RIGHT)
+        # Weapon rank uses val_colors[0] (always blue)
+        render_text(help_surf, [self.text_font], [str(self.vals[0])], [self.val_colors[0]], (50, 8 + self.v_offset), HAlignment.RIGHT)
 
         if self.name_override is not None:
             render_text(help_surf, ['text'], [self.name_override], ['blue'], (8, 6))
@@ -386,12 +465,15 @@ class ItemHelpDialog(HelpDialog):
         val_positions = [(100, 8), (144, 8), (50, 24), (100, 24), (144, 24)]
         val_positions.reverse()
         names = ['Rng', 'Wt', 'Mt', 'Hit', 'Crit']
-        for v, n in zip(self.vals[1:], names):
+        # Use val_colors[1:] for stats after weapon_rank (rng, weight, might, hit, crit)
+        for idx, (v, n) in enumerate(zip(self.vals[1:], names)):
             if v is not None:
                 name_pos = name_positions.pop()
                 render_text(help_surf, [self.text_font], [n], ['yellow'], (name_pos[0], name_pos[1] + self.v_offset))
                 val_pos = val_positions.pop()
-                render_text(help_surf, [self.text_font], [str(v)], ['blue'], (val_pos[0], val_pos[1] + self.v_offset), HAlignment.RIGHT)
+                # idx+1 because val_colors[0] is weapon_rank, so val_colors[1] is for first stat (rng)
+                color = self.val_colors[idx + 1] if idx + 1 < len(self.val_colors) else 'blue'
+                render_text(help_surf, [self.text_font], [str(v)], [color], (val_pos[0], val_pos[1] + self.v_offset), HAlignment.RIGHT)
 
         if self.dlg:
             self.dlg.update()

@@ -447,6 +447,10 @@ class ItemHelpDialog(HelpDialog):
         self.last_time = time
 
         help_surf = engine.copy_surface(self.help_surf)
+        # [v0] DEBUG: log what is actually being drawn this frame
+        print("[v0] ItemHelpDialog.draw nid=%s id=%s owner=%s vals=%s val_colors=%s" % (
+            self.item.nid, id(self.item), getattr(self.item, 'owner_nid', None),
+            self.vals, self.val_colors))
         weapon_type = item_system.weapon_type(self.unit, self.item)
         if weapon_type:
             icons.draw_weapon(help_surf, weapon_type, (8, 8 + self.v_offset))

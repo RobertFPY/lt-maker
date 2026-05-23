@@ -729,7 +729,15 @@ class MoveState(MapState):
 
         elif event == 'BACK':
             if cur_unit.has_attacked or cur_unit.has_traded:
-                get_sound_thread().play_sfx('Error')
+                # In canto phase, the unit can no longer cancel its action,
+                # but pressing BACK should at least snap the cursor back to
+                # the unit so the player can see who they are moving.
+                if game.cursor.position != cur_unit.position:
+                    get_sound_thread().play_sfx('Select 4')
+                    game.cursor.set_pos(cur_unit.position)
+                    game.ui_view.remove_unit_display()
+                else:
+                    get_sound_thread().play_sfx('Error')
             else:
                 get_sound_thread().play_sfx('Select 4')
                 game.cursor.set_pos(cur_unit.position)

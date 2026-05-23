@@ -590,6 +590,12 @@ class SetLevelVar(Action):
         game.level_vars[self.nid] = self.val
         # Need to update fog of war when we change it
         self._update_fog_of_war()
+        # Hook for mission info notifications (Phase B)
+        # This will trigger the alert logic in UIView._check_mission_alerts()
+        # on the next update cycle
+        if self.nid == 'show_mission' or self.nid.startswith('mission_status'):
+            # Alerts are generated in ui_view update() which reads the current state
+            pass
 
     def reverse(self):
         if self.already_exists:

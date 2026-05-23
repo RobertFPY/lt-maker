@@ -9,12 +9,13 @@ from app.data.database.database import DB
 from app.data.database.difficulty_modes import RNGOption
 from app.engine import (base_surf, combat_calcs, engine, equations, evaluate,
                         icons, image_mods, item_funcs, item_system,
-                        skill_system, text_funcs)
+                        skill_system, text_funcs, banner)
 from app.engine.fonts import FONT
 from app.engine.game_menus import menu_options
 from app.engine.game_counters import ANIMATION_COUNTERS
 from app.engine.game_state import game
 from app.engine.sprites import SPRITES
+from app.engine.sound_thread import get_sound_thread
 from app.utilities import utils
 from app.utilities.enums import HAlignment
 
@@ -218,6 +219,25 @@ class UIView():
                 pos = (WINWIDTH - 4 - self.obj_info_disp.get_width(), 1 - self.obj_info_offset)
                 surf.blit(self.obj_info_disp, pos)
 
+        # Mission info display (top-left, mirrors objective logic)
+        if self.mission_info_disp and not self.initiative_info_disp:
+            # Check if cursor is in top-left area
+            if game.cursor.position[1] < TILEY // 2 + game.camera.get_y() and \
+                    game.cursor.position[0] < TILEX // 2 + game.camera.get_x():
+                # Cursor in top-left, move mission info to bottom-left
+                if self.mission_top:
+                    self.mission_top = False
+                    self.mission_info_offset = self.mission_info_disp.get_height()
+                pos = (4, WINHEIGHT - 4 + self.mission_info_offset - self.mission_info_disp.get_height())
+                surf.blit(self.mission_info_disp, pos)
+            else:
+                # Place in top-left
+                if not self.mission_top:
+                    self.mission_top = True
+                    self.mission_info_offset = self.mission_info_disp.get_height()
+                pos = (4, 1 - self.mission_info_offset)
+                surf.blit(self.mission_info_disp, pos)
+
         if self.initiative_info_disp:
             if game.cursor.position[1] < TILEY // 2 + game.camera.get_y():
                 self.initiative_info_offset = self.initiative_info_disp.get_height()
@@ -380,6 +400,77 @@ class UIView():
     def reset_info(self):
         self.attack_info_disp = None
         self.spell_info_disp = None
+
+    def _mission_info_active(self) -> bool:
+        """Check if mission info should be displayed"""
+        if not game.level:
+            return False
+        return game.level_vars.get('show_mission', False)
+
+    def _check_mission_alerts(self):
+        """Check for mission activation and completion status changes"""
+        if not game.level:
+            return
+        
+        current_show_mission = game.level_vars.get('show_mission', False)
+        
+        # Detect "Mission Found!" transition (False → True)
+        if current_show_mission and not self._prev_show_mission:
+            get_sound_thread().play_sfx('MapCursor')
+            game.alerts.append(banner.Custom('Mission Found!', 'MapCursor'))
+        
+        self._prev_show_mission = current_show_mission
+        
+        # Check mission status transitions (red → green = completed)
+        # Count all mission_statusN variables
+        mission_vars = {k: v for k, v in game.level_vars.items() if k.startswith('mission_status')}
+        
+        for mission_key, current_status in mission_vars.items():
+            prev_status = self._prev_mission_statuses.get(mission_key, None)
+            
+            # Detect completion: red → green
+            if prev_status == 'red' and current_status == 'green':
+                get_sound_thread().play_sfx('MapCursor')
+                game.alerts.append(banner.Custom('Mission Complete!', 'MapCursor'))
+        
+        # Update previous statuses for next check
+        self._prev_mission_statuses = mission_vars.copy()
+
+    def create_mission_info(self):
+        """Create the mission info display (top-left corner)"""
+        # Count total missions and completed ones
+        mission_vars = {k: v for k, v in game.level_vars.items() if k.startswith('mission_status')}
+        total_missions = len(mission_vars)
+        completed_missions = sum(1 for v in mission_vars.values() if v == 'green')
+        
+        if total_missions == 0:
+            return None
+        
+        text = f"Missions: {total_missions}"
+        if total_missions > 0:
+            text += f" ({completed_missions}/{total_missions})"
+        
+        # Create the display surface similar to objective info
+        text_lines = [text]
+        longest_surf_width = text_funcs.get_max_width('text', text_lines)
+        bg_surf = base_surf.create_base_surf(longest_surf_width + 16, 16 * len(text_lines) + 8)
+        
+        shimmer = SPRITES.get('menu_shimmer1')
+        bg_surf.blit(shimmer, (bg_surf.get_width() - 1 - shimmer.get_width(), 4))
+        
+        surf = engine.create_surface((bg_surf.get_width(), bg_surf.get_height() + 3), transparent=True)
+        surf.blit(bg_surf, (0, 3))
+        
+        # Use a different gem for missions (or same blue gem)
+        gem = SPRITES.get('combat_gem_blue')
+        surf.blit(gem, (bg_surf.get_width()//2 - gem.get_width()//2, 0))
+        surf = image_mods.make_translucent(surf, .1)
+        
+        for idx, line in enumerate(text_lines):
+            pos = (surf.get_width()//2 - text_width('text', line)//2, 16 * idx + 6)
+            render_text(surf, ['text'], [line], [None], pos)
+        
+        return surf
 
     def _build_forecast_background(self, grandmaster: bool, crit_flag: bool, guard_flag: bool, 
                                     a_assist_flag: bool, d_assist_flag: bool,

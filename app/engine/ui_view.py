@@ -16,6 +16,7 @@ from app.engine.game_menus import menu_options
 from app.engine.game_counters import ANIMATION_COUNTERS
 from app.engine.game_state import game
 from app.engine.sprites import SPRITES
+from app.engine.sound import get_sound_thread
 from app.utilities import utils
 from app.utilities.enums import HAlignment
 
@@ -63,7 +64,14 @@ class UIView():
         # Pulse animation when mission state changes
         self._mission_last_signature = None
         self._mission_pulse_start = 0
-        self._mission_pulse_duration = 600  # ms
+        self._mission_pulse_duration = 1500  # ms - longer pulse with glow
+        self._mission_glow_start = 0
+        self._mission_glow_duration = 2500  # ms - yellow border glow
+
+        # Mission notification banner (top-center, slides down)
+        # Each entry: {'text': str, 'color': 'green'|'yellow'|'blue', 'start': int, 'duration': int}
+        self._mission_banner_queue = []
+        self._mission_last_show = False  # tracks show_mission for new-mission banner
 
     def remove_unit_display(self):
         self.remove_unit_info = True
@@ -128,11 +136,33 @@ class UIView():
         # Mission info handling (top-left counter box)
         mission_info = self._get_mission_info()
         if game.state.current() in self.legal_states and cf.SETTINGS.get('show_mission', 1) and mission_info is not None:
-            # Detect change for pulse animation
+            # Detect "show_mission turned on" → notify
+            if not self._mission_last_show:
+                self._enqueue_mission_banner(
+                    "New Mission Found!", 'yellow', sfx='Item')
+                self._mission_pulse_start = engine.get_time()
+                self._mission_glow_start = engine.get_time()
+            self._mission_last_show = True
+
             signature = (mission_info['done'], mission_info['total'])
             if signature != self._mission_last_signature:
                 if self._mission_last_signature is not None:
+                    prev_done, prev_total = self._mission_last_signature
+                    cur_done, cur_total = signature
+                    # New mission registered (total grew while box was already visible)
+                    if cur_total > prev_total:
+                        self._enqueue_mission_banner(
+                            "New Mission Found!", 'yellow', sfx='Item')
+                    # A mission just completed
+                    if cur_done > prev_done:
+                        if cur_total > 0 and cur_done >= cur_total:
+                            self._enqueue_mission_banner(
+                                "All Missions Complete!", 'green', sfx='StageClear')
+                        else:
+                            self._enqueue_mission_banner(
+                                "Mission Complete!", 'green', sfx='Level Up')
                     self._mission_pulse_start = engine.get_time()
+                    self._mission_glow_start = engine.get_time()
                 self._mission_last_signature = signature
             self.mission_info_disp = self.create_mission_info(mission_info)
             self.mission_info_offset -= 10
@@ -142,6 +172,11 @@ class UIView():
             if self.mission_info_offset >= 100:
                 self.mission_info_disp = None
                 self._mission_last_signature = None
+                self._mission_last_show = False
+        else:
+            # Reset show tracker when missions are unavailable
+            if mission_info is None:
+                self._mission_last_show = False
 
         if (game.state.current() in self.legal_states or game.state.current() in self.initiative_states) \
                 and DB.constants.value('initiative') \
@@ -234,38 +269,58 @@ class UIView():
             else:
                 surf.blit(self.initiative_info_disp, (0, 0))
 
-        # Mission info box: top-left, flips to bottom-left when cursor is in top-left.
-        # Yields the top-left to unit_info_disp (when cursor hovers a unit there) by
-        # also flipping to bottom-left in that case, to avoid overlap.
+        # Mission info box: top-left only. Hides when cursor enters top-left region
+        # or when unit_info_disp is occupying top-left.
         if self.mission_info_disp and not self.initiative_info_disp:
             cursor_in_top_left = (
                 game.cursor.position[1] < TILEY // 2 + game.camera.get_y() and
                 not (game.cursor.position[0] > TILEX // 2 + game.camera.get_x() - 1)
             )
             unit_info_blocking_top_left = bool(self.unit_info_disp) and self.prev_unit_info_top
-            place_bottom = cursor_in_top_left or unit_info_blocking_top_left
+            should_hide = cursor_in_top_left or unit_info_blocking_top_left
 
-            # Pulse animation: gentle vertical bob when mission state changes
-            pulse_dy = 0
-            elapsed = engine.get_time() - self._mission_pulse_start
-            if 0 <= elapsed < self._mission_pulse_duration:
-                # Two soft hops: -3px peak
-                progress = elapsed / self._mission_pulse_duration
-                pulse_dy = -int(round(3 * abs(math.sin(progress * math.pi * 2))))
-
-            if place_bottom:
-                if self.mission_top:
-                    self.mission_top = False
-                    self.mission_info_offset = self.mission_info_disp.get_height()
-                pos = (4,
-                       WINHEIGHT - 4 + self.mission_info_offset - self.mission_info_disp.get_height() + pulse_dy)
+            if should_hide:
+                # Slide it back up off-screen smoothly
+                self.mission_info_offset = min(
+                    self.mission_info_offset + 10,
+                    self.mission_info_disp.get_height() + 4
+                )
             else:
-                if not self.mission_top:
-                    self.mission_top = True
-                    self.mission_info_offset = self.mission_info_disp.get_height()
-                pos = (4,
-                       1 - self.mission_info_offset + pulse_dy)
-            surf.blit(self.mission_info_disp, pos)
+                self.mission_info_offset = max(0, self.mission_info_offset - 10)
+
+            # Only draw if at least partially visible (avoids drawing fully off-screen)
+            if self.mission_info_offset < self.mission_info_disp.get_height() + 4:
+                # Pulse animation: gentle vertical bob when mission state changes
+                pulse_dy = 0
+                elapsed = engine.get_time() - self._mission_pulse_start
+                if 0 <= elapsed < self._mission_pulse_duration:
+                    progress = elapsed / self._mission_pulse_duration
+                    # Decaying sine bob, stronger early then fades out
+                    decay = 1.0 - progress
+                    pulse_dy = -int(round(4 * decay * abs(math.sin(progress * math.pi * 4))))
+
+                pos_x = 4
+                pos_y = 1 - self.mission_info_offset + pulse_dy
+
+                # Glow: yellow outline behind the box, pulsing alpha
+                glow_elapsed = engine.get_time() - self._mission_glow_start
+                if 0 <= glow_elapsed < self._mission_glow_duration:
+                    glow_progress = glow_elapsed / self._mission_glow_duration
+                    glow_alpha = max(0.0, 1.0 - glow_progress)
+                    glow_alpha *= 0.5 + 0.5 * math.sin(glow_elapsed * 0.012)
+                    glow_alpha = max(0.0, min(1.0, glow_alpha))
+                    glow_color = (255, 230, 80)
+                    box_w = self.mission_info_disp.get_width()
+                    box_h = self.mission_info_disp.get_height()
+                    glow_surf = engine.create_surface((box_w + 6, box_h + 6), transparent=True)
+                    engine.fill(glow_surf, glow_color, None, engine.BLEND_RGB_ADD)
+                    glow_surf = image_mods.make_translucent(glow_surf, 1.0 - glow_alpha * 0.6)
+                    surf.blit(glow_surf, (pos_x - 3, pos_y - 3))
+
+                surf.blit(self.mission_info_disp, (pos_x, pos_y))
+
+        # Mission notification banner (top-center)
+        self._draw_mission_banner(surf)
 
         return surf
 
@@ -387,6 +442,80 @@ class UIView():
         pos = (bg_surf.get_width()//2 - width//2, 22 - height)
         render_text(bg_surf, ['text'], [name], [None], pos)
         return bg_surf
+
+    def _enqueue_mission_banner(self, text, color, sfx=None):
+        """Queue a banner notification. color: 'yellow'|'green'|'blue'."""
+        # Avoid duplicating an identical banner that's already pending/active
+        for entry in self._mission_banner_queue:
+            if entry['text'] == text and entry.get('start') is None:
+                return
+        self._mission_banner_queue.append({
+            'text': text,
+            'color': color,
+            'start': None,           # set when it becomes active
+            'duration': 2200,        # total ms visible
+            'slide_in': 250,         # ms slide-in
+            'slide_out': 350,        # ms slide-out
+            'sfx': sfx,
+        })
+
+    def _draw_mission_banner(self, surf):
+        if not self._mission_banner_queue:
+            return
+        entry = self._mission_banner_queue[0]
+        now = engine.get_time()
+        if entry['start'] is None:
+            entry['start'] = now
+            if entry.get('sfx'):
+                try:
+                    get_sound_thread().play_sfx(entry['sfx'])
+                except Exception:
+                    pass
+        elapsed = now - entry['start']
+        if elapsed >= entry['duration']:
+            self._mission_banner_queue.pop(0)
+            return
+
+        text = entry['text']
+        color = entry['color']
+        font_key = {'yellow': 'text-yellow', 'green': 'text-green',
+                    'red': 'text-red', 'blue': 'text-blue'}.get(color, 'text-yellow')
+
+        text_w = text_width('text', text)
+        banner_w = text_w + 40
+        banner_h = 22
+        bg = base_surf.create_base_surf(banner_w, banner_h)
+        # Draw text centered
+        tx = (banner_w - text_w) // 2
+        ty = (banner_h - FONT['text'].height) // 2
+        render_text(bg, [font_key], [text], [None], (tx, ty))
+        bg = image_mods.make_translucent(bg, .05)
+
+        # Slide in/out animation
+        slide_in = entry['slide_in']
+        slide_out = entry['slide_out']
+        hold_end = entry['duration'] - slide_out
+        target_y = 6
+        if elapsed < slide_in:
+            t = elapsed / slide_in
+            # ease-out cubic
+            t = 1 - (1 - t) ** 3
+            y = int(-banner_h + (target_y + banner_h) * t)
+            alpha = t
+        elif elapsed < hold_end:
+            y = target_y
+            alpha = 1.0
+        else:
+            t = (elapsed - hold_end) / slide_out
+            t = t * t
+            y = int(target_y - (banner_h + target_y + 4) * t)
+            alpha = max(0.0, 1.0 - t)
+
+        if alpha < 1.0:
+            bg = image_mods.make_translucent(bg, 1.0 - alpha)
+
+        x = (WINWIDTH - banner_w) // 2
+        surf.blit(bg, (x, y))
 
     def _get_mission_info(self):
         """

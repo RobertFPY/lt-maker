@@ -302,16 +302,7 @@
                 false
             ]
         ],
-        "learned_skills": [
-            [
-                1,
-                "Aether_T4"
-            ],
-            [
-                1,
-                "Test"
-            ]
-        ],
+        "learned_skills": [],
         "unit_notes": [],
         "wexp_gain": {
             "Sword": [
@@ -3523,16 +3514,7 @@
                 true
             ]
         ],
-        "learned_skills": [
-            [
-                1,
-                "Gamble_T1"
-            ],
-            [
-                1,
-                "Zeal_T1"
-            ]
-        ],
+        "learned_skills": [],
         "unit_notes": [],
         "wexp_gain": {
             "Sword": [

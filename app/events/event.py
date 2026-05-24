@@ -186,6 +186,20 @@ class Event():
 
     def _update_state(self, dialog_log=True):
         current_time = engine.get_time()
+        # Soft-pause command processing while a mission banner is on screen,
+        # so the next event command (background change, dialog, transition,
+        # tile_anim, etc.) doesn't fire underneath/over the banner before the
+        # player has a chance to read it. We only block 'processing' — dialogs
+        # already on screen, ongoing waits, blocked sub-states, and movement
+        # updates continue to tick normally. Skipping the event bypasses this.
+        if not self.do_skip and self.state == 'processing':
+            try:
+                ui_view = getattr(self.game, 'ui_view', None)
+                if ui_view is not None and hasattr(ui_view, 'is_mission_banner_active') \
+                        and ui_view.is_mission_banner_active():
+                    return
+            except Exception:
+                pass
         # Can move through its own internal state up to 5 times in a frame
         counter = 0
         while counter < 5:

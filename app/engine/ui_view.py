@@ -441,6 +441,13 @@ class UIView():
         self._mission_pulse_start = engine.get_time()
         self._mission_glow_start = engine.get_time()
 
+    def is_mission_banner_active(self):
+        """Returns True while a mission banner is queued or currently
+        animating on screen. Used by the event system to soft-pause command
+        processing so the banner doesn't get covered by subsequent dialog /
+        background changes / transitions while it is visible."""
+        return bool(self._mission_banner_queue)
+
     def _enqueue_mission_banner(self, text, color, sfx=None):
         """Queue a banner notification. color: 'yellow'|'green'|'red'|'blue'."""
         # Coalesce: if an identical banner is already pending or just appeared

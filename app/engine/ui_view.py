@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from app.engine.graphics.text.text_renderer import fix_tags, render_text, text_width
 import logging
+import math
 from app.engine.text_evaluator import TextEvaluator
 import app.engine.config as cf
 from app.constants import TILEX, TILEY, WINHEIGHT, WINWIDTH
@@ -15,6 +16,7 @@ from app.engine.game_menus import menu_options
 from app.engine.game_counters import ANIMATION_COUNTERS
 from app.engine.game_state import game
 from app.engine.sprites import SPRITES
+from app.engine.sound import get_sound_thread
 from app.utilities import utils
 from app.utilities.enums import HAlignment
 
@@ -35,6 +37,7 @@ class UIView():
         self.unit_info_disp = None
         self.tile_info_disp = None
         self.obj_info_disp = None
+        self.mission_info_disp = None
         self.attack_info_disp = None
         self.spell_info_disp = None
         self.initiative_info_disp = None
@@ -43,6 +46,7 @@ class UIView():
 
         self.unit_info_offset = 0
         self.obj_info_offset = 0
+        self.mission_info_offset = 0
         self.attack_info_offset = 0
         self.initiative_info_offset = 0
 
@@ -55,6 +59,19 @@ class UIView():
         self.remove_unit_info = True
         self.prev_unit_info_top = False
         self.obj_top = False
+        self.mission_top = True
+
+        # Pulse animation when mission state changes
+        self._mission_last_signature = None
+        self._mission_pulse_start = 0
+        self._mission_pulse_duration = 1500  # ms - longer pulse with glow
+        self._mission_glow_start = 0
+        self._mission_glow_duration = 2500  # ms - yellow border glow
+
+        # Mission notification banner (top-center, slides down)
+        # Each entry: {'text': str, 'color': 'green'|'yellow'|'blue', 'start': int, 'duration': int}
+        self._mission_banner_queue = []
+        self._mission_last_show = False  # tracks show_mission for new-mission banner
 
     def remove_unit_display(self):
         self.remove_unit_info = True
@@ -115,6 +132,21 @@ class UIView():
             self.obj_info_offset += 10
             if self.obj_info_offset >= 100:
                 self.obj_info_disp = None
+
+        # Mission info handling (top-left counter box).
+        # Notifications (banner / pulse / glow) are NOT detected here anymore — they
+        # are pushed instantly from action.SetLevelVar via notify_mission_change(),
+        # so they show the moment the var flips, regardless of game state (dialog,
+        # enemy phase, etc.). This block only handles rendering the box itself.
+        mission_info = self._get_mission_info()
+        if game.state.current() in self.legal_states and cf.SETTINGS.get('show_mission', 1) and mission_info is not None:
+            self.mission_info_disp = self.create_mission_info(mission_info)
+            self.mission_info_offset -= 10
+            self.mission_info_offset = max(0, self.mission_info_offset)
+        elif self.mission_info_disp:
+            self.mission_info_offset += 10
+            if self.mission_info_offset >= 100:
+                self.mission_info_disp = None
 
         if (game.state.current() in self.legal_states or game.state.current() in self.initiative_states) \
                 and DB.constants.value('initiative') \
@@ -206,6 +238,59 @@ class UIView():
                 surf.blit(self.initiative_info_disp, (0, ypos))
             else:
                 surf.blit(self.initiative_info_disp, (0, 0))
+
+        # Mission info box: top-left only. INSTANTLY hides whenever something is
+        # occupying the top-left corner (unit_info, tile_info) or when the cursor
+        # is in the upper portion of the screen (which causes the engine to draw
+        # the unit/tile info there). No fade — vanish completely so it never
+        # overlaps important UI.
+        if self.mission_info_disp and not self.initiative_info_disp:
+            unit_info_blocking_top_left = bool(self.unit_info_disp) and self.prev_unit_info_top
+            tile_info_blocking_top_left = bool(self.tile_info_disp) and self.prev_unit_info_top
+            cursor_in_top_half = (
+                game.cursor.position[1] < TILEY // 2 + game.camera.get_y() and
+                not (game.cursor.position[0] > TILEX // 2 + game.camera.get_x() - 1)
+            )
+            should_hide = unit_info_blocking_top_left or tile_info_blocking_top_left or cursor_in_top_half
+
+            if should_hide:
+                # Snap fully off-screen — no animation
+                self.mission_info_offset = self.mission_info_disp.get_height() + 10
+            else:
+                self.mission_info_offset = max(0, self.mission_info_offset - 10)
+
+            # Only draw if at least partially visible
+            if self.mission_info_offset < self.mission_info_disp.get_height():
+                # Pulse animation: gentle vertical bob when mission state changes
+                pulse_dy = 0
+                elapsed = engine.get_time() - self._mission_pulse_start
+                if 0 <= elapsed < self._mission_pulse_duration:
+                    progress = elapsed / self._mission_pulse_duration
+                    decay = 1.0 - progress
+                    pulse_dy = -int(round(4 * decay * abs(math.sin(progress * math.pi * 4))))
+
+                pos_x = 4
+                pos_y = 1 - self.mission_info_offset + pulse_dy
+
+                # Glow: yellow outline behind the box, pulsing alpha
+                glow_elapsed = engine.get_time() - self._mission_glow_start
+                if 0 <= glow_elapsed < self._mission_glow_duration:
+                    glow_progress = glow_elapsed / self._mission_glow_duration
+                    glow_alpha = max(0.0, 1.0 - glow_progress)
+                    glow_alpha *= 0.5 + 0.5 * math.sin(glow_elapsed * 0.012)
+                    glow_alpha = max(0.0, min(1.0, glow_alpha))
+                    glow_color = (255, 230, 80)
+                    box_w = self.mission_info_disp.get_width()
+                    box_h = self.mission_info_disp.get_height()
+                    glow_surf = engine.create_surface((box_w + 6, box_h + 6), transparent=True)
+                    engine.fill(glow_surf, glow_color, None, engine.BLEND_RGB_ADD)
+                    glow_surf = image_mods.make_translucent(glow_surf, 1.0 - glow_alpha * 0.6)
+                    surf.blit(glow_surf, (pos_x - 3, pos_y - 3))
+
+                surf.blit(self.mission_info_disp, (pos_x, pos_y))
+
+        # Mission notification banner (top-most overlay)
+        self.draw_mission_banner(surf)
 
         return surf
 
@@ -327,6 +412,220 @@ class UIView():
         pos = (bg_surf.get_width()//2 - width//2, 22 - height)
         render_text(bg_surf, ['text'], [name], [None], pos)
         return bg_surf
+
+    def notify_mission_change(self, kind):
+        """
+        Public hook called from action.SetLevelVar the moment a relevant
+        level_var changes. Fires the appropriate banner + pulse + glow
+        immediately so the player sees feedback regardless of the current
+        game state (dialog, enemy phase, etc.).
+
+        kind: 'show' | 'new' | 'complete' | 'all_complete' | 'failed'
+        """
+        if not cf.SETTINGS.get('show_mission', 1):
+            return
+
+        text, color, sfx = None, 'yellow', None
+        if kind == 'show' or kind == 'new':
+            text, color, sfx = "New Mission Found!", 'yellow', 'Item'
+        elif kind == 'complete':
+            text, color, sfx = "Mission Complete!", 'green', 'Level Up'
+        elif kind == 'all_complete':
+            text, color, sfx = "All Missions Complete!", 'green', 'StageClear'
+        elif kind == 'failed':
+            text, color, sfx = "Mission Failed!", 'red', 'Death'
+        if not text:
+            return
+
+        self._enqueue_mission_banner(text, color, sfx=sfx)
+        self._mission_pulse_start = engine.get_time()
+        self._mission_glow_start = engine.get_time()
+
+    def _enqueue_mission_banner(self, text, color, sfx=None):
+        """Queue a banner notification. color: 'yellow'|'green'|'red'|'blue'."""
+        # Coalesce: if an identical banner is already pending or just appeared
+        # within the last 250ms, don't double up.
+        now = engine.get_time()
+        for entry in self._mission_banner_queue:
+            if entry['text'] == text:
+                if entry.get('start') is None:
+                    return
+                if now - entry['start'] < 250:
+                    return
+        self._mission_banner_queue.append({
+            'text': text,
+            'color': color,
+            'start': None,           # set when it becomes active
+            'duration': 1900,        # total ms visible
+            'pop_in': 250,           # ms scale-pop in
+            'pop_out': 300,          # ms fade + slight scale-down out
+            'sfx': sfx,
+        })
+
+    def draw_mission_banner(self, surf):
+        """Public draw entrypoint — safe to call from any state's draw().
+        Renders the active banner (if any) at the screen center with a
+        scale-pop animation."""
+        if not self._mission_banner_queue:
+            return
+        entry = self._mission_banner_queue[0]
+        now = engine.get_time()
+        if entry['start'] is None:
+            entry['start'] = now
+            if entry.get('sfx'):
+                try:
+                    get_sound_thread().play_sfx(entry['sfx'])
+                except Exception:
+                    pass
+        elapsed = now - entry['start']
+        if elapsed >= entry['duration']:
+            self._mission_banner_queue.pop(0)
+            return
+
+        text = entry['text']
+        color = entry['color']
+        font_key = {'yellow': 'text-yellow', 'green': 'text-green',
+                    'red': 'text-red', 'blue': 'text-blue'}.get(color, 'text-yellow')
+
+        text_w = text_width('text', text)
+        banner_w = text_w + 40
+        banner_h = 24
+        bg = base_surf.create_base_surf(banner_w, banner_h)
+        tx = (banner_w - text_w) // 2
+        ty = (banner_h - FONT['text'].height) // 2
+        render_text(bg, [font_key], [text], [None], (tx, ty))
+        bg = image_mods.make_translucent(bg, .05)
+
+        # Scale-pop animation
+        pop_in = entry['pop_in']
+        pop_out = entry['pop_out']
+        hold_end = entry['duration'] - pop_out
+        if elapsed < pop_in:
+            # 0.3 -> 1.1 -> 1.0 with ease-out
+            t = elapsed / pop_in
+            if t < 0.7:
+                # Grow phase 0.3 -> 1.1
+                p = t / 0.7
+                p = 1 - (1 - p) ** 3
+                scale = 0.3 + (1.1 - 0.3) * p
+            else:
+                # Settle 1.1 -> 1.0
+                p = (t - 0.7) / 0.3
+                scale = 1.1 - 0.1 * p
+            alpha = min(1.0, t * 2.5)
+        elif elapsed < hold_end:
+            scale = 1.0
+            alpha = 1.0
+        else:
+            t = (elapsed - hold_end) / pop_out
+            scale = 1.0 - 0.05 * t
+            alpha = max(0.0, 1.0 - t * t)
+
+        new_w = max(1, int(banner_w * scale))
+        new_h = max(1, int(banner_h * scale))
+        if new_w != banner_w or new_h != banner_h:
+            try:
+                bg = engine.transform_scale(bg, (new_w, new_h))
+            except Exception:
+                pass
+
+        if alpha < 1.0:
+            bg = image_mods.make_translucent(bg, 1.0 - alpha)
+
+        # Center on screen
+        x = (WINWIDTH - new_w) // 2
+        y = (WINHEIGHT - new_h) // 2
+        surf.blit(bg, (x, y))
+
+
+    def _get_mission_info(self):
+        """
+        Read mission data model from level_vars and return {'done', 'total', 'title'}
+        or None if no missions are registered / mission box is hidden.
+
+        Data model (set via events):
+            level_var.show_mission        -> bool, whether to show the mission box at all
+            level_var.mission_count       -> int, total number of chapter missions
+            level_var.mission_<i>_state   -> 'inactive' | 'active' | 'done' | 'failed' | 'claimed'
+            level_var.mission_<i>_title   -> str, optional, used for second-line preview
+        States 'done' and 'claimed' both count as completed.
+        """
+        if not game.level_vars:
+            return None
+        if not game.level_vars.get('show_mission'):
+            return None
+
+        count = game.level_vars.get('mission_count', 0)
+        try:
+            count = int(count)
+        except (TypeError, ValueError):
+            count = 0
+
+        # Backward-compat: if no mission_count is set, fall back to scanning the
+        # legacy mission_status1, mission_status2... pattern (red = active, green = done).
+        if count <= 0:
+            legacy_done = 0
+            legacy_total = 0
+            i = 1
+            _sentinel = object()
+            while True:
+                key = 'mission_status%d' % i
+                raw = game.level_vars.get(key, _sentinel)
+                if raw is _sentinel:
+                    break
+                legacy_total += 1
+                val = str(raw).strip().strip("'\"").lower()
+                if val == 'green':
+                    legacy_done += 1
+                i += 1
+            if legacy_total == 0:
+                return None
+            return {'done': legacy_done, 'total': legacy_total, 'title': None}
+
+        done = 0
+        first_active_title = None
+        for i in range(1, count + 1):
+            state = str(game.level_vars.get('mission_%d_state' % i, 'inactive')).strip().strip("'\"").lower()
+            if state in ('done', 'claimed'):
+                done += 1
+            elif state == 'active' and first_active_title is None:
+                title = game.level_vars.get('mission_%d_title' % i, None)
+                if title:
+                    first_active_title = str(title)
+        return {'done': done, 'total': count, 'title': first_active_title}
+
+    def create_mission_info(self, info):
+        """Render the small top-left mission counter box, styled like the objective box."""
+        done = info['done']
+        total = info['total']
+        text = "Missions  %d/%d" % (done, total)
+        # Choose gem color: green when all done, blue otherwise
+        gem_name = 'combat_gem_green' if (total > 0 and done >= total) else 'combat_gem_blue'
+
+        text_w = text_width('text', text)
+        # Reserve 12px on the left for a small icon (chapter-symbol shimmer); padding 8 right
+        inner_w = 12 + 4 + text_w
+        bg_surf = base_surf.create_base_surf(inner_w + 16, 24)
+
+        shimmer = SPRITES.get('menu_shimmer1')
+        if shimmer:
+            bg_surf.blit(shimmer, (bg_surf.get_width() - 1 - shimmer.get_width(), 4))
+
+        surf = engine.create_surface((bg_surf.get_width(), bg_surf.get_height() + 3), transparent=True)
+        surf.blit(bg_surf, (0, 3))
+
+        gem = SPRITES.get(gem_name)
+        if gem:
+            surf.blit(gem, (bg_surf.get_width() // 2 - gem.get_width() // 2, 0))
+        surf = image_mods.make_translucent(surf, .1)
+
+        # Render text vertically centered in the bg portion
+        pos_x = 8
+        pos_y = 3 + (bg_surf.get_height() - FONT['text'].height) // 2
+        # Use yellow when complete, white-ish otherwise
+        font_key = 'text-yellow' if (total > 0 and done >= total) else 'text'
+        render_text(surf, [font_key], [text], [None], (pos_x, pos_y))
+        return surf
 
     def create_obj_info(self):
         obj = game.level.objective['simple'] or ""

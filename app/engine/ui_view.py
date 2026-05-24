@@ -61,7 +61,7 @@ class UIView():
         self.mission_top = True
         # Tracks the previous show_mission flag so we can fire a "new mission" alert
         self._prev_show_mission = False
-        # Tracks per-mission status to detect red->green transitions
+        # Tracks per-mission status to detect false->true transitions (completed)
         self._prev_mission_statuses = {}
 
     def remove_unit_display(self):
@@ -421,15 +421,15 @@ class UIView():
         
         self._prev_show_mission = current_show_mission
         
-        # Check mission status transitions (red → green = completed)
+        # Check mission status transitions (false → true = completed)
         # Count all mission_statusN variables
         mission_vars = {k: v for k, v in game.level_vars.items() if k.startswith('mission_status')}
         
         for mission_key, current_status in mission_vars.items():
             prev_status = self._prev_mission_statuses.get(mission_key, None)
             
-            # Detect completion: red → green
-            if prev_status == 'red' and current_status == 'green':
+            # Detect completion: false → true
+            if prev_status == False and current_status == True:
                 get_sound_thread().play_sfx('MapCursor')
                 game.alerts.append(banner.Custom('Mission Complete!', 'MapCursor'))
         
@@ -441,7 +441,7 @@ class UIView():
         # Count total missions and completed ones
         mission_vars = {k: v for k, v in game.level_vars.items() if k.startswith('mission_status')}
         total_missions = len(mission_vars)
-        completed_missions = sum(1 for v in mission_vars.values() if v == 'green')
+        completed_missions = sum(1 for v in mission_vars.values() if v == True)
         
         if total_missions == 0:
             return None

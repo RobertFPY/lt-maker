@@ -590,6 +590,55 @@ class SetLevelVar(Action):
         game.level_vars[self.nid] = self.val
         # Need to update fog of war when we change it
         self._update_fog_of_war()
+        # Mission notification hook: fires the banner / pulse the moment the
+        # var changes, regardless of which game state we're currently in (so
+        # banner shows during dialog, enemy phase, etc.)
+        self._notify_mission_change()
+
+    def _notify_mission_change(self):
+        try:
+            ui_view = getattr(game, 'ui_view', None)
+            if ui_view is None or not hasattr(ui_view, 'notify_mission_change'):
+                return
+            nid = self.nid
+            if nid == 'show_mission':
+                # Fire when transitioning to a truthy value
+                if self.val and not self.old_val:
+                    ui_view.notify_mission_change('show')
+                return
+            if nid == 'mission_count':
+                try:
+                    new_count = int(self.val or 0)
+                except (TypeError, ValueError):
+                    new_count = 0
+                try:
+                    old_count = int(self.old_val or 0)
+                except (TypeError, ValueError):
+                    old_count = 0
+                if new_count > old_count and game.level_vars.get('show_mission'):
+                    ui_view.notify_mission_change('new')
+                return
+            if nid.startswith('mission_') and nid.endswith('_state'):
+                new_state = str(self.val).strip().strip("'\"").lower() if self.val is not None else ''
+                old_state = str(self.old_val).strip().strip("'\"").lower() if self.old_val is not None else ''
+                # Newly completed
+                if new_state in ('done', 'claimed') and old_state not in ('done', 'claimed'):
+                    # If this was the last remaining mission, fire "all complete"
+                    count = int(game.level_vars.get('mission_count', 0) or 0)
+                    done = 0
+                    for i in range(1, count + 1):
+                        s = str(game.level_vars.get('mission_%d_state' % i, '')).strip().strip("'\"").lower()
+                        if s in ('done', 'claimed'):
+                            done += 1
+                    if count > 0 and done >= count:
+                        ui_view.notify_mission_change('all_complete')
+                    else:
+                        ui_view.notify_mission_change('complete')
+                elif new_state == 'failed' and old_state != 'failed':
+                    ui_view.notify_mission_change('failed')
+        except Exception:
+            # Never let notification glitches break the action
+            pass
 
     def reverse(self):
         if self.already_exists:

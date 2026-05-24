@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from app.engine.graphics.text.text_renderer import fix_tags, render_text, text_width
 import logging
+import math
 from app.engine.text_evaluator import TextEvaluator
 import app.engine.config as cf
 from app.constants import TILEX, TILEY, WINHEIGHT, WINWIDTH
@@ -35,6 +36,7 @@ class UIView():
         self.unit_info_disp = None
         self.tile_info_disp = None
         self.obj_info_disp = None
+        self.mission_info_disp = None
         self.attack_info_disp = None
         self.spell_info_disp = None
         self.initiative_info_disp = None
@@ -43,6 +45,7 @@ class UIView():
 
         self.unit_info_offset = 0
         self.obj_info_offset = 0
+        self.mission_info_offset = 0
         self.attack_info_offset = 0
         self.initiative_info_offset = 0
 
@@ -55,6 +58,12 @@ class UIView():
         self.remove_unit_info = True
         self.prev_unit_info_top = False
         self.obj_top = False
+        self.mission_top = True
+
+        # Pulse animation when mission state changes
+        self._mission_last_signature = None
+        self._mission_pulse_start = 0
+        self._mission_pulse_duration = 600  # ms
 
     def remove_unit_display(self):
         self.remove_unit_info = True
@@ -115,6 +124,24 @@ class UIView():
             self.obj_info_offset += 10
             if self.obj_info_offset >= 100:
                 self.obj_info_disp = None
+
+        # Mission info handling (top-left counter box)
+        mission_info = self._get_mission_info()
+        if game.state.current() in self.legal_states and cf.SETTINGS.get('show_mission', 1) and mission_info is not None:
+            # Detect change for pulse animation
+            signature = (mission_info['done'], mission_info['total'])
+            if signature != self._mission_last_signature:
+                if self._mission_last_signature is not None:
+                    self._mission_pulse_start = engine.get_time()
+                self._mission_last_signature = signature
+            self.mission_info_disp = self.create_mission_info(mission_info)
+            self.mission_info_offset -= 10
+            self.mission_info_offset = max(0, self.mission_info_offset)
+        elif self.mission_info_disp:
+            self.mission_info_offset += 10
+            if self.mission_info_offset >= 100:
+                self.mission_info_disp = None
+                self._mission_last_signature = None
 
         if (game.state.current() in self.legal_states or game.state.current() in self.initiative_states) \
                 and DB.constants.value('initiative') \
@@ -206,6 +233,39 @@ class UIView():
                 surf.blit(self.initiative_info_disp, (0, ypos))
             else:
                 surf.blit(self.initiative_info_disp, (0, 0))
+
+        # Mission info box: top-left, flips to bottom-left when cursor is in top-left.
+        # Yields the top-left to unit_info_disp (when cursor hovers a unit there) by
+        # also flipping to bottom-left in that case, to avoid overlap.
+        if self.mission_info_disp and not self.initiative_info_disp:
+            cursor_in_top_left = (
+                game.cursor.position[1] < TILEY // 2 + game.camera.get_y() and
+                not (game.cursor.position[0] > TILEX // 2 + game.camera.get_x() - 1)
+            )
+            unit_info_blocking_top_left = bool(self.unit_info_disp) and self.prev_unit_info_top
+            place_bottom = cursor_in_top_left or unit_info_blocking_top_left
+
+            # Pulse animation: gentle vertical bob when mission state changes
+            pulse_dy = 0
+            elapsed = engine.get_time() - self._mission_pulse_start
+            if 0 <= elapsed < self._mission_pulse_duration:
+                # Two soft hops: -3px peak
+                progress = elapsed / self._mission_pulse_duration
+                pulse_dy = -int(round(3 * abs(math.sin(progress * math.pi * 2))))
+
+            if place_bottom:
+                if self.mission_top:
+                    self.mission_top = False
+                    self.mission_info_offset = self.mission_info_disp.get_height()
+                pos = (4,
+                       WINHEIGHT - 4 + self.mission_info_offset - self.mission_info_disp.get_height() + pulse_dy)
+            else:
+                if not self.mission_top:
+                    self.mission_top = True
+                    self.mission_info_offset = self.mission_info_disp.get_height()
+                pos = (4,
+                       1 - self.mission_info_offset + pulse_dy)
+            surf.blit(self.mission_info_disp, pos)
 
         return surf
 
@@ -327,6 +387,95 @@ class UIView():
         pos = (bg_surf.get_width()//2 - width//2, 22 - height)
         render_text(bg_surf, ['text'], [name], [None], pos)
         return bg_surf
+
+    def _get_mission_info(self):
+        """
+        Read mission data model from level_vars and return {'done', 'total', 'title'}
+        or None if no missions are registered / mission box is hidden.
+
+        Data model (set via events):
+            level_var.show_mission        -> bool, whether to show the mission box at all
+            level_var.mission_count       -> int, total number of chapter missions
+            level_var.mission_<i>_state   -> 'inactive' | 'active' | 'done' | 'failed' | 'claimed'
+            level_var.mission_<i>_title   -> str, optional, used for second-line preview
+        States 'done' and 'claimed' both count as completed.
+        """
+        if not game.level_vars:
+            return None
+        if not game.level_vars.get('show_mission'):
+            return None
+
+        count = game.level_vars.get('mission_count', 0)
+        try:
+            count = int(count)
+        except (TypeError, ValueError):
+            count = 0
+
+        # Backward-compat: if no mission_count is set, fall back to scanning the
+        # legacy mission_status1, mission_status2... pattern (red = active, green = done).
+        if count <= 0:
+            legacy_done = 0
+            legacy_total = 0
+            i = 1
+            _sentinel = object()
+            while True:
+                key = 'mission_status%d' % i
+                raw = game.level_vars.get(key, _sentinel)
+                if raw is _sentinel:
+                    break
+                legacy_total += 1
+                val = str(raw).strip().strip("'\"").lower()
+                if val == 'green':
+                    legacy_done += 1
+                i += 1
+            if legacy_total == 0:
+                return None
+            return {'done': legacy_done, 'total': legacy_total, 'title': None}
+
+        done = 0
+        first_active_title = None
+        for i in range(1, count + 1):
+            state = str(game.level_vars.get('mission_%d_state' % i, 'inactive')).strip().strip("'\"").lower()
+            if state in ('done', 'claimed'):
+                done += 1
+            elif state == 'active' and first_active_title is None:
+                title = game.level_vars.get('mission_%d_title' % i, None)
+                if title:
+                    first_active_title = str(title)
+        return {'done': done, 'total': count, 'title': first_active_title}
+
+    def create_mission_info(self, info):
+        """Render the small top-left mission counter box, styled like the objective box."""
+        done = info['done']
+        total = info['total']
+        text = "Missions  %d/%d" % (done, total)
+        # Choose gem color: green when all done, blue otherwise
+        gem_name = 'combat_gem_green' if (total > 0 and done >= total) else 'combat_gem_blue'
+
+        text_w = text_width('text', text)
+        # Reserve 12px on the left for a small icon (chapter-symbol shimmer); padding 8 right
+        inner_w = 12 + 4 + text_w
+        bg_surf = base_surf.create_base_surf(inner_w + 16, 24)
+
+        shimmer = SPRITES.get('menu_shimmer1')
+        if shimmer:
+            bg_surf.blit(shimmer, (bg_surf.get_width() - 1 - shimmer.get_width(), 4))
+
+        surf = engine.create_surface((bg_surf.get_width(), bg_surf.get_height() + 3), transparent=True)
+        surf.blit(bg_surf, (0, 3))
+
+        gem = SPRITES.get(gem_name)
+        if gem:
+            surf.blit(gem, (bg_surf.get_width() // 2 - gem.get_width() // 2, 0))
+        surf = image_mods.make_translucent(surf, .1)
+
+        # Render text vertically centered in the bg portion
+        pos_x = 8
+        pos_y = 3 + (bg_surf.get_height() - FONT['text'].height) // 2
+        # Use yellow when complete, white-ish otherwise
+        font_key = 'text-yellow' if (total > 0 and done >= total) else 'text'
+        render_text(surf, [font_key], [text], [None], (pos_x, pos_y))
+        return surf
 
     def create_obj_info(self):
         obj = game.level.objective['simple'] or ""

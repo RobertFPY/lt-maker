@@ -183,11 +183,10 @@ def _convert_script_value_to_python(value: str) -> Tuple[str, bool]:
         return "", False
 
     # Bug 4 (script -> python): user viết `""` (literally hai ký tự quote)
-    # trong event-script để biểu thị empty string. Nếu giữ nguyên ta sẽ
-    # quote nó thành `'""'` — một string chứa hai ký tự quote, sai semantics.
-    # Chuẩn hoá thành empty token; downstream sẽ tự bọc thành `""`.
+    # trong event-script để biểu thị empty string. Trả token đã hoàn chỉnh
+    # `""` (is_expression=True) để call-site không re-quote nó thành `'""'`.
     if value in ('""', "''"):
-        return "", False
+        return '""', True
 
     # Bug 2: nếu value đã là một f-string Python pre-baked (`f"..."` /
     # `f'...'`), nó là biểu thức Python hoàn chỉnh — KHÔNG wrap thêm lớp

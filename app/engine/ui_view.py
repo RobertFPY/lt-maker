@@ -16,6 +16,7 @@ from app.engine.game_menus import menu_options
 from app.engine.game_counters import ANIMATION_COUNTERS
 from app.engine.game_state import game
 from app.engine.sprites import SPRITES
+from app.engine.sound import get_sound_thread
 from app.utilities import utils
 from app.utilities.enums import HAlignment
 
@@ -59,6 +60,13 @@ class UIView():
         self.prev_unit_info_top = False
         self.obj_top = False
         self.mission_top = True
+
+        # Pulse animation when mission state changes
+        self._mission_last_signature = None
+        self._mission_pulse_start = 0
+        self._mission_pulse_duration = 1500  # ms - longer pulse with glow
+        self._mission_glow_start = 0
+        self._mission_glow_duration = 2500  # ms - yellow border glow
 
     def remove_unit_display(self):
         self.remove_unit_info = True
@@ -232,13 +240,12 @@ class UIView():
         # the unit/tile info there). No fade — vanish completely so it never
         # overlaps important UI.
         if self.mission_info_disp and not self.initiative_info_disp:
-            unit_info_blocking_top_left = bool(self.unit_info_disp) and self.prev_unit_info_top
-            tile_info_blocking_top_left = bool(self.tile_info_disp) and self.prev_unit_info_top
-            cursor_in_top_half = (
+            cursor_in_top_left = (
                 game.cursor.position[1] < TILEY // 2 + game.camera.get_y() and
                 not (game.cursor.position[0] > TILEX // 2 + game.camera.get_x() - 1)
             )
-            should_hide = unit_info_blocking_top_left or tile_info_blocking_top_left or cursor_in_top_half
+            unit_info_blocking_top_left = bool(self.unit_info_disp) and self.prev_unit_info_top
+            should_hide = cursor_in_top_left or unit_info_blocking_top_left
 
             if should_hide:
                 # Snap fully off-screen — no animation
@@ -396,7 +403,6 @@ class UIView():
         pos = (bg_surf.get_width()//2 - width//2, 22 - height)
         render_text(bg_surf, ['text'], [name], [None], pos)
         return bg_surf
-
 
     def _get_mission_info(self):
         """

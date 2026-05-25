@@ -234,27 +234,75 @@ class UIView():
             else:
                 surf.blit(self.initiative_info_disp, (0, 0))
 
-        # Mission info box: top-left only. INSTANTLY hides whenever something is
-        # occupying the top-left corner (unit_info, tile_info) or when the cursor
-        # is in the upper portion of the screen (which causes the engine to draw
-        # the unit/tile info there). No fade — vanish completely so it never
-        # overlaps important UI.
+        # Mission info box: dynamically positioned in whichever corner is free.
+        # Preferred corner is top-left (its original home); if that is occupied
+        # by another HUD element (unit_info, tile_info, the cursor itself, etc.)
+        # we cascade through BL → BR → TR. This way the box never overlaps the
+        # other info displays and never has to be hidden as long as a corner is
+        # available. We pick the corner once per frame, but remember the last
+        # choice to avoid flickering when the cursor sweeps across boundaries.
         if self.mission_info_disp and not self.initiative_info_disp:
-            cursor_in_top_left = (
-                game.cursor.position[1] < TILEY // 2 + game.camera.get_y() and
-                not (game.cursor.position[0] > TILEX // 2 + game.camera.get_x() - 1)
-            )
-            unit_info_blocking_top_left = bool(self.unit_info_disp) and self.prev_unit_info_top
-            should_hide = cursor_in_top_left or unit_info_blocking_top_left
+            box_w = self.mission_info_disp.get_width()
+            box_h = self.mission_info_disp.get_height()
 
-            if should_hide:
-                # Snap fully off-screen — no animation
-                self.mission_info_offset = self.mission_info_disp.get_height() + 10
+            cursor_top = game.cursor.position[1] < TILEY // 2 + game.camera.get_y()
+            cursor_right = game.cursor.position[0] > TILEX // 2 + game.camera.get_x() - 1
+
+            # --- Figure out which corners are already taken by other displays ---
+            occupied = {'TL': False, 'TR': False, 'BL': False, 'BR': False}
+
+            # Cursor itself causes the engine to draw unit/tile info in the
+            # opposite vertical half, but the cursor's own corner is "visually
+            # busy" too — treat it as occupied so we never sit directly under
+            # the player's pointer.
+            cursor_corner = ('T' if cursor_top else 'B') + ('R' if cursor_right else 'L')
+            occupied[cursor_corner] = True
+
+            # unit_info_disp corner (see lines ~160-176)
+            if self.unit_info_disp and game.state.current() in self.legal_states:
+                if self.prev_unit_info_top:
+                    occupied['TL'] = True
+                else:
+                    occupied['BL'] = True
+
+            # tile_info_disp corner (see lines ~178-206)
+            if self.tile_info_disp:
+                # tile_info only floats to the top when initiative is showing,
+                # but in that branch we've already bailed out above. So in
+                # practice tile_info lives in the bottom row here.
+                if cursor_right:
+                    occupied['BL'] = True
+                else:
+                    occupied['BR'] = True
+
+            # obj_info_disp corner (see lines ~208-227)
+            if self.obj_info_disp and game.level.objective['simple']:
+                if cursor_top and cursor_right:
+                    occupied['BR'] = True
+                else:
+                    occupied['TR'] = True
+
+            # --- Pick the first free corner in priority order ---
+            priority = ('TL', 'BL', 'BR', 'TR')
+            chosen = None
+            for c in priority:
+                if not occupied[c]:
+                    chosen = c
+                    break
+
+            if chosen is None:
+                # Every corner is busy — snap off-screen rather than overlap.
+                self.mission_info_offset = box_h + 10
             else:
+                # If we changed corner, reset the slide so it animates into the
+                # new spot instead of teleporting.
+                if getattr(self, '_mission_current_corner', None) != chosen:
+                    self._mission_current_corner = chosen
+                    self.mission_info_offset = box_h + 10
                 self.mission_info_offset = max(0, self.mission_info_offset - 10)
 
-            # Only draw if at least partially visible
-            if self.mission_info_offset < self.mission_info_disp.get_height():
+            # Only draw if at least partially visible and a corner is chosen
+            if chosen is not None and self.mission_info_offset < box_h:
                 # Pulse animation: gentle vertical bob when mission state changes
                 pulse_dy = 0
                 elapsed = engine.get_time() - self._mission_pulse_start
@@ -263,8 +311,19 @@ class UIView():
                     decay = 1.0 - progress
                     pulse_dy = -int(round(4 * decay * abs(math.sin(progress * math.pi * 4))))
 
-                pos_x = 4
-                pos_y = 1 - self.mission_info_offset + pulse_dy
+                # Compute (pos_x, pos_y) per corner. Slide direction flips for
+                # the bottom row so the box still slides *in* from off-screen.
+                is_top = chosen[0] == 'T'
+                is_left = chosen[1] == 'L'
+
+                pos_x = 4 if is_left else (WINWIDTH - 4 - box_w)
+                if is_top:
+                    pos_y = 1 - self.mission_info_offset + pulse_dy
+                else:
+                    # Bottom row: anchor to bottom, slide up from below.
+                    # Bob direction also inverted (positive dy = downward bob,
+                    # which reads as "toward the edge" visually).
+                    pos_y = (WINHEIGHT - 3 - box_h) + self.mission_info_offset - pulse_dy
 
                 # Glow: yellow outline behind the box, pulsing alpha
                 glow_elapsed = engine.get_time() - self._mission_glow_start

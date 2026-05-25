@@ -103,6 +103,49 @@ def _strip_quotes(token: str) -> str:
 # pyev1 chạy (xem app/engine/evaluate.py:get_context).
 _VAR_GETTER_RE = re.compile(r"\{([vde]):([^{}]+)\}")
 
+# Match a {v:X} / {d:X} / {e:X} that is wrapped in surrounding single OR
+# double quotes — e.g. `'{v:NAME}'` or `"{d:NAME}"`. Users write the quotes
+# because the raw event-script engine substitutes the value as text first,
+# so the quotes turn it into a string literal at eval time. After we convert
+# `{v:X}` into a Python expression that already yields a str, those quotes
+# would turn the expression itself into a literal source-code string, which
+# is wrong both syntactically (Bug 1: stray apostrophes break the parse) and
+# semantically. We strip the wrapping quotes in a pre-pass.
+_QUOTED_VAR_GETTER_RE = re.compile(
+    r"""(?P<q>['"])\s*(?P<inner>\{[vde]:[^{}]+\})\s*(?P=q)"""
+)
+
+
+def _strip_quoted_var_getters(expr: str) -> str:
+    """Strip the surrounding quotes of any `'{v:X}'` / `"{d:X}"` patterns.
+
+    Only strips when the same quote char is on both sides, so legitimately
+    paired string literals like `'foo'` are left alone.
+    """
+    return _QUOTED_VAR_GETTER_RE.sub(lambda m: m.group("inner"), expr)
+
+
+# Stack of Python loop-variable name *sets*, one entry per nested `for`. When
+# the script-side converter is inside a `for;NID;EXPR` block, NID becomes a
+# Python loop variable in the emitted pyev1, so any later script reference
+# to `{NID}` (engine text-substitution syntax) must instead be emitted as an
+# f-string interpolation `{NID}` inside a Python f-string. Otherwise the arg
+# is passed as the literal text `"{NID}"`, the engine fails to find an event
+# var of that name, and substitutes `None` (see Skill_Swap_Class_Data crash).
+_LOOP_VAR_STACK: List[set] = []
+
+
+def _current_loop_vars() -> set:
+    s = set()
+    for layer in _LOOP_VAR_STACK:
+        s |= layer
+    return s
+
+
+# Match `{NAME}` where NAME is a bare identifier (NO `v:`/`d:`/`e:` prefix);
+# i.e. plain event-var text-substitution like `{unit}` or `{FETCHED_UNIT}`.
+_PLAIN_BRACE_RE = re.compile(r"\{([A-Za-z_][A-Za-z_0-9]*)\}")
+
 
 def _convert_script_expr_to_python(expr: str) -> str:
     """Chuyển 1 biểu thức event-script (`{v:X}`, `{d:X}`, `{e:X}`) sang
@@ -120,6 +163,11 @@ def _convert_script_expr_to_python(expr: str) -> str:
     """
     if not expr:
         return expr
+
+    # Pre-pass: drop quotes wrapping a var getter so they don't become part
+    # of a string literal in the Python output (fixes Bug 1 / Bug 3 cases
+    # like `'{v:X}'.startswith(...)` or `len('{v:X}')`).
+    expr = _strip_quoted_var_getters(expr)
 
     def repl(match: "re.Match") -> str:
         kind = match.group(1)
@@ -155,6 +203,74 @@ def _convert_script_value_to_python(value: str) -> Tuple[str, bool]:
     """
     if not value:
         return "", False
+
+    # Bug 4 (script -> python): user viết `""` (literally hai ký tự quote)
+    # trong event-script để biểu thị empty string. Trả token đã hoàn chỉnh
+    # `""` (is_expression=True) để call-site không re-quote nó thành `'""'`.
+    if value in ('""', "''"):
+        return '""', True
+
+    # Bug 2: nếu value đã là một f-string Python pre-baked (`f"..."` /
+    # `f'...'`), nó là biểu thức Python hoàn chỉnh — KHÔNG wrap thêm lớp
+    # f-string nữa, cũng không strip quote. Chỉ chuyển `{v:X}` bên trong
+    # body f-string thành Python expression interpolation.
+    if (value.startswith('f"') and value.endswith('"') and len(value) >= 3) or \
+       (value.startswith("f'") and value.endswith("'") and len(value) >= 3):
+        body = value[2:-1]
+        body = _strip_quoted_var_getters(body)
+        def _fstr_inner(m2):
+            kind, inner = m2.group(1), m2.group(2).strip()
+            if kind == "e":
+                return "{" + f"({inner})" + "}"
+            if "," in inner and kind == "v":
+                name, fb = inner.split(",", 1)
+                return ("{" f"game.level_vars.get('{name.strip()}', "
+                        f"game.game_vars.get('{name.strip()}', {fb.strip()!r}))" "}")
+            if kind == "v":
+                return ("{" f"game.level_vars.get('{inner}', "
+                        f"game.game_vars.get('{inner}'))" "}")
+            return "{" f"game.level_vars.get('{inner}')" "}"
+        new_body = _VAR_GETTER_RE.sub(_fstr_inner, body)
+        quote = value[1]  # `"` or `'`
+        return f'f{quote}{new_body}{quote}', True
+
+    # Strip quoted-getter wrappers BEFORE deciding whether the result is a
+    # pure expression vs mixed text. After stripping, e.g. `'{v:X}'` becomes
+    # `{v:X}` and the `fullmatch` branch below handles it cleanly.
+    value = _strip_quoted_var_getters(value)
+
+    # If we're inside one or more Python `for` loops, any `{NAME}` referring
+    # to a current loop variable must become an f-string interpolation; the
+    # raw `{NAME}` text would otherwise be sent verbatim to the engine, which
+    # only knows how to substitute event vars (not Python locals).
+    loop_vars = _current_loop_vars()
+    if loop_vars and _PLAIN_BRACE_RE.search(value):
+        # Build an f-string where `{NAME}` for loop vars stays as `{NAME}`,
+        # other `{X}` plain braces are escaped as `{{X}}` so they pass through
+        # to the engine untouched, and `{v:X}` etc. are converted as usual.
+        def _plain(m2):
+            name = m2.group(1)
+            if name in loop_vars:
+                return "{" + name + "}"
+            return "{{" + name + "}}"
+        # First convert {v:X}/{d:X}/{e:X} to f-string slots, then plain braces.
+        def _fstr_typed(m2):
+            kind, inner = m2.group(1), m2.group(2).strip()
+            if kind == "e":
+                return "{" + f"({inner})" + "}"
+            if "," in inner and kind == "v":
+                name, fb = inner.split(",", 1)
+                name, fb = name.strip(), fb.strip()
+                return ("{" f"game.level_vars.get('{name}', "
+                        f"game.game_vars.get('{name}', {fb!r}))" "}")
+            if kind == "v":
+                return ("{" f"game.level_vars.get('{inner}', "
+                        f"game.game_vars.get('{inner}'))" "}")
+            return "{" f"game.level_vars.get('{inner}')" "}"
+        body = _VAR_GETTER_RE.sub(_fstr_typed, value)
+        body = _PLAIN_BRACE_RE.sub(_plain, body)
+        return f'f"{body}"', True
+
     if _VAR_GETTER_RE.search(value):
         m = _VAR_GETTER_RE.fullmatch(value)
         if m:
@@ -278,6 +394,7 @@ def script_to_python(source: str) -> str:
     # và biến đếm số statement đã thêm vào block đó. Khi đóng block mà count==0
     # thì chèn `pass`.
     block_stack: List[List[int]] = []  # [count]
+    _LOOP_VAR_STACK.clear()  # defensive reset between conversions
 
     def _bump_block_count():
         if block_stack:
@@ -291,6 +408,8 @@ def script_to_python(source: str) -> str:
         if count == 0:
             out_lines.append(INDENT_STR * depth + "pass")
         depth = max(0, depth - 1)
+        if _LOOP_VAR_STACK:
+            _LOOP_VAR_STACK.pop()
 
     for raw_line in source.splitlines():
         stripped = raw_line.strip()
@@ -341,6 +460,7 @@ def script_to_python(source: str) -> str:
             out_lines.append(INDENT_STR * depth + f"if {expr}:")
             depth += 1
             block_stack.append([0])
+            _LOOP_VAR_STACK.append(set())  # sentinel: not a for block
             continue
 
         # for: `for;NID;EXPR` -> `for NID in EXPR:`
@@ -352,6 +472,7 @@ def script_to_python(source: str) -> str:
             out_lines.append(INDENT_STR * depth + f"for {var_nid} in {expr}:")
             depth += 1
             block_stack.append([0])
+            _LOOP_VAR_STACK.append({var_nid})
             continue
 
         # Comment giữ nguyên, vẫn thụt lề theo depth
@@ -419,11 +540,31 @@ def _pyev1_line_to_script(line: str) -> Tuple[str, bool]:
         args: List[str] = []
         flags: List[str] = []
         for i, tok in enumerate(rest, start=1):
-            value = _strip_quotes(tok)
-            # Keyword=Value: giữ nguyên key, strip quote khỏi value
-            if "=" in value and re.match(r"^[A-Za-z_][A-Za-z_0-9]*=", value):
-                k, v = value.split("=", 1)
-                value = f"{k}={_strip_quotes(v)}"
+            # Bug 4 (python -> script): an explicit empty-string literal
+            # (`""` or `''`, 2 chars) must round-trip as `""` in the script,
+            # not collapse to a missing arg. Detect BEFORE _strip_quotes.
+            if tok in ('""', "''"):
+                value = '""'
+            else:
+                value = _strip_quotes(tok)
+                # F-string token like f"{FETCHED_UNIT}" produced by the
+                # script->python loop-var fix: convert it back to the script's
+                # native text-substitution form `{FETCHED_UNIT}`. Same for
+                # mixed text like f"prefix_{X}". The engine's text evaluator
+                # handles `{NAME}` substitution natively but doesn't know what
+                # an f-string is, so we strip the `f"..."` wrapper and
+                # un-escape doubled braces back to single braces.
+                if (tok.startswith('f"') and tok.endswith('"') and len(tok) >= 3) or \
+                   (tok.startswith("f'") and tok.endswith("'") and len(tok) >= 3):
+                    body = tok[2:-1]
+                    # `{{` / `}}` were escapes for literal braces in f-string
+                    body = body.replace("{{", "\x00").replace("}}", "\x01")
+                    body = body.replace("\x00", "{").replace("\x01", "}")
+                    value = body
+                # Keyword=Value: giữ nguyên key, strip quote khỏi value
+                elif "=" in value and re.match(r"^[A-Za-z_][A-Za-z_0-9]*=", value):
+                    k, v = value.split("=", 1)
+                    value = f"{k}={_strip_quotes(v)}"
             if i >= flag_idx:
                 flags.append(value)
             else:

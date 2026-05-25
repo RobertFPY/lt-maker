@@ -590,6 +590,11 @@ class SetLevelVar(Action):
         game.level_vars[self.nid] = self.val
         # Need to update fog of war when we change it
         self._update_fog_of_war()
+        # Notify mission info changes for animations
+        if self.nid.startswith('mission_'):
+            from app.engine import ui_view as ui_view_module
+            if hasattr(ui_view_module, 'UIView') and hasattr(game, 'ui_view'):
+                game.ui_view.notify_mission_change()
 
 class SetMovementLeft(Action):
     def __init__(self, unit, val):

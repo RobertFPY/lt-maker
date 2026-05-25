@@ -137,7 +137,7 @@ class UIView():
         # so they show the moment the var flips, regardless of game state (dialog,
         # enemy phase, etc.). This block only handles rendering the box itself.
         mission_info = self._get_mission_info()
-        if game.state.current() in self.legal_states and cf.SETTINGS.get('show_mission', 1) and mission_info is not None:
+        if cf.SETTINGS.get('show_mission', 1) and mission_info is not None:
             self.mission_info_disp = self.create_mission_info(mission_info)
             self.mission_info_offset -= 10
             self.mission_info_offset = max(0, self.mission_info_offset)

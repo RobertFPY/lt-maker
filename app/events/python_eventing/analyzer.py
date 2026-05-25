@@ -227,7 +227,17 @@ class PyEventAnalyzer():
                             nested_event_nid = get_script_from_trigger_script_call(cnode)
                             nested_event_info = self.get_event_info(nested_event_nid)
                             if not nested_event_info:
-                                unsafe_save_calls.append(MalformedTriggerScriptCall(*generate_error_info(cnode)))
+                                # `get_event_info` returns None both when the event
+                                # is missing from the catalog AND when it exists but
+                                # is not a `#pyev1` script (the analyzer compiler
+                                # raises and the bare-except swallows it). Only the
+                                # missing-event case is truly malformed — a regular
+                                # event-script target is a perfectly valid call, we
+                                # just can't recurse into it for AST analysis.
+                                if self._catalog and self._catalog.get_from_nid(nested_event_nid) is not None:
+                                    pass  # exists but not pyev1; skip recursion
+                                else:
+                                    unsafe_save_calls.append(MalformedTriggerScriptCall(*generate_error_info(cnode)))
                             else:
                                 error_info = generate_error_info(cnode)
                                 triggered_script_unsafe_save_calls = self._verify_no_loop_save(nested_event_info, error_info[0], error_info[1])

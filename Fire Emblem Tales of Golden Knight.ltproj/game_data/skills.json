@@ -19068,6 +19068,64 @@
         ]
     },
     {
+        "nid": "Threaten_Def_T2",
+        "name": "Threaten Def",
+        "desc": "Inflicts Def-4 on foes within 2 spaces through their next actions at the start of each turn.",
+        "icon_nid": "All_Skills",
+        "icon_index": [
+            14,
+            6
+        ],
+        "components": [
+            [
+                "class_skill",
+                null
+            ],
+            [
+                "upkeep_aoe_skill_gain",
+                {
+                    "skill": "Threaten_Def_T2_Effect",
+                    "range": 2,
+                    "affect_self": false,
+                    "target": "enemy"
+                }
+            ],
+            [
+                "slotc_skill",
+                null
+            ],
+            [
+                "priority",
+                0
+            ]
+        ]
+    },
+    {
+        "nid": "Threaten_Def_T2_Effect",
+        "name": "Threaten Def 2",
+        "desc": "Def-3.",
+        "icon_nid": "All_Skills",
+        "icon_index": [
+            14,
+            6
+        ],
+        "components": [
+            [
+                "hidden",
+                null
+            ],
+            [
+                "stat_change",
+                [
+                    [
+                        "DEF",
+                        -4
+                    ]
+                ]
+            ]
+        ]
+    },
+    {
         "nid": "Threaten_Attack_T1",
         "name": "Threaten Attack",
         "desc": "Inflicts Atk-3 on foes within 2 spaces through their next actions at the start of each turn.",

@@ -1784,8 +1784,8 @@
             },
             {
                 "nid": "Fighter_Bandit",
-                "Class": "",
-                "Special": "Ire_T1",
+                "Class": "Roar_T1",
+                "Special": "",
                 "SlotA": "",
                 "SlotB": "",
                 "SlotC": "",
@@ -1802,7 +1802,7 @@
             {
                 "nid": "Fighter_Gazabin",
                 "Class": "",
-                "Special": "Ire_T1",
+                "Special": "",
                 "SlotA": "",
                 "SlotB": "",
                 "SlotC": "",

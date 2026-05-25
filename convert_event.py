@@ -103,6 +103,27 @@ def _strip_quotes(token: str) -> str:
 # pyev1 chạy (xem app/engine/evaluate.py:get_context).
 _VAR_GETTER_RE = re.compile(r"\{([vde]):([^{}]+)\}")
 
+# Match a {v:X} / {d:X} / {e:X} that is wrapped in surrounding single OR
+# double quotes — e.g. `'{v:NAME}'` or `"{d:NAME}"`. Users write the quotes
+# because the raw event-script engine substitutes the value as text first,
+# so the quotes turn it into a string literal at eval time. After we convert
+# `{v:X}` into a Python expression that already yields a str, those quotes
+# would turn the expression itself into a literal source-code string, which
+# is wrong both syntactically (Bug 1: stray apostrophes break the parse) and
+# semantically. We strip the wrapping quotes in a pre-pass.
+_QUOTED_VAR_GETTER_RE = re.compile(
+    r"""(?P<q>['"])\s*(?P<inner>\{[vde]:[^{}]+\})\s*(?P=q)"""
+)
+
+
+def _strip_quoted_var_getters(expr: str) -> str:
+    """Strip the surrounding quotes of any `'{v:X}'` / `"{d:X}"` patterns.
+
+    Only strips when the same quote char is on both sides, so legitimately
+    paired string literals like `'foo'` are left alone.
+    """
+    return _QUOTED_VAR_GETTER_RE.sub(lambda m: m.group("inner"), expr)
+
 
 def _convert_script_expr_to_python(expr: str) -> str:
     """Chuyển 1 biểu thức event-script (`{v:X}`, `{d:X}`, `{e:X}`) sang
@@ -120,6 +141,11 @@ def _convert_script_expr_to_python(expr: str) -> str:
     """
     if not expr:
         return expr
+
+    # Pre-pass: drop quotes wrapping a var getter so they don't become part
+    # of a string literal in the Python output (fixes Bug 1 / Bug 3 cases
+    # like `'{v:X}'.startswith(...)` or `len('{v:X}')`).
+    expr = _strip_quoted_var_getters(expr)
 
     def repl(match: "re.Match") -> str:
         kind = match.group(1)
@@ -155,6 +181,43 @@ def _convert_script_value_to_python(value: str) -> Tuple[str, bool]:
     """
     if not value:
         return "", False
+
+    # Bug 4 (script -> python): user viết `""` (literally hai ký tự quote)
+    # trong event-script để biểu thị empty string. Nếu giữ nguyên ta sẽ
+    # quote nó thành `'""'` — một string chứa hai ký tự quote, sai semantics.
+    # Chuẩn hoá thành empty token; downstream sẽ tự bọc thành `""`.
+    if value in ('""', "''"):
+        return "", False
+
+    # Bug 2: nếu value đã là một f-string Python pre-baked (`f"..."` /
+    # `f'...'`), nó là biểu thức Python hoàn chỉnh — KHÔNG wrap thêm lớp
+    # f-string nữa, cũng không strip quote. Chỉ chuyển `{v:X}` bên trong
+    # body f-string thành Python expression interpolation.
+    if (value.startswith('f"') and value.endswith('"') and len(value) >= 3) or \
+       (value.startswith("f'") and value.endswith("'") and len(value) >= 3):
+        body = value[2:-1]
+        body = _strip_quoted_var_getters(body)
+        def _fstr_inner(m2):
+            kind, inner = m2.group(1), m2.group(2).strip()
+            if kind == "e":
+                return "{" + f"({inner})" + "}"
+            if "," in inner and kind == "v":
+                name, fb = inner.split(",", 1)
+                return ("{" f"game.level_vars.get('{name.strip()}', "
+                        f"game.game_vars.get('{name.strip()}', {fb.strip()!r}))" "}")
+            if kind == "v":
+                return ("{" f"game.level_vars.get('{inner}', "
+                        f"game.game_vars.get('{inner}'))" "}")
+            return "{" f"game.level_vars.get('{inner}')" "}"
+        new_body = _VAR_GETTER_RE.sub(_fstr_inner, body)
+        quote = value[1]  # `"` or `'`
+        return f'f{quote}{new_body}{quote}', True
+
+    # Strip quoted-getter wrappers BEFORE deciding whether the result is a
+    # pure expression vs mixed text. After stripping, e.g. `'{v:X}'` becomes
+    # `{v:X}` and the `fullmatch` branch below handles it cleanly.
+    value = _strip_quoted_var_getters(value)
+
     if _VAR_GETTER_RE.search(value):
         m = _VAR_GETTER_RE.fullmatch(value)
         if m:
@@ -419,11 +482,17 @@ def _pyev1_line_to_script(line: str) -> Tuple[str, bool]:
         args: List[str] = []
         flags: List[str] = []
         for i, tok in enumerate(rest, start=1):
-            value = _strip_quotes(tok)
-            # Keyword=Value: giữ nguyên key, strip quote khỏi value
-            if "=" in value and re.match(r"^[A-Za-z_][A-Za-z_0-9]*=", value):
-                k, v = value.split("=", 1)
-                value = f"{k}={_strip_quotes(v)}"
+            # Bug 4 (python -> script): an explicit empty-string literal
+            # (`""` or `''`, 2 chars) must round-trip as `""` in the script,
+            # not collapse to a missing arg. Detect BEFORE _strip_quotes.
+            if tok in ('""', "''"):
+                value = '""'
+            else:
+                value = _strip_quotes(tok)
+                # Keyword=Value: giữ nguyên key, strip quote khỏi value
+                if "=" in value and re.match(r"^[A-Za-z_][A-Za-z_0-9]*=", value):
+                    k, v = value.split("=", 1)
+                    value = f"{k}={_strip_quotes(v)}"
             if i >= flag_idx:
                 flags.append(value)
             else:

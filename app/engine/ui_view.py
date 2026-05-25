@@ -60,8 +60,19 @@ class UIView():
         self.obj_top = False
         self.mission_top = True
 
+        # Mission pulse and glow animation timing
+        self._mission_pulse_start = 0
+        self._mission_pulse_duration = 400  # milliseconds
+        self._mission_glow_start = 0
+        self._mission_glow_duration = 600  # milliseconds
+
     def remove_unit_display(self):
         self.remove_unit_info = True
+
+    def notify_mission_change(self):
+        """Trigger pulse and glow animations when mission state changes."""
+        self._mission_pulse_start = engine.get_time()
+        self._mission_glow_start = engine.get_time()
 
     def get_cursor_right(self):
         return game.cursor.position[0] > TILEX // 2 + game.camera.get_x() - 1

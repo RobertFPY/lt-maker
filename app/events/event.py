@@ -326,15 +326,6 @@ class Event():
         ui_surf = self.foreground_overlay_ui.to_surf()
         surf.blit(ui_surf, (0, 0))
 
-        # Mission notification banner: draw on the absolute top so it remains
-        # visible during dialog / cinematic events, not just on the map state.
-        try:
-            ui_view = getattr(self.game, 'ui_view', None)
-            if ui_view is not None and hasattr(ui_view, 'draw_mission_banner'):
-                ui_view.draw_mission_banner(surf)
-        except Exception:
-            pass
-
         return surf
 
     def end(self):

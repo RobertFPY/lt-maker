@@ -16,7 +16,6 @@ from app.engine.game_menus import menu_options
 from app.engine.game_counters import ANIMATION_COUNTERS
 from app.engine.game_state import game
 from app.engine.sprites import SPRITES
-from app.engine.sound import get_sound_thread
 from app.utilities import utils
 from app.utilities.enums import HAlignment
 
@@ -60,18 +59,6 @@ class UIView():
         self.prev_unit_info_top = False
         self.obj_top = False
         self.mission_top = True
-
-        # Pulse animation when mission state changes
-        self._mission_last_signature = None
-        self._mission_pulse_start = 0
-        self._mission_pulse_duration = 1500  # ms - longer pulse with glow
-        self._mission_glow_start = 0
-        self._mission_glow_duration = 2500  # ms - yellow border glow
-
-        # Mission notification banner (top-center, slides down)
-        # Each entry: {'text': str, 'color': 'green'|'yellow'|'blue', 'start': int, 'duration': int}
-        self._mission_banner_queue = []
-        self._mission_last_show = False  # tracks show_mission for new-mission banner
 
     def remove_unit_display(self):
         self.remove_unit_info = True
@@ -289,9 +276,6 @@ class UIView():
 
                 surf.blit(self.mission_info_disp, (pos_x, pos_y))
 
-        # Mission notification banner (top-most overlay)
-        self.draw_mission_banner(surf)
-
         return surf
 
     def create_initiative_info(self):
@@ -412,130 +396,6 @@ class UIView():
         pos = (bg_surf.get_width()//2 - width//2, 22 - height)
         render_text(bg_surf, ['text'], [name], [None], pos)
         return bg_surf
-
-    def notify_mission_change(self, kind):
-        """
-        Public hook called from action.SetLevelVar the moment a relevant
-        level_var changes. Fires the appropriate banner + pulse + glow
-        immediately so the player sees feedback regardless of the current
-        game state (dialog, enemy phase, etc.).
-
-        kind: 'show' | 'new' | 'complete' | 'all_complete' | 'failed'
-        """
-        if not cf.SETTINGS.get('show_mission', 1):
-            return
-
-        text, color, sfx = None, 'yellow', None
-        if kind == 'show' or kind == 'new':
-            text, color, sfx = "New Mission Found!", 'yellow', 'Item'
-        elif kind == 'complete':
-            text, color, sfx = "Mission Complete!", 'green', 'Level Up'
-        elif kind == 'all_complete':
-            text, color, sfx = "All Missions Complete!", 'green', 'StageClear'
-        elif kind == 'failed':
-            text, color, sfx = "Mission Failed!", 'red', 'Death'
-        if not text:
-            return
-
-        self._enqueue_mission_banner(text, color, sfx=sfx)
-        self._mission_pulse_start = engine.get_time()
-        self._mission_glow_start = engine.get_time()
-
-    def _enqueue_mission_banner(self, text, color, sfx=None):
-        """Queue a banner notification. color: 'yellow'|'green'|'red'|'blue'."""
-        # Coalesce: if an identical banner is already pending or just appeared
-        # within the last 250ms, don't double up.
-        now = engine.get_time()
-        for entry in self._mission_banner_queue:
-            if entry['text'] == text:
-                if entry.get('start') is None:
-                    return
-                if now - entry['start'] < 250:
-                    return
-        self._mission_banner_queue.append({
-            'text': text,
-            'color': color,
-            'start': None,           # set when it becomes active
-            'duration': 1900,        # total ms visible
-            'pop_in': 250,           # ms scale-pop in
-            'pop_out': 300,          # ms fade + slight scale-down out
-            'sfx': sfx,
-        })
-
-    def draw_mission_banner(self, surf):
-        """Public draw entrypoint — safe to call from any state's draw().
-        Renders the active banner (if any) at the screen center with a
-        scale-pop animation."""
-        if not self._mission_banner_queue:
-            return
-        entry = self._mission_banner_queue[0]
-        now = engine.get_time()
-        if entry['start'] is None:
-            entry['start'] = now
-            if entry.get('sfx'):
-                try:
-                    get_sound_thread().play_sfx(entry['sfx'])
-                except Exception:
-                    pass
-        elapsed = now - entry['start']
-        if elapsed >= entry['duration']:
-            self._mission_banner_queue.pop(0)
-            return
-
-        text = entry['text']
-        color = entry['color']
-        font_key = {'yellow': 'text-yellow', 'green': 'text-green',
-                    'red': 'text-red', 'blue': 'text-blue'}.get(color, 'text-yellow')
-
-        text_w = text_width('text', text)
-        banner_w = text_w + 40
-        banner_h = 24
-        bg = base_surf.create_base_surf(banner_w, banner_h)
-        tx = (banner_w - text_w) // 2
-        ty = (banner_h - FONT['text'].height) // 2
-        render_text(bg, [font_key], [text], [None], (tx, ty))
-        bg = image_mods.make_translucent(bg, .05)
-
-        # Scale-pop animation
-        pop_in = entry['pop_in']
-        pop_out = entry['pop_out']
-        hold_end = entry['duration'] - pop_out
-        if elapsed < pop_in:
-            # 0.3 -> 1.1 -> 1.0 with ease-out
-            t = elapsed / pop_in
-            if t < 0.7:
-                # Grow phase 0.3 -> 1.1
-                p = t / 0.7
-                p = 1 - (1 - p) ** 3
-                scale = 0.3 + (1.1 - 0.3) * p
-            else:
-                # Settle 1.1 -> 1.0
-                p = (t - 0.7) / 0.3
-                scale = 1.1 - 0.1 * p
-            alpha = min(1.0, t * 2.5)
-        elif elapsed < hold_end:
-            scale = 1.0
-            alpha = 1.0
-        else:
-            t = (elapsed - hold_end) / pop_out
-            scale = 1.0 - 0.05 * t
-            alpha = max(0.0, 1.0 - t * t)
-
-        new_w = max(1, int(banner_w * scale))
-        new_h = max(1, int(banner_h * scale))
-        if new_w != banner_w or new_h != banner_h:
-            try:
-                bg = engine.transform_scale(bg, (new_w, new_h))
-            except Exception:
-                pass
-
-        if alpha < 1.0:
-            bg = image_mods.make_translucent(bg, 1.0 - alpha)
-
-        # Center on screen
-        x = (WINWIDTH - new_w) // 2
-        y = (WINHEIGHT - new_h) // 2
-        surf.blit(bg, (x, y))
 
 
     def _get_mission_info(self):

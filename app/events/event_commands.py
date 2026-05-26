@@ -811,6 +811,30 @@ Causes the cursor to briefly blink on and off at the indicated *Position*.
     keywords = ["Position"]
     _flags = ["immediate"]
 
+class PanCameraLoop(EventCommand):
+    nid = 'pan_camera_loop'
+    tag = Tags.CURSOR_CAMERA
+
+    desc = \
+        """
+Pans the camera around the map in a loop visiting multiple waypoints. By default, pans to the four corners of the map (top-left, top-right, bottom-right, bottom-left) and then back to center.
+
+Parameters:
+
+1. *Speed*: Camera movement speed (default: 60). Higher values are faster.
+2. *Waypoints*: Optional list of (x, y) coordinates to visit. If omitted, uses default 4-corner pattern.
+
+Extra flags:
+
+1. *no_block*: Event script will continue while camera pans in background.
+        """
+
+    keywords = ["Speed"]
+    optional_keywords = ["*Waypoints"]
+    keyword_types = ["Time", "Position"]
+    _flags = ["no_block"]
+
+
 class ScreenShake(EventCommand):
     nid = 'screen_shake'
     tag = Tags.CURSOR_CAMERA

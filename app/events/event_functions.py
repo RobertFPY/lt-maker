@@ -554,6 +554,52 @@ def flicker_cursor(self: Event, position, flags=None):
         disp_cursor_command2
     ]
 
+def pan_camera_loop(self: Event, speed=None, waypoints=None, flags=None):
+    """
+    Pans the camera around the map visiting multiple waypoints.
+    By default, visits the four corners (top-left, top-right, bottom-right, bottom-left) 
+    and returns to center.
+    
+    Args:
+        speed: Camera movement speed (default: 60). Higher values = faster movement.
+        waypoints: Optional list of (x, y) tuples to visit. If None, uses default 4-corner pattern.
+        flags: Event flags (supports 'no_block' to continue event during pan)
+    """
+    flags = flags or set()
+    
+    if speed is None:
+        speed = 60
+    
+    # Get map dimensions
+    map_width = self.game.tilemap.width
+    map_height = self.game.tilemap.height
+    
+    # Default 4-corner waypoints if not specified
+    if waypoints is None:
+        # Calculate safe waypoints at corners and edges
+        # Add margin of ~2 tiles from edges to avoid extreme viewport
+        margin_x = 2
+        margin_y = 2
+        
+        waypoints = [
+            (margin_x, margin_y),                      # Top-left
+            (map_width - 1 - margin_x, margin_y),     # Top-right
+            (map_width - 1 - margin_x, map_height - 1 - margin_y),  # Bottom-right
+            (margin_x, map_height - 1 - margin_y),    # Bottom-left
+            (map_width // 2, map_height // 2)         # Center
+        ]
+    
+    # Queue move_cursor commands for each waypoint
+    for x, y in waypoints:
+        # Only pass 'no_block' flag to last command; other commands must block
+        # so they execute sequentially
+        move_flags = set()
+        if (x, y) == waypoints[-1] and 'no_block' in flags:
+            move_flags.add('no_block')
+        
+        move_command = event_commands.MoveCursor({'Position': (x, y), 'Speed': speed}, move_flags)
+        self.command_queue.append(move_command)
+
 def screen_shake(self: Event, duration: int, shake_type=None, flags=None):
     flags = flags or set()
     shake_type = shake_type or 'default'

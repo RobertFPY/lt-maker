@@ -830,8 +830,8 @@ Extra flags:
         """
 
     keywords = ["Speed"]
-    optional_keywords = ["*Waypoints"]
-    keyword_types = ["Time", "Position"]
+    optional_keywords = ["Waypoints"]
+    keyword_types = ["Time", "Positions"]
     _flags = ["no_block"]
 
 

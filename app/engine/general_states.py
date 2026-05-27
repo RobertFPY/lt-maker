@@ -934,6 +934,14 @@ class MoveCameraState(State):
     name = 'move_camera'
     transparent = True
 
+    def take_input(self, event):
+        # Allow the player to short-circuit a smooth_camera_path tour with
+        # START when the event opted in via the allow_skip flag.
+        camera = game.camera
+        if getattr(camera, 'path_mode', False) and getattr(camera, 'path_allow_skip', False):
+            if event == 'START' or get_input_manager().is_pressed('START'):
+                camera.request_path_skip()
+
     def update(self):
         super().update()
         if game.camera.at_rest():

@@ -1,8 +1,8 @@
 from __future__ import annotations
-from app.utilities.algorithms.interpolation import tcubic_easing
+from app.utilities.algorithms.interpolation import tcubic_easing, tlerp
 
 import math
-from typing import TYPE_CHECKING, Callable, Tuple, List
+from typing import TYPE_CHECKING, Callable, Optional, Tuple, List
 
 from app.constants import TILEX, TILEY, TILEWIDTH, TILEHEIGHT
 from app.engine import engine
@@ -37,6 +37,26 @@ class Camera():
         self.last_at_rest_time: int = engine.get_time()
         self.last_at_rest_position: Tuple[float, float] = (self.current_x, self.current_y)
 
+        # ----- Continuous multi-waypoint smooth path -----
+        # Driven entirely by elapsed time. Movement is computed from a list of
+        # clamped waypoints with a single ease curve (or linear) applied to the
+        # whole journey, so there is no "hitch" at intermediate waypoints.
+        self.path_mode: bool = False
+        self.path_waypoints: List[Tuple[float, float]] = []
+        self.path_segment_lengths: List[float] = []
+        self.path_total_dist: float = 0.0
+        self.path_start_time: int = 0
+        self.path_duration: int = 0
+        self.path_ease: bool = True
+        self.path_curved: bool = False
+        # When True, lets MoveCameraState (or anyone else) request an early end.
+        self.path_allow_skip: bool = False
+        self._path_skip_requested: bool = False
+        # Optional callable run exactly once when the active path ends (whether
+        # naturally or via skip). Used by event commands to restore cursor /
+        # fade music back without coupling those concerns into the camera.
+        self.path_on_end: Optional[Callable[[], None]] = None
+
         # For screenshake
         self.no_shake = [(0, 0)]
         self.shake = self.no_shake
@@ -44,6 +64,8 @@ class Camera():
         self.shake_end_at = 0
 
     def get_next_position(self) -> Tuple[float, float]:
+        if self.path_mode:
+            return self._path_position()
         diff_x = self.target_x - self.current_x
         diff_y = self.target_y - self.current_y
 
@@ -171,6 +193,8 @@ class Camera():
         return self.shake[self.shake_idx]
 
     def at_rest(self):
+        if self.path_mode:
+            return False
         return self.current_x == self.target_x and self.current_y == self.target_y
 
     def set_target_limits(self, tilemap):
@@ -197,6 +221,131 @@ class Camera():
         # queues up a slower algorithm for the next pan
         self.pan_algorithm = lambda a, b, t: tcubic_easing(a, b, t/duration)
 
+    def do_linear_pan(self, duration):
+        # Constant-speed pan algorithm. Useful for chaining several move_cursor
+        # commands without an ease-out/ease-in "hitch" at every waypoint.
+        self.pan_algorithm = lambda a, b, t: tlerp(a, b, t/duration)
+
+    # -------------------- Continuous smooth path --------------------
+
+    def start_smooth_path(self, waypoints: List[Tuple[float, float]], duration: int,
+                          ease: bool = True, curved: bool = False, allow_skip: bool = False):
+        """
+        Begin a continuous multi-waypoint pan. The camera will travel through
+        every waypoint without stopping. Time is distributed by *arc length*
+        across linear segments (or the spline arc when curved=True), so a
+        constant t maps to a constant distance and the motion is uniform.
+
+        Args:
+            waypoints: list of (tile_x, tile_y) targets, in order.
+            duration: total travel time in milliseconds.
+            ease: if True, ease-in/out across the whole path (smoothstep);
+                  if False, linear timing.
+            curved: if True, smooth the path with a Catmull-Rom spline so the
+                    camera bows gently around corners instead of bending sharply.
+            allow_skip: if True, MoveCameraState will end the path early when
+                        START is pressed.
+        """
+        if not waypoints or duration <= 0:
+            return
+
+        # Convert each waypoint into a clamped camera-target position, the same
+        # way move_cursor would have placed it, so the path stays valid.
+        anchored: List[Tuple[float, float]] = [(self.current_x, self.current_y)]
+        saved_tx, saved_ty = self.target_x, self.target_y
+        self.target_x, self.target_y = self.current_x, self.current_y
+        for (wx, wy) in waypoints:
+            cx = self._change_x(wx)
+            cy = self._change_y(wy)
+            self.target_x, self.target_y = cx, cy
+            anchored.append((cx, cy))
+        self.target_x, self.target_y = saved_tx, saved_ty
+
+        # De-duplicate consecutive identical points (zero-length segments break
+        # arc-length parameterization).
+        deduped: List[Tuple[float, float]] = [anchored[0]]
+        for p in anchored[1:]:
+            if p != deduped[-1]:
+                deduped.append(p)
+        if len(deduped) < 2:
+            return
+
+        if curved:
+            # Sample Catmull-Rom spline densely; the resulting polyline behaves
+            # exactly like the linear branch for arc-length parameterization.
+            sampled = _sample_catmull_rom(deduped, samples_per_segment=16)
+        else:
+            sampled = deduped
+
+        seg_lens: List[float] = []
+        total = 0.0
+        for i in range(len(sampled) - 1):
+            ax, ay = sampled[i]
+            bx, by = sampled[i + 1]
+            d = math.hypot(bx - ax, by - ay)
+            seg_lens.append(d)
+            total += d
+
+        if total <= 0:
+            return
+
+        self.path_waypoints = sampled
+        self.path_segment_lengths = seg_lens
+        self.path_total_dist = total
+        self.path_start_time = engine.get_time()
+        self.path_duration = duration
+        self.path_ease = ease
+        self.path_curved = curved
+        self.path_allow_skip = allow_skip
+        self._path_skip_requested = False
+        self.path_mode = True
+        self.pan_algorithm = None
+        # Lock target to the final waypoint so legacy logic stays consistent.
+        final_x, final_y = sampled[-1]
+        self.target_x = final_x
+        self.target_y = final_y
+
+    def _path_position(self) -> Tuple[float, float]:
+        """Compute current camera position along the active smooth path."""
+        elapsed = engine.get_time() - self.path_start_time
+        if self.path_duration <= 0:
+            return self.path_waypoints[-1]
+        t = utils.clamp(elapsed / self.path_duration, 0.0, 1.0)
+        if self.path_ease:
+            # Smoothstep-style cubic ease-in/out.
+            if t < 0.5:
+                t = 4 * t * t * t
+            else:
+                t = 1 - math.pow(-2 * t + 2, 3) / 2
+        target_dist = t * self.path_total_dist
+        accum = 0.0
+        for i, seg_len in enumerate(self.path_segment_lengths):
+            if accum + seg_len >= target_dist or i == len(self.path_segment_lengths) - 1:
+                local_t = 0.0 if seg_len <= 0 else (target_dist - accum) / seg_len
+                ax, ay = self.path_waypoints[i]
+                bx, by = self.path_waypoints[i + 1]
+                return (ax + (bx - ax) * local_t, ay + (by - ay) * local_t)
+            accum += seg_len
+        return self.path_waypoints[-1]
+
+    def request_path_skip(self):
+        """End the active smooth path early on the next update (snaps to end)."""
+        if self.path_mode and self.path_allow_skip:
+            self._path_skip_requested = True
+
+    def cancel_smooth_path(self):
+        self.path_mode = False
+        self.path_waypoints = []
+        self.path_segment_lengths = []
+        self.path_total_dist = 0.0
+        self.path_duration = 0
+        self.path_curved = False
+        self.path_allow_skip = False
+        self._path_skip_requested = False
+        self.path_on_end = None
+
+    # -----------------------------------------------------------------
+
     def set_shake(self, shake: List[Tuple[int, int]], duration: int = 0):
         """
         shake - A List of camera offset tuples that will be looped over each frame to create the screen shake effect
@@ -215,6 +364,35 @@ class Camera():
     def update(self):
         # Make sure target is within bounds
         self.set_target_limits(self.game.tilemap)
+
+        if self.path_mode:
+            # Continuous multi-waypoint pan: drive position purely from time.
+            elapsed = engine.get_time() - self.path_start_time
+            if self._path_skip_requested or elapsed >= self.path_duration:
+                # Snap to the final waypoint and exit path mode cleanly.
+                fx, fy = self.path_waypoints[-1]
+                self.current_x = self.target_x = fx
+                self.current_y = self.target_y = fy
+                end_cb = self.path_on_end
+                self.cancel_smooth_path()
+                self.last_at_rest_time = engine.get_time()
+                self.last_at_rest_position = (self.current_x, self.current_y)
+                if end_cb is not None:
+                    try:
+                        end_cb()
+                    except Exception:
+                        pass
+            else:
+                new_x, new_y = self._path_position()
+                self.current_x = new_x
+                self.current_y = new_y
+            self.set_current_limits(self.game.tilemap)
+            # Update screenshake even while panning along a path
+            self.shake_idx += 1
+            self.shake_idx %= len(self.shake)
+            if self.shake_end_at and engine.get_time() > self.shake_end_at:
+                self.reset_shake()
+            return
 
         # Move camera around
         (new_x, new_y) = self.get_next_position()
@@ -247,3 +425,39 @@ class Camera():
         self.shake_idx %= len(self.shake)
         if self.shake_end_at and engine.get_time() > self.shake_end_at:
             self.reset_shake()
+
+
+def _sample_catmull_rom(points: List[Tuple[float, float]], samples_per_segment: int = 16) -> List[Tuple[float, float]]:
+    """
+    Sample a centripetal Catmull-Rom spline through `points`. The first and
+    last points are kept exactly; intermediate corners are bowed gently so the
+    camera does not bend at sharp 90 degree angles.
+    """
+    if len(points) < 2:
+        return list(points)
+    if len(points) == 2:
+        return list(points)
+
+    # Pad endpoints by reflecting so the spline starts/ends at the original points.
+    p0 = (2 * points[0][0] - points[1][0], 2 * points[0][1] - points[1][1])
+    pN = (2 * points[-1][0] - points[-2][0], 2 * points[-1][1] - points[-2][1])
+    pts = [p0] + list(points) + [pN]
+
+    out: List[Tuple[float, float]] = [points[0]]
+    for i in range(len(pts) - 3):
+        p_a, p_b, p_c, p_d = pts[i], pts[i + 1], pts[i + 2], pts[i + 3]
+        for s in range(1, samples_per_segment + 1):
+            t = s / samples_per_segment
+            t2 = t * t
+            t3 = t2 * t
+            # Standard Catmull-Rom basis (tension = 0.5).
+            x = 0.5 * ((2 * p_b[0]) +
+                       (-p_a[0] + p_c[0]) * t +
+                       (2 * p_a[0] - 5 * p_b[0] + 4 * p_c[0] - p_d[0]) * t2 +
+                       (-p_a[0] + 3 * p_b[0] - 3 * p_c[0] + p_d[0]) * t3)
+            y = 0.5 * ((2 * p_b[1]) +
+                       (-p_a[1] + p_c[1]) * t +
+                       (2 * p_a[1] - 5 * p_b[1] + 4 * p_c[1] - p_d[1]) * t2 +
+                       (-p_a[1] + 3 * p_b[1] - 3 * p_c[1] + p_d[1]) * t3)
+            out.append((x, y))
+    return out

@@ -3,6 +3,7 @@ from __future__ import annotations
 import ast
 import json
 import json
+import math
 import random
 from copy import deepcopy
 from copy import deepcopy
@@ -554,41 +555,149 @@ def flicker_cursor(self: Event, position, flags=None):
         disp_cursor_command2
     ]
 
-def smooth_camera_path(self: Event, positions, total_speed=None, flags=None):
+def smooth_camera_path(self: Event, positions, total_speed=None,
+                       tiles_per_second=None, music=None, flags=None):
     """
-    Pans the camera continuously through a list of waypoints over a single
-    total duration, with no "hitch" at intermediate waypoints.
+    Pans the camera continuously through a list of waypoints in a single smooth
+    motion, without "hitching" at intermediate waypoints. Designed for FE5-style
+    intro tours that fly the camera around the map before deploy.
 
     Args:
-        positions: separator (';' or '|') -separated list of "x,y" tile positions,
-            e.g. "49,3;4,3;4,11;49,11"
-        total_speed: total travel time in milliseconds for the whole path. Defaults to 4000.
+        positions: separator (';' or '|') separated list of waypoints. Each
+            waypoint can be:
+                - "x,y" tile coordinates, e.g. "49,3"
+                - the literal "auto" - replaced by the four corners of the
+                  current map (top-right -> top-left -> bottom-left -> bottom-right)
+                - the literal "auto_loop" - same as auto but returns to start
+                - "{lord}"     - position of the first player unit tagged "Lord"
+                - "{deploy}"   - midpoint of all player unit starting positions
+                - "{cursor}"   - current cursor position
+                - "{unit:NID}" - position of a specific unit by nid
+        total_speed: total travel time in ms for the whole path. Defaults to 4000.
+        tiles_per_second: if given, overrides total_speed. The total duration is
+            computed from path length so big maps and small maps move at the
+            same on-screen speed (e.g. 6 tiles/sec is a comfortable cinematic).
+        music: optional music nid. Plays during the tour and fades back when done.
         flags:
-            - linear: constant speed across the whole path (no ease-in/out).
-            - no_block: do not pause the event while the camera travels.
-            - immediate: skip the pan and snap to the final waypoint.
+            - linear:      constant speed across the whole path.
+            - curved:      bow gently around corners (Catmull-Rom spline).
+            - no_block:    do not pause the event while the camera travels.
+            - immediate:   skip the pan and snap to the final waypoint.
+            - allow_skip:  player can press START to end the tour early.
+            - hide_cursor: hide the map cursor during the tour, restore after.
+            - once:        only play this exact path once per chapter (skipped
+                           on suspend/turnwheel reload of the same event).
     """
     flags = flags or set()
     if not positions:
         self.logger.error("smooth_camera_path: No positions provided")
         return
 
+    # ----- Resolve special tokens into concrete waypoint(s) -----
+    tilemap = self.game.tilemap
+    map_w = tilemap.width if tilemap else 0
+    map_h = tilemap.height if tilemap else 0
+    # Inset corners by a few tiles so the camera viewport actually clamps to
+    # the visible map edge instead of trying to look past it.
+    inset_x = min(4, max(0, map_w // 4))
+    inset_y = min(3, max(0, map_h // 4))
+    auto_corners = [
+        (max(0, map_w - 1 - inset_x), inset_y),                  # top-right
+        (inset_x, inset_y),                                       # top-left
+        (inset_x, max(0, map_h - 1 - inset_y)),                   # bottom-left
+        (max(0, map_w - 1 - inset_x), max(0, map_h - 1 - inset_y)),  # bottom-right
+    ]
+
+    def _resolve_token(token: str):
+        token = token.strip()
+        if not token:
+            return []
+        if token == 'auto':
+            return list(auto_corners)
+        if token == 'auto_loop':
+            return list(auto_corners) + [auto_corners[0]]
+        if token == '{cursor}':
+            cx, cy = self.game.cursor.position
+            return [(int(cx), int(cy))]
+        if token == '{lord}':
+            for u in self.game.get_player_units():
+                if 'Lord' in u.tags and u.position:
+                    return [tuple(u.position)]
+            self.logger.warning("smooth_camera_path: no Lord unit on map for {lord}")
+            return []
+        if token == '{deploy}':
+            positions_list = []
+            for u in self.game.level.units:
+                if u.team == 'player' and u.starting_position:
+                    positions_list.append(u.starting_position)
+            if not positions_list:
+                # Fall back to currently-deployed player units
+                positions_list = [u.position for u in self.game.get_player_units() if u.position]
+            if not positions_list:
+                self.logger.warning("smooth_camera_path: no player units found for {deploy}")
+                return []
+            mx = sum(p[0] for p in positions_list) / len(positions_list)
+            my = sum(p[1] for p in positions_list) / len(positions_list)
+            return [(int(round(mx)), int(round(my)))]
+        if token.startswith('{unit:') and token.endswith('}'):
+            nid = token[len('{unit:'):-1]
+            unit = self.game.get_unit(nid)
+            if unit and unit.position:
+                return [tuple(unit.position)]
+            self.logger.warning("smooth_camera_path: unit %s has no position", nid)
+            return []
+        # Fall back to coordinate parsing.
+        parsed = self._parse_pos(token)
+        if not parsed:
+            self.logger.error("smooth_camera_path: could not parse waypoint %s", token)
+            return []
+        return [parsed]
+
     raw_positions = positions.replace('|', ';')
     waypoint_strs = [p.strip() for p in raw_positions.split(';') if p.strip()]
 
     waypoints: List[Tuple[int, int]] = []
     for ps in waypoint_strs:
-        parsed = self._parse_pos(ps)
-        if not parsed:
-            self.logger.error("smooth_camera_path: Could not determine position from %s" % ps)
-            return
-        waypoints.append(parsed)
+        for pos in _resolve_token(ps):
+            waypoints.append(pos)
 
     if not waypoints:
-        self.logger.error("smooth_camera_path: No valid waypoints parsed")
+        self.logger.error("smooth_camera_path: No valid waypoints parsed from %s", positions)
         return
 
-    duration = int(total_speed) if total_speed else 4000
+    # ----- "once" replay protection -----
+    if 'once' in flags:
+        key = '_smooth_camera_path_played::%s::%s' % (
+            getattr(self, 'nid', '') or '_anon_', positions)
+        if self.game.level_vars.get(key):
+            # Already played this tour in this chapter run; just snap and exit.
+            self.game.cursor.set_pos(waypoints[-1])
+            self.game.camera.force_xy(*waypoints[-1])
+            return
+        self.game.level_vars[key] = True
+
+    # ----- Duration: prefer tiles_per_second when provided -----
+    duration: int
+    if tiles_per_second is not None:
+        try:
+            tps = float(tiles_per_second)
+        except (TypeError, ValueError):
+            tps = 0.0
+        if tps > 0:
+            # Approximate path length using straight-line segments from the
+            # current camera position through each waypoint. This is a good
+            # estimate even for the curved spline path.
+            cx, cy = self.game.camera.current_x, self.game.camera.current_y
+            total_dist = 0.0
+            prev = (cx, cy)
+            for (wx, wy) in waypoints:
+                total_dist += math.hypot(wx - prev[0], wy - prev[1])
+                prev = (wx, wy)
+            duration = int(max(1, total_dist / tps * 1000))
+        else:
+            duration = int(total_speed) if total_speed else 4000
+    else:
+        duration = int(total_speed) if total_speed else 4000
 
     self.game.cursor.set_pos(waypoints[-1])
 
@@ -596,13 +705,51 @@ def smooth_camera_path(self: Event, positions, total_speed=None, flags=None):
         self.game.camera.force_xy(*waypoints[-1])
         return
 
+    # Optional music for the tour
+    if music:
+        music_nid = self._resolve_nid(music)
+        if music_nid and music_nid != 'None':
+            get_sound_thread().fade_in(music_nid, fade_in=400)
+
+    if 'hide_cursor' in flags:
+        self.game.cursor.hide()
+
     ease = 'linear' not in flags
-    self.game.camera.start_smooth_path(waypoints, duration, ease=ease)
+    curved = 'curved' in flags
+    allow_skip = 'allow_skip' in flags
+
+    # Build a cleanup callback so cursor / music are restored even if the
+    # player skips the tour mid-way through.
+    hide_cursor = 'hide_cursor' in flags
+    fade_music_back = bool(music)
+
+    if hide_cursor:
+        try:
+            self.game.cursor.hide()
+        except Exception:
+            pass
+
+    def _on_path_end():
+        if hide_cursor:
+            try:
+                self.game.cursor.show()
+            except Exception:
+                pass
+        if fade_music_back:
+            try:
+                get_sound_thread().fade_back(fade_out=400)
+            except Exception:
+                pass
+
+    self.game.camera.start_smooth_path(
+        waypoints, duration, ease=ease, curved=curved, allow_skip=allow_skip)
+    self.game.camera.path_on_end = _on_path_end
 
     if 'no_block' in flags:
         return
     self.game.state.change('move_camera')
-    self.state = 'paused'
+    self.state = 'paused'  # So that the message will leave the update loop
+
 
 def screen_shake(self: Event, duration: int, shake_type=None, flags=None):
     flags = flags or set()

@@ -808,28 +808,50 @@ class SmoothCameraPath(EventCommand):
     desc = \
         """
 Pans the camera *continuously* through a list of waypoints in a single smooth motion,
-without stopping at intermediate waypoints.
+without stopping at intermediate waypoints. Designed for FE5-style intro tours that
+fly the camera around the map before deploy.
 
-*Positions* is a list of map coordinates separated by ';' (or '|'),
-e.g. ``49,3;4,3;4,11;49,11``.
+*Positions* is a separator ('``;``' or '``|``') -separated list of waypoints. Each
+waypoint can be:
 
-*TotalSpeed* is the **total** travel time in milliseconds across the whole path
-(defaults to 4000 ms). Time is distributed by distance, so each segment moves at
-constant velocity unless an ease curve is applied.
+- ``x,y`` tile coordinates, e.g. ``49,3``
+- ``auto`` - replaced by the four corners of the current map.
+- ``auto_loop`` - same as ``auto`` but returns to the starting corner.
+- ``{lord}`` - position of the first player unit tagged ``Lord``.
+- ``{deploy}`` - midpoint of all player unit starting positions.
+- ``{cursor}`` - current cursor position.
+- ``{unit:NID}`` - position of a specific unit by nid.
+
+These can be mixed freely, e.g. ``auto;{deploy}`` to fly four corners then settle
+on the deploy area.
+
+*TotalSpeed* is the total travel time in milliseconds across the whole path
+(defaults to 4000 ms).
+
+*TilesPerSecond* (optional). When given, overrides *TotalSpeed* and computes the
+duration from the path length, so big maps and small maps move at the same
+on-screen speed (try ``6``-``8`` tiles/second for a comfortable cinematic).
+
+*Music* (optional). Plays a song during the tour.
 
 Extra flags:
 
 1. *immediate*: Skip the pan and snap to the final waypoint.
 2. *no_block*: Event script will continue while the camera travels.
 3. *linear*: Constant speed across the whole path. By default, the camera eases in
-   at the start and eases out at the end of the *entire* journey, giving a smooth
-   FE5-style cinematic sweep.
+   at the start and eases out at the end of the *entire* journey.
+4. *curved*: Bow gently around corners using a Catmull-Rom spline, for a more
+   filmic motion than a straight 90-degree bend.
+5. *allow_skip*: Player can press START to end the tour early.
+6. *hide_cursor*: Hide the map cursor during the tour, restore it afterwards.
+7. *once*: Only play this exact path once per chapter run; on suspend or
+   turnwheel reload of the same event, the tour is skipped automatically.
         """
 
     keywords = ["Positions"]
-    optional_keywords = ["TotalSpeed"]
-    keyword_types = ["String", "Time"]
-    _flags = ["immediate", "no_block", "linear"]
+    optional_keywords = ["TotalSpeed", "TilesPerSecond", "Music"]
+    keyword_types = ["String", "Time", "Float", "Music"]
+    _flags = ["immediate", "no_block", "linear", "curved", "allow_skip", "hide_cursor", "once"]
 
 class FlickerCursor(EventCommand):
     nid = 'flicker_cursor'

@@ -1751,6 +1751,24 @@ in the unit's inventory, and then if no matching item is found, check the sub-it
     keywords = ["GlobalUnit", "Item"]
     _flags = ['recursive']
 
+class SortInventory(EventCommand):
+    nid = 'sort_inventory'
+    tag = Tags.MODIFY_UNIT_PROPERTIES
+    desc = \
+        """
+Sorts *GlobalUnit*'s inventory in this order:
+1) the currently equipped weapon (if any), 2) other weapons, 3) other items.
+Accessories are not reordered (they remain in their existing relative slots
+at the end of the inventory, after non-accessory items, matching the engine's
+existing behavior).
+
+If the *reverse* flag is set, the order of non-equipped weapons and the order
+of non-weapon items are reversed (the equipped weapon still stays at the top).
+        """
+
+    keywords = ["GlobalUnit"]
+    _flags = ['reverse']
+
 class RemoveItem(EventCommand):
     nid = 'remove_item'
     tag = Tags.MODIFY_UNIT_PROPERTIES

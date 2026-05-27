@@ -1649,6 +1649,53 @@ def equip_item(self: Event, global_unit, item, flags=None):
     else:
         self.logger.error("equip_item: %s is not an item that can be equipped" % item.nid)
 
+def sort_inventory(self: Event, global_unit, flags=None):
+    """
+    Sorts the unit's inventory so that:
+      group 0: the currently equipped weapon (if present)
+      group 1: other (non-equipped) weapons
+      group 2: everything else (non-weapon, non-accessory items)
+    Accessories are kept in their existing relative order, after non-accessories,
+    consistent with how the engine already organizes the inventory.
+
+    Sorting is stable: items inside the same group keep their original order
+    unless the `reverse` flag is set, in which case the order of group 1 and
+    group 2 is reversed (the equipped weapon still stays first).
+    """
+    flags = flags or set()
+    reverse_flag = 'reverse' in flags
+
+    unit = self._get_unit(global_unit)
+    if not unit:
+        self.logger.error("sort_inventory: Couldn't find unit with nid %s" % global_unit)
+        return
+
+    equipped_weapon = unit.equipped_weapon
+
+    # Split into accessories vs. non-accessories so we don't disturb the
+    # engine's "accessories live at the end" invariant.
+    non_accessories = [it for it in unit.items if not item_system.is_accessory(unit, it)]
+    accessories = [it for it in unit.items if item_system.is_accessory(unit, it)]
+
+    def _group(it):
+        if equipped_weapon is not None and it is equipped_weapon:
+            return 0
+        if item_system.is_weapon(unit, it):
+            return 1
+        return 2
+
+    # Capture original index for stable secondary key.
+    indexed = list(enumerate(non_accessories))
+    if reverse_flag:
+        # Reverse within group 1 and group 2, but keep group 0 first.
+        # Sort by (group, reversed_index_within_group_or_negated_index).
+        indexed.sort(key=lambda pair: (_group(pair[1]), -pair[0]))
+    else:
+        indexed.sort(key=lambda pair: (_group(pair[1]), pair[0]))
+
+    sorted_non_accessories = [it for _, it in indexed]
+    unit.items = sorted_non_accessories + accessories
+
 def remove_item(self: Event, global_unit_or_convoy, item, party=None, flags=None):
     flags = flags or set()
     global_unit = global_unit_or_convoy

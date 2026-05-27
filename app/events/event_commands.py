@@ -773,11 +773,12 @@ Extra flags:
 
 1. *immediate*: Causes the cursor to immediately jump to the target coordinates.
 2. *no_block*: Event script will continue while cursor moves in background.
+3. *linear*: Camera moves at constant speed (no ease-in/out). Useful when chaining multiple move_cursor commands so the camera does not "hitch" at every waypoint.
         """
 
     keywords = ["Position"]
     optional_keywords = ['Speed']
-    _flags = ["immediate", "no_block"]
+    _flags = ["immediate", "no_block", "linear"]
 
 
 class CenterCursor(EventCommand):
@@ -792,11 +793,43 @@ Extra flags:
 
 1. *immediate*: Causes the cursor to immediately jump to the target coordinates.
 2. *no_block*: Event script will continue while cursor moves in background.
+3. *linear*: Camera moves at constant speed (no ease-in/out).
         """
 
     keywords = ["Position"]
     optional_keywords = ['Speed']
-    _flags = ["immediate", "no_block"]
+    _flags = ["immediate", "no_block", "linear"]
+
+class SmoothCameraPath(EventCommand):
+    nid = "smooth_camera_path"
+    nickname = "camera_path"
+    tag = Tags.CURSOR_CAMERA
+
+    desc = \
+        """
+Pans the camera *continuously* through a list of waypoints in a single smooth motion,
+without stopping at intermediate waypoints.
+
+*Positions* is a list of map coordinates separated by ';' (or '|'),
+e.g. ``49,3;4,3;4,11;49,11``.
+
+*TotalSpeed* is the **total** travel time in milliseconds across the whole path
+(defaults to 4000 ms). Time is distributed by distance, so each segment moves at
+constant velocity unless an ease curve is applied.
+
+Extra flags:
+
+1. *immediate*: Skip the pan and snap to the final waypoint.
+2. *no_block*: Event script will continue while the camera travels.
+3. *linear*: Constant speed across the whole path. By default, the camera eases in
+   at the start and eases out at the end of the *entire* journey, giving a smooth
+   FE5-style cinematic sweep.
+        """
+
+    keywords = ["Positions"]
+    optional_keywords = ["TotalSpeed"]
+    keyword_types = ["String", "Time"]
+    _flags = ["immediate", "no_block", "linear"]
 
 class FlickerCursor(EventCommand):
     nid = 'flicker_cursor'

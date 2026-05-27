@@ -554,6 +554,56 @@ def flicker_cursor(self: Event, position, flags=None):
         disp_cursor_command2
     ]
 
+def smooth_camera_path(self: Event, positions, total_speed=None, flags=None):
+    """
+    Pans the camera continuously through a list of waypoints over a single
+    total duration, with no "hitch" at intermediate waypoints.
+
+    Args:
+        positions: separator (';' or '|') -separated list of "x,y" tile positions,
+            e.g. "49,3;4,3;4,11;49,11"
+        total_speed: total travel time in milliseconds for the whole path. Defaults to 4000.
+        flags:
+            - linear: constant speed across the whole path (no ease-in/out).
+            - no_block: do not pause the event while the camera travels.
+            - immediate: skip the pan and snap to the final waypoint.
+    """
+    flags = flags or set()
+    if not positions:
+        self.logger.error("smooth_camera_path: No positions provided")
+        return
+
+    raw_positions = positions.replace('|', ';')
+    waypoint_strs = [p.strip() for p in raw_positions.split(';') if p.strip()]
+
+    waypoints: List[Tuple[int, int]] = []
+    for ps in waypoint_strs:
+        parsed = self._parse_pos(ps)
+        if not parsed:
+            self.logger.error("smooth_camera_path: Could not determine position from %s" % ps)
+            return
+        waypoints.append(parsed)
+
+    if not waypoints:
+        self.logger.error("smooth_camera_path: No valid waypoints parsed")
+        return
+
+    duration = int(total_speed) if total_speed else 4000
+
+    self.game.cursor.set_pos(waypoints[-1])
+
+    if 'immediate' in flags or self.do_skip:
+        self.game.camera.force_xy(*waypoints[-1])
+        return
+
+    ease = 'linear' not in flags
+    self.game.camera.start_smooth_path(waypoints, duration, ease=ease)
+
+    if 'no_block' in flags:
+        return
+    self.game.state.change('move_camera')
+    self.state = 'paused'
+
 def screen_shake(self: Event, duration: int, shake_type=None, flags=None):
     flags = flags or set()
     shake_type = shake_type or 'default'

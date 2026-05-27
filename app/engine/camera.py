@@ -48,6 +48,7 @@ class Camera():
         self.path_start_time: int = 0
         self.path_duration: int = 0
         self.path_ease: bool = True
+        self.path_ramp_frac: float = 0.15
         self.path_curved: bool = False
         # When True, lets MoveCameraState (or anyone else) request an early end.
         self.path_allow_skip: bool = False
@@ -229,7 +230,8 @@ class Camera():
     # -------------------- Continuous smooth path --------------------
 
     def start_smooth_path(self, waypoints: List[Tuple[float, float]], duration: int,
-                          ease: bool = True, curved: bool = False, allow_skip: bool = False):
+                          ease: bool = True, curved: bool = False, allow_skip: bool = False,
+                          ramp_frac: float = 0.15):
         """
         Begin a continuous multi-waypoint pan. The camera will travel through
         every waypoint without stopping. Time is distributed by *arc length*
@@ -239,12 +241,15 @@ class Camera():
         Args:
             waypoints: list of (tile_x, tile_y) targets, in order.
             duration: total travel time in milliseconds.
-            ease: if True, ease-in/out across the whole path (smoothstep);
-                  if False, linear timing.
+            ease: if True, use a trapezoidal velocity profile (smooth ramp-up,
+                  constant cruise, smooth ramp-down). If False, linear timing.
             curved: if True, smooth the path with a Catmull-Rom spline so the
                     camera bows gently around corners instead of bending sharply.
             allow_skip: if True, MoveCameraState will end the path early when
                         START is pressed.
+            ramp_frac: fraction of total time spent ramping up *and* ramping
+                       down (each). 0.15 means 15% accelerate + 70% cruise +
+                       15% decelerate. Smaller -> snappier, larger -> softer.
         """
         if not waypoints or duration <= 0:
             return
@@ -295,6 +300,7 @@ class Camera():
         self.path_start_time = engine.get_time()
         self.path_duration = duration
         self.path_ease = ease
+        self.path_ramp_frac = utils.clamp(ramp_frac, 0.0, 0.49)
         self.path_curved = curved
         self.path_allow_skip = allow_skip
         self._path_skip_requested = False
@@ -312,11 +318,23 @@ class Camera():
             return self.path_waypoints[-1]
         t = utils.clamp(elapsed / self.path_duration, 0.0, 1.0)
         if self.path_ease:
-            # Smoothstep-style cubic ease-in/out.
-            if t < 0.5:
-                t = 4 * t * t * t
+            # Trapezoidal velocity profile: accelerate over `r`, cruise at peak
+            # velocity, then decelerate over `r`. Unlike cubic ease-in/out the
+            # velocity never drops near zero except at the very first / last
+            # instant, so the camera doesn't appear to "creep" at the start
+            # and finish.
+            r = self.path_ramp_frac
+            if r <= 0.0:
+                pass  # linear
             else:
-                t = 1 - math.pow(-2 * t + 2, 3) / 2
+                v_peak = 1.0 / (1.0 - r)
+                if t < r:
+                    t = 0.5 * v_peak * t * t / r
+                elif t <= 1.0 - r:
+                    t = v_peak * (t - 0.5 * r)
+                else:
+                    rem = 1.0 - t
+                    t = 1.0 - 0.5 * v_peak * rem * rem / r
         target_dist = t * self.path_total_dist
         accum = 0.0
         for i, seg_len in enumerate(self.path_segment_lengths):

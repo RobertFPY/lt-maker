@@ -1,7 +1,11 @@
 [
     [
+        "num_weapons",
+        4
+    ],
+    [
         "num_items",
-        5
+        4
     ],
     [
         "num_accessories",

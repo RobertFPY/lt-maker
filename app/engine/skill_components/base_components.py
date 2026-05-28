@@ -51,6 +51,28 @@ class AdditionalAccessories(SkillComponent):
     def num_accessories_offset(self, unit) -> int:
         return self.value
 
+class WeaponSlotsModifier(SkillComponent):
+    nid = 'weapon_slots_modifier'
+    desc = "Modifies the number of weapon-slot items the unit can carry. Use a negative value to reduce slots."
+    tag = SkillTags.BASE
+
+    expose = ComponentType.Int
+    value = 1
+
+    def num_weapons_offset(self, unit) -> int:
+        return self.value
+
+class ItemSlotsModifier(SkillComponent):
+    nid = 'item_slots_modifier'
+    desc = "Modifies the number of item-slot entries (consumables, etc.) the unit can carry. Use a negative value to reduce slots."
+    tag = SkillTags.BASE
+
+    expose = ComponentType.Int
+    value = 1
+
+    def num_items_offset(self, unit) -> int:
+        return self.value
+
 class IgnoreAlliances(SkillComponent):
     nid = 'ignore_alliances'
     desc = "Unit will treat all units as enemies"

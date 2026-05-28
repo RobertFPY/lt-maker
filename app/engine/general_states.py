@@ -1665,16 +1665,33 @@ class ItemDiscardState(MapState):
 
     def _check_locked_inventory(self) -> bool:
         locked = self._get_locked(self.cur_unit.items)
-        locked_items = [item for idx, item in enumerate(self.cur_unit.items) if locked[idx] and not item_system.is_accessory(self.cur_unit, item)]
 
-        if len(locked_items) > item_funcs.get_num_items(self.cur_unit):
+        # Weapon-slot section
+        locked_weapons = [item for idx, item in enumerate(self.cur_unit.items)
+                          if locked[idx] and item_funcs.is_weapon_slot(self.cur_unit, item)]
+        if len(locked_weapons) > item_funcs.get_num_weapons(self.cur_unit):
             if self.mode == self.ItemDiscardMode.STORAGE:
-                game.alerts.append(banner.SentToConvoy(locked_items[-1]))
-                action.do(action.StoreItem(self.cur_unit, locked_items[-1]))
+                game.alerts.append(banner.SentToConvoy(locked_weapons[-1]))
+                action.do(action.StoreItem(self.cur_unit, locked_weapons[-1]))
             else:
-                game.alerts.append(banner.LostItem(locked_items[-1]))
-                action.do(action.RemoveItem(self.cur_unit, locked_items[-1]))
+                game.alerts.append(banner.LostItem(locked_weapons[-1]))
+                action.do(action.RemoveItem(self.cur_unit, locked_weapons[-1]))
             return True
+
+        # Tool-slot section (non-accessory, non-weapon)
+        locked_tools = [item for idx, item in enumerate(self.cur_unit.items)
+                        if locked[idx]
+                        and not item_system.is_accessory(self.cur_unit, item)
+                        and not item_funcs.is_weapon_slot(self.cur_unit, item)]
+        if len(locked_tools) > item_funcs.get_num_items(self.cur_unit):
+            if self.mode == self.ItemDiscardMode.STORAGE:
+                game.alerts.append(banner.SentToConvoy(locked_tools[-1]))
+                action.do(action.StoreItem(self.cur_unit, locked_tools[-1]))
+            else:
+                game.alerts.append(banner.LostItem(locked_tools[-1]))
+                action.do(action.RemoveItem(self.cur_unit, locked_tools[-1]))
+            return True
+
         locked_accessories = [item for idx, item in enumerate(self.cur_unit.items) if locked[idx] and item_system.is_accessory(self.cur_unit, item)]
         if len(locked_accessories) > item_funcs.get_num_accessories(self.cur_unit):
             if self.mode == self.ItemDiscardMode.STORAGE:
@@ -1702,7 +1719,16 @@ class ItemDiscardState(MapState):
             get_sound_thread().play_sfx('Error')
 
         elif event == 'SELECT':
-            if item_system.is_accessory(self.cur_unit, self.new_item) != item_system.is_accessory(self.cur_unit, self.menu.get_current()):
+            # Inventory has three slot sections (weapon / item / accessory).
+            # Force the user to discard from the same section that the new
+            # item belongs to.
+            def _section(item):
+                if item_system.is_accessory(self.cur_unit, item):
+                    return 'accessory'
+                if item_funcs.is_weapon_slot(self.cur_unit, item):
+                    return 'weapon'
+                return 'tool'
+            if _section(self.new_item) != _section(self.menu.get_current()):
                 get_sound_thread().play_sfx('Error')
             else:
                 get_sound_thread().play_sfx('Select 1')

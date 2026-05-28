@@ -74,16 +74,23 @@ def draw_unit_items(surf, topleft, unit, include_top=False, include_bottom=True,
         if include_face:
             draw_unit_face(surf, topleft, unit, right)
 
-        # Blit items
-        for idx, item in enumerate(unit.nonaccessories):
+        # Blit weapon-section items (top)
+        for idx, item in enumerate(unit.weapons):
             item_option = menu_options.ItemOption(idx, item)
             item_option.draw(surf, topleft[0], topleft[1] + idx * 16 + 4)
+        # Blit tool-section items below the weapon section, offset by the
+        # full weapon capacity so the rows stay aligned with the slot grid.
+        weapon_rows = item_funcs.get_num_weapons(unit)
+        for idx, item in enumerate(unit.tools):
+            item_option = menu_options.ItemOption(idx, item)
+            item_option.draw(surf, topleft[0], topleft[1] + (weapon_rows + idx) * 16 + 4)
         # Costume slot (accessory) is intentionally hidden in places where
         # accessories are managed by the dedicated Costume menu instead.
         if include_accessories:
+            tool_rows = item_funcs.get_num_items(unit)
             for idx, item in enumerate(unit.accessories):
                 item_option = menu_options.ItemOption(idx, item)
-                item_option.draw(surf, topleft[0], topleft[1] + item_funcs.get_num_items(unit) * 16 + idx * 16 + 4)
+                item_option.draw(surf, topleft[0], topleft[1] + (weapon_rows + tool_rows + idx) * 16 + 4)
 
 
 def draw_unit_bexp(surf, topleft, unit, new_exp, new_bexp, current_bexp, include_top=False, include_bottom=True,
@@ -720,24 +727,37 @@ class Inventory(Choice):
 
     def create_options(self, options, info_desc=None):
         self.options.clear()
-        # Assumes all options are Item Objects
+        # Assumes all options are Item Objects. Split the inventory into the
+        # three slot sections: weapon (top), tool (middle) and accessory
+        # (bottom). Each section is padded with empty placeholders so the
+        # grid layout matches the unit's max capacity for that section.
         accessories = [option for option in options if item_system.is_accessory(self.owner, option)]
-        items = [option for option in options if option not in accessories]
+        weapons = [option for option in options if item_funcs.is_weapon_slot(self.owner, option)]
+        tools = [option for option in options
+                 if option not in accessories and option not in weapons]
+        num_weapons = item_funcs.get_num_weapons(self.owner)
         num_items = item_funcs.get_num_items(self.owner)
         num_accessories = item_funcs.get_num_accessories(self.owner)
         show_items = self.mode in ('all', 'items')
         show_accessories = self.mode in ('all', 'costume')
-        # Get items
+        # Weapons (top section)
         if show_items:
-            for idx, item in enumerate(items):
+            for idx, item in enumerate(weapons):
                 option = menu_options.ItemOption(idx, item)
                 option.help_box = option.get_help_box()
                 self.options.append(option)
-            # Get empty options in the middle
-            for num in range(num_items - len(items)):
-                option = menu_options.EmptyOption(len(self.options) + num)
+            for num in range(num_weapons - len(weapons)):
+                option = menu_options.EmptyOption(len(self.options))
                 self.options.append(option)
-        # Get accessories
+            # Tools (middle section)
+            for idx, item in enumerate(tools):
+                option = menu_options.ItemOption(idx, item)
+                option.help_box = option.get_help_box()
+                self.options.append(option)
+            for num in range(num_items - len(tools)):
+                option = menu_options.EmptyOption(len(self.options))
+                self.options.append(option)
+        # Accessories (bottom section)
         if show_accessories:
             for idx, item in enumerate(accessories):
                 option = menu_options.ItemOption(idx, item)
@@ -753,7 +773,7 @@ class Inventory(Choice):
             else:
                 pad_count = num_accessories - len(accessories)
             for num in range(pad_count):
-                option = menu_options.EmptyOption(len(self.options) + num)
+                option = menu_options.EmptyOption(len(self.options))
                 self.options.append(option)
 
 class Shop(Choice):
@@ -821,11 +841,20 @@ class Trade(Simple):
         full_items1 = self.get_items(self.owner)
         full_items2 = self.get_items(self.partner)
 
+        # Trade menu shows weapons (top) and tools (bottom) for both units.
+        # Limit grows with the largest combined section so the full grid is
+        # always visible.
+        trade_limit = max(
+            item_funcs.get_num_weapons(self.owner) + item_funcs.get_num_items(self.owner),
+            item_funcs.get_num_weapons(self.partner) + item_funcs.get_num_items(self.partner),
+            5,
+        )
+
         self.menu1 = Choice(self.owner, full_items1, (11, 68))
-        self.menu1.set_limit(min(5, DB.constants.total_items()))
+        self.menu1.set_limit(trade_limit)
         self.menu1.set_hard_limit(True)  # Makes hard limit
         self.menu2 = Choice(self.partner, full_items2, (125, 68))
-        self.menu2.set_limit(min(5, DB.constants.total_items()))
+        self.menu2.set_limit(trade_limit)
         self.menu2.set_hard_limit(True)  # Makes hard limit
         self.menu2.set_cursor(0)
 
@@ -838,10 +867,16 @@ class Trade(Simple):
         # Accessories are intentionally excluded from unit-to-unit trade.
         # Costumes are managed exclusively through the dedicated Costume menu
         # in prep/base Manage, not through Trade.
-        items = unit.nonaccessories
-        if len(items) < item_funcs.get_num_items(unit):
-            items = items[:] + [''] * (item_funcs.get_num_items(unit) - len(items))
-        return items
+        # The trade menu shows weapon-slot items on top followed by tool-slot
+        # items, padding each section out to its capacity so the slot grid
+        # stays visually stable as items move around.
+        weapons = unit.weapons
+        tools = unit.tools
+        num_w = item_funcs.get_num_weapons(unit)
+        num_t = item_funcs.get_num_items(unit)
+        weapons = weapons[:] + [''] * max(0, num_w - len(weapons))
+        tools = tools[:] + [''] * max(0, num_t - len(tools))
+        return weapons + tools
 
     def selected_option(self):
         return self._selected_option
@@ -1433,7 +1468,8 @@ class Convoy():
         # panel naturally renders short — we just don't want it pinned to
         # the bottom of the screen, which is what would happen if we used
         # its own (small) height in the Y calculation.
-        anchor_height = item_funcs.get_num_items(self.owner) * 16 + 8
+        anchor_height = (item_funcs.get_num_weapons(self.owner) +
+                         item_funcs.get_num_items(self.owner)) * 16 + 8
         self.inventory = Inventory(self.owner, self._owner_items_for_mode(), (12, WINHEIGHT - anchor_height - 4))
         self.inventory.set_mode(self.mode)
         # Rebuild option list now that mode is set so that the inventory only

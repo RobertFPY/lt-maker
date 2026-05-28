@@ -475,9 +475,10 @@ class ConstantDatabase(DatabaseTab):
         # === Left Section ===
         left_section = QGroupBox(self)
         self.left_tab_bar = QTabWidget(self)
-        battle_constants = ('num_items', 'num_accessories', 'min_damage', 'enemy_leveling')
-        battle_info = ("Number of non-accessory items units will be able to carry. The engine will not display inventories of size 6 or greater correctly.",
-                       "Number of accessory items units will be able to carry. Combine with Number of Items to get total inventory size.",
+        battle_constants = ('num_weapons', 'num_items', 'num_accessories', 'min_damage', 'enemy_leveling')
+        battle_info = ("Number of weapon-slot items (weapons/spells) units will be able to carry. Top section of the inventory.",
+                       "Number of item-slot entries (consumables, key items, etc.) units will be able to carry. Bottom section of the inventory.",
+                       "Number of accessory items units will be able to carry. Accessories occupy a separate slot section.",
                        "Minimum damage dealt by a damaging attack (usually 0 or 1)",
                        "How should enemy units get their automatic level ups")
         battle_section = self.create_section(battle_constants, battle_info)

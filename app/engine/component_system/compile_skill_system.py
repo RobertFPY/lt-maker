@@ -46,6 +46,7 @@ SKILL_HOOKS: Dict[str, HookInfo] = {
     'can_select':                           HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
     'movement_type':                        HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
     'num_items_offset':                     HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
+    'num_weapons_offset':                   HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
     'num_accessories_offset':               HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
     'change_variant':                       HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
     'change_animation':                     HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),

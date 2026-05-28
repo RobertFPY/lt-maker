@@ -512,7 +512,7 @@ class InfoMenuState(State):
         # Blit accessories
         if accessory:
             for idx, item in enumerate(self.unit.accessories):
-                aidx = item_funcs.get_num_items(self.unit) + idx
+                aidx = item_funcs.get_num_weapons(self.unit) + item_funcs.get_num_items(self.unit) + idx
                 y_pos = 81
                 equipped_subitem: Optional[ItemObject] = None
                 if item.multi_item and any(subitem is accessory for subitem in item.subitems):
@@ -526,7 +526,7 @@ class InfoMenuState(State):
                 else:
                     item_option = create_item_option(aidx, item)
                 item_option.draw(surf, 5, y_pos)
-                first = (idx == 0 and not self.unit.nonaccessories)
+                first = (idx == 0 and not self.unit.weapons and not self.unit.tools)
                 help_dlg = build_dialog_list(equipped_subitem if equipped_subitem else item, PageType.ITEM, unit=self.unit)
                 self.info_graph.register((5, y_pos, 120, 16), help_dlg, 'all', first=first)
         else:
@@ -848,25 +848,38 @@ class InfoMenuState(State):
         weapon = self.unit.get_weapon()
         accessory = self.unit.get_accessory()
 
-        # Blit items
-        for idx, item in enumerate(self.unit.nonaccessories):
+        # Blit items: weapon-section first, then tool-section. We render the
+        # weapon rows fully (padding to capacity) so the tool rows always
+        # start at the same Y, which matches the on-unit slot layout.
+        weapon_rows = item_funcs.get_num_weapons(self.unit)
+        rendered_idx = 0
+        for idx, item in enumerate(self.unit.weapons):
             equipped_subitem: Optional[ItemObject] = None
             if item.multi_item and any(subitem is weapon for subitem in item.subitems):
-                surf.blit(SPRITES.get('equipment_highlight'), (8, idx * 16 + 24 + 8))
+                surf.blit(SPRITES.get('equipment_highlight'), (8, rendered_idx * 16 + 24 + 8))
                 for subitem in item.subitems:
                     if subitem is weapon:
                         equipped_subitem = subitem
-                        item_option = create_item_option(idx, subitem)
+                        item_option = create_item_option(rendered_idx, subitem)
                         break
                 else:  # Shouldn't happen
-                    item_option = create_item_option(idx, item)
+                    item_option = create_item_option(rendered_idx, item)
             else:
                 if item is weapon:
-                    surf.blit(SPRITES.get('equipment_highlight'), (8, idx * 16 + 24 + 8))
-                item_option = create_item_option(idx, item)
-            item_option.draw(surf, 8, idx * 16 + 24)
+                    surf.blit(SPRITES.get('equipment_highlight'), (8, rendered_idx * 16 + 24 + 8))
+                item_option = create_item_option(rendered_idx, item)
+            item_option.draw(surf, 8, rendered_idx * 16 + 24)
             help_dlg = build_dialog_list(equipped_subitem if equipped_subitem else item, PageType.ITEM, unit=self.unit)
-            self.info_graph.register((96 + 8, idx * 16 + 24, 120, 16), help_dlg, 'equipment', first=(idx == 0))
+            self.info_graph.register((96 + 8, rendered_idx * 16 + 24, 120, 16), help_dlg, 'equipment', first=(rendered_idx == 0))
+            rendered_idx += 1
+        # Skip blank weapon rows so tool rows align with weapon capacity
+        rendered_idx = max(rendered_idx, weapon_rows)
+        for idx, item in enumerate(self.unit.tools):
+            item_option = create_item_option(rendered_idx, item)
+            item_option.draw(surf, 8, rendered_idx * 16 + 24)
+            help_dlg = build_dialog_list(item, PageType.ITEM, unit=self.unit)
+            self.info_graph.register((96 + 8, rendered_idx * 16 + 24, 120, 16), help_dlg, 'equipment', first=False)
+            rendered_idx += 1
 
         # Battle stats
         battle_surf = SPRITES.get('battle_info')

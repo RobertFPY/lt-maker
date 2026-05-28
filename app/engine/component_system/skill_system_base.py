@@ -47,6 +47,10 @@ class Defaults():
         return 0
 
     @staticmethod
+    def num_weapons_offset(unit) -> int:
+        return 0
+
+    @staticmethod
     def num_accessories_offset(unit) -> int:
         return 0
 

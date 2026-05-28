@@ -140,7 +140,7 @@ class Value(ItemComponent):
 
 class Accessory(ItemComponent):
     nid = 'accessory'
-    desc = "The item is considered an accessory and takes up an accessory slot in a unit's inventory. Make sure to increase the number of accessory slots to more than zero and have a total number of inventory + accessory slots less than six."
+    desc = "The item is considered an accessory and takes up an accessory slot in a unit's inventory. Make sure the Number of Accessories constant is greater than zero. Accessories occupy a separate inventory section from weapons and items."
     tag = ItemTags.BASE
 
     def is_accessory(self, unit, item) -> bool:

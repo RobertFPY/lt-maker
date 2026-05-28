@@ -63,10 +63,11 @@ class ConstantCatalog(Data[Constant]):
         raise ValueError("No such Constant %s" % const_nid)
 
     def total_items(self):
-        return self.value('num_items') + self.value('num_accessories')
+        return self.value('num_weapons') + self.value('num_items') + self.value('num_accessories')
 
 constants = ConstantCatalog([
-    Constant('num_items', "Max number of Items in inventory", ConstantType.INT, 5, ConstantTag.INVENTORY),
+    Constant('num_weapons', "Max number of Weapons in inventory", ConstantType.INT, 4, ConstantTag.INVENTORY),
+    Constant('num_items', "Max number of Items in inventory", ConstantType.INT, 4, ConstantTag.INVENTORY),
     Constant('num_accessories', "Max number of Accessories in inventory", ConstantType.INT, 0, ConstantTag.INVENTORY),
     Constant('turnwheel', "Turnwheel", ConstantType.BOOL, False, ConstantTag.MAJOR_FEATURES),
     Constant('initiative', "Per Unit Initiative Order", ConstantType.BOOL, False, ConstantTag.MAJOR_FEATURES),

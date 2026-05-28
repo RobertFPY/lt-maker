@@ -1441,13 +1441,22 @@ class UnequipItem(Action):
         if self.is_equipped_weapon or self.is_equipped_accesory:
             self.unit.unequip(self.item)
 
-            # Unequip now auto-equips the next valid item
+            # Unequip now auto-equips the next valid item in the same section
             all_items = item_funcs.get_all_items(self.unit)
             for item in all_items:
-                if item is not self.item and (item_system.is_accessory(self.unit, item) ^ self.is_equipped_weapon):
-                    if self.unit.can_equip(item):
-                        self.unit.equip(item)
-                        break
+                if item is self.item:
+                    continue
+                if self.is_equipped_weapon:
+                    # Look for another weapon-slot item to auto-equip
+                    if not item_funcs.is_weapon_slot(self.unit, item):
+                        continue
+                else:
+                    # Look for another accessory to auto-equip
+                    if not item_system.is_accessory(self.unit, item):
+                        continue
+                if self.unit.can_equip(item):
+                    self.unit.equip(item)
+                    break
 
     def reverse(self):
         if self.is_equipped_weapon or self.is_equipped_accesory:

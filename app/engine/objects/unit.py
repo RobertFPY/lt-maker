@@ -646,6 +646,26 @@ class UnitObject(Prefab):
         return [item for item in self.items if not item_system.is_accessory(self, item)]
 
     @property
+    def weapons(self) -> List[ItemObject]:
+        """Returns a list of all items in the unit's weapon-slot section.
+
+        An item belongs in the weapon section if it has a `weapon` or `spell`
+        component (and is not an accessory).
+        """
+        return [item for item in self.items if item_funcs.is_weapon_slot(self, item)]
+
+    @property
+    def tools(self) -> List[ItemObject]:
+        """Returns a list of all items in the unit's item-slot section.
+
+        Item-slot items are everything that is neither an accessory nor a
+        weapon-slot item (i.e. consumables, key items, etc.).
+        """
+        return [item for item in self.items
+                if not item_system.is_accessory(self, item)
+                and not item_funcs.is_weapon_slot(self, item)]
+
+    @property
     def movement_left(self) -> int:
         if not self.has_moved:
             return self.get_movement()
@@ -698,6 +718,14 @@ class UnitObject(Prefab):
         """Return True if the unit can equip *item*"""
         return item_system.equippable(self, item) and item_funcs.available(self, item)
 
+    def _slot_sort_key(self, item) -> int:
+        """Sort key used to keep inventory ordered as weapons -> tools -> accessories."""
+        if item_system.is_accessory(self, item):
+            return 2
+        if item_funcs.is_weapon_slot(self, item):
+            return 0
+        return 1
+
     def autoequip(self):
         logging.debug("Autoequipping...")
         all_items = item_funcs.get_all_items(self)
@@ -706,7 +734,9 @@ class UnitObject(Prefab):
             self.unequip(self.equipped_weapon)
         if not self.equipped_weapon:
             for item in all_items:
-                if not item_system.is_accessory(self, item):
+                # Only items in the weapon section are eligible to be the
+                # equipped weapon; tool-slot items can never be equipped.
+                if item_funcs.is_weapon_slot(self, item):
                     if self.can_equip(item):
                         self.equip(item)
                         break
@@ -718,14 +748,18 @@ class UnitObject(Prefab):
                     if self.can_equip(item):
                         self.equip(item)
                         break
-        # keep accessories sorted after items
-        self.items = sorted(self.items, key=lambda item: item_system.is_accessory(self, item))
+        # Keep self.items ordered as weapons -> tools -> accessories
+        self.items = sorted(self.items, key=self._slot_sort_key)
 
     def equip(self, item):
         if item_system.is_accessory(self, item) and item is self.equipped_accessory:
             return  # Don't need to do anything
         elif item is self.equipped_weapon:
             return  # Don't need to do anything
+        # Tool-slot items (consumables, key items, etc.) can never be the
+        # equipped weapon. Silently refuse instead of clobbering equipped_weapon.
+        if not item_system.is_accessory(self, item) and not item_funcs.is_weapon_slot(self, item):
+            return
         logging.debug("Equipping %s" % item)
         if item_system.is_accessory(self, item):
             if self.equipped_accessory:
@@ -753,12 +787,19 @@ class UnitObject(Prefab):
         self.insert_item(index, item)
 
     def bring_to_top_item(self, item):
+        # Move item to the top of its own section so the order stays:
+        # weapons -> tools -> accessories.
+        self.items.remove(item)
         if item_system.is_accessory(self, item):
-            self.items.remove(item)
-            self.items.insert(len(self.nonaccessories), item)
+            # Place at the top of accessories block (right after weapons + tools)
+            insert_idx = len(self.weapons) + len(self.tools)
+        elif item_funcs.is_weapon_slot(self, item):
+            # Place at the top of the weapons block
+            insert_idx = 0
         else:
-            self.items.remove(item)
-            self.items.insert(0, item)
+            # Place at the top of the tools block (right after weapons)
+            insert_idx = len(self.weapons)
+        self.items.insert(insert_idx, item)
 
     def insert_item(self, index, item):
         logging.debug("Unit insert_item %s at %s" % (item, index))

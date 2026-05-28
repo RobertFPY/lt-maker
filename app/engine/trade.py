@@ -4,6 +4,14 @@ from app.engine.game_state import game
 from app.engine import action, menus, item_system, item_funcs
 from app.engine.objects.item import ItemObject
 
+def _trade_section(unit, item: ItemObject) -> str:
+    """Returns which inventory section ('accessory', 'weapon', 'tool') an item belongs to."""
+    if item_system.is_accessory(unit, item):
+        return 'accessory'
+    if item_funcs.is_weapon_slot(unit, item):
+        return 'weapon'
+    return 'tool'
+
 def check_trade(item1: ItemObject, item1_owner, item2: ItemObject, item2_owner) -> bool:
     # Can't trade the same item to itself
     if item1 is item2:
@@ -16,26 +24,30 @@ def check_trade(item1: ItemObject, item1_owner, item2: ItemObject, item2_owner) 
         return False
     if isinstance(item2, ItemObject) and not item_system.tradeable(item2_owner, item2):
         return False
-    # If items are the same type, we are good
-    if isinstance(item1, ItemObject) and isinstance(item2, ItemObject) and \
-            item_system.is_accessory(item1_owner, item1) == item_system.is_accessory(item2_owner, item2):
+
+    # Items can only be traded between matching slot sections (weapon vs
+    # weapon, tool vs tool, accessory vs accessory).
+    if isinstance(item1, ItemObject) and isinstance(item2, ItemObject):
+        if _trade_section(item1_owner, item1) != _trade_section(item2_owner, item2):
+            return False
         return True
 
-    # Now check if the trade is bad
+    # One side is a placeholder (empty slot). Make sure the receiving unit
+    # has room in the matching section.
+    def _section_full(receiver, item) -> bool:
+        section = _trade_section(receiver, item)
+        if section == 'accessory':
+            return len(receiver.accessories) >= item_funcs.get_num_accessories(receiver)
+        if section == 'weapon':
+            return len(receiver.weapons) >= item_funcs.get_num_weapons(receiver)
+        return len(receiver.tools) >= item_funcs.get_num_items(receiver)
+
     if isinstance(item1, ItemObject):
-        if item_system.is_accessory(item1_owner, item1):
-            if item2_owner and len(item2_owner.accessories) >= item_funcs.get_num_accessories(item2_owner):
-                return False
-        else:
-            if item2_owner and len(item2_owner.nonaccessories) >= item_funcs.get_num_items(item2_owner):
-                return False
+        if item2_owner and _section_full(item2_owner, item1):
+            return False
     if isinstance(item2, ItemObject):
-        if item_system.is_accessory(item2_owner, item2):
-            if item1_owner and len(item1_owner.accessories) >= item_funcs.get_num_accessories(item1_owner):
-                return False
-        else:
-            if item1_owner and len(item1_owner.nonaccessories) >= item_funcs.get_num_items(item1_owner):
-                return False
+        if item1_owner and _section_full(item1_owner, item2):
+            return False
 
     return True
 

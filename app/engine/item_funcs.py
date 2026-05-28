@@ -433,15 +433,51 @@ def get_all_storeable_items(unit: UnitObject) -> List[ItemObject]:
             items.append(item)
     return items
 
-def get_num_items(unit: UnitObject) -> int:
+def is_weapon_slot(unit: UnitObject, item: ItemObject) -> bool:
     """
-    Retrieves the maximum number of non-accessories a unit can carry.
+    Determines if an item belongs in the weapon slot section of a unit's inventory.
+
+    An item is considered a "weapon slot" item if:
+        - It is not an accessory, AND
+        - It has a `weapon` or `spell` component (i.e. is_weapon or is_spell returns True)
+
+    Staves and tomes (spells) thus live in the weapon slot section, while
+    consumables like vulneraries live in the item slot section.
+
+    Args:
+        unit (UnitObject): The unit holding the item.
+        item (ItemObject): The item to check.
+
+    Returns:
+        bool: True if the item belongs in the weapon section, False otherwise.
+    """
+    if item_system.is_accessory(unit, item):
+        return False
+    if item_system.is_weapon(unit, item) or item_system.is_spell(unit, item):
+        return True
+    return False
+
+def get_num_weapons(unit: UnitObject) -> int:
+    """
+    Retrieves the maximum number of weapon-slot items a unit can carry.
 
     Args:
         unit (UnitObject): The unit to query.
 
     Returns:
-        int: The maximum number of non-accessories the unit can carry.
+        int: The maximum number of weapons the unit can carry.
+    """
+    return DB.constants.value('num_weapons') + skill_system.num_weapons_offset(unit)
+
+def get_num_items(unit: UnitObject) -> int:
+    """
+    Retrieves the maximum number of item-slot (non-weapon, non-accessory) entries a unit can carry.
+
+    Args:
+        unit (UnitObject): The unit to query.
+
+    Returns:
+        int: The maximum number of item-slot entries the unit can carry.
     """
     return DB.constants.value('num_items') + skill_system.num_items_offset(unit)
 
@@ -459,32 +495,35 @@ def get_num_accessories(unit: UnitObject) -> int:
 
 def too_much_in_inventory(unit: UnitObject) -> bool:
     """
-    Checks if a unit is carrying too many items.
+    Checks if a unit is carrying too many items in any inventory section.
 
     Args:
         unit (UnitObject): The unit to check.
 
     Returns:
-        bool: True if the unit is carrying too many items, False otherwise.
+        bool: True if any inventory section is over capacity, False otherwise.
     """
     return len(unit.accessories) > get_num_accessories(unit) or \
-        len(unit.nonaccessories) > get_num_items(unit)
+        len(unit.weapons) > get_num_weapons(unit) or \
+        len(unit.tools) > get_num_items(unit)
 
 def inventory_full(unit: UnitObject, item: ItemObject) -> bool:
     """
-    Checks if a unit's inventory is full.
+    Checks if the relevant inventory section for an item is full.
 
     Args:
         unit (UnitObject): The unit to check.
         item (ItemObject): The item to potentially add to the unit's inventory.
 
     Returns:
-        bool: True if the unit's inventory is full, False otherwise.
+        bool: True if the matching section is full, False otherwise.
     """
     if item_system.is_accessory(unit, item):
         return len(unit.accessories) >= get_num_accessories(unit)
+    elif is_weapon_slot(unit, item):
+        return len(unit.weapons) >= get_num_weapons(unit)
     else:
-        return len(unit.nonaccessories) >= get_num_items(unit)
+        return len(unit.tools) >= get_num_items(unit)
 
 def get_range(unit: UnitObject, item: ItemObject) -> Set[int]:
     """

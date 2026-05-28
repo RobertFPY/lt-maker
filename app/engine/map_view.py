@@ -178,6 +178,17 @@ class MapView():
             weather.update()
             weather.draw(surf, cull_rect[0], cull_rect[1])
 
+        # Letterbox: if the map render area is smaller than the full window
+        # (e.g. small maps when the viewport is larger than the map), compose
+        # the small map surface centred onto a full-window-sized canvas so the
+        # UI view can still draw to the full screen.
+        if cull_rect[2] < WINWIDTH or cull_rect[3] < WINHEIGHT:
+            offset_x = max(0, (WINWIDTH - cull_rect[2]) // 2)
+            offset_y = max(0, (WINHEIGHT - cull_rect[3]) // 2)
+            outer = engine.create_surface((WINWIDTH, WINHEIGHT))
+            outer.blit(surf, (offset_x, offset_y))
+            surf = outer
+
         surf = game.ui_view.draw(surf)
         return surf
 

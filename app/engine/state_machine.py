@@ -72,6 +72,7 @@ class StateMachine():
              'free': general_states.FreeState,
              'option_menu': general_states.OptionMenuState,
              'option_child': general_states.OptionChildState,
+             'save_state_menu': general_states.SaveStateMenuState,
              'settings_menu': settings.SettingsMenuState,
              'objective_menu': objective_menu.ObjectiveMenuState,
              'unit_menu': unit_menu_state.UnitMenuState,

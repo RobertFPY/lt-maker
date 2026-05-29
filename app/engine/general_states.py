@@ -19,7 +19,7 @@ from app.engine.state import State, MapState
 import app.engine.config as cf
 from app.engine.game_state import game
 from app.engine import engine, action, menus, image_mods, \
-    banner, save, phase, skill_system, item_system, \
+    banner, save, save_state, phase, skill_system, item_system, \
     item_funcs, ui_view, base_surf, gui, background, dialog, \
     text_funcs, equations, evaluate, supports
 from app.engine.combat import base_combat, interaction
@@ -260,6 +260,8 @@ class PhaseChangeState(MapState):
             logging.info("Saving as we enter player phase!")
             name = GAME_NID + '-turn_change-' + game.level.nid + '-' + str(game.turncount)
             save.suspend_game(game, 'turn_change', name=name)
+            # Also take an automatic save-state snapshot into the ring buffer
+            save_state.auto_save(game)
         elif game.phase.get_current() == 'enemy':
             logging.info("Saving as we enter enemy phase!")
             name = GAME_NID + '-enemy_turn_change-' + game.level.nid + '-' + str(game.turncount)
@@ -426,9 +428,9 @@ class OptionMenuState(MapState):
         # 2: whether to gray out these options
         # 3: What event nid to call when you click this option
         """
-        options = ['Unit', 'Objective', 'Options']
-        info_desc = ['Unit_desc', 'Objective_desc', 'Options_desc']
-        ignore = [False, False, False]
+        options = ['Unit', 'Objective', 'Save State', 'Options']
+        info_desc = ['Unit_desc', 'Objective_desc', 'Save_State_desc', 'Options_desc']
+        ignore = [False, False, False, False]
         if game.current_mode.permadeath:
             options.append('Suspend')
             info_desc.append('Suspend_desc')
@@ -556,6 +558,9 @@ class OptionMenuState(MapState):
                         suspend()
                     elif selection == 'Save':
                         battle_save()
+            elif selection == 'Save State':
+                game.memory['savestate_mode'] = 'load'
+                game.state.change('save_state_menu')
             elif selection == 'Unit':
                 game.memory['next_state'] = 'unit_menu'
                 game.state.change('transition_to')
@@ -673,6 +678,99 @@ class OptionChildState(State):
 
     def draw(self, surf):
         self.menu.draw(surf)
+        return surf
+
+class SaveStateMenuState(MapState):
+    """GBA-emulator style save state menu with 9 manual slots.
+
+    Reached from the Option menu. A single screen lets the player either save
+    over or load from any of the 9 slots; START toggles between SAVE and LOAD
+    mode. The quick/auto ring buffer is handled separately via hotkeys.
+    """
+    name = 'save_state_menu'
+
+    def _slot_text(self, idx: int) -> str:
+        from datetime import datetime
+        ss = save_state.get_slot('manual', idx)
+        label = '%d: ' % (idx + 1)
+        if save_state.slot_exists('manual', idx):
+            when = datetime.fromtimestamp(ss.realtime).strftime('%m/%d %H:%M') if ss.realtime else ''
+            return label + ss.get_name() + (('  ' + when) if when else '')
+        return label + '-- EMPTY --'
+
+    def _build_menu(self):
+        options = [self._slot_text(idx) for idx in range(save_state.NUM_MANUAL_SLOTS)]
+        idx = self.menu.get_current_index() if self.menu else 0
+        self.menu = menus.Choice(None, options)
+        self.menu.set_limit(9)
+        self.menu.move_to(idx)
+
+    def start(self):
+        game.cursor.hide()
+        self.mode = game.memory.get('savestate_mode', 'load')  # 'save' or 'load'
+        self.menu = None
+        self._build_menu()
+
+    def begin(self):
+        self.fluid.reset_on_change_state()
+
+    def take_input(self, event):
+        first_push = self.fluid.update()
+        directions = self.fluid.get_directions()
+
+        self.menu.handle_mouse()
+        if 'DOWN' in directions:
+            if self.menu.move_down(first_push):
+                get_sound_thread().play_sfx('Select 6')
+        elif 'UP' in directions:
+            if self.menu.move_up(first_push):
+                get_sound_thread().play_sfx('Select 6')
+
+        if event == 'BACK':
+            get_sound_thread().play_sfx('Select 4')
+            game.state.back()
+
+        elif event == 'START':
+            # Toggle between SAVE and LOAD mode
+            get_sound_thread().play_sfx('Select 1')
+            self.mode = 'save' if self.mode == 'load' else 'load'
+            game.memory['savestate_mode'] = self.mode
+
+        elif event == 'SELECT':
+            idx = self.menu.get_current_index()
+            if self.mode == 'save':
+                if save_state.save_to_manual(game, idx):
+                    get_sound_thread().play_sfx('Select 1')
+                    self._build_menu()
+                    game.alerts.append(banner.Custom("Saved to State %d" % (idx + 1)))
+                    game.state.change('alert')
+                    return 'repeat'
+                else:
+                    get_sound_thread().play_sfx('Error')
+            else:  # load
+                if save_state.slot_exists('manual', idx):
+                    if save_state.load_from_manual(game, idx):
+                        get_sound_thread().play_sfx('Select 1')
+                        # game.state has been fully replaced by the loaded state
+                        return 'repeat'
+                    else:
+                        get_sound_thread().play_sfx('Error')
+                else:
+                    get_sound_thread().play_sfx('Error')
+
+    def update(self):
+        super().update()
+        if self.menu:
+            self.menu.update()
+
+    def draw(self, surf):
+        surf = super().draw(surf)
+        header = 'Save State - %s' % ('SAVE' if self.mode == 'save' else 'LOAD')
+        FONT['text'].blit(header, surf, (8, 4), color='yellow')
+        hint = 'SELECT: %s   START: switch mode' % ('overwrite' if self.mode == 'save' else 'load')
+        FONT['text'].blit(hint, surf, (8, WINHEIGHT - 16), color='grey')
+        if self.menu:
+            self.menu.draw(surf)
         return surf
 
 class MoveState(MapState):

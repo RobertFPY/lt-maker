@@ -108,6 +108,7 @@ def run(game):
     from app.engine.sound import get_sound_thread
     from app.engine.game_counters import ANIMATION_COUNTERS
     from app.engine.input_manager import get_input_manager
+    from app.engine import save_state, banner
 
     ANIMATION_COUNTERS.reset()
 
@@ -152,6 +153,30 @@ def run(game):
                 continue
         else:
             _soft_reset_start_time = None
+
+        # Handle GBA-emulator style save-state hotkeys (chords on AUX):
+        #   AUX + START  -> quick save (ring buffer)
+        #   AUX + SELECT -> quick load (most recent ring-buffer snapshot)
+        # We consume the triggering event so the underlying state doesn't also
+        # react to the START / SELECT press.
+        if not _error_mode and event in ('START', 'SELECT') and inp.is_pressed('AUX') \
+                and game.state.current() not in (None, 'title_start'):
+            try:
+                if event == 'START':
+                    if save_state.quick_save(game):
+                        get_sound_thread().play_sfx('Select 1')
+                        game.alerts.append(banner.Custom("Quick Saved"))
+                        game.state.change('alert')
+                    else:
+                        get_sound_thread().play_sfx('Error')
+                else:  # SELECT -> quick load
+                    if save_state.quick_load(game):
+                        get_sound_thread().play_sfx('Select 1')
+                    else:
+                        get_sound_thread().play_sfx('Error')
+            except Exception:
+                logging.exception("Save-state hotkey failed")
+            event = None  # consume the chord trigger
 
         # game loop. catch and log any errors in this loop.
         if _error_mode:

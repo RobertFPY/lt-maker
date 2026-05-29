@@ -108,7 +108,7 @@ def run(game):
     from app.engine.sound import get_sound_thread
     from app.engine.game_counters import ANIMATION_COUNTERS
     from app.engine.input_manager import get_input_manager
-    from app.engine import save_state, banner
+    from app.engine import save_state
 
     ANIMATION_COUNTERS.reset()
 
@@ -159,12 +159,20 @@ def run(game):
         else:
             _soft_reset_start_time = None
 
+        # Keep the rolling pre-action checkpoint fresh (cheap: only re-snapshots
+        # on entering an idle state). Must run before hotkey handling so a quick
+        # save can write the latest checkpoint.
+        if not _error_mode:
+            save_state.capture_checkpoint(game)
+
         # Handle GBA-emulator style save-state hotkeys (read from raw keyboard):
         #   Shift + F1..F9 -> quick save into slot 1..9
         #   F1..F9         -> quick load from slot 1..9
-        # Loading works at any time (the whole game is rebuilt). Saving in an
-        # unsafe state (combat / event / animation) is deferred and taken at the
-        # next safe boundary by save_state.flush_pending below.
+        # Loading works at any time (the whole game is rebuilt). Saving stores
+        # the latest clean pre-action checkpoint, so a save in the middle of
+        # combat / an event / movement lands on the moment before that action
+        # (turnwheel-like) instead of a broken mid-animation frame. No banner is
+        # shown; the SFX is the only feedback.
         if not _error_mode and game.state.current() not in (None, 'title_start'):
             for raw in raw_events:
                 if raw.type != engine.KEYDOWN or raw.key not in _savestate_fkeys:
@@ -172,14 +180,7 @@ def run(game):
                 slot = _savestate_fkeys[raw.key]
                 try:
                     if engine.is_shift_pressed():  # quick save
-                        result = save_state.quick_save(game, slot)
-                        if result == 'saved':
-                            get_sound_thread().play_sfx('Select 1')
-                            game.alerts.append(banner.Custom("Saved State %d" % (slot + 1)))
-                            game.state.change('alert')
-                        elif result == 'deferred':
-                            # Unsafe state: don't touch the state machine, just
-                            # acknowledge. flush_pending will write it shortly.
+                        if save_state.quick_save(game, slot) == 'saved':
                             get_sound_thread().play_sfx('Select 1')
                         else:
                             get_sound_thread().play_sfx('Error')
@@ -190,17 +191,6 @@ def run(game):
                             get_sound_thread().play_sfx('Error')
                 except Exception:
                     logging.exception("Save-state hotkey failed")
-
-        # Take any deferred snapshot now that we may have reached a safe state.
-        if not _error_mode:
-            try:
-                flushed = save_state.flush_pending(game)
-                if flushed is not None:
-                    get_sound_thread().play_sfx('Select 1')
-                    game.alerts.append(banner.Custom("Saved State %d" % (flushed + 1)))
-                    game.state.change('alert')
-            except Exception:
-                logging.exception("Deferred save-state flush failed")
 
         # game loop. catch and log any errors in this loop.
         if _error_mode:

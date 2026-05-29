@@ -12,23 +12,31 @@ There are 9 hand-addressable slots (1-9), driven entirely by hotkeys:
 
 There is no in-game menu; everything is hotkey driven (see driver.run).
 
-Saving reuses ``save.save_io`` with an explicit ``force_loc`` so that the
-restart/preload side effects in ``save_io`` are skipped entirely. Loading reuses
-``save.load_game`` (build_new + load), which restores the entire game state,
-including the state machine, so a save state can be restored inline at any time,
-even in the middle of combat or an event (the current state is fully discarded).
+Loading
+-------
+Loading rebuilds the entire game from the file and works at ANY time, even in
+the middle of combat, an event, or unit movement. Before handing off to
+``save.load_game`` we hard-reset the state machine stack so that whatever was
+running (an event, a combat, a movement) is fully discarded instead of being
+left underneath the restored states. (This is the fix for "load does nothing
+until the event finishes".)
 
-Deferred snapshots
-------------------
-Loading can happen at any moment because it rebuilds the whole game. Saving,
-however, requires a picklable game state -- in the middle of combat or an event
-the game holds live pygame Surfaces / animation objects that cannot be pickled.
+Saving (pre-action checkpoint, turnwheel-like)
+----------------------------------------------
+The game can only be pickled in a stable state: in the middle of combat / an
+event / movement it holds live pygame Surfaces and animation objects that
+cannot be pickled, and the unit's position has already been mutated toward its
+destination. Trying to snapshot "right now" therefore either crashes or records
+a half-applied action (unit already at the target tile, combat half-resolved).
 
-To still let the player "save anytime", a quick save requested while the game is
-in an unsafe state is *deferred*: the requested slot is remembered and the
-snapshot is taken automatically at the next safe boundary (e.g. as soon as the
-combat or event finishes and control returns to a stable state). The driver
-calls :func:`flush_pending` once per frame to perform any deferred snapshot.
+Instead we continuously keep an in-memory snapshot of the most recent *idle*
+("pre-action") state -- the map free state, prep/base menus, the overworld, and
+phase boundaries. ``capture_checkpoint`` refreshes this snapshot every time the
+game enters one of those idle states. A quick save then writes that checkpoint.
+
+The result behaves like the turnwheel: a save always lands on the clean moment
+*before* the current action, so loading puts a unit back on its original tile
+and never restores a broken mid-combat frame.
 """
 
 from __future__ import annotations
@@ -45,33 +53,26 @@ NUM_SLOTS = 9
 # The kind tag stored in the metadata of a save state.
 KIND = 'savestate'
 
-# States during which it is safe to snapshot the whole game state.
-# Outside of these, the game can hold pygame Surfaces / live combat / animation
-# objects that cannot be pickled, so an immediate snapshot must be deferred.
-SAFE_STATES = {
+# Idle, fully-picklable states that represent a clean "pre-action" moment. The
+# rolling checkpoint is refreshed whenever the game enters one of these. We
+# deliberately exclude 'move'/'movement'/'menu'/'combat'/event states so the
+# checkpoint never captures a unit that has already left its original tile or a
+# combat that is mid-resolution.
+CHECKPOINT_STATES = {
     'free',
-    'option_menu',
-    'option_child',
-    'menu',
-    'move',
     'turn_change',
     'phase_change',
     'prep_main',
-    'prep_formation',
-    'prep_formation_select',
-    'prep_items',
-    'prep_market',
-    'prep_manage',
-    'prep_pick_units',
     'base_main',
-    'objective_menu',
-    'unit_menu',
     'overworld',
 }
 
-# Slot index (0-based) whose snapshot has been deferred until a safe boundary,
-# or None if there is nothing pending.
-_pending_save_idx: int | None = None
+# In-memory snapshot of the latest idle state: a (s_dict, meta_dict) tuple, or
+# None if we have not reached an idle state yet this session.
+_checkpoint = None
+# Name of the state for which _checkpoint was last taken, used for cheap edge
+# detection so we only re-pickle on entering an idle state (not every frame).
+_last_state = None
 
 
 def _game_nid() -> str:
@@ -92,14 +93,6 @@ def _meta_loc(idx: int) -> str:
     return _save_loc(idx) + 'meta'
 
 
-def is_save_state_allowed(game) -> bool:
-    """Whether the whole game state can be safely pickled right now. Outside of a
-    known-stable state a Surface / live combat object could break pickling."""
-    if game is None or not game.state:
-        return False
-    return game.state.current() in SAFE_STATES
-
-
 def get_slot(idx: int) -> save.SaveSlot:
     """A SaveSlot for display purposes (reads .pmeta if it exists)."""
     return save.SaveSlot(_meta_loc(idx), idx)
@@ -109,44 +102,89 @@ def slot_exists(idx: int) -> bool:
     return os.path.exists(_meta_loc(idx))
 
 
-def _write(game, idx: int, display_name: str) -> bool:
-    """Synchronously writes a save state to its dedicated file.
+# ---------------------------------------------------------------------------
+# Rolling pre-action checkpoint
+# ---------------------------------------------------------------------------
 
-    Synchronous (unlike save.suspend_game which threads) so that an immediate
-    quick load right after a quick save can never race the write. Uses
-    force_loc so that save_io skips the restart/preload bookkeeping.
+def capture_checkpoint(game) -> None:
+    """Refresh the in-memory pre-action checkpoint when entering an idle state.
+
+    Called once per frame by the driver. Cheap: it only serializes the game on
+    the frame the current state *changes into* one of CHECKPOINT_STATES, not on
+    every frame spent there.
     """
+    global _checkpoint, _last_state
+    if game is None or not game.state:
+        return
+    cur = game.state.current()
+    if cur == _last_state:
+        return
+    _last_state = cur
+    if cur not in CHECKPOINT_STATES:
+        return
     try:
         s_dict, meta_dict = game.save()
+        _checkpoint = (s_dict, meta_dict)
+        logging.debug("Save-state checkpoint refreshed at '%s'", cur)
+    except Exception:
+        logging.exception("Failed to capture save-state checkpoint at '%s'", cur)
+
+
+def has_checkpoint() -> bool:
+    return _checkpoint is not None
+
+
+# ---------------------------------------------------------------------------
+# Writing / reading the slot files
+# ---------------------------------------------------------------------------
+
+def _write(idx: int, s_dict, meta_dict, display_name: str) -> bool:
+    """Synchronously writes a snapshot to its dedicated slot file.
+
+    Synchronous (unlike save.suspend_game which threads) so a quick load right
+    after a quick save can never race the write. ``force_loc`` makes save_io
+    write only our file and skip all restart/preload bookkeeping.
+    """
+    try:
+        meta_dict = dict(meta_dict)
         meta_dict['kind'] = KIND
         meta_dict['time'] = datetime.now()
         meta_dict['disp'] = display_name
-        # old_slot/slot = None and force_loc set -> save_io writes only our file
-        # and performs no restart/preload copying.
         save.save_io(s_dict, meta_dict, None, None, force_loc=_force_loc(idx))
         logging.info("Saved save-state to %s", _save_loc(idx))
         return True
-    except Exception as e:
-        logging.exception("Failed to write save state (%d): %s", idx, e)
+    except Exception:
+        logging.exception("Failed to write save state (%d)", idx)
         return False
 
 
 def _load(game, idx: int) -> bool:
-    """Loads a save state inline. Preserves the current main save slot id."""
+    """Loads a save state inline. Works mid-combat / mid-event because the whole
+    game is rebuilt; the running state stack is hard-reset first."""
     meta_loc = _meta_loc(idx)
     if not os.path.exists(meta_loc):
         logging.warning("No save state at %s", meta_loc)
         return False
     try:
-        # Preserve which real save slot we belong to so the normal save system
-        # is unaffected by loading a save state.
         cur_slot = game.current_save_slot
         ss = save.SaveSlot(meta_loc, cur_slot)
+        # Hard-reset the state machine BEFORE loading. load_game/build_new do not
+        # clear the state stack and load() only appends, so without this the
+        # currently-running event/combat/movement states would remain underneath
+        # the restored ones and the load would appear to "do nothing" until they
+        # finish. We empty the stack directly (rather than via clear() +
+        # process_temp_state) to avoid running end()/finish() on a live combat or
+        # event that may reference surfaces we are about to throw away.
+        game.state.state = []
+        game.state.temp_state = []
         save.load_game(game, ss)
+        # Keep our own dedicated slot id; loading must not disturb the normal
+        # save slot the player is actually using.
+        game.current_save_slot = cur_slot
         logging.info("Loaded save-state from %s", _save_loc(idx))
         return True
-    except Exception as e:
-        logging.exception("Failed to load save state (%d): %s", idx, e)
+    except Exception:
+        logging.exception("Failed to load save state (%d)", idx)
         return False
 
 
@@ -155,67 +193,39 @@ def _load(game, idx: int) -> bool:
 # ---------------------------------------------------------------------------
 
 def quick_save(game, idx: int) -> str:
-    """Request a quick save into ``idx`` (0-based).
+    """Quick save into slot ``idx`` (0-based).
 
-    Returns one of:
-      * 'saved'    -> snapshot was written immediately
-      * 'deferred' -> game is in an unsafe state; the snapshot will be taken at
-                      the next safe boundary via flush_pending()
-      * 'failed'   -> bad index or the write itself failed
+    Writes the most recent clean pre-action checkpoint. If the game is currently
+    in an idle state we refresh the checkpoint first so saving while idle records
+    exactly the present moment.
+
+    Returns 'saved' on success, or 'failed' on a bad index or if there is no
+    checkpoint yet (e.g. on the title screen).
     """
-    global _pending_save_idx
     if not 0 <= idx < NUM_SLOTS:
         return 'failed'
     if game is None or not game.state or game.state.current() in (None, 'title_start'):
         return 'failed'
-    if is_save_state_allowed(game):
-        ok = _write(game, idx, "Quick Save")
-        return 'saved' if ok else 'failed'
-    # Unsafe state (combat, event, animation, ...): defer to the next boundary.
-    _pending_save_idx = idx
-    logging.info("Deferring save state for slot %d until a safe boundary", idx)
-    return 'deferred'
+    # If we are idle right now, make the checkpoint reflect this exact moment.
+    if game.state.current() in CHECKPOINT_STATES:
+        try:
+            _checkpoint_now = game.save()
+        except Exception:
+            logging.exception("Live checkpoint failed; falling back to last checkpoint")
+            _checkpoint_now = _checkpoint
+    else:
+        _checkpoint_now = _checkpoint
+    if not _checkpoint_now:
+        logging.warning("No pre-action checkpoint available to save yet")
+        return 'failed'
+    s_dict, meta_dict = _checkpoint_now
+    return 'saved' if _write(idx, s_dict, meta_dict, "Quick Save") else 'failed'
 
 
 def quick_load(game, idx: int) -> bool:
-    """Load a quick save from ``idx`` (0-based). Works at any time because the
-    entire game state is rebuilt from the file."""
-    global _pending_save_idx
+    """Load a quick save from slot ``idx`` (0-based). Works at any time."""
     if not 0 <= idx < NUM_SLOTS:
         return False
     if not slot_exists(idx):
         return False
-    # A pending save is meaningless once we jump to a different snapshot.
-    _pending_save_idx = None
     return _load(game, idx)
-
-
-def has_pending_save() -> bool:
-    return _pending_save_idx is not None
-
-
-def pending_slot() -> int | None:
-    return _pending_save_idx
-
-
-def cancel_pending() -> None:
-    global _pending_save_idx
-    _pending_save_idx = None
-
-
-def flush_pending(game) -> int | None:
-    """If a save was deferred and the game has reached a safe state, write it now.
-
-    Called once per frame by the driver. Returns the (0-based) slot index that
-    was just written, or None if nothing happened.
-    """
-    global _pending_save_idx
-    if _pending_save_idx is None:
-        return None
-    if not is_save_state_allowed(game):
-        return None
-    idx = _pending_save_idx
-    _pending_save_idx = None
-    if _write(game, idx, "Quick Save"):
-        return idx
-    return None

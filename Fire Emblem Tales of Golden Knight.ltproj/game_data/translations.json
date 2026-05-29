@@ -418,5 +418,9 @@
     {
         "nid": "Nightmare_desc",
         "text": "Enemies are comically powerful. Hell!!!"
+    },
+    {
+        "nid": "lead_desc",
+        "text": ""
     }
 ]

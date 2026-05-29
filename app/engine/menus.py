@@ -749,7 +749,7 @@ class Inventory(Choice):
             # at all (so the menu still has something to measure / draw a
             # cursor on without crashing).
             if self.mode == 'costume':
-                pad_count = 1 if len(accessories) == 0 else 0
+                pad_count = 2 if len(accessories) == 0 else 1
             else:
                 pad_count = num_accessories - len(accessories)
             for num in range(pad_count):

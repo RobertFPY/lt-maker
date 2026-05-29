@@ -1,5 +1,9 @@
 [
     [
+        "num_weapons",
+        4
+    ],
+    [
         "num_items",
         5
     ],
@@ -53,7 +57,7 @@
     ],
     [
         "rd_bexp_lvl",
-        false
+        true
     ],
     [
         "support",
@@ -137,7 +141,7 @@
     ],
     [
         "enemy_leveling",
-        "Dynamic"
+        "Random"
     ],
     [
         "auto_promote",
@@ -153,7 +157,7 @@
     ],
     [
         "class_change_level_reset",
-        false
+        true
     ],
     [
         "learn_skills_on_reclass",
@@ -253,7 +257,7 @@
     ],
     [
         "num_save_slots",
-        3
+        9
     ],
     [
         "sell_modifier",
@@ -265,7 +269,7 @@
     ],
     [
         "attack_zero_dam",
-        true
+        false
     ],
     [
         "zero_move",
@@ -293,7 +297,7 @@
     ],
     [
         "title_full_support",
-        false
+        true
     ],
     [
         "music_main",

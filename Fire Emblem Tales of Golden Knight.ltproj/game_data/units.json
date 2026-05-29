@@ -45,11 +45,11 @@
         },
         "starting_items": [
             [
-                "Steel_Lance",
+                "Elixir",
                 false
             ],
             [
-                "Elixir",
+                "Steel_Lance",
                 false
             ]
         ],
@@ -71,12 +71,7 @@
                 "Swordbreaker_T1"
             ]
         ],
-        "unit_notes": [
-            [
-                "12121",
-                "12121"
-            ]
-        ],
+        "unit_notes": [],
         "wexp_gain": {
             "Sword": [
                 true,
@@ -177,10 +172,6 @@
             [
                 "Steel_Axe",
                 false
-            ],
-            [
-                "Silver_Axe",
-                false
             ]
         ],
         "learned_skills": [
@@ -251,7 +242,7 @@
         "name": "Martin",
         "desc": "A young man who don't like fighting, but forced to.",
         "variant": null,
-        "level": 5,
+        "level": 1,
         "klass": "Martin_Lord",
         "tags": [
             "Lord"
@@ -814,7 +805,7 @@
             ]
         },
         "alternate_classes": [],
-        "portrait_nid": null,
+        "portrait_nid": "",
         "affinity": "Fire",
         "fields": []
     },
@@ -4450,7 +4441,7 @@
         },
         "alternate_classes": [],
         "portrait_nid": "Lucina",
-        "affinity": null,
+        "affinity": "None",
         "fields": []
     },
     {

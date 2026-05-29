@@ -31,7 +31,7 @@
                 "team": "player",
                 "ai": "None",
                 "roam_ai": null,
-                "ai_group": null,
+                "ai_group": "",
                 "starting_position": [
                     2,
                     9
@@ -1511,11 +1511,11 @@
                 "nid": "ShowMission",
                 "region_type": "normal",
                 "position": [
-                    18,
+                    17,
                     0
                 ],
                 "size": [
-                    16,
+                    17,
                     13
                 ],
                 "sub_nid": "",

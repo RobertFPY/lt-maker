@@ -1786,7 +1786,7 @@
                 "nid": "Fighter_Bandit",
                 "Class": "Roar_T1",
                 "Special": "",
-                "SlotA": "",
+                "SlotA": "Life_and_Death_T1",
                 "SlotB": "",
                 "SlotC": "",
                 "Assit": "",
@@ -3959,88 +3959,5 @@
                 "Hidden1": ""
             }
         ]
-    },
-    {
-        "nid": "DieuChinhDoKhoBossHard",
-        "dtype": "list",
-        "svalue": "",
-        "kvvalue": [],
-        "oattrs": [
-            "nid",
-            "Class",
-            "Level",
-            "HP",
-            "Str",
-            "Magic",
-            "Skill",
-            "Speed",
-            "Luck",
-            "Def",
-            "Res",
-            "Con",
-            "Mov",
-            "Wexp",
-            "Weapon",
-            "Item",
-            "CharSkill",
-            "ClassSkill",
-            "SpecialSkill",
-            "SlotASkill",
-            "SlotBSkill",
-            "SlotCSkill"
-        ],
-        "lovalue": []
-    },
-    {
-        "nid": "DieuChinhDoKhoBossLunatic",
-        "dtype": "list",
-        "svalue": "",
-        "kvvalue": [],
-        "oattrs": [
-            "nid",
-            "Class",
-            "Level",
-            "HP",
-            "Str",
-            "Magic",
-            "Skill",
-            "Speed",
-            "Luck",
-            "Def",
-            "Res",
-            "Con",
-            "Mov",
-            "Wexp",
-            "Weapon",
-            "Item",
-            "Skills"
-        ],
-        "lovalue": []
-    },
-    {
-        "nid": "DieuChinhDoKhoBossNightmare",
-        "dtype": "list",
-        "svalue": "",
-        "kvvalue": [],
-        "oattrs": [
-            "nid",
-            "Class",
-            "Level",
-            "HP",
-            "Str",
-            "Magic",
-            "Skill",
-            "Speed",
-            "Luck",
-            "Def",
-            "Res",
-            "Con",
-            "Mov",
-            "Wexp",
-            "Weapon",
-            "Item",
-            "Skills"
-        ],
-        "lovalue": []
     }
 ]

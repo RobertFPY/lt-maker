@@ -1822,7 +1822,7 @@ class SetSkillOwner(Action):
 class GainMoney(Action):
     def __init__(self, party_nid, money):
         self.party_nid = party_nid
-        self.money = int(money)  # Ensure money is int (from {...} interpolation it's a string)
+        self.money = money
         self.old_money = None
 
     def do(self):

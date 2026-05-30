@@ -2266,6 +2266,11 @@ def remove_skill_component(self: Event, global_unit, skill, skill_component, fla
 def give_money(self: Event, money: int, party=None, flags=None):
     flags = flags or set()
 
+    # {eval:..}/{e:..} interpolation always returns a string (via _object_to_str),
+    # and the Integer validator only converts literal text at parse time, so coerce
+    # here to keep arithmetic (GainMoney, banner) working.
+    money = int(money)
+
     if party:
         party_nid = party
     else:

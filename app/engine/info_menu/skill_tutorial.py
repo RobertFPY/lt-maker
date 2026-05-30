@@ -235,9 +235,7 @@ class SkillTutorial:
         step, lines = self._current()
 
         # 1. Dim the whole page so the tutorial reads clearly.
-        dim = engine.create_surface((WINWIDTH, WINHEIGHT))
-        dim.fill((0, 0, 0))
-        dim = image_mods.make_translucent(dim, 0.45)
+        dim = image_mods.make_translucent(SPRITES.get('bg_black'), 0.45)
         surf.blit(dim, (0, 0))
 
         # 2. Highlight + point at each target rect.

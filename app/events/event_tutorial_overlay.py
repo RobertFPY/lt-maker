@@ -119,23 +119,26 @@ class EventTutorialOverlay:
         angle = self._ROTATION[self.direction]
         if angle:
             sprite = pygame.transform.rotate(sprite, angle)
-        hand_w = sprite.get_width()
-        hand_h = sprite.get_height()
+        sw, sh = sprite.get_width(), sprite.get_height()
 
-        if self.direction == 'right':
-            # Hand sits to the left of the rect and bobs rightward at it.
-            hand_x = max(0, x - hand_w - gap - bob)
-            hand_y = y + (h - hand_h) // 2
-        elif self.direction == 'left':
-            # Hand sits to the right of the rect and bobs leftward at it.
-            hand_x = x + w + gap + bob
-            hand_y = y + (h - hand_h) // 2
-        elif self.direction == 'up':
-            # Hand sits below the rect and bobs upward at it.
-            hand_x = x + (w - hand_w) // 2
-            hand_y = y + h + gap + bob
-        else:  # 'down': hand sits above the rect and bobs downward at it.
-            hand_x = x + (w - hand_w) // 2
-            hand_y = max(0, y - hand_h - gap - bob)
+        # All directions point the finger tip at a single anchor: the centre of
+        # the target rect. Switching direction therefore only rotates the hand
+        # about that point instead of flinging it to a far-away edge. (With the
+        # default 0x0 size this is exactly the given point.)
+        anchor_x = x + w / 2
+        anchor_y = y + h / 2
 
-        engine.blit(surf, sprite, (int(hand_x), int(hand_y)))
+        # (pointing unit vector, finger-tip position within the rotated sprite)
+        dx, dy, tip_x, tip_y = {
+            'right': (1, 0, sw, sh / 2),
+            'left': (-1, 0, 0, sh / 2),
+            'up': (0, -1, sw / 2, 0),
+            'down': (0, 1, sw / 2, sh),
+        }[self.direction]
+
+        # Finger tip sits `gap` away from the anchor and bobs toward it.
+        tip_global_x = anchor_x + dx * (bob - gap)
+        tip_global_y = anchor_y + dy * (bob - gap)
+        hand_x = tip_global_x - tip_x
+        hand_y = tip_global_y - tip_y
+        engine.blit(surf, sprite, (int(round(hand_x)), int(round(hand_y))))

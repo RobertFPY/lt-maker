@@ -253,9 +253,6 @@ class PhaseChangeState(MapState):
         if game.turncount == 1 and game.phase.get_current() == 'player':
             # The turnwheel will not be able to go before this moment
             game.action_log.set_first_free_action()
-        # Fire on_turn_begin now that the turn-phase banner has finished playing.
-        if not self.is_roam() and game.phase.get_current() == 'player':
-            game.events.trigger(triggers.OnTurnBegin('player', game.turncount))
 
     def save_state(self):
         GAME_NID = str(DB.constants.value('game_nid'))
@@ -331,6 +328,16 @@ class FreeState(MapState):
         phase.fade_in_phase_music()
 
         action.do(action.MarkActionGroupEnd(self.name))
+
+        # Fire on_turn_begin once per player turn, after the phase banner has
+        # finished and the map is interactive again. Firing it here (rather than
+        # during phase_change/status_upkeep) keeps the (transparent) event dialog
+        # safely above the already-started free state.
+        if game.phase.get_current() == 'player' and \
+                game.level_vars.get('_last_turn_begin_fired') != game.turncount:
+            game.level_vars['_last_turn_begin_fired'] = game.turncount
+            if game.events.trigger(triggers.OnTurnBegin('player', game.turncount)):
+                return 'repeat'
 
         # Auto-end turn
         autoend_turn = True

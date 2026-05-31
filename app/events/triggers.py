@@ -466,6 +466,60 @@ class EventOnRemove(EventTrigger):
     unit1: UnitObject #: the unit bearing the skill to be removed.
 
 @dataclass(init=True)
+class OnInfoMenuStart(EventTrigger):
+    """
+    Occurs when the unit info menu is opened (after the open transition finishes).
+    Useful for tutorials or commentary about the inspected unit.
+    """
+    nid: ClassVar[NID] = 'on_info_menu_start'
+    unit1: UnitObject #: the unit currently being displayed in the info menu.
+    page: NID #: the nid of the page currently shown (e.g. `personal_data`, `equipment`, `support_skills`, `notes`).
+
+@dataclass(init=True)
+class OnInfoMenuSwitch(EventTrigger):
+    """
+    Occurs when the player switches to a different page within the unit info menu
+    (for instance by pressing LEFT or RIGHT to change pages).
+    """
+    nid: ClassVar[NID] = 'on_info_menu_switch'
+    unit1: UnitObject #: the unit currently being displayed in the info menu.
+    page: NID #: the nid of the page the player just switched to.
+    prev_page: NID #: the nid of the page the player switched away from.
+
+@dataclass(init=True)
+class OnMoveSelect(EventTrigger):
+    """
+    Occurs when the player selects a destination tile to move a unit to
+    (immediately before the move is carried out).
+    """
+    nid: ClassVar[NID] = 'on_move_select'
+    unit1: UnitObject #: the unit that is about to move.
+    position: Tuple[int, int] #: the destination tile the player selected.
+
+@dataclass(init=True)
+class OnCursorMove(EventTrigger):
+    """
+    Occurs while in the free state whenever the player moves the cursor onto a
+    new tile. Use the event's condition field to react to a specific tile or
+    unit, e.g. `position == (5, 5)` or `unit1 and unit1.nid == 'Eirika'`.
+    """
+    nid: ClassVar[NID] = 'on_cursor_move'
+    position: Tuple[int, int] #: the tile the cursor just moved onto.
+    unit1: Optional[UnitObject] #: the unit currently hovered by the cursor, or None if the tile is empty.
+
+@dataclass(init=True)
+class OnTurnBegin(EventTrigger):
+    """
+    Occurs at the start of the player's turn, after the turn-phase banner
+    animation has finished playing (contrast with `turn_change`, which fires
+    before the banner). Useful for dialogue or actions that should happen once
+    the player can see the map again.
+    """
+    nid: ClassVar[NID] = 'on_turn_begin'
+    team: NID #: the team of the phase that just began (always 'player' for this trigger).
+    turn: int #: the current turn count.
+
+@dataclass(init=True)
 class UnlockStaff(EventTrigger):
     """
     Plays when an unlock staff unlocks a region.

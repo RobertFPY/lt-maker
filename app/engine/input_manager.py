@@ -50,10 +50,40 @@ class InputManager():
             self.keys_pressed[button] = False
             self.joys_pressed[button] = False
 
+    _DIRECTIONAL_BUTTONS = ('UP', 'DOWN', 'LEFT', 'RIGHT')
+
+    def is_button_allowed(self, button) -> bool:
+        """
+        Returns whether a button is currently usable by the player.
+
+        Honors the `restrict_keys`/`unrestrict_keys` event commands, which store
+        the allowlist in the game's game_vars so the restriction persists through
+        suspends and loads. When no game is running (e.g. title screen) or no
+        restriction is set, all buttons are allowed.
+        """
+        try:
+            from app.engine.game_state import game
+        except Exception:
+            return True
+        if not game:
+            return True
+        allowed = game.game_vars.get('_allowed_keys', None)
+        if allowed is None:
+            return True
+        if button in allowed:
+            return True
+        if button in self._DIRECTIONAL_BUTTONS and game.game_vars.get('_allow_directional_keys', True):
+            return True
+        return False
+
     def is_pressed(self, button):
+        if not self.is_button_allowed(button):
+            return False
         return self.keys_pressed[button] or self.joys_pressed[button]
 
     def just_pressed(self, button):
+        if not self.is_button_allowed(button):
+            return False
         return button in self.key_down_events
     
     def directional_input_pressed(self):
@@ -204,11 +234,12 @@ class InputManager():
         # Gives priority to later inputs
         # Remove reversed to give priority to earlier inputs
         for button in reversed(self.key_down_events):
-            if button in self.toggle_buttons:
+            if button in self.toggle_buttons and self.is_button_allowed(button):
                 return button
         # If only arrow keys pressed, return last one pressed
-        if self.key_down_events:
-            return self.key_down_events[-1]
+        for button in reversed(self.key_down_events):
+            if self.is_button_allowed(button):
+                return button
 
     def handle_joystick(self):
         def update_state(pushed, state, button_id, button):

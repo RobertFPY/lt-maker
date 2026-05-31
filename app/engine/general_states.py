@@ -280,6 +280,35 @@ def _handle_info():
         get_sound_thread().play_sfx('Select 3')
         game.boundary.toggle_all_enemy_attacks()
 
+def _forced_move_active() -> bool:
+    """Whether a `force_movement` restriction is currently in effect."""
+    return bool(game.level_vars.get('_force_move_units'))
+
+def _forced_move_allows_unit(unit) -> bool:
+    if not _forced_move_active():
+        return True
+    return unit and unit.nid in game.level_vars.get('_force_move_units', [])
+
+def _forced_move_allows_position(position) -> bool:
+    if not _forced_move_active():
+        return True
+    allowed = game.level_vars.get('_force_move_positions') or []
+    return [position[0], position[1]] in [list(p) for p in allowed]
+
+def _show_forced_move_reject():
+    """Plays an error sound and shows the (optional) custom reject dialogue."""
+    get_sound_thread().play_sfx('Error')
+    text = game.level_vars.get('_force_move_reject') or ''
+    if not text:
+        return
+    # Spawn an anonymous event so the dialogue uses the normal speak box.
+    # Semicolons would be parsed as command separators, so guard against them.
+    safe_text = str(text).replace(';', ',')
+    script = 'speak;;%s' % safe_text
+    game.events._add_event_from_script(
+        '_forced_move_reject', script,
+        triggers.GenericTrigger(position=game.cursor.position))
+
 class FreeState(MapState):
     name = 'free'
 
@@ -291,12 +320,24 @@ class FreeState(MapState):
         game.cursor.fluid.reset_on_change_state()
         game.cursor.show()
         game.boundary.show()
+        # Track the cursor tile so on_cursor_move only fires when it changes.
+        self._last_cursor_pos = game.cursor.position
         for unit in game.get_all_units():
             if skill_system.has_dynamic_range(unit):
                 game.boundary.recalculate_unit(unit)
         phase.fade_in_phase_music()
 
         action.do(action.MarkActionGroupEnd(self.name))
+
+        # Fire on_turn_begin once per player turn, after the phase banner has
+        # finished and the map is interactive again. Firing it here (rather than
+        # during phase_change/status_upkeep) keeps the (transparent) event dialog
+        # safely above the already-started free state.
+        if game.phase.get_current() == 'player' and \
+                game.level_vars.get('_last_turn_begin_fired') != game.turncount:
+            game.level_vars['_last_turn_begin_fired'] = game.turncount
+            if game.events.trigger(triggers.OnTurnBegin('player', game.turncount)):
+                return 'repeat'
 
         # Auto-end turn
         autoend_turn = True
@@ -335,6 +376,11 @@ class FreeState(MapState):
         elif event == 'SELECT':
             cur_pos = game.cursor.position
             cur_unit = game.board.get_unit(cur_pos)
+            # If a force_movement restriction is in effect, only the listed
+            # units may be selected; anything else shows the reject dialogue.
+            if _forced_move_active() and not _forced_move_allows_unit(cur_unit):
+                _show_forced_move_reject()
+                return
             if cur_unit and not cur_unit.finished and 'Tile' not in cur_unit.tags and game.board.in_vision(cur_unit.position):
                 if skill_system.can_select(cur_unit) and (not DB.constants.value('initiative') or game.initiative.get_current_unit() is cur_unit):
                     game.cursor.cur_unit = cur_unit
@@ -368,6 +414,10 @@ class FreeState(MapState):
     def update(self):
         super().update()
         game.highlight.handle_hover()
+        # Fire on_cursor_move when the player moves the cursor to a new tile.
+        if game.cursor.position != self._last_cursor_pos:
+            self._last_cursor_pos = game.cursor.position
+            game.events.trigger(triggers.OnCursorMove(game.cursor.position, game.cursor.get_hover()))
 
     def end(self):
         game.cursor.set_speed_state(False)
@@ -765,7 +815,13 @@ class MoveState(MapState):
                 game.events.trigger(triggers.UnitDeselect(cur_unit, cur_unit.position))
 
         elif event == 'SELECT':
+            # Enforce force_movement: a restricted unit may only move onto an
+            # allowed destination tile; otherwise show the reject dialogue.
+            if _forced_move_active() and _forced_move_allows_unit(cur_unit) and not _forced_move_allows_position(game.cursor.position):
+                _show_forced_move_reject()
+                return
             if game.cursor.position == cur_unit.position:
+                game.events.trigger(triggers.OnMoveSelect(cur_unit, game.cursor.position))
                 if cur_unit.has_attacked or cur_unit.has_traded:
                     # Just move in place
                     cur_unit.current_move = action.CantoMove(cur_unit, game.cursor.position)
@@ -782,6 +838,7 @@ class MoveState(MapState):
                 if game.board.in_vision(game.cursor.position) and game.board.get_unit(game.cursor.position):
                     get_sound_thread().play_sfx('Error')
                 else:
+                    game.events.trigger(triggers.OnMoveSelect(cur_unit, game.cursor.position))
                     normal_moves = game.path_system.get_valid_moves(cur_unit, witch_warp=False)
                     witch_warp = set(skill_system.witch_warp(cur_unit))
                     if cur_unit.has_attacked or cur_unit.has_traded:
@@ -805,6 +862,7 @@ class MoveState(MapState):
                 if game.board.in_vision(game.cursor.position) and game.board.get_unit(game.cursor.position):
                     get_sound_thread().play_sfx('Error')
                 else:
+                    game.events.trigger(triggers.OnMoveSelect(cur_unit, game.cursor.position))
                     action.do(action.MarkActionGroupStart(cur_unit, 'free'))
                     cur_unit.current_move = action.XCOMMove(cur_unit, game.cursor.position)
                     game.state.change('canto_wait')
@@ -1077,6 +1135,28 @@ class MenuState(MapState):
             moves = game.path_system.get_valid_moves(self.cur_unit)
             game.highlight.display_moves(moves)
         game.highlight.display_aura_highlights(self.cur_unit)
+
+        # Apply per-unit menu option filter (set_unit_menu_options command).
+        menu_filter = game.level_vars.get('_unit_menu_filter') or {}
+        unit_filter = menu_filter.get(self.cur_unit.nid)
+        if unit_filter:
+            filter_options = unit_filter.get('options') or []
+            mode = unit_filter.get('mode', 'whitelist')
+            filtered_options = []
+            filtered_info_descs = []
+            for option, info_desc in zip(options, info_descs):
+                if mode == 'blacklist':
+                    keep = option not in filter_options
+                else:  # whitelist
+                    keep = option in filter_options
+                # Always keep Wait so the unit can never be soft-locked.
+                if option == 'Wait':
+                    keep = True
+                if keep:
+                    filtered_options.append(option)
+                    filtered_info_descs.append(info_desc)
+            options = filtered_options
+            info_descs = filtered_info_descs
         self.menu = menus.Choice(self.cur_unit, options, info=info_descs)
         self.menu.set_limit(8)
         self.menu.set_color(['green' if option not in self.normal_options else None for option in options])

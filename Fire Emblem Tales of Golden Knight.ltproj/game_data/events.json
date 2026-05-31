@@ -91,7 +91,7 @@
             "$set_item_uses \"Michalis\" \"Steel_Axe\" 2",
             "$give_skill \"Michalis\" \"Cant_Die\",no_banner",
             "$give_skill \"Michalis\" \"Must_Die\",no_banner",
-            "$interact_unit \"Camus\" \"Michalis\" \"hit2, crit1, end\"",
+            "$interact_unit \"Camus\" \"Michalis\" \"hit2, crit1, end\",immediate",
             "$remove_skill \"Michalis\" \"Cant_Die\",no_banner",
             "$remove_skill \"Michalis\" \"Must_Die\",no_banner",
             "$end_skip",
@@ -402,7 +402,7 @@
             "$change_background \"\"",
             "$set_current_hp \"Michalis\" 34",
             "$transition \"open\" 1000",
-            "$interact_unit \"Michalis\" \"Event_0\" \"crit1, end\"",
+            "$interact_unit \"Michalis\" \"Event_0\" \"crit1, end\",immediate",
             "$end_skip",
             "$add_portrait \"Michalis\" \"CenterRight\"",
             "$say \"Michalis\" \"F...|My axe got broke down.\"",
@@ -5578,16 +5578,46 @@
         "nid": "0 DropGold"
     },
     {
-        "name": "Tutorial",
-        "trigger": "on_roam_interact",
+        "name": "Tutorial1",
+        "trigger": "on_turn_begin",
         "level_nid": "0",
-        "condition": "True",
+        "condition": "game.turncount == 1",
         "commands": [],
         "only_once": false,
         "priority": 20,
         "_source": [
-            "force_skill_tutorial;Camus"
+            "#pyev1",
+            "$say \"\" \"Press C to open Unit Info!\" TextPosition=\"center\" Width=145 StyleNid=\"hint\" NumLines=1",
+            "$restrict_keys \"INFO\",disable_mouse"
         ],
-        "nid": "0 Tutorial"
+        "nid": "0 Tutorial1"
+    },
+    {
+        "name": "Tutorial2",
+        "trigger": "on_info_menu_start",
+        "level_nid": "0",
+        "condition": "True",
+        "commands": [],
+        "only_once": true,
+        "priority": 20,
+        "_source": [
+            "#pyev1",
+            "$restrict_keys \"LEFT,RIGHT,SELECT\",disable_mouse",
+            "$say \"\" \"Swap To Page Skill To See Tutorial!\" TextPosition=\"center\" Width=195 StyleNid=\"hint\" NumLines=1"
+        ],
+        "nid": "0 Tutorial2"
+    },
+    {
+        "name": "Tutorial3",
+        "trigger": "on_info_menu_switch",
+        "level_nid": "0",
+        "condition": "page == 'notes'",
+        "commands": [],
+        "only_once": true,
+        "priority": 20,
+        "_source": [
+            "unrestrict_keys"
+        ],
+        "nid": "0 Tutorial3"
     }
 ]

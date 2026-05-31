@@ -494,6 +494,73 @@ def disp_cursor(self: Event, show_cursor: bool, flags=None):
     else:
         self.game.cursor.hide()
 
+def restrict_keys(self: Event, keys, flags=None):
+    flags = flags or set()
+    valid_buttons = ('UP', 'DOWN', 'LEFT', 'RIGHT', 'SELECT', 'BACK', 'INFO', 'AUX', 'START')
+    allowed = []
+    for raw in str(keys).replace('|', ',').split(','):
+        button = raw.strip().upper()
+        if not button:
+            continue
+        if button in valid_buttons:
+            allowed.append(button)
+        else:
+            self.logger.error("restrict_keys: Unknown button '%s'" % button)
+    allow_directions = 'allow_directions' in flags
+    action.do(action.SetGameVar('_allowed_keys', allowed))
+    action.do(action.SetGameVar('_allow_directional_keys', allow_directions))
+
+def unrestrict_keys(self: Event, flags=None):
+    action.do(action.SetGameVar('_allowed_keys', None))
+    action.do(action.SetGameVar('_allow_directional_keys', True))
+
+def force_movement(self: Event, units, positions, reject_text=None, flags=None):
+    flags = flags or set()
+    unit_nids = []
+    for raw in str(units).replace('|', ',').split(','):
+        nid = raw.strip()
+        if not nid:
+            continue
+        unit = self._get_unit(nid)
+        unit_nids.append(unit.nid if unit else nid)
+    target_positions = []
+    for raw in str(positions).split('|'):
+        pos = self._parse_pos(raw.strip())
+        if pos:
+            target_positions.append([pos[0], pos[1]])
+        else:
+            self.logger.error("force_movement: Could not determine position from %s" % raw)
+    action.do(action.SetLevelVar('_force_move_units', unit_nids))
+    action.do(action.SetLevelVar('_force_move_positions', target_positions))
+    action.do(action.SetLevelVar('_force_move_reject', reject_text or ''))
+
+def release_forced_movement(self: Event, flags=None):
+    action.do(action.SetLevelVar('_force_move_units', None))
+    action.do(action.SetLevelVar('_force_move_positions', None))
+    action.do(action.SetLevelVar('_force_move_reject', ''))
+
+def set_unit_menu_options(self: Event, unit, options, flags=None):
+    flags = flags or set()
+    new_unit = self._get_unit(unit)
+    if not new_unit:
+        self.logger.error("set_unit_menu_options: Couldn't find unit %s" % unit)
+        return
+    option_list = [opt.strip() for opt in str(options).replace('|', ',').split(',') if opt.strip()]
+    mode = 'blacklist' if 'blacklist' in flags else 'whitelist'
+    menu_filter = deepcopy(self.game.level_vars.get('_unit_menu_filter', {}))
+    menu_filter[new_unit.nid] = {'mode': mode, 'options': option_list}
+    action.do(action.SetLevelVar('_unit_menu_filter', menu_filter))
+
+def clear_unit_menu_options(self: Event, unit, flags=None):
+    new_unit = self._get_unit(unit)
+    if not new_unit:
+        self.logger.error("clear_unit_menu_options: Couldn't find unit %s" % unit)
+        return
+    menu_filter = deepcopy(self.game.level_vars.get('_unit_menu_filter', {}))
+    if new_unit.nid in menu_filter:
+        del menu_filter[new_unit.nid]
+        action.do(action.SetLevelVar('_unit_menu_filter', menu_filter))
+
 def move_cursor(self: Event, position, speed=None, flags=None):
     flags = flags or set()
 

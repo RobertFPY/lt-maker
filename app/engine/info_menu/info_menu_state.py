@@ -17,6 +17,7 @@ from app.engine.graphics.ingame_ui.build_groove import build_groove
 from app.engine.graphics.text.text_renderer import render_text, text_width
 from app.engine.info_menu.info_graph import InfoGraph, info_states
 from app.engine.info_menu.info_menu_portrait import InfoMenuPortrait
+from app.engine.info_menu import skill_tutorial
 from app.engine.input_manager import get_input_manager
 from app.engine.objects.unit import UnitObject
 from app.engine.sound import get_sound_thread
@@ -99,6 +100,17 @@ class InfoMenuState(State):
         self.state = 'personal_data'
         self.growth_flag = False
 
+        # Skill-system tutorial overlay state.
+        self.skill_tutorial = None
+        self._tutorial_is_auto = False
+        self._tutorial_done = False  # Prevents re-triggering within this menu session
+        # FORCED trigger: an event command can request that we open directly on
+        # the skill (notes) page and immediately play the tutorial.
+        self._pending_force_tutorial = bool(game.memory.get('_force_skill_tutorial'))
+        game.memory['_force_skill_tutorial'] = None
+        if self._pending_force_tutorial:
+            self.state = 'notes'
+
         self.fluid = FluidScroll(200, 1)
 
         self.build_arrows()
@@ -126,6 +138,24 @@ class InfoMenuState(State):
 
     def begin(self):
         self.fluid.reset_on_change_state()
+        # FORCED trigger: start the tutorial once the menu is interactive (i.e.
+        # after the transition-in state has popped).
+        if self._pending_force_tutorial and not self.transition and not self.skill_tutorial:
+            self._pending_force_tutorial = False
+            self.start_skill_tutorial()
+
+    def start_skill_tutorial(self, is_auto=False):
+        self.skill_tutorial = skill_tutorial.SkillTutorial()
+        self._tutorial_is_auto = is_auto
+        get_sound_thread().play_sfx('Info In')
+
+    def _end_skill_tutorial(self):
+        # The AUTO tutorial marks the seen var so it never auto-plays again.
+        # The FORCED tutorial leaves it untouched (the two paths stay separate).
+        if self._tutorial_is_auto:
+            game.game_vars[skill_tutorial.SEEN_VAR] = True
+        self.skill_tutorial = None
+        self._tutorial_done = True
 
     def reset_surfs(self, keep_last_info_graph_aabb=False):
         self.info_graph.clear(keep_last_aabb=keep_last_info_graph_aabb)
@@ -172,6 +202,12 @@ class InfoMenuState(State):
         game.state.change('transition_pop')
 
     def take_input(self, event):
+        # While the skill tutorial overlay is up, it consumes all input.
+        if self.skill_tutorial:
+            self.skill_tutorial.take_input(event)
+            if not self.skill_tutorial.is_active:
+                self._end_skill_tutorial()
+            return
         first_push = self.fluid.update()
         directions = self.fluid.get_directions()
 
@@ -310,6 +346,9 @@ class InfoMenuState(State):
             self.info_graph.handle_mouse(mouse_position)
 
     def update(self):
+        if self.skill_tutorial:
+            self.skill_tutorial.update()
+
         # Up and Down
         if self.next_unit:
             self.transition_counter += 1
@@ -379,6 +418,16 @@ class InfoMenuState(State):
                     self.info_graph.set_current_state(self.state)
                     self.transition_counter = 0
 
+        # AUTO trigger: the very first time the player reaches the skill (notes)
+        # page, play the tutorial automatically. Guarded by a game var so it
+        # only ever happens once per save, and by a session flag so it doesn't
+        # immediately replay after a forced tutorial finishes.
+        if (skill_tutorial.AUTO_TUTORIAL_ENABLED and not self.skill_tutorial
+                and not self._tutorial_done and not self.transition
+                and self.state == 'notes'
+                and not game.game_vars.get(skill_tutorial.SEEN_VAR)):
+            self.start_skill_tutorial(is_auto=True)
+
     def draw(self, surf):
         if self.bg:
             self.bg.draw(surf)
@@ -400,7 +449,10 @@ class InfoMenuState(State):
         if self.info_graph.current_bb:
             self.info_graph.draw(surf)
 
-        if not self.transition:
+        # Skill tutorial overlay sits above the page content.
+        if self.skill_tutorial:
+            self.skill_tutorial.draw(surf)
+        elif not self.transition:
             self.mouse_indicator.draw(surf)
 
         return surf

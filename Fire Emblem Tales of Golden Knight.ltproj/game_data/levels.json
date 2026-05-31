@@ -4,16 +4,16 @@
         "name": "Knights From Another World",
         "tilemap": "Prologue",
         "bg_tilemap": "Prologue",
-        "party": "Eirika",
+        "party": "Camus",
         "music": {
-            "player_phase": "Distant Roads",
-            "enemy_phase": "Shadow of the Enemy",
+            "player_phase": "Within Sadness",
+            "enemy_phase": "Enemies Appear",
             "other_phase": null,
             "enemy2_phase": null,
-            "player_battle": "Attack",
-            "enemy_battle": "Defense",
+            "player_battle": "Strike",
+            "enemy_battle": "Safeguard",
             "other_battle": null,
-            "enemy2_battle": null
+            "enemy2_battle": "Safeguard"
         },
         "objective": {
             "simple": "Defeat boss",
@@ -21,7 +21,7 @@
             "loss": "Camus or Martin Dies"
         },
         "roam": false,
-        "roam_unit": "Eirika",
+        "roam_unit": "Camus",
         "go_to_overworld": false,
         "should_record": true,
         "tags": [],
@@ -178,7 +178,7 @@
                 ],
                 "starting_skills": [],
                 "team": "enemy",
-                "ai": "Defend",
+                "ai": "Attack2Range",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": [
@@ -201,12 +201,12 @@
                     ],
                     [
                         "Javelin",
-                        false
+                        true
                     ]
                 ],
                 "starting_skills": [],
                 "team": "enemy",
-                "ai": "Defend",
+                "ai": "Attack2Range",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": [
@@ -253,12 +253,12 @@
                     ],
                     [
                         "Hand_Axe",
-                        false
+                        true
                     ]
                 ],
                 "starting_skills": [],
                 "team": "enemy",
-                "ai": "Defend",
+                "ai": "Attack2Range",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": [
@@ -282,7 +282,7 @@
                 ],
                 "starting_skills": [],
                 "team": "enemy",
-                "ai": "Defend",
+                "ai": "Attack2Range",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": [
@@ -306,7 +306,7 @@
                 ],
                 "starting_skills": [],
                 "team": "enemy",
-                "ai": "Defend",
+                "ai": "Attack2Range",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": [
@@ -325,7 +325,7 @@
                 "starting_items": [
                     [
                         "Bronze_Bow",
-                        true
+                        false
                     ]
                 ],
                 "starting_skills": [],
@@ -424,7 +424,9 @@
                         false
                     ]
                 ],
-                "starting_skills": [],
+                "starting_skills": [
+                    "Must_Die"
+                ],
                 "team": "enemy",
                 "ai": "Attack2Range",
                 "roam_ai": null,
@@ -452,7 +454,7 @@
                     "Axebreaker_T1"
                 ],
                 "team": "enemy",
-                "ai": "Defend",
+                "ai": "Attack2Range",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": null,
@@ -469,13 +471,17 @@
                     [
                         "Iron_Lance",
                         false
+                    ],
+                    [
+                        "Javelin",
+                        true
                     ]
                 ],
                 "starting_skills": [
                     "Seal_Speed_T1"
                 ],
                 "team": "enemy",
-                "ai": "Defend",
+                "ai": "Attack2Range",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": null,
@@ -515,13 +521,17 @@
                     [
                         "Iron_Axe",
                         false
+                    ],
+                    [
+                        "Hand_Axe",
+                        true
                     ]
                 ],
                 "starting_skills": [
                     "Zeal_T1"
                 ],
                 "team": "enemy",
-                "ai": "Defend",
+                "ai": "Attack2Range",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": null,
@@ -544,7 +554,7 @@
                     "Axebreaker_T1"
                 ],
                 "team": "enemy",
-                "ai": "Defend",
+                "ai": "Attack2Range",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": null,
@@ -567,7 +577,7 @@
                     "Seal_Speed_T1"
                 ],
                 "team": "enemy",
-                "ai": "Defend",
+                "ai": "Attack2Range",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": null,
@@ -583,7 +593,7 @@
                 "starting_items": [
                     [
                         "Iron_Bow",
-                        true
+                        false
                     ]
                 ],
                 "starting_skills": [
@@ -659,7 +669,7 @@
                     "Life_and_Death_T1"
                 ],
                 "team": "enemy",
-                "ai": "Attack2Range",
+                "ai": "Pursue",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": null,
@@ -680,7 +690,7 @@
                 ],
                 "starting_skills": [],
                 "team": "enemy",
-                "ai": "Attack2Range",
+                "ai": "Pursue",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": null,
@@ -701,7 +711,7 @@
                 ],
                 "starting_skills": [],
                 "team": "enemy",
-                "ai": "Attack2Range",
+                "ai": "Pursue",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": null,
@@ -745,7 +755,7 @@
                     "Axebreaker_T1"
                 ],
                 "team": "enemy",
-                "ai": "Defend",
+                "ai": "Attack2Range",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": null,
@@ -762,13 +772,17 @@
                     [
                         "Steel_Lance",
                         false
+                    ],
+                    [
+                        "Javelin",
+                        true
                     ]
                 ],
                 "starting_skills": [
                     "Seal_Speed_T1"
                 ],
                 "team": "enemy",
-                "ai": "Defend",
+                "ai": "Attack2Range",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": null,
@@ -808,13 +822,17 @@
                     [
                         "Steel_Axe",
                         false
+                    ],
+                    [
+                        "Hand_Axe",
+                        true
                     ]
                 ],
                 "starting_skills": [
                     "Zeal_T1"
                 ],
                 "team": "enemy",
-                "ai": "Defend",
+                "ai": "Attack2Range",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": null,
@@ -841,7 +859,7 @@
                     "Axebreaker_T1"
                 ],
                 "team": "enemy",
-                "ai": "Defend",
+                "ai": "Attack2Range",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": null,
@@ -868,7 +886,7 @@
                     "Seal_Speed_T1"
                 ],
                 "team": "enemy",
-                "ai": "Defend",
+                "ai": "Attack2Range",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": null,
@@ -964,7 +982,7 @@
                     "Life_and_Death_T1"
                 ],
                 "team": "enemy",
-                "ai": "Attack2Range",
+                "ai": "Pursue",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": null,
@@ -985,7 +1003,7 @@
                 ],
                 "starting_skills": [],
                 "team": "enemy",
-                "ai": "Attack2Range",
+                "ai": "Pursue",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": null,
@@ -1006,7 +1024,7 @@
                 ],
                 "starting_skills": [],
                 "team": "enemy",
-                "ai": "Attack2Range",
+                "ai": "Pursue",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": null,
@@ -1069,7 +1087,7 @@
                 ],
                 "starting_skills": [],
                 "team": "enemy",
-                "ai": "Defend",
+                "ai": "Attack2Range",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": null,
@@ -1093,7 +1111,7 @@
                     "Vantage_T4"
                 ],
                 "team": "enemy",
-                "ai": "Defend",
+                "ai": "Attack2Range",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": null,
@@ -1110,6 +1128,10 @@
                     [
                         "Steel_Lance",
                         false
+                    ],
+                    [
+                        "Javelin",
+                        true
                     ]
                 ],
                 "starting_skills": [
@@ -1117,7 +1139,7 @@
                     "Vantage_T4"
                 ],
                 "team": "enemy",
-                "ai": "Defend",
+                "ai": "Attack2Range",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": null,
@@ -1158,6 +1180,10 @@
                     [
                         "Steel_Axe",
                         false
+                    ],
+                    [
+                        "Hand_Axe",
+                        true
                     ]
                 ],
                 "starting_skills": [
@@ -1165,7 +1191,7 @@
                     "Vantage_T4"
                 ],
                 "team": "enemy",
-                "ai": "Defend",
+                "ai": "Attack2Range",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": null,
@@ -1193,7 +1219,7 @@
                     "Vantage_T4"
                 ],
                 "team": "enemy",
-                "ai": "Defend",
+                "ai": "Attack2Range",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": null,
@@ -1221,7 +1247,7 @@
                     "Vantage_T4"
                 ],
                 "team": "enemy",
-                "ai": "Defend",
+                "ai": "Attack2Range",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": null,
@@ -1321,7 +1347,7 @@
                     "Vantage_T4"
                 ],
                 "team": "enemy",
-                "ai": "Defend",
+                "ai": "Pursue",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": null,
@@ -1345,7 +1371,7 @@
                     "Vantage_T4"
                 ],
                 "team": "enemy",
-                "ai": "Defend",
+                "ai": "Attack2Range",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": null,
@@ -1369,7 +1395,7 @@
                     "Vantage_T4"
                 ],
                 "team": "enemy",
-                "ai": "Defend",
+                "ai": "Attack2Range",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": null,
@@ -1414,7 +1440,7 @@
                 ],
                 "starting_skills": [],
                 "team": "enemy",
-                "ai": "Attack2Range",
+                "ai": "Pursue",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": null,
@@ -1435,7 +1461,7 @@
                 ],
                 "starting_skills": [],
                 "team": "enemy",
-                "ai": "Attack2Range",
+                "ai": "Pursue",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": null,
@@ -1477,7 +1503,7 @@
                 ],
                 "starting_skills": [],
                 "team": "enemy",
-                "ai": "Defend",
+                "ai": "Attack2Range",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": null,
@@ -1498,7 +1524,7 @@
                 ],
                 "starting_skills": [],
                 "team": "enemy",
-                "ai": "Defend",
+                "ai": "Attack2Range",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": null,
@@ -1511,18 +1537,75 @@
                 "nid": "ShowMission",
                 "region_type": "normal",
                 "position": [
-                    17,
+                    16,
                     0
                 ],
                 "size": [
-                    17,
-                    13
+                    18,
+                    15
                 ],
                 "sub_nid": "",
                 "highlight": null,
                 "condition": "unit.team == 'player'",
                 "time_left": null,
                 "only_once": true,
+                "interrupt_move": false,
+                "hide_time": false
+            },
+            {
+                "nid": "CallEnemy",
+                "region_type": "normal",
+                "position": [
+                    13,
+                    0
+                ],
+                "size": [
+                    27,
+                    15
+                ],
+                "sub_nid": "",
+                "highlight": null,
+                "condition": "True",
+                "time_left": null,
+                "only_once": false,
+                "interrupt_move": false,
+                "hide_time": false
+            },
+            {
+                "nid": "Vendor",
+                "region_type": "event",
+                "position": [
+                    7,
+                    4
+                ],
+                "size": [
+                    1,
+                    1
+                ],
+                "sub_nid": "Vendor",
+                "highlight": null,
+                "condition": "not unit.has_traded",
+                "time_left": null,
+                "only_once": false,
+                "interrupt_move": false,
+                "hide_time": false
+            },
+            {
+                "nid": "Armory",
+                "region_type": "event",
+                "position": [
+                    29,
+                    6
+                ],
+                "size": [
+                    1,
+                    1
+                ],
+                "sub_nid": "Armory",
+                "highlight": null,
+                "condition": "not unit.has_traded",
+                "time_left": null,
+                "only_once": false,
                 "interrupt_move": false,
                 "hide_time": false
             }
@@ -1869,7 +1952,7 @@
         "name": "An Apple And The Tree",
         "tilemap": "Prologue 2",
         "bg_tilemap": "Prologue",
-        "party": "Eirika",
+        "party": "Camus",
         "music": {
             "player_phase": "Distant Roads",
             "enemy_phase": "Shadow of the Enemy",
@@ -2282,7 +2365,7 @@
         "name": "Ch. 1: I'm not a Savior",
         "tilemap": "Chapter 1",
         "bg_tilemap": null,
-        "party": "Eirika",
+        "party": "Camus",
         "music": {
             "player_phase": "Distant Roads",
             "enemy_phase": "Shadow of the Enemy",
@@ -3273,7 +3356,7 @@
         "name": "Ch. 3: The Bandits of Borgo",
         "tilemap": "Chapter 3",
         "bg_tilemap": null,
-        "party": "Eirika",
+        "party": "Camus",
         "music": {
             "player_phase": null,
             "enemy_phase": null,
@@ -3848,7 +3931,7 @@
         "name": "Ch. 4: Ancient Horrors",
         "tilemap": "Chapter 4",
         "bg_tilemap": null,
-        "party": "Eirika",
+        "party": "Camus",
         "music": {
             "player_phase": null,
             "enemy_phase": null,
@@ -4872,7 +4955,7 @@
         "name": "Ch. 5: The Empire's Reach",
         "tilemap": "Chapter 5",
         "bg_tilemap": null,
-        "party": "Eirika",
+        "party": "Camus",
         "music": {
             "player_phase": null,
             "enemy_phase": null,
@@ -5859,7 +5942,7 @@
         "name": "DEBUG",
         "tilemap": "Chapter 2",
         "bg_tilemap": null,
-        "party": "Eirika",
+        "party": "Camus",
         "music": {
             "player_phase": "Shadow of the Enemy",
             "enemy_phase": null,

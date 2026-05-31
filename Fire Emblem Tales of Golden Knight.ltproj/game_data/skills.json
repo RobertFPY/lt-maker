@@ -1623,12 +1623,12 @@
                 null
             ],
             [
-                "dynamic_damage",
-                "4 if mode == 'attack' else 0"
-            ],
-            [
                 "priority",
                 0
+            ],
+            [
+                "raw_damage",
+                "4 if mode == 'attack' else 0"
             ]
         ]
     },
@@ -1651,12 +1651,12 @@
                 null
             ],
             [
-                "dynamic_damage",
-                "6 if mode == 'attack' else 0"
-            ],
-            [
                 "priority",
                 1
+            ],
+            [
+                "raw_damage",
+                "6 if mode == 'attack' else 0"
             ]
         ]
     },
@@ -1691,12 +1691,12 @@
                 "item_system.is_weapon(unit, item)"
             ],
             [
-                "dynamic_damage",
-                "5 if mode == 'attack' else 0"
-            ],
-            [
                 "attack_pre_proc",
                 "Marksmanship_Effect"
+            ],
+            [
+                "raw_damage",
+                "5 if mode == 'attack' else 0"
             ]
         ]
     },
@@ -1731,12 +1731,12 @@
                 "item_system.is_weapon(unit, item)"
             ],
             [
-                "dynamic_damage",
-                "7 if mode == 'attack' else 0"
-            ],
-            [
                 "attack_pre_proc",
                 "Marksmanship_Effect"
+            ],
+            [
+                "raw_damage",
+                "7 if mode == 'attack' else 0"
             ]
         ]
     },
@@ -8818,8 +8818,8 @@
                 "len(get_allies_within_distance(unit, 1)) > 1"
             ],
             [
-                "damage",
-                5
+                "raw_damage",
+                "5"
             ],
             [
                 "attack_speed",
@@ -8970,8 +8970,8 @@
                 "len(get_allies_within_distance(unit, 1)) > 1 "
             ],
             [
-                "damage",
-                5
+                "raw_damage",
+                "5"
             ],
             [
                 "dynamic_resist",
@@ -9114,8 +9114,8 @@
                 "len(get_allies_within_distance(unit, 1)) > 1"
             ],
             [
-                "damage",
-                5
+                "raw_damage",
+                "5"
             ],
             [
                 "dynamic_resist",
@@ -9934,7 +9934,7 @@
     {
         "nid": "Life_and_Death_T1",
         "name": "Life and Death",
-        "desc": "Grants +3 Str/Mag/Spd, -3 Def/Res.",
+        "desc": "Grants +3 Str/Mag/Skl, -3 Def/Res.",
         "icon_nid": "All_Skills",
         "icon_index": [
             5,
@@ -9961,7 +9961,7 @@
                         3
                     ],
                     [
-                        "SPD",
+                        "SKL",
                         3
                     ],
                     [
@@ -9983,7 +9983,7 @@
     {
         "nid": "Life_and_Death_T2",
         "name": "Life and Death",
-        "desc": "Grants +4 Str/Mag/Spd, -4 Def/Res.",
+        "desc": "Grants +4 Str/Mag/Skl, -4 Def/Res.",
         "icon_nid": "All_Skills",
         "icon_index": [
             5,
@@ -10010,7 +10010,7 @@
                         4
                     ],
                     [
-                        "SPD",
+                        "SKL",
                         4
                     ],
                     [
@@ -10032,7 +10032,7 @@
     {
         "nid": "Life_and_Death_T3",
         "name": "Life and Death",
-        "desc": "Grants +5 Str/Mag/Spd, -5 Def/Res.",
+        "desc": "Grants +5 Str/Mag/Skl, -5 Def/Res.",
         "icon_nid": "All_Skills",
         "icon_index": [
             5,
@@ -10059,7 +10059,7 @@
                         5
                     ],
                     [
-                        "SPD",
+                        "SKL",
                         5
                     ],
                     [
@@ -10081,7 +10081,7 @@
     {
         "nid": "Life_and_Death_T4",
         "name": "Life and Death",
-        "desc": "Grants +7 Str/Mag/Spd, -7 Def/Res.",
+        "desc": "Grants +7 Str/Mag/Skl, -7 Def/Res.",
         "icon_nid": "All_Skills",
         "icon_index": [
             5,
@@ -10108,7 +10108,7 @@
                         7
                     ],
                     [
-                        "SPD",
+                        "SKL",
                         7
                     ],
                     [
@@ -10346,12 +10346,12 @@
                 "unit.get_weapon() and item_system.weapon_type(unit, unit.get_weapon()) == 'Sword' and not 'TrueDamage' in item.tags"
             ],
             [
-                "damage",
+                "hit",
                 5
             ],
             [
-                "hit",
-                5
+                "raw_damage",
+                "5"
             ]
         ]
     },
@@ -10382,12 +10382,12 @@
                 "unit.get_weapon() and item_system.weapon_type(unit, unit.get_weapon()) == 'Sword' and not 'TrueDamage' in item.tags"
             ],
             [
-                "damage",
+                "hit",
                 10
             ],
             [
-                "hit",
-                10
+                "raw_damage",
+                "10"
             ]
         ]
     },
@@ -10418,12 +10418,12 @@
                 "unit.get_weapon() and item_system.weapon_type(unit, unit.get_weapon()) == 'Sword' and not 'TrueDamage' in item.tags"
             ],
             [
-                "damage",
+                "hit",
                 15
             ],
             [
-                "hit",
-                15
+                "raw_damage",
+                "15"
             ]
         ]
     },
@@ -10454,8 +10454,8 @@
                 "unit.get_weapon() and item_system.weapon_type(unit, unit.get_weapon()) == 'Lance' and not 'TrueDamage' in item.tags"
             ],
             [
-                "damage",
-                5
+                "raw_damage",
+                "5"
             ],
             [
                 "hit",
@@ -10486,8 +10486,8 @@
                 1
             ],
             [
-                "damage",
-                10
+                "raw_damage",
+                "10"
             ],
             [
                 "hit",
@@ -10526,8 +10526,8 @@
                 "unit.get_weapon() and item_system.weapon_type(unit, unit.get_weapon()) == 'Lance' and not 'TrueDamage' in item.tags"
             ],
             [
-                "damage",
-                15
+                "raw_damage",
+                "15"
             ],
             [
                 "hit",
@@ -10562,8 +10562,8 @@
                 "unit.get_weapon() and item_system.weapon_type(unit, unit.get_weapon()) == 'Axe' and not 'TrueDamage' in item.tags"
             ],
             [
-                "damage",
-                5
+                "raw_damage",
+                "5"
             ],
             [
                 "hit",
@@ -10598,8 +10598,8 @@
                 "unit.get_weapon() and item_system.weapon_type(unit, unit.get_weapon()) == 'Axe' and not 'TrueDamage' in item.tags"
             ],
             [
-                "damage",
-                10
+                "raw_damage",
+                "10"
             ],
             [
                 "hit",
@@ -10634,8 +10634,8 @@
                 "unit.get_weapon() and item_system.weapon_type(unit, unit.get_weapon()) == 'Axe' and not 'TrueDamage' in item.tags"
             ],
             [
-                "damage",
-                15
+                "raw_damage",
+                "15"
             ],
             [
                 "hit",
@@ -10670,8 +10670,8 @@
                 "unit.get_weapon() and item_system.weapon_type(unit, unit.get_weapon()) == 'Bow' and not 'TrueDamage' in item.tags"
             ],
             [
-                "damage",
-                5
+                "raw_damage",
+                "5"
             ],
             [
                 "hit",
@@ -10706,8 +10706,8 @@
                 "unit.get_weapon() and item_system.weapon_type(unit, unit.get_weapon()) == 'Bow' and not 'TrueDamage' in item.tags"
             ],
             [
-                "damage",
-                10
+                "raw_damage",
+                "10"
             ],
             [
                 "hit",
@@ -10742,8 +10742,8 @@
                 "unit.get_weapon() and item_system.weapon_type(unit, unit.get_weapon()) == 'Bow' and not 'TrueDamage' in item.tags"
             ],
             [
-                "damage",
-                15
+                "raw_damage",
+                "15"
             ],
             [
                 "hit",
@@ -10778,8 +10778,8 @@
                 "unit.get_weapon() and item_system.weapon_type(unit, unit.get_weapon()) == 'Knife' and not 'TrueDamage' in item.tags"
             ],
             [
-                "damage",
-                5
+                "raw_damage",
+                "5"
             ],
             [
                 "hit",
@@ -10814,8 +10814,8 @@
                 "unit.get_weapon() and item_system.weapon_type(unit, unit.get_weapon()) == 'Knife' and not 'TrueDamage' in item.tags"
             ],
             [
-                "damage",
-                10
+                "raw_damage",
+                "10"
             ],
             [
                 "hit",
@@ -10850,8 +10850,8 @@
                 "unit.get_weapon() and item_system.weapon_type(unit, unit.get_weapon()) == 'Knife' and not 'TrueDamage' in item.tags"
             ],
             [
-                "damage",
-                15
+                "raw_damage",
+                "15"
             ],
             [
                 "hit",
@@ -10886,8 +10886,8 @@
                 "unit.get_weapon() and item_system.weapon_type(unit, unit.get_weapon()) in ('Anima', 'Light', 'Dark') and not 'TrueDamage' in item.tags"
             ],
             [
-                "damage",
-                5
+                "raw_damage",
+                "5"
             ],
             [
                 "hit",
@@ -10922,8 +10922,8 @@
                 "unit.get_weapon() and item_system.weapon_type(unit, unit.get_weapon()) in ('Anima', 'Light', 'Dark') and not 'TrueDamage' in item.tags"
             ],
             [
-                "damage",
-                10
+                "raw_damage",
+                "10"
             ],
             [
                 "hit",
@@ -10958,8 +10958,8 @@
                 "unit.get_weapon() and item_system.weapon_type(unit, unit.get_weapon()) in ('Anima', 'Light', 'Dark') and not 'TrueDamage' in item.tags"
             ],
             [
-                "damage",
-                15
+                "raw_damage",
+                "15"
             ],
             [
                 "hit",

@@ -4009,17 +4009,6 @@
                 null
             ],
             [
-                "uses",
-                45
-            ],
-            [
-                "uses_options",
-                {
-                    "lose_uses_on_miss": false,
-                    "one_loss_per_combat": false
-                }
-            ],
-            [
                 "weapon_type",
                 "Lance"
             ],
@@ -5908,17 +5897,6 @@
                 null
             ],
             [
-                "uses",
-                45
-            ],
-            [
-                "uses_options",
-                {
-                    "lose_uses_on_miss": false,
-                    "one_loss_per_combat": false
-                }
-            ],
-            [
                 "weapon_type",
                 "Axe"
             ],
@@ -5968,7 +5946,7 @@
             ],
             [
                 "max_range",
-                3
+                2
             ],
             [
                 "damage",
@@ -6053,7 +6031,7 @@
             ],
             [
                 "max_range",
-                3
+                2
             ],
             [
                 "damage",
@@ -6142,7 +6120,7 @@
             ],
             [
                 "max_range",
-                3
+                2
             ],
             [
                 "damage",
@@ -6278,7 +6256,7 @@
             ],
             [
                 "max_range",
-                3
+                2
             ],
             [
                 "effective_damage",
@@ -6367,7 +6345,7 @@
             ],
             [
                 "max_range",
-                3
+                2
             ],
             [
                 "effective_damage",
@@ -6456,7 +6434,7 @@
             ],
             [
                 "max_range",
-                3
+                2
             ],
             [
                 "effective_damage",
@@ -6545,7 +6523,7 @@
             ],
             [
                 "max_range",
-                3
+                2
             ],
             [
                 "effective_damage",
@@ -6638,7 +6616,7 @@
             ],
             [
                 "max_range",
-                3
+                2
             ],
             [
                 "effective_damage",
@@ -6824,7 +6802,7 @@
             ],
             [
                 "max_range",
-                3
+                2
             ],
             [
                 "effective_damage",
@@ -7006,7 +6984,7 @@
             ],
             [
                 "max_range",
-                3
+                2
             ],
             [
                 "effective_damage",
@@ -7096,7 +7074,7 @@
             ],
             [
                 "max_range",
-                4
+                3
             ],
             [
                 "effective_damage",
@@ -7185,7 +7163,7 @@
             ],
             [
                 "max_range",
-                3
+                2
             ],
             [
                 "effective_damage",
@@ -9525,7 +9503,7 @@
             ],
             [
                 "damage",
-                0
+                5
             ],
             [
                 "lifelink",

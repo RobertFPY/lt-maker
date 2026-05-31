@@ -632,7 +632,22 @@ class GridChoiceMenu():
     def draw(self, surf) -> engine.Surface:
         left, top = self._get_screen_position()
         # draw bg
-        engine.blit(surf, self._cached_bg, (left, top))
+        if (self._bg_name and not self._title
+                and self._orientation == Orientation.HORIZONTAL
+                and len(self._option_data) > 1):
+            # Horizontal choice menus normally draw a single shared frame around
+            # the whole row, which can leave trailing options without a visible
+            # border. Instead, draw an individual frame behind each option so
+            # every option is clearly bordered.
+            iw, ih = self._item_size
+            for idx in range(len(self._option_data)):
+                if not self._is_option_visible(idx):
+                    continue
+                ox, oy = self.get_topleft_of_idx(idx)
+                box = create_base_surf(iw + 8, ih + 8, self._bg_name)
+                engine.blit(surf, box, (ox - 4, top))
+        else:
+            engine.blit(surf, self._cached_bg, (left, top))
         # draw title and options
         title_pos = left + 5, top + 3
         options_y = 3

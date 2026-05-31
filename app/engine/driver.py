@@ -108,8 +108,14 @@ def run(game):
     from app.engine.sound import get_sound_thread
     from app.engine.game_counters import ANIMATION_COUNTERS
     from app.engine.input_manager import get_input_manager
+    from app.engine import save_state
 
     ANIMATION_COUNTERS.reset()
+
+    # Map raw F1..F9 keycodes to save-state slot indices (0..8).
+    _savestate_fkeys = {
+        engine.key_map['f%d' % (n + 1)]: n for n in range(save_state.NUM_SLOTS)
+    }
 
     get_sound_thread().reset()
     get_sound_thread().set_music_volume(cf.SETTINGS['music_volume'])
@@ -152,6 +158,39 @@ def run(game):
                 continue
         else:
             _soft_reset_start_time = None
+
+        # Keep the rolling pre-action checkpoint fresh (cheap: only re-snapshots
+        # on entering an idle state). Must run before hotkey handling so a quick
+        # save can write the latest checkpoint.
+        if not _error_mode:
+            save_state.capture_checkpoint(game)
+
+        # Handle GBA-emulator style save-state hotkeys (read from raw keyboard):
+        #   Shift + F1..F9 -> quick save into slot 1..9
+        #   F1..F9         -> quick load from slot 1..9
+        # Loading works at any time (the whole game is rebuilt). Saving stores
+        # the latest clean pre-action checkpoint, so a save in the middle of
+        # combat / an event / movement lands on the moment before that action
+        # (turnwheel-like) instead of a broken mid-animation frame. No banner is
+        # shown; the SFX is the only feedback.
+        if not _error_mode and game.state.current() not in (None, 'title_start'):
+            for raw in raw_events:
+                if raw.type != engine.KEYDOWN or raw.key not in _savestate_fkeys:
+                    continue
+                slot = _savestate_fkeys[raw.key]
+                try:
+                    if engine.is_shift_pressed():  # quick save
+                        if save_state.quick_save(game, slot) == 'saved':
+                            get_sound_thread().play_sfx('Select 1')
+                        else:
+                            get_sound_thread().play_sfx('Error')
+                    else:  # quick load
+                        if save_state.quick_load(game, slot):
+                            get_sound_thread().play_sfx('Select 1')
+                        else:
+                            get_sound_thread().play_sfx('Error')
+                except Exception:
+                    logging.exception("Save-state hotkey failed")
 
         # game loop. catch and log any errors in this loop.
         if _error_mode:

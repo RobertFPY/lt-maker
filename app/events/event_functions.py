@@ -3670,14 +3670,21 @@ def remove_table(self: Event, nid, flags=None):
 
 def draw_hand(self: Event, nid, top_left, size=None, flags=None):
     from app.events.event_tutorial_overlay import EventTutorialOverlay
+    flags = flags or set()
     x, y = top_left
     if size:
         w, h = size
     else:
         w, h = 0, 0
+    # Pick a pointing direction from the flags (default points right).
+    direction = 'right'
+    for d in ('up', 'down', 'left', 'right'):
+        if d in flags:
+            direction = d
+            break
     # Replace any existing overlay sharing this nid.
     self.other_boxes = [(bnid, box) for (bnid, box) in self.other_boxes if bnid != nid]
-    overlay = EventTutorialOverlay(self, (x, y, w, h), show_hand=True, show_highlight=False)
+    overlay = EventTutorialOverlay(self, (x, y, w, h), show_hand=True, show_highlight=False, direction=direction)
     self.other_boxes.append((nid, overlay))
 
 def draw_highlight(self: Event, nid, top_left, size=None, color=None, flags=None):

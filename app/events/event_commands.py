@@ -4073,11 +4073,18 @@ Draws an animated pointing hand (the same hand used by the skill-system tutorial
 
 * *Nid* is the name of this hand overlay (reuse the same nid to move it; use **remove_table** to remove it manually).
 * *TopLeft* is the `x,y` screen-pixel position of the top-left corner of the area to point at.
-* *Size* optionally gives the `w,h` size (in pixels) of that area; the hand is placed just to its left and vertically centered. Defaults to `0,0` (point at a single spot).
+* *Size* optionally gives the `w,h` size (in pixels) of the area being pointed at. Defaults to `0,0` (point at a single spot).
+
+By default the hand points to the **right** (it sits on the left side of the area). Add one of the direction flags to change which way it points and which side of the area it sits on:
+
+1. *right* (default): hand on the left, pointing right.
+2. *left*: hand on the right, pointing left.
+3. *up*: hand below the area, pointing up.
+4. *down*: hand above the area, pointing down.
 
 Write this command *immediately before* the **speak**/**say** it belongs to so the hand binds to (and vanishes with) that text box. For example:
 ```
-draw_hand;Hand1;100,14;136,18
+draw_hand;Hand1;100,14;136,18;down
 speak;Eirika;This is the Class Skill.
 ```
         """
@@ -4085,6 +4092,7 @@ speak;Eirika;This is the Class Skill.
     keywords = ["Nid", "TopLeft"]
     optional_keywords = ["Size"]
     keyword_types = ["Nid", "Size", "Size"]
+    _flags = ["up", "down", "left", "right"]
 
 class DrawHighlight(EventCommand):
     nid = "draw_highlight"

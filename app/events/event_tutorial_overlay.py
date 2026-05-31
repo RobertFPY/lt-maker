@@ -41,12 +41,23 @@ class EventTutorialOverlay:
 
     HIGHLIGHT_COLOR = (248, 224, 96)
 
-    def __init__(self, event, rect, show_hand=True, show_highlight=True, color=None):
+    # The base ``menu_hand`` sprite points to the right. To make it point in
+    # another direction we rotate it counter-clockwise by this many degrees.
+    _ROTATION = {
+        'right': 0,
+        'up': 90,
+        'left': 180,
+        'down': 270,
+    }
+
+    def __init__(self, event, rect, show_hand=True, show_highlight=True,
+                 color=None, direction='right'):
         self.event = event
         self.rect = rect  # (x, y, w, h) in screen-space pixels
         self.show_hand = show_hand
         self.show_highlight = show_highlight
         self.color = color or self.HIGHLIGHT_COLOR
+        self.direction = direction if direction in self._ROTATION else 'right'
 
         self.cursor_hand = CursorHand()
         self.hand_sprite = SPRITES.get('menu_hand')
@@ -100,8 +111,31 @@ class EventTutorialOverlay:
 
     def _draw_hand(self, surf, rect):
         x, y, w, h = rect
-        hand_w = self.hand_sprite.get_width()
-        hand_h = self.hand_sprite.get_height()
-        hand_x = max(0, x - hand_w - 2)
-        hand_y = y + (h - hand_h) // 2
-        self.cursor_hand.draw(surf, (hand_x, hand_y))
+        gap = 2
+        # Animated "bob" amount toward the target (reuses CursorHand's wave).
+        bob = self.cursor_hand.get_offset()
+
+        sprite = self.hand_sprite
+        angle = self._ROTATION[self.direction]
+        if angle:
+            sprite = pygame.transform.rotate(sprite, angle)
+        hand_w = sprite.get_width()
+        hand_h = sprite.get_height()
+
+        if self.direction == 'right':
+            # Hand sits to the left of the rect and bobs rightward at it.
+            hand_x = max(0, x - hand_w - gap - bob)
+            hand_y = y + (h - hand_h) // 2
+        elif self.direction == 'left':
+            # Hand sits to the right of the rect and bobs leftward at it.
+            hand_x = x + w + gap + bob
+            hand_y = y + (h - hand_h) // 2
+        elif self.direction == 'up':
+            # Hand sits below the rect and bobs upward at it.
+            hand_x = x + (w - hand_w) // 2
+            hand_y = y + h + gap + bob
+        else:  # 'down': hand sits above the rect and bobs downward at it.
+            hand_x = x + (w - hand_w) // 2
+            hand_y = max(0, y - hand_h - gap - bob)
+
+        engine.blit(surf, sprite, (int(hand_x), int(hand_y)))

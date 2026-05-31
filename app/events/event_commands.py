@@ -4033,6 +4033,91 @@ If *Unit* is not given, the event's own unit is used. Unlike the automatic first
 
     keywords = ["Unit"]
 
+class RestrictKeys(EventCommand):
+    nid = "restrict_keys"
+    nickname = "lock_keys"
+    tag = Tags.MISCELLANEOUS
+
+    desc = \
+        """
+Restricts player input so that only the listed buttons are usable. *Keys* is a comma-separated list of button names chosen from: `UP`, `DOWN`, `LEFT`, `RIGHT`, `SELECT`, `BACK`, `START`, `AUX`, `INFO`. Any button not in the list is ignored until **unrestrict_keys** is called.
+
+By default the four directional buttons (UP/DOWN/LEFT/RIGHT) are still blocked unless you include them in the list. Add the *allow_directions* flag to always keep cursor/menu navigation usable regardless of the list.
+
+This restriction is saved with the game, so it persists through suspends and loads.
+        """
+
+    keywords = ["Keys"]
+    keyword_types = ["String"]
+    _flags = ["allow_directions"]
+
+class UnrestrictKeys(EventCommand):
+    nid = "unrestrict_keys"
+    nickname = "unlock_keys"
+    tag = Tags.MISCELLANEOUS
+
+    desc = \
+        """
+Removes any key restriction created by **restrict_keys**, allowing the player to use all buttons normally again.
+        """
+
+class ForceMovement(EventCommand):
+    nid = "force_movement"
+    tag = Tags.MISCELLANEOUS
+
+    desc = \
+        """
+Forces the player so that they can only move the listed unit(s) onto the listed tile(s). Selecting any other unit, or trying to move onto any other tile, plays an error sound and shows a dialogue instead of allowing the action.
+
+*Units* is a comma-separated list of unit nids that the player is allowed to pick up and move. *Positions* is a comma-separated list of `x,y` destination tiles that those units are allowed to move onto (use the `|` separator between tiles, e.g. `5,5|6,5`).
+
+*RejectText* (optional) is the dialogue shown when the player tries an illegal selection. If omitted, a default message is shown.
+
+The restriction is cleared with **release_forced_movement**, and is saved with the game.
+        """
+
+    keywords = ["Units", "Positions"]
+    optional_keywords = ["RejectText"]
+    keyword_types = ["String", "String", "String"]
+
+class ReleaseForcedMovement(EventCommand):
+    nid = "release_forced_movement"
+    tag = Tags.MISCELLANEOUS
+
+    desc = \
+        """
+Removes any movement restriction created by **force_movement**, letting the player select and move units freely again.
+        """
+
+class SetUnitMenuOptions(EventCommand):
+    nid = "set_unit_menu_options"
+    tag = Tags.MISCELLANEOUS
+
+    desc = \
+        """
+Controls which action-menu options appear for a specific *Unit*. *Options* is a comma-separated list of option names (e.g. `Attack,Item,Wait`).
+
+By default this acts as a whitelist: only the listed options (plus `Wait`, which is always kept to avoid soft-locks) are shown for that unit. Add the *blacklist* flag instead to hide the listed options while showing everything else.
+
+The filter is saved with the game. Use **clear_unit_menu_options** to remove it.
+        """
+
+    keywords = ["Unit", "Options"]
+    keyword_types = ["Unit", "String"]
+    _flags = ["blacklist"]
+
+class ClearUnitMenuOptions(EventCommand):
+    nid = "clear_unit_menu_options"
+    tag = Tags.MISCELLANEOUS
+
+    desc = \
+        """
+Removes any action-menu option filter created by **set_unit_menu_options** for the given *Unit*, restoring that unit's normal menu.
+        """
+
+    keywords = ["Unit"]
+    keyword_types = ["Unit"]
+
 def get_commands():
     return EventCommand.__subclasses__()
 

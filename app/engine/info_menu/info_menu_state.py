@@ -28,6 +28,7 @@ from app.utilities import utils
 from app.utilities.enums import HAlignment
 from app.engine.fonts import FONT
 from app.engine.info_menu.multi_desc import PageType, build_dialog_list
+from app.events import triggers
 
 if TYPE_CHECKING:
     from app.engine.objects.item import ItemObject
@@ -133,11 +134,18 @@ class InfoMenuState(State):
         self.transition_counter = 0
         self.transparency = 0
 
+        # Fire the on_info_menu_start event trigger once the menu is interactive.
+        self._info_start_triggered = False
+
         game.state.change('transition_in')
         return 'repeat'
 
     def begin(self):
         self.fluid.reset_on_change_state()
+        # Fire on_info_menu_start once the open transition has finished.
+        if not self._info_start_triggered and not self.transition:
+            self._info_start_triggered = True
+            game.events.trigger(triggers.OnInfoMenuStart(self.unit, self.state))
         # FORCED trigger: start the tutorial once the menu is interactive (i.e.
         # after the transition-in state has popped).
         if self._pending_force_tutorial and not self.transition and not self.skill_tutorial:
@@ -414,9 +422,11 @@ class InfoMenuState(State):
                     self.scroll_offset_x = idxs[counter] if self.transition == 'RIGHT' else -idxs[counter]
                 else:
                     self.scroll_offset_x = -140 if self.transition == 'RIGHT' else 140
+                    prev_page = self.state
                     self.state = self.next_state
                     self.info_graph.set_current_state(self.state)
                     self.transition_counter = 0
+                    game.events.trigger(triggers.OnInfoMenuSwitch(self.unit, self.state, prev_page))
 
         # AUTO trigger: the very first time the player reaches the skill (notes)
         # page, play the tutorial automatically. Guarded by a game var so it

@@ -466,6 +466,37 @@ class EventOnRemove(EventTrigger):
     unit1: UnitObject #: the unit bearing the skill to be removed.
 
 @dataclass(init=True)
+class OnInfoMenuStart(EventTrigger):
+    """
+    Occurs when the unit info menu is opened (after the open transition finishes).
+    Useful for tutorials or commentary about the inspected unit.
+    """
+    nid: ClassVar[NID] = 'on_info_menu_start'
+    unit1: UnitObject #: the unit currently being displayed in the info menu.
+    page: NID #: the nid of the page currently shown (e.g. `personal_data`, `equipment`, `support_skills`, `notes`).
+
+@dataclass(init=True)
+class OnInfoMenuSwitch(EventTrigger):
+    """
+    Occurs when the player switches to a different page within the unit info menu
+    (for instance by pressing LEFT or RIGHT to change pages).
+    """
+    nid: ClassVar[NID] = 'on_info_menu_switch'
+    unit1: UnitObject #: the unit currently being displayed in the info menu.
+    page: NID #: the nid of the page the player just switched to.
+    prev_page: NID #: the nid of the page the player switched away from.
+
+@dataclass(init=True)
+class OnMoveSelect(EventTrigger):
+    """
+    Occurs when the player selects a destination tile to move a unit to
+    (immediately before the move is carried out).
+    """
+    nid: ClassVar[NID] = 'on_move_select'
+    unit1: UnitObject #: the unit that is about to move.
+    position: Tuple[int, int] #: the destination tile the player selected.
+
+@dataclass(init=True)
 class UnlockStaff(EventTrigger):
     """
     Plays when an unlock staff unlocks a region.

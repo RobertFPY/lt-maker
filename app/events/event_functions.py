@@ -507,12 +507,15 @@ def restrict_keys(self: Event, keys, flags=None):
         else:
             self.logger.error("restrict_keys: Unknown button '%s'" % button)
     allow_directions = 'allow_directions' in flags
+    disable_mouse = 'disable_mouse' in flags
     action.do(action.SetGameVar('_allowed_keys', allowed))
     action.do(action.SetGameVar('_allow_directional_keys', allow_directions))
+    action.do(action.SetGameVar('_disable_mouse', disable_mouse))
 
 def unrestrict_keys(self: Event, flags=None):
     action.do(action.SetGameVar('_allowed_keys', None))
     action.do(action.SetGameVar('_allow_directional_keys', True))
+    action.do(action.SetGameVar('_disable_mouse', False))
 
 def force_movement(self: Event, units, positions, reject_text=None, flags=None):
     flags = flags or set()

@@ -4044,6 +4044,8 @@ Restricts player input so that only the listed buttons are usable. *Keys* is a c
 
 By default the four directional buttons (UP/DOWN/LEFT/RIGHT) are still blocked unless you include them in the list. Add the *allow_directions* flag to always keep cursor/menu navigation usable regardless of the list.
 
+Add the *disable_mouse* flag to also turn off the player's mouse entirely (clicks, scroll wheel and cursor-following) until **unrestrict_keys** is called.
+
 This restriction is saved with the game, so it persists through suspends and loads.
         """
 
@@ -4058,7 +4060,7 @@ class UnrestrictKeys(EventCommand):
 
     desc = \
         """
-Removes any key restriction created by **restrict_keys**, allowing the player to use all buttons normally again.
+Removes any key restriction created by **restrict_keys**, allowing the player to use all buttons normally again. This also re-enables the mouse if it was turned off with the *disable_mouse* flag.
         """
 
 class ForceMovement(EventCommand):

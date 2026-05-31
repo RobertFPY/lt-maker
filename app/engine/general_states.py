@@ -253,6 +253,9 @@ class PhaseChangeState(MapState):
         if game.turncount == 1 and game.phase.get_current() == 'player':
             # The turnwheel will not be able to go before this moment
             game.action_log.set_first_free_action()
+        # Fire on_turn_begin now that the turn-phase banner has finished playing.
+        if not self.is_roam() and game.phase.get_current() == 'player':
+            game.events.trigger(triggers.OnTurnBegin('player', game.turncount))
 
     def save_state(self):
         GAME_NID = str(DB.constants.value('game_nid'))
@@ -320,6 +323,8 @@ class FreeState(MapState):
         game.cursor.fluid.reset_on_change_state()
         game.cursor.show()
         game.boundary.show()
+        # Track the cursor tile so on_cursor_move only fires when it changes.
+        self._last_cursor_pos = game.cursor.position
         for unit in game.get_all_units():
             if skill_system.has_dynamic_range(unit):
                 game.boundary.recalculate_unit(unit)
@@ -402,6 +407,10 @@ class FreeState(MapState):
     def update(self):
         super().update()
         game.highlight.handle_hover()
+        # Fire on_cursor_move when the player moves the cursor to a new tile.
+        if game.cursor.position != self._last_cursor_pos:
+            self._last_cursor_pos = game.cursor.position
+            game.events.trigger(triggers.OnCursorMove(game.cursor.position, game.cursor.get_hover()))
 
     def end(self):
         game.cursor.set_speed_state(False)

@@ -4063,6 +4063,49 @@ class UnrestrictKeys(EventCommand):
 Removes any key restriction created by **restrict_keys**, allowing the player to use all buttons normally again. This also re-enables the mouse if it was turned off with the *disable_mouse* flag.
         """
 
+class DrawHand(EventCommand):
+    nid = "draw_hand"
+    tag = Tags.DIALOGUE_TEXT
+
+    desc = \
+        """
+Draws an animated pointing hand (the same hand used by the skill-system tutorial) that points at a rectangle on screen. This is meant to accompany a **speak**/**say** text box: the hand pops in at the same time as that text box and disappears automatically the moment the text box goes away.
+
+* *Nid* is the name of this hand overlay (reuse the same nid to move it; use **remove_table** to remove it manually).
+* *TopLeft* is the `x,y` screen-pixel position of the top-left corner of the area to point at.
+* *Size* optionally gives the `w,h` size (in pixels) of that area; the hand is placed just to its left and vertically centered. Defaults to `0,0` (point at a single spot).
+
+Write this command *immediately before* the **speak**/**say** it belongs to so the hand binds to (and vanishes with) that text box. For example:
+```
+draw_hand;Hand1;100,14;136,18
+speak;Eirika;This is the Class Skill.
+```
+        """
+
+    keywords = ["Nid", "TopLeft"]
+    optional_keywords = ["Size"]
+    keyword_types = ["Nid", "Size", "Size"]
+
+class DrawHighlight(EventCommand):
+    nid = "draw_highlight"
+    tag = Tags.DIALOGUE_TEXT
+
+    desc = \
+        """
+Draws a pulsing highlight outline (the same effect used by the skill-system tutorial) around a rectangle on screen. Like **draw_hand**, it is meant to accompany a **speak**/**say** text box: the highlight pops in with that text box and disappears automatically when the text box goes away.
+
+* *Nid* is the name of this highlight overlay (reuse the same nid to move it; use **remove_table** to remove it manually).
+* *TopLeft* is the `x,y` screen-pixel position of the top-left corner of the rectangle.
+* *Size* optionally gives the `w,h` size (in pixels) of the rectangle. Defaults to `16,16`.
+* *Color* optionally gives the outline color as `r,g,b`. Defaults to a soft yellow (`248,224,96`).
+
+Write this command *immediately before* the **speak**/**say** it belongs to so the highlight binds to (and vanishes with) that text box. You can pair it with **draw_hand** to both point at and outline the same area.
+        """
+
+    keywords = ["Nid", "TopLeft"]
+    optional_keywords = ["Size", "Color"]
+    keyword_types = ["Nid", "Size", "Size", "Color3"]
+
 class ForceMovement(EventCommand):
     nid = "force_movement"
     tag = Tags.MISCELLANEOUS

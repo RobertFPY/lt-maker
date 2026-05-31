@@ -3668,6 +3668,40 @@ def table(self: Event, nid: NID, table_data: str, title: str = None,
 def remove_table(self: Event, nid, flags=None):
     self.other_boxes = [(bnid, box) for (bnid, box) in self.other_boxes if bnid != nid]
 
+def draw_hand(self: Event, nid, top_left, size=None, flags=None):
+    from app.events.event_tutorial_overlay import EventTutorialOverlay
+    x, y = top_left
+    if size:
+        w, h = size
+    else:
+        w, h = 0, 0
+    # Replace any existing overlay sharing this nid.
+    self.other_boxes = [(bnid, box) for (bnid, box) in self.other_boxes if bnid != nid]
+    overlay = EventTutorialOverlay(self, (x, y, w, h), show_hand=True, show_highlight=False)
+    self.other_boxes.append((nid, overlay))
+
+def draw_highlight(self: Event, nid, top_left, size=None, color=None, flags=None):
+    from app.events.event_tutorial_overlay import EventTutorialOverlay
+    x, y = top_left
+    if size:
+        w, h = size
+    else:
+        w, h = 16, 16
+    overlay_color = None
+    if color:
+        try:
+            if isinstance(color, (list, tuple)):
+                overlay_color = tuple(int(c) for c in color)
+            else:
+                overlay_color = tuple(int(c) for c in str(color).split(','))
+        except (ValueError, TypeError):
+            self.logger.error("draw_highlight: invalid color %s", color)
+            overlay_color = None
+    # Replace any existing overlay sharing this nid.
+    self.other_boxes = [(bnid, box) for (bnid, box) in self.other_boxes if bnid != nid]
+    overlay = EventTutorialOverlay(self, (x, y, w, h), show_hand=False, show_highlight=True, color=overlay_color)
+    self.other_boxes.append((nid, overlay))
+
 def text_entry(self: Event, nid: NID, string: str, character_limit: int = 16, 
                illegal_character_list: Optional[List[str]] = None, default_string: Optional[str] = None, 
                minimum_character_limit: int = 0, flags: Optional[set[str]] = None):

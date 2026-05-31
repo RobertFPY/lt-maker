@@ -4077,6 +4077,23 @@ def trigger_script_with_args(self: Event, event: str, arg_list: Dict[str, str] =
         self.logger.error("trigger_script_with_args: Couldn't find any valid events matching name %s" % trigger_script)
         return
 
+def force_skill_tutorial(self: Event, unit=None, flags=None):
+    if unit:
+        new_unit = self._get_unit(unit)
+    else:
+        new_unit = self.unit
+    if not new_unit:
+        self.logger.error("force_skill_tutorial: Couldn't find unit %s" % unit)
+        return
+    self.game.memory['current_unit'] = new_unit
+    # Restrict info-menu scrolling to just this unit during the tutorial.
+    self.game.memory['scroll_units'] = [new_unit]
+    # Tell the info menu to open on the skill page and play the tutorial.
+    self.game.memory['_force_skill_tutorial'] = True
+    self.game.memory['next_state'] = 'info_menu'
+    self.game.state.change('transition_to')
+    self.state = 'paused'
+
 def loop_units(self: Event, expression, event, flags=None):
     unit_list_str = expression
     try:

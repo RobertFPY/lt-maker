@@ -4019,6 +4019,20 @@ Places regions stored in memory onto the current tilemap.
 Used with store_regions.
         """
 
+class ForceSkillTutorial(EventCommand):
+    nid = "force_skill_tutorial"
+    nickname = "skill_tutorial"
+    tag = Tags.MISCELLANEOUS
+
+    desc = \
+        """
+Opens the unit info menu directly on the skill page and plays the "Skill System Tutorial" for the given unit (FE7 "Lyn mode" style).
+
+If *Unit* is not given, the event's own unit is used. Unlike the automatic first-visit tutorial, this command always plays and does not check (or set) the `_skill_tutorial_seen` game var.
+        """
+
+    keywords = ["Unit"]
+
 def get_commands():
     return EventCommand.__subclasses__()
 

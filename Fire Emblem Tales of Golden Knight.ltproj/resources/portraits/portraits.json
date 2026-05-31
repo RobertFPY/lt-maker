@@ -300,18 +300,6 @@
         "info_offset": 8
     },
     {
-        "nid": "Gotoh",
-        "blinking_offset": [
-            16,
-            16
-        ],
-        "smiling_offset": [
-            16,
-            32
-        ],
-        "info_offset": 0
-    },
-    {
         "nid": "Lucina",
         "blinking_offset": [
             32,
@@ -656,6 +644,18 @@
         "smiling_offset": [
             16,
             40
+        ],
+        "info_offset": 0
+    },
+    {
+        "nid": "Gotoh {Blaze, Nickt} [F2E]",
+        "blinking_offset": [
+            16,
+            32
+        ],
+        "smiling_offset": [
+            16,
+            48
         ],
         "info_offset": 0
     }

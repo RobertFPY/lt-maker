@@ -4,9 +4,11 @@
         "name": "Camus",
         "desc": "A mysterious knight who holding many secret. Yet his strenght cannot be underestimated.",
         "variant": null,
-        "level": 4,
+        "level": 1,
         "klass": "Paladin_Camus",
-        "tags": [],
+        "tags": [
+            "Lord"
+        ],
         "bases": {
             "HP": 28,
             "STR": 12,
@@ -16,7 +18,7 @@
             "LCK": 4,
             "DEF": 11,
             "CON": 11,
-            "MOV": 9,
+            "MOV": 8,
             "RES": 6
         },
         "growths": {
@@ -60,15 +62,15 @@
             ],
             [
                 1,
-                "Inconsolably_Sorrow_Personal"
-            ],
-            [
-                3,
-                "Lancefaire_T2"
+                "Lancefaire_T1"
             ],
             [
                 1,
-                "Swordbreaker_T1"
+                "Seal_Speed_T1"
+            ],
+            [
+                1,
+                "Threaten_Speed_T1"
             ]
         ],
         "unit_notes": [],
@@ -178,10 +180,6 @@
             [
                 1,
                 "Red_Ambition_Personal"
-            ],
-            [
-                1,
-                "Wyvern_Force_Personal"
             ]
         ],
         "unit_notes": [],
@@ -254,7 +252,7 @@
             "SKL": 7,
             "SPD": 10,
             "LCK": 8,
-            "DEF": 30,
+            "DEF": 6,
             "CON": 8,
             "MOV": 5,
             "RES": 0
@@ -293,7 +291,12 @@
                 false
             ]
         ],
-        "learned_skills": [],
+        "learned_skills": [
+            [
+                1,
+                "Dragon_Blood_Personal_1"
+            ]
+        ],
         "unit_notes": [],
         "wexp_gain": {
             "Sword": [
@@ -409,10 +412,6 @@
             [
                 1,
                 "Untouchable_Personal"
-            ],
-            [
-                1,
-                "Orphan_Maiden_Personal"
             ]
         ],
         "unit_notes": [],
@@ -519,10 +518,6 @@
             [
                 1,
                 "Dragon_Blood_Personal_1"
-            ],
-            [
-                1,
-                "Newborn_Dragon_Personal"
             ]
         ],
         "unit_notes": [],
@@ -534,7 +529,7 @@
             ],
             "Lance": [
                 false,
-                0,
+                31,
                 251
             ],
             "Axe": [
@@ -4539,7 +4534,7 @@
             ]
         },
         "alternate_classes": [],
-        "portrait_nid": "Gotoh",
+        "portrait_nid": "Gotoh {Blaze, Nickt} [F2E]",
         "affinity": null,
         "fields": []
     },

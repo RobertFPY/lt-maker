@@ -143,7 +143,7 @@
             0
         ],
         "map_sprite_nid": "Ephraim_Lord",
-        "combat_anim_nid": "Martin_Lord",
+        "combat_anim_nid": "Martin_Lord2",
         "fields": []
     },
     {
@@ -712,7 +712,7 @@
     },
     {
         "nid": "Martin_Lord",
-        "name": "Lord",
+        "name": "Villager",
         "desc": "??",
         "tier": 1,
         "movement_group": "Light Foot",

@@ -121,12 +121,13 @@ class EventTutorialOverlay:
             sprite = pygame.transform.rotate(sprite, angle)
         sw, sh = sprite.get_width(), sprite.get_height()
 
-        # All directions point the finger tip at a single anchor: the centre of
-        # the target rect. Switching direction therefore only rotates the hand
-        # about that point instead of flinging it to a far-away edge. (With the
-        # default 0x0 size this is exactly the given point.)
-        anchor_x = x + w / 2
-        anchor_y = y + h / 2
+        # All directions point the finger tip at a single anchor: the exact
+        # (x, y) coordinate that was passed to the command. Switching direction
+        # only rotates the hand about that point instead of flinging it to a
+        # far-away edge, and the tip always lands on the coordinate the user
+        # asked for (size does not shift the anchor).
+        anchor_x = x
+        anchor_y = y
 
         # (pointing unit vector, finger-tip position within the rotated sprite)
         dx, dy, tip_x, tip_y = {

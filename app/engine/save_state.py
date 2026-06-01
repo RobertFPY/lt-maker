@@ -21,22 +21,29 @@ running (an event, a combat, a movement) is fully discarded instead of being
 left underneath the restored states. (This is the fix for "load does nothing
 until the event finishes".)
 
-Saving (pre-action checkpoint, turnwheel-like)
-----------------------------------------------
-The game can only be pickled in a stable state: in the middle of combat / an
-event / movement it holds live pygame Surfaces and animation objects that
-cannot be pickled, and the unit's position has already been mutated toward its
-destination. Trying to snapshot "right now" therefore either crashes or records
-a half-applied action (unit already at the target tile, combat half-resolved).
+Saving
+------
+There are two snapshot sources, picked automatically per save:
 
-Instead we continuously keep an in-memory snapshot of the most recent *idle*
-("pre-action") state -- the map free state, prep/base menus, the overworld, and
-phase boundaries. ``capture_checkpoint`` refreshes this snapshot every time the
-game enters one of those idle states. A quick save then writes that checkpoint.
+1. Live snapshot (exact moment). ``game.save()`` does NOT pickle the live game
+   object -- it builds a plain dict from each component's own ``save()`` method.
+   In particular the running event is serialized through
+   ``game.events.save() -> Event.save() -> processor.save()``, which stores the
+   command pointer, so an event can be resumed at the exact command it was on.
+   We therefore take a live snapshot whenever the whole state stack is
+   *reconstructable* from that dict: the idle states below, optionally with one
+   or more ``event`` states on top. This is what makes "save mid-event, load
+   back into the middle of the event" work.
 
-The result behaves like the turnwheel: a save always lands on the clean moment
-*before* the current action, so loading puts a unit back on its original tile
-and never restores a broken mid-combat frame.
+2. Rolling pre-action checkpoint (turnwheel-like fallback). Some states -- combat,
+   movement, menus -- hold live pygame Surfaces / animation objects or have
+   already mutated a unit's position, and are NOT fully captured by
+   ``game.save()``. Snapshotting those directly would crash or restore a broken
+   frame. For them we fall back to ``_checkpoint``: an in-memory snapshot of the
+   most recent *idle* ("pre-action") state, refreshed by ``capture_checkpoint``
+   whenever the game enters one of the idle ``CHECKPOINT_STATES``. A save taken
+   during combat/movement therefore lands on the clean moment *before* that
+   action, exactly like the turnwheel.
 """
 
 from __future__ import annotations
@@ -73,6 +80,42 @@ _checkpoint = None
 # Name of the state for which _checkpoint was last taken, used for cheap edge
 # detection so we only re-pickle on entering an idle state (not every frame).
 _last_state = None
+
+# States that can sit on top of an idle state and still be fully rebuilt from
+# game.save(). Only 'event' qualifies: the event manager serializes each running
+# event (including its command pointer), so a live snapshot taken while an event
+# is on the stack can be resumed at the exact command it was on. Everything else
+# (combat, movement, menus, ...) keeps live data outside the save dict and must
+# use the rolling pre-action checkpoint instead.
+LIVE_SNAPSHOT_TOP_STATES = {'event'}
+
+
+def _can_live_snapshot(game) -> bool:
+    """True if ``game.save()`` right now would capture the exact present moment
+    in a way that can be loaded back faithfully.
+
+    This holds when every state on the stack is reconstructable from the save
+    dict: the bottom must be idle (``CHECKPOINT_STATES``) and anything above it
+    may only be a resumable ``event`` state. If, say, an event was triggered on
+    top of a live combat or during unit movement, those underlying states are
+    NOT in the save dict, so we refuse the live snapshot and let the caller fall
+    back to the rolling pre-action checkpoint.
+    """
+    if game is None or not game.state:
+        return False
+    names = game.state.state_names()
+    if not names:
+        return False
+    top = names[-1]
+    # Plain idle moment -> always safe to snapshot live.
+    if top in CHECKPOINT_STATES:
+        return True
+    # Inside an event: safe only if everything underneath is itself idle or
+    # another (resumable) event.
+    if top in LIVE_SNAPSHOT_TOP_STATES:
+        return all(n in CHECKPOINT_STATES or n in LIVE_SNAPSHOT_TOP_STATES
+                   for n in names)
+    return False
 
 
 def _game_nid() -> str:
@@ -195,28 +238,36 @@ def _load(game, idx: int) -> bool:
 def quick_save(game, idx: int) -> str:
     """Quick save into slot ``idx`` (0-based).
 
-    Writes the most recent clean pre-action checkpoint. If the game is currently
-    in an idle state we refresh the checkpoint first so saving while idle records
-    exactly the present moment.
+    Prefers a *live* snapshot of the exact present moment whenever the state
+    stack is fully reconstructable (an idle state, optionally with one or more
+    running ``event`` states on top) -- this is what lets a save taken in the
+    middle of an event be loaded right back into the middle of that event.
+
+    Otherwise (combat, movement, menus, ...) it falls back to the most recent
+    clean pre-action checkpoint, which behaves like the turnwheel.
 
     Returns 'saved' on success, or 'failed' on a bad index or if there is no
-    checkpoint yet (e.g. on the title screen).
+    snapshot available yet (e.g. on the title screen).
     """
     if not 0 <= idx < NUM_SLOTS:
         return 'failed'
     if game is None or not game.state or game.state.current() in (None, 'title_start'):
         return 'failed'
-    # If we are idle right now, make the checkpoint reflect this exact moment.
-    if game.state.current() in CHECKPOINT_STATES:
+    # Take a live snapshot of the exact moment when the whole stack can be
+    # rebuilt from the save dict (idle, or an event on top of idle states).
+    _checkpoint_now = None
+    if _can_live_snapshot(game):
         try:
             _checkpoint_now = game.save()
         except Exception:
-            logging.exception("Live checkpoint failed; falling back to last checkpoint")
-            _checkpoint_now = _checkpoint
-    else:
+            logging.exception("Live snapshot failed; falling back to last checkpoint")
+            _checkpoint_now = None
+    # Fall back to the rolling pre-action checkpoint for everything else (combat,
+    # movement, menus) or if the live snapshot raised.
+    if _checkpoint_now is None:
         _checkpoint_now = _checkpoint
     if not _checkpoint_now:
-        logging.warning("No pre-action checkpoint available to save yet")
+        logging.warning("No snapshot available to save yet")
         return 'failed'
     s_dict, meta_dict = _checkpoint_now
     return 'saved' if _write(idx, s_dict, meta_dict, "Quick Save") else 'failed'

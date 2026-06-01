@@ -267,15 +267,6 @@ key_map = {"enter": pygame.K_RETURN,
            "tab": pygame.K_TAB,
            "backspace": pygame.K_BACKSPACE,
            "pageup": pygame.K_PAGEUP,
-           "f1": pygame.K_F1,
-           "f2": pygame.K_F2,
-           "f3": pygame.K_F3,
-           "f4": pygame.K_F4,
-           "f5": pygame.K_F5,
-           "f6": pygame.K_F6,
-           "f7": pygame.K_F7,
-           "f8": pygame.K_F8,
-           "f9": pygame.K_F9,
            "f12": pygame.K_F12,
            "`": pygame.K_BACKQUOTE,
            "1": pygame.K_1,
@@ -284,9 +275,6 @@ key_map = {"enter": pygame.K_RETURN,
            "4": pygame.K_4,
            "5": pygame.K_5,
            }
-
-def is_shift_pressed() -> bool:
-    return bool(pygame.key.get_mods() & pygame.KMOD_SHIFT)
 
 events = []
 def get_events():

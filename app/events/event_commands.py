@@ -4044,6 +4044,8 @@ Restricts player input so that only the listed buttons are usable. *Keys* is a c
 
 By default the four directional buttons (UP/DOWN/LEFT/RIGHT) are still blocked unless you include them in the list. Add the *allow_directions* flag to always keep cursor/menu navigation usable regardless of the list.
 
+Add the *disable_mouse* flag to also turn off the player's mouse entirely (clicks, scroll wheel and cursor-following) until **unrestrict_keys** is called.
+
 This restriction is saved with the game, so it persists through suspends and loads.
         """
 
@@ -4058,8 +4060,85 @@ class UnrestrictKeys(EventCommand):
 
     desc = \
         """
-Removes any key restriction created by **restrict_keys**, allowing the player to use all buttons normally again.
+Removes any key restriction created by **restrict_keys**, allowing the player to use all buttons normally again. This also re-enables the mouse if it was turned off with the *disable_mouse* flag.
         """
+
+class DrawHand(EventCommand):
+    nid = "draw_hand"
+    tag = Tags.DIALOGUE_TEXT
+
+    desc = \
+        """
+Draws an animated pointing hand (the same hand used by the skill-system tutorial) that points at a rectangle on screen. The hand is drawn the moment this command runs.
+
+* *Nid* is the name of this hand overlay (reuse the same nid to move it; use **remove_overlay** to remove it manually).
+* *TopLeft* is the `x,y` screen-pixel position the finger tip points at.
+* *Size* optionally gives the `w,h` size (in pixels) of the area being pointed at. Defaults to `0,0` (point at a single spot).
+* *EndAfter* optionally chooses which following **speak**/**say** box the hand vanishes with: `1` (default) = the very next speak box, `2` = the second speak box after it, `3` = the third, and so on. Ignored if the *persist* flag is used.
+
+By default the hand points to the **right** (it sits on the left side of the area). Add one of the direction flags to change which way it points and which side of the area it sits on:
+
+1. *right* (default): hand on the left, pointing right.
+2. *left*: hand on the right, pointing left.
+3. *up*: hand below the area, pointing up.
+4. *down*: hand above the area, pointing down.
+
+Add the *persist* flag to make the hand stand on its own: it is drawn independently and never disappears automatically (even with no **speak** following it). Remove it later with **remove_overlay**.
+
+To tie the hand to a speak box, write it *before* that speak box. For example, this hand vanishes only after the third speak box finishes:
+```
+draw_hand;Hand1;100,14;136,18;down;3
+speak;Eirika;Line one.
+speak;Eirika;Line two.
+speak;Eirika;Line three.
+```
+        """
+
+    keywords = ["Nid", "TopLeft"]
+    optional_keywords = ["Size", "EndAfter"]
+    keyword_types = ["Nid", "Size", "Size", "PositiveInteger"]
+    _flags = ["up", "down", "left", "right", "persist"]
+
+class DrawHighlight(EventCommand):
+    nid = "draw_highlight"
+    tag = Tags.DIALOGUE_TEXT
+
+    desc = \
+        """
+Draws a pulsing highlight outline (the same effect used by the skill-system tutorial) around a rectangle on screen. The highlight is drawn the moment this command runs.
+
+* *Nid* is the name of this highlight overlay (reuse the same nid to move it; use **remove_overlay** to remove it manually).    
+* *TopLeft* is the `x,y` screen-pixel position of the top-left corner of the rectangle.
+* *Size* optionally gives the `w,h` size (in pixels) of the rectangle. Defaults to `16,16`.
+* *Color* optionally gives the outline color as `r,g,b`. Defaults to a soft yellow (`248,224,96`).
+* *EndAfter* optionally chooses which following **speak**/**say** box the highlight vanishes with: `1` (default) = the very next speak box, `2` = the second after it, and so on. Ignored if the *persist* flag is used.
+
+Add the *persist* flag to make the highlight stand on its own: it is drawn independently and never disappears automatically. Remove it later with **remove_overlay**.
+
+To tie the highlight to a speak box, write it *before* that speak box. You can pair it with **draw_hand** to both point at and outline the same area.
+        """
+
+    keywords = ["Nid", "TopLeft"]
+    optional_keywords = ["Size", "Color", "EndAfter"]
+    keyword_types = ["Nid", "Size", "Size", "Color3", "PositiveInteger"]
+    _flags = ["persist"]
+
+class RemoveOverlay(EventCommand):
+    nid = "remove_overlay"
+    tag = Tags.DIALOGUE_TEXT
+
+    desc = \
+        """
+Removes hand/highlight overlays created by **draw_hand** and **draw_highlight**.
+
+* *Nid* (optional) is the name of a single overlay to remove. If omitted, **all** hand and highlight overlays currently on screen are removed at once.
+
+This is useful for turning off overlays that were created with the *persist* flag (which never go away on their own).
+        """
+
+    keywords = []
+    optional_keywords = ["Nid"]
+    keyword_types = ["Nid"]
 
 class ForceMovement(EventCommand):
     nid = "force_movement"

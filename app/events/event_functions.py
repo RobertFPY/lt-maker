@@ -507,12 +507,15 @@ def restrict_keys(self: Event, keys, flags=None):
         else:
             self.logger.error("restrict_keys: Unknown button '%s'" % button)
     allow_directions = 'allow_directions' in flags
+    disable_mouse = 'disable_mouse' in flags
     action.do(action.SetGameVar('_allowed_keys', allowed))
     action.do(action.SetGameVar('_allow_directional_keys', allow_directions))
+    action.do(action.SetGameVar('_disable_mouse', disable_mouse))
 
 def unrestrict_keys(self: Event, flags=None):
     action.do(action.SetGameVar('_allowed_keys', None))
     action.do(action.SetGameVar('_allow_directional_keys', True))
+    action.do(action.SetGameVar('_disable_mouse', False))
 
 def force_movement(self: Event, units, positions, reject_text=None, flags=None):
     flags = flags or set()
@@ -3664,6 +3667,64 @@ def table(self: Event, nid: NID, table_data: str, title: str = None,
 
 def remove_table(self: Event, nid, flags=None):
     self.other_boxes = [(bnid, box) for (bnid, box) in self.other_boxes if bnid != nid]
+
+def draw_hand(self: Event, nid, top_left, size=None, end_after=None, flags=None):
+    from app.events.event_tutorial_overlay import EventTutorialOverlay
+    flags = flags or set()
+    x, y = top_left
+    if size:
+        w, h = size
+    else:
+        w, h = 0, 0
+    # Pick a pointing direction from the flags (default points right).
+    direction = 'right'
+    for d in ('up', 'down', 'left', 'right'):
+        if d in flags:
+            direction = d
+            break
+    persist = 'persist' in flags
+    n = end_after if end_after else 1
+    # Replace any existing overlay sharing this nid.
+    self.other_boxes = [(bnid, box) for (bnid, box) in self.other_boxes if bnid != nid]
+    overlay = EventTutorialOverlay(self, (x, y, w, h), show_hand=True, show_highlight=False,
+                                   direction=direction, persist=persist, end_after=n)
+    self.other_boxes.append((nid, overlay))
+
+def draw_highlight(self: Event, nid, top_left, size=None, color=None, end_after=None, flags=None):
+    from app.events.event_tutorial_overlay import EventTutorialOverlay
+    flags = flags or set()
+    x, y = top_left
+    if size:
+        w, h = size
+    else:
+        w, h = 16, 16
+    overlay_color = None
+    persist = 'persist' in flags
+    n = end_after if end_after else 1
+    if color:
+        try:
+            if isinstance(color, (list, tuple)):
+                overlay_color = tuple(int(c) for c in color)
+            else:
+                overlay_color = tuple(int(c) for c in str(color).split(','))
+        except (ValueError, TypeError):
+            self.logger.error("draw_highlight: invalid color %s", color)
+            overlay_color = None
+    # Replace any existing overlay sharing this nid.
+    self.other_boxes = [(bnid, box) for (bnid, box) in self.other_boxes if bnid != nid]
+    overlay = EventTutorialOverlay(self, (x, y, w, h), show_hand=False, show_highlight=True,
+                                   color=overlay_color, persist=persist, end_after=n)
+    self.other_boxes.append((nid, overlay))
+
+def remove_overlay(self: Event, nid=None, flags=None):
+    from app.events.event_tutorial_overlay import EventTutorialOverlay
+    if nid:
+        # Remove the specific hand/highlight overlay with this nid.
+        self.other_boxes = [(bnid, box) for (bnid, box) in self.other_boxes if bnid != nid]
+    else:
+        # Remove every hand/highlight overlay at once.
+        self.other_boxes = [(bnid, box) for (bnid, box) in self.other_boxes
+                            if not isinstance(box, EventTutorialOverlay)]
 
 def text_entry(self: Event, nid: NID, string: str, character_limit: int = 16, 
                illegal_character_list: Optional[List[str]] = None, default_string: Optional[str] = None, 

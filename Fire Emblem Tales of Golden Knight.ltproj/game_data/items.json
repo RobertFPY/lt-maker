@@ -16537,7 +16537,7 @@
             ],
             [
                 "eval_hp_cost",
-                "{'E': 2, 'D': 3, 'C': 4, 'B': 5, 'A': 6, 'S': 8, 'SS': 10}.get(item.weapon_rank.value if item.weapon_rank else 'E', 2)"
+                "(item.hp_cost_override.value if item.hp_cost_override else {'E': 1, 'D': 2, 'C': 3, 'B': 4, 'A': 7, 'S': 8, 'SS': 10}.get(item.weapon_rank.value if item.weapon_rank else 'E', 1))"
             ],
             [
                 "hp_uses_options",

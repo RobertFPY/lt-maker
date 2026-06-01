@@ -1441,3 +1441,14 @@ class WeaponSkillsOnEquip(ItemComponent):
                 # after_gain_skill hooks resolve any other conflicts naturally.
                 action.do(action.AddSkill(unit, restored))
         action.do(action.ChangeField(unit, 'WeaponDisplacedSkills', displaced_map))
+
+class HpCostOverride(ItemComponent):
+    nid = 'hp_cost_override'
+    desc = ("Optional per-item HP cost override for Mari's magic. When present on an item, "
+            "the spell HP-cost eval prefers this exact value over the rank-based table. "
+            "Add this only to special spells whose HP cost should not follow their weapon rank.")
+    tag = ItemTags.CUSTOM
+    author = "v0"
+
+    expose = ComponentType.Int
+    value = 1

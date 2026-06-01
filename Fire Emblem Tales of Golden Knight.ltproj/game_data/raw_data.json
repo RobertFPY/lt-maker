@@ -3959,5 +3959,50 @@
                 "Hidden1": ""
             }
         ]
+    },
+    {
+        "nid": "MariSpell",
+        "dtype": "list",
+        "svalue": "",
+        "kvvalue": [],
+        "oattrs": [
+            "nid",
+            "element",
+            "rank",
+            "is_ranged",
+            "is_prf",
+            "upgrade_of"
+        ],
+        "lovalue": []
+    },
+    {
+        "nid": "MariTier1Classes",
+        "dtype": "str",
+        "svalue": "",
+        "kvvalue": [],
+        "oattrs": [
+            "nid"
+        ],
+        "lovalue": []
+    },
+    {
+        "nid": "MariTier2Classes",
+        "dtype": "str",
+        "svalue": "",
+        "kvvalue": [],
+        "oattrs": [
+            "nid"
+        ],
+        "lovalue": []
+    },
+    {
+        "nid": "MariTier3Classes",
+        "dtype": "str",
+        "svalue": "",
+        "kvvalue": [],
+        "oattrs": [
+            "nid"
+        ],
+        "lovalue": []
     }
 ]

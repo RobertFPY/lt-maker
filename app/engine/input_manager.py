@@ -76,6 +76,23 @@ class InputManager():
             return True
         return False
 
+    def is_mouse_disabled(self) -> bool:
+        """
+        Returns whether mouse input is currently disabled by the player.
+
+        Honors the `disable_mouse` flag of the `restrict_keys` event command,
+        which stores the state in the game's game_vars so it persists through
+        suspends and loads. `unrestrict_keys` clears it. When no game is running
+        (e.g. title screen) the mouse is never disabled.
+        """
+        try:
+            from app.engine.game_state import game
+        except Exception:
+            return False
+        if not game:
+            return False
+        return bool(game.game_vars.get('_disable_mouse', False))
+
     def is_pressed(self, button):
         if not self.is_button_allowed(button):
             return False
@@ -107,6 +124,8 @@ class InputManager():
         return mx, my
 
     def get_mouse_position(self) -> tuple[int, int] | None:
+        if self.is_mouse_disabled():
+            return None
         if self.current_mouse_position:
             return self._raw_to_game_coords(self.current_mouse_position)
         return None
@@ -115,7 +134,7 @@ class InputManager():
         """
         Works whether or not mouse has been moved recently.
         """
-        if not cf.SETTINGS['mouse']:
+        if not cf.SETTINGS['mouse'] or self.is_mouse_disabled():
             return None
         mouse_pos = engine.get_mouse_pos()
         if not mouse_pos or not engine.get_mouse_focus():
@@ -190,7 +209,7 @@ class InputManager():
                     return 'NEW'
 
         # Check mouse
-        if not self.change_keymap_mode and cf.SETTINGS['mouse']:
+        if not self.change_keymap_mode and cf.SETTINGS['mouse'] and not self.is_mouse_disabled():
             self.current_mouse_position = None
             for event in events:
                 if event.type == engine.MOUSEBUTTONDOWN:

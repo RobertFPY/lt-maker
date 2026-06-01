@@ -153,7 +153,35 @@ class Event():
         ser_dict['local_args'] = {k: action.Action.save_obj(v) for k, v in self.local_args.items()
                                   if k not in self._EXCLUDE_FROM_SAVE}
         ser_dict['processor_state'] = self.processor.save()
+        # Visual runtime state. The processor only stores the command pointer, so
+        # without this the portraits / background added by commands *before* the
+        # save point would be lost when the event resumes at a *later* command
+        # (e.g. saving mid say/speak used to drop every portrait).
+        ser_dict['portraits'] = {name: port.save() for name, port in self.portraits.items()}
+        ser_dict['priority_counter'] = self.priority_counter
+        ser_dict['background'] = self._save_background()
         return ser_dict
+
+    def _save_background(self):
+        if not self.background:
+            return None
+        panorama = getattr(self.background, 'panorama', None)
+        if not panorama:
+            return None
+        return {
+            'panorama_nid': panorama.nid,
+            'scroll': isinstance(self.background, background.ScrollingBackground),
+            'scroll_speed': getattr(self.background, 'scroll_speed', None),
+        }
+
+    def _restore_background(self, bg_dict):
+        if not bg_dict:
+            self.background = None
+            return
+        new_bg = background.create_background(bg_dict['panorama_nid'], bg_dict.get('scroll', False))
+        if new_bg is not None and bg_dict.get('scroll_speed') is not None:
+            new_bg.scroll_speed = bg_dict['scroll_speed']
+        self.background = new_bg
 
     @classmethod
     def restore(cls, ser_dict, game: GameState):
@@ -169,6 +197,15 @@ class Event():
             self.processor = PythonEventProcessor.restore(ser_dict['processor_state'], game)
         else:
             self.processor = EventProcessor.restore(ser_dict['processor_state'], self.text_evaluator)
+        # Restore visual runtime state (portraits + background) so a mid-event
+        # save loads back with everything that was on screen.
+        self.portraits = {}
+        for name, pdict in (ser_dict.get('portraits') or {}).items():
+            port = EventPortrait.restore(pdict)
+            if port:
+                self.portraits[name] = port
+        self.priority_counter = ser_dict.get('priority_counter', self.priority_counter)
+        self._restore_background(ser_dict.get('background'))
         return self
 
     def finished(self):

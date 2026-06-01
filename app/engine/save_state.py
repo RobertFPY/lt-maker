@@ -80,6 +80,16 @@ _checkpoint = None
 # Name of the state for which _checkpoint was last taken, used for cheap edge
 # detection so we only re-pickle on entering an idle state (not every frame).
 _last_state = None
+# (event_nid, command_index, event_stack_depth) of the last *clean* in-event
+# command boundary the checkpoint was refreshed at. Used so the rolling
+# checkpoint keeps advancing through a cutscene (one clean point per command)
+# instead of being frozen at the idle state from before the event started.
+_last_event_key = None
+# engine time (ms) of the last in-event checkpoint refresh, used to throttle the
+# per-command re-pickling so a burst of instantaneous commands can't stutter.
+_last_event_refresh_time = 0
+# Minimum gap between two in-event checkpoint refreshes.
+_EVENT_REFRESH_THROTTLE_MS = 150
 
 # States that may sit on TOP of the stack and still be live-snapshotted. Only
 # 'event' qualifies beyond the idle CHECKPOINT_STATES: the event manager
@@ -115,6 +125,43 @@ UNSAFE_LIVE_SNAPSHOT_STATES = {
 }
 
 
+def _async_in_progress(game) -> bool:
+    """True if a unit/camera move, screen transition, or other in-progress event
+    async work is currently animating.
+
+    This is the key guard for "save during movement". Event-driven movement does
+    NOT push a 'move'/'movement' state -- it runs through ``game.movement`` while
+    the top state stays ``'event'`` -- so a state-name check alone cannot see it.
+    Crucially, ``action.Move.do()`` only calls ``game.movement.begin_move()``;
+    the unit's final ``game.arrive()`` happens later in ``Move.execute()`` when
+    the animation completes. A live snapshot taken mid-move would therefore store
+    an event whose command pointer is already past the move command, while the
+    movement itself (held only in the un-serialized movement system) is lost --
+    the unit would never finish arriving and the event would resume corrupt. In
+    that situation we must fall back to the rolling pre-action checkpoint.
+    """
+    movement = getattr(game, 'movement', None)
+    if movement is not None:
+        try:
+            if len(movement) > 0:
+                return True
+        except TypeError:
+            pass
+    events_mgr = getattr(game, 'events', None)
+    if events_mgr is not None:
+        for ev in events_mgr.all_events:
+            # Pending async callbacks (movement/camera/animation), an unblock
+            # condition, or a mid-flight screen transition all mean the event is
+            # not at a clean, fully-serializable command boundary.
+            if getattr(ev, 'should_update', None):
+                return True
+            if getattr(ev, 'should_remain_blocked', None):
+                return True
+            if getattr(ev, 'transition_state', None):
+                return True
+    return False
+
+
 def _can_live_snapshot(game) -> bool:
     """True if ``game.save()`` right now would capture the exact present moment
     in a way that can be loaded back faithfully.
@@ -127,6 +174,10 @@ def _can_live_snapshot(game) -> bool:
     a live combat or during unit movement, that underlying state is in
     ``UNSAFE_LIVE_SNAPSHOT_STATES`` and we fall back to the rolling pre-action
     checkpoint instead.
+
+    Finally, even when the stack itself looks safe, we refuse the live snapshot
+    if any movement / camera pan / transition is mid-flight (see
+    ``_async_in_progress``), because that animating work is not serialized.
     """
     if game is None or not game.state:
         return False
@@ -136,7 +187,9 @@ def _can_live_snapshot(game) -> bool:
     top = names[-1]
     if top not in CHECKPOINT_STATES and top not in LIVE_SNAPSHOT_TOP_STATES:
         return False
-    return not any(n in UNSAFE_LIVE_SNAPSHOT_STATES for n in names)
+    if any(n in UNSAFE_LIVE_SNAPSHOT_STATES for n in names):
+        return False
+    return not _async_in_progress(game)
 
 
 def _game_nid() -> str:
@@ -170,28 +223,67 @@ def slot_exists(idx: int) -> bool:
 # Rolling pre-action checkpoint
 # ---------------------------------------------------------------------------
 
-def capture_checkpoint(game) -> None:
-    """Refresh the in-memory pre-action checkpoint when entering an idle state.
-
-    Called once per frame by the driver. Cheap: it only serializes the game on
-    the frame the current state *changes into* one of CHECKPOINT_STATES, not on
-    every frame spent there.
-    """
-    global _checkpoint, _last_state
-    if game is None or not game.state:
-        return
-    cur = game.state.current()
-    if cur == _last_state:
-        return
-    _last_state = cur
-    if cur not in CHECKPOINT_STATES:
-        return
+def _refresh_checkpoint(game, cur) -> None:
+    global _checkpoint
     try:
         s_dict, meta_dict = game.save()
         _checkpoint = (s_dict, meta_dict)
         logging.debug("Save-state checkpoint refreshed at '%s'", cur)
     except Exception:
         logging.exception("Failed to capture save-state checkpoint at '%s'", cur)
+
+
+def _current_event_key(game):
+    """A cheap, hashable identity for the current clean command boundary of the
+    top-most running event: (event nid, command pointer, event stack depth)."""
+    events_mgr = getattr(game, 'events', None)
+    if not events_mgr or not events_mgr.all_events:
+        return None
+    ev = events_mgr.all_events[-1]
+    proc = getattr(ev, 'processor', None)
+    idx = getattr(proc, 'curr_cmd_idx', None)
+    return (ev.nid, idx, len(events_mgr.all_events))
+
+
+def capture_checkpoint(game) -> None:
+    """Refresh the in-memory pre-action checkpoint.
+
+    Called once per frame by the driver. There are two refresh triggers:
+
+    1. Entering an idle, fully-serializable state (edge-triggered on the frame
+       the current state *changes into* one of CHECKPOINT_STATES). Cheap.
+
+    2. Reaching a new, *clean* command boundary while an event is running
+       (top state is 'event', nothing async is mid-flight). This keeps the
+       fallback checkpoint advancing through a cutscene -- so a save taken
+       during movement / a camera pan / a transition lands on the most recent
+       clean point *inside* the event, instead of snapping all the way back to
+       the idle state from before the event began. Throttled so a burst of
+       instantaneous commands cannot stutter.
+    """
+    global _last_state, _last_event_key, _last_event_refresh_time
+    if game is None or not game.state:
+        return
+    cur = game.state.current()
+
+    # Case 1: entered a new idle state -> refresh and reset the event tracking.
+    if cur != _last_state:
+        _last_state = cur
+        if cur in CHECKPOINT_STATES:
+            _refresh_checkpoint(game, cur)
+            _last_event_key = None
+            return
+
+    # Case 2: running event, sitting at a clean (fully-serializable) boundary.
+    if cur == 'event' and _can_live_snapshot(game):
+        key = _current_event_key(game)
+        if key is not None and key != _last_event_key:
+            from app.engine import engine
+            now = engine.get_time()
+            if now - _last_event_refresh_time >= _EVENT_REFRESH_THROTTLE_MS:
+                _last_event_key = key
+                _last_event_refresh_time = now
+                _refresh_checkpoint(game, cur)
 
 
 def has_checkpoint() -> bool:

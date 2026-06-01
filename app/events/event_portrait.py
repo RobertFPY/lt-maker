@@ -95,6 +95,43 @@ class EventPortrait():
     def get_height(self):
         return 80
 
+    def save(self):
+        """Serialize enough to rebuild this portrait as a settled (fully shown,
+        not-transitioning) portrait. Used so a save taken mid-event restores the
+        portraits that were on screen. If the portrait is still sliding into
+        place we snap it to its destination."""
+        if self.moving and self.next_position:
+            pos = self.next_position
+        else:
+            pos = self.position
+        pos = (int(round(pos[0])), int(round(pos[1])))
+        return {
+            'portrait_nid': self.portrait.nid,
+            'position': pos,
+            'priority': self.priority,
+            'mirror': self.mirror,
+            'name': self.name,
+            'expressions': list(self.expressions) if self.expressions else [],
+            'saturation': self.saturation,
+            'saturation_direction': self.saturation_direction,
+            'talk_on': self.talk_on,
+        }
+
+    @classmethod
+    def restore(cls, s_dict):
+        from app.data.resources.resources import RESOURCES
+        portrait_prefab = RESOURCES.portraits.get(s_dict['portrait_nid'])
+        if not portrait_prefab:
+            return None
+        self = cls(portrait_prefab, tuple(s_dict['position']), s_dict['priority'],
+                   transition=False, slide=None, mirror=s_dict.get('mirror', False),
+                   name=s_dict.get('name', ''),
+                   expressions=set(s_dict.get('expressions', []) or []))
+        self.saturation = s_dict.get('saturation', 1.)
+        self.saturation_direction = s_dict.get('saturation_direction', 0)
+        self.talk_on = s_dict.get('talk_on', False)
+        return self
+
     def set_expression(self, expression_list):
         self.expressions = expression_list
 

@@ -81,25 +81,51 @@ _checkpoint = None
 # detection so we only re-pickle on entering an idle state (not every frame).
 _last_state = None
 
-# States that can sit on top of an idle state and still be fully rebuilt from
-# game.save(). Only 'event' qualifies: the event manager serializes each running
-# event (including its command pointer), so a live snapshot taken while an event
-# is on the stack can be resumed at the exact command it was on. Everything else
-# (combat, movement, menus, ...) keeps live data outside the save dict and must
-# use the rolling pre-action checkpoint instead.
+# States that may sit on TOP of the stack and still be live-snapshotted. Only
+# 'event' qualifies beyond the idle CHECKPOINT_STATES: the event manager
+# serializes each running event (including its command pointer), so a live
+# snapshot taken while an event is on the stack resumes at the exact command it
+# was on.
 LIVE_SNAPSHOT_TOP_STATES = {'event'}
+
+# States that carry live, in-progress action data which is NOT captured by
+# game.save(). The state machine only serializes state *names* (see
+# StateMachine.save) and rebuilds each state fresh, so any state whose meaning
+# depends on transient, mid-action data would restore a broken frame: a unit
+# frozen mid-move, a combat mid-resolution, a death animation mid-play, an AI
+# mid-decision, etc. If any of these is anywhere on the stack we refuse the live
+# snapshot and fall back to the rolling pre-action checkpoint (turnwheel-like).
+#
+# Note that ordinary map/menu states (free, phase_change, status_upkeep,
+# objective_menu, ...) are NOT listed: they reconstruct faithfully from their
+# name plus the saved game objects, exactly as the vanilla suspend system relies
+# on. This is what lets an event running on top of, say, 'status_upkeep' or
+# 'phase_change' be snapshotted and resumed in place.
+UNSAFE_LIVE_SNAPSHOT_STATES = {
+    'combat',
+    'dying',
+    'move',
+    'movement',
+    'move_camera',
+    'ai',
+    'overworld_movement',
+    'free_roam',
+    'free_roam_rationalize',
+}
 
 
 def _can_live_snapshot(game) -> bool:
     """True if ``game.save()`` right now would capture the exact present moment
     in a way that can be loaded back faithfully.
 
-    This holds when every state on the stack is reconstructable from the save
-    dict: the bottom must be idle (``CHECKPOINT_STATES``) and anything above it
-    may only be a resumable ``event`` state. If, say, an event was triggered on
-    top of a live combat or during unit movement, those underlying states are
-    NOT in the save dict, so we refuse the live snapshot and let the caller fall
-    back to the rolling pre-action checkpoint.
+    The state machine is saved by name and rebuilt, and a running event fully
+    serializes its own command pointer, so the present moment can be snapshotted
+    as long as the top of the stack is an idle state or a resumable ``event``
+    AND nothing on the stack is a state that holds un-serialized in-progress
+    action data (combat, movement, AI, ...). If an event was triggered on top of
+    a live combat or during unit movement, that underlying state is in
+    ``UNSAFE_LIVE_SNAPSHOT_STATES`` and we fall back to the rolling pre-action
+    checkpoint instead.
     """
     if game is None or not game.state:
         return False
@@ -107,15 +133,9 @@ def _can_live_snapshot(game) -> bool:
     if not names:
         return False
     top = names[-1]
-    # Plain idle moment -> always safe to snapshot live.
-    if top in CHECKPOINT_STATES:
-        return True
-    # Inside an event: safe only if everything underneath is itself idle or
-    # another (resumable) event.
-    if top in LIVE_SNAPSHOT_TOP_STATES:
-        return all(n in CHECKPOINT_STATES or n in LIVE_SNAPSHOT_TOP_STATES
-                   for n in names)
-    return False
+    if top not in CHECKPOINT_STATES and top not in LIVE_SNAPSHOT_TOP_STATES:
+        return False
+    return not any(n in UNSAFE_LIVE_SNAPSHOT_STATES for n in names)
 
 
 def _game_nid() -> str:

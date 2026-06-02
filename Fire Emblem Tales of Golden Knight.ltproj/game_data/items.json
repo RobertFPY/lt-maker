@@ -16566,5 +16566,54 @@
                 ]
             ]
         ]
+    },
+    {
+        "nid": "Mari_Spellbook_Template",
+        "name": "Spell Tome",
+        "desc": "A study tome only Mari can read. Using it lets her learn one rank-appropriate spell, then the tome is consumed.",
+        "icon_nid": "Boosters",
+        "icon_index": [
+            0,
+            2
+        ],
+        "components": [
+            [
+                "usable",
+                null
+            ],
+            [
+                "target_ally",
+                null
+            ],
+            [
+                "uses",
+                1
+            ],
+            [
+                "uses_options",
+                {
+                    "lose_uses_on_miss": false,
+                    "one_loss_per_combat": false
+                }
+            ],
+            [
+                "learn_spell_from_book",
+                "Mari_Book_Learn"
+            ],
+            [
+                "prf_unit",
+                [
+                    "Mari"
+                ]
+            ],
+            [
+                "usable_in_base",
+                null
+            ],
+            [
+                "value",
+                3000
+            ]
+        ]
     }
 ]

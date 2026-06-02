@@ -1452,3 +1452,85 @@ class HpCostOverride(ItemComponent):
 
     expose = ComponentType.Int
     value = 1
+
+_SPELL_RANK_ORDER = ['E', 'D', 'C', 'B', 'A', 'S', 'SS']
+
+def _spell_rank_index(rank) -> int:
+    try:
+        return _SPELL_RANK_ORDER.index(str(rank).strip().upper())
+    except ValueError:
+        return 0
+
+def mari_book_learnable(mari) -> list:
+    """Return the list of MariSpell nids Mari could learn from a study book right now.
+
+    Rules (shared with the Mari_Book_Learn event so can_use and the menu stay in sync):
+      - spell not already known
+      - spell rank not S/SS and not above Mari's current Staff weapon rank
+      - either an upgrade_of a spell she already knows, or a base spell (no upgrade_of)
+        introducing an element she does not yet have
+      - Dark element and ranged spells ARE allowed from books
+    """
+    if not mari:
+        return []
+    try:
+        catalog = list(game.get_data('MariSpell'))
+    except Exception:
+        return []
+    known = mari.get_field('known_spells') or []
+    try:
+        staff_wexp = mari.wexp.get('Staff', 0)
+    except Exception:
+        staff_wexp = 0
+    _wr = DB.weapon_ranks.get_rank_from_wexp(staff_wexp)
+    cap = _spell_rank_index(_wr.rank if _wr else 'E')
+    known_elems = set(str(r.element).strip() for r in catalog if r.nid in known)
+    result = []
+    for r in catalog:
+        if r.nid in known:
+            continue
+        if str(r.rank).strip().upper() in ('S', 'SS'):
+            continue
+        if _spell_rank_index(r.rank) > cap:
+            continue
+        upgrade_of = str(r.upgrade_of).strip()
+        if upgrade_of:
+            if upgrade_of in known:
+                result.append(r.nid)
+        elif str(r.element).strip() not in known_elems:
+            result.append(r.nid)
+    return result
+
+class LearnSpellFromBook(ItemComponent):
+    nid = 'learn_spell_from_book'
+    desc = ("Mari-only study book. When Mari uses the item at full durability it opens the "
+            "linked event so she can learn one rank-appropriate spell, then the book is "
+            "consumed by its normal uses. Only usable by Mari and only when no use has been spent.")
+    tag = ItemTags.CUSTOM
+    author = "v0"
+
+    expose = ComponentType.Event
+    value = ""
+
+    _should_fire = False
+
+    def can_use(self, unit, item) -> bool:
+        if not unit or unit.nid != 'Mari':
+            return False
+        # Require full durability: never let a partially-used book be studied again.
+        if 'uses' in item.data and 'starting_uses' in item.data:
+            if item.data['uses'] < item.data['starting_uses']:
+                return False
+        # Only usable if there is at least one spell she could actually learn.
+        return bool(mari_book_learnable(unit))
+
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
+        self._should_fire = True
+
+    def end_combat(self, playback, unit, item, target, item2, mode):
+        if self._should_fire and unit and unit.nid == 'Mari':
+            event_prefab = DB.events.get_from_nid(self.value)
+            if event_prefab:
+                local_args = {'item': item, 'mode': mode}
+                game.events.trigger_specific_event(event_prefab.nid, unit, unit, unit.position, local_args)
+        self._should_fire = False

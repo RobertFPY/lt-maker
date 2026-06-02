@@ -6266,5 +6266,90 @@
             "endf"
         ],
         "nid": "Global Mari_Spell_SyncInventory"
+    },
+    {
+        "name": "Mari_Loadout_Open",
+        "trigger": "on_talk",
+        "level_nid": "NagaFortress",
+        "condition": "bool(unit2) and unit2.nid == 'LoadoutManager'",
+        "commands": [],
+        "only_once": false,
+        "priority": 20,
+        "_source": [
+            "#Spell loadout manager. Fires when a unit talks to the LoadoutManager NPC at Naga's Fortress (level_nid/NPC nid are placeholders - rename to your real ones).",
+            "#The persist choice stays open and live-refreshes after every add/remove; backing out exits and then syncs Mari's inventory to match the loadout.",
+            "trigger_script;Global Mari_Spell_Setup",
+            "choice;MARI_LOADOUT_SEL;Mari Spell Loadout (max 5);(lambda L, f=lambda n: n+'|'+next((str(r.element)+' '+str(r.rank) for r in game.get_data('MariSpell') if r.nid==n), n)+(' R' if any(str(r.is_ranged).strip().lower() in ('1','true','yes','y','t') for r in game.get_data('MariSpell') if r.nid==n) else '')+(' PRF' if any(str(r.is_prf).strip().lower() in ('1','true','yes','y','t') for r in game.get_data('MariSpell') if r.nid==n) else '')+'  HP'+str(next((c.value for c in (DB.items.get(n).components if DB.items.get(n) else []) if c.nid=='hp_cost_override'), next(({'E':1,'D':2,'C':3,'B':4,'A':7,'S':8,'SS':10}.get(str(r.rank).strip().upper(),1) for r in game.get_data('MariSpell') if r.nid==n), 1))): [f(s) for s in L] + (['ADD_SPELL|+ Add Spell'] if len(L)<5 else []))(u('Mari').get_field('spell_loadout') or []);150;vert;top_left;;Global Mari_Loadout_Operations;;6,1;left;persist;backable;expression",
+            "trigger_script;Global Mari_Spell_SyncInventory"
+        ],
+        "nid": "Global Mari_Loadout_Open"
+    },
+    {
+        "name": "Mari_Loadout_Operations",
+        "trigger": null,
+        "level_nid": null,
+        "condition": "True",
+        "commands": [],
+        "only_once": false,
+        "priority": 20,
+        "_source": [
+            "#Routes a selection from the persist loadout menu: the +Add row opens the add submenu, any other (a spell nid) opens the remove confirm.",
+            "if;'{v:MARI_LOADOUT_SEL}' == 'ADD_SPELL'",
+            "    trigger_script;Global Mari_Loadout_Add",
+            "elif;'{v:MARI_LOADOUT_SEL}' != 'BACK' and '{v:MARI_LOADOUT_SEL}' != 'NONE'",
+            "    trigger_script;Global Mari_Loadout_Remove",
+            "end"
+        ],
+        "nid": "Global Mari_Loadout_Operations"
+    },
+    {
+        "name": "Mari_Loadout_Add",
+        "trigger": null,
+        "level_nid": null,
+        "condition": "True",
+        "commands": [],
+        "only_once": false,
+        "priority": 20,
+        "_source": [
+            "#Add a learned spell to the loadout. Enforces: max 5 slots, at most 1 ranged spell, at most 1 S/SS spell (prf counts toward S/SS).",
+            "if;len(u('Mari').get_field('spell_loadout') or []) >= 5",
+            "    alert;The loadout is full (max 5 spells).",
+            "elif;len([s for s in (u('Mari').get_field('known_spells') or []) if s not in (u('Mari').get_field('spell_loadout') or [])]) == 0",
+            "    alert;Mari has no more learned spells to add.",
+            "else",
+            "    choice;MARI_ADD_SEL;Add which spell?;(lambda L, f=lambda n: n+'|'+next((str(r.element)+' '+str(r.rank) for r in game.get_data('MariSpell') if r.nid==n), n)+(' R' if any(str(r.is_ranged).strip().lower() in ('1','true','yes','y','t') for r in game.get_data('MariSpell') if r.nid==n) else '')+(' PRF' if any(str(r.is_prf).strip().lower() in ('1','true','yes','y','t') for r in game.get_data('MariSpell') if r.nid==n) else '')+'  HP'+str(next((c.value for c in (DB.items.get(n).components if DB.items.get(n) else []) if c.nid=='hp_cost_override'), next(({'E':1,'D':2,'C':3,'B':4,'A':7,'S':8,'SS':10}.get(str(r.rank).strip().upper(),1) for r in game.get_data('MariSpell') if r.nid==n), 1))): ([f(s) for s in L] if L else ['NONE|(no spells available)']))([s for s in (u('Mari').get_field('known_spells') or []) if s not in (u('Mari').get_field('spell_loadout') or [])]);150;vert;top_right;;;;6,1;left;scroll_bar;backable;expression",
+            "    if;'{v:MARI_ADD_SEL}' != 'BACK' and '{v:MARI_ADD_SEL}' != 'NONE'",
+            "        game_var;MARI_CAND_RANGED;any(str(r.is_ranged).strip().lower() in ('1','true','yes','y','t') for r in game.get_data('MariSpell') if r.nid=='{v:MARI_ADD_SEL}')",
+            "        game_var;MARI_CAND_SUPER;any(str(r.rank).strip().upper() in ('S','SS') for r in game.get_data('MariSpell') if r.nid=='{v:MARI_ADD_SEL}')",
+            "        game_var;MARI_HAS_RANGED;any(any(str(r.is_ranged).strip().lower() in ('1','true','yes','y','t') for r in game.get_data('MariSpell') if r.nid==s) for s in (u('Mari').get_field('spell_loadout') or []))",
+            "        game_var;MARI_HAS_SUPER;any(any(str(r.rank).strip().upper() in ('S','SS') for r in game.get_data('MariSpell') if r.nid==s) for s in (u('Mari').get_field('spell_loadout') or []))",
+            "        if;{v:MARI_CAND_RANGED} and {v:MARI_HAS_RANGED}",
+            "            alert;Only one ranged spell can be carried at a time.",
+            "        elif;{v:MARI_CAND_SUPER} and {v:MARI_HAS_SUPER}",
+            "            alert;Only one S or SS rank spell can be carried at a time.",
+            "        else",
+            "            set_unit_field;Mari;spell_loadout;(u('Mari').get_field('spell_loadout') or []) + ['{v:MARI_ADD_SEL}']",
+            "        end",
+            "    end",
+            "end"
+        ],
+        "nid": "Global Mari_Loadout_Add"
+    },
+    {
+        "name": "Mari_Loadout_Remove",
+        "trigger": null,
+        "level_nid": null,
+        "condition": "True",
+        "commands": [],
+        "only_once": false,
+        "priority": 20,
+        "_source": [
+            "#Confirm removing the spell currently highlighted in the loadout menu (its nid is in MARI_LOADOUT_SEL).",
+            "choice;MARI_RM_SEL;Remove this spell from the loadout?;Remove,Cancel;90;vert;center;;;;2,1;left;backable",
+            "if;'{v:MARI_RM_SEL}' == 'Remove'",
+            "    set_unit_field;Mari;spell_loadout;[s for s in (u('Mari').get_field('spell_loadout') or []) if s != '{v:MARI_LOADOUT_SEL}']",
+            "end"
+        ],
+        "nid": "Global Mari_Loadout_Remove"
     }
 ]

@@ -6208,5 +6208,63 @@
             "    $give_item \"Martin\" \"Special_Omelet\""
         ],
         "nid": "0 Mission1"
+    },
+    {
+        "name": "Mari_Spell_Setup",
+        "trigger": null,
+        "level_nid": null,
+        "condition": "True",
+        "commands": [],
+        "only_once": false,
+        "priority": 20,
+        "_source": [
+            "#Lazy-init Mari's spell storage fields so later expressions never fail.",
+            "if;u('Mari').get_field('known_spells') is None",
+            "    set_unit_field;Mari;known_spells;[]",
+            "end",
+            "if;u('Mari').get_field('spell_loadout') is None",
+            "    set_unit_field;Mari;spell_loadout;[]",
+            "end"
+        ],
+        "nid": "Global Mari_Spell_Setup"
+    },
+    {
+        "name": "Mari_Spell_Learn",
+        "trigger": null,
+        "level_nid": null,
+        "condition": "True",
+        "commands": [],
+        "only_once": false,
+        "priority": 20,
+        "_source": [
+            "#Adds the spell nid held in game var MARI_NEW_SPELL to Mari's known_spells (no duplicates). The caller must set MARI_NEW_SPELL before triggering this script.",
+            "trigger_script;Global Mari_Spell_Setup",
+            "if;'{v:MARI_NEW_SPELL}' != '' and '{v:MARI_NEW_SPELL}' not in u('Mari').get_field('known_spells')",
+            "    set_unit_field;Mari;known_spells;u('Mari').get_field('known_spells') + ['{v:MARI_NEW_SPELL}']",
+            "end"
+        ],
+        "nid": "Global Mari_Spell_Learn"
+    },
+    {
+        "name": "Mari_Spell_SyncInventory",
+        "trigger": null,
+        "level_nid": null,
+        "condition": "True",
+        "commands": [],
+        "only_once": false,
+        "priority": 20,
+        "_source": [
+            "#Sync Mari's inventory so it carries exactly the spell items in spell_loadout. Non-spell items (Staff, Heal, Vulnerary...) are never touched: we only act on item nids that exist in the MariSpell catalog.",
+            "trigger_script;Global Mari_Spell_Setup",
+            "#Remove spell items Mari carries that are no longer part of the loadout.",
+            "for;OLD_SPELL;[it.nid for it in u('Mari').items if it.nid in [row.nid for row in game.get_data('MariSpell')] and it.nid not in (u('Mari').get_field('spell_loadout') or [])]",
+            "    remove_item;Mari;{OLD_SPELL};no_banner",
+            "endf",
+            "#Give the loadout spells Mari does not currently carry.",
+            "for;NEW_SPELL;[s for s in (u('Mari').get_field('spell_loadout') or []) if s not in [it.nid for it in u('Mari').items]]",
+            "    give_item;Mari;{NEW_SPELL};no_banner;no_choice",
+            "endf"
+        ],
+        "nid": "Global Mari_Spell_SyncInventory"
     }
 ]

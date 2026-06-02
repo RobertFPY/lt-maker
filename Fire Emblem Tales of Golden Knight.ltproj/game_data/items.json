@@ -16566,5 +16566,27 @@
                 ]
             ]
         ]
+    },
+    {
+        "nid": "Empty_Spell",
+        "name": "- Empty -",
+        "desc": "Placeholder displayed in an empty slot of Mari's spell loadout menu. Not a real item: it is never added to any inventory, it only exists so the loadout choice can render empty slots with type_base_item.",
+        "icon_nid": null,
+        "icon_index": [
+            0,
+            0
+        ],
+        "components": []
+    },
+    {
+        "nid": "Empty_Spell_List",
+        "name": "No Spells",
+        "desc": "Placeholder displayed in the 'Known Spells' panel of Mari's loadout menu when there are no learned spells left to equip. Not a real item; never added to any inventory.",
+        "icon_nid": null,
+        "icon_index": [
+            0,
+            0
+        ],
+        "components": []
     }
 ]

@@ -6265,6 +6265,109 @@
             "    give_item;Mari;{NEW_SPELL};no_banner;no_choice",
             "endf"
         ],
-        "nid": "Global Mari_Spell_SyncInventory"
-    }
-]
+  "nid": "Global Mari_Spell_SyncInventory"
+  },
+  {
+  "name": "Mari_Spell_Loadout_Select",
+  "trigger": null,
+  "level_nid": null,
+  "condition": "True",
+  "commands": [],
+  "only_once": false,
+  "priority": 20,
+  "_source": [
+  "#Loadout menu (Buoc 4). Left panel = 5 fixed slots showing Mari's spell_loadout, padded with the Empty_Spell placeholder. Right panel = the known spells not currently equipped, updated live. The cap of 5 is enforced implicitly because there are only 5 slots and 'Add' is only offered on an empty slot.",
+  "trigger_script;Global Mari_Spell_Setup",
+  "#Right panel: known-but-unequipped spells (live). Falls back to the Empty_Spell_List placeholder when nothing is available.",
+  "table;MARI_KNOWN_SPELLS;([s for s in (u('Mari').get_field('known_spells') or []) if s not in (u('Mari').get_field('spell_loadout') or [])] or ['Empty_Spell_List']);Known Spells;5,1;100;top_right;menu_bg_base;type_base_item;left;expression",
+  "#Equipped slots: 5 fixed rows derived live from spell_loadout, padded with Empty_Spell. persist keeps the menu open so the cursor stays put after each Add/Swap/Remove and the list refreshes itself.",
+  "choice;MARI_LOADOUT_SLOT;Spell Loadout;((u('Mari').get_field('spell_loadout') or []) + ['Empty_Spell'] * 5)[:5];100;vert;top_left;;Global Mari_Spell_Loadout_Operations;type_base_item;5,1;left;backable;persist;expression",
+  "rmtable;MARI_KNOWN_SPELLS"
+  ],
+  "nid": "Global Mari_Spell_Loadout_Select"
+  },
+  {
+  "name": "Mari_Spell_Loadout_Operations",
+  "trigger": null,
+  "level_nid": null,
+  "condition": "True",
+  "commands": [],
+  "only_once": false,
+  "priority": 20,
+  "_source": [
+  "#Operation menu shown after the player picks a loadout slot. Empty slot -> Add only (when something can be added). Occupied slot -> Swap (when something can be added) and Remove.",
+  "game_var;AUX_STR;\"\"",
+  "game_var;MARI_AVAILABLE;','.join([s for s in (u('Mari').get_field('known_spells') or []) if s not in (u('Mari').get_field('spell_loadout') or [])]) or 'Empty_Spell_List'",
+  "if;'{v:MARI_LOADOUT_SLOT}' == 'Empty_Spell'",
+  "    if;'{v:MARI_AVAILABLE}' != 'Empty_Spell_List'",
+  "        game_var;AUX_STR;\"Add,\"",
+  "    end",
+  "else",
+  "    if;'{v:MARI_AVAILABLE}' != 'Empty_Spell_List'",
+  "        game_var;AUX_STR;\"Swap,\"",
+  "    end",
+  "    game_var;AUX_STR;\"{v:AUX_STR}\" + \"Remove,\"",
+  "end",
+  "choice;MARI_LOADOUT_OP;;{v:AUX_STR}Cancel;40;backable",
+  "if;'{v:MARI_LOADOUT_OP}' == 'Add'",
+  "    trigger_script;Global Mari_Spell_Loadout_Add",
+  "elif;'{v:MARI_LOADOUT_OP}' == 'Remove'",
+  "    trigger_script;Global Mari_Spell_Loadout_Remove",
+  "elif;'{v:MARI_LOADOUT_OP}' == 'Swap'",
+  "    trigger_script;Global Mari_Spell_Loadout_Replace",
+  "end"
+  ],
+  "nid": "Global Mari_Spell_Loadout_Operations"
+  },
+  {
+  "name": "Mari_Spell_Loadout_Add",
+  "trigger": null,
+  "level_nid": null,
+  "condition": "True",
+  "commands": [],
+  "only_once": false,
+  "priority": 20,
+  "_source": [
+  "#Add a known-but-unequipped spell into the chosen empty slot, then re-sync the inventory.",
+  "choice;MARI_SPELL_TO_ADD;Known Spells;[s for s in (u('Mari').get_field('known_spells') or []) if s not in (u('Mari').get_field('spell_loadout') or [])];100;vert;top_right;;;type_base_item;5,1;scroll_bar;backable;expression",
+  "if;'{v:MARI_SPELL_TO_ADD}' != 'BACK'",
+  "    set_unit_field;Mari;spell_loadout;(u('Mari').get_field('spell_loadout') or []) + ['{v:MARI_SPELL_TO_ADD}']",
+  "    trigger_script;Global Mari_Spell_SyncInventory",
+  "end"
+  ],
+  "nid": "Global Mari_Spell_Loadout_Add"
+  },
+  {
+  "name": "Mari_Spell_Loadout_Remove",
+  "trigger": null,
+  "level_nid": null,
+  "condition": "True",
+  "commands": [],
+  "only_once": false,
+  "priority": 20,
+  "_source": [
+  "#Drop the selected spell out of the loadout, then re-sync the inventory.",
+  "set_unit_field;Mari;spell_loadout;[s for s in (u('Mari').get_field('spell_loadout') or []) if s != '{v:MARI_LOADOUT_SLOT}']",
+  "trigger_script;Global Mari_Spell_SyncInventory"
+  ],
+  "nid": "Global Mari_Spell_Loadout_Remove"
+  },
+  {
+  "name": "Mari_Spell_Loadout_Replace",
+  "trigger": null,
+  "level_nid": null,
+  "condition": "True",
+  "commands": [],
+  "only_once": false,
+  "priority": 20,
+  "_source": [
+  "#Swap the spell in the selected slot for another known-but-unequipped spell, preserving slot order, then re-sync the inventory.",
+  "choice;MARI_SPELL_TO_ADD;Known Spells;[s for s in (u('Mari').get_field('known_spells') or []) if s not in (u('Mari').get_field('spell_loadout') or [])];100;vert;top_right;;;type_base_item;5,1;scroll_bar;backable;expression",
+  "if;'{v:MARI_SPELL_TO_ADD}' != 'BACK'",
+  "    set_unit_field;Mari;spell_loadout;[('{v:MARI_SPELL_TO_ADD}' if s == '{v:MARI_LOADOUT_SLOT}' else s) for s in (u('Mari').get_field('spell_loadout') or [])]",
+  "    trigger_script;Global Mari_Spell_SyncInventory",
+  "end"
+  ],
+  "nid": "Global Mari_Spell_Loadout_Replace"
+  }
+  ]

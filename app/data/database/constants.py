@@ -122,6 +122,7 @@ constants = ConstantCatalog([
     Constant('enable_rating', "Enable rating display in info menu", ConstantType.BOOL, True, ConstantTag.AESTHETIC),
     Constant('show_abilities', "Display range of extra abilities", ConstantType.BOOL, False, ConstantTag.AESTHETIC),
     Constant('info_menu_blink', "Portraits will blink in info menu", ConstantType.BOOL, False, ConstantTag.AESTHETIC),
+    Constant('droppable_icon', "Enemies with droppable items will show an icon", ConstantType.BOOL, True, ConstantTag.AESTHETIC),
     Constant('convoy_on_death', "Items held by dead player units are sent to convoy", ConstantType.BOOL, ConstantTag.OTHER),
     Constant('repair_shop', "Access the Repair Shop in prep and base", ConstantType.BOOL, False, ConstantTag.OTHER),
     Constant('sound_room_in_codex', "Can access sound room from Codex menu in base", ConstantType.BOOL, True, ConstantTag.OTHER),

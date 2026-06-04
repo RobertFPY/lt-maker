@@ -5959,7 +5959,7 @@
             "loss": "Crash"
         },
         "roam": false,
-        "roam_unit": null,
+        "roam_unit": "Mari",
         "go_to_overworld": false,
         "should_record": true,
         "tags": [],
@@ -6318,8 +6318,8 @@
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": [
-                    4,
-                    3
+                    9,
+                    9
                 ],
                 "starting_traveler": null,
                 "generic": false

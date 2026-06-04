@@ -461,16 +461,36 @@ class TargetSystem():
         return all_valid_targets
 
     # === Item Filtering ===
+    def _restrict_mari_loadout(self, unit: UnitObject, items: List[ItemObject]) -> List[ItemObject]:
+        # Mari's combat is driven by her separate spell loadout: the Attack/Spell menus only
+        # consider the spells she has equipped (items whose nid is in the MariSpell catalog and,
+        # when her spell_loadout field is initialized, present in that loadout). Regular weapons
+        # are never usable. Other units are unaffected.
+        if getattr(unit, 'nid', None) != 'Mari':
+            return items
+        catalog = DB.raw_data.get('MariSpell')
+        if not catalog:
+            return items
+        spell_nids = {row.nid for row in catalog}
+        loadout = unit.get_field('spell_loadout') if hasattr(unit, 'get_field') else None
+        if loadout is not None:
+            allowed = spell_nids & set(loadout)
+        else:
+            allowed = spell_nids
+        return [item for item in items if item.nid in allowed]
+
     def get_weapons(self, unit: UnitObject) -> List[ItemObject]:
         # Explicitly does not consider extra abilities since it's used within the Attack menu
-        return [item for item in unit.items if item_funcs.is_weapon_recursive(unit, item) and item_funcs.available(unit, item)]
+        weapons = [item for item in unit.items if item_funcs.is_weapon_recursive(unit, item) and item_funcs.available(unit, item)]
+        return self._restrict_mari_loadout(unit, weapons)
 
     def _get_all_weapons(self, unit: UnitObject, show_abilities: bool = False) -> List[ItemObject]:
         if DB.constants.value("show_abilities") and show_abilities:
             items = item_funcs.get_all_items_and_abilities(unit)
         else:
             items = item_funcs.get_all_items(unit)
-        return [item for item in items if item_system.is_weapon(unit, item) and item_funcs.available(unit, item)]
+        weapons = [item for item in items if item_system.is_weapon(unit, item) and item_funcs.available(unit, item)]
+        return self._restrict_mari_loadout(unit, weapons)
 
     def get_all_weapon_targets(self, unit: UnitObject) -> Set[Pos]:
         weapons: List[ItemObject] = self._get_all_weapons(unit)
@@ -481,14 +501,16 @@ class TargetSystem():
 
     def get_spells(self, unit: UnitObject) -> List[ItemObject]:
         # Explicitly does not consider extra abilities since it's used within the Spell menu
-        return [item for item in unit.items if item_funcs.is_spell_recursive(unit, item) and item_funcs.available(unit, item)]
+        spells = [item for item in unit.items if item_funcs.is_spell_recursive(unit, item) and item_funcs.available(unit, item)]
+        return self._restrict_mari_loadout(unit, spells)
 
     def _get_all_spells(self, unit: UnitObject, show_abilities: bool = False) -> List[ItemObject]:
         if DB.constants.value("show_abilities") and show_abilities:
             items = item_funcs.get_all_items_and_abilities(unit)
         else:
             items = item_funcs.get_all_items(unit)
-        return [item for item in items if item_system.is_spell(unit, item) and item_funcs.available(unit, item)]
+        spells = [item for item in items if item_system.is_spell(unit, item) and item_funcs.available(unit, item)]
+        return self._restrict_mari_loadout(unit, spells)
 
     def get_all_spell_targets(self, unit: UnitObject) -> Set[Pos]:
         spells: List[ItemObject] = self._get_all_spells(unit)

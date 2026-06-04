@@ -6426,7 +6426,7 @@
             "        picked = game.game_vars.get('MARI_LU_PICK')",
             "        if picked:",
             "            game.game_vars['MARI_NEW_SPELL'] = picked",
-            "            $trigger_script \"Global Mari_Spell_Learn\""
+            "            $trigger_script \"Global Mari_Spell_Acquire\""
         ],
         "nid": "Global Mari_LevelUp_Learn"
     },
@@ -6448,11 +6448,11 @@
             "    if r == 'S':",
             "        if 'Mari_S_Prf' not in known:",
             "            game.game_vars['MARI_NEW_SPELL'] = 'Mari_S_Prf'",
-            "            $trigger_script \"Global Mari_Spell_Learn\"",
+            "            $trigger_script \"Global Mari_Spell_Acquire\"",
             "    elif r == 'SS':",
             "        if 'Mari_SS_Prf' not in known:",
             "            game.game_vars['MARI_NEW_SPELL'] = 'Mari_SS_Prf'",
-            "            $trigger_script \"Global Mari_Spell_Learn\"",
+            "            $trigger_script \"Global Mari_Spell_Acquire\"",
             "        new_known = [s for s in (mari.get_field('known_spells') or []) if s != 'Mari_S_Prf']",
             "        $set_unit_field \"Mari\" \"known_spells\" new_known",
             "        new_loadout = [s for s in (mari.get_field('spell_loadout') or []) if s != 'Mari_S_Prf']",
@@ -6523,7 +6523,7 @@
             "        picked = game.game_vars.get('MARI_BOOK_PICK')",
             "        if picked and picked != 'BACK':",
             "            game.game_vars['MARI_NEW_SPELL'] = picked",
-            "            $trigger_script \"Global Mari_Spell_Learn\"",
+            "            $trigger_script \"Global Mari_Spell_Acquire\"",
             "    else:",
             "        $alert \"Mari cannot learn anything new from this book right now.\""
         ],
@@ -6589,14 +6589,14 @@
             "        offers = [r for r in offers if not (r.nid in seen or seen.add(r.nid))]",
             "        if len(offers) == 1:",
             "            game.game_vars['MARI_NEW_SPELL'] = offers[0].nid",
-            "            $trigger_script \"Global Mari_Spell_Learn\"",
+            "            $trigger_script \"Global Mari_Spell_Acquire\"",
             "        elif len(offers) > 1:",
             "            opts_str = ','.join(_label(r) for r in offers)",
             "            $choice \"MARI_SUP_PICK\" \"Learn which spell from your bond?\" opts_str 150 \"vert\" \"center\"",
             "            picked = game.game_vars.get('MARI_SUP_PICK')",
             "            if picked:",
             "                game.game_vars['MARI_NEW_SPELL'] = picked",
-            "                $trigger_script \"Global Mari_Spell_Learn\""
+            "                $trigger_script \"Global Mari_Spell_Acquire\""
         ],
         "nid": "Global Mari_Support_Learn"
     },
@@ -6621,6 +6621,7 @@
             "mari = game.get_unit('Mari')",
             "new_spell = game.game_vars.get('MARI_NEW_SPELL')",
             "if mari and new_spell:",
+            "    $trigger_script \"Global Mari_Spell_Setup\"",
             "    catalog = list(game.get_data('MariSpell'))",
             "    by_nid = {r.nid: r for r in catalog}",
             "    def _is_ranged(nid):",

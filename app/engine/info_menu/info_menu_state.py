@@ -384,11 +384,9 @@ class InfoMenuState(State):
                     self.scroll_offset_x = idxs[counter] if self.transition == 'RIGHT' else -idxs[counter]
                 else:
                     self.scroll_offset_x = -140 if self.transition == 'RIGHT' else 140
-                    prev_page = self.state
                     self.state = self.next_state
                     self.info_graph.set_current_state(self.state)
                     self.transition_counter = 0
-                    game.events.trigger(triggers.OnInfoMenuSwitch(self.unit, self.state, prev_page))
 
     def draw(self, surf):
         if self.bg:

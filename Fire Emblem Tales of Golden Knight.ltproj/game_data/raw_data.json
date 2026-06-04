@@ -3959,5 +3959,483 @@
                 "Hidden1": ""
             }
         ]
+    },
+    {
+        "nid": "MariSpell",
+        "dtype": "list",
+        "svalue": "",
+        "kvvalue": [],
+        "oattrs": [
+            "nid",
+            "element",
+            "rank",
+            "is_ranged",
+            "is_prf",
+            "upgrade_of"
+        ],
+        "lovalue": [
+            {
+                "nid": "Fire_E",
+                "element": "Fire",
+                "rank": "E",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": ""
+            },
+            {
+                "nid": "Fire_D",
+                "element": "Fire",
+                "rank": "D",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": "Fire_E"
+            },
+            {
+                "nid": "Fire_C",
+                "element": "Fire",
+                "rank": "C",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": "Fire_D"
+            },
+            {
+                "nid": "Fire_B",
+                "element": "Fire",
+                "rank": "B",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": "Fire_C"
+            },
+            {
+                "nid": "Fire_A",
+                "element": "Fire",
+                "rank": "A",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": "Fire_B"
+            },
+            {
+                "nid": "Fire_S",
+                "element": "Fire",
+                "rank": "S",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": "Fire_A"
+            },
+            {
+                "nid": "Fire_SS",
+                "element": "Fire",
+                "rank": "SS",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": "Fire_S"
+            },
+            {
+                "nid": "Water_E",
+                "element": "Water",
+                "rank": "E",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": ""
+            },
+            {
+                "nid": "Water_D",
+                "element": "Water",
+                "rank": "D",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": "Water_E"
+            },
+            {
+                "nid": "Water_C",
+                "element": "Water",
+                "rank": "C",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": "Water_D"
+            },
+            {
+                "nid": "Water_B",
+                "element": "Water",
+                "rank": "B",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": "Water_C"
+            },
+            {
+                "nid": "Water_A",
+                "element": "Water",
+                "rank": "A",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": "Water_B"
+            },
+            {
+                "nid": "Water_S",
+                "element": "Water",
+                "rank": "S",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": "Water_A"
+            },
+            {
+                "nid": "Water_SS",
+                "element": "Water",
+                "rank": "SS",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": "Water_S"
+            },
+            {
+                "nid": "Thunder_E",
+                "element": "Thunder",
+                "rank": "E",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": ""
+            },
+            {
+                "nid": "Thunder_D",
+                "element": "Thunder",
+                "rank": "D",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": "Thunder_E"
+            },
+            {
+                "nid": "Thunder_C",
+                "element": "Thunder",
+                "rank": "C",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": "Thunder_D"
+            },
+            {
+                "nid": "Thunder_B",
+                "element": "Thunder",
+                "rank": "B",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": "Thunder_C"
+            },
+            {
+                "nid": "Thunder_A",
+                "element": "Thunder",
+                "rank": "A",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": "Thunder_B"
+            },
+            {
+                "nid": "Thunder_S",
+                "element": "Thunder",
+                "rank": "S",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": "Thunder_A"
+            },
+            {
+                "nid": "Thunder_SS",
+                "element": "Thunder",
+                "rank": "SS",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": "Thunder_S"
+            },
+            {
+                "nid": "Wind_E",
+                "element": "Wind",
+                "rank": "E",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": ""
+            },
+            {
+                "nid": "Wind_D",
+                "element": "Wind",
+                "rank": "D",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": "Wind_E"
+            },
+            {
+                "nid": "Wind_C",
+                "element": "Wind",
+                "rank": "C",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": "Wind_D"
+            },
+            {
+                "nid": "Wind_B",
+                "element": "Wind",
+                "rank": "B",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": "Wind_C"
+            },
+            {
+                "nid": "Wind_A",
+                "element": "Wind",
+                "rank": "A",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": "Wind_B"
+            },
+            {
+                "nid": "Wind_S",
+                "element": "Wind",
+                "rank": "S",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": "Wind_A"
+            },
+            {
+                "nid": "Wind_SS",
+                "element": "Wind",
+                "rank": "SS",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": "Wind_S"
+            },
+            {
+                "nid": "Earth_E",
+                "element": "Earth",
+                "rank": "E",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": ""
+            },
+            {
+                "nid": "Earth_D",
+                "element": "Earth",
+                "rank": "D",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": "Earth_E"
+            },
+            {
+                "nid": "Earth_C",
+                "element": "Earth",
+                "rank": "C",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": "Earth_D"
+            },
+            {
+                "nid": "Earth_B",
+                "element": "Earth",
+                "rank": "B",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": "Earth_C"
+            },
+            {
+                "nid": "Earth_A",
+                "element": "Earth",
+                "rank": "A",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": "Earth_B"
+            },
+            {
+                "nid": "Earth_S",
+                "element": "Earth",
+                "rank": "S",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": "Earth_A"
+            },
+            {
+                "nid": "Earth_SS",
+                "element": "Earth",
+                "rank": "SS",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": "Earth_S"
+            },
+            {
+                "nid": "Light_E",
+                "element": "Light",
+                "rank": "E",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": ""
+            },
+            {
+                "nid": "Light_D",
+                "element": "Light",
+                "rank": "D",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": "Light_E"
+            },
+            {
+                "nid": "Light_C",
+                "element": "Light",
+                "rank": "C",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": "Light_D"
+            },
+            {
+                "nid": "Light_B",
+                "element": "Light",
+                "rank": "B",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": "Light_C"
+            },
+            {
+                "nid": "Light_A",
+                "element": "Light",
+                "rank": "A",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": "Light_B"
+            },
+            {
+                "nid": "Light_S",
+                "element": "Light",
+                "rank": "S",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": "Light_A"
+            },
+            {
+                "nid": "Light_SS",
+                "element": "Light",
+                "rank": "SS",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": "Light_S"
+            },
+            {
+                "nid": "Dark_E",
+                "element": "Dark",
+                "rank": "E",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": ""
+            },
+            {
+                "nid": "Dark_D",
+                "element": "Dark",
+                "rank": "D",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": "Dark_E"
+            },
+            {
+                "nid": "Dark_C",
+                "element": "Dark",
+                "rank": "C",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": "Dark_D"
+            },
+            {
+                "nid": "Dark_B",
+                "element": "Dark",
+                "rank": "B",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": "Dark_C"
+            },
+            {
+                "nid": "Dark_A",
+                "element": "Dark",
+                "rank": "A",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": "Dark_B"
+            },
+            {
+                "nid": "Dark_S",
+                "element": "Dark",
+                "rank": "S",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": "Dark_A"
+            },
+            {
+                "nid": "Dark_SS",
+                "element": "Dark",
+                "rank": "SS",
+                "is_ranged": "false",
+                "is_prf": "false",
+                "upgrade_of": "Dark_S"
+            },
+            {
+                "nid": "Meteor",
+                "element": "Fire",
+                "rank": "A",
+                "is_ranged": "true",
+                "is_prf": "false",
+                "upgrade_of": ""
+            },
+            {
+                "nid": "Purge",
+                "element": "Light",
+                "rank": "A",
+                "is_ranged": "true",
+                "is_prf": "false",
+                "upgrade_of": ""
+            },
+            {
+                "nid": "Eclipse",
+                "element": "Dark",
+                "rank": "A",
+                "is_ranged": "true",
+                "is_prf": "false",
+                "upgrade_of": ""
+            },
+            {
+                "nid": "Mari_S_Prf",
+                "element": "Staff",
+                "rank": "S",
+                "is_ranged": "false",
+                "is_prf": "true",
+                "upgrade_of": ""
+            },
+            {
+                "nid": "Mari_SS_Prf",
+                "element": "Staff",
+                "rank": "SS",
+                "is_ranged": "false",
+                "is_prf": "true",
+                "upgrade_of": "Mari_S_Prf"
+            }
+        ]
+    },
+    {
+        "nid": "MariTier1Classes",
+        "dtype": "str",
+        "svalue": "",
+        "kvvalue": [],
+        "oattrs": [
+            "nid"
+        ],
+        "lovalue": []
+    },
+    {
+        "nid": "MariTier2Classes",
+        "dtype": "str",
+        "svalue": "",
+        "kvvalue": [],
+        "oattrs": [
+            "nid"
+        ],
+        "lovalue": []
+    },
+    {
+        "nid": "MariTier3Classes",
+        "dtype": "str",
+        "svalue": "",
+        "kvvalue": [],
+        "oattrs": [
+            "nid"
+        ],
+        "lovalue": []
     }
 ]

@@ -1849,6 +1849,17 @@ def give_item(self: Event, global_unit_or_convoy, item, party=None, flags=None):
             self.logger.error("give_item: Couldn't find unit with nid %s" % global_unit)
             return
     item_id = item
+    # Mari's spells live in her separate spell loadout, not her regular inventory. When a MariSpell
+    # catalog item is given to Mari, hand it off to Mari_Spell_Acquire, which adds it to her known
+    # spells and either auto-equips it (free loadout slot) or opens the full-loadout swap choice --
+    # exactly like learning a spell on level up. Regular items fall through to the normal logic below.
+    if unit and getattr(unit, 'nid', None) == 'Mari' and 'direct_give' not in flags:
+        mari_spells = DB.raw_data.get('MariSpell')
+        if mari_spells and item_id in {row.nid for row in mari_spells}:
+            self.game.game_vars['MARI_NEW_SPELL'] = item_id
+            self.game.events.trigger_specific_event('Global Mari_Spell_Acquire')
+            self.state = 'paused'
+            return
     if item_id in DB.items:
         item = item_funcs.create_item(None, item_id)
         self.game.register_item(item)

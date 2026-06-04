@@ -1,8 +1,8 @@
 {
-    "date": "2026-06-01 22:36:56.800764",
+    "date": "2026-06-04 11:30:57.012293",
     "engine_version": "2026.02.17a",
     "serialization_version": 0,
     "project": "FETOGK",
-    "has_fatal_errors": false,
+    "has_fatal_errors": true,
     "as_chunks": false
 }

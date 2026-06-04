@@ -1711,3 +1711,24 @@ class MarkerWarningIcon(SkillComponent):
 
     def target_icon(self, hovered_unit, icon_unit) -> str:
         return 'warning'
+
+class MariSpellContainer(SkillComponent):
+    nid = 'mari_spell_container'
+    desc = ("Treats equipped Mari spells (items whose nid is in the MariSpell catalog) as a separate "
+            "container: they never consume the unit's regular inventory slots. The unit's effective "
+            "item capacity is increased by the number of spell items currently carried.")
+    tag = SkillTags.CUSTOM
+
+    def num_items_offset(self, unit) -> int:
+        try:
+            catalog = DB.raw_data.get('MariSpell')
+        except Exception:
+            catalog = None
+        if not catalog:
+            return 0
+        spell_nids = {row.nid for row in catalog}
+        count = 0
+        for item in unit.items:
+            if item.nid in spell_nids and not item_system.is_accessory(unit, item):
+                count += 1
+        return count

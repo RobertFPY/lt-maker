@@ -476,18 +476,6 @@ class OnInfoMenuStart(EventTrigger):
     page: NID #: the nid of the page currently shown (e.g. `personal_data`, `equipment`, `support_skills`, `notes`).
 
 @dataclass(init=True)
-class OnInfoMenuSwitch(EventTrigger):
-    """
-    Occurs when the player switches to a different page within the unit info menu
-    (for instance by pressing LEFT or RIGHT to change pages).
-    """
-    nid: ClassVar[NID] = 'on_info_menu_switch'
-    unit1: UnitObject #: the unit currently being displayed in the info menu.
-    page: NID #: the nid of the page the player just switched to.
-    prev_page: NID #: the nid of the page the player switched away from.
-
-@dataclass(init=True)
-
 class OnInfoMenuOn(EventTrigger):
     """
     Occurs when the player switches to a different page within the unit info menu

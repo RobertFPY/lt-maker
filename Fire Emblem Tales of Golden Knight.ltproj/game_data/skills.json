@@ -25422,5 +25422,25 @@
                 null
             ]
         ]
+    },
+    {
+        "nid": "Mari_Spell_Container",
+        "name": "Spell Loadout",
+        "desc": "Mari's equipped spells are held in a separate loadout and do not take up her regular inventory slots.",
+        "icon_nid": null,
+        "icon_index": [
+            0,
+            0
+        ],
+        "components": [
+            [
+                "hidden",
+                null
+            ],
+            [
+                "mari_spell_container",
+                null
+            ]
+        ]
     }
 ]

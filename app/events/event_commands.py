@@ -1785,11 +1785,12 @@ If the unit's inventory is full, the player will be given the option of which it
 If the *no_choice* flag is set, the new item will be automatically sent to the convoy in this case without prompting the player.
 If the *force_give* flag is set, the new item will be forced into the inventory and another must be discarded instead. *no_choice* takes priority over *force_give*.
 The *droppable* flag determines whether the item is set as a "droppable" item (generally only given to enemy units).
+If the *direct_give* flag is set, the item is placed directly into the inventory even for Mari's spells (bypassing the spell-loadout acquisition flow). This is used internally to materialize Mari's equipped spells into her inventory.
         """
 
     keywords = ["GlobalUnitOrConvoy", "Item"]
     optional_keywords = ["Party"]
-    _flags = ['no_banner', 'no_choice', 'force_give', 'droppable']
+    _flags = ['no_banner', 'no_choice', 'force_give', 'droppable', 'direct_give']
 
 class EquipItem(EventCommand):
     nid = 'equip_item'

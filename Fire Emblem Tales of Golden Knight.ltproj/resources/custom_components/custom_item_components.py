@@ -1461,15 +1461,14 @@ def _spell_rank_index(rank) -> int:
     except ValueError:
         return 0
 
-def mari_book_learnable(mari) -> list:
+def mari_book_learnable(mari, allowed=None) -> list:
     """Return the list of MariSpell nids Mari could learn from a study book right now.
 
     Rules (shared with the Mari_Book_Learn event so can_use and the menu stay in sync):
+      - spell is offered by this book (its nid is in ``allowed``); when ``allowed`` is None
+        every spell in the MariSpell catalog is considered
       - spell not already known
-      - spell rank not S/SS and not above Mari's current Staff weapon rank
-      - either an upgrade_of a spell she already knows, or a base spell (no upgrade_of)
-        introducing an element she does not yet have
-      - Dark element and ranged spells ARE allowed from books
+      - spell rank not above Mari's current Staff weapon rank
     """
     if not mari:
         return []
@@ -1484,35 +1483,55 @@ def mari_book_learnable(mari) -> list:
         staff_wexp = 0
     _wr = DB.weapon_ranks.get_rank_from_wexp(staff_wexp)
     cap = _spell_rank_index(_wr.rank if _wr else 'E')
-    known_elems = set(str(r.element).strip() for r in catalog if r.nid in known)
     result = []
     for r in catalog:
-        if r.nid in known:
+        if allowed is not None and r.nid not in allowed:
             continue
-        if str(r.rank).strip().upper() in ('S', 'SS'):
+        if r.nid in known:
             continue
         if _spell_rank_index(r.rank) > cap:
             continue
-        upgrade_of = str(r.upgrade_of).strip()
-        if upgrade_of:
-            if upgrade_of in known:
-                result.append(r.nid)
-        elif str(r.element).strip() not in known_elems:
-            result.append(r.nid)
+        result.append(r.nid)
     return result
 
 class LearnSpellFromBook(ItemComponent):
     nid = 'learn_spell_from_book'
     desc = ("Mari-only study book. When Mari uses the item at full durability it opens the "
-            "linked event so she can learn one rank-appropriate spell, then the book is "
-            "consumed by its normal uses. Only usable by Mari and only when no use has been spent.")
+            "linked event so she can learn one rank-appropriate spell from the book's spell "
+            "list, then the book is consumed by its normal uses. Configure two fields: the "
+            "event to trigger, and the list of spell items this book can teach. The chosen "
+            "spells' nids are passed to the event as 'mari_new_spell'. Only usable by Mari "
+            "and only when no use has been spent.")
     tag = ItemTags.CUSTOM
     author = "v0"
 
-    expose = ComponentType.Event
-    value = ""
+    expose = ComponentType.NewMultipleOptions
+
+    options = {
+        'event': ComponentType.Event,
+        'spells': (ComponentType.List, ComponentType.Item),  # Stored as Nids
+    }
 
     _should_fire = False
+
+    def __init__(self, value=None):
+        self.value = {
+            'event': '',
+            'spells': [],
+        }
+        if value and isinstance(value, dict):
+            self.value.update(value)
+        elif value:
+            # Backwards compatibility with the old single-Event value.
+            self.value['event'] = value
+
+    @property
+    def event_nid(self):
+        return self.value.get('event', '')
+
+    @property
+    def spell_nids(self) -> list:
+        return list(self.value.get('spells') or [])
 
     def can_use(self, unit, item) -> bool:
         if not unit or unit.nid != 'Mari':
@@ -1521,17 +1540,18 @@ class LearnSpellFromBook(ItemComponent):
         if 'uses' in item.data and 'starting_uses' in item.data:
             if item.data['uses'] < item.data['starting_uses']:
                 return False
-        # Only usable if there is at least one spell she could actually learn.
-        return bool(mari_book_learnable(unit))
+        # Only usable if at least one of this book's spells is something she can learn now.
+        return bool(mari_book_learnable(unit, self.spell_nids))
 
     def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         self._should_fire = True
 
     def end_combat(self, playback, unit, item, target, item2, mode):
         if self._should_fire and unit and unit.nid == 'Mari':
-            event_prefab = DB.events.get_from_nid(self.value)
+            event_prefab = DB.events.get_from_nid(self.event_nid)
             if event_prefab:
-                local_args = {'item': item, 'mode': mode}
+                # Pass the book's spell nids so the event can offer exactly these spells.
+                local_args = {'item': item, 'mode': mode, 'mari_new_spell': self.spell_nids}
                 game.events.trigger_specific_event(event_prefab.nid, unit, unit, unit.position, local_args)
         self._should_fire = False
 

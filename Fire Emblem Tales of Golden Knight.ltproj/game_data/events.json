@@ -2195,7 +2195,7 @@
             "change_item_name;Camus;Silver_Lance;<purple>Silver Lance",
             "give_item;Camus;Shield_of_Cartas;no_banner",
             "give_item;Michalis;Armor_of_Iote;no_banner",
-            "give_item;Mari;Fire_E;direct_give",
+            "give_item;Mari;Mari_Spellbook_Template;direct_give",
             "set_level;Mari;3"
         ],
         "nid": "DEBUG Test"
@@ -6232,28 +6232,6 @@
         "nid": "Global Mari_Spell_Learn"
     },
     {
-        "name": "Mari_Spell_SyncInventory",
-        "trigger": null,
-        "level_nid": null,
-        "condition": "True",
-        "commands": [],
-        "only_once": false,
-        "priority": 20,
-        "_source": [
-            "#Sync Mari's inventory so it carries exactly the spell items in spell_loadout. Non-spell items (Staff, Heal, Vulnerary...) are never touched: we only act on item nids that exist in the MariSpell catalog.",
-            "trigger_script;Global Mari_Spell_Setup",
-            "#Remove spell items Mari carries that are no longer part of the loadout.",
-            "for;OLD_SPELL;[it.nid for it in u('Mari').items if it.nid in [row.nid for row in game.get_data('MariSpell')] and it.nid not in (u('Mari').get_field('spell_loadout') or [])]",
-            "    remove_item;Mari;{OLD_SPELL};no_banner",
-            "endf",
-            "#Give the loadout spells Mari does not currently carry.",
-            "for;NEW_SPELL;[s for s in (u('Mari').get_field('spell_loadout') or []) if s not in [it.nid for it in u('Mari').items]]",
-            "    give_item;Mari;{NEW_SPELL};no_banner;no_choice;direct_give",
-            "endf"
-        ],
-        "nid": "Global Mari_Spell_SyncInventory"
-    },
-    {
         "name": "Mari_Loadout_Open",
         "trigger": "on_talk",
         "level_nid": "NagaFortress",
@@ -6263,10 +6241,9 @@
         "priority": 20,
         "_source": [
             "#Spell loadout manager. Fires when a unit talks to the LoadoutManager NPC at Naga's Fortress (level_nid/NPC nid are placeholders - rename to your real ones).",
-            "#The persist choice stays open and live-refreshes after every add/remove; backing out exits and then syncs Mari's inventory to match the loadout.",
+            "#The persist choice stays open and live-refreshes after every add/remove. The loadout is Mari's spell source on its own - no inventory sync is needed.",
             "trigger_script;Global Mari_Spell_Setup",
-            "choice;MARI_LOADOUT_SEL;Mari Spell Loadout (max 5);(lambda L, f=lambda n: n+'|'+next((str(r.element)+' '+str(r.rank) for r in game.get_data('MariSpell') if r.nid==n), n)+(' R' if any(str(r.is_ranged).strip().lower() in ('1','true','yes','y','t') for r in game.get_data('MariSpell') if r.nid==n) else '')+(' PRF' if any(str(r.is_prf).strip().lower() in ('1','true','yes','y','t') for r in game.get_data('MariSpell') if r.nid==n) else '')+'  HP'+str(next((c.value for c in (DB.items.get(n).components if DB.items.get(n) else []) if c.nid=='hp_cost_override'), next(({'E':1,'D':2,'C':3,'B':4,'A':7,'S':8,'SS':10}.get(str(r.rank).strip().upper(),1) for r in game.get_data('MariSpell') if r.nid==n), 1))): [f(s) for s in L] + (['ADD_SPELL|+ Add Spell'] if len(L)<5 else []))(u('Mari').get_field('spell_loadout') or []);150;vert;top_left;;Global Mari_Loadout_Operations;;6,1;left;persist;backable;expression",
-            "trigger_script;Global Mari_Spell_SyncInventory"
+            "choice;MARI_LOADOUT_SEL;Mari Spell Loadout (max 5);(lambda L, f=lambda n: n+'|'+next((str(r.element)+' '+str(r.rank) for r in game.get_data('MariSpell') if r.nid==n), n)+(' R' if any(str(r.is_ranged).strip().lower() in ('1','true','yes','y','t') for r in game.get_data('MariSpell') if r.nid==n) else '')+(' PRF' if any(str(r.is_prf).strip().lower() in ('1','true','yes','y','t') for r in game.get_data('MariSpell') if r.nid==n) else '')+'  HP'+str(next((c.value for c in (DB.items.get(n).components if DB.items.get(n) else []) if c.nid=='hp_cost_override'), next(({'E':1,'D':2,'C':3,'B':4,'A':7,'S':8,'SS':10}.get(str(r.rank).strip().upper(),1) for r in game.get_data('MariSpell') if r.nid==n), 1))): [f(s) for s in L] + (['ADD_SPELL|+ Add Spell'] if len(L)<5 else []))(u('Mari').get_field('spell_loadout') or []);150;vert;top_left;;Global Mari_Loadout_Operations;;6,1;left;persist;backable;expression"
         ],
         "nid": "NagaFortress Mari_Loadout_Open"
     },
@@ -6426,7 +6403,7 @@
         "priority": 20,
         "_source": [
             "#pyev1",
-            "# When Mari's Staff rank reaches S she learns the S staff-prf spell; when it reaches SS she learns the SS staff-prf and the now-obsolete S-prf is removed from both her known list and her loadout (then inventory is re-synced).",
+            "# When Mari's Staff rank reaches S she learns the S staff-prf spell; when it reaches SS she learns the SS staff-prf and the now-obsolete S-prf is removed from both her known list and her loadout.",
             "mari = game.get_unit('Mari')",
             "if mari:",
             "    r = str(rank).strip().upper()",
@@ -6442,8 +6419,7 @@
             "        new_known = [s for s in (mari.get_field('known_spells') or []) if s != 'Mari_S_Prf']",
             "        $set_unit_field \"Mari\" \"known_spells\" new_known",
             "        new_loadout = [s for s in (mari.get_field('spell_loadout') or []) if s != 'Mari_S_Prf']",
-            "        $set_unit_field \"Mari\" \"spell_loadout\" new_loadout",
-            "        $trigger_script \"Global Mari_Spell_SyncInventory\""
+            "        $set_unit_field \"Mari\" \"spell_loadout\" new_loadout"
         ],
         "nid": "Global Mari_StaffRank_Prf"
     },
@@ -6458,10 +6434,11 @@
         "_source": [
             "#pyev1",
             "# Triggered by the 'learn_spell_from_book' item component when Mari studies a spell book.",
-            "# Offers every spell she can learn from a book: rank not S/SS and not above her current Staff rank,",
-            "# either an upgrade_of a known spell or a base spell of a new element. Dark and ranged spells ARE allowed here.",
+            "# 'mari_new_spell' is the list of spell item nids this book can teach (the component's spell list).",
+            "# Offers exactly those spells, filtered to ones Mari can learn now: not already known and not above her current Staff rank.",
             "mari = game.get_unit('Mari')",
-            "if mari:",
+            "book_spells = list(globals().get('mari_new_spell') or [])",
+            "if mari and book_spells:",
             "    catalog = list(game.get_data('MariSpell'))",
             "    known = mari.get_field('known_spells') or []",
             "    ORDER = ['E', 'D', 'C', 'B', 'A', 'S', 'SS']",
@@ -6486,23 +6463,15 @@
             "        return HPMAP.get(str(r.rank).strip().upper(), 1)",
             "    def _label(r):",
             "        return r.nid + '|' + str(r.element) + ' ' + str(r.rank) + '  HP' + str(_hp(r))",
-            "    known_elems = set(str(r.element).strip() for r in catalog if r.nid in known)",
             "    valid = []",
             "    for r in catalog:",
+            "        if r.nid not in book_spells:",
+            "            continue",
             "        if r.nid in known:",
-            "            continue",
-            "        if str(r.rank).strip().upper() in ('S', 'SS'):",
-            "            continue",
-            "        if str(r.is_prf).strip().lower() in ('1', 'true', 'yes', 'y', 't'):",
             "            continue",
             "        if ridx(r.rank) > cap:",
             "            continue",
-            "        up = str(r.upgrade_of).strip()",
-            "        if up:",
-            "            if up in known:",
-            "                valid.append(r)",
-            "        elif str(r.element).strip() not in known_elems:",
-            "            valid.append(r)",
+            "        valid.append(r)",
             "    if valid:",
             "        opts_str = ','.join(_label(r) for r in valid)",
             "        $choice \"MARI_BOOK_PICK\" \"Study which spell?\" opts_str 150 \"vert\" \"center\" \"scroll_bar\"",
@@ -6609,7 +6578,7 @@
             "# 3) Otherwise opens a panel of the candidate spells (current loadout + the new spell) and lets the",
             "#    player pick exactly one to leave in storage; the remaining (up to 5) stay equipped. Picks that",
             "#    would still break the ranged / S-SS rule are rejected and the panel reopens.",
-            "# After any loadout change it re-syncs Mari's inventory so combat sees exactly the equipped spells.",
+            "# The loadout is the sole source of Mari's usable spells in combat - no inventory sync is needed.",
             "mari = game.get_unit('Mari')",
             "new_spell = game.game_vars.get('MARI_NEW_SPELL')",
             "if mari and new_spell:",
@@ -6657,7 +6626,6 @@
             "        pass",
             "    elif _valid(loadout + [new_spell]):",
             "        action.do(action.ChangeField(mari, 'spell_loadout', loadout + [new_spell], False))",
-            "        $trigger_script \"Global Mari_Spell_SyncInventory\"",
             "        $alert \"Mari equipped a new spell.\"",
             "    else:",
             "        candidates = loadout + [new_spell]",
@@ -6670,7 +6638,6 @@
             "                new_loadout = [n for n in candidates if n != pick]",
             "                if _valid(new_loadout):",
             "                    action.do(action.ChangeField(mari, 'spell_loadout', new_loadout, False))",
-            "                    $trigger_script \"Global Mari_Spell_SyncInventory\"",
             "                    done = True",
             "                else:",
             "                    $alert \"That would keep two ranged or two S/SS spells. Choose another to store.\""

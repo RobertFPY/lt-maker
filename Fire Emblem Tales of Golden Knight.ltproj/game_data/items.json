@@ -16602,7 +16602,12 @@
             ],
             [
                 "learn_spell_from_book",
-                "Mari_Book_Learn"
+                {
+                    "event": "Global Mari_Book_Learn",
+                    "spells": [
+                        "Fire_E"
+                    ]
+                }
             ],
             [
                 "prf_unit",
@@ -17460,7 +17465,7 @@
             ],
             [
                 "weapon_type",
-                "Anima"
+                "Staff"
             ],
             [
                 "weapon_rank",
@@ -19084,7 +19089,7 @@
             ],
             [
                 "weapon_type",
-                "Anima"
+                "Staff"
             ],
             [
                 "weapon_rank",
@@ -20708,7 +20713,7 @@
             ],
             [
                 "weapon_type",
-                "Light"
+                "Staff"
             ],
             [
                 "weapon_rank",

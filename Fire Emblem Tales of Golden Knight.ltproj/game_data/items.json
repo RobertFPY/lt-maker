@@ -16564,6 +16564,10 @@
                 [
                     "MagicalWeapon"
                 ]
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -16725,6 +16729,10 @@
             [
                 "value",
                 600
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -16837,6 +16845,10 @@
             [
                 "value",
                 1000
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -16949,6 +16961,10 @@
             [
                 "value",
                 1500
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -17061,6 +17077,10 @@
             [
                 "value",
                 2200
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -17173,6 +17193,10 @@
             [
                 "value",
                 3200
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -17285,6 +17309,10 @@
             [
                 "value",
                 4500
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -17397,6 +17425,10 @@
             [
                 "value",
                 6000
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -17509,6 +17541,10 @@
             [
                 "value",
                 600
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -17621,6 +17657,10 @@
             [
                 "value",
                 1000
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -17733,6 +17773,10 @@
             [
                 "value",
                 1500
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -17845,6 +17889,10 @@
             [
                 "value",
                 2200
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -17957,6 +18005,10 @@
             [
                 "value",
                 3200
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -18069,6 +18121,10 @@
             [
                 "value",
                 4500
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -18181,6 +18237,10 @@
             [
                 "value",
                 6000
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -18293,6 +18353,10 @@
             [
                 "value",
                 600
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -18405,6 +18469,10 @@
             [
                 "value",
                 1000
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -18517,6 +18585,10 @@
             [
                 "value",
                 1500
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -18629,6 +18701,10 @@
             [
                 "value",
                 2200
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -18741,6 +18817,10 @@
             [
                 "value",
                 3200
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -18853,6 +18933,10 @@
             [
                 "value",
                 4500
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -18965,6 +19049,10 @@
             [
                 "value",
                 6000
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -19077,6 +19165,10 @@
             [
                 "value",
                 600
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -19189,6 +19281,10 @@
             [
                 "value",
                 1000
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -19301,6 +19397,10 @@
             [
                 "value",
                 1500
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -19413,6 +19513,10 @@
             [
                 "value",
                 2200
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -19525,6 +19629,10 @@
             [
                 "value",
                 3200
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -19637,6 +19745,10 @@
             [
                 "value",
                 4500
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -19749,6 +19861,10 @@
             [
                 "value",
                 6000
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -19861,6 +19977,10 @@
             [
                 "value",
                 600
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -19973,6 +20093,10 @@
             [
                 "value",
                 1000
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -20085,6 +20209,10 @@
             [
                 "value",
                 1500
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -20197,6 +20325,10 @@
             [
                 "value",
                 2200
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -20309,6 +20441,10 @@
             [
                 "value",
                 3200
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -20421,6 +20557,10 @@
             [
                 "value",
                 4500
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -20533,6 +20673,10 @@
             [
                 "value",
                 6000
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -20645,6 +20789,10 @@
             [
                 "value",
                 600
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -20757,6 +20905,10 @@
             [
                 "value",
                 1000
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -20869,6 +21021,10 @@
             [
                 "value",
                 1500
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -20981,6 +21137,10 @@
             [
                 "value",
                 2200
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -21093,6 +21253,10 @@
             [
                 "value",
                 3200
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -21205,6 +21369,10 @@
             [
                 "value",
                 4500
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -21317,6 +21485,10 @@
             [
                 "value",
                 6000
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -21429,6 +21601,10 @@
             [
                 "value",
                 600
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -21541,6 +21717,10 @@
             [
                 "value",
                 1000
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -21653,6 +21833,10 @@
             [
                 "value",
                 1500
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -21765,6 +21949,10 @@
             [
                 "value",
                 2200
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -21877,6 +22065,10 @@
             [
                 "value",
                 3200
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -21989,6 +22181,10 @@
             [
                 "value",
                 4500
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -22101,6 +22297,10 @@
             [
                 "value",
                 6000
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -22213,6 +22413,10 @@
             [
                 "value",
                 3200
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -22325,6 +22529,10 @@
             [
                 "value",
                 0
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     },
@@ -22437,6 +22645,10 @@
             [
                 "value",
                 0
+            ],
+            [
+                "hp_cost_as_uses",
+                null
             ]
         ]
     }

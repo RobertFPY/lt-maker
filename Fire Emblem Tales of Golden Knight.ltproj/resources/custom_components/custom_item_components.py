@@ -1534,3 +1534,40 @@ class LearnSpellFromBook(ItemComponent):
                 local_args = {'item': item, 'mode': mode}
                 game.events.trigger_specific_event(event_prefab.nid, unit, unit, unit.position, local_args)
         self._should_fire = False
+
+class HPCostAsUses(ItemComponent):
+    nid = 'hp_cost_as_uses'
+    desc = ("Display the item's HP cost in place of Uses in menus (supports both hp_cost and "
+            "eval_hp_cost). Used for Mari's spells so the Attack/Spell list shows the HP that will "
+            "be consumed instead of a uses count. Do not combine with other uses-display components.")
+    tag = ItemTags.USES
+    delim = None
+
+    def _calc_uses(self, unit, item):
+        # eval_hp_cost takes priority (Mari's elemental spells use it); fall back to flat hp_cost.
+        if getattr(item, 'eval_hp_cost', None):
+            from app.engine import evaluate
+            try:
+                return int(evaluate.evaluate(item.eval_hp_cost.value, unit, local_args={'item': item}))
+            except Exception:
+                logging.error("hp_cost_as_uses: couldn't evaluate eval_hp_cost for %s", item.nid)
+                return None
+        if getattr(item, 'hp_cost', None):
+            return item.hp_cost.value
+        return None
+
+    def _calc_max_uses(self, unit, item):
+        return None
+
+    def _font_color(self, unit, item):
+        from app.engine.fonts import FONT
+        color = 'navy'
+        if not item_funcs.available(unit, item):
+            color = 'grey'
+        if 'text-' + color in FONT:
+            return color
+        return None
+
+    def item_uses_display(self, unit, item):
+        from app.engine.game_menus.icon_options import UsesDisplayConfig
+        return UsesDisplayConfig(self._calc_uses, self.delim, self._calc_max_uses, self._font_color, unit=unit, item=item)

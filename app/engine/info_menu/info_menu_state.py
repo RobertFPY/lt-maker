@@ -149,6 +149,7 @@ class InfoMenuState(State):
         self.class_skill_surf: engine.Surface = None
         self.fatigue_surf: engine.Surface = None
         self.notes_surf: engine.Surface = None
+        self.spellbook_surf: engine.Surface = None
 
     def build_arrows(self):
         self.left_arrow = gui.ScrollArrow('left', (103, 3))
@@ -163,6 +164,10 @@ class InfoMenuState(State):
             image = SPRITES.get('info_title_weapon')
         elif name == 'notes':
             image = SPRITES.get('info_title_notes')
+        elif name == 'spellbook':
+            # Custom title sprite for the spell loadout page; fall back to the
+            # items title if the dedicated sprite has not been added yet.
+            image = SPRITES.get('info_title_spellbook') or SPRITES.get('info_title_items')
         else:
             return
         if self.logo:
@@ -253,23 +258,64 @@ class InfoMenuState(State):
             elif 'UP' in directions:
                 self.move_up()
 
+    def _get_spell_loadout_items(self, unit) -> List['ItemObject']:
+        """Materialize the spell items stored in the unit's 'spell_loadout' field.
+
+        Reuses the same loadout machinery as the Attack/Spell menus (target_system)
+        so the items here are the exact same ItemObjects, and are never duplicated.
+        """
+        if not hasattr(unit, 'get_field'):
+            return []
+        loadout = unit.get_field('spell_loadout')
+        if not loadout:
+            return []
+        catalog = DB.raw_data.get('MariSpell')
+        spell_nids = {row.nid for row in catalog} if catalog else None
+        loadout_nids = [nid for nid in loadout if (spell_nids is None or nid in spell_nids)]
+        return game.target_system._get_mari_loadout_items(unit, loadout_nids)
+
+    def _has_spell_loadout(self, unit=None) -> bool:
+        """The spellbook page is only available when the unit has a non-empty spell loadout."""
+        unit = unit or self.unit
+        return bool(self._get_spell_loadout_items(unit))
+
+    def get_available_states(self) -> List[str]:
+        """The pages reachable for the current unit.
+
+        'notes' is only shown when the unit actually has notes (matching the page
+        counter), and 'spellbook' is only shown when the unit has a spell loadout.
+        """
+        states = []
+        for state in info_states:
+            if state == 'notes':
+                if DB.constants.value('unit_notes') and self.unit.notes:
+                    states.append(state)
+            elif state == 'spellbook':
+                if self._has_spell_loadout():
+                    states.append(state)
+            else:
+                states.append(state)
+        return states
+
     def move_left(self):
-        if len(info_states) > 1:
+        states = self.get_available_states()
+        if len(states) > 1:
             get_sound_thread().play_sfx('Status_Page_Change')
-            index = info_states.index(self.state)
-            new_index = (index - 1) % len(info_states)
-            self.next_state = info_states[new_index]
+            index = states.index(self.state) if self.state in states else 0
+            new_index = (index - 1) % len(states)
+            self.next_state = states[new_index]
             self.info_graph.last_bb = None
             self.transition = 'LEFT'
             self.left_arrow.pulse()
             self.switch_logo(self.next_state)
 
     def move_right(self):
-        if len(info_states) > 1:
+        states = self.get_available_states()
+        if len(states) > 1:
             get_sound_thread().play_sfx('Status_Page_Change')
-            index = info_states.index(self.state)
-            new_index = (index + 1) % len(info_states)
-            self.next_state = info_states[new_index]
+            index = states.index(self.state) if self.state in states else 0
+            new_index = (index + 1) % len(states)
+            self.next_state = states[new_index]
             self.info_graph.last_bb = None
             self.transition = 'RIGHT'
             self.right_arrow.pulse()
@@ -361,6 +407,12 @@ class InfoMenuState(State):
                     self.unit = self.next_unit  # Now transition in
                     self.reset_surfs(keep_last_info_graph_aabb=True)
                     self.transition_counter = 0
+                    # The new unit may not have the current page (e.g. spellbook
+                    # or notes), so fall back to a page that is always available.
+                    if self.state not in self.get_available_states():
+                        self.state = 'personal_data'
+                        self.info_graph.set_current_state(self.state)
+                        self.switch_logo(self.state)
 
         # Left and Right
         elif self.next_state is not None:
@@ -557,11 +609,10 @@ class InfoMenuState(State):
             self.logo.update()
             self.logo.draw(top_surf)
         # Blit page numbers
-        if DB.constants.value('unit_notes') and self.unit.notes:
-            num_states = len(info_states)
-        else:
-            num_states = len(info_states) - 1
-        page = str(info_states.index(self.state) + 1) + '/' + str(num_states)
+        states = self.get_available_states()
+        num_states = len(states)
+        current_index = states.index(self.state) if self.state in states else 0
+        page = str(current_index + 1) + '/' + str(num_states)
         render_text(top_surf, ['small'], [page], [], (235, 12), HAlignment.RIGHT)
 
         if num_states > 1:
@@ -604,6 +655,11 @@ class InfoMenuState(State):
             if not self.notes_surf:
                 self.notes_surf = self.create_notes_surf()
             self.draw_notes_surf(main_surf)
+
+        elif self.state == 'spellbook':
+            if not self.spellbook_surf:
+                self.spellbook_surf = self.create_spellbook_surf()
+            self.draw_spellbook_surf(main_surf)
 
         # Now put it in the right place
         offset_x = max(96, 96 - self.scroll_offset_x)
@@ -931,6 +987,84 @@ class InfoMenuState(State):
 
     def draw_equipment_surf(self, surf):
         surf.blit(self.equipment_surf, (96, 0))
+
+    def create_spellbook_surf(self):
+        def create_item_option(idx, item):
+            return BasicItemOption.from_item(idx, item, width=120, mode=ItemOptionModes.FULL_USES, text_color=item_system.text_color(None, item))
+
+        surf = engine.create_surface((WINWIDTH - 96, WINHEIGHT), transparent=True)
+
+        loadout_items = self._get_spell_loadout_items(self.unit)
+
+        # The "currently equipped" spell whose battle stats we display: prefer the
+        # unit's actual equipped weapon if it lives in the loadout, otherwise the
+        # first loadout entry.
+        weapon = self.unit.get_weapon()
+        if weapon not in loadout_items:
+            weapon = loadout_items[0] if loadout_items else None
+
+        # Blit the loadout spells
+        for idx, item in enumerate(loadout_items):
+            if item is weapon:
+                surf.blit(SPRITES.get('equipment_highlight'), (8, idx * 16 + 24 + 8))
+            item_option = create_item_option(idx, item)
+            item_option.draw(surf, 8, idx * 16 + 24)
+            help_dlg = build_dialog_list(item, PageType.ITEM, unit=self.unit)
+            self.info_graph.register((96 + 8, idx * 16 + 24, 120, 16), help_dlg, 'spellbook', first=(idx == 0))
+
+        # Battle stats for the equipped spell
+        battle_surf = SPRITES.get('battle_info')
+        top, left = 104, 12
+        surf.blit(battle_surf, (left, top))
+        surf.blit(SPRITES.get('equipment_logo'), (14, top + 4))
+        render_text(surf, ['text'], [text_funcs.translate('Rng')], ['yellow'], (78, top))
+        rng_desc = text_funcs.translate_and_text_evaluate('Rng_desc', unit=self.unit)
+        self.info_graph.register((96 + 78, top, 56, 16), rng_desc, 'spellbook')
+        render_text(surf, ['text'], [text_funcs.translate('Atk')], ['yellow'], (22, top + 16))
+        atk_desc = text_funcs.translate_and_text_evaluate('Atk_desc', unit=self.unit)
+        self.info_graph.register((96 + 14, top + 16, 64, 16), atk_desc, 'spellbook')
+        render_text(surf, ['text'], [text_funcs.translate('Hit')], ['yellow'], (22, top + 32))
+        hit_desc = text_funcs.translate_and_text_evaluate('Hit_desc', unit=self.unit)
+        self.info_graph.register((96 + 14, top + 32, 64, 16), hit_desc, 'spellbook')
+        if DB.constants.value('crit'):
+            render_text(surf, ['text'], [text_funcs.translate('Crit')], ['yellow'], (78, top + 16))
+            crit_desc = text_funcs.translate_and_text_evaluate('Crit_desc', unit=self.unit)
+            self.info_graph.register((96 + 78, top + 16, 56, 16), crit_desc, 'spellbook')
+        else:
+            render_text(surf, ['text'], [text_funcs.translate('AS')], ['yellow'], (78, top + 16))
+            AS_desc = text_funcs.translate_and_text_evaluate('AS_desc', unit=self.unit)
+            self.info_graph.register((96 + 78, top + 16, 56, 16), AS_desc, 'spellbook')
+        render_text(surf, ['text'], [text_funcs.translate('Avoid')], ['yellow'], (78, top + 32))
+        avoid_desc = text_funcs.translate_and_text_evaluate('Avoid_desc', unit=self.unit)
+        self.info_graph.register((96 + 78, top + 32, 56, 16), avoid_desc, 'spellbook')
+
+        if weapon:
+            rng = item_funcs.get_range_string(self.unit, weapon)
+            dam = str(combat_calcs.damage(self.unit, weapon))
+            acc = str(combat_calcs.accuracy(self.unit, weapon))
+            crt = combat_calcs.crit_accuracy(self.unit, weapon)
+            if crt is None:
+                crt = '--'
+            else:
+                crt = str(crt)
+        else:
+            rng, dam, acc, crt = '--', '--', '--', '--'
+
+        avo = str(combat_calcs.avoid(self.unit, weapon))
+        attack_speed = str(combat_calcs.attack_speed(self.unit, weapon))
+        render_text(surf, ['text'], [rng], ['blue'], (127, top), HAlignment.RIGHT)
+        render_text(surf, ['text'], [dam], ['blue'], (71, top + 16), HAlignment.RIGHT)
+        render_text(surf, ['text'], [acc], ['blue'], (71, top + 32), HAlignment.RIGHT)
+        if DB.constants.value('crit'):
+            render_text(surf, ['text'], [crt], ['blue'], (127, top + 16), HAlignment.RIGHT)
+        else:
+            render_text(surf, ['text'], [attack_speed], ['blue'], (127, top + 16), HAlignment.RIGHT)
+        render_text(surf, ['text'], [avo], ['blue'], (127, top + 32), HAlignment.RIGHT)
+
+        return surf
+
+    def draw_spellbook_surf(self, surf):
+        surf.blit(self.spellbook_surf, (96, 0))
 
     def create_skill_surf(self):
         surf = engine.create_surface((WINWIDTH - 96, 24), transparent=True)

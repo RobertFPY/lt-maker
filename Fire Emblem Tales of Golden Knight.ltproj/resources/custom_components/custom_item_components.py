@@ -5,7 +5,7 @@ from app.data.database.database import DB
 from app.data.database.item_components import ItemComponent, ItemTags
 from app.engine import (action, banner, combat_calcs, engine, equations,
                         image_mods, item_funcs, item_system, skill_system,
-                        target_system)
+                        target_system, unit_funcs)
 from app.engine.game_state import game
 from app.engine.objects.unit import UnitObjectfrom app.utilities import utils, static_random
 from app.data.database.difficulty_modes import RNGOption
@@ -708,7 +708,59 @@ class WeaponTypeExempt(ItemComponent):
         return self.value
 
     def available(self, unit, item) -> bool:
-        return True
+        return True
+
+# Tag that lets a unit cast spells using their Staff rank instead of the
+# spell's own weapon type (used by Mari).
+STAFF_CASTER_TAG = 'StaffCaster'
+
+class StaffCastWeaponType(ItemComponent):
+    nid = 'staffcast_weapon_type'
+    desc = ("The type of weapon to wield. Behaves like the normal weapon type, "
+            "but units tagged '%s' may also wield it using their Staff rank." % STAFF_CASTER_TAG)
+    tag = ItemTags.CUSTOM
+
+    expose = ComponentType.WeaponType
+
+    def weapon_type(self, unit, item):
+        return self.value
+
+    def available(self, unit, item) -> bool:
+        # Normal weapon-type requirement (matches the base weapon_type component).
+        klass = DB.classes.get(unit.klass)
+        wexp_gain = klass.wexp_gain.get(self.value)
+        if wexp_gain:
+            klass_usable = self.value in unit_funcs.usable_wtypes(unit)
+            if unit.wexp[self.value] > 0 and klass_usable:
+                return True
+        # Staff-caster fallback: tagged units may wield it via their Staff rank.
+        if STAFF_CASTER_TAG in unit.tags and unit.wexp.get('Staff', 0) > 0:
+            return True
+        return False
+
+class StaffCastWeaponRank(ItemComponent):
+    nid = 'staffcast_weapon_rank'
+    desc = ("Weapon rank requirement. Units tagged '%s' qualify when their "
+            "Staff rank is at least the spell's rank." % STAFF_CASTER_TAG)
+    requires = ['weapon_type']
+    tag = ItemTags.CUSTOM
+
+    expose = ComponentType.WeaponRank
+
+    def weapon_rank(self, unit, item):
+        return self.value
+
+    def available(self, unit, item):
+        required_wexp = DB.weapon_ranks.get(self.value).requirement
+        weapon_type = item_system.weapon_type(unit, item)
+        # Normal path: enough wexp in the spell's own weapon type.
+        if weapon_type and unit.wexp.get(weapon_type, 0) >= required_wexp:
+            return True
+        # Staff-caster fallback: Staff rank >= the spell's required rank.
+        if STAFF_CASTER_TAG in unit.tags and unit.wexp.get('Staff', 0) >= required_wexp:
+            return True
+        return False
+
 class PivotOnEndCombatInitiate(ItemComponent):
     nid = 'pivot_on_end_combat_initiate'
     desc = "Item pivots over target at the end of combat, only on initiation"

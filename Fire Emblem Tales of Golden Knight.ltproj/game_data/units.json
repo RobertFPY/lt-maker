@@ -357,7 +357,9 @@
         "variant": null,
         "level": 1,
         "klass": "Mari_Cleric",
-        "tags": [],
+        "tags": [
+            "StaffCaster"
+        ],
         "bases": {
             "HP": 20,
             "STR": 2,

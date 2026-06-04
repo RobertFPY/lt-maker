@@ -10226,11 +10226,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Light"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -10288,11 +10288,11 @@
                 90
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Light"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "D"
             ],
             [
@@ -10385,11 +10385,11 @@
                 85
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Light"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "C"
             ],
             [
@@ -10474,11 +10474,11 @@
                 75
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Light"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "B"
             ],
             [
@@ -10602,11 +10602,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Light"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "A"
             ],
             [
@@ -10664,11 +10664,11 @@
                 90
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Light"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "S"
             ],
             [
@@ -10800,11 +10800,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -10878,11 +10878,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "C"
             ],
             [
@@ -10971,11 +10971,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "D"
             ],
             [
@@ -11060,11 +11060,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "B"
             ],
             [
@@ -11157,11 +11157,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "D"
             ],
             [
@@ -11219,11 +11219,11 @@
                 90
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "S"
             ],
             [
@@ -11312,11 +11312,11 @@
                 90
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "A"
             ],
             [
@@ -11421,11 +11421,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Dark"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "D"
             ],
             [
@@ -11498,11 +11498,11 @@
                 50
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Dark"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "C"
             ],
             [
@@ -11603,11 +11603,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Dark"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "C"
             ],
             [
@@ -11676,11 +11676,11 @@
                 30
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Dark"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "B"
             ],
             [
@@ -11789,11 +11789,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Dark"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "A"
             ],
             [
@@ -11866,11 +11866,11 @@
                 80
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Dark"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "S"
             ],
             [
@@ -11955,11 +11955,11 @@
                 95
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Dark"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "S"
             ],
             [
@@ -16146,11 +16146,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "C"
             ],
             [
@@ -16490,11 +16490,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Light"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -16768,11 +16768,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -16884,11 +16884,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -17000,11 +17000,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -17116,11 +17116,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -17232,11 +17232,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -17348,11 +17348,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -17580,11 +17580,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -17696,11 +17696,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -17812,11 +17812,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -17928,11 +17928,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -18044,11 +18044,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -18160,11 +18160,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -18392,11 +18392,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -18508,11 +18508,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -18624,11 +18624,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -18740,11 +18740,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -18856,11 +18856,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -18972,11 +18972,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -19204,11 +19204,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -19320,11 +19320,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -19436,11 +19436,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -19552,11 +19552,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -19668,11 +19668,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -19784,11 +19784,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -20016,11 +20016,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -20132,11 +20132,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -20248,11 +20248,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -20364,11 +20364,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -20480,11 +20480,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -20596,11 +20596,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -20828,11 +20828,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Light"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -20944,11 +20944,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Light"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -21060,11 +21060,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Light"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -21176,11 +21176,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Light"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -21292,11 +21292,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Light"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -21408,11 +21408,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Light"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -21524,11 +21524,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Dark"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -21640,11 +21640,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Dark"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -21756,11 +21756,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Dark"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -21872,11 +21872,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Dark"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -21988,11 +21988,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Dark"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -22104,11 +22104,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Dark"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -22220,11 +22220,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Dark"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -22336,11 +22336,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -22452,11 +22452,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -22568,11 +22568,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [

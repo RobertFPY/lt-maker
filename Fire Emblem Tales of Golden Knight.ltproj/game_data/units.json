@@ -396,10 +396,6 @@
         },
         "starting_items": [
             [
-                "Staff_of_Mari",
-                false
-            ],
-            [
                 "Heal",
                 false
             ],

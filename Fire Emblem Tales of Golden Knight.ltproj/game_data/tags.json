@@ -28,5 +28,6 @@
     "CannotHeal",
     "CannotRecover",
     "PhysicalWeapon",
-    "MagicalWeapon"
+    "MagicalWeapon",
+    "StaffCaster"
 ]

@@ -20421,23 +20421,23 @@
         "learned_skills": [],
         "wexp_gain": {
             "Sword": [
-                false,
-                0,
+                true,
+                1,
                 251
             ],
             "Lance": [
-                false,
-                0,
+                true,
+                1,
                 251
             ],
             "Axe": [
-                false,
-                0,
+                true,
+                1,
                 251
             ],
             "Bow": [
-                false,
-                0,
+                true,
+                1,
                 251
             ],
             "Staff": [
@@ -20446,28 +20446,28 @@
                 251
             ],
             "Light": [
-                false,
-                0,
+                true,
+                1,
                 251
             ],
             "Anima": [
-                false,
-                0,
+                true,
+                1,
                 251
             ],
             "Dark": [
-                false,
-                0,
+                true,
+                1,
                 251
             ],
             "Default": [
-                false,
-                0,
+                true,
+                1,
                 251
             ],
             "Knife": [
-                false,
-                0,
+                true,
+                1,
                 null
             ],
             "Dragonstone": [

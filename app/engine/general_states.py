@@ -1076,7 +1076,7 @@ class MenuState(MapState):
                 options.append(ability.name)
                 info_descs.append(ability.name + '_desc')  # Could add actual descriptions later
 
-        # Mari spell loadout management: lets her equip which loadout spell is active in combat.
+        # Mari spell loadout: lets her equip which loadout spell she counterattacks with.
         if self.cur_unit.nid == 'Mari' and self.cur_unit.get_field('spell_loadout'):
             options.append("Spell")
             info_descs.append("Spell_desc")
@@ -1464,23 +1464,26 @@ class ItemState(MapState):
 
 class SpellMenuState(MapState):
     # In-battle menu, modeled on ItemState, that lists every spell in Mari's spell loadout
-    # (instead of unit.items) and lets the player pick which one is equipped/active. Combat
-    # then only uses that active spell (see target_system._restrict_mari_loadout). Adding/
-    # swapping/removing the 5 loadout spells is still handled via the Camus event.
+    # (instead of unit.items) and lets the player equip which one she counterattacks with on
+    # the enemy phase (her equipped_weapon), just like equipping a weapon in the Item menu.
+    # All loadout spells remain usable when she initiates combat via Attack/Spells. Adding,
+    # swapping and removing the 5 loadout spells is still handled via the Camus event.
     name = 'spell_menu'
 
     def _get_options(self):
         return game.target_system.get_mari_loadout_items(self.cur_unit)
 
-    def _refresh_active_marker(self, options):
-        # Draw the stationary "equipped" cursor on whichever spell is currently active.
-        active_nid = game.target_system.get_mari_active_spell_nid(self.cur_unit)
-        active_idx = None
-        for idx, item in enumerate(options):
-            if item.nid == active_nid:
-                active_idx = idx
-                break
-        self.menu.set_fake_cursor(active_idx)
+    def _refresh_equipped_marker(self, options):
+        # Draw the stationary "equipped" cursor on whichever loadout spell is currently
+        # equipped as Mari's weapon.
+        equipped = self.cur_unit.equipped_weapon
+        equipped_idx = None
+        if equipped is not None:
+            for idx, item in enumerate(options):
+                if item is equipped or item.uid == equipped.uid:
+                    equipped_idx = idx
+                    break
+        self.menu.set_fake_cursor(equipped_idx)
 
     def start(self):
         self.cur_unit = game.cursor.cur_unit
@@ -1493,7 +1496,7 @@ class SpellMenuState(MapState):
         game.cursor.hide()
         options = self._get_options()
         self.menu.update_options(options)
-        self._refresh_active_marker(options)
+        self._refresh_equipped_marker(options)
         self.item_desc_panel = ui_view.ItemDescriptionPanel(self.cur_unit, self.menu.get_current())
 
     def _item_desc_update(self):
@@ -1531,10 +1534,15 @@ class SpellMenuState(MapState):
                 pass
             elif self.menu.get_current():  # Need to have a spell
                 spell = self.menu.get_current()
-                # Undo-able so equipping is reverted when the player reverses their move.
-                action.do(action.ChangeField(self.cur_unit, 'active_spell', spell.nid))
-                get_sound_thread().play_sfx('Select 1')
-                self.menu.set_fake_cursor(self.menu.get_current_index())
+                # Only weapon-type loadout spells can be equipped as Mari's counterattack
+                # weapon; pure utility/spell items (Spell component) are not equippable.
+                if self.cur_unit.can_equip(spell):
+                    # Undo-able so equipping is reverted when the player reverses their move.
+                    action.do(action.EquipItem(self.cur_unit, spell))
+                    get_sound_thread().play_sfx('Select 1')
+                    self.menu.set_fake_cursor(self.menu.get_current_index())
+                else:
+                    get_sound_thread().play_sfx('Error')
             else:
                 get_sound_thread().play_sfx('Error')
 

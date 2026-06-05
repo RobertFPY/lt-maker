@@ -498,38 +498,23 @@ class TargetSystem():
         spell_nids = {row.nid for row in catalog} if catalog else None
         return [nid for nid in loadout if (spell_nids is None or nid in spell_nids)]
 
-    def get_mari_active_spell_nid(self, unit: UnitObject) -> Optional[str]:
-        # The single spell Mari currently has equipped for combat. Defaults to the first
-        # spell in the loadout when nothing valid is selected yet (e.g. brand new save).
-        loadout_nids = self._get_mari_loadout_nids(unit)
-        if not loadout_nids:
-            return None
-        active = unit.get_field('active_spell') if hasattr(unit, 'get_field') else None
-        if active in loadout_nids:
-            return active
-        return loadout_nids[0]
-
     def get_mari_loadout_items(self, unit: UnitObject) -> List[ItemObject]:
         # Materialize every spell slot in Mari's loadout. Used by the Spell management menu
-        # so the player can browse/equip across all slots (unlike combat, which is restricted
-        # to the single active spell via _restrict_mari_loadout).
+        # so the player can browse and equip across all loadout slots.
         return self._get_mari_loadout_items(unit, self._get_mari_loadout_nids(unit))
 
     def _restrict_mari_loadout(self, unit: UnitObject, items: List[ItemObject], predicate=None) -> List[ItemObject]:
         # Mari's combat is driven entirely by her separate spell loadout, which acts as a second
-        # inventory: the Attack/Spell menus build real ItemObjects from the spell nids stored in
-        # her 'spell_loadout' field, completely independent of her actual inventory. Only the
-        # single equipped ('active_spell') spell is usable in combat; the Spell menu lets the
-        # player switch which one that is. Other units are unaffected and simply get their
-        # inventory-derived list back unchanged.
+        # inventory: the Attack/Spell menus build real ItemObjects from every spell nid stored in
+        # her 'spell_loadout' field, completely independent of her actual inventory. All loadout
+        # spells are usable when she initiates combat. The separate Spell menu lets the player
+        # equip which loadout weapon she counterattacks with on the enemy phase (her
+        # equipped_weapon). Other units are unaffected and get their inventory list back unchanged.
         if getattr(unit, 'nid', None) != 'Mari':
             return items
         loadout_nids = self._get_mari_loadout_nids(unit)
         if not loadout_nids:
             return []
-        active_nid = self.get_mari_active_spell_nid(unit)
-        if active_nid is not None:
-            loadout_nids = [active_nid]
         loadout_items = self._get_mari_loadout_items(unit, loadout_nids)
         if predicate is not None:
             loadout_items = [item for item in loadout_items if predicate(item)]

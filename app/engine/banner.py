@@ -1,11 +1,16 @@
 from __future__ import annotations
 
+import re
+
 from app.constants import WINWIDTH, WINHEIGHT
 from app.engine.sprites import SPRITES
 from app.engine import engine, base_surf, image_mods, icons, text_funcs, item_system
-from app.engine.graphics.text.text_renderer import text_width, render_text
+from app.engine.graphics.text.text_renderer import text_width, render_text, rendered_text_width, fix_tags
 from app.data.database import skills, items
 from app.data.database.database import DB
+
+# Matches inline icon tokens like {icon:Fire_C} embedded in banner text.
+ICON_TOKEN_RE = re.compile(r'\{icon:([^}]+)\}')
 
 from typing import TYPE_CHECKING
 
@@ -183,18 +188,63 @@ class CustomIcon(Banner):
         self.figure_out_size()
         self.sound = sound
 
+    def _has_inline_icons(self):
+        return bool(ICON_TOKEN_RE.search(self.text or ''))
+
+    def _split_inline(self):
+        # Returns a list of ('text', segment) and ('icon', nid) parts in order.
+        parts = []
+        last = 0
+        for m in ICON_TOKEN_RE.finditer(self.text):
+            if m.start() > last:
+                parts.append(('text', self.text[last:m.start()]))
+            parts.append(('icon', m.group(1).strip()))
+            last = m.end()
+        if last < len(self.text):
+            parts.append(('text', self.text[last:]))
+        # Balance color tags across icon boundaries.
+        text_segments = [p[1] for p in parts if p[0] == 'text']
+        fixed = fix_tags(text_segments)
+        fixed_iter = iter(fixed)
+        balanced = []
+        for kind, value in parts:
+            if kind == 'text':
+                balanced.append(('text', next(fixed_iter)))
+            else:
+                balanced.append(('icon', value))
+        return balanced
+
+    @staticmethod
+    def _draw_inline_icon(surf, nid, pos):
+        item = DB.items.get(nid)
+        if item:
+            icons.draw_item(surf, item, pos, cooldown=False)
+            return
+        skill = DB.skills.get(nid)
+        if skill:
+            icons.draw_skill(surf, skill, pos, simple=True)
+
     def figure_out_size(self):
-        self.length = text_width('text', self.text)
-        self.length += 16
-        self.length -= self.length%8
-        self.length += (16 if self.item else 0)
+        if self._has_inline_icons():
+            width = 0
+            for kind, value in self._split_inline():
+                if kind == 'text':
+                    width += rendered_text_width(['text'], [value])
+                else:
+                    width += 16
+            self.length = width + 16
+            self.length -= self.length % 8
+        else:
+            self.length = text_width('text', self.text)
+            self.length += 16
+            self.length -= self.length % 8
+            self.length += (16 if self.item else 0)
         self.font_height = 16
         self.size = self.length, 24
 
     def draw_icon(self, surf):
-        # Draw the icon on the right side, after the text, to match the base
-        # Banner layout (text reads first, then the icon it refers to).
-        if self.item:
+        # Only used when there are no inline tokens: draw a single trailing icon.
+        if self.item and not self._has_inline_icons():
             pos = (self.size[0] - 20, 7)
             if isinstance(self.item, skills.SkillPrefab):
                 icons.draw_skill(surf, self.item, pos, simple=True)
@@ -214,9 +264,19 @@ class CustomIcon(Banner):
 
         bg_surf = self.surf.copy()
 
-        render_text(bg_surf, ['text'], [self.text], ['white'], topleft=(6, self.size[1]//2 - self.font_height//2 + 3))
-
-        self.draw_icon(bg_surf)
+        ty = self.size[1]//2 - self.font_height//2 + 3
+        if self._has_inline_icons():
+            tx = 6
+            for kind, value in self._split_inline():
+                if kind == 'text':
+                    render_text(bg_surf, ['text'], [value], ['white'], topleft=(tx, ty))
+                    tx += rendered_text_width(['text'], [value])
+                else:
+                    self._draw_inline_icon(bg_surf, value, (tx, ty))
+                    tx += 16
+        else:
+            render_text(bg_surf, ['text'], [self.text], ['white'], topleft=(6, ty))
+            self.draw_icon(bg_surf)
 
         engine.blit_center(surf, bg_surf)
         return surf

@@ -6243,7 +6243,9 @@
             "#Spell loadout manager. Fires when a unit talks to the LoadoutManager NPC at Naga's Fortress (level_nid/NPC nid are placeholders - rename to your real ones).",
             "#The persist choice stays open and live-refreshes after every add/remove. The loadout is Mari's spell source on its own - no inventory sync is needed.",
             "trigger_script;Global Mari_Spell_Setup",
-            "choice;MARI_LOADOUT_SEL;Mari Spell Loadout (max 5);(lambda L, f=lambda n: n+'|'+next((str(r.element)+' '+str(r.rank) for r in game.get_data('MariSpell') if r.nid==n), n)+(' R' if any(str(r.is_ranged).strip().lower() in ('1','true','yes','y','t') for r in game.get_data('MariSpell') if r.nid==n) else '')+(' PRF' if any(str(r.is_prf).strip().lower() in ('1','true','yes','y','t') for r in game.get_data('MariSpell') if r.nid==n) else '')+'  HP'+str(next((c.value for c in (DB.items.get(n).components if DB.items.get(n) else []) if c.nid=='hp_cost_override'), next(({'E':1,'D':2,'C':3,'B':4,'A':7,'S':8,'SS':10}.get(str(r.rank).strip().upper(),1) for r in game.get_data('MariSpell') if r.nid==n), 1))): [f(s) for s in L] + (['ADD_SPELL|+ Add Spell'] if len(L)<5 else []))(u('Mari').get_field('spell_loadout') or []);150;vert;top_left;;Global Mari_Loadout_Operations;;6,1;left;persist;backable;expression"
+            "table;MARI_RIGHT_SPELLS;(lambda A, f=lambda n: n+'|'+next((str(r.element)+' '+str(r.rank) for r in game.get_data('MariSpell') if r.nid==n), n)+(' R' if any(str(r.is_ranged).strip().lower() in ('1','true','yes','y','t') for r in game.get_data('MariSpell') if r.nid==n) else '')+(' PRF' if any(str(r.is_prf).strip().lower() in ('1','true','yes','y','t') for r in game.get_data('MariSpell') if r.nid==n) else '')+'  HP'+str(next((c.value for c in (DB.items.get(n).components if DB.items.get(n) else []) if c.nid=='hp_cost_override'), next(({'E':1,'D':2,'C':3,'B':4,'A':7,'S':8,'SS':10}.get(str(r.rank).strip().upper(),1) for r in game.get_data('MariSpell') if r.nid==n), 1))): [f(s) for s in A])([s for s in (u('Mari').get_field('known_spells') or []) if s not in (u('Mari').get_field('spell_loadout') or [])]);Available Spells;5,1;112;top_right;menu_bg_base;type_base_item;left;expression",
+            "choice;MARI_LOADOUT_SEL;Mari Spell Loadout;(lambda L, f=lambda n: n+'|'+next((str(r.element)+' '+str(r.rank) for r in game.get_data('MariSpell') if r.nid==n), n)+(' R' if any(str(r.is_ranged).strip().lower() in ('1','true','yes','y','t') for r in game.get_data('MariSpell') if r.nid==n) else '')+(' PRF' if any(str(r.is_prf).strip().lower() in ('1','true','yes','y','t') for r in game.get_data('MariSpell') if r.nid==n) else '')+'  HP'+str(next((c.value for c in (DB.items.get(n).components if DB.items.get(n) else []) if c.nid=='hp_cost_override'), next(({'E':1,'D':2,'C':3,'B':4,'A':7,'S':8,'SS':10}.get(str(r.rank).strip().upper(),1) for r in game.get_data('MariSpell') if r.nid==n), 1))): [(f(L[i]) if i < len(L) else 'Empty_Spell|Empty Slot') for i in range(5)])(u('Mari').get_field('spell_loadout') or []);112;vert;top_left;;Global Mari_Loadout_Operations;type_base_item;5,1;left;persist;backable;expression",
+            "rmtable;MARI_RIGHT_SPELLS"
         ],
         "nid": "NagaFortress Mari_Loadout_Open"
     },
@@ -6256,11 +6258,11 @@
         "only_once": false,
         "priority": 20,
         "_source": [
-            "#Routes a selection from the persist loadout menu: the +Add row opens the add submenu, any other (a spell nid) opens the remove confirm.",
-            "if;'{v:MARI_LOADOUT_SEL}' == 'ADD_SPELL'",
+            "#Routes a selection from the persist loadout menu: an empty slot (Empty_Spell) opens the Add submenu (cursor jumps to the right list); a real spell nid opens the Swap/Remove submenu.",
+            "if;'{v:MARI_LOADOUT_SEL}' == 'Empty_Spell'",
             "    trigger_script;Global Mari_Loadout_Add",
             "elif;'{v:MARI_LOADOUT_SEL}' != 'BACK' and '{v:MARI_LOADOUT_SEL}' != 'NONE'",
-            "    trigger_script;Global Mari_Loadout_Remove",
+            "    trigger_script;Global Mari_Loadout_Slot_Ops",
             "end"
         ],
         "nid": "Global Mari_Loadout_Operations"
@@ -6274,10 +6276,8 @@
         "only_once": false,
         "priority": 20,
         "_source": [
-            "#Add a learned spell to the loadout. Enforces: max 5 slots, at most 1 ranged spell, at most 1 S/SS spell (prf counts toward S/SS).",
-            "if;len(u('Mari').get_field('spell_loadout') or []) >= 5",
-            "    alert;The loadout is full (max 5 spells).",
-            "elif;len([s for s in (u('Mari').get_field('known_spells') or []) if s not in (u('Mari').get_field('spell_loadout') or [])]) == 0",
+            "#Add a learned spell into an empty slot. Max 5 is implicit - no empty slot exists when the loadout is full. Enforces at most 1 ranged spell and at most 1 S/SS spell (prf counts toward S/SS).",
+            "if;len([s for s in (u('Mari').get_field('known_spells') or []) if s not in (u('Mari').get_field('spell_loadout') or [])]) == 0",
             "    alert;Mari has no more learned spells to add.",
             "else",
             "    choice;MARI_ADD_SEL;Add which spell?;(lambda L, f=lambda n: n+'|'+next((str(r.element)+' '+str(r.rank) for r in game.get_data('MariSpell') if r.nid==n), n)+(' R' if any(str(r.is_ranged).strip().lower() in ('1','true','yes','y','t') for r in game.get_data('MariSpell') if r.nid==n) else '')+(' PRF' if any(str(r.is_prf).strip().lower() in ('1','true','yes','y','t') for r in game.get_data('MariSpell') if r.nid==n) else '')+'  HP'+str(next((c.value for c in (DB.items.get(n).components if DB.items.get(n) else []) if c.nid=='hp_cost_override'), next(({'E':1,'D':2,'C':3,'B':4,'A':7,'S':8,'SS':10}.get(str(r.rank).strip().upper(),1) for r in game.get_data('MariSpell') if r.nid==n), 1))): ([f(s) for s in L] if L else ['NONE|(no spells available)']))([s for s in (u('Mari').get_field('known_spells') or []) if s not in (u('Mari').get_field('spell_loadout') or [])]);150;vert;top_right;;;;6,1;left;scroll_bar;backable;expression",

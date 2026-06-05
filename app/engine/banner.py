@@ -192,13 +192,16 @@ class CustomIcon(Banner):
         self.size = self.length, 24
 
     def draw_icon(self, surf):
+        # Draw the icon on the right side, after the text, to match the base
+        # Banner layout (text reads first, then the icon it refers to).
         if self.item:
+            pos = (self.size[0] - 20, 7)
             if isinstance(self.item, skills.SkillPrefab):
-                icons.draw_skill(surf, self.item, (4, 7), simple=True)
+                icons.draw_skill(surf, self.item, pos, simple=True)
             elif isinstance(self.item, items.ItemPrefab):
-                icons.draw_item(surf, self.item, (4, 7), cooldown=False)
+                icons.draw_item(surf, self.item, pos, cooldown=False)
             elif isinstance(self.item, str):
-                icons.draw_icon_by_alias(surf, self.item, (4, 7))
+                icons.draw_icon_by_alias(surf, self.item, pos)
 
     def draw(self, surf):
         if not self.surf:
@@ -211,7 +214,7 @@ class CustomIcon(Banner):
 
         bg_surf = self.surf.copy()
 
-        render_text(bg_surf, ['text'], [self.text], ['white'], topleft=(22, self.size[1]//2 - self.font_height//2 + 3))
+        render_text(bg_surf, ['text'], [self.text], ['white'], topleft=(6, self.size[1]//2 - self.font_height//2 + 3))
 
         self.draw_icon(bg_surf)
 

@@ -1581,9 +1581,7 @@ class HPCostAsUses(ItemComponent):
 
     def _font_color(self, unit, item):
         from app.engine.fonts import FONT
-        # Red signals the HP that will be spent to cast; grey when the spell
-        # can't currently be used (missing weapon rank, not enough HP, etc.).
-        color = 'red'
+        color = 'navy'
         if not item_funcs.available(unit, item):
             color = 'grey'
         if 'text-' + color in FONT:

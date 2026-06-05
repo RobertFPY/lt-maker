@@ -1009,7 +1009,7 @@ class MoveCameraState(State):
 class MenuState(MapState):
     name = 'menu'
     menu = None
-    normal_options = {'Item', 'Wait', 'Take', 'Give', 'Rescue', 'Trade', 'Drop', 'Visit', 'Armory', 'Vendor', 'Spells', 'Attack', 'Steal', 'Shove', 'Pair Up', 'Switch', 'Separate', 'Transfer'}
+    normal_options = {'Item', 'Wait', 'Take', 'Give', 'Rescue', 'Trade', 'Drop', 'Visit', 'Armory', 'Vendor', 'Spells', 'Spell', 'Attack', 'Steal', 'Shove', 'Pair Up', 'Switch', 'Separate', 'Transfer'}
 
     def start(self):
         self._proceed_with_targets_item = False
@@ -1075,6 +1075,11 @@ class MenuState(MapState):
             if t:
                 options.append(ability.name)
                 info_descs.append(ability.name + '_desc')  # Could add actual descriptions later
+
+        # Mari spell loadout management: lets her equip which loadout spell is active in combat.
+        if self.cur_unit.nid == 'Mari' and self.cur_unit.get_field('spell_loadout'):
+            options.append("Spell")
+            info_descs.append("Spell_desc")
 
         options.append("Wait")
         info_descs.append("Wait_desc")
@@ -1227,6 +1232,8 @@ class MenuState(MapState):
 
             if selection == 'Item':
                 game.state.change('item')
+            elif selection == 'Spell':
+                game.state.change('spell_menu')
             elif selection == 'Attack':
                 game.memory['targets'] = self.target_dict[selection].targets(self.cur_unit)
                 game.memory['ability'] = 'Attack'
@@ -1435,6 +1442,99 @@ class ItemState(MapState):
                 game.memory['is_subitem_child_menu'] = False
                 game.memory['parent_menu'] = self.menu
                 game.state.change('item_child')
+            else:
+                get_sound_thread().play_sfx('Error')
+
+        elif event == 'INFO':
+            self.menu.toggle_info()
+            if self.menu.info_flag:
+                get_sound_thread().play_sfx('Info In')
+            else:
+                get_sound_thread().play_sfx('Info Out')
+
+    def update(self):
+        super().update()
+        self.menu.update()
+
+    def draw(self, surf):
+        surf = super().draw(surf)
+        surf = self.item_desc_panel.draw(surf)
+        surf = self.menu.draw(surf)
+        return surf
+
+class SpellMenuState(MapState):
+    # In-battle menu, modeled on ItemState, that lists every spell in Mari's spell loadout
+    # (instead of unit.items) and lets the player pick which one is equipped/active. Combat
+    # then only uses that active spell (see target_system._restrict_mari_loadout). Adding/
+    # swapping/removing the 5 loadout spells is still handled via the Camus event.
+    name = 'spell_menu'
+
+    def _get_options(self):
+        return game.target_system.get_mari_loadout_items(self.cur_unit)
+
+    def _refresh_active_marker(self, options):
+        # Draw the stationary "equipped" cursor on whichever spell is currently active.
+        active_nid = game.target_system.get_mari_active_spell_nid(self.cur_unit)
+        active_idx = None
+        for idx, item in enumerate(options):
+            if item.nid == active_nid:
+                active_idx = idx
+                break
+        self.menu.set_fake_cursor(active_idx)
+
+    def start(self):
+        self.cur_unit = game.cursor.cur_unit
+        options = self._get_options()
+        self.menu = menus.Choice(self.cur_unit, options)
+        self.menu.set_limit(8)
+
+    def begin(self):
+        self.fluid.reset_on_change_state()
+        game.cursor.hide()
+        options = self._get_options()
+        self.menu.update_options(options)
+        self._refresh_active_marker(options)
+        self.item_desc_panel = ui_view.ItemDescriptionPanel(self.cur_unit, self.menu.get_current())
+
+    def _item_desc_update(self):
+        current = self.menu.get_current()
+        self.item_desc_panel.set_item(current)
+
+    def take_input(self, event):
+        first_push = self.fluid.update()
+        directions = self.fluid.get_directions()
+
+        did_move = self.menu.handle_mouse()
+        if did_move:
+            self._item_desc_update()
+
+        if 'DOWN' in directions:
+            if self.menu.move_down(first_push):
+                get_sound_thread().play_sfx('Select 6')
+            self._item_desc_update()
+
+        elif 'UP' in directions:
+            if self.menu.move_up(first_push):
+                get_sound_thread().play_sfx('Select 6')
+            self._item_desc_update()
+
+        if event == 'BACK':
+            if self.menu.info_flag:
+                self.menu.toggle_info()
+                get_sound_thread().play_sfx('Info Out')
+            else:
+                get_sound_thread().play_sfx('Select 4')
+                game.state.back()
+
+        elif event == 'SELECT':
+            if self.menu.info_flag:
+                pass
+            elif self.menu.get_current():  # Need to have a spell
+                spell = self.menu.get_current()
+                # Undo-able so equipping is reverted when the player reverses their move.
+                action.do(action.ChangeField(self.cur_unit, 'active_spell', spell.nid))
+                get_sound_thread().play_sfx('Select 1')
+                self.menu.set_fake_cursor(self.menu.get_current_index())
             else:
                 get_sound_thread().play_sfx('Error')
 

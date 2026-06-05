@@ -85,6 +85,7 @@ class StateMachine():
              'dying': general_states.DyingState,
              'menu': general_states.MenuState,
              'item': general_states.ItemState,
+             'spell_menu': general_states.SpellMenuState,
              'subitem_child': general_states.SubItemChildState,
              'item_child': general_states.ItemChildState,
              'item_discard': general_states.ItemDiscardState,

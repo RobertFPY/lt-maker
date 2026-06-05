@@ -6243,7 +6243,7 @@
             "#Spell loadout manager. Fires when a unit talks to the LoadoutManager NPC at Naga's Fortress (level_nid/NPC nid are placeholders - rename to your real ones).",
             "#The persist choice stays open and live-refreshes after every add/remove. The loadout is Mari's spell source on its own - no inventory sync is needed.",
             "trigger_script;Global Mari_Spell_Setup",
-            "table;MARI_RIGHT_SPELLS;(lambda A, f=lambda n: n+'|'+next((str(r.element)+' '+str(r.rank) for r in game.get_data('MariSpell') if r.nid==n), n)+(' R' if any(str(r.is_ranged).strip().lower() in ('1','true','yes','y','t') for r in game.get_data('MariSpell') if r.nid==n) else '')+(' PRF' if any(str(r.is_prf).strip().lower() in ('1','true','yes','y','t') for r in game.get_data('MariSpell') if r.nid==n) else '')+'  HP'+str(next((c.value for c in (DB.items.get(n).components if DB.items.get(n) else []) if c.nid=='hp_cost_override'), next(({'E':1,'D':2,'C':3,'B':4,'A':7,'S':8,'SS':10}.get(str(r.rank).strip().upper(),1) for r in game.get_data('MariSpell') if r.nid==n), 1))): [f(s) for s in A])([s for s in (u('Mari').get_field('known_spells') or []) if s not in (u('Mari').get_field('spell_loadout') or [])]);Available Spells;5,1;112;top_right;menu_bg_base;type_base_item;left;expression",
+            "table;MARI_RIGHT_SPELLS;(lambda A, f=lambda n: n+'|'+next((str(r.element)+' '+str(r.rank) for r in game.get_data('MariSpell') if r.nid==n), n)+(' R' if any(str(r.is_ranged).strip().lower() in ('1','true','yes','y','t') for r in game.get_data('MariSpell') if r.nid==n) else '')+(' PRF' if any(str(r.is_prf).strip().lower() in ('1','true','yes','y','t') for r in game.get_data('MariSpell') if r.nid==n) else '')+'  HP'+str(next((c.value for c in (DB.items.get(n).components if DB.items.get(n) else []) if c.nid=='hp_cost_override'), next(({'E':1,'D':2,'C':3,'B':4,'A':7,'S':8,'SS':10}.get(str(r.rank).strip().upper(),1) for r in game.get_data('MariSpell') if r.nid==n), 1))): ([f(s) for s in A] if A else (['Empty_Spell|(loadout full)'] if len(u('Mari').get_field('spell_loadout') or []) >= 5 else ['Empty_Spell|(none learned yet)'])))([s for s in (u('Mari').get_field('known_spells') or []) if s not in (u('Mari').get_field('spell_loadout') or [])]);Available Spells;5,1;112;top_right;menu_bg_base;type_base_item;left;expression",
             "choice;MARI_LOADOUT_SEL;Mari Spell Loadout;(lambda L, f=lambda n: n+'|'+next((str(r.element)+' '+str(r.rank) for r in game.get_data('MariSpell') if r.nid==n), n)+(' R' if any(str(r.is_ranged).strip().lower() in ('1','true','yes','y','t') for r in game.get_data('MariSpell') if r.nid==n) else '')+(' PRF' if any(str(r.is_prf).strip().lower() in ('1','true','yes','y','t') for r in game.get_data('MariSpell') if r.nid==n) else '')+'  HP'+str(next((c.value for c in (DB.items.get(n).components if DB.items.get(n) else []) if c.nid=='hp_cost_override'), next(({'E':1,'D':2,'C':3,'B':4,'A':7,'S':8,'SS':10}.get(str(r.rank).strip().upper(),1) for r in game.get_data('MariSpell') if r.nid==n), 1))): [(f(L[i]) if i < len(L) else 'Empty_Spell|Empty Slot') for i in range(5)])(u('Mari').get_field('spell_loadout') or []);112;vert;top_left;;Global Mari_Loadout_Operations;type_base_item;5,1;left;persist;backable;expression",
             "rmtable;MARI_RIGHT_SPELLS"
         ],
@@ -6280,7 +6280,7 @@
             "if;len([s for s in (u('Mari').get_field('known_spells') or []) if s not in (u('Mari').get_field('spell_loadout') or [])]) == 0",
             "    alert;Mari has no more learned spells to add.",
             "else",
-            "    choice;MARI_ADD_SEL;Add which spell?;(lambda L, f=lambda n: n+'|'+next((str(r.element)+' '+str(r.rank) for r in game.get_data('MariSpell') if r.nid==n), n)+(' R' if any(str(r.is_ranged).strip().lower() in ('1','true','yes','y','t') for r in game.get_data('MariSpell') if r.nid==n) else '')+(' PRF' if any(str(r.is_prf).strip().lower() in ('1','true','yes','y','t') for r in game.get_data('MariSpell') if r.nid==n) else '')+'  HP'+str(next((c.value for c in (DB.items.get(n).components if DB.items.get(n) else []) if c.nid=='hp_cost_override'), next(({'E':1,'D':2,'C':3,'B':4,'A':7,'S':8,'SS':10}.get(str(r.rank).strip().upper(),1) for r in game.get_data('MariSpell') if r.nid==n), 1))): ([f(s) for s in L] if L else ['NONE|(no spells available)']))([s for s in (u('Mari').get_field('known_spells') or []) if s not in (u('Mari').get_field('spell_loadout') or [])]);150;vert;top_right;;;;6,1;left;scroll_bar;backable;expression",
+            "    choice;MARI_ADD_SEL;Add which spell?;(lambda L, f=lambda n: n+'|'+next((str(r.element)+' '+str(r.rank) for r in game.get_data('MariSpell') if r.nid==n), n)+(' R' if any(str(r.is_ranged).strip().lower() in ('1','true','yes','y','t') for r in game.get_data('MariSpell') if r.nid==n) else '')+(' PRF' if any(str(r.is_prf).strip().lower() in ('1','true','yes','y','t') for r in game.get_data('MariSpell') if r.nid==n) else '')+'  HP'+str(next((c.value for c in (DB.items.get(n).components if DB.items.get(n) else []) if c.nid=='hp_cost_override'), next(({'E':1,'D':2,'C':3,'B':4,'A':7,'S':8,'SS':10}.get(str(r.rank).strip().upper(),1) for r in game.get_data('MariSpell') if r.nid==n), 1))): ([f(s) for s in L] if L else ['NONE|(no spells available)']))([s for s in (u('Mari').get_field('known_spells') or []) if s not in (u('Mari').get_field('spell_loadout') or [])]);112;vert;top_right;;;type_base_item;5,1;left;scroll_bar;backable;expression",
             "    if;'{v:MARI_ADD_SEL}' != 'BACK' and '{v:MARI_ADD_SEL}' != 'NONE'",
             "        game_var;MARI_CAND_RANGED;any(str(r.is_ranged).strip().lower() in ('1','true','yes','y','t') for r in game.get_data('MariSpell') if r.nid=='{v:MARI_ADD_SEL}')",
             "        game_var;MARI_CAND_SUPER;any(str(r.rank).strip().upper() in ('S','SS') for r in game.get_data('MariSpell') if r.nid=='{v:MARI_ADD_SEL}')",
@@ -6314,6 +6314,56 @@
             "end"
         ],
         "nid": "Global Mari_Loadout_Remove"
+    },
+    {
+        "name": "Mari_Loadout_Slot_Ops",
+        "trigger": null,
+        "level_nid": null,
+        "condition": "True",
+        "commands": [],
+        "only_once": false,
+        "priority": 20,
+        "_source": [
+            "#Submenu for a filled slot (its spell nid is in MARI_LOADOUT_SEL). Offers Swap (only when another learned spell is available) and Remove.",
+            "if;len([s for s in (u('Mari').get_field('known_spells') or []) if s not in (u('Mari').get_field('spell_loadout') or [])]) > 0",
+            "    choice;MARI_SLOT_OP;What to do with this spell?;Swap,Remove,Cancel;100;vert;center;;;;3,1;left;backable",
+            "else",
+            "    choice;MARI_SLOT_OP;What to do with this spell?;Remove,Cancel;100;vert;center;;;;2,1;left;backable",
+            "end",
+            "if;'{v:MARI_SLOT_OP}' == 'Swap'",
+            "    trigger_script;Global Mari_Loadout_Swap",
+            "elif;'{v:MARI_SLOT_OP}' == 'Remove'",
+            "    set_unit_field;Mari;spell_loadout;[s for s in (u('Mari').get_field('spell_loadout') or []) if s != '{v:MARI_LOADOUT_SEL}']",
+            "end"
+        ],
+        "nid": "Global Mari_Loadout_Slot_Ops"
+    },
+    {
+        "name": "Mari_Loadout_Swap",
+        "trigger": null,
+        "level_nid": null,
+        "condition": "True",
+        "commands": [],
+        "only_once": false,
+        "priority": 20,
+        "_source": [
+            "#Swap the spell currently in MARI_LOADOUT_SEL for another learned spell, replacing it in place (order preserved). Ranged and S/SS constraints are checked against the loadout with the outgoing spell excluded.",
+            "choice;MARI_SWAP_SEL;Swap in which spell?;(lambda L, f=lambda n: n+'|'+next((str(r.element)+' '+str(r.rank) for r in game.get_data('MariSpell') if r.nid==n), n)+(' R' if any(str(r.is_ranged).strip().lower() in ('1','true','yes','y','t') for r in game.get_data('MariSpell') if r.nid==n) else '')+(' PRF' if any(str(r.is_prf).strip().lower() in ('1','true','yes','y','t') for r in game.get_data('MariSpell') if r.nid==n) else '')+'  HP'+str(next((c.value for c in (DB.items.get(n).components if DB.items.get(n) else []) if c.nid=='hp_cost_override'), next(({'E':1,'D':2,'C':3,'B':4,'A':7,'S':8,'SS':10}.get(str(r.rank).strip().upper(),1) for r in game.get_data('MariSpell') if r.nid==n), 1))): ([f(s) for s in L] if L else ['NONE|(no spells available)']))([s for s in (u('Mari').get_field('known_spells') or []) if s not in (u('Mari').get_field('spell_loadout') or [])]);112;vert;top_right;;;type_base_item;5,1;left;scroll_bar;backable;expression",
+            "if;'{v:MARI_SWAP_SEL}' != 'BACK' and '{v:MARI_SWAP_SEL}' != 'NONE'",
+            "    game_var;MARI_CAND_RANGED;any(str(r.is_ranged).strip().lower() in ('1','true','yes','y','t') for r in game.get_data('MariSpell') if r.nid=='{v:MARI_SWAP_SEL}')",
+            "    game_var;MARI_CAND_SUPER;any(str(r.rank).strip().upper() in ('S','SS') for r in game.get_data('MariSpell') if r.nid=='{v:MARI_SWAP_SEL}')",
+            "    game_var;MARI_HAS_RANGED;any(any(str(r.is_ranged).strip().lower() in ('1','true','yes','y','t') for r in game.get_data('MariSpell') if r.nid==s) for s in (u('Mari').get_field('spell_loadout') or []) if s != '{v:MARI_LOADOUT_SEL}')",
+            "    game_var;MARI_HAS_SUPER;any(any(str(r.rank).strip().upper() in ('S','SS') for r in game.get_data('MariSpell') if r.nid==s) for s in (u('Mari').get_field('spell_loadout') or []) if s != '{v:MARI_LOADOUT_SEL}')",
+            "    if;{v:MARI_CAND_RANGED} and {v:MARI_HAS_RANGED}",
+            "        alert;Only one ranged spell can be carried at a time.",
+            "    elif;{v:MARI_CAND_SUPER} and {v:MARI_HAS_SUPER}",
+            "        alert;Only one S or SS rank spell can be carried at a time.",
+            "    else",
+            "        set_unit_field;Mari;spell_loadout;['{v:MARI_SWAP_SEL}' if s == '{v:MARI_LOADOUT_SEL}' else s for s in (u('Mari').get_field('spell_loadout') or [])]",
+            "    end",
+            "end"
+        ],
+        "nid": "Global Mari_Loadout_Swap"
     },
     {
         "name": "Mari_LevelUp_Learn",

@@ -1003,9 +1003,18 @@ class InfoMenuState(State):
 
         # Blit the loadout spells
         for idx, item in enumerate(loadout_items):
-            if item is weapon:
+            if item.multi_item and any(subitem is weapon for subitem in item.subitems):
                 surf.blit(SPRITES.get('equipment_highlight'), (8, idx * 16 + 24 + 8))
-            item_option = create_item_option(idx, item)
+                for subitem in item.subitems:
+                    if subitem is weapon:
+                        item_option = create_item_option(idx, subitem)
+                        break
+                else:  # Shouldn't happen
+                    item_option = create_item_option(idx, item)
+            else:
+                if item is weapon:
+                    surf.blit(SPRITES.get('equipment_highlight'), (8, idx * 16 + 24 + 8))
+                item_option = create_item_option(idx, item)
             item_option.draw(surf, 8, idx * 16 + 24)
             help_dlg = build_dialog_list(item, PageType.ITEM, unit=self.unit)
             self.info_graph.register((96 + 8, idx * 16 + 24, 120, 16), help_dlg, 'spellbook', first=(idx == 0))

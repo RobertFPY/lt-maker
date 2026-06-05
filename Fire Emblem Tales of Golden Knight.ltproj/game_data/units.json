@@ -357,7 +357,9 @@
         "variant": null,
         "level": 1,
         "klass": "Mari_Cleric",
-        "tags": [],
+        "tags": [
+            "StaffCaster"
+        ],
         "bases": {
             "HP": 20,
             "STR": 2,
@@ -418,22 +420,22 @@
         "wexp_gain": {
             "Sword": [
                 false,
-                0,
+                1,
                 251
             ],
             "Lance": [
                 true,
-                0,
+                1,
                 251
             ],
             "Axe": [
                 false,
-                0,
+                1,
                 251
             ],
             "Bow": [
                 false,
-                0,
+                1,
                 251
             ],
             "Staff": [
@@ -443,23 +445,28 @@
             ],
             "Light": [
                 false,
-                0,
+                1,
                 251
             ],
             "Anima": [
                 false,
-                0,
+                1,
                 251
             ],
             "Dark": [
                 false,
-                0,
+                1,
                 251
             ],
             "Default": [
                 false,
-                0,
+                1,
                 251
+            ],
+            "Knife": [
+                false,
+                1,
+                null
             ]
         },
         "alternate_classes": [],

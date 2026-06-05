@@ -16466,7 +16466,7 @@
     {
         "nid": "Mari_Spell_Template",
         "name": "Spell (Template)",
-        "desc": "TEMPLATE for Mari's magic. Clone this item for each MariSpell entry, then set name/desc/icon, weapon_type (element), weapon_rank, damage, hit, crit and ranges. Combat logic only depends on the matching MariSpell catalog row, never on this item's contents.",
+        "desc": "TEMPLATE for Mari's magic. Clone this item for each MariSpell entry, then set name/desc/icon, staffcast_weapon_type (element), weapon_rank, damage, hit, crit and ranges. Combat logic only depends on the matching MariSpell catalog row, never on this item's contents.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
             1,
@@ -16490,11 +16490,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Light"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -16652,11 +16652,11 @@
                 null
             ],
             [
-                "weapon_type",
-                "Staff"
+                "staffcast_weapon_type",
+                "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -16768,12 +16768,12 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
-                "E"
+                "staffcast_weapon_rank",
+                "D"
             ],
             [
                 "damage",
@@ -16884,12 +16884,12 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
-                "E"
+                "staffcast_weapon_rank",
+                "C"
             ],
             [
                 "damage",
@@ -17000,11 +17000,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -17116,11 +17116,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -17232,11 +17232,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -17348,11 +17348,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -17464,11 +17464,11 @@
                 null
             ],
             [
-                "weapon_type",
-                "Staff"
+                "staffcast_weapon_type",
+                "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -17580,11 +17580,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -17696,11 +17696,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -17812,11 +17812,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -17928,11 +17928,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -18044,11 +18044,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -18160,11 +18160,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -18255,8 +18255,8 @@
         "desc": "Thunder-element spell (rank E). Costs 1 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            1,
-            10
+            5,
+            11
         ],
         "components": [
             [
@@ -18276,11 +18276,11 @@
                 null
             ],
             [
-                "weapon_type",
-                "Staff"
+                "staffcast_weapon_type",
+                "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -18371,8 +18371,8 @@
         "desc": "Thunder-element spell (rank D). Costs 2 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            1,
-            10
+            6,
+            11
         ],
         "components": [
             [
@@ -18392,11 +18392,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -18487,8 +18487,8 @@
         "desc": "Thunder-element spell (rank C). Costs 3 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            1,
-            10
+            7,
+            11
         ],
         "components": [
             [
@@ -18508,11 +18508,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -18603,8 +18603,8 @@
         "desc": "Thunder-element spell (rank B). Costs 4 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            1,
-            10
+            8,
+            11
         ],
         "components": [
             [
@@ -18624,11 +18624,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -18719,8 +18719,8 @@
         "desc": "Thunder-element spell (rank A). Costs 7 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            1,
-            10
+            5,
+            12
         ],
         "components": [
             [
@@ -18740,11 +18740,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -18835,8 +18835,8 @@
         "desc": "Thunder-element spell (rank S). Costs 8 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            1,
-            10
+            6,
+            12
         ],
         "components": [
             [
@@ -18856,11 +18856,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -18972,11 +18972,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -19088,11 +19088,11 @@
                 null
             ],
             [
-                "weapon_type",
-                "Staff"
+                "staffcast_weapon_type",
+                "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -19204,11 +19204,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -19320,11 +19320,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -19436,11 +19436,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -19552,11 +19552,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -19668,11 +19668,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -19784,11 +19784,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -19900,11 +19900,11 @@
                 null
             ],
             [
-                "weapon_type",
-                "Staff"
+                "staffcast_weapon_type",
+                "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -20016,11 +20016,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -20132,11 +20132,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -20248,11 +20248,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -20364,11 +20364,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -20480,11 +20480,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -20596,11 +20596,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -20712,11 +20712,11 @@
                 null
             ],
             [
-                "weapon_type",
-                "Staff"
+                "staffcast_weapon_type",
+                "Light"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -20828,11 +20828,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Light"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -20944,11 +20944,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Light"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -21060,11 +21060,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Light"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -21176,11 +21176,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Light"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -21292,11 +21292,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Light"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -21408,11 +21408,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Light"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -21524,11 +21524,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Dark"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -21640,11 +21640,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Dark"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -21756,11 +21756,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Dark"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -21872,11 +21872,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Dark"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -21988,11 +21988,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Dark"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -22104,11 +22104,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Dark"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -22220,11 +22220,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Dark"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -22336,11 +22336,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -22452,11 +22452,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -22568,11 +22568,11 @@
                 null
             ],
             [
-                "weapon_type",
+                "staffcast_weapon_type",
                 "Anima"
             ],
             [
-                "weapon_rank",
+                "staffcast_weapon_rank",
                 "E"
             ],
             [
@@ -22656,5 +22656,16 @@
                 null
             ]
         ]
+    },
+    {
+        "nid": "Empty_Spell",
+        "name": "Empty Slot",
+        "desc": "",
+        "icon_nid": null,
+        "icon_index": [
+            0,
+            0
+        ],
+        "components": []
     }
 ]

@@ -1266,6 +1266,10 @@ class MenuState(MapState):
             elif selection == 'Combat Arts' or selection in self.combat_arts.get('_uncategorized', {}) or selection in self.combat_arts:
                 self._handle_combat_art_selection(selection)
 
+            # Mari's spell loadout chooser - equip one of her loadout spells
+            elif selection == 'Spell Loadout':
+                game.state.change('spell_loadout_choice')
+
             # Selection is one of the other abilities
             else:
                 game.memory['ability'] = self.target_dict[selection]
@@ -2023,6 +2027,98 @@ class SpellChoiceState(WeaponChoiceState):
             else:
                 get_sound_thread().play_sfx('Info In')
             self.menu.toggle_info()
+
+class SpellLoadoutChoiceState(MapState):
+    """Out-of-combat chooser that lets Mari equip one of the spells in her
+    spell loadout as her default equipped weapon, mirroring WeaponChoiceState.
+
+    Loadout spells report equippable=False (like all spells), so we deliberately
+    force-equip via EquipItem rather than going through can_equip. autoequip is
+    taught to leave Mari's equipped loadout spell alone (see Unit.is_mari_loadout_item)."""
+    name = 'spell_loadout_choice'
+
+    def start(self):
+        self.cur_unit = game.cursor.cur_unit
+        self.options = game.target_system.get_mari_loadout(self.cur_unit)
+
+    def begin(self):
+        self.fluid.reset_on_change_state()
+        game.cursor.hide()
+        self.cur_unit = game.cursor.cur_unit
+        self.cur_unit.sprite.change_state('chosen')
+        # Remember what was equipped on entry so BACK can restore it.
+        self.current_equipped = self.cur_unit.equipped_weapon
+        self.menu = menus.Choice(self.cur_unit, self.options)
+        self.menu.set_limit(8)
+        self.item_desc_panel = ui_view.ItemDescriptionPanel(self.cur_unit, self.menu.get_current())
+        self._force_equip()
+
+    def _force_equip(self):
+        # Preview the highlighted loadout spell by actually equipping it. Spells are not
+        # "equippable" by the normal rules, so we bypass can_equip and equip directly.
+        current = self.menu.get_current()
+        if current and current is not self.cur_unit.equipped_weapon:
+            action.do(action.EquipItem(self.cur_unit, current))
+
+    def _item_desc_update(self):
+        current = self.menu.get_current()
+        self.item_desc_panel.set_item(current)
+
+    def take_input(self, event):
+        first_push = self.fluid.update()
+        directions = self.fluid.get_directions()
+
+        did_move = self.menu.handle_mouse()
+        if did_move:
+            self._force_equip()
+            self._item_desc_update()
+
+        if 'DOWN' in directions:
+            if self.menu.move_down(first_push):
+                get_sound_thread().play_sfx('Select 6')
+            self._force_equip()
+            self._item_desc_update()
+        elif 'UP' in directions:
+            if self.menu.move_up(first_push):
+                get_sound_thread().play_sfx('Select 6')
+            self._force_equip()
+            self._item_desc_update()
+
+        if event == 'BACK':
+            get_sound_thread().play_sfx('Select 4')
+            # Cancelled - restore whatever was equipped before we opened the chooser.
+            if self.current_equipped and self.current_equipped is not self.cur_unit.equipped_weapon:
+                action.do(action.EquipItem(self.cur_unit, self.current_equipped))
+            game.state.back()
+
+        elif event == 'SELECT':
+            selection = self.menu.get_current()
+            if not selection:
+                get_sound_thread().play_sfx('Error')
+                return
+            get_sound_thread().play_sfx('Select 1')
+            # Confirm: equip the chosen loadout spell as Mari's default weapon.
+            if selection is not self.cur_unit.equipped_weapon:
+                action.do(action.EquipItem(self.cur_unit, selection))
+            self.current_equipped = self.cur_unit.equipped_weapon
+            game.state.back()
+
+        elif event == 'INFO':
+            if self.menu.info_flag:
+                get_sound_thread().play_sfx('Info Out')
+            else:
+                get_sound_thread().play_sfx('Info In')
+            self.menu.toggle_info()
+
+    def update(self):
+        super().update()
+        self.menu.update()
+
+    def draw(self, surf):
+        surf = super().draw(surf)
+        surf = self.item_desc_panel.draw(surf)
+        surf = self.menu.draw(surf)
+        return surf
 
 class AbilityMultiItemChoiceState(WeaponChoiceState):
     name = 'ability_multi_item_choice'

@@ -1076,17 +1076,15 @@ class MenuState(MapState):
                 options.append(ability.name)
                 info_descs.append(ability.name + '_desc')  # Could add actual descriptions later
 
-        # Move Mari's 'Spell Loadout' option up to sit right after Attack/Spells
+        # Move Mari's 'Spell Loadout' option so it sits right above 'Item'
         if 'Spell Loadout' in options:
             idx = options.index('Spell Loadout')
             options.pop(idx)
             desc = info_descs.pop(idx)
-            if 'Spells' in options:
-                loadout_index = options.index('Spells') + 1
-            elif 'Attack' in options:
-                loadout_index = options.index('Attack') + 1
+            if 'Item' in options:
+                loadout_index = options.index('Item')
             else:
-                loadout_index = 0
+                loadout_index = len(options)
             options.insert(loadout_index, 'Spell Loadout')
             info_descs.insert(loadout_index, desc)
 

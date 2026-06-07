@@ -1009,7 +1009,7 @@ class MoveCameraState(State):
 class MenuState(MapState):
     name = 'menu'
     menu = None
-    normal_options = {'Item', 'Wait', 'Take', 'Give', 'Rescue', 'Trade', 'Drop', 'Visit', 'Armory', 'Vendor', 'Spells', 'Attack', 'Steal', 'Shove', 'Pair Up', 'Switch', 'Separate', 'Transfer'}
+    normal_options = {'Item', 'Wait', 'Take', 'Give', 'Rescue', 'Trade', 'Drop', 'Visit', 'Armory', 'Vendor', 'Spells', 'Attack', 'Steal', 'Shove', 'Pair Up', 'Switch', 'Separate', 'Transfer', 'Spell Loadout'}
 
     def start(self):
         self._proceed_with_targets_item = False

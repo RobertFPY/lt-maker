@@ -4,7 +4,6 @@ from app.data.database.components import ComponentType
 
 from app.engine import action
 from app.engine.game_state import game
-from app.engine.combat import playback as pb
 
 class DeathTether(SkillComponent):
     nid = 'death_tether'
@@ -150,53 +149,6 @@ class EventAfterInitiatedCombat(SkillComponent):
     def end_combat(self, playback, unit: UnitObject, item, target: UnitObject, item2, mode):
         if mode == 'attack':
             game.events.trigger_specific_event(self.value, unit, target, unit.position, {'item': item, 'item2': item2, 'mode': mode})
-
-class ReduceToOneAndEventOnFirstHit(SkillComponent):
-    nid = 'reduce_to_one_and_event_on_first_hit'
-    desc = ("The first time this unit is struck by any damaging hit, the damage is reduced "
-            "so the unit is left with exactly 1 HP, and for the rest of that combat the unit "
-            "cannot drop below 1 HP. After that combat ends, the chosen event is triggered "
-            "(unit=this unit, target=the attacker) and this skill removes itself so it only "
-            "ever happens once.")
-    tag = SkillTags.ADVANCED
-
-    expose = ComponentType.Event
-    value = ''
-
-    _should_trigger_event = False
-
-    def after_take_strike(self, actions, playback, unit, item, target, item2, mode, attack_info, strike):
-        # Only react while the skill has not already done its thing.
-        if self._should_trigger_event:
-            # Already triggered this combat - just make sure we never die before the event.
-            for act in reversed(actions):
-                if isinstance(act, action.ChangeHP) and -act.num >= act.old_hp and act.unit == unit:
-                    act.num = -act.old_hp + 1
-            return
-
-        did_something = False
-        for act in reversed(actions):
-            # Any incoming damage to this unit.
-            if isinstance(act, action.ChangeHP) and act.num < 0 and act.unit == unit:
-                # Leave the unit with exactly 1 HP no matter how big the hit was.
-                act.num = -act.old_hp + 1
-                did_something = True
-                playback.append(pb.DefenseHitProc(unit, self.skill))
-
-        if did_something:
-            self._should_trigger_event = True
-            actions.append(action.TriggerCharge(unit, self.skill))
-
-    def end_combat(self, playback, unit: UnitObject, item, target: UnitObject, item2, mode):
-        if self._should_trigger_event:
-            self._should_trigger_event = False
-            if self.value:
-                game.events.trigger_specific_event(
-                    self.value, unit, target, unit.position,
-                    {'item': item, 'item2': item2, 'mode': mode})
-            # Remove the skill so this only ever happens once.
-            action.do(action.RemoveSkill(unit, self.skill))
-
 
 class Nihil(SkillComponent):
     nid = 'nihil'

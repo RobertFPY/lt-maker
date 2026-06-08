@@ -1732,3 +1732,42 @@ class MariSpellContainer(SkillComponent):
             if item.nid in spell_nids and not item_system.is_accessory(unit, item):
                 count += 1
         return count
+
+class ReduceToOneAndEventOnFirstHit(SkillComponent):
+    nid = 'reduce_to_one_and_event_on_first_hit'
+    desc = ("The first time this unit is struck (the blow must hit) by an enemy, the damage is "
+            "reduced so the unit is left with exactly 1 HP instead of dying. After that combat "
+            "ends, the chosen event is triggered (unit=this unit, target=the attacker) and this "
+            "skill removes itself, so the whole thing only ever happens once.")
+    tag = SkillTags.CUSTOM
+
+    expose = ComponentType.Event
+    value = ''
+
+    _should_trigger_event = False
+
+    def after_take_strike(self, actions, playback, unit, item, target, item2, mode, attack_info, strike):
+        if self._should_trigger_event:
+            return
+        if not (target and skill_system.check_enemy(unit, target) and strike == Strike.HIT):
+            return
+        did_something = False
+        for act in reversed(actions):
+            # Any incoming damage to this unit gets clamped so the unit survives with 1 HP.
+            if isinstance(act, action.ChangeHP) and act.num < 0 and act.unit == unit:
+                act.num = max(act.num, -act.old_hp + 1)
+                did_something = True
+        if did_something:
+            self._should_trigger_event = True
+            playback.append(pb.DefenseHitProc(unit, self.skill))
+            actions.append(action.TriggerCharge(unit, self.skill))
+
+    def end_combat(self, playback, unit, item, target, item2, mode):
+        if self._should_trigger_event:
+            self._should_trigger_event = False
+            if self.value:
+                game.events.trigger_specific_event(self.value, unit, target, unit.position, {'item': item, 'item2': item2, 'mode': mode})
+            action.do(action.RemoveSkill(unit, self.skill))
+
+    def on_end_chapter(self, unit, skill):
+        self._should_trigger_event = False

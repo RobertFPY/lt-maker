@@ -372,16 +372,17 @@ class CombatPhaseSolver():
     def get_defense_info(self) -> tuple:
         return self.num_defends, self.num_subdefends
 
-    def _trigger_take_strike(self, defender, attacker, item, strike):
-        # Fires the 'unit_take_strike' event trigger for the unit receiving a strike.
-        # Counts every strike (hit, crit, or miss) accumulated within this combat.
+    def _trigger_take_strike(self, defender, attacker, item):
+        # Fires the 'unit_take_strike' event trigger for the unit receiving a strike,
+        # at the very start of the strike (before hit/damage is resolved).
+        # Counts every strike accumulated within this combat.
         if not defender:
             return
         from app.events import triggers
         count = self.strikes_taken.get(defender.nid, 0) + 1
         self.strikes_taken[defender.nid] = count
         game.events.trigger(triggers.UnitTakeStrike(
-            defender, attacker, defender.position, item, count, strike.value))
+            defender, attacker, defender.position, item, count))
 
     def get_state(self):
         return self.state
@@ -454,6 +455,10 @@ class CombatPhaseSolver():
         first_item = item in (self.main_item, self.def_item, self.items[0])
         if assist:
             item = attacker.get_weapon()
+
+        # Fire the take-strike trigger at the very start of the strike,
+        # before hit/damage/death for this strike are resolved.
+        self._trigger_take_strike(defender, attacker, item)
 
         unclamped_hit = combat_calcs.compute_hit(attacker, defender, item, def_item, mode, attack_info, clamp_hit=False)
         rng_mode = game.rng_mode
@@ -539,13 +544,11 @@ class CombatPhaseSolver():
                 item_system.after_strike(actions, playback, attacker, item, defender, resolve_weapon(defender), mode, attack_info, strike)
                 skill_system.after_strike(actions, playback, attacker, item, defender, resolve_weapon(defender), mode, attack_info, strike)
                 skill_system.after_take_strike(actions, playback, defender, def_item, attacker, item, mode, attack_info, strike)
-                self._trigger_take_strike(defender, attacker, item, strike)
         else:
             item_system.on_miss(actions, playback, attacker, item, defender, resolve_weapon(defender), def_pos, mode, attack_info, first_item)
             item_system.after_strike(actions, playback, attacker, item, defender, resolve_weapon(defender), mode, attack_info, Strike.MISS)
             skill_system.after_strike(actions, playback, attacker, item, defender, resolve_weapon(defender), mode, attack_info, Strike.MISS)
             skill_system.after_take_strike(actions, playback, defender, def_item, attacker, item, mode, attack_info, Strike.MISS)
-            self._trigger_take_strike(defender, attacker, item, Strike.MISS)
             if defender:
                 playback.append(pb.MarkMiss(attacker, defender, self.attacker, item))
 

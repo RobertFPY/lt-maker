@@ -257,10 +257,10 @@ class BeforeCombatEnd(EventTrigger):
 @dataclass(init=True)
 class UnitTakeStrike(EventTrigger):
     """
-    This trigger fires every time a unit is on the receiving end of a strike
-    during combat, after damage/death for that strike is resolved. It fires for
-    every strike (hit, crit, or miss). Use strike_count to react to the 1st, 2nd,
-    3rd, ... strike a unit takes within a single combat.
+    This trigger fires at the very start of each strike a unit is about to take
+    during combat, before hit/damage/death for that strike are resolved. It fires
+    for every strike. Use strike_count to react to the 1st, 2nd, 3rd, ... strike a
+    unit takes within a single combat.
     """
     nid: ClassVar[NID] = 'unit_take_strike'
     unit1: UnitObject #: the unit receiving the strike.
@@ -268,7 +268,6 @@ class UnitTakeStrike(EventTrigger):
     position: Tuple[int, int] #: contains the position of unit1 (the unit being struck).
     item: ItemObject #: the item/ability used by the attacker.
     strike_count: int #: how many strikes unit1 has taken so far this combat (1 = first strike).
-    strike_result: str #: the result of the strike: 'hit', 'crit', or 'miss'.
 
 @dataclass(init=True)
 class CombatEnd(EventTrigger):

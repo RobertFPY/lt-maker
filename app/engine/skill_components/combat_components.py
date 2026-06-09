@@ -97,6 +97,25 @@ class Damage(SkillComponent):
     def modify_damage(self, unit, item):
         return self.value
 
+class ExactLethalDamage(SkillComponent):
+    nid = 'exact_lethal_damage'
+    desc = "Cộng/giảm damage sao cho tổng sát thương đúng bằng HP hiện tại của mục tiêu (1 hit K.O vừa đủ, không thừa damage)"
+    tag = SkillTags.COMBAT
+
+    def raw_damage(self, unit, item, target, item2, mode, attack_info, base_value):
+        from app.engine import skill_system
+        # Chỉ áp dụng khi người sở hữu là bên tấn công và mục tiêu là kẻ địch còn sống
+        if mode != 'attack' or target is None:
+            return 0
+        if not skill_system.check_enemy(unit, target):
+            return 0
+        current_hp = target.get_hp()
+        if current_hp <= 0:
+            return 0
+        # base_value là sát thương cuối cùng dự kiến gây ra (sau giáp, crit, multiplier).
+        # Trả về phần chênh lệch để tổng damage = đúng HP hiện tại.
+        return current_hp - base_value
+
 class EvalDamage(SkillComponent):
     nid = 'eval_damage'
     desc = "Gives +X damage solved using evaluate"

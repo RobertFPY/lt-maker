@@ -45,6 +45,12 @@ class MainSettingsController():
             fallback = QDir.currentPath()
         return str(self.state.value("last_open_path", fallback, type=str))
 
+    def set_last_build_path(self, value):
+        self.state.setValue("last_build_path", value)
+
+    def get_last_build_path(self, fallback=""):
+        return str(self.state.value("last_build_path", fallback, type=str))
+
     def append_or_bump_project(self, project_name: str, project_path: str):
         self.project_history_controller.append_or_bump_project(
             project_name, project_path)

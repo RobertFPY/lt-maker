@@ -456,10 +456,6 @@ class CombatPhaseSolver():
         if assist:
             item = attacker.get_weapon()
 
-        # Fire the take-strike trigger at the very start of the strike,
-        # before hit/damage/death for this strike are resolved.
-        self._trigger_take_strike(defender, attacker, item)
-
         unclamped_hit = combat_calcs.compute_hit(attacker, defender, item, def_item, mode, attack_info, clamp_hit=False)
         rng_mode = game.rng_mode
         if rng_mode == RNGOption.FATES_HIT:
@@ -551,6 +547,10 @@ class CombatPhaseSolver():
             skill_system.after_take_strike(actions, playback, defender, def_item, attacker, item, mode, attack_info, Strike.MISS)
             if defender:
                 playback.append(pb.MarkMiss(attacker, defender, self.attacker, item))
+
+        # Fire the take-strike trigger after this strike has been fully resolved,
+        # before the next strike is computed. Counts every strike (hit or miss).
+        self._trigger_take_strike(defender, attacker, item)
 
         # Gauge is set to 0. Damage is negated elsewhere
         if DB.constants.value('pairup') and item_system.is_weapon(attacker, item) and skill_system.check_enemy(attacker, defender):

@@ -1461,7 +1461,7 @@ class CharacterSkillSlot(SkillComponent):
 
 
 # Helper: when two skills sharing the same slot category land on a unit, keep the higher-priority one and shelve the loser into the unit's LearnedSkills field so it can be re-equipped from the Skill Swap menu later.
-_SLOT_NIDS = ('special_skill', 'slota_skill', 'slotb_skill', 'slotc_skill', 'assist_skill')
+_SLOT_NIDS = ('special_skill', 'slota_skill', 'slotb_skill', 'slotc_skill', 'extra_skill')
 
 
 def _skill_priority(skill):
@@ -1536,9 +1536,9 @@ class SlotCSkillSlot(SkillComponent):
         _resolve_slot_conflict(self.nid, self.skill, unit, other_skill)
 
 
-class AssistSkillSlot(SkillComponent):
-    nid = 'assist_skill'
-    desc = "Assist Skill Slot"
+class ExtraSkillSlot(SkillComponent):
+    nid = 'extra_skill'
+    desc = "Extra Skill Slot"
     tag = SkillTags.ATTRIBUTE
 
     def after_gain_skill(self, unit, other_skill):
@@ -1570,9 +1570,9 @@ class WeaponSlotCSkillSlot(SkillComponent):
     tag = SkillTags.ATTRIBUTE
 
 
-class WeaponAssistSkillSlot(SkillComponent):
-    nid = 'weapon_assist_skill'
-    desc = "Weapon-granted skill occupying the Assist slot."
+class WeaponExtraSkillSlot(SkillComponent):
+    nid = 'weapon_extra_skill'
+    desc = "Weapon-granted skill occupying the Extra slot."
     tag = SkillTags.ATTRIBUTE
 
 

@@ -93,6 +93,7 @@ class StateMachine():
              'combat_trade': trade.CombatTradeState,
              'weapon_choice': general_states.WeaponChoiceState,
              'spell_choice': general_states.SpellChoiceState,
+             'spell_loadout_choice': general_states.SpellLoadoutChoiceState,
              'ability_multi_item_choice': general_states.AbilityMultiItemChoiceState,
              'ability_submenu_choice': general_states.AbilitySubmenuChoiceState,
              'combat_targeting': general_states.CombatTargetingState,

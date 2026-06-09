@@ -322,6 +322,27 @@ class TradeAbility(Ability):
     def do(unit):
         game.state.change('trade')
 
+class SpellLoadoutAbility(Ability):
+    name = 'Spell'
+
+    @staticmethod
+    def targets(unit) -> set:
+        # Only Mari, and only when she has a non-empty spell loadout to choose from.
+        if getattr(unit, 'nid', None) != 'Mari':
+            return set()
+        if unit.has_attacked:
+            return set()
+        loadout = unit.get_field('spell_loadout') if hasattr(unit, 'get_field') else None
+        if not loadout:
+            return set()
+        return {unit.position}
+
+    @staticmethod
+    def do(unit):
+        # Selection is handled specially in MenuState.take_input, which opens the
+        # 'spell_loadout_choice' state. This is only here for completeness.
+        game.state.change('spell_loadout_choice')
+
 ABILITIES = Ability.__subclasses__()
 PRIMARY_ABILITIES = ABILITIES[:3]
 OTHER_ABILITIES = ABILITIES[3:]

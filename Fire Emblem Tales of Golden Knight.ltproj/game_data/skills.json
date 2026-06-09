@@ -22,10 +22,6 @@
                 "not has_skill(unit, 'Canto_Plus')"
             ],
             [
-                "assist_skill",
-                null
-            ],
-            [
                 "class_skill",
                 null
             ],
@@ -54,10 +50,6 @@
                 []
             ],
             [
-                "assist_skill",
-                null
-            ],
-            [
                 "class_skill",
                 null
             ],
@@ -84,10 +76,6 @@
             [
                 "copysafe",
                 []
-            ],
-            [
-                "assist_skill",
-                null
             ],
             [
                 "class_skill",
@@ -126,10 +114,6 @@
                 null
             ],
             [
-                "assist_skill",
-                null
-            ],
-            [
                 "priority",
                 0
             ]
@@ -151,10 +135,6 @@
             ],
             [
                 "locktouch",
-                null
-            ],
-            [
-                "assist_skill",
                 null
             ],
             [
@@ -182,10 +162,6 @@
                 "Summon_T2"
             ],
             [
-                "assist_skill",
-                null
-            ],
-            [
                 "priority",
                 0
             ]
@@ -204,10 +180,6 @@
             [
                 "ability",
                 "Refresh"
-            ],
-            [
-                "assist_skill",
-                null
             ],
             [
                 "priority",
@@ -24293,13 +24265,33 @@
                 [
                     [
                         "DEF",
-                        -30
+                        -200
                     ],
                     [
                         "RES",
-                        -30
+                        -200
                     ]
                 ]
+            ]
+        ]
+    },
+    {
+        "nid": "Must_Hit",
+        "name": "Must Hit",
+        "desc": "",
+        "icon_nid": "Skills",
+        "icon_index": [
+            0,
+            0
+        ],
+        "components": [
+            [
+                "hidden",
+                null
+            ],
+            [
+                "hit",
+                100
             ]
         ]
     },

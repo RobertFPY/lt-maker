@@ -9420,12 +9420,12 @@
     },
     {
         "nid": "Staff_of_Mari",
-        "name": "Mari's Staff",
+        "name": "???",
         "desc": "This staff is also treated as Light Magic type. Deal MAG damage and recover HP by half of the damage dealt.",
-        "icon_nid": "Staff",
+        "icon_nid": "zarg icons ltinsert",
         "icon_index": [
             0,
-            16
+            5
         ],
         "components": [
             [
@@ -9435,10 +9435,6 @@
             [
                 "max_range",
                 2
-            ],
-            [
-                "weapon_type",
-                "Staff"
             ],
             [
                 "prf_unit",
@@ -9499,7 +9495,7 @@
             ],
             [
                 "alternate_damage_formula",
-                "MAGIC_DAMAGE"
+                "HEAL"
             ],
             [
                 "damage",
@@ -9512,6 +9508,14 @@
             [
                 "item_tags",
                 []
+            ],
+            [
+                "staffcast_weapon_type",
+                "Light"
+            ],
+            [
+                "wexp",
+                0
             ]
         ]
     },

@@ -97,7 +97,8 @@ class InfoMenuState(State):
         game.memory['scroll_units'] = None
 
         self.state = game.memory.get('info_menu_state', info_states[0])
-        self.state = 'personal_data'
+        if self.state == 'notes' and not (DB.constants.value('unit_notes') and self.unit.notes):
+            self.state = 'personal_data'
         self.growth_flag = False
 
         self.fluid = FluidScroll(200, 1)
@@ -162,6 +163,8 @@ class InfoMenuState(State):
             image = SPRITES.get('info_title_items')
         elif name == 'support_skills':
             image = SPRITES.get('info_title_weapon')
+        elif name == 'skills':
+            image = SPRITES.get('info_title_skills')
         elif name == 'notes':
             image = SPRITES.get('info_title_notes')
         elif name == 'spellbook':
@@ -288,7 +291,8 @@ class InfoMenuState(State):
         states = []
         for state in info_states:
             if state == 'notes':
-                states.append(state)
+                if DB.constants.value('unit_notes') and self.unit.notes:
+                    states.append(state)
             elif state == 'spellbook':
                 if self._has_spell_loadout():
                     states.append(state)
@@ -298,7 +302,7 @@ class InfoMenuState(State):
 
     def move_left(self):
         states = self.get_available_states()
-        if len(info_states) > 1:
+        if len(states) > 1:
             get_sound_thread().play_sfx('Status_Page_Change')
             index = states.index(self.state) if self.state in states else 0
             new_index = (index - 1) % len(states)
@@ -649,6 +653,11 @@ class InfoMenuState(State):
             if not self.support_surf:
                 self.support_surf = self.create_support_surf()
             self.draw_support_surf(main_surf)
+
+        elif self.state == 'skills':
+            if not self.class_skill_surf:
+                self.class_skill_surf = self.create_class_skill_surf()
+            self.draw_class_skill_surf(main_surf)
 
         elif self.state == 'notes':
             if not self.notes_surf:
@@ -1104,43 +1113,99 @@ class InfoMenuState(State):
         surf.blit(self.skill_surf, (96, WINHEIGHT - 32))
 
     def create_class_skill_surf(self):
-        surf = engine.create_surface((WINWIDTH - 96, 24), transparent=True)
-        class_skills = [skill for skill in self.unit.skills if skill.class_skill and not skill_system.hidden(skill, self.unit)]
+        import pygame
+        surf = engine.create_surface((WINWIDTH - 96, WINHEIGHT), transparent=True)
 
-        # stacked skills appear multiple times, but should be drawn only once
-        skill_counter = {}
-        unique_skills = list()
-        for skill in class_skills:
-            if skill.nid not in skill_counter:
-                skill_counter[skill.nid] = 1
-                unique_skills.append(skill)
+        def pick_skill(skill_list):
+            """Return the top-priority skill (deduped by nid) from the filtered list."""
+            if not skill_list:
+                return None
+            best = None
+            best_prio = -1
+            for skill in skill_list:
+                prio = skill.priority.int()
+                if prio > best_prio:
+                    best_prio = prio
+                    best = skill
+            return best
+
+        char_skills = [s for s in self.unit.skills if s.class_skill and s.char_skill and not skill_system.hidden(s, self.unit)]
+        class_skills = [s for s in self.unit.skills if s.class_skill and s.class_skill2 and not skill_system.hidden(s, self.unit)]
+        # Weapon-granted skills (weapon_*_skill components) take precedence in their
+        # respective category rows. If no weapon skill is present, fall back to the
+        # regular class_skill in that category.
+        special_skills = [s for s in self.unit.skills if s.weapon_special_skill and not skill_system.hidden(s, self.unit)] \
+            or [s for s in self.unit.skills if s.class_skill and s.special_skill and not skill_system.hidden(s, self.unit)]
+        slota_skills = [s for s in self.unit.skills if s.weapon_slota_skill and not skill_system.hidden(s, self.unit)] \
+            or [s for s in self.unit.skills if s.class_skill and s.slota_skill and not skill_system.hidden(s, self.unit)]
+        slotb_skills = [s for s in self.unit.skills if s.weapon_slotb_skill and not skill_system.hidden(s, self.unit)] \
+            or [s for s in self.unit.skills if s.class_skill and s.slotb_skill and not skill_system.hidden(s, self.unit)]
+        slotc_skills = [s for s in self.unit.skills if s.weapon_slotc_skill and not skill_system.hidden(s, self.unit)] \
+            or [s for s in self.unit.skills if s.class_skill and s.slotc_skill and not skill_system.hidden(s, self.unit)]
+        extra_skill = [s for s in self.unit.skills if s.weapon_assist_skill and not skill_system.hidden(s, self.unit)] \
+            or [s for s in self.unit.skills if s.class_skill and s.extra_skill and not skill_system.hidden(s, self.unit)]
+
+        # FEH-style pill layout: 7 horizontal pills, each with a category color,
+        # the skill icon at the left, and the skill name in the middle.
+        # (label, fill color, border color, top skill)
+        rows = [
+            ('Personal', (190, 60, 80),   (110, 30, 50),  pick_skill(char_skills),    'Personal'),
+            ('Class',    (180, 70, 150),  (100, 35, 90),  pick_skill(class_skills),   'Class'),
+            ('Special',  (200, 150, 40),  (120, 80, 20),  pick_skill(special_skills), 'Special'),
+            ('A',        (70, 140, 90),   (35, 80, 50),   pick_skill(slota_skills),   'Slot A'),
+            ('B',        (170, 60, 60),   (95, 30, 30),   pick_skill(slotb_skills),   'Slot B'),
+            ('C',        (60, 130, 200),  (30, 70, 120),  pick_skill(slotc_skills),   'Slot C'),
+            ('E',        (200, 170, 60),  (115, 95, 25),  pick_skill(extra_skill),   'Extra'),
+        ]
+
+        pill_x = 4
+        pill_w = (WINWIDTH - 96) - 8  # 136 px
+        pill_h = 18
+        start_y = 14
+        gap = 2
+
+        for idx, (label, fill_color, border_color, skill, category) in enumerate(rows):
+            y = start_y + idx * (pill_h + gap)
+
+            # Draw rounded pill background (filled, with 1px darker border)
+            pygame.draw.rect(surf, fill_color, (pill_x, y, pill_w, pill_h), border_radius=pill_h // 2)
+            pygame.draw.rect(surf, border_color, (pill_x, y, pill_w, pill_h), width=1, border_radius=pill_h // 2)
+
+            # Category badge (single letter, on the left side, inside a small circle)
+            badge_cx = pill_x + 9
+            badge_cy = y + pill_h // 2
+            pygame.draw.circle(surf, border_color, (badge_cx, badge_cy), 7)
+            badge_w = text_width('text', label[0])
+            render_text(surf, ['text'], [label[0]], ['white'], ((badge_cx - badge_w // 2) - 1, y + 1))
+
+            # Skill icon (16x16) right after the badge
+            icon_x = pill_x + 18
+            icon_y = y + 1
+            if skill is not None:
+                icons.draw_skill(surf, skill, (icon_x, icon_y), compact=False,
+                                 grey=skill_system.is_grey(skill, self.unit))
+                # Skill name, truncated to fit
+                name = skill.name
+                max_name_w = pill_w - (icon_x - pill_x) - 18 - 4
+                truncated = name
+                while truncated and text_width('text', truncated) > max_name_w:
+                    truncated = truncated[:-1]
+                if truncated != name and len(truncated) > 1:
+                    truncated = truncated[:-1] + '.'
+                name_x = icon_x + 18
+                render_text(surf, ['text'], [truncated], ['white'], (name_x, y + 2))
+                # Register the whole pill for info graph hover help
+                self.info_graph.register((96 + pill_x, y, pill_w, pill_h),
+                                         help_menu.SkillHelpDialog(skill, category=category), 'skills')
             else:
-                skill_counter[skill.nid] += 1
-        for idx, skill in enumerate(unique_skills[:6]):
-            left_pos = idx * 24
-            icons.draw_skill(surf, skill, (left_pos + 8, 8), compact=False, grey=skill_system.is_grey(skill, self.unit))
-            if skill_counter[skill.nid] > 1:
-                text = str(skill_counter[skill.nid])
-                render_text(surf, ['small'], [text], ['white'], (left_pos + 20 - 4 * len(text), 6))
-            text = text_funcs.translate_and_text_evaluate(
-                skill.desc,
-                unit=game.get_unit(skill.owner_nid),
-                self=skill)
-            help_dlg = build_dialog_list(skill, PageType.SKILL, unit=self.unit)
-            if self._extra_stat_row:
-                self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 22, 16, 16), help_dlg, 'personal_data')
-                self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 22, 16, 16), help_dlg, 'growths')
-            else:
-                self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 32, 16, 16), help_dlg, 'personal_data')
-                self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 32, 16, 16), help_dlg, 'growths')
+                # Empty slot indicator
+                dash_x = icon_x + 18
+                render_text(surf, ['text'], ['---'], ['white'], (dash_x, y + 2))
 
         return surf
 
     def draw_class_skill_surf(self, surf):
-        if self._extra_stat_row:
-            surf.blit(self.class_skill_surf, (96, WINHEIGHT - 26))
-        else:
-            surf.blit(self.class_skill_surf, (96, WINHEIGHT - 36))
+        surf.blit(self.class_skill_surf, (96, 0))
 
     def create_support_surf(self):
         surf = engine.create_surface((WINWIDTH - 96, WINHEIGHT), transparent=True)
@@ -1196,96 +1261,28 @@ class InfoMenuState(State):
         surf.blit(self.fatigue_surf, (96, 0))
 
     def create_notes_surf(self):
-        import pygame
-        surf = engine.create_surface((WINWIDTH - 96, WINHEIGHT), transparent=True)
+        # Menu background
+        menu_surf = engine.create_surface((WINWIDTH - 96, WINHEIGHT), transparent=True)
 
-        def pick_skill(skill_list):
-            """Return the top-priority skill (deduped by nid) from the filtered list."""
-            if not skill_list:
-                return None
-            best = None
-            best_prio = -1
-            for skill in skill_list:
-                prio = skill.priority.int()
-                if prio > best_prio:
-                    best_prio = prio
-                    best = skill
-            return best
+        text_parser = TextEvaluator(logging.getLogger(), game, self.unit)
+        my_notes = self.unit.notes
 
-        char_skills = [s for s in self.unit.skills if s.class_skill and s.char_skill and not skill_system.hidden(s, self.unit)]
-        class_skills = [s for s in self.unit.skills if s.class_skill and s.class_skill2 and not skill_system.hidden(s, self.unit)]
-        # Weapon-granted skills (weapon_*_skill components) take precedence in their
-        # respective category rows. If no weapon skill is present, fall back to the
-        # regular class_skill in that category.
-        special_skills = [s for s in self.unit.skills if s.weapon_special_skill and not skill_system.hidden(s, self.unit)] \
-            or [s for s in self.unit.skills if s.class_skill and s.special_skill and not skill_system.hidden(s, self.unit)]
-        slota_skills = [s for s in self.unit.skills if s.weapon_slota_skill and not skill_system.hidden(s, self.unit)] \
-            or [s for s in self.unit.skills if s.class_skill and s.slota_skill and not skill_system.hidden(s, self.unit)]
-        slotb_skills = [s for s in self.unit.skills if s.weapon_slotb_skill and not skill_system.hidden(s, self.unit)] \
-            or [s for s in self.unit.skills if s.class_skill and s.slotb_skill and not skill_system.hidden(s, self.unit)]
-        slotc_skills = [s for s in self.unit.skills if s.weapon_slotc_skill and not skill_system.hidden(s, self.unit)] \
-            or [s for s in self.unit.skills if s.class_skill and s.slotc_skill and not skill_system.hidden(s, self.unit)]
-        assist_skill = [s for s in self.unit.skills if s.weapon_assist_skill and not skill_system.hidden(s, self.unit)] \
-            or [s for s in self.unit.skills if s.class_skill and s.assist_skill and not skill_system.hidden(s, self.unit)]
+        if my_notes:
+            total_height = 24
+            help_offset = 0
+            for idx, note in enumerate(my_notes):
+                category = note[0]
+                entries = note[1].split(',')
+                render_text(menu_surf, ['text'], [category], ['blue'], (10, total_height))
+                for entry in entries:
+                    category_length = text_width('text', category)
+                    left_pos = 64 if category_length <= 64 else (category_length + 8)
+                    render_text(menu_surf, ['text'], [text_parser._evaluate_all(entry)], [], (left_pos, total_height))
+                    total_height += 16
+                self.info_graph.register((96, 16 * help_offset + 24, 64, 16), '%s_desc' % category, 'notes', first=(idx == 0))
+                help_offset += len(entries)
 
-        # FEH-style pill layout: 7 horizontal pills, each with a category color,
-        # the skill icon at the left, and the skill name in the middle.
-        # (label, fill color, border color, top skill)
-        rows = [
-            ('Personal', (190, 60, 80),   (110, 30, 50),  pick_skill(char_skills),    'Personal'),
-            ('Class',    (180, 70, 150),  (100, 35, 90),  pick_skill(class_skills),   'Class'),
-            ('Special',  (200, 150, 40),  (120, 80, 20),  pick_skill(special_skills), 'Special'),
-            ('A',        (70, 140, 90),   (35, 80, 50),   pick_skill(slota_skills),   'Slot A'),
-            ('B',        (170, 60, 60),   (95, 30, 30),   pick_skill(slotb_skills),   'Slot B'),
-            ('C',        (60, 130, 200),  (30, 70, 120),  pick_skill(slotc_skills),   'Slot C'),
-            ('S',        (200, 170, 60),  (115, 95, 25),  pick_skill(assist_skill),   'Assist'),
-        ]
-
-        pill_x = 4
-        pill_w = (WINWIDTH - 96) - 8  # 136 px
-        pill_h = 18
-        start_y = 14
-        gap = 2
-
-        for idx, (label, fill_color, border_color, skill, category) in enumerate(rows):
-            y = start_y + idx * (pill_h + gap)
-
-            # Draw rounded pill background (filled, with 1px darker border)
-            pygame.draw.rect(surf, fill_color, (pill_x, y, pill_w, pill_h), border_radius=pill_h // 2)
-            pygame.draw.rect(surf, border_color, (pill_x, y, pill_w, pill_h), width=1, border_radius=pill_h // 2)
-
-            # Category badge (single letter, on the left side, inside a small circle)
-            badge_cx = pill_x + 9
-            badge_cy = y + pill_h // 2
-            pygame.draw.circle(surf, border_color, (badge_cx, badge_cy), 7)
-            badge_w = text_width('text', label[0])
-            render_text(surf, ['text'], [label[0]], ['white'], ((badge_cx - badge_w // 2) - 1, y + 1))
-
-            # Skill icon (16x16) right after the badge
-            icon_x = pill_x + 18
-            icon_y = y + 1
-            if skill is not None:
-                icons.draw_skill(surf, skill, (icon_x, icon_y), compact=False,
-                                 grey=skill_system.is_grey(skill, self.unit))
-                # Skill name, truncated to fit
-                name = skill.name
-                max_name_w = pill_w - (icon_x - pill_x) - 18 - 4
-                truncated = name
-                while truncated and text_width('text', truncated) > max_name_w:
-                    truncated = truncated[:-1]
-                if truncated != name and len(truncated) > 1:
-                    truncated = truncated[:-1] + '.'
-                name_x = icon_x + 18
-                render_text(surf, ['text'], [truncated], ['white'], (name_x, y + 2))
-                # Register the whole pill for info graph hover help
-                self.info_graph.register((96 + pill_x, y, pill_w, pill_h),
-                                         help_menu.SkillHelpDialog(skill, category=category), 'notes')
-            else:
-                # Empty slot indicator
-                dash_x = icon_x + 18
-                render_text(surf, ['text'], ['---'], ['white'], (dash_x, y + 2))
-
-        return surf
+        return menu_surf
 
     def draw_notes_surf(self, surf):
         surf.blit(self.notes_surf, (96, 0))

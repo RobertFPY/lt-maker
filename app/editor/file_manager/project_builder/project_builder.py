@@ -4,7 +4,6 @@ import os
 import shlex
 import shutil
 import subprocess
-import time
 from pathlib import Path
 from typing import List
 
@@ -66,10 +65,26 @@ class LTProjectBuilder():
         return True
 
     def _select_build_path(self, current_proj: Path) -> Path:
-        starting_path = Path(current_proj or QDir.currentPath()).parent
-        starting_path = Path(starting_path) / (os.path.basename(current_proj) + '_build_' + time.strftime("%Y%m%d-%H%M%S"))
-        output_dir, _ = QFileDialog.getSaveFileName(None, "Choose build location", str(starting_path),
-                                            "All Files (*)")
+        # Phương án 3: nếu đã build trước đó, mặc định gợi ý lại đúng thư mục cũ
+        # để người dùng dễ ghi đè (tiện cập nhật build lên git).
+        last_build_path = self.proj_file_manager.settings.get_last_build_path()
+        if last_build_path:
+            starting_path = Path(last_build_path)
+        else:
+            # Phương án 1: mặc định là "<Project>_build" cố định cạnh project,
+            # KHÔNG kèm timestamp, nên lần build sau luôn trỏ về cùng một chỗ.
+            parent_path = Path(current_proj or QDir.currentPath()).parent
+            starting_path = parent_path / (os.path.basename(current_proj) + '_build')
+        # Build output là một THƯ MỤC, nên dùng getExistingDirectory thay vì
+        # getSaveFileName. getSaveFileName là dialog chọn FILE: khi click vào một
+        # thư mục đã tồn tại nó chỉ "mở" thư mục đó chứ không cho chọn -> không thể
+        # ghi đè build cũ. getExistingDirectory cho phép chọn thẳng thư mục có sẵn
+        # (và tạo thư mục mới qua nút "New Folder") để ghi đè.
+        if not os.path.isdir(str(starting_path)):
+            # đảm bảo dialog mở đúng vị trí gợi ý kể cả khi thư mục chưa tồn tại
+            starting_path = Path(starting_path).parent
+        output_dir = QFileDialog.getExistingDirectory(
+            None, "Choose build location (folder)", str(starting_path))
         return output_dir
 
     def _build_game(self, current_proj: Path, dist_cmd: str, work_cmd: str, path_to_icon: Path):
@@ -126,6 +141,27 @@ class LTProjectBuilder():
         output_dir = self._select_build_path(current_proj)
         if not output_dir:
             return
+
+        # Phương án 2: nếu thư mục build cũ đã tồn tại, hỏi xác nhận rồi dọn sạch
+        # dist/build cũ trước khi build để tránh lẫn file thừa từ lần build trước.
+        old_dist = os.path.join(output_dir, "dist")
+        old_build = os.path.join(output_dir, "build")
+        if os.path.exists(old_dist) or os.path.exists(old_build):
+            ret = QMessageBox.question(
+                None, "Overwrite existing build?",
+                "A build already exists at:\n%s\n\nOverwrite it? The old 'dist' and "
+                "'build' folders there will be deleted first." % output_dir,
+                QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
+            if ret != QMessageBox.Yes:
+                return
+            if os.path.exists(old_dist):
+                shutil.rmtree(old_dist, ignore_errors=True)
+            if os.path.exists(old_build):
+                shutil.rmtree(old_build, ignore_errors=True)
+
+        # Phương án 3: ghi nhớ thư mục build này cho lần sau
+        self.proj_file_manager.settings.set_last_build_path(output_dir)
+
         self.progress_dialog = QProgressDialog(
                 "Building project", None, 0, 100)
         self.progress_dialog.setAutoClose(True)
@@ -145,7 +181,7 @@ class LTProjectBuilder():
         self.progress_dialog.setValue(80)
         self._build_executable_wrapper(curr_proj_path, dist_cmd, work_cmd, icon)
         self._preload_config(curr_proj_path, Path(output_dir))
-        shutil.rmtree(output_dir + "/build")
+        shutil.rmtree(output_dir + "/build", ignore_errors=True)
         self.progress_dialog.setValue(100)
         
         # just save again to restore state

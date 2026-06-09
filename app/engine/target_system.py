@@ -504,6 +504,12 @@ class TargetSystem():
             loadout_items = [item for item in loadout_items if predicate(item)]
         return loadout_items
 
+    def get_mari_loadout(self, unit: UnitObject) -> List[ItemObject]:
+        # Returns the materialized ItemObjects for every spell currently in Mari's spell loadout
+        # (independent of availability), used by the out-of-combat spell loadout chooser.
+        # Returns an empty list for any other unit.
+        return self._restrict_mari_loadout(unit, [])
+
     def get_weapons(self, unit: UnitObject) -> List[ItemObject]:
         # Explicitly does not consider extra abilities since it's used within the Attack menu
         weapons = [item for item in unit.items if item_funcs.is_weapon_recursive(unit, item) and item_funcs.available(unit, item)]

@@ -698,11 +698,32 @@ class UnitObject(Prefab):
         """Return True if the unit can equip *item*"""
         return item_system.equippable(self, item) and item_funcs.available(self, item)
 
+    def is_mari_loadout_item(self, item) -> bool:
+        """True if *item* is one of Mari's materialized spell-loadout spells.
+
+        These spells live in a separate "loadout" inventory and are intentionally
+        equippable by Mari even though spells normally report equippable=False, so
+        they must be protected from autoequip's can_equip-based unequip pass.
+
+        We check the cache first, then fall back to the persisted 'spell_loadout'
+        field so the guard still works right after a save/load (before the loadout
+        items have been re-materialized into the cache)."""
+        if item is None or getattr(self, 'nid', None) != 'Mari':
+            return False
+        cache = getattr(self, '_mari_loadout_items', None)
+        if cache and item in cache.values():
+            return True
+        loadout = self.get_field('spell_loadout') if hasattr(self, 'get_field') else None
+        if loadout and item.nid in loadout and item not in self.items:
+            return True
+        return False
+
     def autoequip(self):
         logging.debug("Autoequipping...")
         all_items = item_funcs.get_all_items(self)
         # Do an an initial check that the weapon is still good
-        if self.equipped_weapon and not self.can_equip(self.equipped_weapon):
+        if self.equipped_weapon and not self.can_equip(self.equipped_weapon) \
+                and not self.is_mari_loadout_item(self.equipped_weapon):
             self.unequip(self.equipped_weapon)
         if not self.equipped_weapon:
             for item in all_items:

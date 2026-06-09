@@ -10,7 +10,7 @@ from app.engine.dialog import DialogState
 from app.engine.graphics.text.text_renderer import render_text
 from app.utilities.enums import HAlignment
 
-info_states = ('personal_data', 'equipment', 'support_skills', 'notes', 'spellbook')
+info_states = ('personal_data', 'equipment', 'support_skills', 'skills', 'notes', 'spellbook')
 
 @dataclass
 class BoundingBox():

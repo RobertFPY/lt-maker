@@ -420,22 +420,22 @@
         "wexp_gain": {
             "Sword": [
                 false,
-                1,
+                0,
                 251
             ],
             "Lance": [
                 true,
-                1,
+                0,
                 251
             ],
             "Axe": [
                 false,
-                1,
+                0,
                 251
             ],
             "Bow": [
                 false,
-                1,
+                0,
                 251
             ],
             "Staff": [
@@ -445,27 +445,27 @@
             ],
             "Light": [
                 false,
-                1,
+                0,
                 251
             ],
             "Anima": [
                 false,
-                1,
+                0,
                 251
             ],
             "Dark": [
                 false,
-                1,
+                0,
                 251
             ],
             "Default": [
                 false,
-                1,
+                0,
                 251
             ],
             "Knife": [
                 false,
-                1,
+                0,
                 null
             ]
         },

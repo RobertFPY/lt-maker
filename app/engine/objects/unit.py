@@ -918,7 +918,11 @@ class UnitObject(Prefab):
                   'wexp': self.wexp,
                   'portrait_nid': self.portrait_nid,
                   'affinity': self.affinity,
-                  'skills': [(skill_info.skill_obj.uid, skill_info.source, skill_info.source_type) for skill_info in self._skills],
+                  # Aura children are intentionally not serialized; they are re-derived
+                  # from the live board on load so their source always points at the
+                  # current parent skill instance (see GameState load + restore).
+                  'skills': [(skill_info.skill_obj.uid, skill_info.source, skill_info.source_type)
+                             for skill_info in self._skills if skill_info.source_type != SourceType.AURA],
                   'notes': self.notes,
                   'current_hp': self.current_hp,
                   'current_mana': self.current_mana,
@@ -979,7 +983,11 @@ class UnitObject(Prefab):
         self.equipped_weapon = None
         self.equipped_accessory = None
 
-        self._skills = [UnitSkill(game.get_skill(skill_uid), source, source_type) for skill_uid, source, source_type in s_dict['skills']]
+        # Drop any serialized aura children (heals old saves that baked them in);
+        # they are re-derived from the live board after all units arrive.
+        self._skills = [UnitSkill(game.get_skill(skill_uid), source, source_type)
+                        for skill_uid, source, source_type in s_dict['skills']
+                        if source_type != SourceType.AURA]
         self._skills = [s for s in self._skills if s.get()]
 
         self.current_hp = s_dict['current_hp']

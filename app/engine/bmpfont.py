@@ -123,11 +123,36 @@ class BmpFont():
     def get_base_surf(self) -> engine.Surface:
         return self.surfaces[self.default_color]
 
+    @staticmethod
+    def _smart_quotes(string: str) -> str:
+        """Converts straight quotes into directional (curly) quotes.
+
+        A quote is treated as an opening quote when it is at the start of the
+        string or follows whitespace or an opening bracket; otherwise it is a
+        closing quote (this also handles apostrophes inside words, e.g. don't).
+        """
+        if '"' not in string and "'" not in string:
+            return string
+        openers = ' \t\n([{“‘'
+        result = []
+        for i, c in enumerate(string):
+            if c == '"' or c == "'":
+                prev = string[i - 1] if i > 0 else ''
+                is_open = (prev == '') or (prev in openers)
+                if c == '"':
+                    result.append('“' if is_open else '”')
+                else:
+                    result.append('‘' if is_open else '’')
+            else:
+                result.append(c)
+        return ''.join(result)
+
     def modify_string(self, string: str) -> str:
         if self.all_uppercase:
             string = string.upper()
         if self.all_lowercase:
             string = string.lower()
+        string = self._smart_quotes(string)
         # string = string.replace('_', ' ')
         return string
 

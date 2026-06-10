@@ -30,6 +30,10 @@ def get_support_rank_bonus(unit, target=None):
 
     if not unit.position:
         return [], []
+    # _supports gates the whole feature; without it combat would leak support bonuses
+    # even before the developer enables supports (matches info screen / point accumulation)
+    if not game.game_vars.get('_supports'):
+        return [], []
     # If target, only check for when can attack same unit
     if target and DB.support_constants.value('bonus_range') != 0:
         return [], []

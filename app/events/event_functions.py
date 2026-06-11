@@ -16,6 +16,7 @@ from app.engine import (action, background, banner, base_surf, dialog, engine,
                         gui, icons, image_mods, item_funcs, item_system,
                         save, skill_system, unit_funcs)
 from app.engine.game_board import FogOfWarType
+from app.engine.fog_of_war import FogOfWarColor
 from app.engine.achievements import ACHIEVEMENTS
 from app.engine.animations import MapAnimation
 from app.engine.combat import interaction
@@ -703,7 +704,7 @@ def enable_turnwheel(self: Event, activated: bool, flags=None):
 def enable_fog_of_war(self: Event, activated: bool, flags=None):
     action.do(action.SetLevelVar("_fog_of_war", activated))
 
-def set_fog_of_war(self: Event, fog_of_war_type: str, radius: int, ai_radius: Optional[int] = None, other_radius: Optional[int] = None, flags=None):
+def set_fog_of_war(self: Event, fog_of_war_type: str, radius: int, ai_radius: Optional[int] = None, other_radius: Optional[int] = None, fog_of_war_color: Optional[str] = None, flags=None):
     fowt = fog_of_war_type.lower()
     if fowt == 'gba':
         fowt = FogOfWarType.GBA
@@ -719,6 +720,15 @@ def set_fog_of_war(self: Event, fog_of_war_type: str, radius: int, ai_radius: Op
         action.do(action.SetLevelVar('_ai_fog_of_war_radius', ai_radius))
     if other_radius is not None:
         action.do(action.SetLevelVar('_ai_fog_of_war_radius', other_radius))
+    if fog_of_war_color is not None:
+        fowc = fog_of_war_color.lower()
+        if fowc == 'white':
+            fowc = FogOfWarColor.WHITE
+        else:
+            fowc = FogOfWarColor.BLACK
+    else:
+        fowc = FogOfWarColor.BLACK
+    action.do(action.SetLevelVar('_fog_of_war_color', fowc))
 
 def end_turn(self: Event, team: NID = None, flags=None):
     self.logger.info('Force end of turn.')

@@ -6,7 +6,7 @@ from app.data.database.database import DB
 from app.engine import line_of_sight
 from app.engine.pathfinding.node import Node
 from app.engine.game_state import game
-from app.engine.fog_of_war import FogOfWarType
+from app.engine.fog_of_war import FogOfWarType, FogOfWarColor
 from app.engine.objects.unit import UnitObject
 from app.utilities.grid import Grid, BoundedGrid
 from app.utilities.typing import NID, Pos, UID

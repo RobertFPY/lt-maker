@@ -113,18 +113,35 @@ def save_io(s_dict, meta_dict, old_slot, slot, force_loc=None, name=None):
     if not force_loc:
         r_save = 'saves/' + GAME_NID() + '-restart' + str(slot) + '.p'
         r_save_meta = r_save + 'meta'
-        # If the slot I'm overwriting is a start of map
-        # Then rename it to restart file
+        # The restart save lets "Restart Level" replay this slot's chapter from
+        # the start. Pick which save becomes that restart point, then copy it once.
+        old_restart = old_restart_meta = None
+        if old_slot is not None:
+            old_restart = 'saves/' + GAME_NID() + '-restart' + str(old_slot) + '.p'
+            old_restart_meta = old_restart + 'meta'
+
         if meta_dict['kind'] == 'start':
-            if save_loc != r_save:
-                shutil.copy(save_loc, r_save)
-                shutil.copy(meta_loc, r_save_meta)
-        elif old_slot is not None:
-            old_name = 'saves/' + GAME_NID() + '-restart' + str(old_slot) + '.p'
-            old_name_meta = old_name + 'meta'
-            if old_name != r_save and os.path.exists(old_name):
-                shutil.copy(old_name, r_save)
-                shutil.copy(old_name_meta, r_save_meta)
+            # Start of a map is itself the restart point.
+            restart_src, restart_src_meta = save_loc, meta_loc
+        elif old_restart and os.path.exists(old_restart):
+            # Carry the restart point forward from the slot we loaded from.
+            restart_src, restart_src_meta = old_restart, old_restart_meta
+        elif not os.path.exists(r_save):
+            # Nothing to carry forward (e.g. started via Test Chapter, so
+            # current_save_slot was None and no 'start' save was ever made).
+            # Fall back to the current save so Restart Level still works.
+            # NOTE: this seeds the restart point from this first save, not a
+            # pristine chapter start, so Restart Level replays from here rather
+            # than the true beginning. Only matters for the dev Test Chapter
+            # path; normal play always seeds restart from the new-game 'start'.
+            restart_src, restart_src_meta = save_loc, meta_loc
+        else:
+            # Keep this slot's existing restart point untouched.
+            restart_src = restart_src_meta = None
+
+        if restart_src and restart_src != r_save:
+            shutil.copy(restart_src, r_save)
+            shutil.copy(restart_src_meta, r_save_meta)
 
     # For preload
     if meta_dict['kind'] == 'start':

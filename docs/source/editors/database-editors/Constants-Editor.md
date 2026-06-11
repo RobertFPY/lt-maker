@@ -30,6 +30,12 @@ For more information on variables used for these constants, please refer to [Spe
 
 3. Create a LEAD_HIT and LEAD_AVOID equation in the Equations editor. These equations will determine the bonus hit and avoid units will get from leadership stars
 
+## Chance (%) to Score a Glancing Hit
+
+Glancing Hit is a value you can set in the constants editor that controls when a unit would score a glancing hit that deals half damage rather than a full normal hit that does full damage. 
+
+Assume the Glancing Hit percentage is set to 20 and your unit has an 80% hit rate on an enemy. If RNG rolls an 80 through 99, such as a 95, you will miss. This is normal. If the RNG rolls an (80 - 20) through 80, you will score a glancing hit since you did hit, but just barely. You were at most 20% away from a miss. If the RNG rolls a 0 through (80 - 20), you will score a true hit dealing full damage.
+
 ## Constants Dictionary
 
 This section lists the functionality of each constant available in the Constants editor.

@@ -85,6 +85,3 @@ Temporary Items
 # Cython compilation results
 *.c
 *.pyd
-
-# Claude code utils
-.claude

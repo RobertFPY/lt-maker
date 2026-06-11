@@ -24276,8 +24276,8 @@
         ]
     },
     {
-        "nid": "Must_Hit",
-        "name": "Must Hit",
+        "nid": "Must_Kill",
+        "name": "Must Kill",
         "desc": "",
         "icon_nid": "Skills",
         "icon_index": [
@@ -24291,7 +24291,31 @@
             ],
             [
                 "hit",
-                100
+                200
+            ],
+            [
+                "exact_lethal_damage",
+                null
+            ]
+        ]
+    },
+    {
+        "nid": "Must_Double",
+        "name": "Must Double",
+        "desc": "",
+        "icon_nid": "Skills",
+        "icon_index": [
+            0,
+            0
+        ],
+        "components": [
+            [
+                "hidden",
+                null
+            ],
+            [
+                "dynamic_multiattacks",
+                "1"
             ]
         ]
     },

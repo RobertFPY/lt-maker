@@ -575,6 +575,15 @@ class GameState():
                     self.boundary.arrive(unit)
                     action.UpdateFogOfWar(unit).execute()
 
+            # Re-derive aura child skills now that every source's aura is on the
+            # board. Children are not serialized (see UnitObject.save/restore);
+            # rebuilding them here guarantees each one's source points at the live
+            # parent skill instance, so it can be removed later. Otherwise a
+            # save/load or game-over restart leaves orphaned, unremovable auras.
+            for unit in self.units:
+                if unit.position:
+                    aura_funcs.pull_auras(unit, self, test=True)
+
             self.cursor.autocursor(True)
 
         self.events = event_manager.EventManager.restore(s_dict.get('events'))
@@ -1341,11 +1350,11 @@ class GameState():
         if not unit.position:
             raise ValueError("Unit must have a position to leave, not None")
 
-        # Auras
-        for aura_data in game.board.get_auras(unit.position):
-            child_aura_uid, target = aura_data
-            child_skill = self.get_skill(child_aura_uid)
-            aura_funcs.remove_aura(unit, child_skill, test)
+        # Auras affecting this unit -- it is leaving the map, so it loses all of
+        # them. Strip by the unit's own skill list rather than by board position:
+        # the board bookkeeping can desync (re-propagation, save/load, teardown
+        # ordering) and otherwise orphan an aura child skill permanently.
+        aura_funcs.remove_all_auras(unit, test)
         if not test:
             for skill in unit.all_skills:
                 if skill.aura:

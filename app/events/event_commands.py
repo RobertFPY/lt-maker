@@ -1099,8 +1099,8 @@ Sets the fog of war state for the current level.
         """
 
     keywords = ["FogOfWarType", "Radius"]
-    optional_keywords = ["AIRadius", "OtherRadius"]
-    keyword_types = ["FogOfWarType", "PositiveInteger", "PositiveInteger", "PositiveInteger"]
+    optional_keywords = ["AIRadius", "OtherRadius", "FogOfWarColor"]
+    keyword_types = ["FogOfWarType", "PositiveInteger", "PositiveInteger", "PositiveInteger", "FogOfWarColor"]
 
 class EndTurn(EventCommand):
     nid = 'end_turn'
@@ -1502,6 +1502,14 @@ The *immediate* flag will cause the combat to happen as quickly as possible, oft
     optional_keywords = ["CombatScript", "Ability", "Rounds"]
     keyword_types = ["Unit", "Position", "CombatScript", "Ability", "PositiveInteger"]
     _flags = ["arena", "force_animation", "force_no_animation", "immediate"]
+
+class SetCombatScript(EventCommand):
+    nid = 'set_combat_script'
+    tag = Tags.ADD_REMOVE_INTERACT_WITH_UNITS
+
+    desc = "Modify the current combat with a combat script."
+
+    keywords = ["CombatScript"]
 
 class PoseUnit(EventCommand):
     nid = 'pose_unit'

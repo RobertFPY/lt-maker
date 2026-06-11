@@ -492,7 +492,10 @@ class SupportDisplay():
             for bonus in prefab.requirements:
                 rank = bonus.support_rank
                 if rank in pair.locked_ranks:
-                    font_color = 'green'
+                    if bonus.gate and not game.game_vars[bonus.gate]:
+                        font_color = 'red'
+                    else:
+                        font_color = 'green'
                 elif rank in pair.unlocked_ranks:
                     font_color = None
                 else:

@@ -31,13 +31,13 @@ class MusicDialog(SimpleDialog):
             title = key.replace('_', ' ').title()
             box = PropertyBox(title, QLineEdit, self)
             box.edit.setReadOnly(True)
-            box.add_button(QPushButton('...'))
-            box.button.setMaximumWidth(40)
+            box.add_button(QPushButton('Assign'))
+            box.button.setMaximumWidth(70)
             box.button.clicked.connect(
                 partial(self.access_music_resources, key))
-            box.delete_button = QPushButton('X')
+            box.delete_button = QPushButton('Remove')
             box.bottom_section.addWidget(box.delete_button)
-            box.delete_button.setMaximumWidth(30)
+            box.delete_button.setMaximumWidth(70)
             box.delete_button.clicked.connect(
                 partial(self.delete_music_resource, key))
 
@@ -45,7 +45,7 @@ class MusicDialog(SimpleDialog):
             self.boxes[key] = box
 
         self.set_current(self.current)
-        self.setMinimumWidth(300)
+        self.setMinimumWidth(400)
 
     def set_current(self, current):
         self.current = current

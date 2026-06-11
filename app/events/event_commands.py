@@ -1041,8 +1041,8 @@ Sets the fog of war state for the current level.
         """
 
     keywords = ["FogOfWarType", "Radius"]
-    optional_keywords = ["AIRadius", "OtherRadius"]
-    keyword_types = ["FogOfWarType", "PositiveInteger", "PositiveInteger", "PositiveInteger"]
+    optional_keywords = ["AIRadius", "OtherRadius", "FogOfWarColor"]
+    keyword_types = ["FogOfWarType", "PositiveInteger", "PositiveInteger", "PositiveInteger", "FogOfWarColor"]
 
 class EndTurn(EventCommand):
     nid = 'end_turn'

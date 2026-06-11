@@ -7,6 +7,7 @@ from app.data.database.database import DB
 from app.engine.sprites import SPRITES
 from app.engine import engine, equations, image_mods, aura_funcs, line_of_sight, skill_system
 from app.engine.game_state import game
+from app.engine.fog_of_war import FogOfWarColor
 
 from app.utilities import utils
 
@@ -15,6 +16,8 @@ class BoundaryInterface():
     enemy_teams = DB.teams.enemies
     fog_of_war_tile1 = SPRITES.get('bg_fow_tile')
     fog_of_war_tile2 = SPRITES.get('bg_black_tile')
+    fog_of_war_tile3 = SPRITES.get('bg_fow_tile_white')
+    fog_of_war_tile4 = SPRITES.get('bg_white_tile')
 
     def __init__(self, width, height):
         self.modes = {'attack': SPRITES.get('boundary_red'),
@@ -350,9 +353,18 @@ class BoundaryInterface():
                     is_in_vision = game.board.in_vision((x, y))
                     if not is_in_vision:
                         if game.board.terrain_known((x, y), is_in_vision):
-                            image = self.fog_of_war_tile1
+
+                            fog_of_war_color = game.get_current_fog_info().color
+                            
+                            if fog_of_war_color == FogOfWarColor.WHITE:
+                                image = self.fog_of_war_tile3
+                            else:
+                                image = self.fog_of_war_tile1
                         else:
-                            image = self.fog_of_war_tile2
+                            if fog_of_war_color == FogOfWarColor.WHITE:
+                                image = self.fog_of_war_tile4
+                            else:
+                                image = self.fog_of_war_tile2
                         self.fog_of_war_surf.blit(image, (x * TILEWIDTH, y * TILEHEIGHT))
 
             im = engine.subsurface(self.fog_of_war_surf, cull_rect)

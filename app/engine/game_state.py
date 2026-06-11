@@ -46,7 +46,7 @@ from app.events.regions import RegionType
 from app.events import speak_style
 from app.engine import config as cf
 from app.engine import state_machine
-from app.engine.fog_of_war import FogOfWarType, FogOfWarLevelConfig
+from app.engine.fog_of_war import FogOfWarType, FogOfWarColor, FogOfWarLevelConfig
 from app.engine.roam.roam_info import RoamInfo
 from app.utilities import static_random
 from app.data.resources.resources import RESOURCES
@@ -1288,7 +1288,8 @@ class GameState():
             self.level_vars.get('_fog_of_war_type', FogOfWarType.GBA_DEPRECATED),
             self.level_vars.get('_fog_of_war_radius', 0),
             ai_fog_of_war_radius,
-            self.level_vars.get('_other_fog_of_war_radius', ai_fog_of_war_radius))
+            self.level_vars.get('_other_fog_of_war_radius', ai_fog_of_war_radius),
+            self.level_vars.get('_fog_of_war_color', FogOfWarColor.BLACK))
 
     def check_dead(self, nid: NID) -> bool:
         """

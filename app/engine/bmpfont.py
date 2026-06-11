@@ -9,6 +9,34 @@ from app.utilities.typing import Color4
 
 OUTLINE_WIDTH = 1
 
+# Unicode smart-quote characters drawn into the sprite sheets.
+LEFT_DOUBLE_QUOTE = '\u201c'   # "
+RIGHT_DOUBLE_QUOTE = '\u201d'  # "
+LEFT_SINGLE_QUOTE = '\u2018'   # '
+RIGHT_SINGLE_QUOTE = '\u2019'  # '
+
+# A straight quote is treated as an *opening* quote when it appears at the
+# start of the string or right after one of these characters.
+_OPEN_BEFORE = set(' \t\n([{\u201c\u2018')
+
+
+def _smart_quotes(string: str) -> str:
+    """Convert straight quotes (' and ") into curly opening/closing quotes
+    based on the surrounding context. Applied to every BmpFont so that both
+    rendering (blit) and measurement (width) stay in sync."""
+    if "'" not in string and '"' not in string:
+        return string
+    out = []
+    prev = ' '
+    for c in string:
+        if c == '"':
+            c = LEFT_DOUBLE_QUOTE if prev in _OPEN_BEFORE else RIGHT_DOUBLE_QUOTE
+        elif c == "'":
+            c = LEFT_SINGLE_QUOTE if prev in _OPEN_BEFORE else RIGHT_SINGLE_QUOTE
+        out.append(c)
+        prev = c
+    return ''.join(out)
+
 class FallbackFont():
     """TTF font wrapper used when a BmpFont character is not in its sprite sheet.
 
@@ -129,6 +157,7 @@ class BmpFont():
         if self.all_lowercase:
             string = string.lower()
         # string = string.replace('_', ' ')
+        string = _smart_quotes(string)
         return string
 
     @lru_cache()

@@ -241,6 +241,20 @@ class CombatStart(EventTrigger):
     is_animation_combat: bool #: a boolean denoting whether or not we are in an actual animation or merely a map animation.
 
 @dataclass(init=True)
+class BeforeCombatEnd(EventTrigger):
+    """
+    This trigger fires just before combat ends, after damage and death have been
+    calculated but before the combat is fully cleaned up. Useful for last-second
+    interventions (e.g. revive, swap items, prevent death).
+    """
+    nid: ClassVar[NID] = 'before_combat_end'
+    unit1: UnitObject #: the unit who initiated combat.
+    unit2: UnitObject #: the target of the combat (can be None).
+    position: Tuple[int, int] #: contains the position of unit1.
+    item: ItemObject #: the item/ability used by unit1.
+    playback: List[PlaybackBrush] #: a list of the playback brushes from the combat.
+
+@dataclass(init=True)
 class CombatEnd(EventTrigger):
     """
     This trigger fires at the end of combat. Useful for checking win or loss conditions.

@@ -4392,7 +4392,7 @@
             },
             {
                 "nid": "Mari_S_Prf",
-                "element": "Staff",
+                "element": "Light",
                 "rank": "S",
                 "is_ranged": "false",
                 "is_prf": "true",
@@ -4400,11 +4400,19 @@
             },
             {
                 "nid": "Mari_SS_Prf",
-                "element": "Staff",
+                "element": "Light",
                 "rank": "SS",
                 "is_ranged": "false",
                 "is_prf": "true",
                 "upgrade_of": "Mari_S_Prf"
+            },
+            {
+                "nid": "Staff_of_Mari",
+                "element": "Light",
+                "rank": "",
+                "is_ranged": "false",
+                "is_prf": "true",
+                "upgrade_of": ""
             }
         ]
     },

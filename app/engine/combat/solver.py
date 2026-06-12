@@ -67,8 +67,9 @@ class AttackerState(SolverState):
                     defender_num_phases = 1
 
                 if solver.attacker.strike_partner and solver.attacker_partner_alive() and \
-                        (solver.num_attacks == 1 or can_double_in_pairup) and \
-                        solver.num_subattacks >= self.num_multiattacks:
+                        (solver.num_attacks == 1 or can_double_in_pairup) \
+                        and solver.attacker_partner_item_has_uses() \
+                        and solver.num_subattacks >= self.num_multiattacks:
                     solver.num_subattacks = 0
                     return 'attacker_partner'
                 elif solver.item_has_uses() and \
@@ -154,8 +155,9 @@ class AttackerPartnerState(SolverState):
                 else:
                     defender_num_phases = 1
 
-                if solver.item_has_uses() and solver.attacker_partner_alive() and \
-                        solver.num_subattacks < self.num_multiattacks:
+                if solver.item_has_uses() and solver.attacker_partner_alive() \
+                        and solver.attacker_partner_item_has_uses() \
+                        and solver.num_subattacks < self.num_multiattacks:
                     return 'attacker_partner'
                 elif solver.item_has_uses() and \
                         solver.attacker_has_desperation() and \
@@ -221,9 +223,10 @@ class DefenderState(SolverState):
                 attacker_num_phases = combat_calcs.compute_attack_phases(solver.attacker, solver.defender, solver.main_item, solver.def_item, 'attack', solver.get_attack_info())
                 defender_num_phases = combat_calcs.compute_attack_phases(solver.defender, solver.attacker, solver.def_item, solver.main_item, 'defense', solver.get_defense_info())
 
-                if solver.defender.strike_partner and solver.defender_partner_alive() and \
-                        (solver.num_defends == 1 or can_double_in_pairup) and \
-                        solver.num_subdefends >= self.num_multiattacks:
+                if solver.defender.strike_partner and solver.defender_partner_alive() \
+                        and solver.defender_partner_item_has_uses() \
+                        and (solver.num_defends == 1 or can_double_in_pairup) \
+                        and solver.num_subdefends >= self.num_multiattacks:
                     solver.num_subdefends = 0
                     return 'defender_partner'
                 if solver.allow_counterattack() and \
@@ -284,8 +287,9 @@ class DefenderPartnerState(SolverState):
                 attacker_num_phases = combat_calcs.compute_attack_phases(solver.attacker, solver.defender, solver.main_item, solver.def_item, 'attack', solver.get_attack_info())
                 defender_num_phases = combat_calcs.compute_attack_phases(solver.defender, solver.attacker, solver.def_item, solver.main_item, 'defense', solver.get_defense_info())
 
-                if solver.allow_counterattack() and solver.defender_partner_alive() and \
-                        solver.num_subdefends < self.num_multiattacks:
+                if solver.allow_counterattack() and solver.defender_partner_alive() \
+                        and solver.defender_partner_item_has_uses() \
+                        and solver.num_subdefends < self.num_multiattacks:
                     return 'defender_partner'
                 elif solver.allow_counterattack() and \
                         solver.defender_has_desperation() and \
@@ -585,3 +589,11 @@ class CombatPhaseSolver():
 
     def target_item_has_uses(self):
         return self.defender and self.def_item and item_funcs.available(self.defender, self.def_item)
+
+    def attacker_partner_item_has_uses(self):
+        atk = self.attacker.strike_partner
+        return atk and atk.get_weapon() and item_funcs.available(atk, atk.get_weapon())
+
+    def defender_partner_item_has_uses(self):
+        d_partner = self.defender.strike_partner
+        return d_partner and d_partner.get_weapon() and item_funcs.available(d_partner, d_partner.get_weapon())

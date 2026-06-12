@@ -533,7 +533,8 @@ class InfoMenuState(State):
         else:
             num_states = len(info_states) - 1
         page = str(info_states.index(self.state) + 1) + '/' + str(num_states)
-        render_text(top_surf, ['small'], [page], [], (235, 12), HAlignment.RIGHT)
+        typeface = 'number_small4' if 'number_small4' in FONT else 'small'
+        render_text(top_surf, [typeface], [page], [], (236, 13), HAlignment.RIGHT)
 
         if num_states > 1:
             self.draw_top_arrows(top_surf)

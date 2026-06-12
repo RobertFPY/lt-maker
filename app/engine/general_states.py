@@ -741,6 +741,7 @@ class MoveState(MapState):
 
         elif event == 'SELECT':
             if game.cursor.position == cur_unit.position:
+                cur_unit.clear_net_position()
                 if cur_unit.has_attacked or cur_unit.has_traded:
                     # Just move in place
                     cur_unit.current_move = action.CantoMove(cur_unit, game.cursor.position)

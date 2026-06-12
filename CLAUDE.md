@@ -10,6 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - Run the editor: `python run_editor.py`
 - Run the engine on a project: `python run_engine.py` (auto-finds a `*.ltproj` in the repo root)
+- Run the map maker: `python run_map_maker.py`
 - Run all tests: `python -m unittest discover -s app/tests -p 'test*.py'` (wrapper: `./utilities/build_tools/run_tests.sh`)
 - Run one test module: `python -m unittest app.tests.test_engine`
 - Type check: `mypy app/` — config in `mypy.ini`, `strict = True`, **excludes** `app/editor`, `app/extensions`, `app/map_maker`, `app/tests`. New non-editor code is expected to pass strict typing.
@@ -37,7 +38,7 @@ Three top-level halves under `app/`:
 
 - **`app/editor/`** — PyQt5 editor. One sub-package per data type (e.g. `item_editor/`, `class_editor/`, `event_editor/`), each typically a `*_tab.py` (Qt view), `*_model.py` (Qt model over the DB), and `*_properties.py` (the edit form). `main_editor.py` is the window. Editor state lives in `app/editor/lib/state_editor/`. The editor edits `DB`/`RESOURCES` in memory and serializes back to the `.ltproj`.
 
-Also: **`app/events/`** — the eventing/scripting system, including a custom Python-eventing compiler under `app/events/python_eventing/` (analyzer → compiler → postcomp) that turns user event scripts into runnable code. **`app/map_maker/`** — a separate procedural tile-map tool (`run_map_maker.py`), with its own palette pipeline (see `app/map_maker/README.md`).
+Also: **`app/events/`** — the eventing/scripting system, including a custom Python-eventing compiler under `app/events/python_eventing/` (analyzer → compiler → postcomp) that turns user event scripts into runnable code. Event triggers are defined in `app/events/triggers.py` (chapter start/end, unit death, talk, level up, etc.) and matched against `EventPrefab.triggers` at runtime. **`app/map_maker/`** — a separate procedural tile-map tool, with its own palette pipeline (see `app/map_maker/README.md`). **`app/engine/roam/`** — a free-roam exploration mode (town menus, NPC interactions) that runs as its own state machine alongside but separate from tactical map states; **`app/engine/overworld/`** — the node-based overworld graph (map selection, cinematics, route branching).
 
 ### Save / restart system
 
@@ -48,6 +49,8 @@ Gotcha: **"Test Chapter"** (editor → engine via `game_state.start_level()`) by
 ### Component system
 
 Items and skills are composed of **components**, not subclasses. A component (e.g. in `app/engine/item_components/formula_components.py`) declares `nid`, `tag`, an `expose` type for its editor field, and implements named **hook methods** like `damage_formula(unit, item)` or `on_hit(...)`. The codegen step collects all components and builds `item_system`/`skill_system` dispatch functions that fan a hook call out across whatever components an item/skill carries. To add a behavior: add a component class with the right hook method name, then regenerate. `item_component_access.py` / `skill_component_access.py` expose the catalogs.
+
+Each hook method has a **resolution policy** controlling how multiple components' return values combine: `ALL_DEFAULT_FALSE` (any False → False; e.g., `is_weapon`), `UNIQUE` (last-defined wins; e.g., `damage_formula`), `NUMERIC_ACCUM` (sum all numerics; e.g., `modify_damage`), `UNION` (merge all returned sets; e.g., `target_icon`). The policy is declared alongside the hook in the codegen templates — pick the right one when adding a new hook.
 
 ### Aura system
 

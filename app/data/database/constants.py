@@ -80,7 +80,6 @@ constants = ConstantCatalog([
     Constant('lead', "Global Leadership Stars", ConstantType.BOOL, False, ConstantTag.MAJOR_FEATURES),
     Constant('bexp', "Bonus Experience", ConstantType.BOOL, False, ConstantTag.MAJOR_FEATURES),
     Constant('rd_bexp_lvl', "Always gain 3 stat-ups when using Bonus Exp.", ConstantType.BOOL, False, ConstantTag.MAJOR_FEATURES),
-    Constant('support', "Supports", ConstantType.BOOL, False, ConstantTag.MAJOR_FEATURES),
     Constant('overworld', "Overworld", ConstantType.BOOL, False, ConstantTag.MAJOR_FEATURES),
     Constant('overworld_start', "Start in Overworld", ConstantType.BOOL, False, ConstantTag.MAJOR_FEATURES),
     Constant('unit_notes', "Unit Notes", ConstantType.BOOL, False, ConstantTag.MAJOR_FEATURES),

@@ -57,7 +57,7 @@ class Uses(ItemComponent):
                 if item in other_unit.items:
                     action.do(action.RemoveItem(other_unit, item))
 
-    def end_combat(self, playback, unit, item, target, item2, mode):
+    def cleanup_combat(self, playback, unit, item, target, item2, mode):
         if self._did_something and 'uses' in item.data:
             action.do(action.SetObjData(item, 'uses', item.data['uses'] - 1))
             action.do(action.UpdateRecords('item_use', (unit.nid, item.nid)))
@@ -117,7 +117,7 @@ class ChapterUses(ItemComponent):
         elif unit.equipped_accessory is item:
             action.do(action.UnequipItem(unit, item))
 
-    def end_combat(self, playback, unit, item, target, item2, mode):
+    def cleanup_combat(self, playback, unit, item, target, item2, mode):
         if self._did_something and 'c_uses' in item.data:
             action.do(action.SetObjData(item, 'c_uses', item.data['c_uses'] - 1))
             action.do(action.UpdateRecords('item_use', (unit.nid, item.nid)))
@@ -235,7 +235,7 @@ class HPCost(ItemComponent):
             else:
                 action.do(action.ChangeHP(unit, -self.value))
 
-    def end_combat(self, playback, unit, item, target, item2, mode):
+    def cleanup_combat(self, playback, unit, item, target, item2, mode):
         if self._did_something:
             action.do(action.ChangeHP(unit, -self.value))
         self._did_something = False
@@ -293,7 +293,7 @@ class EvalHPCost(ItemComponent):
             else:
                 action.do(action.ChangeHP(unit, -self._check_value(unit, item)))
 
-    def end_combat(self, playback, unit, item, target, item2, mode):
+    def cleanup_combat(self, playback, unit, item, target, item2, mode):
         if self._did_something:
             action.do(action.ChangeHP(unit, -self._check_value(unit, item)))
         self._did_something = False
@@ -375,7 +375,7 @@ class ManaCost(ItemComponent):
             else:
                 action.do(action.ChangeMana(unit, -self.value))
 
-    def end_combat(self, playback, unit, item, target, item2, mode):
+    def cleanup_combat(self, playback, unit, item, target, item2, mode):
         if self._did_something:
             action.do(action.ChangeMana(unit, -self.value))
         self._did_something = False
@@ -434,7 +434,7 @@ class EvalManaCost(ItemComponent):
             else:
                 action.do(action.ChangeMana(unit, -self._check_value(unit, item)))
 
-    def end_combat(self, playback, unit, item, target, item2, mode):
+    def cleanup_combat(self, playback, unit, item, target, item2, mode):
         if self._did_something:
             action.do(action.ChangeMana(unit, -self._check_value(unit, item)))
         self._did_something = False

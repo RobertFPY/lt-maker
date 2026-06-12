@@ -80,8 +80,10 @@ class BaseCombat(SimpleCombat):
 
     def cleanup_combat(self):
         skill_system.cleanup_combat(self.full_playback, self.attacker, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
+        item_system.cleanup_combat(self.full_playback, self.attacker, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
         if self.attacker is not self.defender:
             skill_system.cleanup_combat(self.full_playback, self.defender, self.def_item, self.attacker, self.main_item, 'defense')
+            item_system.cleanup_combat(self.full_playback, self.defender, self.def_item, self.attacker, self.main_item, 'defense')
 
     def end_combat(self):
         skill_system.end_combat(self.full_playback, self.attacker, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')

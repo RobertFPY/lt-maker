@@ -302,8 +302,7 @@ class ProjectFileBackend():
                 self.current_proj = fn
                 self.settings.set_current_project(self.current_proj)
                 logging.info("Opening project %s" % self.current_proj)
-                self.load()
-                return True
+                return self.load()
             else:
                 return False
         return False
@@ -315,8 +314,7 @@ class ProjectFileBackend():
             try:
                 self.current_proj = path
                 self.settings.set_current_project(self.current_proj)
-                self.load()
-                return True
+                return self.load()
             except exceptions.CustomComponentsException as e:
                 logging.exception(e)
                 logging.error("Failed to load project at %s due to syntax error. Likely there's a problem in your Custom Components file, located at %s. See error above." % (
@@ -336,22 +334,36 @@ class ProjectFileBackend():
                             "Failed to load project at %s - path doesn't exist" % path)
         return False
 
-    def load(self):
-        if os.path.exists(self.current_proj):
-            curr_proj_path = Path(self.current_proj)
-            self.file_manager = FileManager(curr_proj_path)
-            try:
-                self.metadata = dataclass_from_dict(Metadata, self.file_manager.load_json(Path('metadata.json')))
-            except Exception:
-                self.metadata = Metadata()
-            RESOURCES.load(self.current_proj, self.metadata.serialization_version)
-            DB.load(curr_proj_path, self.metadata.serialization_version)
+    def load(self) -> bool:
+        if not os.path.exists(self.current_proj):
+            return False
 
-            if self.metadata.serialization_version < CURRENT_SERIALIZATION_VERSION:
-                self.save()     # To ensure updates from migration are saved
+        curr_proj_path = Path(self.current_proj)
+        self.file_manager = FileManager(curr_proj_path)
+        try:
+            self.metadata = dataclass_from_dict(Metadata, self.file_manager.load_json(Path('metadata.json')))
+        except Exception:
+            self.metadata = Metadata()
 
-            self.settings.append_or_bump_project(
-                DB.constants.value('title') or os.path.basename(self.current_proj), self.current_proj)
+        if self.metadata.serialization_version < CURRENT_SERIALIZATION_VERSION:
+            ret = QMessageBox.warning(self.parent, "Main Editor",
+                                        "Project serialization version %d is outdated. The engine requires serialization version %d.\n"
+                                        "Apply updates?" % (self.metadata.serialization_version, CURRENT_SERIALIZATION_VERSION),
+                                        QMessageBox.Ok | QMessageBox.Cancel)
+            if ret == QMessageBox.Ok:
+                pass
+            elif ret == QMessageBox.Cancel:
+                return False
+
+        RESOURCES.load(self.current_proj, self.metadata.serialization_version)
+        DB.load(curr_proj_path, self.metadata.serialization_version)
+
+        if self.metadata.serialization_version < CURRENT_SERIALIZATION_VERSION:
+            self.save()     # To ensure updates from migration are saved
+
+        self.settings.append_or_bump_project(
+            DB.constants.value('title') or os.path.basename(self.current_proj), self.current_proj)
+        return True
 
     @save_mutex
     def autosave(self):

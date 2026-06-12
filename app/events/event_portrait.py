@@ -1,35 +1,35 @@
 import math
 import random
-from typing import Optional
+from typing import Optional, Tuple
 
 from app.utilities.typing import Point
 from app.data.resources.portraits import PortraitPrefab
 
 from app import counters
 from app.utilities import utils
-from app.constants import PORTRAIT_WIDTH, PORTRAIT_HEIGHT, COLORKEY
+from app.constants import COLORKEY
 
 from app.engine import engine, image_mods
 
+def update_talk(talk_state: int, max_state: int, reverse: bool = True) -> Tuple[int, int, bool]:
+    if talk_state == 0 or talk_state == max_state-1:
+        reverse = not reverse
+        next_update = random.randint(70, 160)
+    else:
+        next_update = random.randint(30, 50)
+        if random.randint(1, 10) == 1:  # 10% chance to reverse
+            reverse = not reverse
+
+    mt = 2 if random.randint(1, 10) == 1 else 1    # 10% chance to skip a frame
+    if reverse:
+        next_state = talk_state - mt
+    else:
+        next_state = talk_state + mt
+    next_state = utils.clamp(next_state, 0, max_state-1)
+
+    return next_state, next_update, reverse
+
 class EventPortrait():
-    width, height = PORTRAIT_WIDTH, PORTRAIT_HEIGHT
-    main_portrait_coords = (0, 0, 96, 80)
-    chibi_coords = (width - 32, 16, 32, 32)
-
-    halfblink = (width - 32, 48, 32, 16)
-    fullblink = (width - 32, 64, 32, 16)
-    
-    leftwink = (width - 32, 64, 16, 16)
-    rightwink = (width - 16, 64, 16, 16)
-
-    openmouth = (0, height - 16, 32, 16)
-    halfmouth = (32, height - 16, 32, 16)
-    closemouth = (64, height - 16, 32, 16)
-
-    opensmile = (0, height - 32, 32, 16)
-    halfsmile = (32, height - 32, 32, 16)
-    closesmile = (64, height - 32, 32, 16)
-
     base_transition_speed = utils.frames2ms(14)
     travel_time = utils.frames2ms(15)
     bop_time = utils.frames2ms(8)
@@ -57,8 +57,8 @@ class EventPortrait():
         self.expressions = expressions or set()
 
         self.transition_progress = 0
-        self.main_portrait = engine.subsurface(self.portrait.image, self.main_portrait_coords)
-        self.chibi = engine.subsurface(self.portrait.image, self.chibi_coords)
+        self.main_portrait = engine.subsurface(self.portrait.image, self.portrait.get_face_frame())
+        self.chibi = engine.subsurface(self.portrait.image, self.portrait.get_minimug())
 
         self.talk_on = False
         self.remove = False
@@ -72,12 +72,14 @@ class EventPortrait():
         self.talk_state = 0
         self.last_talk_update = 0
         self.next_talk_update = 0
+        self.reverse = False
 
         # For blinking
         # Blinking set up
         self.offset_blinking = [x for x in range(-2000, 2000, 125)]
         # 3 frames for each
-        self.blink_counter = counters.generic3counter(7000 + random.choice(self.offset_blinking), utils.frames2ms(3), utils.frames2ms(3))
+        self.blink_counter = counters.BlinkCounter(self.portrait.blink_frames,
+            [7000 + random.choice(self.offset_blinking), utils.frames2ms(3)])
 
         # For bop
         self.bops_remaining = 0
@@ -89,14 +91,17 @@ class EventPortrait():
         self.saturation = 1.
         self.saturation_direction = 0
 
+    def get_size(self):
+        return self.portrait.face_size
+
     def get_width(self):
-        return 96
+        return self.portrait.face_size[0]
 
     def get_height(self):
-        return 80
+        return self.portrait.face_size[1]
 
     def set_expression(self, expression_list):
-        self.expressions = expression_list
+        self.expressions = set(expression_list)
 
     def saturate(self):
         self.saturation_direction = 1
@@ -142,98 +147,67 @@ class EventPortrait():
         # update mouth
         if self.talk_on and current_time - self.last_talk_update > self.next_talk_update:
             self.last_talk_update = current_time
-            chance = random.randint(1, 10)
-            if self.talk_state == 0:
-                # 10% chance to skip to state 2
-                if chance == 1:
-                    self.talk_state = 2
-                    self.next_talk_update = random.randint(70, 160)
-                else:
-                    self.talk_state = 1
-                    self.next_talk_update = random.randint(30, 50)
-            elif self.talk_state == 1:
-                # 10% chance to go back to state 0
-                if chance == 1:
-                    self.talk_state = 0
-                    self.next_talk_update = random.randint(50, 100)
-                else:
-                    self.talk_state = 2
-                    self.next_talk_update = random.randint(70, 160)
-            elif self.talk_state == 2:
-                # 10% chance to skip back to state 0
-                # 10% chance to go back to state 1
-                chance = random.randint(1, 10)
-                if chance == 1:
-                    self.talk_state = 0
-                    self.next_talk_update = random.randint(50, 100)
-                elif chance == 2:
-                    self.talk_state = 1
-                    self.next_talk_update = random.randint(30, 50)
-                else:
-                    self.talk_state = 3
-                    self.next_talk_update = random.randint(30, 50)
-            elif self.talk_state == 3:
-                self.talk_state = 0
-                self.next_talk_update = random.randint(50, 100)
+            self.talk_state, self.next_talk_update, self.reverse = \
+                update_talk(self.talk_state, self.portrait.mouth_frames, self.reverse)
         if not self.talk_on:
             self.talk_state = 0
+            self.reverse = False
 
     def create_image(self):
         main_image = self.main_portrait.copy()
         # For smile image
         if "OpenMouth" in self.expressions:
-            if "Smile" in self.expressions:
-                mouth_image = engine.subsurface(self.portrait.image, self.opensmile)
-            else:
-                mouth_image = engine.subsurface(self.portrait.image, self.openmouth)
-        elif "Smile" in self.expressions:
-            if self.talk_state == 0:
-                mouth_image = engine.subsurface(self.portrait.image, self.closesmile)
-            elif self.talk_state == 1 or self.talk_state == 3:
-                mouth_image = engine.subsurface(self.portrait.image, self.halfsmile)
-            elif self.talk_state == 2:
-                mouth_image = engine.subsurface(self.portrait.image, self.opensmile)
+            idx = self.portrait.mouth_frames-1
         else:
-            if self.talk_state == 0:
-                mouth_image = engine.subsurface(self.portrait.image, self.closemouth)
-            elif self.talk_state == 1 or self.talk_state == 3:
-                mouth_image = engine.subsurface(self.portrait.image, self.halfmouth)
-            elif self.talk_state == 2:
-                mouth_image = engine.subsurface(self.portrait.image, self.openmouth)
+            idx = self.talk_state
+            for expression in self.expressions:
+                if expression.startswith('MouthFrame'):
+                    # `expression` should be a str of format 'MouthFrameX' where X is a non-negative integer,
+                    #  so get X using string slice at 10th index `expression[10:]`
+                    idx = min(int(expression[10:]), self.portrait.mouth_frames-1)
+                    break
+        mouth_image = engine.subsurface(self.portrait.image,
+            self.portrait.get_mouth_frame(idx, smile="Smile" in self.expressions))
 
         # For blink image.
         blink_image: Optional[engine.Surface] = None
+        idx = None
         if "CloseEyes" in self.expressions:
-            blink_image = engine.subsurface(self.portrait.image, self.fullblink)
+            idx = self.portrait.blink_frames - 1
         elif "HalfCloseEyes" in self.expressions:
-            blink_image = engine.subsurface(self.portrait.image, self.halfblink)
+            idx = self.portrait.blink_frames // 2 - 1
         elif "OpenEyes" in self.expressions:
-            blink_image = None
+            idx = None
         else:
-            if self.blink_counter.count == 0:
-                blink_image = None
-            elif self.blink_counter.count == 1:
-                blink_image = engine.subsurface(self.portrait.image, self.halfblink)
-            elif self.blink_counter.count == 2:
-                blink_image = engine.subsurface(self.portrait.image, self.fullblink)
+            if self.blink_counter.count:
+                idx = self.blink_counter.count - 1
+            for expression in self.expressions:
+                if expression.startswith('BlinkFrame'):
+                    # `expression` should be a str of format 'BlinkFrameX' where X is a non-negative integer,
+                    #  so get X using string slice at 10th index `expression[10:]`
+                    idx = min(int(expression[10:]), self.portrait.blink_frames-1)
+                    break
+        if idx is not None:
+            blink_image = engine.subsurface(self.portrait.image, self.portrait.get_blink_frame(idx))
         
         # For wink image.
         wink_image: Optional[engine.Surface] = None
-        wink_offset = 0 # For right-winking purposes.
+        left_wink = None
         if "LeftWink" in self.expressions or "FarWink" in self.expressions:
-            wink_image = engine.subsurface(self.portrait.image, self.leftwink)
+            left_wink = True
         elif "RightWink" in self.expressions or "NearWink" in self.expressions:
-            wink_image = engine.subsurface(self.portrait.image, self.rightwink)
-            wink_offset = 16
+            left_wink = False
+        if left_wink is not None:
+            wink_image = engine.subsurface(self.portrait.image, self.portrait.get_wink(left_wink))
 
         # Piece together image
         if blink_image:
-            main_image.blit(blink_image, self.portrait.blinking_offset)
+            main_image.blit(blink_image, self.portrait.get_blink_coord())
             
         if wink_image:
-            main_image.blit(wink_image, [self.portrait.blinking_offset[0] + wink_offset, self.portrait.blinking_offset[1]])
+            main_image.blit(wink_image, self.portrait.get_wink_coord(left_wink))
             
-        main_image.blit(mouth_image, self.portrait.smiling_offset)
+        main_image.blit(mouth_image, self.portrait.get_mouth_coord())
         
         return main_image
 

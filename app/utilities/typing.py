@@ -4,6 +4,7 @@ Pos = Tuple[int, int]
 
 Point = Tuple[int, int]
 Segment = Tuple[Point, Point]
+Rect = Tuple[int, int, int, int]	# (left, top, width, height)
 
 NID = str
 UID = int

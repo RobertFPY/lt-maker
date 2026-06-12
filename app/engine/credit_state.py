@@ -2,6 +2,7 @@ from app.constants import WINHEIGHT, WINWIDTH, COLORKEY
 
 from app.data.database.database import DB
 from app.data.database.credit import CreditEntry, CreditCatalog
+from app.data.resources.portraits import INFO_PORTRAIT_WIDTH, INFO_PORTRAIT_HEIGHT
 from app.data.resources.resources import RESOURCES
 from app.data.resources.resource_types import ResourceType
 
@@ -315,9 +316,18 @@ class CreditDisplay():
             self.portrait = InfoMenuPortrait(portrait, DB.constants.value('info_menu_blink')) if portrait else None
 
         if self.portrait:
+            width, height = (self.width - 8, WINHEIGHT - 12)
             self.portrait.update()
             im = self.portrait.create_image()
-            surf.blit(im, utils.tuple_add((self.width - 8 - 96, WINHEIGHT - 12 - 80), self.topleft))
+            prefab = self.portrait.portrait
+            x_offset = utils.clamp(prefab.get_info_coord()[0] + (INFO_PORTRAIT_WIDTH - width) // 2,
+                                    0, prefab.face_size[0] - width)
+            y_offset = utils.clamp(prefab.get_info_coord()[1] + (INFO_PORTRAIT_HEIGHT - height) // 2,
+                                    0, prefab.face_size[1] - height)
+            im = engine.subsurface(im, (x_offset, y_offset, width, height)).convert_alpha()
+            im = image_mods.make_translucent(im, 0.5)
+            # Blit from bottom right
+            surf.blit(im, utils.tuple_sub(utils.tuple_add(self.topleft, (width, height)), im.get_size()))
 
         elif credit.credit_type == ResourceType.MAP_SPRITES:
             y_pos = 20

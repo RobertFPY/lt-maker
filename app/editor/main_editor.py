@@ -542,7 +542,7 @@ class MainEditor(QMainWindow):
         dialog.exec_()
 
     def edit_supports(self, parent=None):
-        dialog = support_pair_tab.get_full_editor()
+        dialog = support_pair_tab.get_full_editor(self)
         dialog.exec_()
 
     def edit_mcost(self, parent=None):
@@ -558,19 +558,19 @@ class MainEditor(QMainWindow):
         dialog.exec_()
 
     def edit_icons(self, parent=None):
-        dialog = icon_tab.get_full_editor()
+        dialog = icon_tab.get_full_editor(self)
         dialog.exec_()
 
     def edit_combat_animations(self, parent=None):
-        dialog = new_combat_animation_tab.get_full_editor()
+        dialog = new_combat_animation_tab.get_full_editor(self)
         dialog.exec_()
 
     def edit_tilemaps(self, parent=None):
-        dialog = tile_tab.get_full_editor()
+        dialog = tile_tab.get_full_editor(self)
         dialog.exec_()
 
     def edit_sounds(self, parent=None):
-        dialog = sound_tab.get_full_editor()
+        dialog = sound_tab.get_full_editor(self)
         dialog.exec_()
 
     def edit_preferences(self):

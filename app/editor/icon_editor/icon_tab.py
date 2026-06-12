@@ -234,9 +234,9 @@ def get(width, icon_nid=None):
     else:
         return None, False
 
-def get_full_editor():
+def get_full_editor(parent=None):
     return MultiResourceEditor((Icon16Database, Icon32Database, Icon80Database, MapIconDatabase),
-                               ('icons16', 'icons32', 'icons80', 'map_icons'))
+                               ('icons16', 'icons32', 'icons80', 'map_icons'), parent)
 
 # Testing
 # Run "python -m app.editor.icon_editor.icon_tab" from main directory

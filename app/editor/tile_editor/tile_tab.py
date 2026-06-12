@@ -182,9 +182,9 @@ def get_tilemaps() -> tuple:
     else:
         return None, False
 
-def get_full_editor() -> MultiResourceEditor:
+def get_full_editor(parent=None) -> MultiResourceEditor:
     editor = MultiResourceEditor((TileSetDatabase, TileMapDatabase),
-                                 ("tilesets", "tilemaps"))
+                                 ("tilesets", "tilemaps"), parent)
     editor.setWindowTitle("Tile Editor")
     return editor
 

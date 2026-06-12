@@ -131,9 +131,9 @@ class NewCombatEffectDatabase(NewEditorTab):
         else:
             return False
 
-def get_full_editor() -> NewMultiResourceEditor:
+def get_full_editor(parent=None) -> NewMultiResourceEditor:
     editor = NewMultiResourceEditor((NewCombatAnimDatabase, NewCombatEffectDatabase, NewPaletteDatabase),
-                                 ('combat_anims', 'combat_effects', 'combat_palettes'))
+                                 ('combat_anims', 'combat_effects', 'combat_palettes'), parent)
     editor.setWindowTitle("Combat Animation Editor")
     return editor
 

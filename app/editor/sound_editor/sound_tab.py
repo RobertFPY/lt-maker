@@ -147,9 +147,9 @@ def get_music():
     else:
         return None, False
 
-def get_full_editor():
+def get_full_editor(parent=None):
     return MultiResourceEditor((MusicDatabase, SFXDatabase),
-                               ("music", "sfx"))
+                               ("music", "sfx"), parent)
 
 # Testing
 # Run "python -m app.editor.sound_editor.sound_tab"

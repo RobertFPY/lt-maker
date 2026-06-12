@@ -848,7 +848,7 @@ class CantoWaitState(MapState):
         self.menu.set_color(['green' if option == 'Supply' else None for option in options])
 
     def begin(self):
-        self.cur_unit.sprite.change_state('selected')
+        self.cur_unit.sprite.change_state('chosen')
 
     def take_input(self, event):
         first_push = self.fluid.update()

@@ -764,6 +764,7 @@ class MoveState(MapState):
                         if game.cursor.position in witch_warp and game.cursor.position not in normal_moves:
                             cur_unit.current_move = action.Warp(cur_unit, game.cursor.position)
                         else:
+                            game.cursor.clamp_path_to_movement()
                             cur_unit.current_move = action.CantoMove(cur_unit, game.cursor.position)
                         game.state.change('canto_wait')
                     elif game.cursor.position in witch_warp and game.cursor.position not in normal_moves:
@@ -771,6 +772,7 @@ class MoveState(MapState):
                         cur_unit.current_move = action.Warp(cur_unit, game.cursor.position)
                         game.state.change('menu')
                     else:
+                        game.cursor.clamp_path_to_movement()
                         action.do(action.MarkActionGroupStart(cur_unit, 'free'))
                         cur_unit.current_move = action.Move(cur_unit, game.cursor.position)
                         game.state.change('menu')

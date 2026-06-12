@@ -209,6 +209,8 @@ class NewMapSpriteProperties(QWidget):
             self.draw_frame()
 
     def draw_frame(self):
+        if not self.current:
+            return
         if self.left_arrow.isChecked():
             num = timer.get_timer().move_sprite_counter.count
             frame = self.current.moving_pixmap.copy(num*48, 40, 48, 40)

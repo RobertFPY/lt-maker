@@ -170,8 +170,8 @@ class Dialog:
                     pos_x += 4
                 if pos_x == 0:
                     pos_x = 4
-            pos_y = (WINHEIGHT - self.height -
-                     event_portrait.EventPortrait.main_portrait_coords[3] - 4)
+            # Prevent speechbox from going out-of-frame due to portrait's absurd height
+            pos_y = max(WINHEIGHT - self.height - self.portrait.get_height() - 4, 4)
         else:
             pos_x = 4
             pos_y = WINHEIGHT - self.height - 4
@@ -979,7 +979,8 @@ class Ending:
         size = WINWIDTH, WINHEIGHT
         self.bg = engine.create_surface(size, transparent=True)
         self.bg.blit(self.background, (0, 0))
-        self.bg.blit(self.portrait, (136, 57))
+        self.bg.blit(self.portrait, (WINWIDTH - self.portrait.get_width() - 8,
+                                    WINHEIGHT - self.portrait.get_height() - 23))
 
         title_pos_x = 68 - text_width(self.font_name, self.title) // 2
         self.font.blit(self.title, self.bg, (title_pos_x, 24))
@@ -1081,8 +1082,9 @@ class PairedEnding(Ending):
         size = WINWIDTH, WINHEIGHT
         self.bg = engine.create_surface(size, transparent=True)
         self.bg.blit(self.background, (0, 0))
-        self.bg.blit(self.left_portrait, (8, 49))
-        self.bg.blit(self.right_portrait, (136, 49))
+        self.bg.blit(self.left_portrait, (8, WINHEIGHT - self.left_portrait.get_height() - 31))
+        self.bg.blit(self.right_portrait, (WINWIDTH - self.right_portrait.get_width() - 8,
+                                          WINHEIGHT - self.right_portrait.get_height() - 31))
 
         render_text(self.bg, [self.font_name], [self.left_title], [None], (68, 24),
                     align=HAlignment.CENTER)

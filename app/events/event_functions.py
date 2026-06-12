@@ -128,7 +128,7 @@ def add_portrait(self: Event, portrait, screen_position: Tuple | str, slide=None
         self.logger.error("add_portrait: Couldn't find portrait %s" % name)
         return False
 
-    position, mirror = parse_screen_position(screen_position)
+    position, mirror = parse_screen_position(screen_position, portrait_size=portrait_prefab.face_size)
 
     priority = self.priority_counter
     if 'low_priority' in flags:
@@ -228,7 +228,7 @@ def move_portrait(self: Event, portrait, screen_position: Tuple, speed_mult: flo
     if not event_portrait:
         return False
 
-    position, _ = parse_screen_position(screen_position)
+    position, _ = parse_screen_position(screen_position, portrait_size=event_portrait.get_size())
 
     if 'immediate' in flags or self.do_skip:
         event_portrait.quick_move(position)

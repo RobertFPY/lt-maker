@@ -100,6 +100,12 @@ class EventCatalog(Data[EventPrefab]):
         self.inspector = EventInspectorEngine(self)
 
     def get(self, trigger_nid, level_nid):
+        # A falsy trigger_nid - e.g. an event region created without a trigger name -
+        # must not match events that have no trigger set (event.trigger is None). Those
+        # events are call-only (triggered explicitly), so an empty region trigger would
+        # otherwise fire every triggerless event at once.
+        if not trigger_nid:
+            return []
         return [event for event in self._list if event.trigger == trigger_nid and
                 (not event.level_nid or event.level_nid == level_nid)]
 

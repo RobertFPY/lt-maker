@@ -51,7 +51,13 @@ def split(font_name, string, num_lines, max_width):
         lines.append([])
     new_line = False
     which_line = 0
+    angle_bracket_counter = 0
     for character in string:
+        if character == '<':
+            angle_bracket_counter += 1
+        elif character == '>':
+            angle_bracket_counter -= 1
+
         if new_line and character == ' ':
             which_line += 1
             new_line = False
@@ -62,7 +68,8 @@ def split(font_name, string, num_lines, max_width):
 
         if which_line >= len(lines):
             lines.append([])  # This shouldn't happen normally
-        lines[which_line].append(character)
+        if angle_bracket_counter == 0 and character != '>':
+            lines[which_line].append(character)
         length_so_far = text_width(font_name, ''.join(lines[which_line]))
         if num_lines > 1 and length_so_far >= total_length // num_lines - 5:
             new_line = True

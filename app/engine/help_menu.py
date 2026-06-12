@@ -2,12 +2,10 @@ from __future__ import annotations
 
 from typing import List, Optional, TYPE_CHECKING
 
-import app.engine.config as cf
 from app.constants import WINHEIGHT, WINWIDTH
 from app.data.database.database import DB
 from app.engine import (base_surf, engine, icons, item_funcs,
                         item_system, skill_system, text_funcs)
-from app.engine.fonts import FONT
 from app.engine.game_state import game
 from app.engine.graphics.text.text_renderer import (fix_tags, font_height, render_text,
                                                     text_width)
@@ -27,7 +25,7 @@ class HelpDialog():
     help_logo = SPRITES.get('help_logo')
     font: NID = 'convo'
 
-    def __init__(self, desc:str='', name:str=''):
+    def __init__(self, desc: str = '', name: str = ''):
         self.name = name
         self.last_time = self.start_time = 0
         self.transition_in = False
@@ -367,7 +365,7 @@ class ItemHelpDialog(HelpDialog):
         return surf
 
 class SkillHelpDialog(HelpDialog):
-    def __init__(self, skill: SkillObject, first:bool=True, unit_override:Optional[UnitObject]=None):
+    def __init__(self, skill: SkillObject, first: bool = True, unit_override: Optional[UnitObject] = None):
         # old behavior where the charge is just shown next to the name
         self.name = skill.name + self._get_charge_str(skill)
         self.last_time = self.start_time = 0

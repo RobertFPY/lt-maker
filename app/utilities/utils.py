@@ -191,6 +191,8 @@ def smart_farthest_away_pos(position: Point, valid_moves: Collection[Point], ene
         return None
     avg_x, avg_y = 0.0, 0.0
     for pos, mag in enemy_pos:
+        if mag == 0:  # Make sure we don't divide by zero below
+            continue
         avg_x += (position[0] - pos[0]) / mag
         avg_y += (position[1] - pos[1]) / mag
     avg_x /= len(enemy_pos)

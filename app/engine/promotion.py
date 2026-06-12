@@ -31,6 +31,9 @@ class PromotionChoiceState(State):
         game.memory['current_unit'] = self.unit
         game.memory['next_class'] = next_class
         game.memory['next_state'] = 'promotion'
+        # The turn was deliberately left unfinalized so the choice could be
+        # cancelled; now that we're committing, finalize it after the promotion.
+        game.memory['_promo_finalize_turn'] = True
         game.state.change('transition_to_with_pop')
 
     def start(self):
@@ -230,6 +233,7 @@ class ClassChangeChoiceState(PromotionChoiceState):
         game.memory['current_unit'] = self.unit
         game.memory['next_class'] = next_class
         game.memory['next_state'] = 'class_change'
+        game.memory['_promo_finalize_turn'] = True
         game.state.change('transition_to_with_pop')
 
 class PromotionState(State, MockCombat):
@@ -244,6 +248,11 @@ class PromotionState(State, MockCombat):
 
     def start(self):
         self.create_background()
+
+        # Whether to finalize the unit's turn when the promotion finishes. Set
+        # when confirming a cancellable promotion choice, where the turn was
+        # left unfinalized up front so it could be backed out of.
+        self.finalize_turn = game.memory.pop('_promo_finalize_turn', False)
 
         music = 'music_%s' % self.name
         self.promotion_song = None
@@ -325,7 +334,14 @@ class PromotionState(State, MockCombat):
 
         elif self.state == 'leave':
             if current_time > utils.frames2ms(10):
-                game.state.change('transition_pop')
+                if self.finalize_turn:
+                    # Cancellable promotion was confirmed: the turn was not
+                    # finalized earlier, so end it cleanly now.
+                    game.state.clear()
+                    game.state.change('free')
+                    self.unit.wait()
+                else:
+                    game.state.change('transition_pop')
                 self.state = 'done'
                 if self.promotion_song:
                     get_sound_thread().fade_back()

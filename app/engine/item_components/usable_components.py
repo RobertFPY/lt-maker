@@ -65,10 +65,16 @@ class Uses(ItemComponent):
 
     def reverse_use(self, unit, item):
         if self.is_broken(unit, item):
+            # on_broken removed the item with a persisting RemoveItem. This
+            # give-back is its deliberate inverse, so it must persist through a
+            # menu cancel too -- otherwise backing out of the menu reverses the
+            # give-back but not the removal, and the item is lost.
             if item_funcs.inventory_full(unit, item):
-                action.do(action.PutItemInConvoy(item))
+                give_back = action.PutItemInConvoy(item)
             else:
-                action.do(action.GiveItem(unit, item))
+                give_back = action.GiveItem(unit, item)
+            give_back.persist_through_menu_cancel = True
+            action.do(give_back)
         action.do(action.SetObjData(item, 'uses', item.data['uses'] + 1))
         action.do(action.ReverseRecords('item_use', (unit.nid, item.nid)))
 

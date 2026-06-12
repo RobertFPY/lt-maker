@@ -6,6 +6,7 @@ from typing import List, Optional, Tuple, TYPE_CHECKING
 
 from app.constants import WINHEIGHT, WINWIDTH
 from app.data.database.database import DB
+from app.data.resources.portraits import INFO_PORTRAIT_WIDTH, INFO_PORTRAIT_HEIGHT
 from app.data.resources.resources import RESOURCES
 from app.engine import (background, combat_calcs, engine, equations, gui,
                         help_menu, icons, image_mods, item_funcs, item_system,
@@ -430,12 +431,12 @@ class InfoMenuState(State):
         if self.current_portrait:
             self.current_portrait.update()
             im = self.current_portrait.create_image()
-            offset = self.current_portrait.portrait.info_offset
+            offset = self.current_portrait.portrait.get_info_coord()
         # Draw portrait onto the portrait surf
         if im:
-            x_pos = (im.get_width() - 80)//2
-            im_surf = engine.subsurface(im, (x_pos, offset, 80, 72))
-            portrait_surf.blit(im_surf, (8, 8))
+            im_surf = engine.subsurface(im, (*offset, INFO_PORTRAIT_WIDTH, INFO_PORTRAIT_HEIGHT))
+            portrait_surf.blit(im_surf, (8 + (INFO_PORTRAIT_WIDTH - im_surf.get_width()) // 2,
+                                         8 + (INFO_PORTRAIT_HEIGHT- im_surf.get_height())// 2))
 
         # Stick it on the surface
         if self.transparency:

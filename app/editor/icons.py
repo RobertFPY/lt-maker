@@ -114,18 +114,16 @@ class ItemIcon80(ItemIcon16):
 
 class UnitPortrait(QPushButton):
     sourceChanged = pyqtSignal(str)
-    width, height = 96, 80
     database = RESOURCES.portraits
 
     def __init__(self, parent):
         super().__init__(parent)
         self.window = parent
         self._nid = None
+        self.width, self.height = (96, 80)
 
         self.setMinimumHeight(self.height)
-        self.setMaximumHeight(self.height)
         self.setMinimumWidth(self.width)
-        self.setMaximumWidth(self.width)
         self.resize(self.width, self.height)
         self.setStyleSheet("QPushButton {qproperty-iconSize: %dpx %dpx;}" % (self.width, self.height))
         self.pressed.connect(self.onIconSourcePicker)
@@ -138,10 +136,13 @@ class UnitPortrait(QPushButton):
                 return
             if not res.pixmap:
                 res.pixmap = QPixmap(res.full_path)
-            pixmap = res.pixmap.copy(0, 0, self.width, self.height)
+            pixmap = res.pixmap.copy(*res.get_face_frame())
+            self.width, self.height = res.face_size
             pic = QPixmap.fromImage(editor_utilities.convert_colorkey(pixmap.toImage()))
             pic = QIcon(pic)
             self.setIcon(pic)
+            self.resize(self.width, self.height)
+            self.setStyleSheet("QPushButton {qproperty-iconSize: %dpx %dpx;}" % (self.width, self.height))
         else:
             self.setIcon(QIcon())
 

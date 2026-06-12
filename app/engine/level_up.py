@@ -628,13 +628,13 @@ class LevelUpScreen():
             width = FONT['text-blue'].width(str(text))
             FONT['text-blue'].blit(str(text), sprite, (pos[0] + 40 - width, pos[1]))
 
-        pos = (6 - self.screen_scroll_offset, WINHEIGHT - 8 - self.height)
-        surf.blit(sprite, pos)
-
         # Blit unit's pic
         right = WINWIDTH - 4
         bottom = WINHEIGHT + self.unit_scroll_offset
         icons.draw_portrait(surf, self.unit, bottomright=(right, bottom))
+
+        pos = (6 - self.screen_scroll_offset, WINHEIGHT - 8 - self.height)
+        surf.blit(sprite, pos)
 
         # Update and draw animations
         self.animations = [a for a in self.animations if not a.update()]

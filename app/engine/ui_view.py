@@ -1062,11 +1062,14 @@ class ItemDescriptionPanel():
             cursor_left = True
             topleft = (8, WINHEIGHT - 8 - self.surf.get_height())
 
-        portrait, _ = icons.get_portrait(self.unit)
+        width = 96
+        height = topleft[1] + 4
+        portrait = icons.get_portrait_with_size(self.unit, width, height)
         if portrait:
             if cursor_left:
                 portrait = engine.flip_horiz(portrait)
-            surf.blit(portrait, (topleft[0] + 2, topleft[1] - 76))
+            surf.blit(portrait, (topleft[0] + 2 + (width - portrait.get_width()) // 2,
+                                 height - portrait.get_height()))
         copy_surf = self.surf.copy()
         self._draw_item_delta_info(copy_surf)
         surf.blit(copy_surf, topleft)

@@ -107,7 +107,7 @@ def engage(attacker: UnitObject, positions: list, main_item: ItemObject, skip: b
 def start_combat(unit: UnitObject, target: tuple, item: ItemObject, skip: bool = False,
                  ai_combat: bool = False, event_combat: bool = False, script: list = None,
                  total_rounds: int = 1, arena: bool = False, force_animation: bool = False, 
-                 force_no_animation: bool = False):
+                 force_no_animation: bool = False, no_exp: bool = False, no_wexp: bool = False):
     """
     Target is a position tuple
     """
@@ -137,4 +137,6 @@ def start_combat(unit: UnitObject, target: tuple, item: ItemObject, skip: bool =
     combat.ai_combat = ai_combat  # Must mark this so we can come back!
     combat.event_combat = event_combat  # Must mark this so we can come back!
     combat.arena_combat = arena
+    combat.no_exp = no_exp  # Suppress exp gain for this combat
+    combat.no_wexp = no_wexp  # Suppress weapon exp gain for this combat
     game.combat_instance.append(combat)

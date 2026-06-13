@@ -480,6 +480,8 @@ class SimpleCombat():
             item_system.on_unusable(self.defender.strike_partner, self.defense_partner_weapon)
 
     def handle_wexp(self, unit, item, target):
+        if getattr(self, 'no_wexp', False):
+            return
         marks = self.get_from_full_playback('mark_hit')
         marks += self.get_from_full_playback('mark_crit')
         if DB.constants.value('miss_wexp'):
@@ -537,6 +539,8 @@ class SimpleCombat():
 
     def handle_exp(self, combat_object=None):
         # handle exp
+        if getattr(self, 'no_exp', False):
+            return
         if self.attacker.team == 'player' and not self.attacker.is_dying:
             exp = self.calculate_exp(self.attacker, self.main_item)
             exp = int(utils.clamp(exp, -100, 100))

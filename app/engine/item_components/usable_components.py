@@ -8,6 +8,13 @@ from app.engine.game_menus.icon_options import UsesDisplayConfig
 
 import logging
 
+def _suppress_weapon_use() -> bool:
+    """True if the current combat was started with the no_weapon_use flag."""
+    from app.engine.game_state import game
+    if game.combat_instance:
+        return getattr(game.combat_instance[-1], 'no_weapon_use', False)
+    return False
+
 class Uses(ItemComponent):
     nid = 'uses'
     desc = "Number of uses of item"
@@ -30,6 +37,8 @@ class Uses(ItemComponent):
         return item.data['uses'] <= 0
 
     def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
+        if _suppress_weapon_use():
+            return
         if item.uses_options.one_loss_per_combat():
             self._did_something = True
         else:
@@ -37,6 +46,8 @@ class Uses(ItemComponent):
             actions.append(action.UpdateRecords('item_use', (unit.nid, item.nid)))
 
     def on_miss(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
+        if _suppress_weapon_use():
+            return
         if item.uses_options.lose_uses_on_miss():
             if item.uses_options.one_loss_per_combat():
                 self._did_something = True
@@ -58,7 +69,7 @@ class Uses(ItemComponent):
                     action.do(action.RemoveItem(other_unit, item))
 
     def end_combat(self, playback, unit, item, target, item2, mode):
-        if self._did_something and 'uses' in item.data:
+        if self._did_something and 'uses' in item.data and not _suppress_weapon_use():
             action.do(action.SetObjData(item, 'uses', item.data['uses'] - 1))
             action.do(action.UpdateRecords('item_use', (unit.nid, item.nid)))
         self._did_something = False
@@ -97,6 +108,8 @@ class ChapterUses(ItemComponent):
         return item.data['c_uses'] <= 0
 
     def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
+        if _suppress_weapon_use():
+            return
         if item.uses_options.one_loss_per_combat():
             self._did_something = True
         else:
@@ -104,6 +117,8 @@ class ChapterUses(ItemComponent):
             actions.append(action.UpdateRecords('item_use', (unit.nid, item.nid)))
 
     def on_miss(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
+        if _suppress_weapon_use():
+            return
         if item.uses_options.lose_uses_on_miss():
             if item.uses_options.one_loss_per_combat():
                 self._did_something = True
@@ -118,7 +133,7 @@ class ChapterUses(ItemComponent):
             action.do(action.UnequipItem(unit, item))
 
     def end_combat(self, playback, unit, item, target, item2, mode):
-        if self._did_something and 'c_uses' in item.data:
+        if self._did_something and 'c_uses' in item.data and not _suppress_weapon_use():
             action.do(action.SetObjData(item, 'c_uses', item.data['c_uses'] - 1))
             action.do(action.UpdateRecords('item_use', (unit.nid, item.nid)))
         self._did_something = False

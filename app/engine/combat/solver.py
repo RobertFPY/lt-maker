@@ -385,6 +385,11 @@ class CombatPhaseSolver():
 
     def setup_next_state(self):
         # Does actually change the state
+        if self.state is None:
+            # Solver is already terminal (e.g. a combat script ended with 'end').
+            # The battle animation may still emit a trailing hit/miss frame that
+            # calls back into here; ignore it instead of crashing.
+            return
         next_state = self.state.get_next_state(self)
         logging.debug("Next State: %s" % next_state)
         if next_state == 'done':

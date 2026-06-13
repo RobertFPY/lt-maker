@@ -20,6 +20,9 @@ class Terrain(namedtuple("Terrain", "value outdoor"), Enum):
     MOUNTAIN = 'Mountain', True
     RIVER = 'River', True
     SEA = 'Sea', True
+    DESERT = 'Desert', True
+    DESERT_CLIFF = 'Desert Cliff', True
+    DESERT_ROCK = 'Desert Rock', True
     BRIDGEH = 'Bridge H', True
     BRIDGEV = 'Bridge V', True
     HOUSE = 'House', True
@@ -77,7 +80,7 @@ class Terrain(namedtuple("Terrain", "value outdoor"), Enum):
 
     @staticmethod
     def sand_like(terrain: "Terrain") -> bool:
-        return terrain in (Terrain.ROAD, Terrain.SAND)
+        return terrain in (Terrain.ROAD, Terrain.SAND, Terrain.DESERT)
 
     @staticmethod
     def get_all_floor() -> List[Terrain]:

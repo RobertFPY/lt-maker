@@ -1,6 +1,6 @@
 from __future__ import annotations
 from enum import Enum
-from typing import Tuple, Callable
+from typing import Optional, Tuple, Callable
 
 class Direction(str, Enum):
     CENTER = 'center'
@@ -36,7 +36,7 @@ class Direction(str, Enum):
             if y > 0:
                 return Direction.DOWN
             elif y == 0:
-                return Direction.NONE
+                return Direction.CENTER
             elif y < 0:
                 return Direction.UP
         elif x < 0:
@@ -46,6 +46,7 @@ class Direction(str, Enum):
                 return Direction.LEFT
             elif y < 0:
                 return Direction.UP_LEFT
+        return Direction.CENTER
 
     @staticmethod
     def which_vertical_dir(direction: Direction) -> int:
@@ -74,7 +75,7 @@ class Direction(str, Enum):
             return 0
 
     @staticmethod
-    def next(direction, pos: Tuple[int, int]) -> Tuple[int, int]:
+    def next(direction: Direction, pos: Tuple[int, int]) -> Tuple[int, int]:
         """
         Returns the next position in the given direction
         """
@@ -89,7 +90,7 @@ class Direction(str, Enum):
         return pos
 
     @staticmethod
-    def opposite(direction: Direction) -> Direction:
+    def opposite(direction: Direction) -> Optional[Direction]:
         if direction == Direction.NORTH:
             return Direction.SOUTH
         elif direction == Direction.SOUTH:
@@ -135,7 +136,7 @@ class Direction(str, Enum):
                 return Direction.CENTER
 
     @staticmethod
-    def sorting_key(direction, size: Tuple[int, int]) -> Callable[Tuple[int, int]]:
+    def sorting_key(direction: Direction, size: Tuple[int, int]) -> Callable[[Tuple[int, int]], float]:
         width, height = size
         if direction == Direction.CENTER:
             return lambda x: abs(x[0] - width/2.) + abs(x[1] - height/2.)
@@ -158,15 +159,15 @@ class Direction(str, Enum):
         else:
             raise ValueError("%s is not a valid Direction" % direction)
 
-def get_cardinal_positions(pos: tuple) -> tuple:
+def get_cardinal_positions(pos: Tuple[int, int]) -> Tuple[Tuple[int, int], ...]:
     return (
-        (pos[0], pos[1] - 1), # North
-        (pos[0] + 1, pos[1]), # East
-        (pos[0], pos[1] + 1), # South
-        (pos[0] - 1, pos[1]), # West
+        (pos[0], pos[1] - 1),  # North
+        (pos[0] + 1, pos[1]),  # East
+        (pos[0], pos[1] + 1),  # South
+        (pos[0] - 1, pos[1]),  # West
     )
 
-def get_diagonal_positions(pos: tuple) -> tuple:
+def get_diagonal_positions(pos: Tuple[int, int]) -> Tuple[Tuple[int, int], ...]:
     return (
         (pos[0] + 1, pos[1] - 1),  # Northeast
         (pos[0] + 1, pos[1] + 1),  # Southeast

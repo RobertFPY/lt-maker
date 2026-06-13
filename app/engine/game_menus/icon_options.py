@@ -141,24 +141,19 @@ class ItemOptionUtils():
         # Set Current Uses
         curr_uses_string = custom_uses.get_uses()
         max_uses_string = custom_uses.get_max()
-        curr_uses_string_loc_x = 25 if curr_uses_string is not None else 5
-
-        # Check Custom Color
-        uses_color = custom_uses.get_color() or uses_color
+        curr_uses_string_loc_x = 25 if max_uses_string is not None else 5
 
         # Set String A
         curr_uses_string_loc = anchor_align(
             x, width, HAlignment.RIGHT, (0, curr_uses_string_loc_x)), y
-        render_text(surf, [uses_font], [curr_uses_string], [
-                    uses_color], curr_uses_string_loc, HAlignment.RIGHT)
+        render_text(surf, [uses_font], [curr_uses_string], [uses_color], curr_uses_string_loc, HAlignment.RIGHT)
 
         # Set String B if Not None
         if max_uses_string is not None:
             max_uses_string_loc = anchor_align(x, width, HAlignment.RIGHT, (0, 0)), y
             slash_loc = anchor_align(x, width, HAlignment.RIGHT, (0, 16)), y
             render_text(surf, [uses_font], [custom_uses.delim], [], slash_loc, HAlignment.RIGHT)
-            render_text(surf, [uses_font], [curr_uses_string], [
-                        uses_color], max_uses_string_loc, HAlignment.RIGHT)
+            render_text(surf, [uses_font], [max_uses_string], [uses_color], max_uses_string_loc, HAlignment.RIGHT)
 
 
 class BasicItemOption(BaseOption[Optional[ItemObject]]):
@@ -174,8 +169,8 @@ class BasicItemOption(BaseOption[Optional[ItemObject]]):
         self._font = font
         self._mode = mode
 
-        self._custom_uses = UsesDisplayConfig.from_item(self._value)
-        if self._custom_uses:
+        self._uses_config = UsesDisplayConfig.from_item(self._value)
+        if self._uses_config and self._uses_config.get_uses() is not None:
             self._mode = ItemOptionModes.CUSTOM
 
     @classmethod
@@ -222,21 +217,25 @@ class BasicItemOption(BaseOption[Optional[ItemObject]]):
             return 'grey', 'grey'
         owner = game.get_unit(self._value.owner_nid)
         main_color = 'grey'
-        uses_color = 'grey'
+        custom_color = self._uses_config.get_color() if self._uses_config else None
+        uses_color = custom_color or 'grey'
         if self.get_ignore():
             pass
         elif self._color:
             main_color = self._color
-            if owner and not item_funcs.available(owner, self._value):
-                pass
-            else:
-                uses_color = 'blue'
+            if not custom_color:
+                if owner and not item_funcs.available(owner, self._value):
+                    pass
+                else:
+                    uses_color = 'blue'
         elif self._value.droppable:
             main_color = 'green'
-            uses_color = 'green'
+            if not custom_color:
+                uses_color = 'green'
         elif not owner or item_funcs.available(owner, self._value):
             main_color = 'white'
-            uses_color = 'blue'
+            if not custom_color:
+                uses_color = 'blue'
         return main_color, uses_color
 
     def get_help_box(self):
@@ -257,7 +256,7 @@ class BasicItemOption(BaseOption[Optional[ItemObject]]):
             blit_loc = anchor_align(x, self.width(), self._align, (5, 5)), y
             render_text(surf, [self._font], [self._disp_value], [main_color], blit_loc, self._align)
         elif self._mode == ItemOptionModes.CUSTOM:
-            ItemOptionUtils.draw_with_custom_uses(surf, x, y, self._value, self._custom_uses, self._font,
+            ItemOptionUtils.draw_with_custom_uses(surf, x, y, self._value, self._uses_config, self._font,
                                            main_color, uses_color, self.width(), self._align, self._disp_value)
         elif self._mode == ItemOptionModes.NO_USES:
             ItemOptionUtils.draw_without_uses(

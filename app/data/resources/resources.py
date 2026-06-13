@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-import pprint
 import re
 import shutil
 import os
@@ -202,7 +201,7 @@ class Resources():
                     # divide save data into chunks based on key value
                     if not os.path.exists(actual_save_dir):
                         os.makedirs(actual_save_dir)
-                    if key in self.save_as_chunks and main_settings.get_should_save_as_chunks():
+                    if key in self.save_as_chunks and main_settings.get_save_chunks_preference():
                         orderkeys: List[str] = []
                         for idx, subvalue in enumerate(value):
                             # ordering

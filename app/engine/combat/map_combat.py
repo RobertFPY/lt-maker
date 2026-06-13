@@ -54,7 +54,6 @@ class MapCombat(SimpleCombat):
     def update(self) -> bool:
         current_time = engine.get_time() - self.last_update
         current_state = self.state
-
         # Only for the very first phase
         if self.state == 'init':
             game.highlight.remove_highlights()
@@ -70,8 +69,10 @@ class MapCombat(SimpleCombat):
         elif self.state == 'begin_phase':
             # Get playback
             if not self.state_machine.get_state():
-                self.clean_up()
-                return True
+                self.clean_up0()
+                self.set_state('exp_wait')
+                return False
+
             self.actions, self.playback = self.state_machine.do()
             self.full_playback += self.playback
             if not self.actions and not self.playback:
@@ -255,6 +256,15 @@ class MapCombat(SimpleCombat):
                 self._end_phase()
                 self.state_machine.setup_next_state()
                 self.set_state('begin_phase')
+                
+        elif self.state == 'exp_wait':
+            self.health_bars.clear()
+            self.clean_up1()
+            self.set_state('post_combat')
+            
+        elif self.state == 'post_combat':
+            self.clean_up2()
+            return True
 
         if self.state != current_state:
             self.last_update = engine.get_time()

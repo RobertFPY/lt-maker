@@ -186,8 +186,8 @@ class MapView():
             if not region.hide_time and region.time_left is not None and region.position:
                 text = str(region.time_left)
                 w = font.width(text)
-                pos = (region.center[0] * TILEWIDTH - cull_rect[0], region.center[1] * TILEHEIGHT - cull_rect[1])
-                pos = (pos[0] + TILEWIDTH//2 - w//2, pos[1] - TILEHEIGHT//2 - 1 + 2 * math.sin(current_time//500))
+                pos = (region.draw_center()[0] * TILEWIDTH - cull_rect[0], region.draw_center()[1] * TILEHEIGHT - cull_rect[1])
+                pos = (pos[0] - w//2 - 1, pos[1] - 12 + 2 * math.sin(current_time//500))
                 font.blit(text, surf, pos)
 
     def draw_grid(self, surf, cull_rect):

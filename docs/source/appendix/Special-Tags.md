@@ -32,3 +32,5 @@ Both units and classes can be assigned tags. A unit in game has it's own tags as
 **AdjConvoy** - Allows allies adjacent to the unit/class to access the convoy during their turn.
 
 **Tile** - Denotes a unit should behave as a destructible tile. Unit cannot be selected, and will not show up in the Info Menu. Unit will also not be contained in most lists of units throughout the engine.
+
+**Protect** - Unit will have the protect icon on their sprite.

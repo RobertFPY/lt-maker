@@ -38,17 +38,39 @@ def set_title(text):
 
 def build_display(size):
     try:
-        return pygame.display.set_mode(size, pygame.FULLSCREEN if cf.SETTINGS['fullscreen'] else 0)
+        if cf.SETTINGS['fullscreen']:
+            return pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+        else:
+            return pygame.display.set_mode(size, pygame.RESIZABLE)
     except pygame.error as e:
         logging.exception(e)
-        logging.error("Your screen is probably too small to activate fullscreen with this resolution. Close the engine and editor. Go to your saves/config.ini file and change the screensize variable to 1. Then try again.")
-        return pygame.display.set_mode(size)
-
+        logging.error(
+            "Display creation failed. Falling back to windowed resizable mode."
+        )
+        return pygame.display.set_mode(size, pygame.RESIZABLE)
+    
 def get_screen_size():
     return pygame.display.get_surface().get_size()
 
 def push_display(surf, size, new_surf):
-    pygame.transform.scale(surf, size, new_surf)
+    win_w, win_h = size
+    base_w, base_h = surf.get_size()
+
+    # Calculate current aspect ratio
+    scale = min(win_w / base_w, win_h / base_h)
+
+    # Calculate new size with scale factor
+    new_w = int(base_w * scale)
+    new_h = int(base_h * scale)
+
+    scaled_surf = pygame.transform.scale(surf, (new_w, new_h))
+
+    # Center view
+    x = (win_w - new_w) // 2
+    y = (win_h - new_h) // 2
+
+    # Render scaled surface
+    new_surf.blit(scaled_surf, (x, y))
 
 def update_display():
     pygame.display.update()

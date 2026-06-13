@@ -348,6 +348,11 @@ def _handle_info():
         game.memory['next_state'] = 'info_menu'
         game.memory['current_unit'] = game.cursor.get_hover()
         game.state.change('transition_to')
+    elif region := game.cursor.get_previewable_region():
+        get_sound_thread().play_sfx('Select 1')
+        did_trigger = game.events.trigger(triggers.Preview(game.cursor.position, region))
+        if did_trigger and region.only_once:
+            action.do(action.RemoveRegion(region))
     else:
         get_sound_thread().play_sfx('Select 3')
         game.boundary.toggle_all_enemy_attacks()
@@ -383,7 +388,7 @@ class PrepFormationState(MapState):
                 elif cur_unit.traveler and game.check_for_region(game.cursor.position, 'formation'):
                     get_sound_thread().play_sfx('Select 1')
                     game.memory['formation_unit'] = game.get_unit(cur_unit.traveler)
-                    game.memory['child_menu'] = menus.Choice(cur_unit, ['Separate', 'Switch'])
+                    game.memory['child_menu'] = menus.Choice(cur_unit, ['Continue', 'Switch'])
                     game.state.change('prep_formation_menu')
                 else:
                     get_sound_thread().play_sfx('Select 2')
@@ -393,6 +398,11 @@ class PrepFormationState(MapState):
                         game.boundary.toggle_unit(cur_unit)
                     else:
                         get_sound_thread().play_sfx('Error')
+            elif region := game.cursor.get_previewable_region():
+                get_sound_thread().play_sfx('Select 1')
+                did_trigger = game.events.trigger(triggers.Preview(game.cursor.position, region))
+                if did_trigger and region.only_once:
+                    action.do(action.RemoveRegion(region))
 
         elif event == 'BACK':
             get_sound_thread().play_sfx('Select 1')
@@ -401,11 +411,14 @@ class PrepFormationState(MapState):
             game.state.back()
 
         elif event == 'START':
-            get_sound_thread().play_sfx('Select 5')
             if DB.constants.value('initiative'):
+                get_sound_thread().play_sfx('Select 5')
                 game.initiative.toggle_draw()
-            else:
+            elif DB.constants.value('minimap') and game.game_vars.get('_minimap', True):
+                get_sound_thread().play_sfx('Select 5')
                 game.state.change('minimap')
+            else:
+                get_sound_thread().play_sfx('Error')
 
     def update(self):
         super().update()
@@ -442,24 +455,6 @@ class PrepFormationSelectState(MapState):
     def take_input(self, event):
         game.cursor.take_input()
 
-        def swap_duo_unit(hovered_unit):
-            # Hovered unit nevers moves, just the traveler
-            traveler = game.get_unit(hovered_unit.traveler)
-            # If the originally selected unit was on the map
-            if self.unit.position:
-                old_unit_position = self.unit.position
-                action.do(action.Separate(hovered_unit, traveler, None, False))
-                action.do(action.PairUp(self.unit, hovered_unit))
-                action.do(action.ArriveOnMap(traveler, old_unit_position))
-            # The moving unit was a traveler
-            else:
-                carrier = game.get_rescuer(self.unit)
-                action.do(action.Separate(hovered_unit, traveler, None, False))
-                action.do(action.Separate(carrier, self.unit, None, False))
-                action.do(action.PairUp(self.unit, hovered_unit))
-                action.do(action.PairUp(traveler, carrier))
-            self.back()
-
         if event == 'SELECT':
             hovered_unit = game.cursor.get_hover()
             pair_up_valid = DB.constants.value('pairup') and not DB.constants.value('attack_stance_only')
@@ -468,12 +463,14 @@ class PrepFormationSelectState(MapState):
                 get_sound_thread().play_sfx('FormationSelect')
                 # If hovered unit is not a player or is the current_unit
                 # Error
-                if hovered_unit and (hovered_unit.team != 'player' or hovered_unit is self.unit):
+                if hovered_unit and (hovered_unit.team != 'player' or hovered_unit is self.unit or \
+                                        hovered_unit is game.get_rescuer(self.unit)):
                     get_sound_thread().play_sfx('Error')
                 # Else if duo unit
                 # Swap us
                 elif hovered_unit and hovered_unit.traveler:
-                    swap_duo_unit(hovered_unit)
+                    game.memory['child_menu'] = menus.Choice(self.unit, ['Switch', 'Swap'])
+                    game.state.change('prep_formation_menu')
                 # Else if solo unit and can pair-up
                 # Give option between pair up and swap
                 elif hovered_unit and pair_up_valid:
@@ -505,10 +502,11 @@ class PrepFormationSelectState(MapState):
                 else:
                     if self.unit.position:
                         action.do(action.LeaveMap(self.unit))
+                        action.do(action.ArriveOnMap(self.unit, game.cursor.position))
+                        self.back()
                     else:
-                        action.do(action.Separate(game.get_rescuer(self.unit), self.unit, None, False))
-                    action.do(action.ArriveOnMap(self.unit, game.cursor.position))
-                    self.back()
+                        game.memory['child_menu'] = menus.Choice(self.unit, ['Separate', 'Swap'])
+                        game.state.change('prep_formation_menu')
             else:
                 get_sound_thread().play_sfx('Error')
 
@@ -562,6 +560,23 @@ class PrepFormationMenuState(MapState):
         self.fluid.reset_on_change_state()
 
     def take_input(self, event):
+        def swap_duo_unit(hovered_unit):
+            # Hovered unit nevers moves, just the traveler
+            traveler = game.get_unit(hovered_unit.traveler)
+            # If the originally selected unit was on the map
+            if self.unit.position:
+                old_unit_position = self.unit.position
+                action.do(action.Separate(hovered_unit, traveler, None, False))
+                action.do(action.PairUp(self.unit, hovered_unit))
+                action.do(action.ArriveOnMap(traveler, old_unit_position))
+            # The moving unit was a traveler
+            else:
+                carrier = game.get_rescuer(self.unit)
+                action.do(action.Separate(hovered_unit, traveler, None, False))
+                action.do(action.Separate(carrier, self.unit, None, False))
+                action.do(action.PairUp(self.unit, hovered_unit))
+                action.do(action.PairUp(traveler, carrier))
+
         first_push = self.fluid.update()
         directions = self.fluid.get_directions()
 
@@ -596,31 +611,49 @@ class PrepFormationMenuState(MapState):
                 game.state.back()
 
             elif selection == 'Swap':
-                # Guaranteed that hovered unit exists and is on a formation and is by itself
+                # NOT guaranteed that hovered unit exists
                 if self.unit.position:
                     # Unit was a solo unit
                     unit_to_move = self.unit
                 else:
                     # Unit was a duo unit
                     unit_to_move = game.get_rescuer(self.unit)
-                old_unit_position = unit_to_move.position
-                old_hovered_unit_position = hovered_unit.position
-                action.do(action.LeaveMap(unit_to_move))
-                action.do(action.LeaveMap(hovered_unit))
-                action.do(action.ArriveOnMap(unit_to_move, old_hovered_unit_position))
-                action.do(action.ArriveOnMap(hovered_unit, old_unit_position))
+                if hovered_unit:
+                    old_unit_position = unit_to_move.position
+                    old_hovered_unit_position = hovered_unit.position
+                    action.do(action.LeaveMap(unit_to_move))
+                    action.do(action.LeaveMap(hovered_unit))
+                    action.do(action.ArriveOnMap(unit_to_move, old_hovered_unit_position))
+                    action.do(action.ArriveOnMap(hovered_unit, old_unit_position))
+                else:
+                    action.do(action.LeaveMap(unit_to_move))
+                    action.do(action.ArriveOnMap(unit_to_move, game.cursor.position))
                 game.state.back()
                 game.state.back()
 
             elif selection == 'Separate':
+                # guaranteed that we are hovering over an empty formation tile
+                action.do(action.Separate(game.get_rescuer(self.unit), self.unit, None, False))
+                action.do(action.ArriveOnMap(self.unit, game.cursor.position))
+                game.state.back()
+                game.state.back()
+
+            elif selection == 'Continue':
                 # guaranteed that we are hovering over a duo unit on a formation
                 game.state.back()
                 game.state.change('prep_formation_select')
 
             elif selection == 'Switch':
                 # guaranteed that we are hovering over a duo unit on a formation
-                action.do(action.SwitchPaired(game.get_rescuer(self.unit), self.unit))
-                game.state.back()
+                if hovered_unit.traveler is self.unit.nid:
+                    # currently at [Continue, Switch] option menu after select a duo unit
+                    action.do(action.SwitchPaired(game.get_rescuer(self.unit), self.unit))
+                    game.state.back()
+                else:
+                    # currently at [Switch, Swap] option menu after hover over a duo unit
+                    swap_duo_unit(hovered_unit)
+                    game.state.back()
+                    game.state.back()
 
     def update(self):
         super().update()
@@ -874,6 +907,9 @@ class PrepManageSelectState(State):
                 tradeable_items = item_funcs.get_all_tradeable_items(self.unit)
                 for item in tradeable_items:
                     convoy_funcs.store_item(item, self.unit)
+                # Could have given away an item that would let us Restock/Repair/Use etc.
+                # Recheck what should be ignored
+                self.select_menu.set_ignore(self.get_ignore())
             elif choice == 'Items':
                 if self.name.startswith('base'):
                     game.memory['next_state'] = 'base_items'

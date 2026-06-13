@@ -43,7 +43,7 @@
         "growth_bonus": {
             "HP": 0,
             "STR": 0,
-            "MAG": 35,
+            "MAG": 0,
             "SKL": 0,
             "SPD": 0,
             "LCK": 0,

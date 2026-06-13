@@ -310,13 +310,17 @@ class OnTurnwheel(EventTrigger):
 class OnTitleScreen(EventTrigger):
     """
     Occurs before the title screen is shown.
+    Intended for title screen cutscenes and frontend presentation logic.
+    Use this instead of "OnStartup" for anything that should be visible on the title screen.
     """
     nid: ClassVar[NID] = 'on_title_screen'
 
 @dataclass(init=True)
 class OnStartup(EventTrigger):
     """
-    Occurs whenever the engine starts.
+    Occurs whenever the engine starts, before "OnTitleScreen".
+    Intended for backend setup steps (such as 'speak_style' configuration).
+    Should not contain cutscenes - use "OnTitleScreen" for those instead.
     """
     nid: ClassVar[NID] = 'on_startup'
 
@@ -393,6 +397,14 @@ class RegionTrigger(EventTrigger):
     position: Tuple[int, int] #: The position of the unit triggering the region
     region: RegionObject #: the name of the region that was triggered
     item: ItemObject = None #: the item used to trigger this region (used with unlock staves and keys)
+
+@dataclass(init=True)
+class Preview(EventTrigger):
+    """
+    """
+    nid: ClassVar[NID] = 'preview'
+    position: Tuple[int, int]  #: the position of the user's cursor when triggering this event
+    region: RegionObject  #: the name of the region that was triggered
 
 @dataclass(init=True)
 class EventOnHit(EventTrigger):

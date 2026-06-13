@@ -19,7 +19,7 @@
             "transition;Open",
             "give_item;{unit};Armorslayer",
             "show_layer;Village2",
-            "has_traded;{unit}"
+            "has_visited;{unit}"
         ],
         "nid": "5 Village2"
     }

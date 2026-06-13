@@ -1,10 +1,14 @@
+from __future__ import annotations
+
 import math
+from typing import TYPE_CHECKING, Tuple, Optional, Protocol, runtime_checkable
 
 from app.utilities import utils
 from app.utilities.enums import HAlignment
 import app.utilities.algorithms.interpolation as interp
 
 from app.constants import COLORKEY
+from app.data.resources.portraits import INFO_PORTRAIT_WIDTH, INFO_PORTRAIT_HEIGHT, PortraitPrefab
 from app.data.resources.resources import RESOURCES
 from app.data.database.database import DB
 
@@ -12,7 +16,17 @@ from app.engine.sprites import SPRITES
 from app.engine.fonts import FONT
 from app.engine import engine, skill_system, image_mods, unit_funcs
 
-def get_icon_by_name(name) -> engine.Surface:
+if TYPE_CHECKING:
+    from app.data.database import factions, skills, units
+    from app.engine.objects import skill, unit
+    from app.engine.bmpfont import BmpFont
+
+@runtime_checkable
+class HasIcon(Protocol):
+    icon_nid: str
+    icon_index: Tuple[int, int]
+
+def get_icon_by_name(name: str) -> Optional[engine.Surface]:
     image, index = None, None
     for icon_sheet in RESOURCES.icons16:
         if icon_sheet.get_index(name):
@@ -28,7 +42,7 @@ def get_icon_by_name(name) -> engine.Surface:
     engine.set_colorkey(image, COLORKEY, rleaccel=True)
     return image
 
-def get_icon_by_nid(nid, x, y) -> engine.Surface:
+def get_icon_by_nid(nid: str, x: int, y: int) -> Optional[engine.Surface]:
     image = RESOURCES.icons16.get(nid)
     if not image:
         return None
@@ -39,7 +53,8 @@ def get_icon_by_nid(nid, x, y) -> engine.Surface:
     engine.set_colorkey(image, COLORKEY, rleaccel=True)
     return image
 
-def get_icon(item) -> engine.Surface:
+def get_icon(item: Optional[HasIcon]) -> Optional[engine.Surface]:
+    # Basically `item` can be any Prefab with `icon_nid` attribute
     if not item:
         return None
     image = RESOURCES.icons16.get(item.icon_nid)
@@ -53,7 +68,9 @@ def get_icon(item) -> engine.Surface:
     engine.set_colorkey(image, COLORKEY, rleaccel=True)
     return image
 
-def draw_item(surf, item, topleft, cooldown=False):
+def draw_item(surf: engine.Surface, item: Optional[HasIcon],
+              topleft: Tuple[int, int], cooldown:bool=False) -> Optional[engine.Surface]:
+    # Basically `item` can be any Prefab with `icon_nid` attribute
     image = get_icon(item)
     if not image:
         return None
@@ -62,7 +79,8 @@ def draw_item(surf, item, topleft, cooldown=False):
 
     return surf
 
-def draw_skill(surf, skill, topleft, compact=True, simple=False, grey=False):
+def draw_skill(surf: engine.Surface, skill: skill.SkillObject | skills.SkillPrefab,
+               topleft: Tuple[int, int], compact:bool=True, simple:bool=False, grey:bool=False) -> Optional[engine.Surface]:
     image = get_icon(skill)
     if not image:
         return None
@@ -89,14 +107,14 @@ def draw_skill(surf, skill, topleft, compact=True, simple=False, grey=False):
 
     return surf
 
-def draw_icon_by_alias(surf, icon_alias, topleft):
+def draw_icon_by_alias(surf: engine.Surface, icon_alias: str, topleft: Tuple[int, int]) -> Optional[engine.Surface]:
     image = get_icon_by_name(icon_alias)
     if not image:
         return None
     surf.blit(image, topleft)
     return surf
 
-def draw_weapon(surf, weapon_type, topleft, gray=False):
+def draw_weapon(surf: engine.Surface, weapon_type: str, topleft: Tuple[int, int], gray:bool=False) -> engine.Surface:
     w_type_obj = DB.weapons.get(weapon_type)
     if not w_type_obj:
         return surf
@@ -116,7 +134,7 @@ def draw_weapon(surf, weapon_type, topleft, gray=False):
     surf.blit(image, topleft)
     return surf
 
-def draw_faction(surf, faction, topleft):
+def draw_faction(surf: engine.Surface, faction: factions.Faction, topleft: Tuple[int, int]) -> engine.Surface:
     image = RESOURCES.icons32.get(faction.icon_nid)
     if not image:
         return surf
@@ -130,42 +148,54 @@ def draw_faction(surf, faction, topleft):
     surf.blit(image, topleft)
     return surf
 
-def get_portrait(unit) -> tuple:
+def get_portrait(unit: unit.UnitObject | units.UnitPrefab) -> Tuple[Optional[engine.Surface], Tuple[int, int]]:
     image = RESOURCES.portraits.get(unit.portrait_nid)
     if image:
-        offset = image.info_offset
+        offset = image.get_info_coord()
         if not image.image:
             image.image = engine.image_load(image.full_path)
-        image = engine.subsurface(image.image, (0, 0, 96, 80))
+        image = engine.subsurface(image.image, image.get_face_frame())
     else:  # Generic class portrait
         klass = DB.classes.get(unit.klass)
         image = RESOURCES.icons80.get(klass.icon_nid)
         if not image:
-            return None, 0
+            return None, (0, 0)
         if not image.image:
             image.image = engine.image_load(image.full_path)
         image = engine.subsurface(image.image, (klass.icon_index[0] * 80, klass.icon_index[1] * 72, 80, 72))
-        offset = 0
+        offset = (0, 0)
 
     image = image.convert()
     engine.set_colorkey(image, COLORKEY, rleaccel=True)
 
     return image, offset
 
-def get_portrait_from_nid(portrait_nid) -> tuple:
+def get_portrait_from_nid(portrait_nid: str) -> Tuple[Optional[engine.Surface], Tuple[int, int]]:
     image = RESOURCES.portraits.get(portrait_nid)
     if image:
-        offset = image.info_offset
+        offset = image.get_info_coord()
         if not image.image:
             image.image = engine.image_load(image.full_path)
-        image = engine.subsurface(image.image, (0, 0, 96, 80))
+        image = engine.subsurface(image.image, image.get_face_frame())
         image = image.convert()
         engine.set_colorkey(image, COLORKEY, rleaccel=True)
     else:
-        offset = 0
+        offset = (0, 0)
     return image, offset
 
-def draw_portrait(surf, unit, topleft=None, bottomright=None):
+def get_portrait_with_size(unit: unit.UnitObject | units.UnitPrefab, width: int, height: int) -> engine.Surface:
+    # Sub-surface out the best portion of the portrait given the size
+    image, offset = get_portrait(unit)
+    x_offset = max(min(offset[0] + (min( INFO_PORTRAIT_WIDTH,  image.get_width()) -  width)//2,
+                        image.get_width() -  width), 0)
+    y_offset = max(min(offset[1] + (min(INFO_PORTRAIT_HEIGHT, image.get_height()) - height)//2,
+                        image.get_height()- height), 0)
+    portrait = engine.subsurface(image, (x_offset, y_offset, width, height))
+    return portrait
+
+def draw_portrait(surf: engine.Surface, unit: unit.UnitObject | units.UnitPrefab,
+                  topleft: Optional[Tuple[int, int]] = None,
+                  bottomright: Optional[Tuple[int, int]] = None) -> Optional[engine.Surface]:
     image, _ = get_portrait(unit)
     if not image:
         return None
@@ -173,18 +203,20 @@ def draw_portrait(surf, unit, topleft=None, bottomright=None):
     if topleft:
         surf.blit(image, topleft)
     elif bottomright:
-        surf.blit(image, (bottomright[0] - 96, bottomright[1] - 80))
+        surf.blit(image, utils.tuple_sub(bottomright, image.get_size()))
     return surf
 
-def get_chibi(portrait):
+def get_chibi(portrait: PortraitPrefabs) -> engine.Surface:
     if not portrait.image:
         portrait.image = engine.image_load(portrait.full_path)
-    image = engine.subsurface(portrait.image, (portrait.image.get_width() - 32, 16, 32, 32))
+    image = engine.subsurface(portrait.image, portrait.get_minimug())
     image = image.convert()
     engine.set_colorkey(image, COLORKEY, rleaccel=True)
     return image
 
-def draw_chibi(surf, nid, topleft=None, bottomright=None):
+def draw_chibi(surf: engine.Surface, nid: str,
+               topleft: Optional[Tuple[int, int]] = None,
+               bottomright: Optional[Tuple[int, int]] = None) -> engine.Surface:
     portrait = RESOURCES.portraits.get(nid)
     if not portrait:
         return surf
@@ -193,10 +225,11 @@ def draw_chibi(surf, nid, topleft=None, bottomright=None):
     if topleft:
         surf.blit(image, topleft)
     elif bottomright:
-        surf.blit(image, (bottomright[0] - 32, bottomright[1] - 32))
+        surf.blit(image, utils.tuple_sub(bottomright, image.get_size()))
     return surf
 
-def draw_stat(surf, stat_nid, unit, topright, compact=False):
+def draw_stat(surf: engine.Surface, stat_nid: str, unit: unit.UnitObject,
+              topright: Tuple[int, int], compact:bool=False) -> None:
     if stat_nid not in DB.stats:
         FONT['text-yellow'].blit_right('--', surf, topright)
         return
@@ -229,7 +262,8 @@ def draw_stat(surf, stat_nid, unit, topright, compact=False):
         elif bonus < 0:
             draw_glow(surf, FONT['small-red'], str(bonus), topright)
 
-def draw_growth(surf, stat_nid, unit, topright, compact=False):
+def draw_growth(surf: engine.Surface, stat_nid: str, unit: unit.UnitObject,
+                topright: Tuple[int, int], compact:bool=False) -> None:
     if stat_nid not in DB.stats:
         FONT['text-yellow'].blit_right('--', surf, topright)
         return
@@ -245,7 +279,8 @@ def draw_growth(surf, stat_nid, unit, topright, compact=False):
         elif bonus < 0:
             FONT['small-red'].blit(str(bonus), surf, topright)
 
-def draw_glow(surf, font_obj, text, topright, align: HAlignment = HAlignment.LEFT, color: str = None):
+def draw_glow(surf: engine.Surface, font_obj: BmpFont, text: str, topright: Tuple[int, int],
+              align: HAlignment = HAlignment.LEFT, color: str = None) -> engine.Surface:
     interval = 800   # ms
     progress = engine.get_time() % (interval*2)  # Between 0 and 1600
     white = math.sin(progress / interval * math.pi)  # Returns between -1 and 1

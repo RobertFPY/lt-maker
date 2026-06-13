@@ -4,9 +4,10 @@ from app.utilities.typing import NID
 
 import functools
 import logging
+import pickle
 import sys
 import app.engine.config as cf
-from typing import Any, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type
 
 from app.constants import TILEHEIGHT, TILEWIDTH
 from app.data.database.database import DB
@@ -20,48 +21,46 @@ from app.engine.objects.item import ItemObject
 from app.engine.objects.skill import SkillObject
 from app.engine.objects.unit import UnitObject
 from app.engine.objects.region import RegionObject
+from app.engine.persistent_records import RECORDS
 from app.engine import engine
 from app.utilities import utils, static_random
 from app.utilities.typing import Pos
 from app.engine.source_type import SourceType
 
-def alters_game_state(func):
+def alters_game_state(func: Callable[..., Any]) -> Callable[..., None]:
     @functools.wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: Any, **kwargs: Any) -> None:
         func(*args, **kwargs)
         game.on_alter_game_state()
     return wrapper
 
-def wrap_do_exec_reverse(_cls):
+def wrap_do_exec_reverse(_cls: Type[Action]) -> Type[Action]:
     for func in ['do', 'execute', 'reverse']:
         setattr(_cls, func, alters_game_state(getattr(_cls, func)))
-        
-    def wrapper():
-        return _cls()
-    return wrapper
+    return _cls
 
 class Action():
     persist_through_menu_cancel = False
 
-    def __init_subclass__(cls, **kwargs):
-        return wrap_do_exec_reverse(_cls=cls)
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        wrap_do_exec_reverse(_cls=cls)
 
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     # When used normally
-    def do(self):
+    def do(self) -> None:
         pass
 
     # When put in forward motion by the turnwheel
-    def execute(self):
+    def execute(self) -> None:
         self.do()
 
     # When put in reverse motion by the turnwheel
-    def reverse(self):
+    def reverse(self) -> None:
         pass
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         s = "%s: " % self.__class__.__name__
         for attr in self.__dict__.items():
             name, value = attr
@@ -70,7 +69,7 @@ class Action():
         return s
 
     @staticmethod
-    def save_obj(value):
+    def save_obj(value: Any) -> Tuple[str, Any]:
         if isinstance(value, UnitObject):
             value = ('unit', value.nid)
         elif isinstance(value, ItemObject):
@@ -84,11 +83,25 @@ class Action():
         elif isinstance(value, Action):
             value = ('action', value.save())
         else:
-            value = ('generic', value)
+            # verify value can be pickled
+            # complex objects (e.g., PlaybackBrush containing game objects
+            # with cached pygame surfaces) may not be picklable
+            # so we just fail gracefully - nothing of value has been lost
+            # becase the GenericTrigger on the restore path ditches
+            # the list of PlaybackBrush in the old impl anyway
+            # if pickling these objects is desired, then that burden falls upon
+            # the impl of the class itself, not in this routine
+            try:
+                pickle.dumps(value)
+                value = ('generic', value)
+            # shouldn't happen with our guard upstream, but just in case
+            except (TypeError, pickle.PicklingError, AttributeError):
+                logging.error(f"save_obj: dropping unpicklable value of type {type(value).__name__}: {value}")
+                value = ('generic', None)
         return value
 
-    def save(self):
-        ser_dict = {}
+    def save(self) -> Tuple[str, Dict[str, Tuple[str, Any]]]:
+        ser_dict: Dict[str, Tuple[str, Any]] = {}
         for attr in self.__dict__.items():
             name, value = attr
             value = self.save_obj(value)
@@ -96,7 +109,7 @@ class Action():
         return (self.__class__.__name__, ser_dict)
 
     @staticmethod
-    def restore_obj(value):
+    def restore_obj(value: Tuple[str, Any]) -> Any:
         if value[0] == 'unit':
             return game.get_unit(value[1])
         elif value[0] == 'item':
@@ -115,13 +128,13 @@ class Action():
             return value[1]
 
     @classmethod
-    def restore(cls, ser_dict):
+    def restore(cls, ser_dict: Dict[str, Tuple[str, Any]]) -> Action:
         self = cls.__new__(cls)
         for name, value in ser_dict.items():
             setattr(self, name, self.restore_obj(value))
         return self
 
-def recalc_unit(unit):
+def recalc_unit(unit: UnitObject) -> None:
     # Currently Equipped Item may have changed
     unit.autoequip()
     if unit.position and game.tilemap:
@@ -129,19 +142,24 @@ def recalc_unit(unit):
         if game.boundary:
             game.boundary.recalculate_unit(unit)
         # Fog of War Sight may have changed
-        # But we can't update it directly here, because the unit may have just gained
-        # this skill on a move, and the unit shouldn't be able to see until they press "Wait"
-        # So instead, we just change the sight range directly but not their vantage point
-        if game.board:
+        # Only refresh it when the unit is actually standing at its fog vantage point.
+        # During a move preview the vantage stays at the unit's starting tile (the unit
+        # shouldn't reveal new vision until it presses "Wait"). If we recomputed sight here
+        # from the destination tile, a terrain-conditional sight bonus (e.g. +sight while on
+        # a mountain) would be applied at the OLD vantage, revealing extra tiles from the
+        # start position - and since this writes straight to the board rather than as a
+        # reversible action, that bonus would also survive cancelling the move. UpdateFogOfWar
+        # re-syncs sight from the correct tile when the move is finalized (Wait) or reversed.
+        if game.board and game.board.fow_vantage_point.get(unit.nid) == unit.position:
             fog_of_war_radius = game.board.get_fog_of_war_radius(unit.team)
             sight_range = skill_system.sight_range(unit) + fog_of_war_radius
             game.board.change_sight_range(unit, sight_range)
             if game.boundary:
                 game.boundary.reset_fog_of_war()
 
-def recalculate_unit(func):
+def recalculate_unit(func: Callable[..., Any]) -> Callable[..., None]:
     @functools.wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: Any, **kwargs: Any) -> None:
         func(*args, **kwargs)
         self = args[0]
         recalc_unit(self.unit)
@@ -268,6 +286,10 @@ class ForcedMovement(SimpleMove):
         game.arrive(self.unit, self.new_pos)
         self.update_fow_action.do()
 
+    def execute(self):
+        game.leave(self.unit)
+        game.arrive(self.unit, self.new_pos)
+        self.update_fow_action.do()
 
 class Swap(Action):
     def __init__(self, unit1: UnitObject, unit2: UnitObject):
@@ -2577,6 +2599,9 @@ class UnlockSupportRank(Action):
         self.was_locked: bool = False
 
     def do(self):
+        # Yea, this one can't be turnwheel-ed lol
+        RECORDS.unlock_support_rank(self.nid, self.rank)
+
         self.was_locked = False
         pair = game.supports.create_pair(self.nid)
         if self.rank in pair.locked_ranks:

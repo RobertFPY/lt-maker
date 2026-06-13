@@ -2,12 +2,13 @@ from enum import IntEnum
 import math
 from typing import Optional, Tuple
 
-from app.engine.game_counters import ANIMATION_COUNTERS
 from app.engine.objects.unit import UnitObject
+from app.engine.objects.region import RegionObject
+from app.events.regions import RegionType
 from app.constants import TILEHEIGHT, TILEWIDTH
 from app.counters import GenericAnimCounter
 from app.data.database.database import DB
-from app.engine import engine, image_mods, skill_system, equations
+from app.engine import engine, image_mods, skill_system, evaluate
 from app.engine.cursor import BaseCursor
 from app.engine.game_state import GameState
 from app.engine.input_manager import get_input_manager
@@ -58,6 +59,19 @@ class LevelCursor(BaseCursor):
     def get_bounds(self) -> Tuple[int, int, int, int]:
         self.game_board = self.game.board
         return super().get_bounds()
+
+    def get_previewable_region(self) -> Optional[RegionObject]:
+        for region in self.game.level.regions:
+            if region.region_type == RegionType.EVENT and region.sub_nid.lower() == 'preview' and region.contains(self.position):
+                try:
+                    truth = evaluate.evaluate(region.condition, position=self.position, local_args={'region': region})
+                    logging.debug("Testing region: %s %s", region.condition, truth)
+                    # No duplicates
+                    if truth:
+                        return region
+                except:
+                    logging.error("Region condition {%s} could not be evaluated" % region.condition)
+        return None
 
     def hide(self):
         super().hide()
@@ -116,6 +130,21 @@ class LevelCursor(BaseCursor):
             limit = self.cur_unit.movement_left
         self.path = self.game.path_system.get_path(self.cur_unit, self._last_valid_position, use_limit=limit)
         return self.path
+
+    def clamp_path_to_movement(self):
+        """If the built path overspends the current unit's normal movement, recompute a legal path.
+
+        The path arrow is built with the xcom movement budget (movement_left +
+        get_xcom_movement(), see _get_path), so a player can wind a route that ends on a
+        normally-reachable tile yet costs more than normal movement. Committing that as a
+        normal Move would let the unit traverse an over-budget route and still attack.
+        Recomputing keeps the unit on a legal route to the same tile.
+        """
+        unit = self.cur_unit
+        if self.game.path_system.get_path_cost(unit, self.path) > unit.movement_left:
+            new_path = self.game.path_system.get_path(unit, self.position, use_limit=unit.movement_left)
+            if new_path:
+                self.path = new_path
 
     def move(self, dx, dy, mouse=False, sound=True):
         super().move(dx, dy, mouse, sound)

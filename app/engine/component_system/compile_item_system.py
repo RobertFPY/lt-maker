@@ -37,7 +37,7 @@ ITEM_HOOKS: Dict[str, HookInfo] = {
     'allow_target_in_fog_of_war':                      HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_FALSE),
     # default true, return false if any component returns false
     'alerts_when_broken':                              HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_TRUE, inherits_parent=True),
-    'tradeable':                                       HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_TRUE),                                       
+    'tradeable':                                       HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_TRUE),
     'storeable':                                       HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_TRUE),
     'discardable':                                     HookInfo(['unit', 'item'], ResolvePolicy.ALL_DEFAULT_TRUE),
     # returns latest value defined by a component, or default value if not defined
@@ -100,7 +100,9 @@ ITEM_HOOKS: Dict[str, HookInfo] = {
     'battle_music':                                    HookInfo(['unit', 'item', 'target', 'item2', 'mode'], ResolvePolicy.UNIQUE),
     'combat_effect':                                   HookInfo(['unit', 'item', 'target', 'item2', 'mode'], ResolvePolicy.UNIQUE),
     'on_hit_effect':                                   HookInfo(['unit', 'item', 'target', 'item2', 'mode'], ResolvePolicy.UNIQUE),
-    'item_uses_display':                               HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE),
+    'item_uses_display':                               HookInfo(['unit', 'item'], ResolvePolicy.OBJECT_MERGE),
+    'multi_desc_name_override':                        HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE),
+    'show_item_name_in_help_dlg':                      HookInfo(['unit', 'item'], ResolvePolicy.UNIQUE, has_default_value=True),
     # events do not return, but are the only item components currently inherited from parents
     'on_end_chapter':                                  HookInfo(['unit', 'item'], ResolvePolicy.NO_RETURN, inherits_parent=True),
     'reverse_use':                                     HookInfo(['unit', 'item'], ResolvePolicy.NO_RETURN, inherits_parent=True),
@@ -111,6 +113,7 @@ ITEM_HOOKS: Dict[str, HookInfo] = {
     'on_upkeep':                                       HookInfo(['actions', 'playback', 'unit', 'item'], ResolvePolicy.NO_RETURN, inherits_parent=True),
     'on_endstep':                                      HookInfo(['actions', 'playback', 'unit', 'item'], ResolvePolicy.NO_RETURN, inherits_parent=True),
     'start_combat':                                    HookInfo(['playback', 'unit', 'item', 'target', 'item2', 'mode'], ResolvePolicy.NO_RETURN, inherits_parent=True),
+    'cleanup_combat':                                  HookInfo(['playback', 'unit', 'item', 'target', 'item2', 'mode'], ResolvePolicy.NO_RETURN, inherits_parent=True),
     'end_combat':                                      HookInfo(['playback', 'unit', 'item', 'target', 'item2', 'mode'], ResolvePolicy.NO_RETURN, inherits_parent=True),
 }
 

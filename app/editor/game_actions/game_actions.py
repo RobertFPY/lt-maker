@@ -4,6 +4,7 @@ import traceback
 
 from app.editor.data_editor import DB
 from app.editor.settings import MainSettingsController
+from app.editor.settings.preference_definitions import Preference
 from app.engine import driver, engine, game_state
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtGui import QFont
@@ -19,7 +20,7 @@ def handle_exception(e: Exception):
     else:
         msg = "Engine crashed. \nFor more detailed logs, please click View Logs in the Extra menu.\n" + traceback.format_exc()
     settings = MainSettingsController()
-    if settings.get_should_display_crash_logs():
+    if settings.get_preference(Preference.CRASH_LOGS):
         error_msg = QMessageBox()
         error_msg.setFont(QFont("consolas"))
         error_msg.setFixedWidth(1200)
@@ -90,12 +91,7 @@ def test_event(event_prefab, starting_command_idx=0, strategy=None):
     try:
         driver.start("Event Test", from_editor=True)
         from app.events.mock_event import MockEvent
-        # Runs the `on_startup` trigger event commands before running the main MockEvent
-        startup_event_prefabs = DB.events.get('on_startup', None)
         mock_event = MockEvent('Test Event', event_prefab, starting_command_idx, strategy)
-        for startup in startup_event_prefabs:
-            for line in startup.source.split('\n'):
-                mock_event.queue_command(line)
         driver.run_event(mock_event)
     except Exception as e:
         handle_exception(e)

@@ -1,4 +1,3 @@
-from __future__ import annotations
 from enum import Enum
 from app.data.database.items import ItemPrefab
 from app.data.database.levels import LevelPrefab
@@ -18,7 +17,7 @@ from app.sprites import SPRITES
 from app.utilities import str_utils
 from app.utilities.enums import Alignments
 from app.utilities.typing import NID, Point
-from app.events.regions import RegionType as RegionTypeEnum
+from app.events.regions import RegionType as RegionTypeEnum, RegionHighlight as HighlightTypeEnum
 
 class Validator():
     desc = ""
@@ -568,12 +567,21 @@ class Orientation(OptionValidator):
 
 class ExpressionList(SequenceValidator):
     valid_expressions = ["NoSmile", "Smile", "NormalBlink", "CloseEyes", "HalfCloseEyes", "LeftWink", "RightWink", "FarWink", "NearWink", "OpenEyes", "OpenMouth"]
-    desc = "expects a comma-delimited list of expressions. Valid expressions are: (`NoSmile`, `Smile`, `NormalBlink`, `CloseEyes`, `HalfCloseEyes`, `LeftWink`, `RightWink`, `FarWink`, `NearWink`, `OpenEyes`, `OpenMouth`). Example: `Smile,CloseEyes`"
+    valid_expressions_pattern = re.compile(r'^((BlinkFrame)|(MouthFrame))\d+$')
+    # regex explanation: match all strings that strictly:
+    #   - starts with either 'BlinkFrame' or 'MouthFrame'
+    #   - follows by and ends with a non-negative integer
+
+    desc = ("expects a comma-delimited list of expressions. "
+            "Valid expressions are: (`NoSmile`, `Smile`, `NormalBlink`, `CloseEyes`, `HalfCloseEyes`, `LeftWink`, `RightWink`, `FarWink`, `NearWink`, `OpenEyes`, `OpenMouth`). "
+            "Expressions can also be of patterns: `BlinkFrameX` and `MouthFrameX` where X is a non-negative whole number "
+            "(BlinkFrame0 is top blink frame, and MouthFrame0 is rightmost mouth frame). "
+            "Example: `Smile,LeftWink,MouthFrame12,HalfCloseEyes`")
 
     def validate(self, text, level):
         text = text.split(',')
         for t in text:
-            if t not in self.valid_expressions:
+            if t not in self.valid_expressions and not self.valid_expressions_pattern.match(t):
                 return None
         return text
 
@@ -700,6 +708,9 @@ class Chapter(Validator):
 
 class FogOfWarType(OptionValidator):
     valid = ['gba', 'thracia', 'hybrid']
+
+class FogOfWarColor(OptionValidator):
+    valid = ['black', 'white']
 
 class ShakeType(OptionValidator):
     valid = ['default', 'combat', 'kill', 'random', 'celeste']
@@ -964,9 +975,14 @@ class RemoveType(OptionValidator):
 
 class RegionType(OptionValidator):
     valid = [r.value for r in RegionTypeEnum]
+    
+class HighlightType(OptionValidator):
+    valid = [r.value for r in HighlightTypeEnum]
 
 class Weather(OptionValidator):
-    valid = ["rain", "sand", "snow", "fire", "light", "purple", "dark", "smoke", "night", "sunset", "event_tile", "switch_tile"]
+    valid = ["rain", "sand", "snow", "fire", "light", 
+             "purple", "dark", "smoke", "night", "sunset", 
+             "event_tile", "switch_tile", "fire_pillar"]
 
 class Align(EnumValidator):
     enum_type = Alignments

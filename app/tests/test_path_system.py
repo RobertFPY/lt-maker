@@ -108,6 +108,24 @@ class PathSystemTests(unittest.TestCase):
             bad_path_valid = self.path_system.check_path(self.player_unit, bad_path)
             self.assertEqual(bad_path_valid, False, 'A too long path was not caught')
 
+    def test_get_path_cost(self):
+        with patch('app.engine.movement.movement_funcs.get_mcost') as mcost_mock, \
+             patch('app.engine.objects.unit.UnitObject.movement_left', new_callable=PropertyMock) as movement_left_mock:
+            mcost_mock.return_value = 1
+            movement_left_mock.return_value = 5
+
+            # path is goal-first, start-last; the starting position (path[-1])
+            # is not counted, so cost == number of tiles moved onto
+            path = [(2, 3), (2, 2), (2, 1), (1, 1)]
+            cost = self.path_system.get_path_cost(self.player_unit, path)
+            self.assertEqual(cost, 3, 'Path cost should exclude the starting position')
+
+            # An over-budget winding path costs more than the unit's movement
+            winding_path = [(3, 1), (3, 2), (3, 3), (2, 3), (1, 3), (1, 2), (1, 1)]
+            cost = self.path_system.get_path_cost(self.player_unit, winding_path)
+            self.assertGreater(cost, self.player_unit.movement_left,
+                               'Winding path should overspend normal movement')
+
     def test_travel_algorithm(self):
         path = [(0, 0), (1, 0), (1, 1), (2, 1), (2, 2), (2, 3)]
         final_pos = self.path_system.travel_algorithm(path, 3, self.player_unit, self.simple_grid)

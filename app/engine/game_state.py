@@ -37,6 +37,7 @@ if TYPE_CHECKING:
     from app.engine.target_system import TargetSystem
     from app.engine.pathfinding.path_system import PathSystem
     from app.utilities.typing import NID, UID, Pos
+    from app.data.database.terrain import Terrain
 
 from app.constants import VERSION
 from app.data.database.database import DB
@@ -45,11 +46,12 @@ from app.events.regions import RegionType
 from app.events import speak_style
 from app.engine import config as cf
 from app.engine import state_machine
-from app.engine.fog_of_war import FogOfWarType, FogOfWarLevelConfig
+from app.engine.fog_of_war import FogOfWarType, FogOfWarColor, FogOfWarLevelConfig
 from app.engine.roam.roam_info import RoamInfo
 from app.utilities import static_random
 from app.data.resources.resources import RESOURCES
 from app.engine.source_type import SourceType
+from app.engine.persistent_records import RECORDS
 
 import logging
 
@@ -159,10 +161,10 @@ class GameState():
 
         self.clear()
 
-    def on_alter_game_state(self):
+    def on_alter_game_state(self) -> None:
         ltcache.alter_state()
 
-    def clear(self):
+    def clear(self) -> None:
         self.game_vars = PrimitiveCounter()
         self.memory = {}
 
@@ -573,6 +575,15 @@ class GameState():
                     self.boundary.arrive(unit)
                     action.UpdateFogOfWar(unit).execute()
 
+            # Re-derive aura child skills now that every source's aura is on the
+            # board. Children are not serialized (see UnitObject.save/restore);
+            # rebuilding them here guarantees each one's source points at the live
+            # parent skill instance, so it can be removed later. Otherwise a
+            # save/load or game-over restart leaves orphaned, unremovable auras.
+            for unit in self.units:
+                if unit.position:
+                    aura_funcs.pull_auras(unit, self, test=True)
+
             self.cursor.autocursor(True)
 
         self.events = event_manager.EventManager.restore(s_dict.get('events'))
@@ -866,6 +877,7 @@ class GameState():
     def register_unit(self, unit):
         logging.debug("Registering unit %s as %s", unit, unit.nid)
         self.unit_registry[unit.nid] = unit
+        RECORDS.mark_unit_as_loaded(unit.nid)
 
     def unregister_unit(self, unit):
         logging.debug("Unregistering unit %s as %s", unit, unit.nid)
@@ -1285,7 +1297,8 @@ class GameState():
             self.level_vars.get('_fog_of_war_type', FogOfWarType.GBA_DEPRECATED),
             self.level_vars.get('_fog_of_war_radius', 0),
             ai_fog_of_war_radius,
-            self.level_vars.get('_other_fog_of_war_radius', ai_fog_of_war_radius))
+            self.level_vars.get('_other_fog_of_war_radius', ai_fog_of_war_radius),
+            self.level_vars.get('_fog_of_war_color', FogOfWarColor.BLACK))
 
     def check_dead(self, nid: NID) -> bool:
         """
@@ -1337,11 +1350,11 @@ class GameState():
         if not unit.position:
             raise ValueError("Unit must have a position to leave, not None")
 
-        # Auras
-        for aura_data in game.board.get_auras(unit.position):
-            child_aura_uid, target = aura_data
-            child_skill = self.get_skill(child_aura_uid)
-            aura_funcs.remove_aura(unit, child_skill, test)
+        # Auras affecting this unit -- it is leaving the map, so it loses all of
+        # them. Strip by the unit's own skill list rather than by board position:
+        # the board bookkeeping can desync (re-propagation, save/load, teardown
+        # ordering) and otherwise orphan an aura child skill permanently.
+        aura_funcs.remove_all_auras(unit, test)
         if not test:
             for skill in unit.all_skills:
                 if skill.aura:
@@ -1510,6 +1523,13 @@ class GameState():
         else:
             terrain_nid = tilemap.get_terrain(position)
         return terrain_nid
+
+    def get_terrain(self, tilemap: TileMapObject, position: Pos) -> Terrain:
+        terrain_nid = self.get_terrain_nid(tilemap, position)
+        terrain = DB.terrain.get(terrain_nid)
+        if not terrain:
+            terrain = DB.terrain[0]
+        return terrain
 
     def get_all_formation_spots(self) -> List[Pos]:
         """

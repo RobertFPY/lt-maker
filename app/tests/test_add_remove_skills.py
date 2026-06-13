@@ -205,6 +205,47 @@ class AddRemoveSkillTests(unittest.TestCase):
             self.assertNotIn(test_skill_stack3, self.test_unit.all_skills)
             self.assertNotIn(test_skill_stack4, self.test_unit.all_skills)
             self.assertNotIn(test_skill_stack5, self.test_unit.all_skills)
+    def test_remove_all_auras_strips_orphaned_child(self):
+        '''
+        An aura child applied to a unit must be removable when the unit leaves
+        the map even if board bookkeeping has no record of it. This is the
+        "permanent aura skill" bug: AURA skills are non-removable except via
+        their exact source, so a board desync would otherwise orphan them.
+        '''
+        from app.engine import aura_funcs
+        with unittest.mock.patch('app.engine.action.ResetUnitVars', FakeResetUnitVars):
+            aura_child = MagicMock()
+            aura_child.nid = 'Aura_Child'
+            aura_child.stack = None
+            # Applied as an aura whose parent skill instance has uid 999
+            self.test_unit.add_skill(aura_child, source=999, source_type=SourceType.AURA)
+            self.assertIn(aura_child, self.test_unit.all_skills)
+
+            # No board entry exists for this child anywhere. The old board-driven
+            # teardown would miss it; remove_all_auras must still strip it.
+            aura_funcs.remove_all_auras(self.test_unit, test=True)
+            self.assertNotIn(aura_child, self.test_unit.all_skills)
+
+    def test_remove_all_auras_leaves_other_sources(self):
+        '''
+        remove_all_auras must only remove AURA-sourced skills, leaving skills
+        from every other source (class, personal, terrain, ...) untouched.
+        '''
+        from app.engine import aura_funcs
+        with unittest.mock.patch('app.engine.action.ResetUnitVars', FakeResetUnitVars):
+            aura_child = MagicMock()
+            aura_child.nid = 'Aura_Child'
+            aura_child.stack = None
+            self.test_unit.add_skill(aura_child, source=999, source_type=SourceType.AURA)
+
+            klass_skill = MagicMock()
+            klass_skill.nid = 'Class_Skill'
+            klass_skill.stack = None
+            self.test_unit.add_skill(klass_skill, source='Knight', source_type=SourceType.KLASS)
+
+            aura_funcs.remove_all_auras(self.test_unit, test=True)
+            self.assertNotIn(aura_child, self.test_unit.all_skills)
+            self.assertIn(klass_skill, self.test_unit.all_skills)
 
 
 if __name__ == '__main__':

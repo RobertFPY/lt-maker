@@ -67,6 +67,10 @@
             [
                 "eval_target_restrict_2",
                 "not game.get_region_under_pos(target_pos, 'vision')"
+            ],
+            [
+                "map_cast_pose",
+                null
             ]
         ]
     }

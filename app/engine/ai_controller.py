@@ -363,7 +363,10 @@ class PrimaryAI():
                            item_system.extra_command(self.unit, item) and item_funcs.available(self.unit, item_system.extra_command(self.unit, item))]
             self.extra_abilities = skill_system.get_extra_abilities(self.unit)
             for ability in self.extra_abilities.values():
-                self.items.append(ability)
+                # Filter by availability so the AI doesn't consider (and commit to) an
+                # ability item that can't actually be used, e.g. one on cooldown
+                if item_funcs.available(self.unit, ability):
+                    self.items.append(ability)
 
         elif self.behaviour.action == 'Support':
             self.items = [item for item in item_funcs.get_all_items(self.unit) if
@@ -372,13 +375,14 @@ class PrimaryAI():
                                        item_system.extra_command(self.unit, item) and item_funcs.available(self.unit, item_system.extra_command(self.unit, item))]
             self.extra_abilities = skill_system.get_extra_abilities(self.unit)
             for ability in self.extra_abilities.values():
-                self.items.append(ability)
-                
+                if item_funcs.available(self.unit, ability):
+                    self.items.append(ability)
+
         elif self.behaviour.action == 'Steal':
             self.items = []
             self.extra_abilities = skill_system.get_extra_abilities(self.unit)
             for ability in self.extra_abilities.values():
-                if ability.name == 'Steal':
+                if ability.name == 'Steal' and item_funcs.available(self.unit, ability):
                     self.items.append(ability)
 
         self.behaviour_targets = get_targets(self.unit, self.behaviour)

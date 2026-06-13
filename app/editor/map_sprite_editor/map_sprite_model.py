@@ -12,6 +12,7 @@ from app.data.database.database import DB
 from app.data.resources.default_palettes import default_palettes
 
 from app.extensions.custom_gui import DeletionTab, DeletionDialog
+from app.extensions.pixmap_replace_message_box import PixmapReplaceMessageBox
 from app.editor.settings import MainSettingsController
 from app.editor.base_database_gui import ResourceCollectionModel
 import app.editor.utilities as editor_utilities
@@ -177,6 +178,24 @@ def create_new(window):
             current_proj = settings.get_current_project()
             if current_proj:
                 standing_pix, moving_pix = import_gba_map_sprite(standing_pix, moving_pix, gba_overhang, gba_no_move)
+
+                recolor_stand_pix = editor_utilities.convert_default_palette_pixmap(standing_pix)
+                recolor_move_pix = editor_utilities.convert_default_palette_pixmap(moving_pix)
+                recolor_title = 'Palette values do not align'
+                recolor_text = 'Allow your image to be recolored using only colors from default palette?'
+                caption1 = 'Before recolor'
+                caption2 = 'After recolor'
+
+                if recolor_stand_pix:
+                    recolor_msg = PixmapReplaceMessageBox(recolor_title, recolor_text, caption1, caption2,
+                                    standing_pix, recolor_stand_pix, parent=window)
+                    standing_pix = recolor_msg.exec_()
+
+                if recolor_move_pix:
+                    recolor_msg = PixmapReplaceMessageBox(recolor_title, recolor_text, caption1, caption2,
+                                    moving_pix, recolor_move_pix, parent=window)
+                    moving_pix = recolor_msg.exec_()
+
                 stand_full_path = os.path.join(current_proj, 'resources', 'map_sprites', nid + '-stand.png')
                 move_full_path = os.path.join(current_proj, 'resources', 'map_sprites', nid + '-move.png')
                 standing_pix.save(stand_full_path)
@@ -185,7 +204,6 @@ def create_new(window):
             else:
                 QMessageBox.critical(window, "Error", "Cannot load GBA map sprites without having saved the project")
                 return
-        window.data.append(new_map_sprite)
         parent_dir = os.path.split(fn)[0]
         settings.set_last_open_path(parent_dir)
         return new_map_sprite

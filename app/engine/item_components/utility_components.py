@@ -12,7 +12,8 @@ from app.engine.combat import playback as pb
 
 class Heal(ItemComponent):
     nid = 'heal'
-    desc = "Item heals this amount on hit"
+    desc = "Item heals this amount on hit.\n\
+        If ManaRestore is used on the same item, both mana and hp must be below max to use the item."
     tag = ItemTags.UTILITY
 
     expose = ComponentType.Int
@@ -77,6 +78,74 @@ class EquationHeal(Heal):
         equation = self.value
         return equations.parser.get(equation, unit) + empower_heal + empower_heal_received
 
+class ManaRestore(ItemComponent):
+    nid = 'mana_restore'
+    desc = "Item restores mana by this amount on hit.\n\
+        If Heal is used on the same item, both mana and hp must be below max to use the item."
+    tag = ItemTags.UTILITY
+
+    expose = ComponentType.Int
+    value = 5
+
+    def _get_restore_amount(self, unit, target):
+        empower_mana = skill_system.empower_mana(unit, target)
+        empower_mana_received = skill_system.empower_mana_received(target, unit)
+        return self.value + empower_mana + empower_mana_received
+
+    def target_restrict(self, unit, item, def_pos, splash) -> bool:
+        # Restricts target based on whether any unit has < full MANA
+        defender = game.board.get_unit(def_pos)
+        if defender and defender.get_mana() < defender.get_max_mana():
+            return True
+        for s_pos in splash:
+            s = game.board.get_unit(s_pos)
+            if s and s.get_mana() < s.get_max_mana():
+                return True
+        return False
+
+    def simple_target_restrict(self, unit, item):
+        return unit and unit.get_mana() < unit.get_max_mana()
+
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
+        gain = self._get_restore_amount(unit, target)
+        true_gain = min(gain, target.get_max_mana() - target.get_mana())
+        actions.append(action.ChangeMana(target, gain))
+
+        # For animation
+        if true_gain > 0:
+            playback.append(pb.HealHit(unit, item, target, gain, true_gain))
+            playback.append(pb.HitSound('MapHeal', map_only=True))
+            if gain >= 30:
+                name = 'MapBigHealTrans'
+            elif gain >= 15:
+                name = 'MapMediumHealTrans'
+            else:
+                name = 'MapSmallHealTrans'
+            playback.append(pb.HitAnim(name, target))
+
+    def ai_priority(self, unit, item, target, move):
+        if target and skill_system.check_ally(unit, target):
+            max_mana = target.get_max_mana()
+            missing_mana = max_mana - target.get_mana()
+            help_term = utils.clamp(missing_mana / float(max_mana), 0, 1)
+            heal = self._get_restore_amount(unit, target)
+            heal_term = utils.clamp(min(heal, missing_mana) / float(max_mana), 0, 1)
+            return help_term * heal_term
+        return 0
+
+class EquationManaRestore(ManaRestore):
+    nid = 'equation_mana_restore'
+    desc = "Restores the target's mana for the value of the equation defined in the equations editor. Equation is calculated using the caster's stats, not the targets"
+
+    expose = ComponentType.Equation
+    value = 'MANA_GAIN'
+
+    def _get_restore_amount(self, unit, target):
+        empower_mana = skill_system.empower_mana(unit, target)
+        empower_mana_received = skill_system.empower_mana_received(target, unit)
+        equation = self.value
+        return equations.parser.get(equation, unit) + empower_mana + empower_mana_received
+
 class Refresh(ItemComponent):
     nid = 'refresh'
     desc = "Has an effect identical to dancing in normal FE. A dance skill makes use of this component in an attached item."
@@ -111,7 +180,7 @@ class Restore(ItemComponent):
             return True
         for s_pos in splash:
             s = game.board.get_unit(s_pos)
-            if skill_system.check_ally(unit, s) and any(self._can_be_restored(skill) for skill in s.skills):
+            if s and skill_system.check_ally(unit, s) and any(self._can_be_restored(skill) for skill in s.skills):
                 return True
         return False
 

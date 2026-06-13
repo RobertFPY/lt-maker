@@ -163,3 +163,28 @@ class arrow_counter():
 
     def pulse(self):
         self.increment = [1, 1, 1, 1, 1, 1, 1, 1, .5, .5, .5, .5, .25, .25, .25]
+
+class BlinkCounter():
+    def __init__(self, max_count: int = 2, update_times: List[int] = [440, 50]):
+        self.count = 0
+        self.max_count = max_count
+        self.last_update = 0
+        self.reverse = False
+
+        self.update_times = update_times
+        for i in range(max_count+1 - len(update_times)):
+            update_times.append(update_times[-1])
+
+    def update(self, current_time):
+        if current_time - self.last_update > self.update_times[self.count]:
+            self.count += -1 if self.reverse else 1
+            if self.count == 0 or self.count == self.max_count:
+                self.reverse = not self.reverse
+            self.last_update = current_time
+            return True
+        return False
+
+    def reset(self):
+        self.count = 0
+        self.last_update = 0
+        self.reverse = False

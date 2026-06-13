@@ -392,7 +392,7 @@ class IntDelegate(QItemDelegate):
         if index.column() in self.int_columns:
             editor = QSpinBox(parent)
             editor.setAlignment(Qt.AlignRight)
-            editor.setRange(-1023, 1023)
+            editor.setRange(-65536, 65536)
             return editor
         else:
             return super().createEditor(parent, option, index)

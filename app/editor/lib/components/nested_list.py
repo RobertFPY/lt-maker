@@ -241,10 +241,15 @@ class LTNestedList(QWidget):
         if self.attempt_new:
             attempt = self.attempt_new(new_nid)
             icon = None
-            if isinstance(attempt, NID):
+            if isinstance(attempt, list):
+                for nid in attempt:
+                    icon = self.get_icon(nid)
+                    self.insert_item(index, nid, item, icon)
+            elif isinstance(attempt, NID):
                 new_nid = attempt
                 icon = self.get_icon(new_nid)
-            if attempt:
+                self.insert_item(index, new_nid, item, icon)
+            elif attempt:
                 self.insert_item(index, new_nid, item, icon)
 
     def new_category(self, index, item: Optional[QTreeWidgetItem]):
@@ -360,7 +365,7 @@ class LTNestedList(QWidget):
             self.select_item(target_item)
 
     def data_changed(self, item: Optional[QTreeWidgetItem], column=None):
-        if item and self.old_nid and not item.data(0, IsCategoryRole) and self.allow_rename:
+        if item and self.old_nid and not item.data(0, IsCategoryRole) and self.allow_rename and column is not None:
             old_nid = self.old_nid
             self.old_nid = None
             if not self.attempt_rename(old_nid, item.text(column)):

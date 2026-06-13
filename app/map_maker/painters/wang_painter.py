@@ -74,7 +74,7 @@ class WangEdge8Painter(Painter):
         coord4 = random_choice([(col_idx4, k) for k in range(self.limit[col_idx4])], position, offset=3)
         return coord1, coord2, coord3, coord4
 
-class WangCorner8Painter(Painter):
+class WangCorner16Painter(Painter):
     """
     """
     terrain_like: Tuple[Terrain] = tuple()
@@ -180,6 +180,37 @@ class WangCorner8Painter(Painter):
         self.vertices[topright] = (topright_vertex_type, random_random(topright))
         self.vertices[bottomleft] = (bottomleft_vertex_type, random_random(bottomleft))
         self.vertices[bottomright] = (bottomright_vertex_type, random_random(bottomright))
+
+    def _determine_index(self, tilemap, pos: Pos) -> int:
+        north, east, south, west = tilemap.get_cardinal_terrain(pos)
+        ne, se, sw, nw = tilemap.get_diagonal_terrain(pos)
+
+        north_edge = bool(not north or north in self.terrain_like)
+        east_edge = bool(not east or east in self.terrain_like)
+        south_edge = bool(not south or south in self.terrain_like)
+        west_edge = bool(not west or west in self.terrain_like)
+        northeast_edge = bool(not ne or ne in self.terrain_like)
+        southeast_edge = bool(not se or se in self.terrain_like)
+        southwest_edge = bool(not sw or sw in self.terrain_like)
+        northwest_edge = bool(not nw or nw in self.terrain_like)
+
+        ne_edge = northeast_edge or (north_edge and east_edge)
+        se_edge = southeast_edge or (south_edge and east_edge)
+        sw_edge = southwest_edge or (south_edge and west_edge)
+        nw_edge = northwest_edge or (north_edge and west_edge)
+        index = 1 * ne_edge + 2 * se_edge + 4 * sw_edge + 8 * nw_edge
+        return index
+
+    def get_coord(self, tilemap, position: Pos) -> Tuple[Pos, Pos, Pos, Pos]:
+        index = self._determine_index(tilemap, position)
+        coord = random_choice([(index, k) for k in range(self.limit[index])], position)
+        return coord
+
+class WangCorner8Painter(WangCorner16Painter):
+    """
+    """
+    terrain_like: Tuple[Terrain] = tuple()
+    vertices: Dict[Pos, Tuple[int, float]] = {}
 
     def _determine_index(self, tilemap, pos: Pos) -> int:
         north, east, south, west = tilemap.get_cardinal_terrain(pos)

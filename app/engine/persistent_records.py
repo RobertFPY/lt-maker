@@ -66,6 +66,64 @@ class PersistentRecordManager(Data):
         else:
             return False
 
+    def unlock_song(self, music: str):
+        if music in self:
+            logging.info("Music with nid of %s already unlocked")
+            return
+        else:
+            self.append(PersistentRecord(music, True))
+        persistent_data.serialize(self.location, self.save())
+
+    def check_song_unlocked(self, music: str):
+        if music in self:
+            return super().get(music).value
+        else:
+            return False
+
+    def unlock_support_rank(self, support_pair: str, rank: str):
+        if support_pair not in self:
+            self.append(PersistentRecord(support_pair, []))
+        unlocked_ranks = super().get(support_pair).value
+
+        if rank in unlocked_ranks:
+            logging.info("Support Pair with nid of %s already unlocked rank %s" % (support_pair, rank))
+            return
+        else:
+            unlocked_ranks.append(rank)
+        persistent_data.serialize(self.location, self.save())
+
+    def check_support_unlocked(self, support_pair: str, rank: str):
+        if support_pair in self:
+            return rank in super().get(support_pair).value
+        else:
+            return False
+
+    def mark_unit_as_loaded(self, unit_nid: str):
+        key = '_loaded_units'
+        if key not in self:
+            self.append(PersistentRecord(key, []))
+        loaded_units = super().get(key).value
+
+        if unit_nid in loaded_units:
+            logging.info("Unit with nid of %s already unlocked" % unit_nid)
+            return
+        else:
+            loaded_units.append(unit_nid)
+        persistent_data.serialize(self.location, self.save())
+
+    def check_unit_loaded(self, unit_nid: str):
+        key = '_loaded_units'
+        if key in self:
+            return unit_nid in super().get(key).value
+        else:
+            return False
+
+    def unlock_support_room(self):
+        self.create('_support_room_unlocked', True)
+
+    def check_support_room_unlocked(self):
+        return self.get('_support_room_unlocked')
+
 def reset():
     game_id = str(DB.constants.value('game_nid'))
     location = 'saves/' + game_id + '-persistent_records.p'

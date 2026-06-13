@@ -143,6 +143,15 @@ class PathSystem():
             prev_pos = pos
         return True
 
+    def get_path_cost(self, unit: UnitObject, path: List[Pos]) -> int:
+        """Total movement cost of traversing path, excluding the starting position.
+
+        Path is ordered goal-first, start-last (as produced by get_path), so the
+        starting position is path[-1] and is not counted - matching how
+        unit_path_movement_component consumes movement per tile arrived on.
+        """
+        return sum(movement_funcs.get_mcost(unit, pos) for pos in path[:-1])
+
     def travel_algorithm(self, path: List[Pos], moves: int, unit: UnitObject, grid: Grid[Node]) -> Pos:
         """
         Given a long path, travels along that path as far as possible.

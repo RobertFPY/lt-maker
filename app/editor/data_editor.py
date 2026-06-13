@@ -8,6 +8,27 @@ from app.data.database.database import DB
 
 from app.data.serialization.versions import CURRENT_SERIALIZATION_VERSION
 from app.editor.settings import MainSettingsController
+from app.editor.settings.preference_definitions import Preference
+
+def restore_db_and_resync(saved_data, main_editor):
+    """Restore the DB from a snapshot, then re-broadcast the selected level.
+
+    DB.restore() rebuilds DB.levels into brand-new objects. The level editor
+    (and its sub-widgets) cache the live level object and only refresh on a
+    'selected_level' broadcast, so without the re-broadcast they keep pointing
+    at the old, now-orphaned level object. Subsequent unit edits then go to the
+    orphan while the DB holds the stale copy, and the next refresh snaps the
+    editor back to the stale state -- the "unit positions revert" bug.
+    """
+    DB.restore(saved_data)
+    state_manager = main_editor.app_state_manager if main_editor else None
+    if state_manager:
+        current_level_nid = state_manager.state.selected_level
+        # Sometimes the stored current level nid does not exist as a valid
+        # level; check before broadcasting.
+        if current_level_nid in DB.levels:
+            state_manager.change_and_broadcast(
+                'selected_level', current_level_nid)
 
 class SingleDatabaseEditor(QDialog):
     def __init__(self, tab, parent=None):
@@ -32,7 +53,7 @@ class SingleDatabaseEditor(QDialog):
             self.tab.splitter.restoreState(state)
 
     def keyPressEvent(self, keypress: QtGui.QKeyEvent) -> None:
-        if keypress.key() == self.settings.get_editor_close_button():
+        if keypress.key() == self.settings.get_preference(Preference.EDITOR_CLOSE_BUTTON):
             self.reject()
         else:
             pass
@@ -78,19 +99,7 @@ class SingleDatabaseEditor(QDialog):
         return self.saved_data
 
     def restore(self):
-        DB.restore(self.saved_data)
-        # Make sure we use the new restored database as the level
-        # in the level editors
-        if self.main_editor:
-            state_manager = self.main_editor.app_state_manager
-            current_level_nid = state_manager.state.selected_level
-            # Sometimes the current level nid stored here
-            # does not exist as a valid level
-            # Reason currently unknown...
-            # Check that it does before broadcasting
-            if current_level_nid in DB.levels:
-                state_manager.change_and_broadcast(
-                    'selected_level', current_level_nid)
+        restore_db_and_resync(self.saved_data, self.main_editor)
 
     def apply(self):
         self.save()
@@ -187,6 +196,7 @@ class SingleResourceEditor(QDialog):
     def __init__(self, tab, resource_types=None, parent=None, *args, **kwargs):
         super().__init__(parent)
         self.window = parent
+        self.main_editor = parent
         self.resource_types = resource_types
         self.setStyleSheet("font: 10pt;")
         self.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
@@ -233,7 +243,7 @@ class SingleResourceEditor(QDialog):
         current_proj = self.settings.get_current_project()
         if current_proj:
             RESOURCES.load(current_proj, CURRENT_SERIALIZATION_VERSION)
-        DB.restore(self.saved_data)
+        restore_db_and_resync(self.saved_data, self.main_editor)
         self.save_geometry()
         super().reject()
         self.close()
@@ -265,6 +275,7 @@ class MultiResourceEditor(SingleResourceEditor):
     def __init__(self, tabs, resource_types, parent=None):
         QDialog.__init__(self, parent)
         self.window = parent
+        self.main_editor = parent
         self.resource_types = resource_types
         self.setWindowTitle("Resource Editor")
         self.setStyleSheet("font: 10pt;")

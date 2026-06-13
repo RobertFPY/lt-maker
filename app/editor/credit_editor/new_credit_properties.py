@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QWidget, QLineEdit, QVBoxLayout, QTextEdit, QStackedWidget
-from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtCore import Qt, QSize, pyqtSignal
 from PyQt5.QtGui import QFontMetrics, QIcon
 
 from app.data.resources.resources import RESOURCES
@@ -9,7 +9,7 @@ from app.extensions.custom_gui import PropertyBox, ComboBox
 from app.extensions.list_widgets import AppendMultiListWidget
 from app.extensions.key_value_delegate import KeyValueDelegate, KeyValueDoubleListModel
 
-from app.editor.icons import PushableIcon16, MapSpriteBox
+from app.editor.icons import PushableIcon16, MapSpriteBox, UnitPortrait
 from app.editor.icon_editor import icon_tab
 from app.editor.lib.components.validated_line_edit import NidLineEdit
 
@@ -248,15 +248,11 @@ class CreditPushableIcon(PushableIcon16):
             self.database = RESOURCES.portraits
 
     def onIconSourcePicker(self):
-        if self.credit_type == ResourceType.PORTRAITS:
-            from app.editor.portrait_editor import new_portrait_tab
-            res, ok = new_portrait_tab.get()
-        else:           
-            from app.editor.icon_editor import icon_tab
-            if self.credit_type == ResourceType.MAP_ICONS:
-                res, ok = icon_tab.get_map_icon_editor()
-            else:
-                res, ok = icon_tab.get(self.width, self._nid)
+        from app.editor.icon_editor import icon_tab
+        if self.credit_type == ResourceType.MAP_ICONS:
+            res, ok = icon_tab.get_map_icon_editor()
+        else:
+            res, ok = icon_tab.get(self.width, self._nid)
 
         if res and ok:
             icon_index = (0, 0)
@@ -266,15 +262,26 @@ class CreditPushableIcon(PushableIcon16):
             self.change_icon(res.nid, icon_index)
             self.sourceChanged.emit(self._nid, self.x, self.y)
 
+class PortraitIcon(UnitPortrait):
+    sourceChanged = pyqtSignal(str, int, int)
+
+    def change_icon(self, nid, index=None):
+        self._nid = nid
+        self.sourceChanged.emit(self._nid, 0, 0)
+        self.render()
+
 class IconDesc(QWidget):
-    def __init__(self, parent=None, credit_type='16x16_Icons'):
+    def __init__(self, parent=None, credit_type=ResourceType.ICONS16):
         super().__init__(parent)
         self.window = parent
 
-        self.layout = QVBoxLayout()       
+        self.layout = QVBoxLayout()
 
-        self.icon_box = PropertyBox("Contribution", CreditPushableIcon, self)
-        self.icon_box.edit.setType(credit_type)
+        if credit_type == ResourceType.PORTRAITS:
+            self.icon_box = PropertyBox("Contribution", PortraitIcon, self)
+        else:
+            self.icon_box = PropertyBox("Contribution", CreditPushableIcon, self)
+            self.icon_box.edit.setType(credit_type)
         self.icon_box.edit.sourceChanged.connect(self.on_icon_changed)
 
         self.contrib_box = PropertyBox("Name", QLineEdit, self)

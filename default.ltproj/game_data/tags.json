@@ -14,6 +14,8 @@
     "Tile",
     "Flying",
     "Monster",
+    "Mogall",
     "Sword",
-    "ArenaIgnore"
+    "ArenaIgnore",
+    "Protect"
 ]

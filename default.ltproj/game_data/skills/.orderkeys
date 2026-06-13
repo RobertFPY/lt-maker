@@ -61,5 +61,6 @@
     "LightOverride",
     "AnimaOverride",
     "DarkOverride",
-    "Shove"
+    "Shove",
+    "Distance_Debuff"
 ]

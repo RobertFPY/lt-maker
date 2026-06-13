@@ -1,12 +1,14 @@
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton, \
     QDialog, QAbstractItemView, QHBoxLayout
 from PyQt5.QtCore import Qt
-
+from PyQt5.QtWidgets import QHeaderView
 from app.data.resources.resources import RESOURCES
 from app.extensions.custom_gui import ResourceTableView, MultiselectTableView
 from app.editor.data_editor import SingleResourceEditor, MultiResourceEditor
 from app.editor.sound_editor.sound_model import SFXModel, MusicModel
 from app.editor import table_model
+from app.editor.sound_editor.sound_player import SoundPlayer
+
 
 class SoundTab(QWidget):
     def __init__(self, data, title, model, view, parent=None):
@@ -31,6 +33,9 @@ class SoundTab(QWidget):
         self.view.setSelectionMode(QAbstractItemView.SingleSelection)
         self.view.setModel(self.proxy_model)
         self.view.setSortingEnabled(True)
+        self.view.resizeColumnsToContents()
+        self.view.horizontalHeader().setSectionResizeMode(1, QHeaderView.Interactive)
+        self.view.horizontalHeader().setMaximumSectionSize(250)
         # Remove edit on double click
         self.view.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.view.sortByColumn(0, Qt.AscendingOrder)
@@ -38,17 +43,29 @@ class SoundTab(QWidget):
 
         self.layout.addWidget(self.view)
 
-        hbox = QHBoxLayout()
+        # Sound Player UI
+        self.sound_player_widget = SoundPlayer(self.view, self.layout)
 
-        self.button = QPushButton("Add New %s..." % self.title)
+        # Add or Mofidy UI
+        hboxItem = QHBoxLayout()
+
+        self.button = QPushButton("Add Track (.ogg)")
         self.button.clicked.connect(self.append)
-        hbox.addWidget(self.button)
+        hboxItem.addWidget(self.button)
 
-        self.modify_button = QPushButton("Modify Current %s..." % self.title)
+        self.modify_button = QPushButton("Modify Track")
+        self.modify_button.setEnabled(False)
         self.modify_button.clicked.connect(self.modify)
-        hbox.addWidget(self.modify_button)
+        hboxItem.addWidget(self.modify_button)
 
-        self.layout.addLayout(hbox)
+        self.layout.addLayout(hboxItem)
+
+        selection_model = self.view.selectionModel()
+        selection_model.selectionChanged.connect(self.on_select)
+
+        # Stop audio player whenever closing SoundTab
+        if self.window:
+            self.window.finished.connect(self.sound_player_widget.stop_track_on_close_event)
 
     def append(self):
         last_index = self.model.append()
@@ -65,13 +82,25 @@ class SoundTab(QWidget):
         select = self.display.selectionModel()
         indices = select.selectedRows()
         return [self._data[self.proxy_model.mapToSource(index).row()] for index in indices]
-
+    
     def modify(self, index):
         proxy_indices = self.display.selectionModel().selectedRows()
         if proxy_indices:
             real_indices = [self.proxy_model.mapToSource(index) for index in proxy_indices]
             self.model.modify(real_indices)
 
+    def on_select(self):
+        has_selection = self.view.selectionModel().hasSelection()
+        self.modify_button.setEnabled(has_selection)
+        
+        selected_track = None
+        selected_candidates = self.get_selected()
+
+        if len(selected_candidates) > 0:
+            selected_track = selected_candidates[0]
+
+        self.sound_player_widget.handle_audio_player_on_select(has_selection, selected_track)
+  
 class SFXDatabase(SoundTab):
     @classmethod
     def create(cls, parent=None):
@@ -89,6 +118,16 @@ class MusicDatabase(SoundTab):
 
         dialog = cls(data, title, MusicModel, ResourceTableView, parent)
         return dialog
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.autofill_button = QPushButton("Autofill Sound Room Number")
+        self.autofill_button.clicked.connect(self.autofill)
+        self.autofill_button.setToolTip('Assign consecutive, unique, positive values to all the Sound Room Numbers that are currently 0.')
+        self.layout.addWidget(self.autofill_button)
+
+    def autofill(self):
+        self.model.autofill()
 
 def get_sfx():
     window = SingleResourceEditor(SFXDatabase, ['sfx'])
@@ -108,9 +147,9 @@ def get_music():
     else:
         return None, False
 
-def get_full_editor():
+def get_full_editor(parent=None):
     return MultiResourceEditor((MusicDatabase, SFXDatabase),
-                               ("music", "sfx"))
+                               ("music", "sfx"), parent)
 
 # Testing
 # Run "python -m app.editor.sound_editor.sound_tab"

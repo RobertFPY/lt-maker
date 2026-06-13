@@ -33,10 +33,11 @@
             "speak;Eirika;......",
             "transition;Close",
             "show_layer;Village1",
+            "remove_region;DestroyVillage1",
             "change_background",
             "transition;Open",
             "give_item;Eirika;Red_Gem",
-            "has_traded;{unit}"
+            "has_visited;{unit}"
         ],
         "nid": "2 Village1Eirika"
     }

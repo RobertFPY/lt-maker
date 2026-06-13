@@ -1,9 +1,12 @@
 
+from __future__ import annotations
+
 import logging
-from typing import List, Tuple
+from typing import List, Optional, Tuple, TYPE_CHECKING
 
 from app.constants import WINHEIGHT, WINWIDTH
 from app.data.database.database import DB
+from app.data.resources.portraits import INFO_PORTRAIT_WIDTH, INFO_PORTRAIT_HEIGHT
 from app.data.resources.resources import RESOURCES
 from app.engine import (background, combat_calcs, engine, equations, gui,
                         help_menu, icons, image_mods, item_funcs, item_system,
@@ -25,28 +28,44 @@ from app.engine.text_evaluator import TextEvaluator
 from app.utilities import utils
 from app.utilities.enums import HAlignment
 from app.engine.fonts import FONT
+from app.engine.info_menu.multi_desc import PageType, build_dialog_list
+
+if TYPE_CHECKING:
+    from app.engine.objects.item import ItemObject
 
 class InfoMenuState(State):
     name = 'info_menu'
     in_level = False
     show_map = False 
 
-    left_stats = [stat.nid for stat in DB.stats if stat.position == 'left']
-    if len(left_stats) >= 7:
-        _extra_stat_row = True
-        # If we have 7 or more left stats, use 7 rows
-        right_stats = left_stats[7:]
-    else:  # Otherwise, just use the 6 rows
-        _extra_stat_row = False
-        right_stats = left_stats[6:]
-    right_stats += [stat.nid for stat in DB.stats if stat.position == 'right']
-    # Make sure we only display up to 6 or 7 on each
-    if _extra_stat_row:
-        left_stats = left_stats[:7]
-        right_stats = right_stats[:7]
-    else:
-        left_stats = left_stats[:6]
-        right_stats = right_stats[:6]
+    def _init(self):
+        """
+        Determines which stats are left stats, right stats, and/or hidden stats
+        for use when drawing within this state.
+
+        Necessary to wrap this in a function that's called when the info menu starts up
+        because otherwise starting up the info menu, then changing the stat nids, and then
+        starting up the info menu again will break which stats are actually available
+        """
+        left_stats = [stat.nid for stat in DB.stats if stat.position == 'left']
+        if len(left_stats) >= 7:
+            _extra_stat_row = True
+            # If we have 7 or more left stats, use 7 rows
+            right_stats = left_stats[7:]
+        else:  # Otherwise, just use the 6 rows
+            _extra_stat_row = False
+            right_stats = left_stats[6:]
+        right_stats += [stat.nid for stat in DB.stats if stat.position == 'right']
+        # Make sure we only display up to 6 or 7 on each
+        if _extra_stat_row:
+            left_stats = left_stats[:7]
+            right_stats = right_stats[:7]
+        else:
+            left_stats = left_stats[:6]
+            right_stats = right_stats[:6]
+        self._extra_stat_row = _extra_stat_row
+        self.left_stats = left_stats
+        self.right_stats = right_stats
 
     def create_background(self):
         panorama = RESOURCES.panoramas.get('info_menu_background')
@@ -58,6 +77,7 @@ class InfoMenuState(State):
             self.bg = None
 
     def start(self):
+        self._init()
         self.mouse_indicator = gui.MouseIndicator()
         self.create_background()
 
@@ -159,6 +179,10 @@ class InfoMenuState(State):
                 self.info_graph.set_transition_out()
                 self.info_flag = False
                 return
+            
+            if event == 'AUX':
+                self.info_graph.switch_info()
+                get_sound_thread().play_sfx('Select 6')
 
             if 'RIGHT' in directions:
                 if self.info_graph.move_right():
@@ -407,12 +431,12 @@ class InfoMenuState(State):
         if self.current_portrait:
             self.current_portrait.update()
             im = self.current_portrait.create_image()
-            offset = self.current_portrait.portrait.info_offset
+            offset = self.current_portrait.portrait.get_info_coord()
         # Draw portrait onto the portrait surf
         if im:
-            x_pos = (im.get_width() - 80)//2
-            im_surf = engine.subsurface(im, (x_pos, offset, 80, 72))
-            portrait_surf.blit(im_surf, (8, 8))
+            im_surf = engine.subsurface(im, (*offset, INFO_PORTRAIT_WIDTH, INFO_PORTRAIT_HEIGHT))
+            portrait_surf.blit(im_surf, (8 + (INFO_PORTRAIT_WIDTH - im_surf.get_width()) // 2,
+                                         8 + (INFO_PORTRAIT_HEIGHT- im_surf.get_height())// 2))
 
         # Stick it on the surface
         if self.transparency:
@@ -510,7 +534,8 @@ class InfoMenuState(State):
         else:
             num_states = len(info_states) - 1
         page = str(info_states.index(self.state) + 1) + '/' + str(num_states)
-        render_text(top_surf, ['small'], [page], [], (235, 12), HAlignment.RIGHT)
+        typeface = 'number_small4' if 'number_small4' in FONT else 'small'
+        render_text(top_surf, [typeface], [page], [], (236, 13), HAlignment.RIGHT)
 
         if num_states > 1:
             self.draw_top_arrows(top_surf)
@@ -636,7 +661,9 @@ class InfoMenuState(State):
             help_box = help_menu.StatDialog(desc_text or ('%s_desc' % stat_nid), contribution)
             self.info_graph.register((96 + 72, 16 * idx + 24, 64, 16), help_box, state)
 
-        other_stats = ['RAT']
+        other_stats = []
+        if DB.constants.value('enable_rating'):
+            other_stats.append('RAT')
         if DB.constants.value('talk_display'):
             other_stats.insert(0, 'TALK')
         if DB.constants.value('pairup') and DB.constants.value('attack_stance_only'):
@@ -808,10 +835,12 @@ class InfoMenuState(State):
 
         # Blit items
         for idx, item in enumerate(self.unit.nonaccessories):
+            equipped_subitem: Optional[ItemObject] = None
             if item.multi_item and any(subitem is weapon for subitem in item.subitems):
                 surf.blit(SPRITES.get('equipment_highlight'), (8, idx * 16 + 24 + 8))
                 for subitem in item.subitems:
                     if subitem is weapon:
+                        equipped_subitem = subitem
                         item_option = create_item_option(idx, subitem)
                         break
                 else:  # Shouldn't happen
@@ -821,16 +850,19 @@ class InfoMenuState(State):
                     surf.blit(SPRITES.get('equipment_highlight'), (8, idx * 16 + 24 + 8))
                 item_option = create_item_option(idx, item)
             item_option.draw(surf, 8, idx * 16 + 24)
-            self.info_graph.register((96 + 8, idx * 16 + 24, 120, 16), item_option.get_help_box(), 'equipment', first=(idx == 0))
+            help_dlg = build_dialog_list(equipped_subitem if equipped_subitem else item, PageType.ITEM, unit=self.unit)
+            self.info_graph.register((96 + 8, idx * 16 + 24, 120, 16), help_dlg, 'equipment', first=(idx == 0))
 
         # Blit accessories
         for idx, item in enumerate(self.unit.accessories):
             aidx = item_funcs.get_num_items(self.unit) + idx
             y_pos = aidx * 16 + 24
+            equipped_subitem: Optional[ItemObject] = None
             if item.multi_item and any(subitem is accessory for subitem in item.subitems):
                 surf.blit(SPRITES.get('equipment_highlight'), (8, y_pos + 8))
                 for subitem in item.subitems:
                     if subitem is accessory:
+                        equipped_subitem = subitem
                         item_option = create_item_option(aidx, subitem)
                         break
                 else:  # Shouldn't happen
@@ -841,7 +873,8 @@ class InfoMenuState(State):
                 item_option = create_item_option(aidx, item)
             item_option.draw(surf, 8, y_pos)
             first = (idx == 0 and not self.unit.nonaccessories)
-            self.info_graph.register((96 + 8, y_pos, 120, 16), item_option.get_help_box(), 'equipment', first=first)
+            help_dlg = build_dialog_list(equipped_subitem if equipped_subitem else item, PageType.ITEM, unit=self.unit)
+            self.info_graph.register((96 + 8, y_pos, 120, 16), help_dlg, 'equipment', first=first)
 
         # Battle stats
         battle_surf = SPRITES.get('battle_info')
@@ -916,15 +949,12 @@ class InfoMenuState(State):
             if skill_counter[skill.nid] > 1:
                 text = str(skill_counter[skill.nid])
                 render_text(surf, ['small'], [text], ['white'], (left_pos + 20 - 4 * len(text), 6))
-            if skill.data.get('total_charge'):
-                charge = ' %d / %d' % (skill.data['charge'], skill.data['total_charge'])
-            else:
-                charge = ''
             text = text_funcs.translate_and_text_evaluate(
                 skill.desc,
                 unit=game.get_unit(skill.owner_nid),
                 self=skill)
-            self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 28, 16, 16), help_menu.HelpDialog(text, name=skill.name + charge), 'support_skills')
+            help_dlg = build_dialog_list(skill, PageType.SKILL, unit=self.unit)
+            self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 28, 16, 16), help_dlg, 'support_skills')
 
         return surf
 
@@ -950,20 +980,17 @@ class InfoMenuState(State):
             if skill_counter[skill.nid] > 1:
                 text = str(skill_counter[skill.nid])
                 render_text(surf, ['small'], [text], ['white'], (left_pos + 20 - 4 * len(text), 6))
-            if skill.data.get('total_charge'):
-                charge = ' %d / %d' % (skill.data['charge'], skill.data['total_charge'])
-            else:
-                charge = ''
             text = text_funcs.translate_and_text_evaluate(
                 skill.desc,
                 unit=game.get_unit(skill.owner_nid),
                 self=skill)
+            help_dlg = build_dialog_list(skill, PageType.SKILL, unit=self.unit)
             if self._extra_stat_row:
-                self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 22, 16, 16), help_menu.HelpDialog(text, name=skill.name + charge), 'personal_data')
-                self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 22, 16, 16), help_menu.HelpDialog(text, name=skill.name + charge), 'growths')
+                self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 22, 16, 16), help_dlg, 'personal_data')
+                self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 22, 16, 16), help_dlg, 'growths')
             else:
-                self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 32, 16, 16), help_menu.HelpDialog(text, name=skill.name + charge), 'personal_data')
-                self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 32, 16, 16), help_menu.HelpDialog(text, name=skill.name + charge), 'growths')
+                self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 32, 16, 16), help_dlg, 'personal_data')
+                self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 32, 16, 16), help_dlg, 'growths')
 
         return surf
 

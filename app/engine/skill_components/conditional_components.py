@@ -20,6 +20,14 @@ class CombatCondition(SkillComponent):
             x = bool(evaluate.evaluate(self.value, unit, target,
                                        unit.position, {'item': item, 'item2': item2, 'mode': mode, 'skill': self.skill}))
             self._condition = x
+            # Invalidate the cache AGAIN, after _condition is published. Evaluating
+            # self.value above can route back into condition() for this skill (e.g. a
+            # condition referencing weapon_type/weapon_triangle_override, which go through
+            # item_override -> condition), caching the old _condition under the *current*
+            # cache state. Without this second invalidation that stale value sticks until
+            # some unrelated hook alters game state, so the override (e.g. Weapon Triangle)
+            # silently fails to apply for the first hit.
+            game.on_alter_game_state()
             return x
         except Exception as e:
             print("%s: Could not evaluate combat condition %s" %

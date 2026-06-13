@@ -15,6 +15,7 @@ class RegionObject(Region):
         position (Pos): The position of the region object. Defaults to None.
         size (Tuple[int, int]): The size of the region object in tiles. Defaults to [1, 1].
         sub_nid (str): Extra data for the region object. Defaults to None.
+        highlight (str): Highlight color to add to region.  Defaults to None.
         condition (str): The condition for the region object to be enabled. Defaults to 'True'.
         time_left (Optional[int]): The number of turns left for the region object. Defaults to None, which means it is permanent.
         only_once (bool): Flag indicating if the region object triggers only once. Defaults to False.
@@ -25,13 +26,14 @@ class RegionObject(Region):
     def __init__(self, nid: NID, region_type: RegionType, 
                  position: Pos = None, size: Tuple[int, int] = [1, 1], 
                  sub_nid: str = None, condition: str = 'True', time_left: Optional[int] = None,
-                 only_once: bool = False, interrupt_move: bool = False, hide_time: bool = False):
+                 only_once: bool = False, interrupt_move: bool = False, hide_time: bool = False, highlight = None):
         self.nid = nid
         self.region_type = region_type
         self.position = tuple(position) if position else None
         self.size = size
 
         self.sub_nid = sub_nid
+        self.highlight = highlight
         self.condition: str = condition
         self.time_left: Optional[int] = time_left
         self.only_once: bool = only_once
@@ -45,7 +47,7 @@ class RegionObject(Region):
     def from_prefab(cls, prefab):
         return cls(prefab.nid, prefab.region_type, prefab.position, prefab.size,
                    prefab.sub_nid, prefab.condition, prefab.time_left,
-                   prefab.only_once, prefab.interrupt_move, prefab.hide_time)
+                   prefab.only_once, prefab.interrupt_move, prefab.hide_time, prefab.highlight)
 
     def save(self) -> dict:
         serial_dict = {}
@@ -54,6 +56,7 @@ class RegionObject(Region):
         serial_dict['position'] = self.position
         serial_dict['size'] = self.size
         serial_dict['sub_nid'] = self.sub_nid
+        serial_dict['highlight'] = self.highlight
         serial_dict['condition'] = self.condition
         serial_dict['time_left'] = self.time_left
         serial_dict['only_once'] = self.only_once
@@ -67,6 +70,6 @@ class RegionObject(Region):
     def restore(cls, dat: dict):
         self = cls(dat['nid'], dat['region_type'], dat['position'], dat['size'],
                    dat['sub_nid'], dat['condition'], dat['time_left'],
-                   dat['only_once'], dat['interrupt_move'], dat.get('hide_time', False))
+                   dat['only_once'], dat['interrupt_move'], dat.get('hide_time', False), dat.get('highlight', None))
         self.data = dat['data']
         return self

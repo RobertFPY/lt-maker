@@ -45,7 +45,7 @@ class Database(object):
         self.factions = factions.FactionCatalog()
         self.items = items.ItemCatalog()
         self.skills = skills.SkillCatalog()
-        self.tags = tags.TagCatalog(['Lord', 'Boss', 'Armor', 'Horse', 'Mounted', 'Dragon', 'ZeroMove', 'AutoPromote', 'NoAutoPromote'])
+        self.tags = tags.TagCatalog()
         self.game_var_slots = varslot.VarSlotCatalog([])
         self.classes = klass.ClassCatalog()
 

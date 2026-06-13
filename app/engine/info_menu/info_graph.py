@@ -1,7 +1,14 @@
+from __future__ import annotations
+
 from typing import List
 from dataclasses import dataclass
+from typing import Dict, List, Optional
 
+from app.constants import TILEHEIGHT, WINHEIGHT
 from app.engine import engine, help_menu, menus
+from app.engine.dialog import DialogState
+from app.engine.graphics.text.text_renderer import render_text
+from app.utilities.enums import HAlignment
 
 info_states = ('personal_data', 'equipment', 'support_skills', 'notes')
 
@@ -9,9 +16,20 @@ info_states = ('personal_data', 'equipment', 'support_skills', 'notes')
 class BoundingBox():
     idx: int = 0
     aabb: tuple = None
-    help_box: help_menu.HelpDialog = None
+    _help_box: help_menu.HelpDialog | List[help_menu.HelpDialog] = None
     state: str = None
     first: bool = False
+
+    _page: int = 0
+
+    @property
+    def help_box(self) -> help_menu.HelpDialog:
+        if self.is_multiple():
+            return self._help_box[self._page]
+        return self._help_box
+
+    def is_multiple(self):
+        return isinstance(self._help_box, list)
 
 def find_closest(current_bb: BoundingBox, boxes: List[BoundingBox], horiz: bool) -> BoundingBox:
     center_point = (current_bb.aabb[0] + current_bb.aabb[2]/2,
@@ -47,10 +65,10 @@ class InfoGraph():
     draw_all_bbs: bool = False
 
     def __init__(self):
-        self.registry = {state: [] for state in info_states}
+        self.registry: Dict[str, List[BoundingBox]] = {state: [] for state in info_states}
         self.registry.update({'growths': []})
-        self.current_bb = None
-        self.last_bb = None
+        self.current_bb: Optional[BoundingBox] = None
+        self.last_bb: Optional[BoundingBox] = None
         self.current_state = None
         self.cursor = menus.Cursor()
 
@@ -63,8 +81,10 @@ class InfoGraph():
 
     def set_current_state(self, state):
         self.current_state = state
+        if state not in self.registry:
+            self.registry[state] = []
 
-    def register(self, aabb, help_box, state, first=False):
+    def register(self, aabb: tuple[int, int, int, int], help_box: help_menu.HelpDialog, state: str, first:bool=False):
         if isinstance(help_box, str):
             help_box = help_menu.HelpDialog(help_box)
 
@@ -73,6 +93,8 @@ class InfoGraph():
                 idx = len(self.registry[s])
                 self.registry[s].append(BoundingBox(idx, aabb, help_box, s, first))
         else:
+            if state not in self.registry:
+                self.registry[state] = []
             idx = len(self.registry[state])
             self.registry[state].append(BoundingBox(idx, aabb, help_box, state, first))
 
@@ -108,7 +130,7 @@ class InfoGraph():
         self.last_bb = self.current_bb
         self.current_bb = None
 
-    def _move(self, boxes, horiz=False) -> bool:
+    def _move(self, boxes: List[BoundingBox], horiz:bool=False) -> bool:
         """Move the current_bb to the closest box in the given direction
 
         Args:
@@ -125,7 +147,15 @@ class InfoGraph():
         if closest_box == self.current_bb:
             return False
         self.current_bb = closest_box
+        self.current_bb._page = 0
         return True
+
+    def switch_info(self) -> None:
+        if self.current_bb and self.current_bb.is_multiple():
+            if self.current_bb._page < len(self.current_bb._help_box) - 1:
+                self.current_bb._page += 1
+            else:
+                self.current_bb._page = 0
 
     def move_left(self) -> bool:
         boxes = [bb for bb in self.registry[self.current_state] if bb.aabb[0] < self.current_bb.aabb[0]]
@@ -150,6 +180,22 @@ class InfoGraph():
                     bb.aabb[1] <= y < bb.aabb[1] + bb.aabb[3]:
                 self.current_bb = bb
 
+    def box_at_top(self, pos: tuple[int, int]) -> bool:
+        """
+            Determine if the help box would be drawn at the top or bottom of the screen.
+            Used only for determining where the page number will go if pages are active.
+            Args:
+                pos: The proposed position for the help box
+            Returns:
+                bool: True if the box would be repositioned on top, False otherwise
+        """
+        # eyeballed these numbers but they're 'good enough 99% of the time' lmao
+        final_offset: int = pos[1] + self.current_bb.help_box.get_height()
+        threshold: int = WINHEIGHT + TILEHEIGHT * 2
+        if final_offset >= threshold:
+            return True
+        return False
+
     def draw(self, surf):
         if self.draw_all_bbs:
             for bb in self.registry[self.current_state]:
@@ -157,12 +203,23 @@ class InfoGraph():
                 engine.fill(s, (10 * bb.idx, 10 * bb.idx, 0, 128))
                 surf.blit(s, (bb.aabb[0], bb.aabb[1]))
         if self.current_bb:
-            # right = self.current_bb.aabb[0] >= int(0.75 * WINWIDTH)
             right = False
             pos = (max(0, self.current_bb.aabb[0] - 32), self.current_bb.aabb[1] + 13)
+            box_at_top = self.box_at_top(pos)
 
             cursor_pos = (max(0, self.current_bb.aabb[0] - 4), self.current_bb.aabb[1])
             self.cursor.update()
             self.cursor.draw(surf, *cursor_pos)
 
             self.current_bb.help_box.draw(surf, pos, right)
+            if self.current_bb.is_multiple() and len(self.current_bb._help_box) > 1:
+                # If the help_box has no dlg, then we don't need to wait for it to transition in.
+                if not self.current_bb.help_box.dlg or \
+                    (self.current_bb.help_box.dlg and 
+                     self.current_bb.help_box.dlg.state != DialogState.TRANSITION_IN):
+                    pos = self.current_bb.help_box.top_left(pos)
+                    if box_at_top:
+                        pos = (pos[0] + self.current_bb.help_box.get_width() - 16, pos[1] + self.current_bb.help_box.get_height() - 8)
+                    else:
+                        pos = (pos[0] + self.current_bb.help_box.get_width() - 16, pos[1] - 4)
+                    render_text(surf, ['small-yellow'], ['%d/%d' % (self.current_bb._page + 1, len(self.current_bb._help_box))], [], pos, HAlignment.RIGHT)

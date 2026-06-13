@@ -499,15 +499,6 @@ class GridChoiceMenu():
         lb, rb = sx, sx + ncols
         ub, db = sy, sy + nrows
         nx, ny = loc
-        mx, my = self._total_grid_size()
-        if nx == sx and nx > 0:
-            nx -= 1
-        elif nx > 0 and nx < mx - 1:
-            nx += 1
-        if ny == sy and ny > 0:
-            ny -= 1
-        elif ny > 0 and ny < my - 1:
-            ny += 1
 
         fx, fy = scroll
         if nx < lb:

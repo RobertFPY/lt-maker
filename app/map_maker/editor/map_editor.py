@@ -369,7 +369,7 @@ class MapEditor(QMainWindow):
             self.cliff_marker_widget.main_box.edit.removeItem(idx)
             self.current.reset_all()
         else:
-            QMessageBox.warning("Warning", "Cannot remove last cliff marker!")
+            QMessageBox.warning(self, "Warning", "Cannot remove last cliff marker!")
         self.cliff_marker_widget.toggle_remove_button()
 
     def set_current(self, current: MapPrefab):

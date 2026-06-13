@@ -92,6 +92,11 @@ class CombatCalcTests(unittest.TestCase):
 
     def check_counter(self, should_counter, msg):
         from app.engine.game_state import game
+        from app.utilities.primitive_counter import PrimitiveCounter
+        # Seed game_vars so support gating (game.game_vars.get('_supports')) has a
+        # real store to read. Otherwise this test depends on whatever the global
+        # game singleton was left holding by a prior test in the suite.
+        game.game_vars = PrimitiveCounter()
         game.target_system = MagicMock()
         game.target_system.targets_in_range = self.is_attacker_in_range
         self.assertEqual(can_counterattack(self.attacker, self.aweapon, self.defender, self.dweapon), should_counter, msg)

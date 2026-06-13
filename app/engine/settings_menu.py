@@ -104,7 +104,7 @@ class SliderOption(ConfigOption):
         if not slider_bar:
             return
         surf.blit(slider_bar, (x + 112, y + 4))
-        slider_cursor = SPRITES.get('waiting_cursor')
+        slider_cursor = SPRITES.get('slider_cursor')
         if not slider_cursor:
             return
         value = cf.SETTINGS[self.name]

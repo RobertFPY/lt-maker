@@ -279,7 +279,7 @@ class MiniMap(object):
             return self.coast(position)
         # Lava Coast
         elif key == 'Lava_Coast':
-            return self.coast(position, sea_keys=('Lava',), coast_key=key, offset=(0, 2))
+            return self.coast(position, sea_keys=('Lava',), coast_key=key, offset=(0, 3))
         # Cliff
         elif key in self.cliffs:
             pos = self.cliff_manager.get_orientation(position)
@@ -467,6 +467,9 @@ class MiniMap(object):
             keys = ('Sea', 'Coast', 'River', 'Wall', 'Pier', 'Bridge')
         else:
             keys = (key, )
+
+        if key == 'Lava':
+            column += 2
 
         row = 0
 

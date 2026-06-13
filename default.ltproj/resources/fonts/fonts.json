@@ -1374,6 +1374,14 @@
         "palettes": {}
     },
     {
+        "nid": "number_small4",
+        "fallback_ttf": null,
+        "fallback_size": 16,
+        "default_color": null,
+        "outline_font": false,
+        "palettes": {}
+    },
+    {
         "nid": "reel",
         "fallback_ttf": null,
         "fallback_size": 16,
@@ -2528,7 +2536,7 @@
             ]
         }
     },
-	{
+    {
         "nid": "rank",
         "fallback_ttf": null,
         "fallback_size": 16,

@@ -1,6 +1,8 @@
 from enum import Enum
 from typing import List
 
+from app.data.database.database import DB
+
 from app.engine import engine
 from app.events import speak_style, event_commands
 from app.events.event import Event
@@ -58,6 +60,12 @@ class MockEvent(Event):
             self.processor = MockPythonEventProcessor('Mock', event_prefab.source)
         else:
             self.processor = MockEventProcessor('Mock', event_prefab.source, self.text_evaluator, if_statement_strategy, command_idx)
+
+        # Runs the `on_startup` trigger event commands before running the main MockEvent (to load speak_style)
+        startup_event_prefabs = DB.events.get('on_startup', None)
+        for startup in startup_event_prefabs:
+            for line in startup.source.split('\n'):
+                self.queue_command(line)
 
     def update(self):
         # update all internal updates, remove the ones that are finished

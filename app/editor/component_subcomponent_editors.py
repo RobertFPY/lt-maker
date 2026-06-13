@@ -11,6 +11,7 @@ from PyQt5.QtCore import Qt, pyqtSignal
 from app.data.database.components import ComponentType
 from app.data.database.database import DB
 from app.data.resources.resources import RESOURCES
+from app.engine.fonts import get_text_color_options
 from app.editor.component_editor_delegates import (AffinityDelegate,
                                                    BaseComponentDelegate,
                                                    ClassDelegate, ItemDelegate,
@@ -27,6 +28,7 @@ from app.editor.event_editor.py_syntax import PythonHighlighter
 from app.editor.settings.main_settings_controller import MainSettingsController
 from app.editor.auto_resizing_text_edit import AutoResizingTextEdit
 
+from app.editor.settings.preference_definitions import Preference
 from app.extensions.custom_gui import ComboBox
 from app.extensions.list_widgets import AppendSingleListWidget
 from app.extensions.shape_dialog import ShapeIcon
@@ -35,7 +37,7 @@ from app.utilities import str_utils, utils
 
 class BaseSubcomponentEditor(QWidget):
     resized: pyqtSignal = pyqtSignal() # emit on possible resize
-    
+
     def __init__(self, field_name: str, option_dict: Dict[str, Any]) -> None:
         super().__init__()
         hbox = QHBoxLayout()
@@ -114,19 +116,19 @@ class StringSubcomponentEditor(BaseSubcomponentEditor):
         self.settings = MainSettingsController()
         self.editor = AutoResizingTextEdit(self)
         self.editor.setMaximumWidth(640)
-        
+
         self.editor.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.editor.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        
+
         if not self.option_dict.get(self.field_name):
             self.option_dict[self.field_name] = ''
-        
+
         self._set_font()
         self.editor.setText(str(self.option_dict[self.field_name]))
-        
+
         self._old_height = self.editor.document().size().height()
         self.highlighter = PythonHighlighter(self.editor.document())
-        
+
         self.editor.textChanged.connect(lambda: self.on_value_changed(self.editor.toPlainText()))
         hbox.addWidget(self.editor)
 
@@ -136,10 +138,10 @@ class StringSubcomponentEditor(BaseSubcomponentEditor):
         if new_height != self._old_height:
             self._old_height = new_height
             self.resized.emit() # size could change here so emit
-                        
+
     def _set_font(self):
-        if self.settings.get_code_font_in_boxes():
-            self.editor.setFont(QFont(self.settings.get_code_font()))
+        if self.settings.get_preference(Preference.CODE_FONT_IN_BOXES):
+            self.editor.setFont(QFont(self.settings.get_preference(Preference.CODE_FONT)))
 
 class FloatSubcomponentEditor(BaseSubcomponentEditor):
     @override
@@ -235,8 +237,8 @@ class SoundSubcomponentEditor(BaseSubcomponentEditor):
 
     def on_value_changed(self, val):
         self.option_dict[self.field_name] = val
-        
-        
+
+
 class ShapeSubcomponentEditor(BaseSubcomponentEditor):
     @override
     def _create_editor(self, hbox):
@@ -249,6 +251,26 @@ class ShapeSubcomponentEditor(BaseSubcomponentEditor):
 
     def on_value_changed(self):
         self.option_dict[self.field_name] = self.editor.shape()
+
+
+class TextColorSubcomponentEditor(BaseSubcomponentEditor):
+    @override
+    def _create_editor(self, hbox):
+        self.editor = ComboBox(self)
+        choices = get_text_color_options()
+        for choice in choices:
+            self.editor.addItem(choice)
+        width = utils.clamp(self.editor.minimumSizeHint().width(
+        ) + DROP_DOWN_BUFFER, MIN_DROP_DOWN_WIDTH, MAX_DROP_DOWN_WIDTH)
+        self.editor.setMaximumWidth(width)
+        if not self.option_dict.get(self.field_name):
+            self.option_dict[self.field_name] = choices[0]
+        self.editor.setValue(self.option_dict[self.field_name])
+        self.editor.currentTextChanged.connect(self.on_value_changed)
+        hbox.addWidget(self.editor)
+
+    def on_value_changed(self, val):
+        self.option_dict[self.field_name] = val
 
 
 class BaseContainerSubcomponentEditor(BaseSubcomponentEditor):
@@ -299,7 +321,8 @@ EDITOR_MAP: Dict[ComponentType, BaseSubcomponentEditor] = {
     ComponentType.Event: EventSubcomponentEditor,
     ComponentType.Sound: SoundSubcomponentEditor,
     ComponentType.Affinity: AffinitySubcomponentEditor,
-    ComponentType.Shape: ShapeSubcomponentEditor
+    ComponentType.Shape: ShapeSubcomponentEditor,
+    ComponentType.TextColor: TextColorSubcomponentEditor
 }
 
 CONTAINER_EDITOR_MAP: Dict[ComponentType, BaseContainerSubcomponentEditor] = {

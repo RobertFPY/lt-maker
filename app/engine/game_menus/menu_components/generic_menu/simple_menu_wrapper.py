@@ -7,6 +7,7 @@ from app.data.database.database import DB
 from app.data.database.items import ItemPrefab
 from app.data.database.klass import Klass
 from app.data.database.skills import SkillPrefab
+from app.data.resources.portraits import INFO_PORTRAIT_WIDTH, INFO_PORTRAIT_HEIGHT, CHIBI_HEIGHT
 from app.data.resources.resources import RESOURCES
 from app.engine import engine
 from app.engine.game_menus.menu_components.generic_menu.simple_menu import \
@@ -14,13 +15,26 @@ from app.engine.game_menus.menu_components.generic_menu.simple_menu import \
 from app.engine.game_state import game
 from app.engine.graphics.ui_framework.ui_framework import UIComponent
 from app.engine.graphics.ui_framework.ui_framework_layout import convert_align
-from app.engine.icons import draw_chibi, get_icon, get_icon_by_nid
+from app.engine.icons import draw_chibi, get_icon, get_icon_by_nid, get_portrait_from_nid
 from app.engine.objects.item import ItemObject
 from app.engine.objects.unit import UnitObject
 from app.sprites import SPRITES
 from app.utilities.enums import Alignments, HAlignment, Orientation
 from app.utilities.typing import NID
 
+ICON_HEIGHT = 16
+
+HEIGHT_DATA_TYPE_MAP = {
+    'type_base_item': ICON_HEIGHT,
+    'type_game_item': ICON_HEIGHT,
+    'type_skill': ICON_HEIGHT,
+    'type_unit': ICON_HEIGHT,
+    'type_class': ICON_HEIGHT,
+    'type_portrait': INFO_PORTRAIT_HEIGHT,
+    'type_chibi': CHIBI_HEIGHT,
+    'type_icon': ICON_HEIGHT,
+    'str': ICON_HEIGHT,
+}
 
 class SimpleMenuUI():
     def __init__(self, data: List[str] | Callable[[], List] = None, data_type: str = 'str',
@@ -33,7 +47,8 @@ class SimpleMenuUI():
 
         # UI stuff
         self.base_component = UIComponent.create_base_component()
-        self.table: SimpleIconTable = self.create_table(self.base_component, rows, cols, title, row_width, bg, orientation, text_align)
+        default_row_height = HEIGHT_DATA_TYPE_MAP.get(data_type, ICON_HEIGHT)
+        self.table: SimpleIconTable = self.create_table(self.base_component, rows, cols, title, row_width, bg, orientation, text_align, default_row_height)
         halign, valign = convert_align(alignment)
         self.table.props.h_alignment = halign
         self.table.props.v_alignment = valign
@@ -46,12 +61,11 @@ class SimpleMenuUI():
         else:
             self.set_data(data)
 
-    def create_table(self, base_component, rows, cols, title, row_width, bg, orientation, text_align) -> SimpleIconTable:
+    def create_table(self, base_component, rows, cols, title, row_width, bg, orientation, text_align, entry_height) -> SimpleIconTable:
         return SimpleIconTable('table', base_component, num_rows=rows,
                                num_columns=cols, title=title, row_width=row_width,
                                background=bg, orientation=orientation,
-                               option_text_align=text_align)
-
+                               option_text_align=text_align, default_row_height=entry_height)
     def set_data(self, raw_data):
         if self._data == raw_data and not self._data_type == 'type_unit': # units need to be refreshed
             return
@@ -132,18 +146,12 @@ class SimpleMenuUI():
             return (get_icon(None), "ERR", "ERR")
 
     def parse_portrait(self, portrait_nid: NID) -> Tuple[engine.Surface, str, str]:
-        # mostly copied from EventPortrait
-        portrait = RESOURCES.portraits.get(portrait_nid)
-        if portrait:
-            main_portrait_coords = (0, 0, 96, 80)
-            if not portrait.image:
-                portrait.image = engine.image_load(portrait.full_path)
-            portrait.image = portrait.image.convert()
-            engine.set_colorkey(portrait.image, COLORKEY, rleaccel=True)
-            main_portrait = engine.subsurface(portrait.image, main_portrait_coords)
+        portrait, offset = get_portrait_from_nid(portrait_nid)
+        if not portrait:
+            portrait = engine.create_surface((INFO_PORTRAIT_WIDTH, INFO_PORTRAIT_HEIGHT))
         else:
-            main_portrait = engine.create_surface((96, 80))
-        return (main_portrait, "", "")
+            portrait = engine.subsurface(portrait, (*offset, INFO_PORTRAIT_WIDTH, INFO_PORTRAIT_HEIGHT))
+        return (portrait, "", "")
 
     def parse_chibi(self, chibi_nid: NID) -> Tuple[engine.Surface, str, str]:
         chibi_surf = engine.create_surface((32, 32), True)

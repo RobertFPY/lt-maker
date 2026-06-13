@@ -1246,8 +1246,6 @@ class AnimationCombat(BaseCombat, MockCombat):
             if unit.get_hp() <= 0:
                 game.death.should_die(unit)
 
-        self.handle_records(self.full_playback, all_units)
-
         self._delay_death = self.combat_death_should_trigger(all_units)
 
     def clean_up1(self):
@@ -1264,27 +1262,51 @@ class AnimationCombat(BaseCombat, MockCombat):
 
         self.cleanup_combat()
 
+        self.handle_unusable_items()
+        self.handle_broken_items()
+        
         # handle wexp & skills
         if not self.attacker.is_dying:
             self.handle_wexp(self.attacker, self.main_item, self.defender)
+
+        if DB.constants.value('pairup') and self.main_item:
+            if self.attacker.strike_partner:
+                self.handle_wexp(self.attacker.strike_partner, self.main_item, self.defender)
+            if self.attacker.traveler:
+                self.handle_wexp(game.get_unit(self.attacker.traveler), self.main_item, self.defender)
+
         if self.defender and self.def_item and not self.defender.is_dying:
             self.handle_wexp(self.defender, self.def_item, self.attacker)
+
+        if DB.constants.value('pairup') and self.def_item:
+            if self.defender and self.defender.strike_partner:
+                self.handle_wexp(self.defender.strike_partner, self.def_item, self.attacker)
+            if self.defender and self.defender.traveler:
+                self.handle_wexp(game.get_unit(self.defender.traveler), self.def_item, self.attacker)
 
         self.handle_mana(all_units)
         self.handle_exp(self)
 
     def clean_up2(self):
+        """
+        This clean up function handles updates done after combat stops being shown.
+        """
+        all_units = self._all_units()
+        
         game.state.back()
 
         # attacker has attacked
         action.do(action.HasAttacked(self.attacker))
+        
+        self.handle_records(self.full_playback, all_units)
 
         self.handle_messages()
-        all_units = self._all_units()
         self.turnwheel_death_messages(all_units)
 
         self.handle_state_stack()
+        
         game.events.trigger(triggers.CombatEnd(self.attacker, self.defender, self.attacker.position, self.main_item, self.full_playback))
+
         self.handle_item_gain(all_units)
 
         pairs = self.handle_supports(all_units)
@@ -1293,9 +1315,6 @@ class AnimationCombat(BaseCombat, MockCombat):
         self.end_combat()
 
         self.handle_death(all_units)
-
-        self.handle_unusable_items()
-        self.handle_broken_items()
 
         self.attacker.built_guard = True
         if self.defender:

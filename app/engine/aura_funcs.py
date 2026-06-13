@@ -66,6 +66,28 @@ def remove_aura(unit, child_skill, test=False):
             # action.do(act)
             act.do()
 
+def remove_all_auras(unit, test=False):
+    """
+    Strips every aura child skill currently on the unit, regardless of board
+    state. Used when a unit leaves the map: a unit off the map can never legally
+    retain an aura, and relying on board bookkeeping (game.board.get_auras at the
+    unit's position) to find them is fragile -- re-propagation, save/load, and
+    teardown ordering can all desync the board and orphan an aura child skill
+    permanently (AURA skills are non-removable except via their exact source).
+
+    Removal uses each child's *stored* source so it matches even if the parent
+    skill instance is stale, which also heals already-orphaned skills.
+    """
+    aura_children = [(us.skill_obj, us.source) for us in unit._skills
+                     if us.source_type == SourceType.AURA]
+    for child_skill, source in aura_children:
+        logging.debug("Removing Aura %s from %s", child_skill, unit)
+        if test:
+            unit.remove_skill(child_skill, source=source, source_type=SourceType.AURA)
+        else:
+            act = action.RemoveSkill(unit, child_skill, source=source, source_type=SourceType.AURA)
+            act.do()
+
 def propagate_aura(unit, skill, game):
     game.board.reset_aura(skill.subskill)
     aura_range = skill.aura_range.value

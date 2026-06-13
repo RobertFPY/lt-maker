@@ -68,27 +68,37 @@ class TitleStartState(State):
         game.state.refresh()
 
         # Title Screen Intro Cinematic
+        self._events_triggered = False
         if game.memory.get('title_intro_already_played'):
             game.state.change('transition_in')
         else:
             game.sweep()
-            game.events.trigger(triggers.OnTitleScreen())
+            self._events_triggered = game.events.trigger(triggers.OnTitleScreen())
             # On startup occurs before on title_screen
-            game.events.trigger(triggers.OnStartup())
+            self._events_triggered = game.events.trigger(triggers.OnStartup()) or self._events_triggered
             game.memory['title_intro_already_played'] = True
 
+        # delay title music until after on_startup/on_title_screen events complete
+        # to avoid a brief stutter of title music before the events fire
+        if not self._events_triggered:
+            self._start_title_music()
+
+        return 'repeat'
+
+    def _start_title_music(self):
         get_sound_thread().clear()
         if RECORDS.get('_music_title_screen'):
             get_sound_thread().fade_in(RECORDS.get('_music_title_screen'), fade_in=50)
         elif DB.constants.value('music_main'):
             get_sound_thread().fade_in(DB.constants.value('music_main'), fade_in=50)
 
-        return 'repeat'
-
     def begin(self):
         if game.state.from_transition():
             game.state.change('transition_in')
             return 'repeat'
+        if self._events_triggered:
+            self._events_triggered = False
+            self._start_title_music()
 
     def take_input(self, event):
         if event:
@@ -741,9 +751,13 @@ class TitleExtrasState(TitleLoadState):
         self.bg = game.memory['title_bg']
         self.particles = game.memory['title_particles']
 
-        options = ['Options', 'Credits']
+        options = ['Options']
+        if DB.constants.value('title_credits'):
+            options.append('Credits')
         if DB.constants.value('title_sound'):
             options.append('Sound Room')
+        if RECORDS.check_support_room_unlocked():
+            options.append('Support Room')
         if ACHIEVEMENTS:
             options.insert(1, 'Achievements')
         if (cf.SETTINGS['debug'] or cf.SETTINGS['all_saves']) and save.get_all_saves():
@@ -803,6 +817,10 @@ class TitleExtrasState(TitleLoadState):
                 game.state.change('transition_to')
             elif selection == 'Achievements':
                 game.memory['next_state'] = 'base_achievement'
+                game.memory['base_bg'] = self.bg
+                game.state.change('transition_to')
+            elif selection == 'Support Room':
+                game.memory['next_state'] = 'extras_supports'
                 game.memory['base_bg'] = self.bg
                 game.state.change('transition_to')
 
@@ -986,7 +1004,7 @@ class TitleSaveState(State):
                 saved_state = game.state.state[:]
                 game.state.state = game.state.state[:-1]  # All except this one
                 save.suspend_game(game, game.memory['save_kind'], slot=self.menu.current_index, 
-                                    display_name=game.game_vars.get('_save_name'))
+                                  display_name=game.game_vars.get('_save_name'))
                 # Put states back
                 game.state.state = saved_state
                 game.state.change('transition_pop')

@@ -6,6 +6,7 @@ from app.utilities import utils
 from app.engine.sprites import SPRITES
 from app.engine.fonts import FONT
 from app.engine.input_manager import get_input_manager
+from app.engine.game_state import game
 
 from app.engine import engine, image_mods, icons
 from app.engine.graphics.text.text_renderer import render_text, text_width
@@ -170,7 +171,7 @@ class MovementDamageNumber(DamageNumber):
         self.origin_pos = origin_pos
     
     def draw(self, surf, pos=None):
-        super().draw(surf,(self.origin_pos[0] * 16 + 4, self.origin_pos[1] * 16))
+        super().draw(surf,((self.origin_pos[0] - game.camera.get_x()) * 16 + 4, (self.origin_pos[1] - game.camera.get_y()) * 16))
 
 class ScrollArrow():
     def __init__(self, direction, topleft, offset=0):

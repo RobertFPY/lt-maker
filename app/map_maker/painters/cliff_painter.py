@@ -11,11 +11,11 @@ from app.utilities.utils import distance
 from app.map_maker.painter_utils import Painter
 
 class CliffPainter(Painter):
-    terrain_like = (Terrain.CLIFF,)
+    terrain_like = (Terrain.CLIFF, Terrain.DESERT_CLIFF)
     base_coord = (15, 0)
     second_start_px = 96
-    organization = {}
     second_limit = {}
+    organization = {}
 
     @property
     def check_flood_fill(self) -> str:
@@ -124,12 +124,13 @@ class CliffPainter(Painter):
 
     def single_process(self, tilemap):
         positions: set = tilemap.get_all_terrain(Terrain.CLIFF)
+        positions |= tilemap.get_all_terrain(Terrain.DESERT_CLIFF)
         self.organization.clear()
         groupings: List[Set[Pos]] = []  # of sets
         counter: int = 0
         while positions and counter < 99999:
             pos = positions.pop()
-            near_positions: set = flood_fill(tilemap, pos, diagonal=True)
+            near_positions: set = flood_fill(tilemap, pos, diagonal=True, match=set(self.terrain_like))
             groupings.append(near_positions)
             positions -= near_positions
             counter += 1

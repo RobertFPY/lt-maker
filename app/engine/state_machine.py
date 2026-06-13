@@ -46,7 +46,7 @@ class StateMachine():
         from app.engine.info_menu import info_menu_state
         from app.engine.overworld import overworld_states
         from app.engine.roam import free_roam_state, free_roam_rationalize
-        from app.events import event_state
+        from app.events import event_state, mock_event_state
         self.all_states = \
             {'title_start': title_screen.TitleStartState,
              'title_main': title_screen.TitleMainState,
@@ -114,6 +114,7 @@ class StateMachine():
              'game_over': game_over.GameOverState,
              'chapter_title': chapter_title.ChapterTitleState,
              'event': event_state.EventState,
+             'mock_event': mock_event_state.MockEventState,
              'player_choice': player_choice.PlayerChoiceState,
              'text_entry': text_entry.TextEntryState,
              'text_confirm': text_entry.TextConfirmState,
@@ -151,9 +152,11 @@ class StateMachine():
              'base_library': base.BaseLibraryState,
              'base_guide': base.BaseGuideState,
              'base_records': base.BaseRecordsState,
-             'base_sound_room': base.BaseSoundRoomState,
              'base_achievement': base.BaseAchievementState,
+             'base_sound_room': base.BaseSoundRoomState,
+             'event_sound_room': base.BaseSoundRoomState,
              'extras_sound_room': base.BaseSoundRoomState,
+             'extras_supports': base.BaseSupportsState,
              'free_roam': free_roam_state.FreeRoamState,
              'free_roam_rationalize': free_roam_rationalize.FreeRoamRationalizeState,
              'debug': debug_mode.DebugState,

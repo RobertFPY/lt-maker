@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import QPlainTextEdit
 from PyQt5.QtGui import QFont, QFontMetrics
 from app.editor.settings import MainSettingsController
 from app.editor.event_editor.py_syntax import PythonHighlighter
+from app.editor.settings.preference_definitions import Preference
 
 class CodeLineEdit(QPlainTextEdit):
     """
@@ -18,17 +19,17 @@ class CodeLineEdit(QPlainTextEdit):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        
+
         self.highlighter = PythonHighlighter(self.document())
-        
+
         self.setLineWrapMode(QPlainTextEdit.NoWrap)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setFixedHeight(25)
-        
+
         settings = MainSettingsController()
-        if settings.get_code_font_in_boxes():
-            self.setFont(QFont(settings.get_code_font()))
+        if settings.get_preference(Preference.CODE_FONT_IN_BOXES):
+            self.setFont(QFont(settings.get_preference(Preference.CODE_FONT)))
 
         self.textChanged.connect(self._clamp_scroll)
         self._clamp_scroll() # just to be sure
@@ -48,9 +49,9 @@ class CodeLineEdit(QPlainTextEdit):
         scroll_bar.setMaximum(max(0, max_width - self.viewport().width()))
 
         # shift scroll only if user is at the end? ugh
-        if current_value >= scroll_bar.maximum() - 5:  
+        if current_value >= scroll_bar.maximum() - 5:
             scroll_bar.setValue(scroll_bar.maximum())
-        
+
     def scrollContentsBy(self, dx, dy):
         self.verticalScrollBar().setValue(0)
         super().scrollContentsBy(dx, 0) # explicitly no vertical scrolling

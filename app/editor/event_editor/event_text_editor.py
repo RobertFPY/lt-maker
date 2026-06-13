@@ -12,6 +12,7 @@ from app import dark_theme
 from app.editor.event_editor import event_autocompleter, event_formatter
 from app.editor.event_editor.event_function_hinter import IFunctionHinter
 from app.editor.settings import MainSettingsController
+from app.editor.settings.preference_definitions import Preference
 from app.events.event_version import EventVersion
 from app.utilities import str_utils
 
@@ -79,7 +80,7 @@ class EventTextEditor(QPlainTextEdit):
         self.addAction(self.format_action)
 
         self.function_annotator: QLabel = QLabel(self)
-        if bool(self.settings.get_event_autocomplete()):
+        if bool(self.settings.get_preference(Preference.AUTOCOMPLETE_ENABLED)):
             # function helper
             self.textChanged.connect(self.display_function_hint)
             self.clicked.connect(self.display_function_hint)
@@ -97,19 +98,19 @@ class EventTextEditor(QPlainTextEdit):
             text_cursor = self.textCursor()
             block_num = text_cursor.blockNumber()
             pos_in_block = text_cursor.positionInBlock()
-            
+
             text = self.document().toRawText()
             text = str_utils.convert_raw_text_newlines(text)
             formatted = event_formatter.format_event_script(text)
             self.document().setPlainText(formatted)
-            
+
             # attempt to snap to the nearest valid block after autoformatting
             block = self.document().findBlockByNumber(block_num)
             if block and block.isValid():
                 new_pos: int = block.position() + min(pos_in_block, block.length() - 1)
                 text_cursor.setPosition(new_pos)
                 self.setTextCursor(text_cursor)
-            
+
             self.verticalScrollBar().setValue(scroll_pos)
         else:
             pass
@@ -270,7 +271,7 @@ class EventTextEditor(QPlainTextEdit):
         super().insertFromMimeData(source)
 
     def should_show_completion_box(self):
-        if not self.completer or not bool(self.settings.get_event_autocomplete()):
+        if not self.completer or not bool(self.settings.get_preference(Preference.AUTOCOMPLETE_ENABLED)):
             return False
         if not self.document().toPlainText():
             return False
@@ -295,7 +296,7 @@ class EventTextEditor(QPlainTextEdit):
             pass
 
     def should_show_function_hint(self):
-        if not bool(self.settings.get_event_autocomplete()):
+        if not bool(self.settings.get_preference(Preference.AUTOCOMPLETE_ENABLED)):
             return False
         if not self.function_hinter:
             return False

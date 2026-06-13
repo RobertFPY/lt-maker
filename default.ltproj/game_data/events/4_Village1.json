@@ -19,7 +19,7 @@
             "change_background",
             "transition;Open",
             "give_item;{unit};Iron_Axe",
-            "has_traded;{unit}"
+            "has_visited;{unit}"
         ],
         "nid": "4 Village1"
     }

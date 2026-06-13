@@ -6,6 +6,7 @@ from PyQt5.QtCore import QTimer, pyqtSignal
 from app import constants
 from app import counters
 from app.counters import GenericAnimCounter
+from app.editor.settings.preference_definitions import Preference
 from app.utilities.utils import frames2ms
 
 from app.editor.settings import MainSettingsController
@@ -22,7 +23,7 @@ class Timer(QWidget):
         self.main_timer.start()
 
         self.autosave_timer = QTimer()
-        autosave_time = MainSettingsController().get_autosave_time(5)
+        autosave_time = MainSettingsController().get_preference(Preference.AUTOSAVE_TIME)
         self.autosave_timer.setInterval(int(autosave_time * 60 * 1000))
         self.autosave_timer.start()
 

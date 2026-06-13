@@ -11,6 +11,7 @@ from PyQt5.QtWidgets import (QApplication, QDoubleSpinBox, QHBoxLayout,
 from app.data.database.components import ComponentType
 from app.data.database.database import DB
 from app.data.resources.resources import RESOURCES
+from app.engine.fonts import get_text_color_options
 from app.editor.component_editor_delegates import (AffinityDelegate,
                                                    ClassDelegate, ItemDelegate,
                                                    SkillDelegate, StatDelegate,
@@ -20,9 +21,10 @@ from app.editor.component_editor_delegates import (AffinityDelegate,
                                                    UnitDelegate,
                                                    WeaponTypeDelegate,
                                                    LoreDelegate)
-from app.editor.component_subcomponent_editors import get_editor_widget
+from app.editor.component_subcomponent_editors import get_editor_widget, TextColorSubcomponentEditor
 from app.editor.editor_constants import (DROP_DOWN_BUFFER, MAX_DROP_DOWN_WIDTH,
                                          MIN_DROP_DOWN_WIDTH)
+from app.editor.settings.preference_definitions import Preference
 from app.editor.weapon_editor import weapon_model
 
 from app.extensions import list_models
@@ -183,34 +185,34 @@ class StringItemComponent(BoolItemComponent):
         self.editor = AutoResizingTextEdit(self)
         self.editor.setMaximumWidth(640)
 
-        # must set to at least 3 to avoid an edge case 
+        # must set to at least 3 to avoid an edge case
         # where lines < 3 are just a TINY bit taller than the box
         # and is visually annoying
         # probably due to rounding errors
         self.editor.setMinimumLines(3)
         self.editor.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.editor.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        
+
         self._set_font()
         self.editor.setText(str(self._data.value) if self._data.value else '')
         self._old_height = self.editor.document().size().height()
-        
+
         self.highlighter = PythonHighlighter(self.editor.document())
-        
+
         self.editor.textChanged.connect(self.on_value_changed)
         hbox.addWidget(self.editor)
 
     def on_value_changed(self):
         self._data.value = self.editor.toPlainText()
-        
+
         new_height = self.editor.document().size().height()
         if new_height != self._old_height:
             self._old_height = new_height
             self.resized.emit() # size could change here so emit
-        
+
     def _set_font(self):
-        if self.settings.get_code_font_in_boxes():
-            self.editor.setFont(QFont(self.settings.get_code_font()))
+        if self.settings.get_preference(Preference.CODE_FONT_IN_BOXES):
+            self.editor.setFont(QFont(self.settings.get_preference(Preference.CODE_FONT)))
 
 class DropDownItemComponent(BoolItemComponent):
     def __init__(self, data, parent, options):
@@ -233,6 +235,9 @@ class DropDownItemComponent(BoolItemComponent):
     def on_value_changed(self, val):
         self._data.value = self.options[val]
 
+class TextColorItemComponent(DropDownItemComponent):
+    def __init__(self, data, parent):
+        super().__init__(data, parent, get_text_color_options())
 
 class DeprecatedOptionsItemComponent(BoolItemComponent):
     def create_editor(self, hbox):
@@ -453,7 +458,7 @@ class UnitItemComponent(BoolItemComponent):
         self.editor.setValue(self._data.value)
         self.editor.currentTextChanged.connect(self.on_value_changed)
         hbox.addWidget(self.editor)
-        
+
 
 class LoreItemComponent(BoolItemComponent):
     def create_editor(self, hbox):
@@ -595,7 +600,7 @@ class StatItemComponent(BoolItemComponent):
     def on_value_changed(self):
         val = self.editor.currentText()
         self._data.value = val
-        
+
 class ShapeItemComponent(BoolItemComponent):
     def create_editor(self, hbox):
         if not self._data.value:
@@ -615,22 +620,22 @@ class EventItemComponent(BoolItemComponent):
         # Only use global events
         valid_events = [event for event in DB.events.values()
                         if not event.level_nid]
-        
+
         for event in valid_events:
             self.editor.addItem(event.name, event.nid)
-                    
-        width = utils.clamp(self.editor.minimumSizeHint().width() + DROP_DOWN_BUFFER, 
+
+        width = utils.clamp(self.editor.minimumSizeHint().width() + DROP_DOWN_BUFFER,
                           MIN_DROP_DOWN_WIDTH, MAX_DROP_DOWN_WIDTH)
         self.editor.setMaximumWidth(width)
-        
+
         if not self._data.value and valid_events:
             self._data.value = valid_events[0].nid
-        
+
         self.editor.setValue(self._data.value)
-        
+
         self.editor.currentIndexChanged.connect(self.on_value_changed)
         hbox.addWidget(self.editor)
-    
+
     def on_value_changed(self, index):
         self._data.value = self.editor.itemData(index)
 
@@ -742,7 +747,9 @@ def get_display_widget(component, parent):
         c = UnitItemComponent(component, parent)
     elif component.expose == ComponentType.Lore:
         c = LoreItemComponent(component, parent)
-        
+    elif component.expose == ComponentType.TextColor:
+        c = TextColorItemComponent(component, parent)
+
     elif isinstance(component.expose, tuple):
         delegate = None
         if component.expose[1] == ComponentType.Unit:

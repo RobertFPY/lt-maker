@@ -1,7 +1,7 @@
 from typing import Dict
 
 import glob
-from PyQt5.QtGui import QImage, qRgb
+from PyQt5.QtGui import QImage, qRgb, QColor
 
 from app.editor.tile_editor.autotiles import PaletteData, check_hashes
 
@@ -37,9 +37,9 @@ if __name__ == '__main__':
     from PyQt5.QtWidgets import QApplication
     app = QApplication(sys.argv)
 
-    color_change_these_images = ['app/map_maker/palettes/monastery_outdoors/road.png',
-                                 'app/map_maker/palettes/monastery_outdoors/house.png',
-                                 'app/map_maker/palettes/monastery_outdoors/ruins.png',]
+    # color_change_these_images = ['app/map_maker/palettes/monastery_outdoors/road.png',
+    #                              'app/map_maker/palettes/monastery_outdoors/house.png',
+    #                              'app/map_maker/palettes/monastery_outdoors/ruins.png',]
     # color_change_these_images = ['app/map_maker/palettes/autumn_ruins/pool.png',
     #                              'app/map_maker/palettes/autumn_ruins/pool_shading.png',
     #                              'app/map_maker/palettes/autumn_ruins/pool_bridge.png',
@@ -62,9 +62,13 @@ if __name__ == '__main__':
     #                              'app/map_maker/palettes/monastery_outdoors/sea_autotiles.png',
     #                              'app/map_maker/palettes/monastery_outdoors/sparse_forest.png',
     #                              'app/map_maker/palettes/monastery_outdoors/thicket.png',
-    #                              ]
-    original_palette = 'app/map_maker/palettes/autumn_outdoors/main.png'
-    new_palette = 'app/map_maker/palettes/monastery_outdoors/main.png'
+    #            
+    # color_change_these_images = ['app/map_maker/palettes/greysnow_outdoors/desert.png',
+    #                              'app/map_maker/palettes/greysnow_outdoors/desert_cliff.png',
+    #                              'app/map_maker/palettes/greysnow_outdoors/desert_rock.png']
+    color_change_these_images = ['app/map_maker/palettes/desert_ruins/*.png']
+    original_palette = 'app/map_maker/palettes/monastery/main.png'
+    new_palette = 'app/map_maker/palettes/desert/ImprovedDesert.png'
 
     change_images = []
     for c in color_change_these_images:
@@ -80,6 +84,20 @@ if __name__ == '__main__':
             if check_hashes(orig, new):
                 conv = get_color_exchange(orig, new)
                 palette_exchange.update(conv)
+
+    # Remove 0, 0, 0 on both sides
+    black = qRgb(0, 0, 0)
+    # if black in palette_exchange:
+    print(palette_exchange)
+    palette_exchange.pop(black)
+    for k, v in list(palette_exchange.items()):
+        if v == black:
+            palette_exchange.pop(k)
+    # Print transfers
+    for opalette, npalette in palette_exchange.items():
+        k = QColor(opalette)
+        v = QColor(npalette)
+        print(f"({k.red()}, {k.green()}, {k.blue()}) -> ({v.red()}, {v.green()}, {v.blue()})")
 
     for im_path in change_images[:]:
         print(im_path)

@@ -80,7 +80,7 @@ The following event is an example of how you might use python variables to hold 
 #pyev1
 
 seth_unit = u("Seth")
-reduced_hp = seth_unit.get_current_hp() - 5
+reduced_hp = seth_unit.get_hp() - 5
 reduced_luck = seth_unit.stats['LCK'] - 5
 
 $set_stats seth_unit {"HP": reduced_hp, "LCK": reduced_luck}, immediate

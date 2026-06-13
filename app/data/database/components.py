@@ -37,6 +37,7 @@ class ComponentType(Enum):
     Shape = 26 #List of lists of [x,y] coordinates
     StatFloat = 27 # Special handling for stat as float
     StatString = 28 # Special handling for stat as string
+    TextColor = 29 # Stored as a text palette name for the default text font
     Event = 80
     List = 100  # List containing Items
     Dict = 101  # List of Tuples of [Item, integer]
@@ -149,8 +150,8 @@ class Component():
     def save(self):
         if isinstance(self.value, Data):
             return self.nid, self.value.save()
-        elif isinstance(self.value, list):
-            # Handle lists of lists with deepcopy
+        elif isinstance(self.value, list) or isinstance(self.value, dict):
+            # Handle lists of lists or dictionaries with deepcopy
             return self.nid, copy.deepcopy(self.value)
         else:
             return self.nid, self.value

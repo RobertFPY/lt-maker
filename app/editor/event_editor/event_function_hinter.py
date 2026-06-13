@@ -7,6 +7,7 @@ from app.editor.event_editor.event_autocompleter import get_arg_name
 from app.editor.settings.main_settings_controller import MainSettingsController
 
 
+from app.editor.settings.preference_definitions import Preference
 from app.events import event_commands, event_validators
 from app.events.event_version import EventVersion
 from app.events.event_structs import ParseMode
@@ -61,7 +62,7 @@ class EventScriptFunctionHinter():
                 .command_text {font-family: '%s', %s, monospace;}
                 .desc_text {font-family: Arial, Helvetica, sans-serif;}
             </style>
-        """ % (settings.get_code_font(), settings.get_code_font())
+        """ % (settings.get_preference(Preference.CODE_FONT), settings.get_preference(Preference.CODE_FONT))
 
 
         hint_text = style + hint_cmd_str + '<hr>' + hint_desc
@@ -131,7 +132,7 @@ class PythonFunctionHinter():
                 .command_text {font-family: '%s', %s, monospace;}
                 .desc_text {font-family: Arial, Helvetica, sans-serif;}
             </style>
-        """ % (settings.get_code_font(), settings.get_code_font())
+        """ % (settings.get_preference(Preference.CODE_FONT), settings.get_preference(Preference.CODE_FONT))
 
 
         hint_text = style + hint_cmd_str + '<hr>' + hint_desc

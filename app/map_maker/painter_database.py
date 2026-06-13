@@ -1,11 +1,12 @@
 from app.map_maker.terrain import Terrain
 from app.map_maker.painter_utils import Painter
 from app.map_maker.painters import (
+    WangEdge16Painter,
+    WangEdge8Painter,
     GrassPainter, 
     LightGrassPainter,
     NoisyGrassPainter,
     SandPainter,
-    WangEdge8Painter,
     RiverPainter,
     SeaPainter,
     ForestPainter,
@@ -14,7 +15,8 @@ from app.map_maker.painters import (
     HillPainter,
     MountainPainter,
     CliffPainter,
-    WangEdge16Painter,
+    DesertPainter,
+    DesertRockPainter,
     CastlePainter,
     HousePainter,
     RuinsPainter,
@@ -56,6 +58,9 @@ PAINTERS[Terrain.THICKET].data = [
 PAINTERS[Terrain.HILL] = HillPainter()
 PAINTERS[Terrain.MOUNTAIN] = MountainPainter()
 PAINTERS[Terrain.CLIFF] = CliffPainter()
+PAINTERS[Terrain.DESERT] = DesertPainter()
+PAINTERS[Terrain.DESERT_CLIFF] = CliffPainter()
+PAINTERS[Terrain.DESERT_ROCK] = DesertRockPainter()
 PAINTERS[Terrain.BRIDGEH] = WangEdge16Painter()
 PAINTERS[Terrain.BRIDGEH].terrain_like = (Terrain.BRIDGEH, )
 PAINTERS[Terrain.BRIDGEV] = WangEdge16Painter()

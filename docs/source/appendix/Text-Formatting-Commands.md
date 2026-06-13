@@ -37,7 +37,7 @@ In order to have your in-game dialog between characters or between the narrator 
 
 `{speed:NUMBER}`: Replace `NUMBER` with a non-negative number (for example: 4, 0.6, 1.23, etc). After this command, dialog will be drawn at the input speed to the screen. Higher input value means slower speed.
 
-`{command:??}, {c:??}`: Allows you to run any event command inline while dialog is being drawn to the screen. For instance: `s;Eirika;I'm... so.... {c:set_expression;Eirika;CloseEyes} sleepy...`
+`{command:??}, {c:??}`: Allows you to run any event command inline while dialog is being drawn to the screen. For instance: `s;Eirika;I'm... so.... {c:expression;Eirika;CloseEyes} sleepy...`
 
 ## General Formatting Commands
 

@@ -487,22 +487,31 @@ class TargetSystem():
         return items
 
     def _restrict_mari_loadout(self, unit: UnitObject, items: List[ItemObject], predicate=None) -> List[ItemObject]:
-        # Mari's combat is driven entirely by her separate spell loadout, which acts as a second
-        # inventory: the Attack/Spell menus build real ItemObjects from the spell nids stored in
-        # her 'spell_loadout' field, completely independent of her actual inventory. Other units
-        # are unaffected and simply get their inventory-derived list back unchanged.
+        # Mari's spell loadout acts as a *second* inventory: the Attack/Spell menus build real
+        # ItemObjects from the spell nids stored in her 'spell_loadout' field. These loadout spells
+        # are MERGED on top of whatever she can already use from her real inventory (weapons, staves,
+        # spells), so Mari keeps full access to her actual equipment AND her chosen spell loadout.
+        # Other units are unaffected and simply get their inventory-derived list back unchanged.
         if getattr(unit, 'nid', None) != 'Mari':
             return items
         loadout = unit.get_field('spell_loadout') if hasattr(unit, 'get_field') else None
-        if not loadout:
-            return []
-        catalog = DB.raw_data.get('MariSpell')
-        spell_nids = {row.nid for row in catalog} if catalog else None
-        loadout_nids = [nid for nid in loadout if (spell_nids is None or nid in spell_nids)]
-        loadout_items = self._get_mari_loadout_items(unit, loadout_nids)
-        if predicate is not None:
-            loadout_items = [item for item in loadout_items if predicate(item)]
-        return loadout_items
+        loadout_items: List[ItemObject] = []
+        if loadout:
+            catalog = DB.raw_data.get('MariSpell')
+            spell_nids = {row.nid for row in catalog} if catalog else None
+            loadout_nids = [nid for nid in loadout if (spell_nids is None or nid in spell_nids)]
+            loadout_items = self._get_mari_loadout_items(unit, loadout_nids)
+            if predicate is not None:
+                loadout_items = [item for item in loadout_items if predicate(item)]
+        # Merge inventory-derived items with the loadout spells, skipping duplicates so a spell
+        # that is both in her inventory and her loadout only shows up once.
+        merged: List[ItemObject] = list(items)
+        existing = {item.uid for item in merged}
+        for item in loadout_items:
+            if item.uid not in existing:
+                merged.append(item)
+                existing.add(item.uid)
+        return merged
 
     def get_mari_loadout(self, unit: UnitObject) -> List[ItemObject]:
         # Returns the materialized ItemObjects for every spell currently in Mari's spell loadout

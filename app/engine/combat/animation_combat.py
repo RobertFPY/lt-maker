@@ -102,6 +102,9 @@ class AnimationCombat(BaseCombat, MockCombat):
         self.full_playback = []
         self.playback = []
         self.actions = []
+        # Guard so a single phase's actions are committed exactly once,
+        # even if the animation emits a trailing/duplicate hit/miss frame.
+        self._actions_applied = False
 
         self.viewbox_time = 250
         self.viewbox = None
@@ -370,6 +373,8 @@ class AnimationCombat(BaseCombat, MockCombat):
                 self.playback.clear()
                 return False
             self.actions, self.playback = self.state_machine.do()
+            # New phase begun: allow its actions to be committed once.
+            self._actions_applied = False
             self.full_playback += self.playback
             if not self.actions and not self.playback:
                 logging.debug("Set Up Next State")
@@ -750,6 +755,12 @@ class AnimationCombat(BaseCombat, MockCombat):
         """
         Actually commit the actions that we had stored!
         """
+        # A pose can emit a trailing/duplicate hit/miss frame. Ensure we only
+        # commit this phase's actions and advance the solver script once,
+        # otherwise actions get double-applied and the script pops extra commands.
+        if self._actions_applied:
+            return
+        self._actions_applied = True
         for act in self.actions:
             action.do(act)
         # Now nothing else should be using the current state, so we can move the state

@@ -1498,12 +1498,13 @@ The *force_animation* and *force_no_animation* flags tell the engine whether to 
 The *immediate* flag will cause the combat to happen as quickly as possible, often instantaneously. Use when you want the effects of combat to happen without the player waiting to see it.
 The *no_exp* flag prevents any unit from gaining exp from this combat.
 The *no_wexp* flag prevents any unit from gaining weapon exp (wexp) from this combat.
+The *no_weapon_use* flag prevents items/weapons from losing uses in this combat.
         """
 
     keywords = ["Unit", "Position"]
     optional_keywords = ["CombatScript", "Ability", "Rounds"]
     keyword_types = ["Unit", "Position", "CombatScript", "Ability", "PositiveInteger"]
-    _flags = ["arena", "force_animation", "force_no_animation", "immediate", "no_exp", "no_wexp"]
+    _flags = ["arena", "force_animation", "force_no_animation", "immediate", "no_exp", "no_wexp", "no_weapon_use"]
 
 class PoseUnit(EventCommand):
     nid = 'pose_unit'

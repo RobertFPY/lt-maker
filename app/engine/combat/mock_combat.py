@@ -192,6 +192,7 @@ class MockCombat():
         if miss:
             self.damage = 0
             self.miss_anim()
+        return True
 
     def spell_hit(self):
         self.last_update = engine.get_time()

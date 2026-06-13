@@ -476,10 +476,10 @@ class BattleAnimation():
 
         elif command.nid == 'start_hit':
             self.owner.shake()
-            self.owner.start_hit()
-            if self.partner_anim:  # Also offset partner, since they got hit
-                self.partner_anim.damaged()
-                self.partner_anim.lr_offset = [-1, -2, -3, -2, -1]
+            if self.owner.start_hit():
+                if self.partner_anim:  # Also offset partner, since they got hit
+                    self.partner_anim.damaged()
+                    self.partner_anim.lr_offset = [-1, -2, -3, -2, -1]
         elif command.nid == 'wait_for_hit':
             if self.wait_for_hit:
                 self.current_frame = self.get_frame(values[0])
@@ -489,9 +489,9 @@ class BattleAnimation():
                 self.state = 'wait'
                 self.in_basic_state = True
         elif command.nid == 'miss':
-            self.owner.start_hit(miss=True)
-            if self.partner_anim:
-                self.partner_anim.dodge()
+            if self.owner.start_hit(miss=True):
+                if self.partner_anim:
+                    self.partner_anim.dodge()
         elif command.nid == 'spell_hit':
             self.state = 'wait'
             self.processing = False

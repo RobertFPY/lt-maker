@@ -709,11 +709,15 @@ class AnimationCombat(BaseCombat, MockCombat):
                     self.battle_background.set_off()
 
     def start_hit(self, sound=True, miss=False):
-        self._apply_actions()
+        # If a trailing/duplicate hit/miss frame fires, _apply_actions() returns
+        # False so we don't replay sounds, the MISS popup, or the dodge anim.
+        if not self._apply_actions():
+            return False
         self._handle_playback(sound)
 
         if miss:
             self.miss_anim()
+        return True
 
     def spell_hit(self):
         self._apply_actions()
@@ -758,13 +762,15 @@ class AnimationCombat(BaseCombat, MockCombat):
         # A pose can emit a trailing/duplicate hit/miss frame. Ensure we only
         # commit this phase's actions and advance the solver script once,
         # otherwise actions get double-applied and the script pops extra commands.
+        # Returns True if actions were committed, False if this was a duplicate.
         if self._actions_applied:
-            return
+            return False
         self._actions_applied = True
         for act in self.actions:
             action.do(act)
         # Now nothing else should be using the current state, so we can move the state
         self.state_machine.setup_next_state()
+        return True
 
     def _end_phase(self):
         if self.llast_gauge == self.left.get_guard_gauge():

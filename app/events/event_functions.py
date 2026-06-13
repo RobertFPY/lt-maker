@@ -1516,7 +1516,8 @@ def interact_unit(self: Event, unit, position, combat_script: Optional[List[str]
 
     interaction.start_combat(
         actor, target, item, skip='immediate' in flags, event_combat=True, script=script, total_rounds=total_rounds,
-        arena='arena' in flags, force_animation='force_animation' in flags, force_no_animation='force_no_animation' in flags)
+        arena='arena' in flags, force_animation='force_animation' in flags, force_no_animation='force_no_animation' in flags,
+        no_exp='no_exp' in flags, no_wexp='no_wexp' in flags, no_weapon_use='no_weapon_use' in flags)
     self.state = "paused"
 
 def set_combat_script(self: Event, combat_script: List[str], flags=None):

@@ -24443,6 +24443,29 @@
         ]
     },
     {
+        "nid": "Nihil_Hidden",
+        "name": "Nihil_Hidden",
+        "desc": "",
+        "icon_nid": "Skills",
+        "icon_index": [
+            0,
+            0
+        ],
+        "components": [
+            [
+                "hidden",
+                null
+            ],
+            [
+                "nihil",
+                [
+                    "Red_Ambition_Personal",
+                    "Wyvern_Force_Personal"
+                ]
+            ]
+        ]
+    },
+    {
         "nid": "Flying",
         "name": "Flying",
         "desc": "Can fly.",

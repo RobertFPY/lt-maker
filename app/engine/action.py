@@ -142,10 +142,15 @@ def recalc_unit(unit: UnitObject) -> None:
         if game.boundary:
             game.boundary.recalculate_unit(unit)
         # Fog of War Sight may have changed
-        # But we can't update it directly here, because the unit may have just gained
-        # this skill on a move, and the unit shouldn't be able to see until they press "Wait"
-        # So instead, we just change the sight range directly but not their vantage point
-        if game.board:
+        # Only refresh it when the unit is actually standing at its fog vantage point.
+        # During a move preview the vantage stays at the unit's starting tile (the unit
+        # shouldn't reveal new vision until it presses "Wait"). If we recomputed sight here
+        # from the destination tile, a terrain-conditional sight bonus (e.g. +sight while on
+        # a mountain) would be applied at the OLD vantage, revealing extra tiles from the
+        # start position - and since this writes straight to the board rather than as a
+        # reversible action, that bonus would also survive cancelling the move. UpdateFogOfWar
+        # re-syncs sight from the correct tile when the move is finalized (Wait) or reversed.
+        if game.board and game.board.fow_vantage_point.get(unit.nid) == unit.position:
             fog_of_war_radius = game.board.get_fog_of_war_radius(unit.team)
             sight_range = skill_system.sight_range(unit) + fog_of_war_radius
             game.board.change_sight_range(unit, sight_range)

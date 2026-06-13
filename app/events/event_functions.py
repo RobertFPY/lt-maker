@@ -3195,7 +3195,7 @@ def unchoice(self: Event, flags=None):
     except Exception as e:
         self.logger.error("unchoice: Unchoice failed: " + str(e))
 
-def textbox(self: Event, nid: str, text: str, box_position: Point | Alignments=None,
+def textbox(self: Event, nid: str, text: str, box_position: Point | Alignments = None,
             width=None, num_lines=None, style_nid=None, text_speed=None,
             font_color=None, font_type=None, bg=None, flags=None):
     flags = flags or set()
@@ -3277,7 +3277,8 @@ def textbox(self: Event, nid: str, text: str, box_position: Point | Alignments=N
                     self.logger.error("textbox: failed to eval %s", callback_expr)
                     return ""
             expr = lambda: tryexcept(text)
-        except:
+        except Exception as e:
+            self.logger.exception(e)
             self.logger.error('textbox: %s is not a valid python expression' % text)
         textbox = dialog.DynamicDialogWrapper(
             expr, background=box_bg, position=position, width=box_width,

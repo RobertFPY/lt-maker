@@ -135,6 +135,11 @@
                 true,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Citizen",
@@ -274,6 +279,11 @@
                 null
             ],
             "RangedDragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -418,6 +428,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Citizen",
@@ -555,6 +570,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -696,6 +716,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -846,6 +871,11 @@
                 true,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Citizen",
@@ -985,6 +1015,11 @@
                 true,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Citizen",
@@ -1122,6 +1157,11 @@
             ],
             "Dragonstone": [
                 true,
+                0,
+                null
+            ],
+            "Dagger": [
+                false,
                 0,
                 null
             ]
@@ -1264,6 +1304,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Citizen",
@@ -1400,6 +1445,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -1545,6 +1595,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Myrmidon",
@@ -1684,6 +1739,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -1827,6 +1887,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Swordmaster",
@@ -1964,6 +2029,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -2107,6 +2177,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Swordmaster",
@@ -2244,6 +2319,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -2390,6 +2470,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Mercenary",
@@ -2533,6 +2618,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Mercenary",
@@ -2670,6 +2760,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -2816,6 +2911,11 @@
                 false,
                 0,
                 251
+            ],
+            "Dagger": [
+                true,
+                31,
+                181
             ]
         },
         "icon_nid": "Generic_Portrait_Thief",
@@ -2959,6 +3059,11 @@
                 false,
                 0,
                 251
+            ],
+            "Dagger": [
+                true,
+                31,
+                181
             ]
         },
         "icon_nid": "Thief (F) Sword {L95}",
@@ -3101,6 +3206,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                true,
+                71,
+                251
             ]
         },
         "icon_nid": "Generic_Portrait_Assassin",
@@ -3243,6 +3353,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                true,
+                71,
+                251
             ]
         },
         "icon_nid": "Rogue (F) {L95}",
@@ -3384,6 +3499,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                true,
+                121,
+                331
             ]
         },
         "icon_nid": "Trickster (M) Sword T3 {Jj09, Scrazia, Sword of HaE}",
@@ -3525,6 +3645,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                true,
+                121,
+                331
             ]
         },
         "icon_nid": "Trickster (F) Sword T2 {Jj09, Scraiza, Sword of HaE,SableMage}",
@@ -3667,6 +3792,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                true,
+                71,
+                251
             ]
         },
         "icon_nid": "Assassin (M) Dual-Swords {Scraiza, Sword of HaE}",
@@ -3809,6 +3939,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                true,
+                71,
+                251
             ]
         },
         "icon_nid": "Assassin (F) Knives (Pushwall, L95)",
@@ -3949,6 +4084,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                true,
+                121,
+                331
             ]
         },
         "icon_nid": "Assassin (M) Dual-Swords-Generic {Leif, Scraiza, Sword of HaE}",
@@ -4089,6 +4229,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                true,
+                121,
+                331
             ]
         },
         "icon_nid": "Assassin (M) Dual-Swords-Generic {Leif, Scraiza, Sword of HaE}",
@@ -4229,6 +4374,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -4373,6 +4523,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Soldier",
@@ -4509,6 +4664,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -4651,6 +4811,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Halberdier (M) Dragoon Lance {Uncredited}",
@@ -4787,6 +4952,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -4932,6 +5102,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Axe Rider",
@@ -5071,6 +5246,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -5216,6 +5396,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Sword Rider",
@@ -5355,6 +5540,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -5500,6 +5690,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Lance Rider",
@@ -5639,6 +5834,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -5784,6 +5984,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Axe Paladin",
@@ -5923,6 +6128,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -6068,6 +6278,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Sword Paladin",
@@ -6207,6 +6422,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -6352,6 +6572,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Lance Paladin",
@@ -6494,6 +6719,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Lance Paladin",
@@ -6631,6 +6861,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -6775,6 +7010,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Great Knight",
@@ -6913,6 +7153,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -7056,6 +7301,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Glory Knight",
@@ -7193,6 +7443,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -7336,6 +7591,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Duke Knight",
@@ -7476,6 +7736,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Duke Knight",
@@ -7613,6 +7878,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -7764,6 +8034,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Pegasus_Knight",
@@ -7909,6 +8184,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -8059,6 +8339,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Falcoknight",
@@ -8203,6 +8488,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -8353,6 +8643,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Falcoknight",
@@ -8497,6 +8792,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -8645,6 +8945,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Seraph Knight (F) Lance {CamusZekeSirius, flasuban}",
@@ -8787,6 +9092,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -8935,6 +9245,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Seraph Knight (F) Lance {CamusZekeSirius, flasuban}",
@@ -9080,6 +9395,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Seraph Knight (F) Lance {CamusZekeSirius, flasuban}",
@@ -9218,6 +9538,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -9362,6 +9687,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Knight (M) SALVAGED Axe {SALVAGED}",
@@ -9500,6 +9830,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -9644,6 +9979,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Knight (M) SALVAGED Axe {SALVAGED}",
@@ -9782,6 +10122,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -9927,6 +10272,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Knight (M) SALVAGED Lance {SALVAGED}",
@@ -10065,6 +10415,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -10209,6 +10564,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Knight (M) SALVAGED Lance {SALVAGED}",
@@ -10347,6 +10707,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -10491,6 +10856,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Knight (M) SALVAGED Sword {SALVAGED}",
@@ -10629,6 +10999,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -10773,6 +11148,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Knight (M) SALVAGED Sword {SALVAGED}",
@@ -10911,6 +11291,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -11055,6 +11440,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Axe General",
@@ -11193,6 +11583,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -11337,6 +11732,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Axe General",
@@ -11475,6 +11875,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -11619,6 +12024,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Lance General",
@@ -11757,6 +12167,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -11901,6 +12316,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Lance General",
@@ -12039,6 +12459,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -12183,6 +12608,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Sword General",
@@ -12321,6 +12751,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -12465,6 +12900,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Sword General",
@@ -12601,6 +13041,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -12743,6 +13188,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Axe Marshall",
@@ -12879,6 +13329,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -13021,6 +13476,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Axe Marshall",
@@ -13157,6 +13617,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -13299,6 +13764,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Lance Marshall",
@@ -13435,6 +13905,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -13577,6 +14052,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Lance Marshall",
@@ -13713,6 +14193,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -13855,6 +14340,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Sword Marshall",
@@ -13991,6 +14481,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -14133,6 +14628,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Sword Marshall",
@@ -14269,6 +14769,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -14414,6 +14919,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Citizen",
@@ -14555,6 +15065,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Fighter (M) Tellius-Style Axe {flasuban}",
@@ -14693,6 +15208,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -14838,6 +15358,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Fighter (M) Tellius-Style Axe {flasuban}",
@@ -14977,6 +15502,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -15121,6 +15651,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Warrior",
@@ -15259,6 +15794,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -15401,6 +15941,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Warrior (M) Tellius + helmet {Rasdel, Jey the Count}",
@@ -15537,6 +16082,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -15681,6 +16231,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Pirate (M) DS-Style {Der}",
@@ -15822,6 +16377,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Berserker",
@@ -15958,6 +16518,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -16102,6 +16667,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Brigand",
@@ -16240,6 +16810,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -16384,6 +16959,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Berserker (M) Wolf Rider {Zoramine}",
@@ -16522,6 +17102,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -16666,6 +17251,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Archer (F) Improved {Der}",
@@ -16804,6 +17394,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -16949,6 +17544,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Sniper",
@@ -17088,6 +17688,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -17233,6 +17838,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Sniper",
@@ -17369,6 +17979,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -17511,6 +18126,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "MarksmanFemale",
@@ -17647,6 +18267,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -17790,6 +18415,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Bow Knight (M) Updated {Der, HyperGammaSpaces}",
@@ -17927,6 +18557,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -18071,6 +18706,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Hunter (M) {Spud}",
@@ -18209,6 +18849,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -18354,6 +18999,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Ranger",
@@ -18493,6 +19143,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -18636,6 +19291,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Paladin (M) SALVAGED Bow {Sir_Dadou}",
@@ -18773,6 +19433,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -18918,6 +19583,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Nomad (M) Bow {IS}",
@@ -19060,6 +19730,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Nomad Trooper (M) Bow {IS}",
@@ -19197,6 +19872,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -19342,6 +20022,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Monk (M) Magic {Blademaster, ltranc}",
@@ -19481,6 +20166,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -19626,6 +20316,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Bishop",
@@ -19765,6 +20460,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -19908,6 +20608,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Bishop (M) Staff {IS}",
@@ -20045,6 +20750,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -20190,6 +20900,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Cleric Updated (F) Staff {flasuban, HyperGammaSpaces}",
@@ -20329,6 +21044,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -20474,6 +21194,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Cleric Updated (F) Staff {flasuban, HyperGammaSpaces}",
@@ -20613,6 +21338,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -20758,6 +21488,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Bishop (F) Staff {L95}",
@@ -20898,6 +21633,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Bishop (F) Staff {L95}_1",
@@ -21035,6 +21775,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -21181,6 +21926,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Mage (1)",
@@ -21321,6 +22071,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -21467,6 +22222,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Mage (1)",
@@ -21606,6 +22366,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -21751,6 +22516,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Sage (F) Magic {L95}",
@@ -21890,6 +22660,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -22035,6 +22810,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Sage",
@@ -22174,6 +22954,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -22319,6 +23104,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Sage",
@@ -22456,6 +23246,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -22599,6 +23394,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Sage",
@@ -22736,6 +23536,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -22879,6 +23684,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Sage",
@@ -23019,6 +23829,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Sage",
@@ -23156,6 +23971,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -23302,6 +24122,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Shaman",
@@ -23442,6 +24267,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -23588,6 +24418,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Shaman",
@@ -23727,6 +24562,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -23872,6 +24712,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Druid (F) Magic {L95}_1",
@@ -24011,6 +24856,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -24156,6 +25006,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Summoner (M) {Uncredited}",
@@ -24295,6 +25150,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -24440,6 +25300,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Summoner (M) {Uncredited}",
@@ -24577,6 +25442,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -24720,6 +25590,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Dark Druid (M) Magic {CamusZekeSirius}",
@@ -24857,6 +25732,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -25000,6 +25880,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Summoner (M) {Uncredited}",
@@ -25140,6 +26025,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Summoner (F) {Samirplayz}",
@@ -25277,6 +26167,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -25423,6 +26318,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Troubadour (M) Staff {Leif}",
@@ -25563,6 +26463,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -25709,6 +26614,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Troubadour",
@@ -25847,6 +26757,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -25991,6 +26906,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Valkyrie",
@@ -26129,6 +27049,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -26273,6 +27198,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Dark Knight (M) Hood Magic {Pikmin}",
@@ -26411,6 +27341,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -26555,6 +27490,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Dark Knight (M) Hood Magic {Pikmin}",
@@ -26693,6 +27633,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -26837,6 +27782,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Mage_Knight",
@@ -26975,6 +27925,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -27119,6 +28074,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Mage_Knight",
@@ -27260,6 +28220,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Mage_Knight",
@@ -27398,6 +28363,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -27551,6 +28521,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Wyvern_Rider",
@@ -27698,6 +28673,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -27850,6 +28830,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Wyvern_Rider",
@@ -27996,6 +28981,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -28147,6 +29137,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Wyvern_Lord",
@@ -28292,6 +29287,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -28443,6 +29443,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Wyvern_Lord",
@@ -28591,6 +29596,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Wyvern Lord (U) Axe {flasuban}",
@@ -28734,6 +29744,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -28885,6 +29900,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Wyvern Knight (U) Lance {IS}",
@@ -29030,6 +30050,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -29181,6 +30206,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Wyvern Knight (U) Lance {IS}",
@@ -29326,6 +30356,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -29475,6 +30510,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Dragon_Lord",
@@ -29618,6 +30658,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -29767,6 +30812,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Dragon_Lord",
@@ -29910,6 +30960,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -30059,6 +31114,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Dragon_Knight",
@@ -30202,6 +31262,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -30351,6 +31416,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Dragon_Knight",
@@ -30494,6 +31564,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -30645,6 +31720,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Malig Knight (M) Magic {Pikmin}",
@@ -30790,6 +31870,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -30939,6 +32024,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Malig Knight (M) Magic {Pikmin}",
@@ -31081,6 +32171,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Revenant",
@@ -31218,6 +32313,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -31363,6 +32463,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Sword_Bonewalker",
@@ -31500,6 +32605,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -31645,6 +32755,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Sword_Bonewalker",
@@ -31782,6 +32897,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -31933,6 +33053,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Mogall",
@@ -32071,6 +33196,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -32222,6 +33352,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Citizen",
@@ -32370,6 +33505,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Citizen",
@@ -32513,6 +33653,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Citizen",
@@ -32653,6 +33798,11 @@
                 251
             ],
             "Knife": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null
@@ -32803,6 +33953,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "icon_nid": "Generic_Portrait_Citizen",
@@ -32939,6 +34094,11 @@
                 null
             ],
             "Dragonstone": [
+                false,
+                0,
+                null
+            ],
+            "Dagger": [
                 false,
                 0,
                 null

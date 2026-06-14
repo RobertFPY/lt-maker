@@ -1058,15 +1058,15 @@
             "speak;Mari;I... can't...die...yet...|I...haven't...tell...Martin...my...feeling...",
             "expression;Mari;CloseEyes",
             "remove_portrait;Mari",
-            "if;game.game_vars.get(\"resurrect_mari\") != 1",
-            "choice;mari;Do you want it?;Yes!,No",
-            "if;'{v:_last_choice}' == 'Yes!'",
-            "    speak;;You've lost something important to completing the game!",
-            "else",
-            "    resurrect;Mari;no_warn",
-            "    game_var;resurrect_mari;1",
-            "end",
-            "end"
+            "#if;game.game_vars.get(\"resurrect_mari\") != 1",
+            "#choice;mari;Do you want it?;Yes!,No",
+            "#if;'{v:_last_choice}' == 'Yes!'",
+            "#    speak;;You've lost something important to completing the game!",
+            "#else",
+            "resurrect;Mari;no_warn",
+            "#    game_var;resurrect_mari;1",
+            "#end",
+            "#end"
         ],
         "nid": "Global DeathMari"
     },
@@ -2295,17 +2295,15 @@
             "give_item;Camus;Shield_of_Cartas;no_banner",
             "give_item;Michalis;Armor_of_Iote;no_banner",
             "give_item;Mari;Mari_Spellbook_Template;direct_give",
-            "give_item;Mari;Thunder_E",
-            "give_item;Mari;Thunder_D",
-            "give_item;Mari;Thunder_C",
-            "give_item;Mari;Thunder_B",
-            "give_item;Mari;Thunder_A",
-            "give_item;Mari;Thunder_S",
-            "give_item;Mari;Thunder",
+            "give_item;Mari;Spark;no_banner",
+            "give_item;Camus;Thunder;no_banner",
             "set_level;Mari;3",
             "add_talk;Camus;Mari",
             "add_talk;Mari;Camus",
-            "#prep;True;;Skill Swap;true;Global Skill_Swap_Select"
+            "#prep;True;;Skill Swap;true;Global Skill_Swap_Select",
+            "give_item;Mari;Fire;no_banner",
+            "give_item;Mari;Sleep;no_banner",
+            "give_wexp;Mari;Staff;255;no_banner"
         ],
         "nid": "DEBUG Test"
     },
@@ -2378,7 +2376,7 @@
         "only_once": false,
         "priority": 20,
         "_source": [
-            ""
+            "set_current_hp;Camus;1"
         ],
         "nid": "DEBUG Turn2"
     },

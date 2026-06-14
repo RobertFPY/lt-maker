@@ -33,7 +33,7 @@ class AttackAbility(Ability):
         return bool(valid_attacks)
 
 class SpellAbility(Ability):
-    name = 'Spells'
+    name = 'Staff'
 
     @staticmethod
     def targets(unit) -> set:
@@ -323,7 +323,7 @@ class TradeAbility(Ability):
         game.state.change('trade')
 
 class SpellLoadoutAbility(Ability):
-    name = 'Spell'
+    name = 'Spell List'
 
     @staticmethod
     def targets(unit) -> set:

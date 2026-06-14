@@ -1009,7 +1009,7 @@ class MoveCameraState(State):
 class MenuState(MapState):
     name = 'menu'
     menu = None
-    normal_options = {'Item', 'Wait', 'Take', 'Give', 'Rescue', 'Trade', 'Drop', 'Visit', 'Armory', 'Vendor', 'Spells', 'Attack', 'Steal', 'Shove', 'Pair Up', 'Switch', 'Separate', 'Transfer', 'Spell'}
+    normal_options = {'Item', 'Wait', 'Take', 'Give', 'Rescue', 'Trade', 'Drop', 'Visit', 'Armory', 'Vendor', 'Staff', 'Attack', 'Steal', 'Shove', 'Pair Up', 'Switch', 'Separate', 'Transfer', 'Spell List'}
 
     def start(self):
         self._proceed_with_targets_item = False
@@ -1077,23 +1077,23 @@ class MenuState(MapState):
                 info_descs.append(ability.name + '_desc')  # Could add actual descriptions later
 
         # Move Mari's 'Spell Loadout' option so it sits right above 'Item'
-        if 'Spell' in options:
-            idx = options.index('Spell')
+        if 'Spell List' in options:
+            idx = options.index('Spell List')
             options.pop(idx)
             desc = info_descs.pop(idx)
             if 'Item' in options:
                 loadout_index = options.index('Item')
             else:
                 loadout_index = len(options)
-            options.insert(loadout_index, 'Spell')
+            options.insert(loadout_index, 'Spell List')
             info_descs.insert(loadout_index, desc)
 
         options.append("Wait")
         info_descs.append("Wait_desc")
 
         # Handle extra ability options
-        if 'Spells' in options:
-            start_index = options.index('Spells') + 1
+        if 'Staff' in options:
+            start_index = options.index('Staff') + 1
         elif 'Attack' in options:
             start_index = options.index('Attack') + 1
         else:
@@ -1225,7 +1225,7 @@ class MenuState(MapState):
             else:
                 selection = self.menu.get_current()
                 # Show info menu for the basic stuff
-                if selection in ('Attack', 'Spells', 'Item', 'Wait'):
+                if selection in ('Attack', 'Staff', 'Item', 'Wait', 'Spell List'):
                     _handle_info()
                 else:  # Show description for everything else.
                     get_sound_thread().play_sfx('Info In')
@@ -1243,9 +1243,9 @@ class MenuState(MapState):
                 game.memory['targets'] = self.target_dict[selection].targets(self.cur_unit)
                 game.memory['ability'] = 'Attack'
                 game.state.change('weapon_choice')
-            elif selection == 'Spells':
+            elif selection == 'Staff':
                 game.memory['targets'] = self.target_dict[selection].targets(self.cur_unit)
-                game.memory['ability'] = 'Spells'
+                game.memory['ability'] = 'Staff'
                 game.state.change('spell_choice')
             elif selection == 'Supply':
                 game.memory['current_unit'] = self.cur_unit
@@ -1279,7 +1279,7 @@ class MenuState(MapState):
                 self._handle_combat_art_selection(selection)
 
             # Mari's spell loadout chooser - equip one of her loadout spells
-            elif selection == 'Spell':
+            elif selection == 'Spell List':
                 game.state.change('spell_loadout_choice')
 
             # Selection is one of the other abilities
@@ -2492,7 +2492,7 @@ class CombatTargetingState(MapState):
         self._process_next_target_asap = False
 
         self.ability_name = game.memory.get('ability')
-        if self.ability_name == 'Spells':
+        if self.ability_name == 'Staff':
             game.ui_view.prepare_spell_info()
         else:
             game.ui_view.prepare_attack_info()

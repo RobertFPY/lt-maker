@@ -1605,7 +1605,62 @@ class LearnSpellFromBook(ItemComponent):
                 # Pass the book's spell nids so the event can offer exactly these spells.
                 local_args = {'item': item, 'mode': mode, 'mari_new_spell': self.spell_nids}
                 game.events.trigger_specific_event(event_prefab.nid, unit, unit, unit.position, local_args)
+            # Consume the book entirely once it has been studied. Guard on inventory membership so
+            # we never try to remove an item that lives somewhere else (e.g. a command_item copy).
+            if item in unit.items:
+                action.do(action.RemoveItem(unit, item))
         self._should_fire = False
+
+class RestrictedAdditionalItemCommand(ItemComponent):
+    nid = 'restricted_additional_item_command'
+    desc = ("Like 'additional_item_command' (adds another item as an extra menu option on this "
+            "item), but the extra command only shows up for the units listed in 'units'. Any "
+            "other holder sees the item exactly as normal, so the base item is never affected. "
+            "Configure two fields: the command item to attach, and the list of units allowed to "
+            "use that command.")
+    tag = ItemTags.CUSTOM
+    author = "v0"
+
+    expose = ComponentType.NewMultipleOptions
+
+    options = {
+        'item': ComponentType.Item,
+        'units': (ComponentType.List, ComponentType.Unit),  # Stored as unit nids
+    }
+
+    def __init__(self, value=None):
+        self.value = {
+            'item': '',
+            'units': [],
+        }
+        if value and isinstance(value, dict):
+            self.value.update(value)
+        elif value:
+            # Backwards compatibility with a bare item nid.
+            self.value['item'] = value
+
+    @property
+    def command_nid(self):
+        return self.value.get('item', '')
+
+    @property
+    def allowed_units(self) -> list:
+        return list(self.value.get('units') or [])
+
+    def extra_command(self, unit, item):
+        # Only the designated units get the extra command; everyone else is unaffected.
+        if not unit or unit.nid not in self.allowed_units:
+            return None
+        if not self.command_nid:
+            return None
+        if item.command_item:
+            return item.command_item
+        new_item = item_funcs.create_item(unit, self.command_nid)
+        game.register_item(new_item)
+        item.command_item = new_item
+        item.command_uid = new_item.uid
+        new_item.command_parent_item = item
+        return new_item
 
 class HPCostAsUses(ItemComponent):
     nid = 'hp_cost_as_uses'

@@ -1605,6 +1605,26 @@ class LearnSpellFromBook(ItemComponent):
     def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         self._should_fire = True
 
+    @staticmethod
+    def _current_uses(it):
+        # Current durability of an item copy. Items without a uses component are treated as having
+        # the highest priority (infinite) so they are never skipped over.
+        if 'uses' in it.data and it.data['uses'] is not None:
+            return it.data['uses']
+        if 'c_uses' in it.data and it.data['c_uses'] is not None:
+            return it.data['c_uses']
+        return float('inf')
+
+    def _best_inventory_match(self, unit, nid):
+        # Among inventory copies sharing this nid, pick the one with the most remaining uses.
+        # can_use only permits a study at FULL durability, so the copy Mari actually used is the
+        # full-durability one. Preferring max-uses guarantees we never consume a depleted copy
+        # (e.g. a 49-use book) instead of the full one (50) she really studied from.
+        matches = [i for i in unit.items if i.nid == nid]
+        if not matches:
+            return None
+        return max(matches, key=self._current_uses)
+
     def end_combat(self, playback, unit, item, target, item2, mode):
         if self._should_fire and unit and unit.nid == 'Mari':
             event_prefab = DB.events.get_from_nid(self.event_nid)
@@ -1612,22 +1632,22 @@ class LearnSpellFromBook(ItemComponent):
                 # Pass the book's spell nids so the event can offer exactly these spells.
                 local_args = {'item': item, 'mode': mode, 'mari_new_spell': self.spell_nids}
                 game.events.trigger_specific_event(event_prefab.nid, unit, unit, unit.position, local_args)
-            # Consume an item once studying finishes. Always prefer the EXACT object Mari just
-            # used, matched by uid, so duplicate copies that share a nid but differ in uses (e.g.
-            # one at 49 uses and one at 50) are never confused. Only when 'consumed_item' names a
-            # *different* item, or when the used object is not in Mari's inventory (e.g. a loadout
-            # copy), do we fall back to a nid lookup.
+            # Consume an item once studying finishes. Prefer the EXACT object Mari used (matched by
+            # uid). If that object isn't in her inventory (e.g. she studied from a loadout copy,
+            # whose uid differs from the real inventory items), fall back to a nid lookup that picks
+            # the FULL-durability copy, since that is the only copy can_use allowed her to study.
             used_copy = next((i for i in unit.items if i.uid == item.uid), None)
             to_remove = None
             if self.consumed_item_nid and self.consumed_item_nid != item.nid:
                 # Configured to consume a different item than the one used.
-                to_remove = next((i for i in unit.items if i.nid == self.consumed_item_nid), None)
+                to_remove = self._best_inventory_match(unit, self.consumed_item_nid)
             elif used_copy is not None:
                 # Default, or 'consumed_item' matches the used nid: remove the exact used object.
                 to_remove = used_copy
-            elif self.consumed_item_nid:
-                # Used object isn't in the inventory; fall back to the first matching copy.
-                to_remove = next((i for i in unit.items if i.nid == self.consumed_item_nid), None)
+            else:
+                # Used object isn't in the inventory; match by nid, preferring the full copy.
+                target_nid = self.consumed_item_nid or item.nid
+                to_remove = self._best_inventory_match(unit, target_nid)
             if to_remove is not None:
                 action.do(action.RemoveItem(unit, to_remove))
         self._should_fire = False

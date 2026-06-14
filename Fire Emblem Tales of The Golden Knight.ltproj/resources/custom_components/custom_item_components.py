@@ -1550,10 +1550,11 @@ class LearnSpellFromBook(ItemComponent):
     nid = 'learn_spell_from_book'
     desc = ("Mari-only study book. When Mari uses the item at full durability it opens the "
             "linked event so she can learn one rank-appropriate spell from the book's spell "
-            "list, then the book is consumed by its normal uses. Configure two fields: the "
-            "event to trigger, and the list of spell items this book can teach. The chosen "
-            "spells' nids are passed to the event as 'mari_new_spell'. Only usable by Mari "
-            "and only when no use has been spent.")
+            "list. Configure three fields: the event to trigger, the list of spell items this "
+            "book can teach, and (optionally) the item to consume once studying finishes. The "
+            "chosen spells' nids are passed to the event as 'mari_new_spell'. If 'consumed_item' "
+            "is set, that item is removed from Mari's inventory after the event; otherwise the "
+            "book itself is removed. Only usable by Mari and only when no use has been spent.")
     tag = ItemTags.CUSTOM
     author = "v0"
 
@@ -1562,6 +1563,7 @@ class LearnSpellFromBook(ItemComponent):
     options = {
         'event': ComponentType.Event,
         'spells': (ComponentType.List, ComponentType.Item),  # Stored as Nids
+        'consumed_item': ComponentType.Item,  # Stored as Nid; the item removed after learning
     }
 
     _should_fire = False
@@ -1570,6 +1572,7 @@ class LearnSpellFromBook(ItemComponent):
         self.value = {
             'event': '',
             'spells': [],
+            'consumed_item': '',
         }
         if value and isinstance(value, dict):
             self.value.update(value)
@@ -1584,6 +1587,10 @@ class LearnSpellFromBook(ItemComponent):
     @property
     def spell_nids(self) -> list:
         return list(self.value.get('spells') or [])
+
+    @property
+    def consumed_item_nid(self):
+        return self.value.get('consumed_item', '')
 
     def can_use(self, unit, item) -> bool:
         if not unit or unit.nid != 'Mari':
@@ -1605,10 +1612,17 @@ class LearnSpellFromBook(ItemComponent):
                 # Pass the book's spell nids so the event can offer exactly these spells.
                 local_args = {'item': item, 'mode': mode, 'mari_new_spell': self.spell_nids}
                 game.events.trigger_specific_event(event_prefab.nid, unit, unit, unit.position, local_args)
-            # Consume the book entirely once it has been studied. Guard on inventory membership so
-            # we never try to remove an item that lives somewhere else (e.g. a command_item copy).
-            if item in unit.items:
-                action.do(action.RemoveItem(unit, item))
+            # Consume an item once studying finishes. If a specific 'consumed_item' is configured,
+            # remove the first matching copy from Mari's inventory; otherwise fall back to removing
+            # the book itself. Guard on inventory membership so we never try to remove an item that
+            # lives somewhere else (e.g. a command_item copy).
+            to_remove = None
+            if self.consumed_item_nid:
+                to_remove = next((i for i in unit.items if i.nid == self.consumed_item_nid), None)
+            elif item in unit.items:
+                to_remove = item
+            if to_remove is not None and to_remove in unit.items:
+                action.do(action.RemoveItem(unit, to_remove))
         self._should_fire = False
 
 class RestrictedAdditionalItemCommand(ItemComponent):

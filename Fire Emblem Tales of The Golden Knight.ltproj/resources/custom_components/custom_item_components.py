@@ -1612,21 +1612,23 @@ class LearnSpellFromBook(ItemComponent):
                 # Pass the book's spell nids so the event can offer exactly these spells.
                 local_args = {'item': item, 'mode': mode, 'mari_new_spell': self.spell_nids}
                 game.events.trigger_specific_event(event_prefab.nid, unit, unit, unit.position, local_args)
-            # Consume an item once studying finishes. If a specific 'consumed_item' is configured,
-            # prefer the exact item object Mari just used when it matches that nid, so duplicate
-            # copies (same nid, different uses) are not confused; otherwise remove the first copy
-            # matching the configured nid. With no 'consumed_item' set, fall back to the book
-            # itself. Guard on inventory membership so we never remove an item that lives elsewhere
-            # (e.g. a command_item copy), and match by uid to delete the precise object.
+            # Consume an item once studying finishes. Always prefer the EXACT object Mari just
+            # used, matched by uid, so duplicate copies that share a nid but differ in uses (e.g.
+            # one at 49 uses and one at 50) are never confused. Only when 'consumed_item' names a
+            # *different* item, or when the used object is not in Mari's inventory (e.g. a loadout
+            # copy), do we fall back to a nid lookup.
+            used_copy = next((i for i in unit.items if i.uid == item.uid), None)
             to_remove = None
-            if self.consumed_item_nid:
-                if item in unit.items and item.nid == self.consumed_item_nid:
-                    to_remove = item
-                else:
-                    to_remove = next((i for i in unit.items if i.nid == self.consumed_item_nid), None)
-            elif item in unit.items:
-                to_remove = item
-            if to_remove is not None and any(i.uid == to_remove.uid for i in unit.items):
+            if self.consumed_item_nid and self.consumed_item_nid != item.nid:
+                # Configured to consume a different item than the one used.
+                to_remove = next((i for i in unit.items if i.nid == self.consumed_item_nid), None)
+            elif used_copy is not None:
+                # Default, or 'consumed_item' matches the used nid: remove the exact used object.
+                to_remove = used_copy
+            elif self.consumed_item_nid:
+                # Used object isn't in the inventory; fall back to the first matching copy.
+                to_remove = next((i for i in unit.items if i.nid == self.consumed_item_nid), None)
+            if to_remove is not None:
                 action.do(action.RemoveItem(unit, to_remove))
         self._should_fire = False
 

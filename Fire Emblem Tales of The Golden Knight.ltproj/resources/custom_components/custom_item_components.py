@@ -1613,15 +1613,20 @@ class LearnSpellFromBook(ItemComponent):
                 local_args = {'item': item, 'mode': mode, 'mari_new_spell': self.spell_nids}
                 game.events.trigger_specific_event(event_prefab.nid, unit, unit, unit.position, local_args)
             # Consume an item once studying finishes. If a specific 'consumed_item' is configured,
-            # remove the first matching copy from Mari's inventory; otherwise fall back to removing
-            # the book itself. Guard on inventory membership so we never try to remove an item that
-            # lives somewhere else (e.g. a command_item copy).
+            # prefer the exact item object Mari just used when it matches that nid, so duplicate
+            # copies (same nid, different uses) are not confused; otherwise remove the first copy
+            # matching the configured nid. With no 'consumed_item' set, fall back to the book
+            # itself. Guard on inventory membership so we never remove an item that lives elsewhere
+            # (e.g. a command_item copy), and match by uid to delete the precise object.
             to_remove = None
             if self.consumed_item_nid:
-                to_remove = next((i for i in unit.items if i.nid == self.consumed_item_nid), None)
+                if item in unit.items and item.nid == self.consumed_item_nid:
+                    to_remove = item
+                else:
+                    to_remove = next((i for i in unit.items if i.nid == self.consumed_item_nid), None)
             elif item in unit.items:
                 to_remove = item
-            if to_remove is not None and to_remove in unit.items:
+            if to_remove is not None and any(i.uid == to_remove.uid for i in unit.items):
                 action.do(action.RemoveItem(unit, to_remove))
         self._should_fire = False
 

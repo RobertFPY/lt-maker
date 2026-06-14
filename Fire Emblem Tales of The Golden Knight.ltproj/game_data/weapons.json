@@ -41,6 +41,119 @@
         ]
     },
     {
+        "nid": "Dagger",
+        "name": "Dagger",
+        "force_melee_anim": false,
+        "hide_from_display": false,
+        "hide_from_convoy": false,
+        "rank_bonus": [],
+        "advantage": [
+            {
+                "weapon_type": "Bow",
+                "weapon_rank": "All",
+                "damage": 1,
+                "resist": 0,
+                "accuracy": 15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            }
+        ],
+        "disadvantage": [
+            {
+                "weapon_type": "Light",
+                "weapon_rank": "All",
+                "damage": -1,
+                "resist": 0,
+                "accuracy": -15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            },
+            {
+                "weapon_type": "Fire",
+                "weapon_rank": "All",
+                "damage": -1,
+                "resist": 0,
+                "accuracy": -15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            },
+            {
+                "weapon_type": "Wind",
+                "weapon_rank": "All",
+                "damage": -1,
+                "resist": 0,
+                "accuracy": -15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            },
+            {
+                "weapon_type": "Thunder",
+                "weapon_rank": "All",
+                "damage": -1,
+                "resist": 0,
+                "accuracy": -15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            },
+            {
+                "weapon_type": "Water",
+                "weapon_rank": "All",
+                "damage": -1,
+                "resist": 0,
+                "accuracy": -15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            },
+            {
+                "weapon_type": "Earth",
+                "weapon_rank": "All",
+                "damage": -1,
+                "resist": 0,
+                "accuracy": -15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            },
+            {
+                "weapon_type": "Dark",
+                "weapon_rank": "All",
+                "damage": -1,
+                "resist": 0,
+                "accuracy": -15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            }
+        ],
+        "icon_nid": "wexp_icons",
+        "icon_index": [
+            0,
+            10
+        ]
+    },
+    {
         "nid": "Lance",
         "name": "Lance",
         "force_melee_anim": false,
@@ -129,8 +242,106 @@
         "hide_from_display": false,
         "hide_from_convoy": false,
         "rank_bonus": [],
-        "advantage": [],
-        "disadvantage": [],
+        "advantage": [
+            {
+                "weapon_type": "Light",
+                "weapon_rank": "All",
+                "damage": 1,
+                "resist": 0,
+                "accuracy": 15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            },
+            {
+                "weapon_type": "Fire",
+                "weapon_rank": "All",
+                "damage": 1,
+                "resist": 0,
+                "accuracy": 15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            },
+            {
+                "weapon_type": "Wind",
+                "weapon_rank": "All",
+                "damage": 1,
+                "resist": 0,
+                "accuracy": 15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            },
+            {
+                "weapon_type": "Thunder",
+                "weapon_rank": "All",
+                "damage": 1,
+                "resist": 0,
+                "accuracy": 15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            },
+            {
+                "weapon_type": "Water",
+                "weapon_rank": "All",
+                "damage": 1,
+                "resist": 0,
+                "accuracy": 15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            },
+            {
+                "weapon_type": "Earth",
+                "weapon_rank": "All",
+                "damage": 1,
+                "resist": 0,
+                "accuracy": 15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            },
+            {
+                "weapon_type": "Dark",
+                "weapon_rank": "All",
+                "damage": 1,
+                "resist": 0,
+                "accuracy": 15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            }
+        ],
+        "disadvantage": [
+            {
+                "weapon_type": "Dagger",
+                "weapon_rank": "All",
+                "damage": -1,
+                "resist": 0,
+                "accuracy": 15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            }
+        ],
         "icon_nid": "wexp_icons",
         "icon_index": [
             0,
@@ -171,11 +382,23 @@
                 "dodge": "0",
                 "attack_speed": "0",
                 "defense_speed": "0"
+            },
+            {
+                "weapon_type": "Dagger",
+                "weapon_rank": "All",
+                "damage": 1,
+                "resist": 0,
+                "accuracy": 15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
             }
         ],
         "disadvantage": [
             {
-                "weapon_type": "Anima",
+                "weapon_type": "Fire",
                 "weapon_rank": "All",
                 "damage": "-1",
                 "resist": "0",
@@ -185,12 +408,517 @@
                 "dodge": "0",
                 "attack_speed": "0",
                 "defense_speed": "0"
+            },
+            {
+                "weapon_type": "Wind",
+                "weapon_rank": "All",
+                "damage": -1,
+                "resist": 0,
+                "accuracy": -15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            },
+            {
+                "weapon_type": "Thunder",
+                "weapon_rank": "All",
+                "damage": -1,
+                "resist": 0,
+                "accuracy": -15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            },
+            {
+                "weapon_type": "Water",
+                "weapon_rank": "All",
+                "damage": -1,
+                "resist": 0,
+                "accuracy": -15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            },
+            {
+                "weapon_type": "Earth",
+                "weapon_rank": "All",
+                "damage": -1,
+                "resist": 0,
+                "accuracy": -15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            },
+            {
+                "weapon_type": "Bow",
+                "weapon_rank": "All",
+                "damage": -1,
+                "resist": 0,
+                "accuracy": -15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
             }
         ],
         "icon_nid": "wexp_icons",
         "icon_index": [
             0,
             5
+        ]
+    },
+    {
+        "nid": "Fire",
+        "name": "Fire",
+        "force_melee_anim": false,
+        "hide_from_display": false,
+        "hide_from_convoy": false,
+        "rank_bonus": [],
+        "advantage": [
+            {
+                "weapon_type": "Light",
+                "weapon_rank": "All",
+                "damage": "1",
+                "resist": "0",
+                "accuracy": "15",
+                "avoid": "0",
+                "crit": "0",
+                "dodge": "0",
+                "attack_speed": "0",
+                "defense_speed": "0"
+            },
+            {
+                "weapon_type": "Wind",
+                "weapon_rank": "All",
+                "damage": 1,
+                "resist": 0,
+                "accuracy": 15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            },
+            {
+                "weapon_type": "Dagger",
+                "weapon_rank": "All",
+                "damage": 1,
+                "resist": 0,
+                "accuracy": 15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            }
+        ],
+        "disadvantage": [
+            {
+                "weapon_type": "Dark",
+                "weapon_rank": "All",
+                "damage": "-1",
+                "resist": "0",
+                "accuracy": "-15",
+                "avoid": "0",
+                "crit": "0",
+                "dodge": "0",
+                "attack_speed": "0",
+                "defense_speed": "0"
+            },
+            {
+                "weapon_type": "Water",
+                "weapon_rank": "All",
+                "damage": -1,
+                "resist": 0,
+                "accuracy": -15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            },
+            {
+                "weapon_type": "Bow",
+                "weapon_rank": "All",
+                "damage": -1,
+                "resist": 0,
+                "accuracy": -15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            }
+        ],
+        "icon_nid": "wexp_icons",
+        "icon_index": [
+            0,
+            11
+        ]
+    },
+    {
+        "nid": "Wind",
+        "name": "Wind",
+        "force_melee_anim": false,
+        "hide_from_display": false,
+        "hide_from_convoy": false,
+        "rank_bonus": [],
+        "advantage": [
+            {
+                "weapon_type": "Light",
+                "weapon_rank": "All",
+                "damage": "1",
+                "resist": "0",
+                "accuracy": "15",
+                "avoid": "0",
+                "crit": "0",
+                "dodge": "0",
+                "attack_speed": "0",
+                "defense_speed": "0"
+            },
+            {
+                "weapon_type": "Earth",
+                "weapon_rank": "All",
+                "damage": 1,
+                "resist": 0,
+                "accuracy": 15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            },
+            {
+                "weapon_type": "Dagger",
+                "weapon_rank": "All",
+                "damage": 1,
+                "resist": 0,
+                "accuracy": 15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            }
+        ],
+        "disadvantage": [
+            {
+                "weapon_type": "Dark",
+                "weapon_rank": "All",
+                "damage": -1,
+                "resist": "0",
+                "accuracy": "-15",
+                "avoid": "0",
+                "crit": "0",
+                "dodge": "0",
+                "attack_speed": "0",
+                "defense_speed": "0"
+            },
+            {
+                "weapon_type": "Fire",
+                "weapon_rank": "All",
+                "damage": -1,
+                "resist": 0,
+                "accuracy": -15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            },
+            {
+                "weapon_type": "Bow",
+                "weapon_rank": "All",
+                "damage": -1,
+                "resist": 0,
+                "accuracy": -15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            }
+        ],
+        "icon_nid": "wexp_icons",
+        "icon_index": [
+            0,
+            13
+        ]
+    },
+    {
+        "nid": "Thunder",
+        "name": "Thunder",
+        "force_melee_anim": false,
+        "hide_from_display": false,
+        "hide_from_convoy": false,
+        "rank_bonus": [],
+        "advantage": [
+            {
+                "weapon_type": "Light",
+                "weapon_rank": "All",
+                "damage": "1",
+                "resist": "0",
+                "accuracy": "15",
+                "avoid": "0",
+                "crit": "0",
+                "dodge": "0",
+                "attack_speed": "0",
+                "defense_speed": "0"
+            },
+            {
+                "weapon_type": "Water",
+                "weapon_rank": "All",
+                "damage": 1,
+                "resist": 0,
+                "accuracy": 15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            },
+            {
+                "weapon_type": "Dagger",
+                "weapon_rank": "All",
+                "damage": 1,
+                "resist": 0,
+                "accuracy": 15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            }
+        ],
+        "disadvantage": [
+            {
+                "weapon_type": "Dark",
+                "weapon_rank": "All",
+                "damage": "-1",
+                "resist": "0",
+                "accuracy": "-15",
+                "avoid": "0",
+                "crit": "0",
+                "dodge": "0",
+                "attack_speed": "0",
+                "defense_speed": "0"
+            },
+            {
+                "weapon_type": "Earth",
+                "weapon_rank": "All",
+                "damage": -1,
+                "resist": 0,
+                "accuracy": -15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            },
+            {
+                "weapon_type": "Bow",
+                "weapon_rank": "All",
+                "damage": -1,
+                "resist": 0,
+                "accuracy": -15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            }
+        ],
+        "icon_nid": "wexp_icons",
+        "icon_index": [
+            0,
+            12
+        ]
+    },
+    {
+        "nid": "Water",
+        "name": "Water",
+        "force_melee_anim": false,
+        "hide_from_display": false,
+        "hide_from_convoy": false,
+        "rank_bonus": [],
+        "advantage": [
+            {
+                "weapon_type": "Light",
+                "weapon_rank": "All",
+                "damage": "1",
+                "resist": "0",
+                "accuracy": "15",
+                "avoid": "0",
+                "crit": "0",
+                "dodge": "0",
+                "attack_speed": "0",
+                "defense_speed": "0"
+            },
+            {
+                "weapon_type": "Fire",
+                "weapon_rank": "All",
+                "damage": 1,
+                "resist": 0,
+                "accuracy": 15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            },
+            {
+                "weapon_type": "Dagger",
+                "weapon_rank": "All",
+                "damage": 1,
+                "resist": 0,
+                "accuracy": 15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            }
+        ],
+        "disadvantage": [
+            {
+                "weapon_type": "Dark",
+                "weapon_rank": "All",
+                "damage": "-1",
+                "resist": "0",
+                "accuracy": "-15",
+                "avoid": "0",
+                "crit": "0",
+                "dodge": "0",
+                "attack_speed": "0",
+                "defense_speed": "0"
+            },
+            {
+                "weapon_type": "Thunder",
+                "weapon_rank": "All",
+                "damage": -1,
+                "resist": 0,
+                "accuracy": -15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            },
+            {
+                "weapon_type": "Bow",
+                "weapon_rank": "All",
+                "damage": -1,
+                "resist": 0,
+                "accuracy": -15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            }
+        ],
+        "icon_nid": "wexp_icons",
+        "icon_index": [
+            0,
+            14
+        ]
+    },
+    {
+        "nid": "Earth",
+        "name": "Earth",
+        "force_melee_anim": false,
+        "hide_from_display": false,
+        "hide_from_convoy": false,
+        "rank_bonus": [],
+        "advantage": [
+            {
+                "weapon_type": "Light",
+                "weapon_rank": "All",
+                "damage": "1",
+                "resist": "0",
+                "accuracy": "15",
+                "avoid": "0",
+                "crit": "0",
+                "dodge": "0",
+                "attack_speed": "0",
+                "defense_speed": "0"
+            },
+            {
+                "weapon_type": "Thunder",
+                "weapon_rank": "All",
+                "damage": 1,
+                "resist": 0,
+                "accuracy": 15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            },
+            {
+                "weapon_type": "Dagger",
+                "weapon_rank": "All",
+                "damage": 1,
+                "resist": 0,
+                "accuracy": 15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            }
+        ],
+        "disadvantage": [
+            {
+                "weapon_type": "Dark",
+                "weapon_rank": "All",
+                "damage": "-1",
+                "resist": "0",
+                "accuracy": "-15",
+                "avoid": "0",
+                "crit": "0",
+                "dodge": "0",
+                "attack_speed": "0",
+                "defense_speed": "0"
+            },
+            {
+                "weapon_type": "Wind",
+                "weapon_rank": "All",
+                "damage": -1,
+                "resist": 0,
+                "accuracy": -15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            },
+            {
+                "weapon_type": "Bow",
+                "weapon_rank": "All",
+                "damage": -1,
+                "resist": 0,
+                "accuracy": -15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            }
+        ],
+        "icon_nid": "wexp_icons",
+        "icon_index": [
+            0,
+            15
         ]
     },
     {
@@ -243,7 +971,7 @@
         "rank_bonus": [],
         "advantage": [
             {
-                "weapon_type": "Anima",
+                "weapon_type": "Fire",
                 "weapon_rank": "All",
                 "damage": "1",
                 "resist": "0",
@@ -253,6 +981,66 @@
                 "dodge": "0",
                 "attack_speed": "0",
                 "defense_speed": "0"
+            },
+            {
+                "weapon_type": "Wind",
+                "weapon_rank": "All",
+                "damage": 1,
+                "resist": 0,
+                "accuracy": 15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            },
+            {
+                "weapon_type": "Thunder",
+                "weapon_rank": "All",
+                "damage": 1,
+                "resist": 0,
+                "accuracy": 15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            },
+            {
+                "weapon_type": "Water",
+                "weapon_rank": "All",
+                "damage": 1,
+                "resist": 0,
+                "accuracy": 15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            },
+            {
+                "weapon_type": "Earth",
+                "weapon_rank": "All",
+                "damage": 1,
+                "resist": 0,
+                "accuracy": 15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
+            },
+            {
+                "weapon_type": "Dagger",
+                "weapon_rank": "All",
+                "damage": 1,
+                "resist": 0,
+                "accuracy": 15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
             }
         ],
         "disadvantage": [
@@ -267,12 +1055,39 @@
                 "dodge": "0",
                 "attack_speed": "0",
                 "defense_speed": "0"
+            },
+            {
+                "weapon_type": "Bow",
+                "weapon_rank": "All",
+                "damage": -1,
+                "resist": 0,
+                "accuracy": -15,
+                "avoid": 0,
+                "crit": 0,
+                "dodge": 0,
+                "attack_speed": 0,
+                "defense_speed": 0
             }
         ],
         "icon_nid": "wexp_icons",
         "icon_index": [
             0,
             7
+        ]
+    },
+    {
+        "nid": "Dragon",
+        "name": "Dragon",
+        "force_melee_anim": false,
+        "hide_from_display": false,
+        "hide_from_convoy": false,
+        "rank_bonus": [],
+        "advantage": [],
+        "disadvantage": [],
+        "icon_nid": "wexp_icons",
+        "icon_index": [
+            0,
+            9
         ]
     },
     {
@@ -288,21 +1103,6 @@
         "icon_index": [
             0,
             8
-        ]
-    },
-    {
-        "nid": "Knife",
-        "name": "Knife",
-        "force_melee_anim": false,
-        "hide_from_display": false,
-        "hide_from_convoy": false,
-        "rank_bonus": [],
-        "advantage": [],
-        "disadvantage": [],
-        "icon_nid": "wexp_icons",
-        "icon_index": [
-            0,
-            10
         ]
     }
 ]

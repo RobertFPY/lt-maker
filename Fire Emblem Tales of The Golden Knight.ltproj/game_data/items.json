@@ -10068,13 +10068,13 @@
         ]
     },
     {
-        "nid": "Lightning",
-        "name": "Lightning",
-        "desc": "",
+        "nid": "Ember",
+        "name": "Ember",
+        "desc": "Common Fire magic.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
             0,
-            10
+            9
         ],
         "components": [
             [
@@ -10083,7 +10083,1146 @@
             ],
             [
                 "value",
-                630
+                500
+            ],
+            [
+                "target_enemy",
+                null
+            ],
+            [
+                "min_range",
+                1
+            ],
+            [
+                "max_range",
+                2
+            ],
+            [
+                "damage",
+                3
+            ],
+            [
+                "hit",
+                100
+            ],
+            [
+                "weight",
+                1
+            ],
+            [
+                "uses",
+                50
+            ],
+            [
+                "uses_options",
+                {
+                    "lose_uses_on_miss": false,
+                    "one_loss_per_combat": false
+                }
+            ],
+            [
+                "level_exp",
+                null
+            ],
+            [
+                "weapon_type",
+                "Fire"
+            ],
+            [
+                "weapon_rank",
+                "E"
+            ],
+            [
+                "map_hit_add_blend",
+                [
+                    224,
+                    96,
+                    0
+                ]
+            ],
+            [
+                "magic",
+                null
+            ],
+            [
+                "battle_cast_anim",
+                "Fire"
+            ],
+            [
+                "item_tags",
+                [
+                    "MagicalWeapon"
+                ]
+            ],
+            [
+                "learn_spell_from_book",
+                {
+                    "event": "Global Mari_Book_Learn",
+                    "spells": [
+                        "Fire_E"
+                    ]
+                }
+            ],
+            [
+                "wexp",
+                1
+            ],
+            [
+                "usable",
+                null
+            ],
+            [
+                "target_ally",
+                null
+            ]
+        ]
+    },
+    {
+        "nid": "Fire",
+        "name": "Fire",
+        "desc": "Advanced Fire magic.",
+        "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
+        "icon_index": [
+            1,
+            9
+        ],
+        "components": [
+            [
+                "weapon",
+                null
+            ],
+            [
+                "target_enemy",
+                null
+            ],
+            [
+                "min_range",
+                1
+            ],
+            [
+                "max_range",
+                2
+            ],
+            [
+                "damage",
+                5
+            ],
+            [
+                "hit",
+                90
+            ],
+            [
+                "crit",
+                0
+            ],
+            [
+                "weight",
+                3
+            ],
+            [
+                "level_exp",
+                null
+            ],
+            [
+                "weapon_type",
+                "Fire"
+            ],
+            [
+                "weapon_rank",
+                "D"
+            ],
+            [
+                "map_hit_add_blend",
+                [
+                    224,
+                    96,
+                    0
+                ]
+            ],
+            [
+                "magic",
+                null
+            ],
+            [
+                "value",
+                1500
+            ],
+            [
+                "uses",
+                40
+            ],
+            [
+                "uses_options",
+                {
+                    "lose_uses_on_miss": false,
+                    "one_loss_per_combat": false
+                }
+            ],
+            [
+                "wexp",
+                1
+            ],
+            [
+                "item_tags",
+                [
+                    "MagicalWeapon"
+                ]
+            ],
+            [
+                "learn_spell_from_book",
+                {
+                    "event": "Global Mari_Book_Learn",
+                    "spells": [
+                        "Fire_D"
+                    ]
+                }
+            ],
+            [
+                "usable",
+                null
+            ],
+            [
+                "target_ally",
+                null
+            ]
+        ]
+    },
+    {
+        "nid": "Spark",
+        "name": "Spark",
+        "desc": "Intermediate Thunder magic.",
+        "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
+        "icon_index": [
+            6,
+            9
+        ],
+        "components": [
+            [
+                "weapon",
+                null
+            ],
+            [
+                "target_enemy",
+                null
+            ],
+            [
+                "min_range",
+                1
+            ],
+            [
+                "max_range",
+                2
+            ],
+            [
+                "damage",
+                3
+            ],
+            [
+                "hit",
+                90
+            ],
+            [
+                "weight",
+                2
+            ],
+            [
+                "level_exp",
+                null
+            ],
+            [
+                "weapon_type",
+                "Thunder"
+            ],
+            [
+                "weapon_rank",
+                "E"
+            ],
+            [
+                "map_hit_add_blend",
+                [
+                    251,
+                    255,
+                    0
+                ]
+            ],
+            [
+                "magic",
+                null
+            ],
+            [
+                "value",
+                500
+            ],
+            [
+                "uses",
+                50
+            ],
+            [
+                "uses_options",
+                {
+                    "lose_uses_on_miss": false,
+                    "one_loss_per_combat": false
+                }
+            ],
+            [
+                "battle_cast_anim",
+                "Thunder"
+            ],
+            [
+                "item_tags",
+                [
+                    "MagicalWeapon"
+                ]
+            ],
+            [
+                "wexp",
+                1
+            ],
+            [
+                "learn_spell_from_book",
+                {
+                    "event": "Global Mari_Book_Learn",
+                    "spells": [
+                        "Thunder_E"
+                    ]
+                }
+            ],
+            [
+                "usable",
+                null
+            ],
+            [
+                "target_ally",
+                null
+            ]
+        ]
+    },
+    {
+        "nid": "Thunder",
+        "name": "Thunder",
+        "desc": "Advanced Thunder magic.",
+        "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
+        "icon_index": [
+            7,
+            9
+        ],
+        "components": [
+            [
+                "weapon",
+                null
+            ],
+            [
+                "target_enemy",
+                null
+            ],
+            [
+                "min_range",
+                1
+            ],
+            [
+                "max_range",
+                2
+            ],
+            [
+                "damage",
+                6
+            ],
+            [
+                "hit",
+                80
+            ],
+            [
+                "crit",
+                5
+            ],
+            [
+                "weight",
+                2
+            ],
+            [
+                "level_exp",
+                null
+            ],
+            [
+                "weapon_type",
+                "Thunder"
+            ],
+            [
+                "weapon_rank",
+                "D"
+            ],
+            [
+                "map_hit_add_blend",
+                [
+                    251,
+                    255,
+                    0
+                ]
+            ],
+            [
+                "magic",
+                null
+            ],
+            [
+                "value",
+                1500
+            ],
+            [
+                "uses",
+                40
+            ],
+            [
+                "uses_options",
+                {
+                    "lose_uses_on_miss": false,
+                    "one_loss_per_combat": false
+                }
+            ],
+            [
+                "battle_cast_anim",
+                "ElThunder"
+            ],
+            [
+                "item_tags",
+                [
+                    "MagicalWeapon"
+                ]
+            ],
+            [
+                "wexp",
+                1
+            ],
+            [
+                "learn_spell_from_book",
+                {
+                    "event": "Global Mari_Book_Learn",
+                    "spells": [
+                        "Thunder_D"
+                    ]
+                }
+            ],
+            [
+                "usable",
+                null
+            ],
+            [
+                "target_ally",
+                null
+            ]
+        ]
+    },
+    {
+        "nid": "Bolting",
+        "name": "Bolting",
+        "desc": "Long-range lightning strike.",
+        "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
+        "icon_index": [
+            9,
+            9
+        ],
+        "components": [
+            [
+                "target_enemy",
+                null
+            ],
+            [
+                "min_range",
+                3
+            ],
+            [
+                "max_range",
+                10
+            ],
+            [
+                "damage",
+                12
+            ],
+            [
+                "hit",
+                80
+            ],
+            [
+                "crit",
+                0
+            ],
+            [
+                "weight",
+                20
+            ],
+            [
+                "level_exp",
+                null
+            ],
+            [
+                "weapon_type",
+                "Anima"
+            ],
+            [
+                "weapon_rank",
+                "B"
+            ],
+            [
+                "map_hit_add_blend",
+                [
+                    255,
+                    255,
+                    0
+                ]
+            ],
+            [
+                "magic",
+                null
+            ],
+            [
+                "value",
+                2500
+            ],
+            [
+                "uses",
+                5
+            ],
+            [
+                "uses_options",
+                {
+                    "lose_uses_on_miss": false,
+                    "one_loss_per_combat": false
+                }
+            ],
+            [
+                "siege_weapon",
+                null
+            ],
+            [
+                "item_tags",
+                [
+                    "MagicalWeapon"
+                ]
+            ]
+        ]
+    },
+    {
+        "nid": "Breeze",
+        "name": "Breeze",
+        "desc": "Intermediate Wind magic. Effective vs Fliers.",
+        "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
+        "icon_index": [
+            18,
+            9
+        ],
+        "components": [
+            [
+                "weapon",
+                null
+            ],
+            [
+                "value",
+                500
+            ],
+            [
+                "target_enemy",
+                null
+            ],
+            [
+                "min_range",
+                1
+            ],
+            [
+                "max_range",
+                2
+            ],
+            [
+                "damage",
+                1
+            ],
+            [
+                "hit",
+                100
+            ],
+            [
+                "weight",
+                1
+            ],
+            [
+                "level_exp",
+                null
+            ],
+            [
+                "weapon_type",
+                "Wind"
+            ],
+            [
+                "weapon_rank",
+                "E"
+            ],
+            [
+                "magic",
+                null
+            ],
+            [
+                "effective_damage",
+                {
+                    "effective_tags": [
+                        "Flying"
+                    ],
+                    "effective_multiplier": 3,
+                    "effective_bonus_damage": 0,
+                    "show_effectiveness_flash": true,
+                    "weapon_effectiveness_multiplied": true
+                }
+            ],
+            [
+                "item_tags",
+                [
+                    "MagicalWeapon"
+                ]
+            ],
+            [
+                "wexp",
+                1
+            ],
+            [
+                "uses",
+                50
+            ],
+            [
+                "uses_options",
+                {
+                    "lose_uses_on_miss": false,
+                    "one_loss_per_combat": false
+                }
+            ],
+            [
+                "map_hit_add_blend",
+                [
+                    0,
+                    170,
+                    0
+                ]
+            ],
+            [
+                "battle_cast_anim",
+                "Wind"
+            ],
+            [
+                "learn_spell_from_book",
+                {
+                    "event": "Global Mari_Book_Learn",
+                    "spells": [
+                        "Wind_E"
+                    ]
+                }
+            ]
+        ]
+    },
+    {
+        "nid": "Wind",
+        "name": "Wind",
+        "desc": "Advanced Wind magic. Effective vs Fliers.",
+        "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
+        "icon_index": [
+            19,
+            9
+        ],
+        "components": [
+            [
+                "weapon",
+                null
+            ],
+            [
+                "value",
+                1500
+            ],
+            [
+                "target_enemy",
+                null
+            ],
+            [
+                "min_range",
+                1
+            ],
+            [
+                "max_range",
+                2
+            ],
+            [
+                "damage",
+                6
+            ],
+            [
+                "hit",
+                90
+            ],
+            [
+                "crit",
+                0
+            ],
+            [
+                "weight",
+                3
+            ],
+            [
+                "level_exp",
+                null
+            ],
+            [
+                "weapon_type",
+                "Wind"
+            ],
+            [
+                "weapon_rank",
+                "D"
+            ],
+            [
+                "magic",
+                null
+            ],
+            [
+                "effective_damage",
+                {
+                    "effective_tags": [
+                        "Flying"
+                    ],
+                    "effective_multiplier": 3,
+                    "effective_bonus_damage": 0,
+                    "show_effectiveness_flash": true,
+                    "weapon_effectiveness_multiplied": true
+                }
+            ],
+            [
+                "item_tags",
+                [
+                    "MagicalWeapon"
+                ]
+            ],
+            [
+                "wexp",
+                1
+            ],
+            [
+                "uses",
+                40
+            ],
+            [
+                "uses_options",
+                {
+                    "lose_uses_on_miss": false,
+                    "one_loss_per_combat": false
+                }
+            ],
+            [
+                "learn_spell_from_book",
+                {
+                    "event": "Global Mari_Book_Learn",
+                    "spells": [
+                        "Wind_D"
+                    ]
+                }
+            ],
+            [
+                "map_hit_add_blend",
+                [
+                    0,
+                    170,
+                    0
+                ]
+            ],
+            [
+                "battle_cast_anim",
+                "Wind"
+            ]
+        ]
+    },
+    {
+        "nid": "Excalibur",
+        "name": "Excalibur",
+        "desc": "Speed +5. Effective against monsters",
+        "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
+        "icon_index": [
+            23,
+            9
+        ],
+        "components": [
+            [
+                "weapon",
+                null
+            ],
+            [
+                "target_enemy",
+                null
+            ],
+            [
+                "level_exp",
+                null
+            ],
+            [
+                "damage",
+                18
+            ],
+            [
+                "hit",
+                90
+            ],
+            [
+                "weapon_type",
+                "Anima"
+            ],
+            [
+                "weapon_rank",
+                "S"
+            ],
+            [
+                "magic",
+                null
+            ],
+            [
+                "uses",
+                30
+            ],
+            [
+                "uses_options",
+                {
+                    "lose_uses_on_miss": false,
+                    "one_loss_per_combat": false
+                }
+            ],
+            [
+                "weight",
+                13
+            ],
+            [
+                "crit",
+                10
+            ],
+            [
+                "status_on_equip",
+                "Speed_Plus5"
+            ],
+            [
+                "min_range",
+                1
+            ],
+            [
+                "max_range",
+                2
+            ],
+            [
+                "effective_damage",
+                {
+                    "effective_tags": [
+                        "Monster"
+                    ],
+                    "effective_multiplier": 1.0,
+                    "effective_bonus_damage": 36,
+                    "show_effectiveness_flash": true,
+                    "weapon_effectiveness_multiplied": true
+                }
+            ],
+            [
+                "item_tags",
+                [
+                    "MagicalWeapon"
+                ]
+            ]
+        ]
+    },
+    {
+        "nid": "Splash",
+        "name": "Splash",
+        "desc": "Intermediate Water magic.",
+        "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
+        "icon_index": [
+            12,
+            9
+        ],
+        "components": [
+            [
+                "weapon",
+                null
+            ],
+            [
+                "value",
+                500
+            ],
+            [
+                "target_enemy",
+                null
+            ],
+            [
+                "min_range",
+                1
+            ],
+            [
+                "max_range",
+                2
+            ],
+            [
+                "damage",
+                1
+            ],
+            [
+                "hit",
+                90
+            ],
+            [
+                "weight",
+                1
+            ],
+            [
+                "level_exp",
+                null
+            ],
+            [
+                "weapon_type",
+                "Water"
+            ],
+            [
+                "weapon_rank",
+                "E"
+            ],
+            [
+                "magic",
+                null
+            ],
+            [
+                "map_hit_add_blend",
+                [
+                    0,
+                    0,
+                    127
+                ]
+            ],
+            [
+                "battle_cast_anim",
+                "Arrow"
+            ],
+            [
+                "uses",
+                50
+            ],
+            [
+                "uses_options",
+                {
+                    "lose_uses_on_miss": false,
+                    "one_loss_per_combat": false
+                }
+            ],
+            [
+                "learn_spell_from_book",
+                {
+                    "event": "Global Mari_Book_Learn",
+                    "spells": [
+                        "Water_E"
+                    ]
+                }
+            ]
+        ]
+    },
+    {
+        "nid": "Water",
+        "name": "Water",
+        "desc": "Advanced Water magic.",
+        "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
+        "icon_index": [
+            13,
+            9
+        ],
+        "components": [
+            [
+                "weapon",
+                null
+            ],
+            [
+                "value",
+                1500
+            ],
+            [
+                "target_enemy",
+                null
+            ],
+            [
+                "min_range",
+                1
+            ],
+            [
+                "max_range",
+                2
+            ],
+            [
+                "damage",
+                3
+            ],
+            [
+                "hit",
+                90
+            ],
+            [
+                "weight",
+                1
+            ],
+            [
+                "level_exp",
+                null
+            ],
+            [
+                "weapon_type",
+                "Water"
+            ],
+            [
+                "weapon_rank",
+                "D"
+            ],
+            [
+                "magic",
+                null
+            ],
+            [
+                "map_hit_add_blend",
+                [
+                    0,
+                    0,
+                    127
+                ]
+            ],
+            [
+                "battle_cast_anim",
+                "Arrow"
+            ],
+            [
+                "uses",
+                40
+            ],
+            [
+                "uses_options",
+                {
+                    "lose_uses_on_miss": false,
+                    "one_loss_per_combat": false
+                }
+            ],
+            [
+                "learn_spell_from_book",
+                {
+                    "event": "Global Mari_Book_Learn",
+                    "spells": [
+                        "Water_D"
+                    ]
+                }
+            ],
+            [
+                "crit",
+                0
+            ]
+        ]
+    },
+    {
+        "nid": "Fimbulvetr",
+        "name": "Fimbulvetr",
+        "desc": "Effective against dragons.",
+        "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
+        "icon_index": [
+            16,
+            9
+        ],
+        "components": [
+            [
+                "weapon",
+                null
+            ],
+            [
+                "target_enemy",
+                null
+            ],
+            [
+                "level_exp",
+                null
+            ],
+            [
+                "damage",
+                13
+            ],
+            [
+                "hit",
+                90
+            ],
+            [
+                "weapon_type",
+                "Anima"
+            ],
+            [
+                "weapon_rank",
+                "A"
+            ],
+            [
+                "magic",
+                null
+            ],
+            [
+                "uses",
+                20
+            ],
+            [
+                "uses_options",
+                {
+                    "lose_uses_on_miss": false,
+                    "one_loss_per_combat": false
+                }
+            ],
+            [
+                "weight",
+                12
+            ],
+            [
+                "crit",
+                0
+            ],
+            [
+                "value",
+                6000
+            ],
+            [
+                "min_range",
+                1
+            ],
+            [
+                "max_range",
+                2
+            ],
+            [
+                "effective_damage",
+                {
+                    "effective_tags": [
+                        "Dragon"
+                    ],
+                    "effective_multiplier": 3,
+                    "effective_bonus_damage": 0,
+                    "show_effectiveness_flash": true,
+                    "weapon_effectiveness_multiplied": true
+                }
+            ],
+            [
+                "item_tags",
+                [
+                    "MagicalWeapon"
+                ]
+            ]
+        ]
+    },
+    {
+        "nid": "Pebble",
+        "name": "Pebble",
+        "desc": "Intermediate Earth magic.",
+        "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
+        "icon_index": [
+            12,
+            9
+        ],
+        "components": [
+            [
+                "weapon",
+                null
+            ],
+            [
+                "value",
+                500
             ],
             [
                 "target_enemy",
@@ -10103,19 +11242,203 @@
             ],
             [
                 "hit",
-                95
-            ],
-            [
-                "crit",
-                5
+                75
             ],
             [
                 "weight",
-                6
+                5
+            ],
+            [
+                "level_exp",
+                null
+            ],
+            [
+                "weapon_type",
+                "Earth"
+            ],
+            [
+                "weapon_rank",
+                "E"
+            ],
+            [
+                "magic",
+                null
+            ],
+            [
+                "map_hit_add_blend",
+                [
+                    85,
+                    85,
+                    0
+                ]
+            ],
+            [
+                "battle_cast_anim",
+                "Arrow"
+            ],
+            [
+                "uses",
+                50
+            ],
+            [
+                "uses_options",
+                {
+                    "lose_uses_on_miss": false,
+                    "one_loss_per_combat": false
+                }
+            ],
+            [
+                "learn_spell_from_book",
+                {
+                    "event": "Global Mari_Book_Learn",
+                    "spells": [
+                        "Earth_E"
+                    ]
+                }
+            ]
+        ]
+    },
+    {
+        "nid": "Earth",
+        "name": "Earth",
+        "desc": "Advanced Earth magic.",
+        "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
+        "icon_index": [
+            13,
+            9
+        ],
+        "components": [
+            [
+                "weapon",
+                null
+            ],
+            [
+                "value",
+                1500
+            ],
+            [
+                "target_enemy",
+                null
+            ],
+            [
+                "min_range",
+                1
+            ],
+            [
+                "max_range",
+                2
+            ],
+            [
+                "damage",
+                7
+            ],
+            [
+                "hit",
+                75
+            ],
+            [
+                "weight",
+                5
+            ],
+            [
+                "level_exp",
+                null
+            ],
+            [
+                "weapon_type",
+                "Earth"
+            ],
+            [
+                "weapon_rank",
+                "D"
+            ],
+            [
+                "magic",
+                null
+            ],
+            [
+                "map_hit_add_blend",
+                [
+                    85,
+                    85,
+                    0
+                ]
+            ],
+            [
+                "battle_cast_anim",
+                "Arrow"
             ],
             [
                 "uses",
                 40
+            ],
+            [
+                "uses_options",
+                {
+                    "lose_uses_on_miss": false,
+                    "one_loss_per_combat": false
+                }
+            ],
+            [
+                "learn_spell_from_book",
+                {
+                    "event": "Global Mari_Book_Learn",
+                    "spells": [
+                        "Earth_D"
+                    ]
+                }
+            ],
+            [
+                "crit",
+                10
+            ]
+        ]
+    },
+    {
+        "nid": "Ray",
+        "name": "Ray",
+        "desc": "",
+        "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
+        "icon_index": [
+            0,
+            10
+        ],
+        "components": [
+            [
+                "weapon",
+                null
+            ],
+            [
+                "value",
+                500
+            ],
+            [
+                "target_enemy",
+                null
+            ],
+            [
+                "min_range",
+                1
+            ],
+            [
+                "max_range",
+                2
+            ],
+            [
+                "damage",
+                3
+            ],
+            [
+                "hit",
+                100
+            ],
+            [
+                "weight",
+                1
+            ],
+            [
+                "uses",
+                50
             ],
             [
                 "uses_options",
@@ -10157,6 +11480,117 @@
                 [
                     "MagicalWeapon"
                 ]
+            ],
+            [
+                "learn_spell_from_book",
+                {
+                    "event": "Global Mari_Book_Learn",
+                    "spells": [
+                        "Light_E"
+                    ]
+                }
+            ]
+        ]
+    },
+    {
+        "nid": "Lightning",
+        "name": "Lightning",
+        "desc": "",
+        "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
+        "icon_index": [
+            1,
+            10
+        ],
+        "components": [
+            [
+                "weapon",
+                null
+            ],
+            [
+                "value",
+                1500
+            ],
+            [
+                "target_enemy",
+                null
+            ],
+            [
+                "min_range",
+                1
+            ],
+            [
+                "max_range",
+                2
+            ],
+            [
+                "damage",
+                4
+            ],
+            [
+                "hit",
+                100
+            ],
+            [
+                "crit",
+                20
+            ],
+            [
+                "weight",
+                6
+            ],
+            [
+                "uses",
+                40
+            ],
+            [
+                "uses_options",
+                {
+                    "lose_uses_on_miss": false,
+                    "one_loss_per_combat": false
+                }
+            ],
+            [
+                "level_exp",
+                null
+            ],
+            [
+                "weapon_type",
+                "Light"
+            ],
+            [
+                "weapon_rank",
+                "D"
+            ],
+            [
+                "map_hit_add_blend",
+                [
+                    255,
+                    255,
+                    0
+                ]
+            ],
+            [
+                "magic",
+                null
+            ],
+            [
+                "battle_cast_anim",
+                "Lightning"
+            ],
+            [
+                "item_tags",
+                [
+                    "MagicalWeapon"
+                ]
+            ],
+            [
+                "learn_spell_from_book",
+                {
+                    "event": "Global Mari_Book_Learn",
+                    "spells": [
+                        "Light_D"
+                    ]
+                }
             ]
         ]
     },
@@ -10166,7 +11600,7 @@
         "desc": "",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            1,
+            2,
             10
         ],
         "components": [
@@ -10263,7 +11697,7 @@
         "desc": "",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            2,
+            3,
             10
         ],
         "components": [
@@ -10356,7 +11790,7 @@
         "desc": "",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            3,
+            4,
             10
         ],
         "components": [
@@ -10449,7 +11883,7 @@
         "desc": "",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            4,
+            5,
             10
         ],
         "components": [
@@ -10542,7 +11976,7 @@
         "desc": "Defense +5. Effective against monsters",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            5,
+            11,
             10
         ],
         "components": [
@@ -10642,644 +12076,8 @@
         ]
     },
     {
-        "nid": "Fire",
-        "name": "Fire",
-        "desc": "Common anima magic.",
-        "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
-        "icon_index": [
-            0,
-            9
-        ],
-        "components": [
-            [
-                "weapon",
-                null
-            ],
-            [
-                "value",
-                450
-            ],
-            [
-                "target_enemy",
-                null
-            ],
-            [
-                "min_range",
-                1
-            ],
-            [
-                "max_range",
-                2
-            ],
-            [
-                "damage",
-                7
-            ],
-            [
-                "hit",
-                95
-            ],
-            [
-                "crit",
-                0
-            ],
-            [
-                "weight",
-                4
-            ],
-            [
-                "uses",
-                45
-            ],
-            [
-                "uses_options",
-                {
-                    "lose_uses_on_miss": false,
-                    "one_loss_per_combat": false
-                }
-            ],
-            [
-                "level_exp",
-                null
-            ],
-            [
-                "weapon_type",
-                "Anima"
-            ],
-            [
-                "weapon_rank",
-                "E"
-            ],
-            [
-                "map_hit_add_blend",
-                [
-                    224,
-                    96,
-                    0
-                ]
-            ],
-            [
-                "magic",
-                null
-            ],
-            [
-                "battle_cast_anim",
-                "Fire"
-            ],
-            [
-                "item_tags",
-                [
-                    "MagicalWeapon"
-                ]
-            ]
-        ]
-    },
-    {
-        "nid": "Elfire",
-        "name": "Elfire",
-        "desc": "Advanced anima magic.",
-        "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
-        "icon_index": [
-            1,
-            9
-        ],
-        "components": [
-            [
-                "weapon",
-                null
-            ],
-            [
-                "target_enemy",
-                null
-            ],
-            [
-                "min_range",
-                1
-            ],
-            [
-                "max_range",
-                2
-            ],
-            [
-                "damage",
-                12
-            ],
-            [
-                "hit",
-                90
-            ],
-            [
-                "crit",
-                0
-            ],
-            [
-                "weight",
-                10
-            ],
-            [
-                "level_exp",
-                null
-            ],
-            [
-                "weapon_type",
-                "Anima"
-            ],
-            [
-                "weapon_rank",
-                "C"
-            ],
-            [
-                "map_hit_add_blend",
-                [
-                    224,
-                    96,
-                    0
-                ]
-            ],
-            [
-                "magic",
-                null
-            ],
-            [
-                "value",
-                1500
-            ],
-            [
-                "uses",
-                30
-            ],
-            [
-                "uses_options",
-                {
-                    "lose_uses_on_miss": false,
-                    "one_loss_per_combat": false
-                }
-            ],
-            [
-                "wexp",
-                2
-            ],
-            [
-                "item_tags",
-                [
-                    "MagicalWeapon"
-                ]
-            ]
-        ]
-    },
-    {
-        "nid": "Thunder",
-        "name": "Thunder",
-        "desc": "Intermediate anima magic.",
-        "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
-        "icon_index": [
-            6,
-            9
-        ],
-        "components": [
-            [
-                "weapon",
-                null
-            ],
-            [
-                "target_enemy",
-                null
-            ],
-            [
-                "min_range",
-                1
-            ],
-            [
-                "max_range",
-                2
-            ],
-            [
-                "damage",
-                8
-            ],
-            [
-                "hit",
-                90
-            ],
-            [
-                "crit",
-                5
-            ],
-            [
-                "weight",
-                6
-            ],
-            [
-                "level_exp",
-                null
-            ],
-            [
-                "weapon_type",
-                "Anima"
-            ],
-            [
-                "weapon_rank",
-                "D"
-            ],
-            [
-                "map_hit_add_blend",
-                [
-                    251,
-                    255,
-                    0
-                ]
-            ],
-            [
-                "magic",
-                null
-            ],
-            [
-                "value",
-                1000
-            ],
-            [
-                "uses",
-                40
-            ],
-            [
-                "uses_options",
-                {
-                    "lose_uses_on_miss": false,
-                    "one_loss_per_combat": false
-                }
-            ],
-            [
-                "battle_cast_anim",
-                "Thunder"
-            ],
-            [
-                "item_tags",
-                [
-                    "MagicalWeapon"
-                ]
-            ]
-        ]
-    },
-    {
-        "nid": "Bolting",
-        "name": "Bolting",
-        "desc": "Long-range lightning strike.",
-        "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
-        "icon_index": [
-            9,
-            9
-        ],
-        "components": [
-            [
-                "target_enemy",
-                null
-            ],
-            [
-                "min_range",
-                3
-            ],
-            [
-                "max_range",
-                10
-            ],
-            [
-                "damage",
-                12
-            ],
-            [
-                "hit",
-                80
-            ],
-            [
-                "crit",
-                0
-            ],
-            [
-                "weight",
-                20
-            ],
-            [
-                "level_exp",
-                null
-            ],
-            [
-                "weapon_type",
-                "Anima"
-            ],
-            [
-                "weapon_rank",
-                "B"
-            ],
-            [
-                "map_hit_add_blend",
-                [
-                    255,
-                    255,
-                    0
-                ]
-            ],
-            [
-                "magic",
-                null
-            ],
-            [
-                "value",
-                2500
-            ],
-            [
-                "uses",
-                5
-            ],
-            [
-                "uses_options",
-                {
-                    "lose_uses_on_miss": false,
-                    "one_loss_per_combat": false
-                }
-            ],
-            [
-                "siege_weapon",
-                null
-            ],
-            [
-                "item_tags",
-                [
-                    "MagicalWeapon"
-                ]
-            ]
-        ]
-    },
-    {
-        "nid": "Wind",
-        "name": "Wind",
-        "desc": "Effective vs Fliers.",
-        "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
-        "icon_index": [
-            18,
-            9
-        ],
-        "components": [
-            [
-                "weapon",
-                null
-            ],
-            [
-                "value",
-                800
-            ],
-            [
-                "target_enemy",
-                null
-            ],
-            [
-                "min_range",
-                1
-            ],
-            [
-                "max_range",
-                2
-            ],
-            [
-                "damage",
-                6
-            ],
-            [
-                "hit",
-                90
-            ],
-            [
-                "crit",
-                0
-            ],
-            [
-                "weight",
-                3
-            ],
-            [
-                "level_exp",
-                null
-            ],
-            [
-                "weapon_type",
-                "Anima"
-            ],
-            [
-                "weapon_rank",
-                "D"
-            ],
-            [
-                "magic",
-                null
-            ],
-            [
-                "effective_damage",
-                {
-                    "effective_tags": [
-                        "Flying"
-                    ],
-                    "effective_multiplier": 3,
-                    "effective_bonus_damage": 0,
-                    "show_effectiveness_flash": true,
-                    "weapon_effectiveness_multiplied": true
-                }
-            ],
-            [
-                "item_tags",
-                [
-                    "MagicalWeapon"
-                ]
-            ]
-        ]
-    },
-    {
-        "nid": "Excalibur",
-        "name": "Excalibur",
-        "desc": "Speed +5. Effective against monsters",
-        "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
-        "icon_index": [
-            23,
-            9
-        ],
-        "components": [
-            [
-                "weapon",
-                null
-            ],
-            [
-                "target_enemy",
-                null
-            ],
-            [
-                "level_exp",
-                null
-            ],
-            [
-                "damage",
-                18
-            ],
-            [
-                "hit",
-                90
-            ],
-            [
-                "weapon_type",
-                "Anima"
-            ],
-            [
-                "weapon_rank",
-                "S"
-            ],
-            [
-                "magic",
-                null
-            ],
-            [
-                "uses",
-                30
-            ],
-            [
-                "uses_options",
-                {
-                    "lose_uses_on_miss": false,
-                    "one_loss_per_combat": false
-                }
-            ],
-            [
-                "weight",
-                13
-            ],
-            [
-                "crit",
-                10
-            ],
-            [
-                "status_on_equip",
-                "Speed_Plus5"
-            ],
-            [
-                "min_range",
-                1
-            ],
-            [
-                "max_range",
-                2
-            ],
-            [
-                "effective_damage",
-                {
-                    "effective_tags": [
-                        "Monster"
-                    ],
-                    "effective_multiplier": 1.0,
-                    "effective_bonus_damage": 36,
-                    "show_effectiveness_flash": true,
-                    "weapon_effectiveness_multiplied": true
-                }
-            ],
-            [
-                "item_tags",
-                [
-                    "MagicalWeapon"
-                ]
-            ]
-        ]
-    },
-    {
-        "nid": "Fimbulvetr",
-        "name": "Fimbulvetr",
-        "desc": "Effective against dragons.",
-        "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
-        "icon_index": [
-            16,
-            9
-        ],
-        "components": [
-            [
-                "weapon",
-                null
-            ],
-            [
-                "target_enemy",
-                null
-            ],
-            [
-                "level_exp",
-                null
-            ],
-            [
-                "damage",
-                13
-            ],
-            [
-                "hit",
-                90
-            ],
-            [
-                "weapon_type",
-                "Anima"
-            ],
-            [
-                "weapon_rank",
-                "A"
-            ],
-            [
-                "magic",
-                null
-            ],
-            [
-                "uses",
-                20
-            ],
-            [
-                "uses_options",
-                {
-                    "lose_uses_on_miss": false,
-                    "one_loss_per_combat": false
-                }
-            ],
-            [
-                "weight",
-                12
-            ],
-            [
-                "crit",
-                0
-            ],
-            [
-                "value",
-                6000
-            ],
-            [
-                "min_range",
-                1
-            ],
-            [
-                "max_range",
-                2
-            ],
-            [
-                "effective_damage",
-                {
-                    "effective_tags": [
-                        "Dragon"
-                    ],
-                    "effective_multiplier": 3,
-                    "effective_bonus_damage": 0,
-                    "show_effectiveness_flash": true,
-                    "weapon_effectiveness_multiplied": true
-                }
-            ],
-            [
-                "item_tags",
-                [
-                    "MagicalWeapon"
-                ]
-            ]
-        ]
-    },
-    {
-        "nid": "Flux",
-        "name": "Flux",
+        "nid": "Miasma",
+        "name": "Miasma",
         "desc": "Common dark magic.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
@@ -11305,11 +12103,109 @@
             ],
             [
                 "damage",
-                8
+                5
             ],
             [
                 "hit",
-                80
+                70
+            ],
+            [
+                "weight",
+                5
+            ],
+            [
+                "level_exp",
+                null
+            ],
+            [
+                "weapon_type",
+                "Dark"
+            ],
+            [
+                "weapon_rank",
+                "E"
+            ],
+            [
+                "map_hit_add_blend",
+                [
+                    72,
+                    0,
+                    65
+                ]
+            ],
+            [
+                "magic",
+                null
+            ],
+            [
+                "value",
+                500
+            ],
+            [
+                "uses",
+                50
+            ],
+            [
+                "uses_options",
+                {
+                    "lose_uses_on_miss": false,
+                    "one_loss_per_combat": false
+                }
+            ],
+            [
+                "battle_cast_anim",
+                "Flux"
+            ],
+            [
+                "item_tags",
+                [
+                    "MagicalWeapon"
+                ]
+            ],
+            [
+                "learn_spell_from_book",
+                {
+                    "event": "Global Mari_Book_Learn",
+                    "spells": [
+                        "Dark_E"
+                    ]
+                }
+            ]
+        ]
+    },
+    {
+        "nid": "Flux",
+        "name": "Flux",
+        "desc": "Advanced dark magic.",
+        "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
+        "icon_index": [
+            13,
+            10
+        ],
+        "components": [
+            [
+                "weapon",
+                null
+            ],
+            [
+                "target_enemy",
+                null
+            ],
+            [
+                "min_range",
+                1
+            ],
+            [
+                "max_range",
+                2
+            ],
+            [
+                "damage",
+                7
+            ],
+            [
+                "hit",
+                70
             ],
             [
                 "crit",
@@ -11345,7 +12241,7 @@
             ],
             [
                 "value",
-                600
+                1500
             ],
             [
                 "uses",
@@ -11367,6 +12263,15 @@
                 [
                     "MagicalWeapon"
                 ]
+            ],
+            [
+                "learn_spell_from_book",
+                {
+                    "event": "Global Mari_Book_Learn",
+                    "spells": [
+                        "Dark_D"
+                    ]
+                }
             ]
         ]
     },
@@ -11376,7 +12281,7 @@
         "desc": "Ignore's enemy resistance",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            13,
+            14,
             10
         ],
         "components": [
@@ -11465,7 +12370,7 @@
         "desc": "User recovers HP equal to damage dealt.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            14,
+            15,
             10
         ],
         "components": [
@@ -11562,7 +12467,7 @@
         "desc": "Halve's the enemy's current HP",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            15,
+            16,
             10
         ],
         "components": [
@@ -11651,7 +12556,7 @@
         "desc": "Extremely heavy and powerful.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            16,
+            17,
             10
         ],
         "components": [
@@ -11744,7 +12649,7 @@
         "desc": "",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            17,
+            18,
             10
         ],
         "components": [
@@ -11831,10 +12736,10 @@
         "nid": "Naglfar",
         "name": "Naglfar",
         "desc": "",
-        "icon_nid": "Dark",
+        "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            0,
-            6
+            20,
+            10
         ],
         "components": [
             [
@@ -13225,7 +14130,7 @@
             ],
             [
                 "weapon_type",
-                "Knife"
+                "Dagger"
             ],
             [
                 "weapon_rank",
@@ -13306,7 +14211,7 @@
             ],
             [
                 "weapon_type",
-                "Knife"
+                "Dagger"
             ],
             [
                 "weapon_rank",
@@ -13387,7 +14292,7 @@
             ],
             [
                 "weapon_type",
-                "Knife"
+                "Dagger"
             ],
             [
                 "weapon_rank",
@@ -13468,7 +14373,7 @@
             ],
             [
                 "weapon_type",
-                "Knife"
+                "Dagger"
             ],
             [
                 "weapon_rank",
@@ -13549,7 +14454,7 @@
             ],
             [
                 "weapon_type",
-                "Knife"
+                "Dagger"
             ],
             [
                 "weapon_rank",
@@ -16443,7 +17348,7 @@
             ],
             [
                 "alternate_damage_formula",
-                "HEAL"
+                "MAGIC_DAMAGE"
             ],
             [
                 "damage",
@@ -16641,12 +17546,12 @@
     },
     {
         "nid": "Fire_E",
-        "name": "Fire E",
-        "desc": "Fire-element spell (rank E). Costs 1 HP to cast.",
+        "name": "Ember",
+        "desc": "Common Fire magic. Costs 1 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            1,
-            10
+            0,
+            9
         ],
         "components": [
             [
@@ -16667,11 +17572,119 @@
             ],
             [
                 "staffcast_weapon_type",
-                "Anima"
+                "Fire"
             ],
             [
                 "staffcast_weapon_rank",
                 "E"
+            ],
+            [
+                "damage",
+                3
+            ],
+            [
+                "hit",
+                100
+            ],
+            [
+                "weight",
+                1
+            ],
+            [
+                "min_range",
+                1
+            ],
+            [
+                "max_range",
+                2
+            ],
+            [
+                "prf_unit",
+                [
+                    "Mari"
+                ]
+            ],
+            [
+                "locked",
+                null
+            ],
+            [
+                "unrepairable",
+                null
+            ],
+            [
+                "eval_hp_cost",
+                "(item.hp_cost_override.value if item.hp_cost_override else {'E': 1, 'D': 2, 'C': 3, 'B': 4, 'A': 7, 'S': 8, 'SS': 10}.get(item.weapon_rank.value if item.weapon_rank else 'E', 1))"
+            ],
+            [
+                "hp_uses_options",
+                {
+                    "cost_hp_on_miss": true,
+                    "one_hp_cost_per_combat": false,
+                    "unequip_on_unusable": true
+                }
+            ],
+            [
+                "map_hit_add_blend",
+                [
+                    224,
+                    96,
+                    0
+                ]
+            ],
+            [
+                "battle_cast_anim",
+                "Fire"
+            ],
+            [
+                "item_tags",
+                [
+                    "MagicalWeapon"
+                ]
+            ],
+            [
+                "hp_cost_as_uses",
+                null
+            ],
+            [
+                "wexp",
+                0
+            ]
+        ]
+    },
+    {
+        "nid": "Fire_D",
+        "name": "Fire",
+        "desc": "Advanced Fire magic. Costs 2 HP to cast.",
+        "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
+        "icon_index": [
+            1,
+            9
+        ],
+        "components": [
+            [
+                "weapon",
+                null
+            ],
+            [
+                "target_enemy",
+                null
+            ],
+            [
+                "level_exp",
+                null
+            ],
+            [
+                "magic",
+                null
+            ],
+            [
+                "staffcast_weapon_type",
+                "Fire"
+            ],
+            [
+                "staffcast_weapon_rank",
+                "D"
             ],
             [
                 "damage",
@@ -16687,7 +17700,7 @@
             ],
             [
                 "weight",
-                0
+                3
             ],
             [
                 "min_range",
@@ -16726,14 +17739,14 @@
             [
                 "map_hit_add_blend",
                 [
-                    255,
-                    255,
+                    224,
+                    96,
                     0
                 ]
             ],
             [
                 "battle_cast_anim",
-                "Shine"
+                "Elfire"
             ],
             [
                 "item_tags",
@@ -16742,132 +17755,12 @@
                 ]
             ],
             [
-                "hp_cost_override",
-                1
-            ],
-            [
-                "value",
-                600
-            ],
-            [
                 "hp_cost_as_uses",
                 null
-            ]
-        ]
-    },
-    {
-        "nid": "Fire_D",
-        "name": "Fire D",
-        "desc": "Fire-element spell (rank D). Costs 2 HP to cast.",
-        "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
-        "icon_index": [
-            1,
-            10
-        ],
-        "components": [
-            [
-                "weapon",
-                null
             ],
             [
-                "target_enemy",
-                null
-            ],
-            [
-                "level_exp",
-                null
-            ],
-            [
-                "magic",
-                null
-            ],
-            [
-                "staffcast_weapon_type",
-                "Anima"
-            ],
-            [
-                "staffcast_weapon_rank",
-                "D"
-            ],
-            [
-                "damage",
-                8
-            ],
-            [
-                "hit",
-                90
-            ],
-            [
-                "crit",
+                "wexp",
                 0
-            ],
-            [
-                "weight",
-                0
-            ],
-            [
-                "min_range",
-                1
-            ],
-            [
-                "max_range",
-                2
-            ],
-            [
-                "prf_unit",
-                [
-                    "Mari"
-                ]
-            ],
-            [
-                "locked",
-                null
-            ],
-            [
-                "unrepairable",
-                null
-            ],
-            [
-                "eval_hp_cost",
-                "(item.hp_cost_override.value if item.hp_cost_override else {'E': 1, 'D': 2, 'C': 3, 'B': 4, 'A': 7, 'S': 8, 'SS': 10}.get(item.weapon_rank.value if item.weapon_rank else 'E', 1))"
-            ],
-            [
-                "hp_uses_options",
-                {
-                    "cost_hp_on_miss": true,
-                    "one_hp_cost_per_combat": false,
-                    "unequip_on_unusable": true
-                }
-            ],
-            [
-                "map_hit_add_blend",
-                [
-                    255,
-                    255,
-                    0
-                ]
-            ],
-            [
-                "battle_cast_anim",
-                "Shine"
-            ],
-            [
-                "item_tags",
-                [
-                    "MagicalWeapon"
-                ]
-            ],
-            [
-                "hp_cost_override",
-                2
-            ],
-            [
-                "value",
-                1000
-            ],
-            [
-                "hp_cost_as_uses",
-                null
             ]
         ]
     },
@@ -16877,8 +17770,8 @@
         "desc": "Fire-element spell (rank C). Costs 3 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            1,
-            10
+            2,
+            9
         ],
         "components": [
             [
@@ -16984,6 +17877,10 @@
             [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                2
             ]
         ]
     },
@@ -16993,8 +17890,8 @@
         "desc": "Fire-element spell (rank B). Costs 4 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            1,
-            10
+            3,
+            9
         ],
         "components": [
             [
@@ -17100,6 +17997,10 @@
             [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                2
             ]
         ]
     },
@@ -17109,8 +18010,8 @@
         "desc": "Fire-element spell (rank A). Costs 7 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            1,
-            10
+            4,
+            9
         ],
         "components": [
             [
@@ -17216,6 +18117,10 @@
             [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                2
             ]
         ]
     },
@@ -17225,8 +18130,8 @@
         "desc": "Fire-element spell (rank S). Costs 8 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            1,
-            10
+            5,
+            9
         ],
         "components": [
             [
@@ -17332,6 +18237,10 @@
             [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                2
             ]
         ]
     },
@@ -17341,8 +18250,8 @@
         "desc": "Fire-element spell (rank SS). Costs 10 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            1,
-            10
+            19,
+            11
         ],
         "components": [
             [
@@ -17448,17 +18357,21 @@
             [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                2
             ]
         ]
     },
     {
         "nid": "Water_E",
-        "name": "Water E",
+        "name": "Splash",
         "desc": "Water-element spell (rank E). Costs 1 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            1,
-            10
+            12,
+            9
         ],
         "components": [
             [
@@ -17479,7 +18392,7 @@
             ],
             [
                 "staffcast_weapon_type",
-                "Anima"
+                "Water"
             ],
             [
                 "staffcast_weapon_rank",
@@ -17487,19 +18400,15 @@
             ],
             [
                 "damage",
-                5
+                1
             ],
             [
                 "hit",
                 90
             ],
             [
-                "crit",
-                0
-            ],
-            [
                 "weight",
-                0
+                1
             ],
             [
                 "min_range",
@@ -17538,9 +18447,9 @@
             [
                 "map_hit_add_blend",
                 [
-                    255,
-                    255,
-                    0
+                    0,
+                    0,
+                    127
                 ]
             ],
             [
@@ -17554,27 +18463,23 @@
                 ]
             ],
             [
-                "hp_cost_override",
-                1
-            ],
-            [
-                "value",
-                600
-            ],
-            [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                0
             ]
         ]
     },
     {
         "nid": "Water_D",
-        "name": "Water D",
+        "name": "Water",
         "desc": "Water-element spell (rank D). Costs 2 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            1,
-            10
+            13,
+            9
         ],
         "components": [
             [
@@ -17595,15 +18500,15 @@
             ],
             [
                 "staffcast_weapon_type",
-                "Anima"
+                "Water"
             ],
             [
                 "staffcast_weapon_rank",
-                "E"
+                "D"
             ],
             [
                 "damage",
-                8
+                3
             ],
             [
                 "hit",
@@ -17615,7 +18520,7 @@
             ],
             [
                 "weight",
-                0
+                1
             ],
             [
                 "min_range",
@@ -17654,9 +18559,9 @@
             [
                 "map_hit_add_blend",
                 [
-                    255,
-                    255,
-                    0
+                    0,
+                    0,
+                    127
                 ]
             ],
             [
@@ -17670,16 +18575,12 @@
                 ]
             ],
             [
-                "hp_cost_override",
-                2
-            ],
-            [
-                "value",
-                1000
-            ],
-            [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                0
             ]
         ]
     },
@@ -17689,8 +18590,8 @@
         "desc": "Water-element spell (rank C). Costs 3 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            1,
-            10
+            14,
+            9
         ],
         "components": [
             [
@@ -17796,6 +18697,10 @@
             [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                2
             ]
         ]
     },
@@ -17805,8 +18710,8 @@
         "desc": "Water-element spell (rank B). Costs 4 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            1,
-            10
+            15,
+            9
         ],
         "components": [
             [
@@ -17912,6 +18817,10 @@
             [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                2
             ]
         ]
     },
@@ -17921,8 +18830,8 @@
         "desc": "Water-element spell (rank A). Costs 7 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            1,
-            10
+            16,
+            9
         ],
         "components": [
             [
@@ -18028,6 +18937,10 @@
             [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                2
             ]
         ]
     },
@@ -18037,8 +18950,8 @@
         "desc": "Water-element spell (rank S). Costs 8 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            1,
-            10
+            17,
+            9
         ],
         "components": [
             [
@@ -18144,6 +19057,10 @@
             [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                2
             ]
         ]
     },
@@ -18153,8 +19070,8 @@
         "desc": "Water-element spell (rank SS). Costs 10 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            1,
-            10
+            20,
+            11
         ],
         "components": [
             [
@@ -18260,17 +19177,21 @@
             [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                2
             ]
         ]
     },
     {
         "nid": "Thunder_E",
-        "name": "Thunder E",
-        "desc": "Thunder-element spell (rank E). Costs 1 HP to cast.",
+        "name": "Spark",
+        "desc": "Common Thunder magic. Costs 1 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            5,
-            11
+            6,
+            9
         ],
         "components": [
             [
@@ -18291,7 +19212,7 @@
             ],
             [
                 "staffcast_weapon_type",
-                "Anima"
+                "Thunder"
             ],
             [
                 "staffcast_weapon_rank",
@@ -18299,19 +19220,15 @@
             ],
             [
                 "damage",
-                5
+                3
             ],
             [
                 "hit",
                 90
             ],
             [
-                "crit",
-                0
-            ],
-            [
                 "weight",
-                0
+                2
             ],
             [
                 "min_range",
@@ -18350,14 +19267,14 @@
             [
                 "map_hit_add_blend",
                 [
-                    255,
+                    251,
                     255,
                     0
                 ]
             ],
             [
                 "battle_cast_anim",
-                "Shine"
+                "Thunder"
             ],
             [
                 "item_tags",
@@ -18366,27 +19283,23 @@
                 ]
             ],
             [
-                "hp_cost_override",
-                1
-            ],
-            [
-                "value",
-                600
-            ],
-            [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                0
             ]
         ]
     },
     {
         "nid": "Thunder_D",
-        "name": "Thunder D",
-        "desc": "Thunder-element spell (rank D). Costs 2 HP to cast.",
+        "name": "Thunder",
+        "desc": "Advanced Thunder magic. Costs 2 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            6,
-            11
+            7,
+            9
         ],
         "components": [
             [
@@ -18407,27 +19320,27 @@
             ],
             [
                 "staffcast_weapon_type",
-                "Anima"
+                "Thunder"
             ],
             [
                 "staffcast_weapon_rank",
-                "E"
+                "D"
             ],
             [
                 "damage",
-                8
+                6
             ],
             [
                 "hit",
-                90
+                80
             ],
             [
                 "crit",
-                0
+                5
             ],
             [
                 "weight",
-                0
+                2
             ],
             [
                 "min_range",
@@ -18466,14 +19379,14 @@
             [
                 "map_hit_add_blend",
                 [
-                    255,
+                    251,
                     255,
                     0
                 ]
             ],
             [
                 "battle_cast_anim",
-                "Shine"
+                "ElThunder"
             ],
             [
                 "item_tags",
@@ -18482,16 +19395,12 @@
                 ]
             ],
             [
-                "hp_cost_override",
-                2
-            ],
-            [
-                "value",
-                1000
-            ],
-            [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                0
             ]
         ]
     },
@@ -18608,6 +19517,10 @@
             [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                2
             ]
         ]
     },
@@ -18724,6 +19637,10 @@
             [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                2
             ]
         ]
     },
@@ -18840,6 +19757,10 @@
             [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                2
             ]
         ]
     },
@@ -18956,6 +19877,10 @@
             [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                2
             ]
         ]
     },
@@ -18965,8 +19890,8 @@
         "desc": "Thunder-element spell (rank SS). Costs 10 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            1,
-            10
+            21,
+            11
         ],
         "components": [
             [
@@ -19072,17 +19997,21 @@
             [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                2
             ]
         ]
     },
     {
         "nid": "Wind_E",
-        "name": "Wind E",
-        "desc": "Wind-element spell (rank E). Costs 1 HP to cast.",
+        "name": "Breeze",
+        "desc": "Common Wind magic. Costs 1 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            1,
-            10
+            18,
+            9
         ],
         "components": [
             [
@@ -19103,7 +20032,7 @@
             ],
             [
                 "staffcast_weapon_type",
-                "Anima"
+                "Wind"
             ],
             [
                 "staffcast_weapon_rank",
@@ -19111,19 +20040,15 @@
             ],
             [
                 "damage",
-                5
+                1
             ],
             [
                 "hit",
-                90
-            ],
-            [
-                "crit",
-                0
+                100
             ],
             [
                 "weight",
-                0
+                1
             ],
             [
                 "min_range",
@@ -19162,14 +20087,14 @@
             [
                 "map_hit_add_blend",
                 [
-                    255,
-                    255,
+                    0,
+                    170,
                     0
                 ]
             ],
             [
                 "battle_cast_anim",
-                "Shine"
+                "Wind"
             ],
             [
                 "item_tags",
@@ -19178,27 +20103,23 @@
                 ]
             ],
             [
-                "hp_cost_override",
-                1
-            ],
-            [
-                "value",
-                600
-            ],
-            [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                0
             ]
         ]
     },
     {
         "nid": "Wind_D",
-        "name": "Wind D",
-        "desc": "Wind-element spell (rank D). Costs 2 HP to cast.",
+        "name": "Wind",
+        "desc": "Advanced Wind magic. Costs 2 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            1,
-            10
+            19,
+            9
         ],
         "components": [
             [
@@ -19219,19 +20140,19 @@
             ],
             [
                 "staffcast_weapon_type",
-                "Anima"
+                "Wind"
             ],
             [
                 "staffcast_weapon_rank",
-                "E"
+                "D"
             ],
             [
                 "damage",
-                8
+                4
             ],
             [
                 "hit",
-                90
+                100
             ],
             [
                 "crit",
@@ -19239,7 +20160,7 @@
             ],
             [
                 "weight",
-                0
+                1
             ],
             [
                 "min_range",
@@ -19278,14 +20199,14 @@
             [
                 "map_hit_add_blend",
                 [
-                    255,
-                    255,
+                    0,
+                    170,
                     0
                 ]
             ],
             [
                 "battle_cast_anim",
-                "Shine"
+                "Wind"
             ],
             [
                 "item_tags",
@@ -19294,16 +20215,12 @@
                 ]
             ],
             [
-                "hp_cost_override",
-                2
-            ],
-            [
-                "value",
-                1000
-            ],
-            [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                0
             ]
         ]
     },
@@ -19313,8 +20230,8 @@
         "desc": "Wind-element spell (rank C). Costs 3 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            1,
-            10
+            20,
+            9
         ],
         "components": [
             [
@@ -19420,6 +20337,10 @@
             [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                2
             ]
         ]
     },
@@ -19429,8 +20350,8 @@
         "desc": "Wind-element spell (rank B). Costs 4 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            1,
-            10
+            21,
+            9
         ],
         "components": [
             [
@@ -19536,6 +20457,10 @@
             [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                2
             ]
         ]
     },
@@ -19545,8 +20470,8 @@
         "desc": "Wind-element spell (rank A). Costs 7 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            1,
-            10
+            22,
+            9
         ],
         "components": [
             [
@@ -19652,6 +20577,10 @@
             [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                2
             ]
         ]
     },
@@ -19661,8 +20590,8 @@
         "desc": "Wind-element spell (rank S). Costs 8 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            1,
-            10
+            23,
+            9
         ],
         "components": [
             [
@@ -19768,6 +20697,10 @@
             [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                2
             ]
         ]
     },
@@ -19777,8 +20710,8 @@
         "desc": "Wind-element spell (rank SS). Costs 10 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            1,
-            10
+            22,
+            11
         ],
         "components": [
             [
@@ -19884,13 +20817,17 @@
             [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                2
             ]
         ]
     },
     {
         "nid": "Earth_E",
-        "name": "Earth E",
-        "desc": "Earth-element spell (rank E). Costs 1 HP to cast.",
+        "name": "Pebble",
+        "desc": "Common Earth magic. Costs 1 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
             1,
@@ -19915,7 +20852,7 @@
             ],
             [
                 "staffcast_weapon_type",
-                "Anima"
+                "Earth"
             ],
             [
                 "staffcast_weapon_rank",
@@ -19923,19 +20860,15 @@
             ],
             [
                 "damage",
-                5
+                4
             ],
             [
                 "hit",
-                90
-            ],
-            [
-                "crit",
-                0
+                75
             ],
             [
                 "weight",
-                0
+                5
             ],
             [
                 "min_range",
@@ -19974,8 +20907,8 @@
             [
                 "map_hit_add_blend",
                 [
-                    255,
-                    255,
+                    85,
+                    85,
                     0
                 ]
             ],
@@ -19990,23 +20923,19 @@
                 ]
             ],
             [
-                "hp_cost_override",
-                1
-            ],
-            [
-                "value",
-                600
-            ],
-            [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                0
             ]
         ]
     },
     {
         "nid": "Earth_D",
-        "name": "Earth D",
-        "desc": "Earth-element spell (rank D). Costs 2 HP to cast.",
+        "name": "Earth",
+        "desc": "Advanced Earth magic. Costs 2 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
             1,
@@ -20031,27 +20960,27 @@
             ],
             [
                 "staffcast_weapon_type",
-                "Anima"
+                "Earth"
             ],
             [
                 "staffcast_weapon_rank",
-                "E"
+                "D"
             ],
             [
                 "damage",
-                8
+                7
             ],
             [
                 "hit",
-                90
+                75
             ],
             [
                 "crit",
-                0
+                10
             ],
             [
                 "weight",
-                0
+                5
             ],
             [
                 "min_range",
@@ -20090,8 +21019,8 @@
             [
                 "map_hit_add_blend",
                 [
-                    255,
-                    255,
+                    85,
+                    85,
                     0
                 ]
             ],
@@ -20106,16 +21035,12 @@
                 ]
             ],
             [
-                "hp_cost_override",
-                2
-            ],
-            [
-                "value",
-                1000
-            ],
-            [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                0
             ]
         ]
     },
@@ -20232,6 +21157,10 @@
             [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                2
             ]
         ]
     },
@@ -20348,6 +21277,10 @@
             [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                2
             ]
         ]
     },
@@ -20464,6 +21397,10 @@
             [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                2
             ]
         ]
     },
@@ -20580,6 +21517,10 @@
             [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                2
             ]
         ]
     },
@@ -20696,16 +21637,20 @@
             [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                2
             ]
         ]
     },
     {
         "nid": "Light_E",
-        "name": "Light E",
-        "desc": "Light-element spell (rank E). Costs 1 HP to cast.",
+        "name": "Ray",
+        "desc": "Common Light magic. Costs 1 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            1,
+            0,
             10
         ],
         "components": [
@@ -20735,19 +21680,15 @@
             ],
             [
                 "damage",
-                5
+                3
             ],
             [
                 "hit",
-                90
-            ],
-            [
-                "crit",
-                0
+                100
             ],
             [
                 "weight",
-                0
+                1
             ],
             [
                 "min_range",
@@ -20793,7 +21734,7 @@
             ],
             [
                 "battle_cast_anim",
-                "Shine"
+                "Lightning"
             ],
             [
                 "item_tags",
@@ -20802,23 +21743,19 @@
                 ]
             ],
             [
-                "hp_cost_override",
-                1
-            ],
-            [
-                "value",
-                600
-            ],
-            [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                0
             ]
         ]
     },
     {
         "nid": "Light_D",
-        "name": "Light D",
-        "desc": "Light-element spell (rank D). Costs 2 HP to cast.",
+        "name": "Lightning",
+        "desc": "Advanced Light magic. Costs 2 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
             1,
@@ -20847,23 +21784,23 @@
             ],
             [
                 "staffcast_weapon_rank",
-                "E"
+                "D"
             ],
             [
                 "damage",
-                8
+                4
             ],
             [
                 "hit",
-                90
+                100
             ],
             [
                 "crit",
-                0
+                20
             ],
             [
                 "weight",
-                0
+                6
             ],
             [
                 "min_range",
@@ -20909,7 +21846,7 @@
             ],
             [
                 "battle_cast_anim",
-                "Shine"
+                "Lightning"
             ],
             [
                 "item_tags",
@@ -20918,16 +21855,12 @@
                 ]
             ],
             [
-                "hp_cost_override",
-                2
-            ],
-            [
-                "value",
-                1000
-            ],
-            [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                0
             ]
         ]
     },
@@ -20937,7 +21870,7 @@
         "desc": "Light-element spell (rank C). Costs 3 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            1,
+            2,
             10
         ],
         "components": [
@@ -21044,6 +21977,10 @@
             [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                2
             ]
         ]
     },
@@ -21053,7 +21990,7 @@
         "desc": "Light-element spell (rank B). Costs 4 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            1,
+            3,
             10
         ],
         "components": [
@@ -21160,6 +22097,10 @@
             [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                2
             ]
         ]
     },
@@ -21169,7 +22110,7 @@
         "desc": "Light-element spell (rank A). Costs 7 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            1,
+            4,
             10
         ],
         "components": [
@@ -21276,6 +22217,10 @@
             [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                2
             ]
         ]
     },
@@ -21285,7 +22230,7 @@
         "desc": "Light-element spell (rank S). Costs 8 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            1,
+            5,
             10
         ],
         "components": [
@@ -21392,6 +22337,10 @@
             [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                2
             ]
         ]
     },
@@ -21401,7 +22350,7 @@
         "desc": "Light-element spell (rank SS). Costs 10 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            1,
+            11,
             10
         ],
         "components": [
@@ -21508,16 +22457,20 @@
             [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                2
             ]
         ]
     },
     {
         "nid": "Dark_E",
-        "name": "Dark E",
-        "desc": "Dark-element spell (rank E). Costs 1 HP to cast.",
+        "name": "Miasma",
+        "desc": "Common Dark magic. Costs 1 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            1,
+            12,
             10
         ],
         "components": [
@@ -21551,15 +22504,11 @@
             ],
             [
                 "hit",
-                90
-            ],
-            [
-                "crit",
-                0
+                70
             ],
             [
                 "weight",
-                0
+                5
             ],
             [
                 "min_range",
@@ -21598,9 +22547,9 @@
             [
                 "map_hit_add_blend",
                 [
-                    255,
-                    255,
-                    0
+                    72,
+                    0,
+                    65
                 ]
             ],
             [
@@ -21614,26 +22563,22 @@
                 ]
             ],
             [
-                "hp_cost_override",
-                1
-            ],
-            [
-                "value",
-                600
-            ],
-            [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                0
             ]
         ]
     },
     {
         "nid": "Dark_D",
         "name": "Dark D",
-        "desc": "Dark-element spell (rank D). Costs 2 HP to cast.",
+        "desc": "Advanced Dark magic. Costs 2 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            1,
+            13,
             10
         ],
         "components": [
@@ -21659,15 +22604,15 @@
             ],
             [
                 "staffcast_weapon_rank",
-                "E"
+                "D"
             ],
             [
                 "damage",
-                8
+                7
             ],
             [
                 "hit",
-                90
+                80
             ],
             [
                 "crit",
@@ -21675,7 +22620,7 @@
             ],
             [
                 "weight",
-                0
+                8
             ],
             [
                 "min_range",
@@ -21714,14 +22659,14 @@
             [
                 "map_hit_add_blend",
                 [
-                    255,
-                    255,
-                    0
+                    72,
+                    0,
+                    65
                 ]
             ],
             [
                 "battle_cast_anim",
-                "Shine"
+                "Flux"
             ],
             [
                 "item_tags",
@@ -21730,16 +22675,12 @@
                 ]
             ],
             [
-                "hp_cost_override",
-                2
-            ],
-            [
-                "value",
-                1000
-            ],
-            [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                0
             ]
         ]
     },
@@ -21749,7 +22690,7 @@
         "desc": "Dark-element spell (rank C). Costs 3 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            1,
+            14,
             10
         ],
         "components": [
@@ -21856,6 +22797,10 @@
             [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                2
             ]
         ]
     },
@@ -21865,7 +22810,7 @@
         "desc": "Dark-element spell (rank B). Costs 4 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            1,
+            15,
             10
         ],
         "components": [
@@ -21972,6 +22917,10 @@
             [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                2
             ]
         ]
     },
@@ -21981,7 +22930,7 @@
         "desc": "Dark-element spell (rank A). Costs 7 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            1,
+            16,
             10
         ],
         "components": [
@@ -22088,6 +23037,10 @@
             [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                2
             ]
         ]
     },
@@ -22097,7 +23050,7 @@
         "desc": "Dark-element spell (rank S). Costs 8 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            1,
+            17,
             10
         ],
         "components": [
@@ -22204,6 +23157,10 @@
             [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                2
             ]
         ]
     },
@@ -22213,7 +23170,7 @@
         "desc": "Dark-element spell (rank SS). Costs 10 HP to cast.",
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
-            1,
+            23,
             10
         ],
         "components": [
@@ -22320,6 +23277,10 @@
             [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                2
             ]
         ]
     },
@@ -22330,7 +23291,7 @@
         "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
         "icon_index": [
             1,
-            10
+            11
         ],
         "components": [
             [
@@ -22436,6 +23397,10 @@
             [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                2
             ]
         ]
     },
@@ -22552,6 +23517,10 @@
             [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                2
             ]
         ]
     },
@@ -22668,6 +23637,10 @@
             [
                 "hp_cost_as_uses",
                 null
+            ],
+            [
+                "wexp",
+                2
             ]
         ]
     },

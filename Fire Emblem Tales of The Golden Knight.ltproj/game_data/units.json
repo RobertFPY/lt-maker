@@ -467,6 +467,11 @@
                 false,
                 0,
                 null
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
             ]
         },
         "alternate_classes": [],
@@ -1297,7 +1302,7 @@
         },
         "starting_items": [
             [
-                "Fire",
+                "Ember",
                 false
             ]
         ],
@@ -2949,11 +2954,11 @@
         },
         "starting_items": [
             [
-                "Elfire",
+                "Fire",
                 false
             ],
             [
-                "Thunder",
+                "Spark",
                 false
             ]
         ],
@@ -3057,7 +3062,7 @@
         },
         "starting_items": [
             [
-                "Fire",
+                "Ember",
                 false
             ],
             [
@@ -4091,7 +4096,7 @@
                 false
             ],
             [
-                "Elfire",
+                "Fire",
                 false
             ]
         ],
@@ -4694,7 +4699,7 @@
                 false
             ],
             [
-                "Fire",
+                "Ember",
                 false
             ],
             [

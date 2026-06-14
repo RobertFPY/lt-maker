@@ -422,5 +422,9 @@
     {
         "nid": "lead_desc",
         "text": ""
+    },
+    {
+        "nid": "Spell_desc",
+        "text": "Chose default spell to use"
     }
 ]

@@ -424,9 +424,7 @@
                         false
                     ]
                 ],
-                "starting_skills": [
-                    "Must_Die"
-                ],
+                "starting_skills": [],
                 "team": "enemy",
                 "ai": "Attack2Range",
                 "roam_ai": null,
@@ -1668,13 +1666,13 @@
                         41,
                         6
                     ],
-                    "Normal_9": [
-                        46,
-                        4
-                    ],
                     "Normal_10": [
                         17,
                         10
+                    ],
+                    "Normal_9": [
+                        46,
+                        4
                     ]
                 }
             },
@@ -2019,7 +2017,7 @@
                 "faction": "Monster",
                 "starting_items": [
                     [
-                        "Elfire",
+                        "Fire",
                         false
                     ]
                 ],

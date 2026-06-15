@@ -353,6 +353,24 @@ class MultipleChoiceSubcomponentEditor(BaseSubcomponentEditor):
         self.option_dict[self.field_name] = val
 
 
+class FallbackSubcomponentEditor(BaseSubcomponentEditor):
+    """Safe fallback for ComponentTypes without a dedicated editor.
+
+    Shows a disabled, read-only field so the whole component editor does not
+    crash when an unsupported option type is encountered.
+    """
+
+    @override
+    def _create_editor(self, hbox):
+        self.editor = QLineEdit(self)
+        value = self.option_dict.get(self.field_name)
+        self.editor.setText('' if value is None else str(value))
+        self.editor.setReadOnly(True)
+        self.editor.setEnabled(False)
+        self.editor.setPlaceholderText("Unsupported type (edit not available)")
+        hbox.addWidget(self.editor)
+
+
 def get_editor_widget(field_name: str, ctype: ComponentType | Tuple[ComponentType, ComponentType | list], option_dict: Dict[str, Any]):
     if ctype in EDITOR_MAP:
         return EDITOR_MAP[ctype].create(field_name, option_dict)
@@ -368,4 +386,5 @@ def get_editor_widget(field_name: str, ctype: ComponentType | Tuple[ComponentTyp
                 raise ValueError("Container has no subtype")
             delegate = DELEGATE_MAP[stype]
             return CONTAINER_EDITOR_MAP[container_type].create(field_name, option_dict, delegate)
-    raise ValueError("Component type not valid")
+    # Unsupported ComponentType: degrade gracefully instead of crashing the editor.
+    return FallbackSubcomponentEditor.create(field_name, option_dict)

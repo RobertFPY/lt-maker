@@ -1605,12 +1605,16 @@ class LearnSpellFromBook(ItemComponent):
 
     def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         self._should_fire = True
-        # Remember the EXACT object Mari studied from by its unique uid. Every item copy has its own
-        # uid even when copies share the same nid, so this pins down the precise book/spell used
-        # (e.g. the 50-use copy) and never confuses it with a duplicate (the 49-use copy).
-        self._used_uid = item.uid
-        logging.info("[v0] LearnSpellFromBook.on_hit captured used item nid=%s uid=%s uses=%s",
-                     item.nid, item.uid, item.data.get('uses'))
+        # When studying through an extra command, the item passed here is the command_item helper,
+        # which is NOT in Mari's inventory. The actual spell/book she owns is its command_parent_item.
+        # Capture the PARENT's uid so end_combat removes the real inventory object; fall back to this
+        # item's own uid when LearnSpellFromBook sits directly on an inventory item. Using uid (not
+        # nid) pins down the precise copy even when duplicates share a nid (e.g. 50-use vs 49-use).
+        parent = getattr(item, 'command_parent_item', None)
+        source_item = parent if parent is not None else item
+        self._used_uid = source_item.uid
+        logging.info("[v0] LearnSpellFromBook.on_hit captured source nid=%s uid=%s uses=%s (via command_item=%s)",
+                     source_item.nid, source_item.uid, source_item.data.get('uses'), parent is not None)
 
     def end_combat(self, playback, unit, item, target, item2, mode):
         if self._should_fire and unit and unit.nid == 'Mari':

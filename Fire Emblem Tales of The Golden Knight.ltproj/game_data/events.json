@@ -2294,16 +2294,17 @@
             "change_item_name;Camus;Silver_Lance;<purple>Silver Lance",
             "give_item;Camus;Shield_of_Cartas;no_banner",
             "give_item;Michalis;Armor_of_Iote;no_banner",
-            "give_item;Mari;Mari_Spellbook_Template;direct_give",
-            "give_item;Mari;Spark;no_banner",
+            "give_item;Mari;Mari_Spellbook_Template;direct_give;no_banner",
+            "give_item;Mari;Ember;no_banner",
             "give_item;Camus;Thunder;no_banner",
             "set_level;Mari;3",
             "add_talk;Camus;Mari",
             "add_talk;Mari;Camus",
             "#prep;True;;Skill Swap;true;Global Skill_Swap_Select",
             "give_item;Mari;Fire;no_banner",
-            "give_item;Mari;Sleep;no_banner",
-            "give_wexp;Mari;Staff;255;no_banner"
+            "#give_item;Mari;Sleep;no_banner",
+            "give_wexp;Mari;Staff;255;no_banner",
+            "give_skill;Mari;Inf_Move;;no_banner"
         ],
         "nid": "DEBUG Test"
     },
@@ -6774,5 +6775,18 @@
             "                    $alert \"That would keep two ranged or two S/SS spells. Choose another to store.\""
         ],
         "nid": "Global Mari_Spell_Acquire"
+    },
+    {
+        "name": "Inf_Move",
+        "trigger": null,
+        "level_nid": null,
+        "condition": "True",
+        "commands": [],
+        "only_once": false,
+        "priority": 20,
+        "_source": [
+            "reset;{unit}"
+        ],
+        "nid": "Global Inf_Move"
     }
 ]

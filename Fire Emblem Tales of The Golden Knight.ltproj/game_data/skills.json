@@ -24466,6 +24466,26 @@
         ]
     },
     {
+        "nid": "Inf_Move",
+        "name": "Inf_Move",
+        "desc": "",
+        "icon_nid": "Skills",
+        "icon_index": [
+            0,
+            0
+        ],
+        "components": [
+            [
+                "hidden",
+                null
+            ],
+            [
+                "event_on_wait",
+                "Global Inf_Move"
+            ]
+        ]
+    },
+    {
         "nid": "Flying",
         "name": "Flying",
         "desc": "Can fly.",

@@ -10146,7 +10146,7 @@
             ],
             [
                 "battle_cast_anim",
-                "Fire"
+                "Ember"
             ],
             [
                 "item_tags",
@@ -10155,17 +10155,35 @@
                 ]
             ],
             [
+                "wexp",
+                1
+            ],
+            [
+                "mari_additional_item_command",
+                "Ember_Use"
+            ]
+        ]
+    },
+    {
+        "nid": "Ember_Use",
+        "name": "Learn",
+        "desc": "Common Fire magic.",
+        "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
+        "icon_index": [
+            0,
+            9
+        ],
+        "components": [
+            [
                 "learn_spell_from_book",
                 {
                     "event": "Global Mari_Book_Learn",
                     "spells": [
                         "Fire_E"
-                    ]
+                    ],
+                    "consumed_item": "Ember",
+                    "item": ""
                 }
-            ],
-            [
-                "wexp",
-                1
             ],
             [
                 "usable",
@@ -10269,12 +10287,34 @@
                 ]
             ],
             [
+                "battle_cast_anim",
+                "Fire"
+            ],
+            [
+                "mari_additional_item_command",
+                "Fire_Use"
+            ]
+        ]
+    },
+    {
+        "nid": "Fire_Use",
+        "name": "Learn",
+        "desc": "Advanced Fire magic.",
+        "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
+        "icon_index": [
+            1,
+            9
+        ],
+        "components": [
+            [
                 "learn_spell_from_book",
                 {
                     "event": "Global Mari_Book_Learn",
                     "spells": [
                         "Fire_D"
-                    ]
+                    ],
+                    "consumed_item": "Fire",
+                    "item": ""
                 }
             ],
             [
@@ -10379,14 +10419,21 @@
                 1
             ],
             [
-                "learn_spell_from_book",
-                {
-                    "event": "Global Mari_Book_Learn",
-                    "spells": [
-                        "Thunder_E"
-                    ]
-                }
-            ],
+                "mari_additional_item_command",
+                "Spark_Use"
+            ]
+        ]
+    },
+    {
+        "nid": "Spark_Use",
+        "name": "Learn",
+        "desc": "Intermediate Thunder magic.",
+        "icon_nid": "{Ereshkigal} Sprite Sheet V1.4 Converted",
+        "icon_index": [
+            6,
+            9
+        ],
+        "components": [
             [
                 "usable",
                 null
@@ -10394,6 +10441,17 @@
             [
                 "target_ally",
                 null
+            ],
+            [
+                "learn_spell_from_book",
+                {
+                    "event": "Global Mari_Book_Learn",
+                    "spells": [
+                        "Thunder_E"
+                    ],
+                    "consumed_item": "Spark",
+                    "item": "Spark"
+                }
             ]
         ]
     },
@@ -10498,7 +10556,9 @@
                     "event": "Global Mari_Book_Learn",
                     "spells": [
                         "Thunder_D"
-                    ]
+                    ],
+                    "consumed_item": "",
+                    "item": ""
                 }
             ],
             [
@@ -10709,7 +10769,9 @@
                     "event": "Global Mari_Book_Learn",
                     "spells": [
                         "Wind_E"
-                    ]
+                    ],
+                    "consumed_item": "",
+                    "item": ""
                 }
             ]
         ]
@@ -10815,7 +10877,9 @@
                     "event": "Global Mari_Book_Learn",
                     "spells": [
                         "Wind_D"
-                    ]
+                    ],
+                    "consumed_item": "",
+                    "item": ""
                 }
             ],
             [
@@ -11012,7 +11076,9 @@
                     "event": "Global Mari_Book_Learn",
                     "spells": [
                         "Water_E"
-                    ]
+                    ],
+                    "consumed_item": "",
+                    "item": ""
                 }
             ]
         ]
@@ -11104,7 +11170,9 @@
                     "event": "Global Mari_Book_Learn",
                     "spells": [
                         "Water_D"
-                    ]
+                    ],
+                    "consumed_item": "",
+                    "item": ""
                 }
             ],
             [
@@ -11293,7 +11361,9 @@
                     "event": "Global Mari_Book_Learn",
                     "spells": [
                         "Earth_E"
-                    ]
+                    ],
+                    "consumed_item": "",
+                    "item": ""
                 }
             ]
         ]
@@ -11385,7 +11455,9 @@
                     "event": "Global Mari_Book_Learn",
                     "spells": [
                         "Earth_D"
-                    ]
+                    ],
+                    "consumed_item": "",
+                    "item": ""
                 }
             ],
             [
@@ -11487,7 +11559,9 @@
                     "event": "Global Mari_Book_Learn",
                     "spells": [
                         "Light_E"
-                    ]
+                    ],
+                    "consumed_item": "",
+                    "item": ""
                 }
             ]
         ]
@@ -11589,7 +11663,9 @@
                     "event": "Global Mari_Book_Learn",
                     "spells": [
                         "Light_D"
-                    ]
+                    ],
+                    "consumed_item": "",
+                    "item": ""
                 }
             ]
         ]
@@ -12168,7 +12244,9 @@
                     "event": "Global Mari_Book_Learn",
                     "spells": [
                         "Dark_E"
-                    ]
+                    ],
+                    "consumed_item": "",
+                    "item": ""
                 }
             ]
         ]
@@ -12270,7 +12348,9 @@
                     "event": "Global Mari_Book_Learn",
                     "spells": [
                         "Dark_D"
-                    ]
+                    ],
+                    "consumed_item": "",
+                    "item": ""
                 }
             ]
         ]
@@ -17525,7 +17605,9 @@
                     "event": "Global Mari_Book_Learn",
                     "spells": [
                         "Fire_E"
-                    ]
+                    ],
+                    "consumed_item": "",
+                    "item": ""
                 }
             ],
             [
@@ -17634,7 +17716,7 @@
             ],
             [
                 "battle_cast_anim",
-                "Fire"
+                "Ember"
             ],
             [
                 "item_tags",

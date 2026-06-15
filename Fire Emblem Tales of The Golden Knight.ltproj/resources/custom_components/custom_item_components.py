@@ -1550,10 +1550,11 @@ class LearnSpellFromBook(ItemComponent):
     nid = 'learn_spell_from_book'
     desc = ("Mari-only study book. When Mari uses the item at full durability it opens the "
             "linked event so she can learn one rank-appropriate spell from the book's spell "
-            "list, then the book is consumed by its normal uses. Configure two fields: the "
-            "event to trigger, and the list of spell items this book can teach. The chosen "
-            "spells' nids are passed to the event as 'mari_new_spell'. Only usable by Mari "
-            "and only when no use has been spent.")
+            "list. Configure three fields: the event to trigger, the list of spell items this "
+            "book can teach, and (optionally) the item to consume once studying finishes. The "
+            "chosen spells' nids are passed to the event as 'mari_new_spell'. If 'consumed_item' "
+            "is set, that item is removed from Mari's inventory after the event; otherwise the "
+            "book itself is removed. Only usable by Mari and only when no use has been spent.")
     tag = ItemTags.CUSTOM
     author = "v0"
 
@@ -1562,6 +1563,7 @@ class LearnSpellFromBook(ItemComponent):
     options = {
         'event': ComponentType.Event,
         'spells': (ComponentType.List, ComponentType.Item),  # Stored as Nids
+        'consumed_item': ComponentType.Item,  # Stored as Nid; the item removed after learning
     }
 
     _should_fire = False
@@ -1570,6 +1572,7 @@ class LearnSpellFromBook(ItemComponent):
         self.value = {
             'event': '',
             'spells': [],
+            'consumed_item': '',
         }
         if value and isinstance(value, dict):
             self.value.update(value)
@@ -1585,6 +1588,10 @@ class LearnSpellFromBook(ItemComponent):
     def spell_nids(self) -> list:
         return list(self.value.get('spells') or [])
 
+    @property
+    def consumed_item_nid(self):
+        return self.value.get('consumed_item', '')
+
     def can_use(self, unit, item) -> bool:
         if not unit or unit.nid != 'Mari':
             return False
@@ -1597,6 +1604,14 @@ class LearnSpellFromBook(ItemComponent):
 
     def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         self._should_fire = True
+        # When studying through an extra command, the item passed here is the command_item helper,
+        # which is NOT in Mari's inventory. The actual spell/book she owns is its command_parent_item.
+        # Capture the PARENT's uid so end_combat removes the real inventory object; fall back to this
+        # item's own uid when LearnSpellFromBook sits directly on an inventory item. Using uid (not
+        # nid) pins down the precise copy even when duplicates share a nid (e.g. 50-use vs 49-use).
+        parent = getattr(item, 'command_parent_item', None)
+        source_item = parent if parent is not None else item
+        self._used_uid = source_item.uid
 
     def end_combat(self, playback, unit, item, target, item2, mode):
         if self._should_fire and unit and unit.nid == 'Mari':
@@ -1605,7 +1620,95 @@ class LearnSpellFromBook(ItemComponent):
                 # Pass the book's spell nids so the event can offer exactly these spells.
                 local_args = {'item': item, 'mode': mode, 'mari_new_spell': self.spell_nids}
                 game.events.trigger_specific_event(event_prefab.nid, unit, unit, unit.position, local_args)
+            # Consume the exact item Mari used, located by the uid captured in on_hit. Matching by
+            # uid (not nid) guarantees the right copy is removed even with duplicate nids in her
+            # inventory.
+            used_uid = getattr(self, '_used_uid', None)
+            to_remove = next((i for i in unit.items if i.uid == used_uid), None)
+            if to_remove is not None:
+                action.do(action.RemoveItem(unit, to_remove))
         self._should_fire = False
+        self._used_uid = None
+
+class MariAdditionalItemCommand(ItemComponent):
+    nid = 'mari_additional_item_command'
+    desc = ("Like 'additional_item_command' (adds another item as an extra menu option on this "
+            "item), but the extra command only shows up for the units listed in 'units'. Any "
+            "other holder sees the item exactly as normal, so the base item is never affected. "
+            "Configure two fields: the command item to attach, and the list of units allowed to "
+            "use that command.")
+    tag = ItemTags.CUSTOM
+    author = "v0"
+
+    expose = ComponentType.Item
+
+    def extra_command(self, unit, item):
+        # Only the designated units get the extra command; everyone else is unaffected.
+        if not unit or unit.nid != 'Mari':
+            return None
+        if 'uses' in item.data and 'starting_uses' in item.data:
+            if item.data['uses'] < item.data['starting_uses']:
+                return None
+        if item.command_item:
+            return item.command_item
+        else:
+            new_item = item_funcs.create_item(unit, self.value)
+            game.register_item(new_item)
+            item.command_item = new_item
+            item.command_uid = new_item.uid
+            new_item.command_parent_item = item
+            return new_item
+
+class RestrictedAdditionalItemCommand(ItemComponent):
+    nid = 'restricted_additional_item_command'
+    desc = ("Like 'additional_item_command' (adds another item as an extra menu option on this "
+            "item), but the extra command only shows up for the units listed in 'units'. Any "
+            "other holder sees the item exactly as normal, so the base item is never affected. "
+            "Configure two fields: the command item to attach, and the list of units allowed to "
+            "use that command.")
+    tag = ItemTags.CUSTOM
+    author = "v0"
+
+    expose = ComponentType.NewMultipleOptions
+
+    options = {
+        'item': ComponentType.Item,
+        'units': (ComponentType.List, ComponentType.Unit),  # Stored as unit nids
+    }
+
+    def __init__(self, value=None):
+        self.value = {
+            'item': '',
+            'units': [],
+        }
+        if value and isinstance(value, dict):
+            self.value.update(value)
+        elif value:
+            # Backwards compatibility with a bare item nid.
+            self.value['item'] = value
+
+    @property
+    def command_nid(self):
+        return self.value.get('item', '')
+
+    @property
+    def allowed_units(self) -> list:
+        return list(self.value.get('units') or [])
+
+    def extra_command(self, unit, item):
+        # Only the designated units get the extra command; everyone else is unaffected.
+        if not unit or unit.nid not in self.allowed_units:
+            return None
+        if not self.command_nid:
+            return None
+        if item.command_item:
+            return item.command_item
+        new_item = item_funcs.create_item(unit, self.command_nid)
+        game.register_item(new_item)
+        item.command_item = new_item
+        item.command_uid = new_item.uid
+        new_item.command_parent_item = item
+        return new_item
 
 class HPCostAsUses(ItemComponent):
     nid = 'hp_cost_as_uses'

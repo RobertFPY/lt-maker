@@ -1804,3 +1804,48 @@ class HPCostAsUses(ItemComponent):
     def item_uses_display(self, unit, item):
         from app.engine.game_menus.icon_options import UsesDisplayConfig
         return UsesDisplayConfig(self._calc_uses, self.delim, self._calc_max_uses, self._font_color, unit=unit, item=item)
+
+class RangeBasedBattleCastAnim(ItemComponent):
+    nid = 'range_based_battle_cast_anim'
+    desc = ("Like 'Battle Cast Anim', but lets you pick two effect animations chosen by combat "
+            "range: 'melee' plays when combat range == 1, 'ranged' plays when combat range > 1. "
+            "Like the vanilla component, this only changes the spell-effect animation, not the "
+            "battle animation itself. If one field is left blank, the other is used as a fallback.")
+    tag = ItemTags.AESTHETIC
+    author = "v0"
+
+    expose = ComponentType.NewMultipleOptions
+
+    options = {
+        'melee': ComponentType.EffectAnimation,   # combat range == 1
+        'ranged': ComponentType.EffectAnimation,  # combat range > 1
+    }
+
+    def __init__(self, value=None):
+        self.value = {
+            'melee': None,
+            'ranged': None,
+        }
+        if value and isinstance(value, dict):
+            self.value.update(value)
+
+    def _get_combat_range(self):
+        # effect_animation only receives (unit, item), so resolve the active combat to
+        # measure range. The current combat is the last entry in game.combat_instance.
+        combat = game.combat_instance[-1] if game.combat_instance else None
+        if not combat:
+            return None
+        attacker = getattr(combat, 'attacker', None)
+        attacker_pos = getattr(attacker, 'position', None) if attacker else None
+        target_positions = getattr(combat, 'target_positions', None)
+        target_pos = target_positions[0] if target_positions else None
+        if attacker_pos and target_pos:
+            return utils.calculate_distance(attacker_pos, target_pos)
+        return None
+
+    def effect_animation(self, unit, item):
+        rng = self._get_combat_range()
+        if rng is not None and rng > 1:
+            return self.value.get('ranged') or self.value.get('melee')
+        # Default to the melee effect when range is 1 or can't be determined.
+        return self.value.get('melee') or self.value.get('ranged')

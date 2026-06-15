@@ -1666,6 +1666,23 @@ class MariAdditionalItemCommand(ItemComponent):
 
     expose = ComponentType.Item
 
+    def text_color(self, unit, item):
+        # Light up the book's name (white) in the Item Menu when Mari can actually study
+        # a spell from it right now, so the player can tell at a glance it is usable.
+        # These books are magic weapons Mari can't wield, so item_funcs.available() is
+        # False and the name would otherwise render grey. This hook is purely cosmetic
+        # (it never makes the book usable as a weapon) and only affects the Item Menu,
+        # since other item lists already default to white. Uses the same gate as
+        # extra_command so the highlight matches exactly when the Learn command appears.
+        if not unit or unit.nid != 'Mari':
+            return None
+        if 'uses' in item.data and 'starting_uses' in item.data:
+            if item.data['uses'] < item.data['starting_uses']:
+                return None
+        if mari_book_learnable(unit, _command_spell_nids(self.value)):
+            return 'white'
+        return None
+
     def extra_command(self, unit, item):
         # Only the designated units get the extra command; everyone else is unaffected.
         if not unit or unit.nid != 'Mari':

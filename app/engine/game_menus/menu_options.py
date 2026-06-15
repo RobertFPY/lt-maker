@@ -281,8 +281,6 @@ class ItemOption(BasicOption):
         self.color = item_system.text_color(None, item)
         self.ignore = False
         self.uses_config = UsesDisplayConfig.from_item(item)
-        logging.info("[v0] ItemOption.__init__: item=%s owner_nid=%s -> self.color=%s",
-                     getattr(item, 'nid', None), getattr(item, 'owner_nid', None), self.color)
 
     def get(self):
         return self.item
@@ -294,8 +292,6 @@ class ItemOption(BasicOption):
         self.item = item
         self.color = item_system.text_color(None, item)
         self.uses_config = UsesDisplayConfig.from_item(item)
-        logging.info("[v0] ItemOption.set_item: item=%s owner_nid=%s -> self.color=%s",
-                     getattr(item, 'nid', None), getattr(item, 'owner_nid', None), self.color)
 
     def width(self):
         return 104
@@ -305,20 +301,12 @@ class ItemOption(BasicOption):
 
     def get_color(self):
         owner = game.get_unit(self.item.owner_nid)
-        # Recompute the custom text color each frame using the freshly resolved owner.
-        # self.color is frozen at construction time (when owner_nid may not be set yet),
-        # so components like MariAdditionalItemCommand that depend on the holder would be
-        # missed. We poll the item's components directly here instead of going through the
-        # generated item_system.text_color aggregator, which proved unreliable under
-        # hot-reload (it returned None even when a component returned a color). Falling
-        # back to self.color preserves behavior when there's no owner.
-        color = self.color
-        if owner:
-            for comp in self.item.components:
-                if hasattr(comp, 'text_color'):
-                    c = comp.text_color(owner, self.item)
-                    if c is not None:
-                        color = c
+        # Recompute the text color each frame with the freshly resolved owner. self.color
+        # is frozen at construction time, when item.owner_nid may not point to the holder
+        # yet, so holder-dependent components (e.g. MariAdditionalItemCommand) get missed
+        # and the name stays grey. Re-querying here with the resolved owner fixes that;
+        # fall back to self.color when there is no owner.
+        color = item_system.text_color(owner, self.item) if owner else self.color
         main_color = 'grey'
         custom_color = self.uses_config.get_color() if self.uses_config else None
         uses_color = custom_color or 'grey'

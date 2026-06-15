@@ -1,4 +1,3 @@
-import logging
 import math
 
 from app.data.database.database import DB
@@ -301,12 +300,16 @@ class ItemOption(BasicOption):
 
     def get_color(self):
         owner = game.get_unit(self.item.owner_nid)
-        # Recompute the text color each frame with the freshly resolved owner. self.color
-        # is frozen at construction time, when item.owner_nid may not point to the holder
-        # yet, so holder-dependent components (e.g. MariAdditionalItemCommand) get missed
-        # and the name stays grey. Re-querying here with the resolved owner fixes that;
-        # fall back to self.color when there is no owner.
-        color = item_system.text_color(owner, self.item) if owner else self.color
+        # Recompute the text color each frame with the freshly resolved owner, but ONLY in
+        # the Item Menu (state 'item'). self.color is frozen at construction time, when
+        # item.owner_nid may not point to the holder yet, so holder-dependent components
+        # (e.g. MariAdditionalItemCommand) get missed and the name stays grey. Re-querying
+        # here with the resolved owner fixes that. We gate it to the Item Menu so the
+        # highlight doesn't leak into the info menu or trade menu, which share this option.
+        if owner and game.state.current() == 'item':
+            color = item_system.text_color(owner, self.item)
+        else:
+            color = self.color
         main_color = 'grey'
         custom_color = self.uses_config.get_color() if self.uses_config else None
         uses_color = custom_color or 'grey'
@@ -327,8 +330,6 @@ class ItemOption(BasicOption):
             main_color = None
             if not custom_color:
                 uses_color = 'blue'
-        logging.info("[v0] ItemOption.get_color: item=%s color=%s ignore=%s custom_color=%s -> main=%s uses=%s",
-                     getattr(self.item, 'nid', None), color, self.ignore, custom_color, main_color, uses_color)
         return main_color, uses_color
 
     def get_help_box(self):

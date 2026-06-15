@@ -1676,6 +1676,11 @@ class MariAdditionalItemCommand(ItemComponent):
         # extra_command so the highlight matches exactly when the Learn command appears.
         # NOTE: ItemOption calls item_system.text_color(None, item) with unit=None, so we
         # must resolve the holder from item.owner_nid instead of relying on the argument.
+        # Gate by the active state: this is a shared item hook, so the info menu and trade
+        # menu also call it directly. Only highlight while inside the Item Menu ('item'),
+        # otherwise return None so those screens render the name normally (grey).
+        if game.state.current() != 'item':
+            return None
         if unit is None and getattr(item, 'owner_nid', None):
             unit = game.get_unit(item.owner_nid)
         if not unit or unit.nid != 'Mari':

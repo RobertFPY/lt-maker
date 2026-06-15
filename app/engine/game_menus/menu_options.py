@@ -1,3 +1,4 @@
+import logging
 import math
 
 from app.data.database.database import DB
@@ -308,10 +309,12 @@ class ItemOption(BasicOption):
         elif self.color:
             main_color = self.color
             if not custom_color:
-                if owner and not item_funcs.available(owner, self._value):
+                if owner and not item_funcs.available(owner, self.item):
                     pass
                 else:
                     uses_color = 'blue'
+        logging.info("[v0] ItemOption.get_color: item=%s self.color=%s ignore=%s custom_color=%s -> main=%s uses=%s",
+                     getattr(self.item, 'nid', None), self.color, self.ignore, custom_color, main_color, uses_color)
         elif self.item.droppable:
             main_color = 'green'
             if not custom_color:

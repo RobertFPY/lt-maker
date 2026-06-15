@@ -1609,6 +1609,8 @@ class LearnSpellFromBook(ItemComponent):
         # uid even when copies share the same nid, so this pins down the precise book/spell used
         # (e.g. the 50-use copy) and never confuses it with a duplicate (the 49-use copy).
         self._used_uid = item.uid
+        logging.info("[v0] LearnSpellFromBook.on_hit captured used item nid=%s uid=%s uses=%s",
+                     item.nid, item.uid, item.data.get('uses'))
 
     def end_combat(self, playback, unit, item, target, item2, mode):
         if self._should_fire and unit and unit.nid == 'Mari':
@@ -1621,9 +1623,15 @@ class LearnSpellFromBook(ItemComponent):
             # uid (not nid) guarantees the right copy is removed even with duplicate nids in her
             # inventory.
             used_uid = getattr(self, '_used_uid', None)
+            logging.info("[v0] LearnSpellFromBook.end_combat looking to remove uid=%s. Mari inventory: %s",
+                         used_uid, [(i.nid, i.uid, i.data.get('uses')) for i in unit.items])
             to_remove = next((i for i in unit.items if i.uid == used_uid), None)
             if to_remove is not None:
+                logging.info("[v0] LearnSpellFromBook removing nid=%s uid=%s uses=%s",
+                             to_remove.nid, to_remove.uid, to_remove.data.get('uses'))
                 action.do(action.RemoveItem(unit, to_remove))
+            else:
+                logging.warning("[v0] LearnSpellFromBook found NO item matching uid=%s to remove", used_uid)
         self._should_fire = False
         self._used_uid = None
 

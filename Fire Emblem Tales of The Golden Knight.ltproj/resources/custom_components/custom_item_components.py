@@ -1535,6 +1535,14 @@ def mari_book_learnable(mari, allowed=None) -> list:
         staff_wexp = 0
     _wr = DB.weapon_ranks.get_rank_from_wexp(staff_wexp)
     cap = _spell_rank_index(_wr.rank if _wr else 'E')
+    # Sequential gate: Mari may only learn one rank above her highest known spell,
+    # so she can't pick up rank D before E, C before D, etc. With no spells known
+    # yet, only rank E (index 0) is allowed.
+    rank_by_nid = {r.nid: _spell_rank_index(r.rank) for r in catalog}
+    known_indices = [rank_by_nid[n] for n in known if n in rank_by_nid]
+    seq_cap = (max(known_indices) + 1) if known_indices else 0
+    # Both the Staff weapon rank and the sequential progression must allow the spell.
+    cap = min(cap, seq_cap)
     result = []
     for r in catalog:
         if allowed is not None and r.nid not in allowed:
@@ -1545,6 +1553,22 @@ def mari_book_learnable(mari, allowed=None) -> list:
             continue
         result.append(r.nid)
     return result
+
+
+def _command_spell_nids(command_nid) -> list:
+    """Pull the spell list that a learn-book command item teaches, from its prefab."""
+    if not command_nid:
+        return []
+    prefab = DB.items.get(command_nid)
+    if not prefab:
+        return []
+    comp = prefab.components.get('learn_spell_from_book')
+    if not comp:
+        return []
+    val = getattr(comp, 'value', None)
+    if isinstance(val, dict):
+        return list(val.get('spells') or [])
+    return []
 
 class LearnSpellFromBook(ItemComponent):
     nid = 'learn_spell_from_book'
@@ -1649,6 +1673,12 @@ class MariAdditionalItemCommand(ItemComponent):
         if 'uses' in item.data and 'starting_uses' in item.data:
             if item.data['uses'] < item.data['starting_uses']:
                 return None
+        # Rank gate: only offer the learn command when this book teaches at least one
+        # spell Mari can legally learn right now. mari_book_learnable enforces both the
+        # Staff weapon-rank cap and the sequential rule (no rank D before E, C before D...),
+        # keeping the extra command in sync with MariSpell in the rawdata.
+        if not mari_book_learnable(unit, _command_spell_nids(self.value)):
+            return None
         if item.command_item:
             return item.command_item
         else:

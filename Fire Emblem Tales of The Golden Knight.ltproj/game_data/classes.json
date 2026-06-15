@@ -22320,6 +22320,11 @@
                 0,
                 251
             ],
+            "Dagger": [
+                false,
+                0,
+                null
+            ],
             "Lance": [
                 false,
                 0,
@@ -22345,6 +22350,31 @@
                 0,
                 251
             ],
+            "Fire": [
+                true,
+                31,
+                null
+            ],
+            "Wind": [
+                true,
+                31,
+                null
+            ],
+            "Thunder": [
+                true,
+                31,
+                null
+            ],
+            "Water": [
+                false,
+                0,
+                null
+            ],
+            "Earth": [
+                false,
+                0,
+                null
+            ],
             "Anima": [
                 true,
                 71,
@@ -22354,6 +22384,11 @@
                 false,
                 0,
                 251
+            ],
+            "Dragon": [
+                false,
+                0,
+                null
             ],
             "Default": [
                 false,
@@ -22366,11 +22401,6 @@
                 null
             ],
             "Dragonstone": [
-                false,
-                0,
-                null
-            ],
-            "Dagger": [
                 false,
                 0,
                 null

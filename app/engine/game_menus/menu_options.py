@@ -305,20 +305,23 @@ class ItemOption(BasicOption):
 
     def get_color(self):
         owner = game.get_unit(self.item.owner_nid)
+        # Recompute the custom text color each frame using the freshly resolved owner.
+        # self.color is frozen at construction time (when owner_nid may not be set yet),
+        # so components like MariAdditionalItemCommand that depend on the holder would be
+        # missed. Falling back to self.color preserves behavior when there's no owner.
+        color = item_system.text_color(owner, self.item) if owner else self.color
         main_color = 'grey'
         custom_color = self.uses_config.get_color() if self.uses_config else None
         uses_color = custom_color or 'grey'
         if self.ignore:
             pass
-        elif self.color:
-            main_color = self.color
+        elif color:
+            main_color = color
             if not custom_color:
                 if owner and not item_funcs.available(owner, self.item):
                     pass
                 else:
                     uses_color = 'blue'
-        logging.info("[v0] ItemOption.get_color: item=%s self.color=%s ignore=%s custom_color=%s -> main=%s uses=%s",
-                     getattr(self.item, 'nid', None), self.color, self.ignore, custom_color, main_color, uses_color)
         elif self.item.droppable:
             main_color = 'green'
             if not custom_color:
@@ -327,6 +330,8 @@ class ItemOption(BasicOption):
             main_color = None
             if not custom_color:
                 uses_color = 'blue'
+        logging.info("[v0] ItemOption.get_color: item=%s color=%s ignore=%s custom_color=%s -> main=%s uses=%s",
+                     getattr(self.item, 'nid', None), color, self.ignore, custom_color, main_color, uses_color)
         return main_color, uses_color
 
     def get_help_box(self):

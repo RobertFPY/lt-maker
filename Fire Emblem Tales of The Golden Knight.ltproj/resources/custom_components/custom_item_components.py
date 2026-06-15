@@ -13,6 +13,7 @@ from app.engine.combat import playback as pb
 from app.engine.movement import movement_funcs
 from app.engine.source_type import SourceType
 import logging
+import inspect
 def ai_status_priority(unit, target, item, move, status_nid) -> float:
     if target and status_nid not in [skill.nid for skill in target.skills]:
         accuracy_term = utils.clamp(combat_calcs.compute_hit(unit, target, item, target.get_weapon(), "attack", (0, 0))/100., 0, 1)

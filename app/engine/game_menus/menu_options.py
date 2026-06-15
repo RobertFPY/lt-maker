@@ -281,6 +281,8 @@ class ItemOption(BasicOption):
         self.color = item_system.text_color(None, item)
         self.ignore = False
         self.uses_config = UsesDisplayConfig.from_item(item)
+        logging.info("[v0] ItemOption.__init__: item=%s owner_nid=%s -> self.color=%s",
+                     getattr(item, 'nid', None), getattr(item, 'owner_nid', None), self.color)
 
     def get(self):
         return self.item
@@ -292,6 +294,8 @@ class ItemOption(BasicOption):
         self.item = item
         self.color = item_system.text_color(None, item)
         self.uses_config = UsesDisplayConfig.from_item(item)
+        logging.info("[v0] ItemOption.set_item: item=%s owner_nid=%s -> self.color=%s",
+                     getattr(item, 'nid', None), getattr(item, 'owner_nid', None), self.color)
 
     def width(self):
         return 104

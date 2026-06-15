@@ -307,8 +307,9 @@ class ItemOption(BasicOption):
             pass
         elif self.color:
             main_color = self.color
+            uses_color = self.color
             if not custom_color:
-                if owner and not item_funcs.available(owner, self._value):
+                if owner and not item_funcs.available(owner, self.item):
                     pass
                 else:
                     uses_color = 'blue'

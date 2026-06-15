@@ -6167,11 +6167,11 @@
                 "nid": "106",
                 "variant": null,
                 "level": 1,
-                "klass": "Thief",
+                "klass": "Sage",
                 "faction": "Soldier",
                 "starting_items": [
                     [
-                        "Bronze_Sword",
+                        "Thunder",
                         false
                     ]
                 ],
@@ -6181,8 +6181,8 @@
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": [
-                    4,
-                    5
+                    8,
+                    10
                 ],
                 "starting_traveler": null,
                 "generic": true

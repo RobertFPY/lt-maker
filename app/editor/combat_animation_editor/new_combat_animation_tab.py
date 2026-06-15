@@ -8,7 +8,7 @@ from app.editor.new_editor_tab import NewEditorTab
 from app.editor.combat_animation_editor import combat_animation_model, combat_effect_model
 from app.editor.item_editor import  item_model
 from app.editor.combat_animation_editor.new_combat_animation_properties import NewCombatAnimProperties
-from app.editor.combat_animation_editor.new_combat_effect_properties import NewCombatEffectProperties
+from app.editor.combat_animation_editor.new_combat_effect_properties import NewCombatEffectProperties, populate_effect_pixmaps
 from app.editor.combat_animation_editor.new_palette_tab import NewPaletteDatabase
 from app.editor.data_editor import SingleResourceEditor, NewMultiResourceEditor
 from app.utilities.typing import NID
@@ -87,7 +87,7 @@ class NewCombatEffectDatabase(NewEditorTab):
     catalog_type = CombatEffectCatalog
     properties_type = NewCombatEffectProperties
     allow_rename = True
-    allow_duplicate = False
+    allow_duplicate = True
 
     def create_new(self, nid):
         if self.data.get(nid):
@@ -95,6 +95,25 @@ class NewCombatEffectDatabase(NewEditorTab):
             return False
         new_class = self.catalog_type.datatype(nid, '')
         self.data.append(new_class)
+        return True
+
+    def duplicate(self, old_nid, nid):
+        # EffectAnimation.save()/restore() only serialize poses/frames/palettes, not the
+        # spritesheet (full_path/pixmap) or the per-frame cropped pixmaps. So we restore the
+        # structure, carry over full_path from the original, then re-load the sheet and
+        # re-crop every frame via populate_effect_pixmaps so the copy keeps its graphics.
+        if self.data.get(nid):
+            QMessageBox.warning(self, 'Warning', 'ID %s already in use' % nid)
+            return False
+        orig_obj = self.data.get(old_nid)
+        if not orig_obj:
+            QMessageBox.warning(self, 'Warning', 'ID %s not found' % old_nid)
+            return False
+        new_obj = self.catalog_type.datatype.restore(orig_obj.save())
+        new_obj.nid = nid
+        new_obj.set_full_path(orig_obj.full_path)
+        populate_effect_pixmaps(new_obj, force=True)
+        self.data.append(new_obj)
         return True
 
     @classmethod

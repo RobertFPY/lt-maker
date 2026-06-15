@@ -1535,6 +1535,14 @@ def mari_book_learnable(mari, allowed=None) -> list:
         staff_wexp = 0
     _wr = DB.weapon_ranks.get_rank_from_wexp(staff_wexp)
     cap = _spell_rank_index(_wr.rank if _wr else 'E')
+    # Sequential gate: Mari may only learn one rank above her highest known spell,
+    # so she can't pick up rank D before E, C before D, etc. With no spells known
+    # yet, only rank E (index 0) is allowed.
+    rank_by_nid = {r.nid: _spell_rank_index(r.rank) for r in catalog}
+    known_indices = [rank_by_nid[n] for n in known if n in rank_by_nid]
+    seq_cap = (max(known_indices) + 1) if known_indices else 0
+    # Both the Staff weapon rank and the sequential progression must allow the spell.
+    cap = min(cap, seq_cap)
     result = []
     for r in catalog:
         if allowed is not None and r.nid not in allowed:
@@ -1545,6 +1553,22 @@ def mari_book_learnable(mari, allowed=None) -> list:
             continue
         result.append(r.nid)
     return result
+
+
+def _command_spell_nids(command_nid) -> list:
+    """Pull the spell list that a learn-book command item teaches, from its prefab."""
+    if not command_nid:
+        return []
+    prefab = DB.items.get(command_nid)
+    if not prefab:
+        return []
+    comp = prefab.components.get('learn_spell_from_book')
+    if not comp:
+        return []
+    val = getattr(comp, 'value', None)
+    if isinstance(val, dict):
+        return list(val.get('spells') or [])
+    return []
 
 class LearnSpellFromBook(ItemComponent):
     nid = 'learn_spell_from_book'
@@ -1642,6 +1666,32 @@ class MariAdditionalItemCommand(ItemComponent):
 
     expose = ComponentType.Item
 
+    def text_color(self, unit, item):
+        # Light up the book's name (white) in the Item Menu when Mari can actually study
+        # a spell from it right now, so the player can tell at a glance it is usable.
+        # These books are magic weapons Mari can't wield, so item_funcs.available() is
+        # False and the name would otherwise render grey. This hook is purely cosmetic
+        # (it never makes the book usable as a weapon) and only affects the Item Menu,
+        # since other item lists already default to white. Uses the same gate as
+        # extra_command so the highlight matches exactly when the Learn command appears.
+        # NOTE: ItemOption calls item_system.text_color(None, item) with unit=None, so we
+        # must resolve the holder from item.owner_nid instead of relying on the argument.
+        # Gate by the active state: this is a shared item hook, so the info menu and trade
+        # menu also call it directly. Only highlight while inside the Item Menu ('item'),
+        # otherwise return None so those screens render the name normally (grey).
+        if game.state.current() != 'item':
+            return None
+        if unit is None and getattr(item, 'owner_nid', None):
+            unit = game.get_unit(item.owner_nid)
+        if not unit or unit.nid != 'Mari':
+            return None
+        if 'uses' in item.data and 'starting_uses' in item.data:
+            if item.data['uses'] < item.data['starting_uses']:
+                return None
+        if mari_book_learnable(unit, _command_spell_nids(self.value)):
+            return 'white'
+        return None
+
     def extra_command(self, unit, item):
         # Only the designated units get the extra command; everyone else is unaffected.
         if not unit or unit.nid != 'Mari':
@@ -1649,6 +1699,12 @@ class MariAdditionalItemCommand(ItemComponent):
         if 'uses' in item.data and 'starting_uses' in item.data:
             if item.data['uses'] < item.data['starting_uses']:
                 return None
+        # Rank gate: only offer the learn command when this book teaches at least one
+        # spell Mari can legally learn right now. mari_book_learnable enforces both the
+        # Staff weapon-rank cap and the sequential rule (no rank D before E, C before D...),
+        # keeping the extra command in sync with MariSpell in the rawdata.
+        if not mari_book_learnable(unit, _command_spell_nids(self.value)):
+            return None
         if item.command_item:
             return item.command_item
         else:
@@ -1748,3 +1804,48 @@ class HPCostAsUses(ItemComponent):
     def item_uses_display(self, unit, item):
         from app.engine.game_menus.icon_options import UsesDisplayConfig
         return UsesDisplayConfig(self._calc_uses, self.delim, self._calc_max_uses, self._font_color, unit=unit, item=item)
+
+class RangeBasedBattleCastAnim(ItemComponent):
+    nid = 'range_based_battle_cast_anim'
+    desc = ("Like 'Battle Cast Anim', but lets you pick two effect animations chosen by combat "
+            "range: 'melee' plays when combat range == 1, 'ranged' plays when combat range > 1. "
+            "Like the vanilla component, this only changes the spell-effect animation, not the "
+            "battle animation itself. If one field is left blank, the other is used as a fallback.")
+    tag = ItemTags.AESTHETIC
+    author = "v0"
+
+    expose = ComponentType.NewMultipleOptions
+
+    options = {
+        'melee': ComponentType.EffectAnimation,   # combat range == 1
+        'ranged': ComponentType.EffectAnimation,  # combat range > 1
+    }
+
+    def __init__(self, value=None):
+        self.value = {
+            'melee': None,
+            'ranged': None,
+        }
+        if value and isinstance(value, dict):
+            self.value.update(value)
+
+    def _get_combat_range(self):
+        # effect_animation only receives (unit, item), so resolve the active combat to
+        # measure range. The current combat is the last entry in game.combat_instance.
+        combat = game.combat_instance[-1] if game.combat_instance else None
+        if not combat:
+            return None
+        attacker = getattr(combat, 'attacker', None)
+        attacker_pos = getattr(attacker, 'position', None) if attacker else None
+        target_positions = getattr(combat, 'target_positions', None)
+        target_pos = target_positions[0] if target_positions else None
+        if attacker_pos and target_pos:
+            return utils.calculate_distance(attacker_pos, target_pos)
+        return None
+
+    def effect_animation(self, unit, item):
+        rng = self._get_combat_range()
+        if rng is not None and rng > 1:
+            return self.value.get('ranged') or self.value.get('melee')
+        # Default to the melee effect when range is 1 or can't be determined.
+        return self.value.get('melee') or self.value.get('ranged')

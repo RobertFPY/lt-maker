@@ -1674,12 +1674,23 @@ class MariAdditionalItemCommand(ItemComponent):
         # (it never makes the book usable as a weapon) and only affects the Item Menu,
         # since other item lists already default to white. Uses the same gate as
         # extra_command so the highlight matches exactly when the Learn command appears.
+        # NOTE: ItemOption calls item_system.text_color(None, item) with unit=None, so we
+        # must resolve the holder from item.owner_nid instead of relying on the argument.
+        if unit is None and getattr(item, 'owner_nid', None):
+            unit = game.get_unit(item.owner_nid)
+        logging.info("[v0] text_color called: item=%s, unit=%s", getattr(item, 'nid', None), unit.nid if unit else None)
         if not unit or unit.nid != 'Mari':
+            logging.info("[v0] text_color: not Mari -> grey")
             return None
         if 'uses' in item.data and 'starting_uses' in item.data:
             if item.data['uses'] < item.data['starting_uses']:
+                logging.info("[v0] text_color: book not at full uses -> grey")
                 return None
-        if mari_book_learnable(unit, _command_spell_nids(self.value)):
+        spell_nids = _command_spell_nids(self.value)
+        learnable = mari_book_learnable(unit, spell_nids)
+        logging.info("[v0] text_color: book teaches %s, learnable now %s", spell_nids, learnable)
+        if learnable:
+            logging.info("[v0] text_color: -> white (usable)")
             return 'white'
         return None
 

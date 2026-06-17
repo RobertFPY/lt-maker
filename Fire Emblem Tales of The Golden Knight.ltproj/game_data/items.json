@@ -10145,10 +10145,6 @@
                 null
             ],
             [
-                "battle_cast_anim",
-                "Ember"
-            ],
-            [
                 "item_tags",
                 [
                     "MagicalWeapon"
@@ -10161,6 +10157,13 @@
             [
                 "mari_additional_item_command",
                 "Ember_Use"
+            ],
+            [
+                "range_based_battle_cast_anim",
+                {
+                    "melee": "Ember",
+                    "ranged": "Ember_Range"
+                }
             ]
         ]
     },
@@ -10287,12 +10290,15 @@
                 ]
             ],
             [
-                "battle_cast_anim",
-                "Fire"
-            ],
-            [
                 "mari_additional_item_command",
                 "Fire_Use"
+            ],
+            [
+                "range_based_battle_cast_anim",
+                {
+                    "melee": "Fire",
+                    "ranged": "Fire_Range"
+                }
             ]
         ]
     },
@@ -17715,10 +17721,6 @@
                 ]
             ],
             [
-                "battle_cast_anim",
-                "Ember"
-            ],
-            [
                 "item_tags",
                 [
                     "MagicalWeapon"
@@ -17731,6 +17733,13 @@
             [
                 "wexp",
                 0
+            ],
+            [
+                "range_based_battle_cast_anim",
+                {
+                    "melee": "Ember",
+                    "ranged": "Ember_Range"
+                }
             ]
         ]
     },
@@ -17827,10 +17836,6 @@
                 ]
             ],
             [
-                "battle_cast_anim",
-                "Elfire"
-            ],
-            [
                 "item_tags",
                 [
                     "MagicalWeapon"
@@ -17843,6 +17848,13 @@
             [
                 "wexp",
                 0
+            ],
+            [
+                "range_based_battle_cast_anim",
+                {
+                    "melee": "Fire",
+                    "ranged": "Fire_Range"
+                }
             ]
         ]
     },

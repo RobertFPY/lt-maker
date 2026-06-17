@@ -104,6 +104,8 @@ class FrameSelector(Dialog):
 
         self.delete_button = QPushButton("Delete Current Frame")
         self.delete_button.clicked.connect(self.delete_frame)
+        self.duplicate_button = QPushButton("Duplicate Current Frame")
+        self.duplicate_button.clicked.connect(self.duplicate_frame)
         self.add_button = QPushButton("Add Frames...")
         self.add_button.clicked.connect(self.import_frames)
         self.export_button = QPushButton("Export Frames...")
@@ -115,6 +117,7 @@ class FrameSelector(Dialog):
         left_layout.addWidget(self.view)
         if not isinstance(combat_anim, map_sprites.MapSprite):
             left_layout.addWidget(self.add_button)
+            left_layout.addWidget(self.duplicate_button)
             left_layout.addWidget(self.delete_button)
             left_layout.addWidget(self.export_button)
         right_layout = QVBoxLayout()
@@ -178,6 +181,20 @@ class FrameSelector(Dialog):
             if new_idx:
                 new_frame = self.frames[new_idx.row()]
                 self.set_current(new_frame)
+
+    def duplicate_frame(self):
+        if not self.current:
+            return
+        nid = utilities.get_next_name(self.current.nid, self.frames.keys())
+        # Copy the pixmap so the duplicate is fully independent.
+        pix = self.current.pixmap.copy() if self.current.pixmap else None
+        offset = tuple(self.current.offset)
+        # rect is None because it hasn't been placed in the combined sheet yet
+        new_frame = combat_anims.Frame(nid, None, offset, pix)
+        self.frames.append(new_frame)
+        update_anim_full_image(self.weapon_anim)
+        self.model.layoutChanged.emit()
+        self.set_current(new_frame)
 
     def palette_swap(self, pixmap):
         if isinstance(self.combat_anim, map_sprites.MapSprite):

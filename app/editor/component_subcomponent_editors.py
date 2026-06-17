@@ -311,6 +311,25 @@ DELEGATE_MAP: Dict[ComponentType, BaseComponentDelegate] = {
     ComponentType.Terrain: TerrainDelegate,
 }
 
+class EffectAnimationSubcomponentEditor(BaseSubcomponentEditor):
+    @override
+    def _create_editor(self, hbox):
+        self.editor = ComboBox(self)
+        # Empty entry lets the field be left blank (so the component can fall
+        # back to the other option, e.g. melee <-> ranged).
+        self.editor.addItem('')
+        for effect_anim in RESOURCES.combat_effects.values():
+            self.editor.addItem(effect_anim.nid)
+        width = utils.clamp(self.editor.minimumSizeHint().width(
+        ) + DROP_DOWN_BUFFER, MIN_DROP_DOWN_WIDTH, MAX_DROP_DOWN_WIDTH)
+        self.editor.setMaximumWidth(width)
+        self.editor.setValue(self.option_dict.get(self.field_name) or '')
+        self.editor.currentTextChanged.connect(self.on_value_changed)
+        hbox.addWidget(self.editor)
+
+    def on_value_changed(self, val):
+        self.option_dict[self.field_name] = val or None
+
 EDITOR_MAP: Dict[ComponentType, BaseSubcomponentEditor] = {
     ComponentType.Bool: BoolSubcomponentEditor,
     ComponentType.Skill: SkillSubcomponentEditor,
@@ -322,7 +341,8 @@ EDITOR_MAP: Dict[ComponentType, BaseSubcomponentEditor] = {
     ComponentType.Sound: SoundSubcomponentEditor,
     ComponentType.Affinity: AffinitySubcomponentEditor,
     ComponentType.Shape: ShapeSubcomponentEditor,
-    ComponentType.TextColor: TextColorSubcomponentEditor
+    ComponentType.TextColor: TextColorSubcomponentEditor,
+    ComponentType.EffectAnimation: EffectAnimationSubcomponentEditor
 }
 
 CONTAINER_EDITOR_MAP: Dict[ComponentType, BaseContainerSubcomponentEditor] = {

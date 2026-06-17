@@ -13,6 +13,7 @@ from app.engine.combat import playback as pb
 from app.engine.movement import movement_funcs
 from app.engine.source_type import SourceType
 import logging
+import inspect
 def ai_status_priority(unit, target, item, move, status_nid) -> float:
     if target and status_nid not in [skill.nid for skill in target.skills]:
         accuracy_term = utils.clamp(combat_calcs.compute_hit(unit, target, item, target.get_weapon(), "attack", (0, 0))/100., 0, 1)
@@ -1830,22 +1831,38 @@ class RangeBasedBattleCastAnim(ItemComponent):
             self.value.update(value)
 
     def _get_combat_range(self):
-        # effect_animation only receives (unit, item), so resolve the active combat to
-        # measure range. The current combat is the last entry in game.combat_instance.
+        # effect_animation duoc goi TRONG AnimationCombat.__init__, truoc khi
+        # combat duoc append vao game.combat_instance -> combat_instance con rong.
+        # Vi vay ta lay instance combat dang khoi tao tu call stack (no da tinh san .distance).
+        for frame_info in inspect.stack():
+            candidate = frame_info.frame.f_locals.get('self')
+            if candidate is None or candidate is self:
+                continue
+            dist = getattr(candidate, 'distance', None)
+            if dist is not None and hasattr(candidate, 'attacker') and hasattr(candidate, 'at_range'):
+                return dist
+
+        # Fallback: neu combat da nam trong combat_instance (cac loai combat khac)
         combat = game.combat_instance[-1] if game.combat_instance else None
-        if not combat:
-            return None
-        attacker = getattr(combat, 'attacker', None)
-        attacker_pos = getattr(attacker, 'position', None) if attacker else None
-        target_positions = getattr(combat, 'target_positions', None)
-        target_pos = target_positions[0] if target_positions else None
-        if attacker_pos and target_pos:
-            return utils.calculate_distance(attacker_pos, target_pos)
+        if combat is not None:
+            dist = getattr(combat, 'distance', None)
+            if dist is not None:
+                return dist
+            attacker = getattr(combat, 'attacker', None)
+            defender = getattr(combat, 'defender', None)
+            a_pos = getattr(attacker, 'position', None) if attacker else None
+            d_pos = getattr(defender, 'position', None) if defender else None
+            if a_pos and d_pos:
+                return utils.calculate_distance(a_pos, d_pos)
+
         return None
 
     def effect_animation(self, unit, item):
         rng = self._get_combat_range()
+        melee = self.value.get('melee')
+        ranged = self.value.get('ranged')
         if rng is not None and rng > 1:
-            return self.value.get('ranged') or self.value.get('melee')
-        # Default to the melee effect when range is 1 or can't be determined.
-        return self.value.get('melee') or self.value.get('ranged')
+            chosen = ranged or melee
+            return chosen
+        chosen = melee or ranged
+        return chosen

@@ -42,7 +42,7 @@ class SpinBoxXY(QWidget):
         self.y_spinbox.setSingleStep(i)
 
     def setMinimum(self, x, y):
-        # Checked, this was used only by Portrait Editor
+        # Used in portrait editor and map animation editor
         self.x_spinbox.setMinimum(x)
         self.y_spinbox.setMinimum(y)
 

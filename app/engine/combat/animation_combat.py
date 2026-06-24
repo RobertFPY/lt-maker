@@ -36,6 +36,9 @@ from app.engine.combat.utils import resolve_weapon
 
 class AnimationCombat(BaseCombat, MockCombat):
     alerts: bool = True
+    # On-map animated combat (delegates handle_state_stack to MapCombat's), so
+    # it does finalize a turn -- override BaseCombat's False.
+    finalizes_turn: bool = True
 
     def __init__(self, attacker: UnitObject, main_item: ItemObject, defender: UnitObject, def_item: ItemObject,
                  script: list, total_rounds: int = 1, arena_combat: bool = False):

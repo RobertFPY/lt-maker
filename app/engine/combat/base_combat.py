@@ -13,6 +13,9 @@ from app.engine.combat.utils import resolve_weapon
 
 class BaseCombat(SimpleCombat):
     alerts: bool = True
+    # A base/prep "Use" consumes no tactical turn (handle_state_stack is a
+    # no-op below), so a promotion launched from here must not finalize a turn.
+    finalizes_turn: bool = False
     """
     Handles in base and in prep screen "use" of items
     """

@@ -49,6 +49,11 @@ class Promote(ItemComponent):
                 game.memory['next_state'] = 'promotion'
                 game.state.change('transition_to')
             else:
+                # A cancellable choice is coming. Record whether this combat
+                # finalizes a tactical turn so the choice, on confirm, knows
+                # whether to end the turn (on-map seal) or just pop back to its
+                # caller (base/prep "Use"). See PromotionChoiceState.
+                game.memory['_promo_map_combat'] = game.memory['current_combat'].finalizes_turn
                 game.memory['next_state'] = 'promotion_choice'
                 game.state.change('transition_to')
         self._did_hit = False
@@ -104,6 +109,9 @@ class ClassChange(Promote):
                 game.state.change('class_change')
                 game.state.change('transition_out')
             else:
+                # See Promote.end_combat: record turn-finalization context for
+                # the cancellable choice that is about to be shown.
+                game.memory['_promo_map_combat'] = game.memory['current_combat'].finalizes_turn
                 game.state.change('class_change_choice')
                 game.state.change('transition_out')
         self._did_hit = False

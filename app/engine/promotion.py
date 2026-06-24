@@ -31,9 +31,15 @@ class PromotionChoiceState(State):
         game.memory['current_unit'] = self.unit
         game.memory['next_class'] = next_class
         game.memory['next_state'] = 'promotion'
-        # The turn was deliberately left unfinalized so the choice could be
-        # cancelled; now that we're committing, finalize it after the promotion.
-        game.memory['_promo_finalize_turn'] = True
+        # Only an on-map promotion (Master Seal used during the unit's turn)
+        # has a tactical turn to finalize. The turn was deliberately left
+        # unfinalized so the choice could be cancelled; now that we're
+        # committing, finalize it after the promotion. Off-map promotions
+        # (base/prep "Use", base bonus exp, promote event command) have no turn
+        # to end -- finalizing there clears the base/event state stack and
+        # dumps the player onto the map.
+        if self.from_map_combat:
+            game.memory['_promo_finalize_turn'] = True
         game.state.change('transition_to_with_pop')
 
     def start(self):
@@ -41,6 +47,11 @@ class PromotionChoiceState(State):
 
         self.can_go_back = game.memory.get('can_go_back', False)
         game.memory['can_go_back'] = None
+        # Whether the promotion was launched from an on-map combat (and so owes
+        # a turn finalization on confirm). Set by the class-change item's
+        # end_combat; absent for base bonus exp and event-command promotions.
+        self.from_map_combat = game.memory.get('_promo_map_combat', False)
+        game.memory['_promo_map_combat'] = None
         self.combat_item = game.memory.get('combat_item')
         game.memory['combat_item'] = None
         self.unit = game.memory['current_unit']
@@ -233,7 +244,9 @@ class ClassChangeChoiceState(PromotionChoiceState):
         game.memory['current_unit'] = self.unit
         game.memory['next_class'] = next_class
         game.memory['next_state'] = 'class_change'
-        game.memory['_promo_finalize_turn'] = True
+        # See PromotionChoiceState._proceed.
+        if self.from_map_combat:
+            game.memory['_promo_finalize_turn'] = True
         game.state.change('transition_to_with_pop')
 
 class PromotionState(State, MockCombat):

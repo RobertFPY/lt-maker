@@ -1477,7 +1477,11 @@ class Convoy():
 
     def move_to_item_type(self, item):
         wtype = item_system.weapon_type(self.unit, item)
-        if wtype:
+        # A hidden weapon type (hide_from_convoy/hide_from_display) is absent
+        # from self.order, so its items live in the 'Default' bucket (see
+        # create_sorted_dict). Treat it like a typeless item and jump there
+        # instead of indexing self.order, which would raise ValueError.
+        if wtype and wtype in self.order:
             self.menu_index = self.order.index(wtype)
         else:
             self.menu_index = len(self.order) - 1

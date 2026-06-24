@@ -73,7 +73,8 @@ def is_trigger_script_call(node: ast.stmt):
 
 def check_valid_trigger_script_call(node: ast.stmt):
     if is_trigger_script_call(node):
-        if len(node.args) > 0 and isinstance(node.args[0], ast.Str):
+        if len(node.args) > 0 and isinstance(node.args[0], ast.Constant) \
+                and isinstance(node.args[0].value, str):
             return True
         return False
     return True
@@ -81,7 +82,7 @@ def check_valid_trigger_script_call(node: ast.stmt):
 def get_script_from_trigger_script_call(node: ast.Call) -> str:
     try:
         if is_trigger_script_call(node):
-            return node.args[0].s
+            return node.args[0].value
     except:
         raise ValueError("Not a valid TriggerScript call")
 

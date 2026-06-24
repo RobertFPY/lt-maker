@@ -18,6 +18,7 @@ from app.utilities.typing import NID
 class IfStatementStrategy(Enum):
     ALWAYS_TRUE = 1
     ALWAYS_FALSE = 2
+    EVALUATE = 3  # Actually evaluate the condition (needs local_args context)
 
 class MockGame():
     """
@@ -42,7 +43,8 @@ class MockEvent(Event):
                  "ending", "paired_ending", "pop_dialog", "unpause", 
                  "screen_shake", "toggle_narration_mode"}
 
-    def __init__(self, nid, event_prefab: EventPrefab, command_idx=0, if_statement_strategy=IfStatementStrategy.ALWAYS_TRUE):
+    def __init__(self, nid, event_prefab: EventPrefab, command_idx=0, if_statement_strategy=IfStatementStrategy.ALWAYS_TRUE,
+                 local_args=None):
         self._transition_speed = 250
         self._transition_color = (0, 0, 0)
 
@@ -55,7 +57,16 @@ class MockEvent(Event):
 
         self._generic_setup()
 
-        self.text_evaluator = TextEvaluator(self.logger, None)
+        # local_args carries the trigger context (e.g. support_rank_nid, unit1,
+        # unit2) so conditional commands can be evaluated under EVALUATE. unit1/
+        # unit2/position must be passed positionally too: check_pair() closes
+        # over those params, not over local_args.
+        local_args = local_args or {}
+        self.text_evaluator = TextEvaluator(self.logger, None,
+                                            unit=local_args.get('unit1'),
+                                            unit2=local_args.get('unit2'),
+                                            position=local_args.get('position'),
+                                            local_args=local_args)
         if event_prefab.version() != EventVersion.EVENT:
             self.processor = MockPythonEventProcessor('Mock', event_prefab.source)
         else:
@@ -98,10 +109,12 @@ class MockEventProcessor(EventProcessor):
         self.command_pointer = command_pointer
 
     def _get_truth(self, command: event_commands.EventCommand) -> bool:
-        if self.if_statement_strategy == IfStatementStrategy.ALWAYS_TRUE:
-            truth = True
-        else:
-            truth = False
+        if self.if_statement_strategy == IfStatementStrategy.EVALUATE:
+            # Real evaluation against the trigger context (text_evaluator's
+            # local_args). Used by the Support Room so a single support event
+            # that branches on support_rank_nid plays the chosen rank.
+            return super()._get_truth(command)
+        truth = self.if_statement_strategy == IfStatementStrategy.ALWAYS_TRUE
         self.logger.info("Result: %s" % truth)
         return truth
 

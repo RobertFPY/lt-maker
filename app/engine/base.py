@@ -32,7 +32,7 @@ import app.engine.config as cf
 from app.utilities.utils import linspace
 from app.utilities.enums import HAlignment
 from app.events import triggers
-from app.events.mock_event import MockEvent
+from app.events.mock_event import MockEvent, IfStatementStrategy
 
 def base_background():
     # build background
@@ -607,10 +607,10 @@ class ExtrasSupportDisplay(SupportDisplay):
 
     def trigger(self, trigger: triggers.EventTrigger):
         default_bg = self.get_background()
+        args = trigger.to_args()
         triggered_events = []
         for event_prefab in DB.events.get(trigger.nid, None):
             try:
-                args = trigger.to_args()
                 if evaluate.evaluate(event_prefab.condition,
                                      unit1=args.get('unit1', None),
                                      unit2=args.get('unit2', None),
@@ -623,7 +623,12 @@ class ExtrasSupportDisplay(SupportDisplay):
         sorted_events = sorted(triggered_events, key=lambda x: x.priority)
         game.memory['mock_events'] = []
         for event_prefab in sorted_events:
-            mock_event = MockEvent('extra_support', event_prefab)
+            # EVALUATE + the trigger args so a single support event that branches
+            # internally on support_rank_nid plays the rank the player picked,
+            # instead of always falling through to the first (C) branch.
+            mock_event = MockEvent('extra_support', event_prefab,
+                                   if_statement_strategy=IfStatementStrategy.EVALUATE,
+                                   local_args=args)
             if not mock_event.background:
                 mock_event.background = default_bg
             game.memory['mock_events'].append(mock_event)

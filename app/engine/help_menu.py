@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Optional, TYPE_CHECKING
+from typing import List, Optional, Tuple, TYPE_CHECKING
 
 from app.constants import WINHEIGHT, WINWIDTH
 from app.data.database.database import DB
@@ -32,13 +32,7 @@ class HelpDialog():
         self.transition_out = 0
 
         desc = text_funcs.translate(desc)
-        lines = self.build_lines(desc)
-        num_lines = len(lines)
-
-        if lines:
-            self.greatest_line_len = text_funcs.get_max_width(self.font, lines)
-        else:
-            self.greatest_line_len = 8
+        num_lines, self.greatest_line_len = self.measure_dialog(desc)
         if self.name:
             self.greatest_line_len = max(self.greatest_line_len, text_width(self.font, self.name))
             num_lines += 1
@@ -63,32 +57,47 @@ class HelpDialog():
     def get_height(self):
         return self.help_surf.get_height()
 
-    def find_num_lines(self, desc: str) -> int:
-        '''Returns the number of lines in the description'''
-        # Split on \n, then go through each element in the list
-        # and break it into further strings if too long
-        desc = desc.replace('{br}', '\n')
-        lines = desc.split("\n")
-        total_lines = len(lines)
-        for line in lines:
-            desc_length = text_width(self.font, line)
-            total_lines += desc_length // MAX_TEXT_WIDTH
-        return total_lines
+    def _wrap_at(self, styled: str, width: int) -> Tuple[int, int]:
+        '''Wrap `styled` in a throwaway dialog of the given box width and
+        return (num_lines, widest_rendered_line). Uses the dialog's own
+        per-character font metrics, so inline font tags like <nconvo> are
+        measured with their true widths.'''
+        from app.engine import dialog
+        d = dialog.Dialog.from_style(
+            game.speak_styles.get('__default_help'), styled, width=width)
+        d.warp_speed()
+        if not d.text_indices:
+            return 0, 8
+        greatest = max(d.tagged_text[t.start:t.stop].width() for t in d.text_indices)
+        return len(d.text_indices), max(8, greatest)
 
-    def build_lines(self, desc: str) -> List[str]:
-        # Hard set num lines if desc is very short
-        if '\n' in desc:
-            desc_lines = desc.splitlines()
-            lines = []
-            for line in desc_lines:
-                num = self.find_num_lines(line)
-                line = text_funcs.split(self.font, line, num, MAX_TEXT_WIDTH)
-                lines.extend(line)
-        else:
-            num = self.find_num_lines(desc)
-            lines = text_funcs.split(self.font, desc, num, MAX_TEXT_WIDTH)
-        lines = fix_tags(lines)
-        return lines
+    def measure_dialog(self, desc: str) -> Tuple[int, int]:
+        '''Measure how the description should wrap, returning
+        (num_lines, greatest_line_len).
+
+        Wrapping at max width gives the fewest lines the text needs. We then
+        binary-search the *narrowest* box that still wraps into that same
+        number of lines -- the tightest fit packs the lines to roughly equal
+        length, minimising whitespace, instead of leaving the last line nearly
+        empty. Measurement goes through the real dialog so inline font tags
+        (e.g. <nconvo>) are sized with their own metrics rather than the base
+        help font.'''
+        styled = desc.replace('\n', '{br}')
+        num_lines, greatest = self._wrap_at(styled, MAX_TEXT_WIDTH + 16)
+        if num_lines <= 1:
+            return max(1, num_lines), greatest
+        # A box of width `greatest + 16` is the widest we need (it fits the
+        # greedy layout in num_lines lines); search down from there.
+        lo, hi, best = 8, greatest + 16, greatest
+        while lo <= hi:
+            mid = (lo + hi) // 2
+            count, wide = self._wrap_at(styled, mid)
+            if 0 < count <= num_lines:  # still fits in num_lines -> try narrower
+                best = wide
+                hi = mid - 1
+            else:                       # too narrow, spilled to more lines
+                lo = mid + 1
+        return num_lines, best
 
     def set_transition_in(self):
         self.transition_in = True
@@ -381,13 +390,7 @@ class SkillHelpDialog(HelpDialog):
 
         desc = skill.desc
         desc = text_funcs.translate_and_text_evaluate(desc, unit=unit_override, self=skill, local_args={'skill': skill})
-        lines = self.build_lines(desc)
-        num_lines = len(lines)
-
-        if lines:
-            self.greatest_line_len = text_funcs.get_max_width(self.font, lines)
-        else:
-            self.greatest_line_len = 8
+        num_lines, self.greatest_line_len = self.measure_dialog(desc)
         if self.name:
             self.greatest_line_len = max(self.greatest_line_len, text_width(self.font, self.name))
             num_lines += 1

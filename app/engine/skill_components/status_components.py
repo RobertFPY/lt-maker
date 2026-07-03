@@ -187,6 +187,33 @@ class GBAPoison(SkillComponent):
         new_random_state = static_random.get_combat_random_state()
         actions.append(action.RecordRandomState(old_random_state, new_random_state))
         actions.append(action.ChangeHP(unit, hp_loss))
+        
+class GBAPoisonRange(SkillComponent):
+    nid = 'gba_poison_range'
+    desc = "Unit takes random amount of damage between two values (inclusive)"
+    tag = SkillTags.STATUS
+
+    expose = ComponentType.NewMultipleOptions
+
+    options = {
+        'min_damage': ComponentType.Int,
+        'max_damage': ComponentType.Int,
+    }
+    
+    def __init__(self, value=None):
+        self.value = {
+            'min_damage': 3,
+            'max_damage': 5,
+        }
+        if value:
+            self.value.update(value)
+
+    def on_upkeep(self, actions, playback, unit):
+        old_random_state = static_random.get_combat_random_state()
+        hp_loss = -static_random.get_randint(self.value['min_damage'], self.value['max_damage'])
+        new_random_state = static_random.get_combat_random_state()
+        actions.append(action.RecordRandomState(old_random_state, new_random_state))
+        actions.append(action.ChangeHP(unit, hp_loss))
 
 class ResistStatus(SkillComponent):
     nid = 'resist_status'

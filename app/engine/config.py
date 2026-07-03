@@ -21,6 +21,7 @@ def base_config() -> OrderedDict:
                         ('cursor_speed', 66),
                         ('mouse', 1),
                         ('show_terrain', 1),
+                        ('forecast', 'Strategic'),
                         ('show_objective', 1),
                         ('autocursor', 1),
                         ('music_volume', 0.3),
@@ -58,7 +59,7 @@ def read_config_file():
             parse_ini('data/config.ini')
 
     float_vals = ('music_volume', 'sound_volume')
-    string_vals = ('animation', 'hp_map_team', 'hp_map_cull')
+    string_vals = ('animation', 'hp_map_team', 'hp_map_cull', 'forecast')
     key_vals = ('key_SELECT', 'key_BACK', 'key_INFO', 'key_AUX',
                 'key_START', 'key_LEFT', 'key_RIGHT', 'key_UP', 'key_DOWN')
     for k, v in config.items():

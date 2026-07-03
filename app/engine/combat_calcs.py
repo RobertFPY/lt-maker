@@ -452,6 +452,87 @@ def compute_crit(unit, target, item, def_item, mode, attack_info):
     crit = int(crit)
 
     return utils.clamp(crit, 0, 100)
+    
+def compute_damage_before_resist(unit, target, item, def_item, mode, attack_info, crit=False, assist=False):
+    if not item:
+        return None
+
+    might = damage(unit, item)
+    if might is None:
+        return None
+
+    # Handles things like effective damage
+    might += item_system.dynamic_damage(unit, item, target, def_item, mode, attack_info, might)
+    might += skill_system.dynamic_damage(unit, item, target, def_item, mode, attack_info, might)
+
+    # Weapon Triangle
+    triangle_bonus = 0
+    triangle_bonus += compute_advantage_attr(unit, target, item, def_item, 'damage')
+    triangle_bonus -= compute_advantage_attr(target, unit, def_item, item, 'resist')
+    might += triangle_bonus
+
+    # Three Houses style support bonus (only works on attack)
+    if mode in ('attack', 'splash'):
+        # Attacker's damage bonus
+        support_rank_bonuses, support_allies = get_support_rank_bonus(unit, target)
+        for bonus in support_rank_bonuses:
+            might += float(bonus.damage)
+    if mode == 'defense':
+        # Attacker's resist bonus
+        support_rank_bonuses, support_allies = get_support_rank_bonus(target, unit)
+        for bonus in support_rank_bonuses:
+            might -= float(bonus.resist)
+    might = int(might)
+
+    if assist:
+        might //= 2
+
+    might *= skill_system.damage_multiplier(unit, item, target, resolve_weapon(target), mode, attack_info, might)
+    might *= skill_system.resist_multiplier(target, resolve_weapon(target), unit, item, mode, attack_info, might)
+    
+    return might
+    
+def compute_resist(unit, target, item, def_item, mode, attack_info, crit=False, assist=False):
+    if not item:
+        return None
+
+    might = damage(unit, item)
+    if might is None:
+        return None
+
+    # Handles things like effective damage
+    might += item_system.dynamic_damage(unit, item, target, def_item, mode, attack_info, might)
+    might += skill_system.dynamic_damage(unit, item, target, def_item, mode, attack_info, might)
+
+    # Weapon Triangle
+    triangle_bonus = 0
+    triangle_bonus += compute_advantage_attr(unit, target, item, def_item, 'damage')
+    triangle_bonus -= compute_advantage_attr(target, unit, def_item, item, 'resist')
+    might += triangle_bonus
+
+    # Three Houses style support bonus (only works on attack)
+    if mode in ('attack', 'splash'):
+        # Attacker's damage bonus
+        support_rank_bonuses, support_allies = get_support_rank_bonus(unit, target)
+        for bonus in support_rank_bonuses:
+            might += float(bonus.damage)
+    if mode == 'defense':
+        # Attacker's resist bonus
+        support_rank_bonuses, support_allies = get_support_rank_bonus(target, unit)
+        for bonus in support_rank_bonuses:
+            might -= float(bonus.resist)
+    might = int(might)
+
+    resist = defense(unit, target, def_item, item)
+    resist += skill_system.dynamic_resist(target, resolve_weapon(target), unit, item, mode, attack_info, might)
+
+    if assist:
+        resist //= 2
+
+    resist *= skill_system.damage_multiplier(unit, item, target, resolve_weapon(target), mode, attack_info, might)
+    resist *= skill_system.resist_multiplier(target, resolve_weapon(target), unit, item, mode, attack_info, might)
+    
+    return resist
 
 def compute_damage(unit, target, item, def_item, mode, attack_info, crit=False, assist=False):
     if not item:

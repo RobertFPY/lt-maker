@@ -4,6 +4,8 @@ from pathlib import Path
 import re
 import shutil
 import os
+import stat
+import sys
 import traceback
 
 from typing import Dict, List
@@ -31,6 +33,24 @@ from app.utilities.serialization import save_json
 from app.utilities.typing import NestedPrimitiveDict
 
 CATEGORY_SUFFIX = '.category'
+
+def _clear_readonly_and_retry(func, path, _exc):
+    """rmtree error handler: clear the read-only bit and retry.
+
+    The most common cause of WinError 5 (access denied) when deleting a
+    save directory on Windows is a read-only file. Make it writable and
+    retry the failing operation once; if it still fails, let it raise.
+    """
+    os.chmod(path, stat.S_IWRITE)
+    func(path)
+
+def rmtree_robust(path):
+    """shutil.rmtree that recovers from read-only files across Python versions."""
+    if sys.version_info >= (3, 12):
+        shutil.rmtree(path, onexc=_clear_readonly_and_retry)
+    else:
+        # onerror gets (func, path, exc_info); adapt to our handler
+        shutil.rmtree(path, onerror=lambda f, p, ei: _clear_readonly_and_retry(f, p, ei[1]))
 
 class Resources():
     save_data_types = ("icons16", "icons32", "icons80", "portraits", "animations", "panoramas", "fonts",
@@ -197,7 +217,7 @@ class Resources():
                         elif key == 'combat_palettes':
                             actual_save_dir = Path(save_dir, 'palette_data')
                         if os.path.exists(actual_save_dir):
-                            shutil.rmtree(actual_save_dir)
+                            rmtree_robust(actual_save_dir)
                     # divide save data into chunks based on key value
                     if not os.path.exists(actual_save_dir):
                         os.makedirs(actual_save_dir)
@@ -220,8 +240,16 @@ class Resources():
                         save_loc = Path(actual_save_dir, key + '.json')
                         # logging.info("Serializing %s to %s" % (key, save_loc))
                         save_json(save_loc, value)
-            except OSError as e:  # In case we ran out of memory
-                logging.error("Editor was unable to save your project. Free up memory in your hard drive or try saving somewhere else, otherwise progress will be lost when the editor is closed.")
+            except PermissionError as e:  # Access denied (read-only file, AV lock, or cloud-sync handle)
+                logging.error("Editor was denied permission to save your project (%s). "
+                              "The project folder or a file inside it may be read-only, locked by "
+                              "antivirus, or held open by cloud sync (OneDrive/Dropbox). Try moving "
+                              "the project out of a synced folder, clearing read-only, or saving "
+                              "somewhere else, otherwise progress will be lost when the editor is closed.", e)
+                logging.exception(e)
+                return False
+            except OSError as e:  # e.g. disk full
+                logging.error("Editor was unable to save your project. Free up space on your hard drive or try saving somewhere else, otherwise progress will be lost when the editor is closed.")
                 logging.exception(e)
                 return False
 

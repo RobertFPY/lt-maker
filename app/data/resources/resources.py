@@ -4,8 +4,6 @@ from pathlib import Path
 import re
 import shutil
 import os
-import stat
-import sys
 import traceback
 
 from typing import Dict, List
@@ -29,28 +27,10 @@ from app.data.resources.combat_anims import CombatCatalog, CombatEffectCatalog
 
 import logging
 
-from app.utilities.serialization import save_json
+from app.utilities.serialization import save_json, rmtree_robust
 from app.utilities.typing import NestedPrimitiveDict
 
 CATEGORY_SUFFIX = '.category'
-
-def _clear_readonly_and_retry(func, path, _exc):
-    """rmtree error handler: clear the read-only bit and retry.
-
-    The most common cause of WinError 5 (access denied) when deleting a
-    save directory on Windows is a read-only file. Make it writable and
-    retry the failing operation once; if it still fails, let it raise.
-    """
-    os.chmod(path, stat.S_IWRITE)
-    func(path)
-
-def rmtree_robust(path):
-    """shutil.rmtree that recovers from read-only files across Python versions."""
-    if sys.version_info >= (3, 12):
-        shutil.rmtree(path, onexc=_clear_readonly_and_retry)
-    else:
-        # onerror gets (func, path, exc_info); adapt to our handler
-        shutil.rmtree(path, onerror=lambda f, p, ei: _clear_readonly_and_retry(f, p, ei[1]))
 
 class Resources():
     save_data_types = ("icons16", "icons32", "icons80", "portraits", "animations", "panoramas", "fonts",

@@ -2387,6 +2387,20 @@ Cannot be undone by the turnwheel.
     keywords = ["rng"]
     keyword_types = ["RNGType"]
 
+class SetModePermadeath(EventCommand):
+    nid = 'set_mode_permadeath'
+    tag = Tags.GAME_VARS
+
+    desc = \
+       """
+changes if permadeath is active in the game.
+Cannot be undone by the turnwheel.
+        """
+
+    keywords = ['Permadeath']
+    keyword_types = ["Bool"]
+
+
 class Promote(EventCommand):
     nid = 'promote'
     tag = Tags.MODIFY_UNIT_PROPERTIES

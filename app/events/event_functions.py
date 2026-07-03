@@ -2428,6 +2428,12 @@ def set_mode_rng(self: Event, rng: str, flags=None):
         return
     self.game.current_mode.rng_mode = RNGOption(new_mode)
 
+def set_mode_permadeath(self: Event, permadeath: bool, flags=None):
+    flags = flags or set()
+    
+    self.game.current_mode.permadeath = permadeath
+
+
 def promote(self: Event, global_unit, klass_list: Optional[List[NID]] = None, flags=None):
     flags = flags or set()
     unit = self._get_unit(global_unit)

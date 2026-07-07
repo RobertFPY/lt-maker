@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import QMainWindow, QAction, QMenu, QMessageBox, QApplicati
 from PyQt5.QtGui import QIcon
 
 from app import autoupdate, dark_theme
+from app.utilities import file_utils
 
 from app.editor.file_manager.project_builder.project_builder import LTProjectBuilder
 from app.editor.font_editor.font_tab import FontDatabase
@@ -207,6 +208,9 @@ class MainEditor(QMainWindow):
 
         self.build_project = QAction(
             "Build project", self, triggered=lambda: self.project_builder.build(self.project_save_load_handler.current_proj))
+        if not file_utils.Pltfm.windows():
+            self.build_project.setEnabled(False)
+            self.build_project.setToolTip("Building is only supported on Windows.")
 
         self.preferences_act = QAction(
             _("&Preferences..."), self, triggered=self.edit_preferences)

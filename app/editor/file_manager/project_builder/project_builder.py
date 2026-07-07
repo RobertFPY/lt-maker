@@ -46,6 +46,14 @@ class LTProjectBuilder():
         self.progress_dialog = None
 
     def validate(self, current_proj: Path) -> bool:
+        if not file_utils.Pltfm.windows():
+            QMessageBox.warning(None, "Build not supported on this platform",
+                                "Project building currently only works on Windows. "
+                                "The build tooling produces a Windows executable whose "
+                                "launcher wrapper collides with the game folder on Linux/Mac.\n\n"
+                                "To share your project, distribute the .ltproj alongside the "
+                                "engine source, or build on a Windows machine.")
+            return False
         current_proj_basename = os.path.basename(current_proj)
         if(current_proj_basename) == DEFAULT_PROJECT:
             QMessageBox.warning(None, "Cannot build default project",

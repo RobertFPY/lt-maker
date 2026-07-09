@@ -17,12 +17,22 @@ class AIPrefab(Prefab):
 
     def add_behaviour(self, behaviour):
         self.behaviours.append(behaviour)
-
+    
     def add_default(self):
         self.behaviours.append(AIBehaviour.DoNothing())
+    
+    def insert_default(self, idx):
+        self.behaviours.insert(idx, AIBehaviour.DoNothing())
 
     def pop_behaviour(self):
         self.behaviours.pop()
+        
+    def remove_behaviour(self, idx):
+        self.behaviours.pop(idx)
+        
+    def handle_drop(self, start_row, end_row):
+        item = self.behaviours.pop(start_row)
+        self.behaviours.insert(end_row, item)
 
     def set_behaviour(self, idx, behaviour):
         self.behaviours[idx] = behaviour

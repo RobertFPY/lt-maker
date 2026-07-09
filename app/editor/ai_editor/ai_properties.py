@@ -492,6 +492,17 @@ class BehaviourBox(QGroupBox):
             self.condition_box.edit.setPlainText(behaviour.condition)
         else:
             self.condition_box.edit.setPlainText("")
+            
+class BehaviourBoxList(QListWidget):           
+    def dropEvent(self, event):
+        if self.count() > 1: #Relocation can happen
+            start_row = self.currentRow()
+            drop_index = self.indexAt(event.pos())
+            drop_row = drop_index.row()
+            if drop_row == -1: #Seems to happen if you drop within the list's window but not at a recognized spot, adds at end of list
+                drop_row = self.count() - 1
+            self.parent.handle_drop(start_row, drop_row)
+            super().dropEvent(event)
 
 class AIProperties(QWidget):
     def __init__(self, parent, current=None):
@@ -531,17 +542,21 @@ class AIProperties(QWidget):
         self.top_section.addWidget(self.roam_ai_box)
 
         self.add_button = QPushButton("Add Behaviour", self)
-        self.add_button.clicked.connect(self.add_behaviour)
+        self.add_button.clicked.connect(self.insert_behaviour)
         self.top_section.addWidget(self.add_button)
 
         self.remove_button = QPushButton("Remove Behaviour", self)
-        self.remove_button.clicked.connect(self.pop_behaviour)
+        self.remove_button.clicked.connect(self.remove_behaviour)
         self.top_section.addWidget(self.remove_button)
 
         main_section = QVBoxLayout()
 
         self.behaviour_boxes = []
-        self.behaviour_list = QListWidget()
+        self.behaviour_list = BehaviourBoxList()
+        self.behaviour_list.parent = self
+        self.behaviour_list.setDragEnabled(True)
+        self.behaviour_list.setAcceptDrops(True)
+        self.behaviour_list.setDragDropMode(4)
 
         main_section.addWidget(self.behaviour_list)
 
@@ -609,6 +624,59 @@ class AIProperties(QWidget):
             behaviour_box.set_current(self.current.behaviours[-1])
 
         self.construct_roam_info()
+        
+    def insert_behaviour(self, checked = False, set_current = True, idx = None):
+        item = QListWidgetItem()
+        if idx is None:
+            idx = self.behaviour_list.currentRow() + 1
+            if idx == 0: #If nothing was selected, append to the end of the list rather than at the beginning
+                idx = len(self.behaviour_list)
+        self.behaviour_list.insertItem(idx, item)
+
+        behaviour_box = BehaviourBox(self)
+        behaviour_box.setTitle("Behaviour %d" % len(self.behaviour_list))
+        item.setSizeHint(behaviour_box.minimumSizeHint())
+
+        self.behaviour_list.setItemWidget(item, behaviour_box)
+        self.behaviour_boxes.insert(idx, behaviour_box)
+
+        if self.current and set_current:
+            self.current.insert_default(idx)
+            behaviour_box.set_current(self.current.behaviours[idx])
+            
+        self.rename_boxes()
+        self.construct_roam_info()
+          
+    def remove_behaviour(self, checked = False, set_current = True, idx = None):
+        if idx is None:
+            idx = self.behaviour_list.currentRow()
+            
+        if len(self.behaviour_boxes) == 0: #Nothing to remove
+            return
+            
+        if idx < 0: #Nothing selected, so default to removing last item
+            idx = len(self.behaviour_list) - 1
+            
+        self.behaviour_list.takeItem(idx)
+        self.behaviour_boxes.pop(idx)
+
+        if self.current and set_current:
+            self.current.remove_behaviour(idx)
+        
+        self.rename_boxes()
+            
+    def handle_drop(self, start_row, end_row):
+        item = self.behaviour_boxes.pop(start_row)
+        self.behaviour_boxes.insert(end_row, item)
+        self.current.handle_drop(start_row, end_row)
+        idx = 0
+        self.rename_boxes()
+        
+    def rename_boxes(self): #Make sure the behaviour titles are still correctly ordered after the move
+        idx = 0
+        for box in self.behaviour_boxes:
+            idx += 1
+            box.setTitle("Behaviour %d" % idx)
 
     def set_current(self, current):
         self.current = current

@@ -2,6 +2,8 @@
 
 Due to the sheer amount of editors available in Lex Talionis it can be very easy to become overwhelmed when first starting out. This page will provide a short guide on how to learn some of the essentials of any LT game - interacting with level properties, editing the map, and making and placing units.
 
+**Note:** Do NOT make changes to the project's files outside of the editor while the editor is open!
+
 First, go to "File" in the top left corner and select the sacred_stones.ltproj folder in the window that appears.
 
 Your window should now look like this: 

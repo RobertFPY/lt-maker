@@ -6,21 +6,23 @@ try:
 except ImportError:
     import pickle
 
-from PyQt5.QtCore import QThread
-
 from app.utilities.typing import Pos
 
 from app.map_maker.utilities import random_choice, flood_fill
 from app.map_maker.terrain import Terrain
 from app.map_maker.painter_utils import Painter
-from app.map_maker.mountain_processing_threads \
-    import NaiveBacktrackingThread, AlgorithmXThread
+from app.map_maker.mountain_processing \
+    import NaiveBacktrackingProcess, AlgorithmXProcess
 
 class MountainPainter(Painter):
     terrain_like = (Terrain.MOUNTAIN, )
     base_coord = (8, 13)
     organization = {}
     current_threads = []  # Keeps track of the currently running threads
+    # When True (the Qt editor), groups are solved on background Qt threads
+    # and reported through the callbacks below. When False (the pygame engine),
+    # groups are solved synchronously with no Qt dependency.
+    gui_processing: bool = True
     mountain_process_finished: Callable = None
     mountain_processing: Callable = None
 
@@ -101,7 +103,18 @@ class MountainPainter(Painter):
         # Just fill it up with generic pieces
         self._generic_fill(group)
 
-        # But then, start the thread
+        # But then, do the real solve
+        if self.gui_processing:
+            self._process_group_in_thread(tilemap, group)
+        else:
+            self._process_group_synchronously(tilemap, group)
+
+    def _process_group_in_thread(self, tilemap, group: Set[Pos]):
+        # Imported here so the engine can use this painter without PyQt5
+        from PyQt5.QtCore import QThread
+        from app.map_maker.mountain_processing_threads \
+            import NaiveBacktrackingThread, AlgorithmXThread
+
         if len(group) < 12:
             thread = NaiveBacktrackingThread(tilemap, self.mountain_data, self.noneless_rules, group)
         else:
@@ -111,13 +124,23 @@ class MountainPainter(Painter):
         self.current_threads.append(thread)
         thread.start(QThread.LowPriority)
 
+    def _process_group_synchronously(self, tilemap, group: Set[Pos]):
+        if len(group) < 12:
+            process = NaiveBacktrackingProcess(tilemap, self.mountain_data, self.noneless_rules, group, gui_processing=False)
+        else:
+            process = AlgorithmXProcess(tilemap, self.mountain_data, self.noneless_rules, group, gui_processing=False)
+        process.process_group()
+        if process.did_complete:
+            self.organization.update(process.organization)
+        # Otherwise the generic fill above remains
+
     def _generic_fill(self, group: Set[Pos]):
         for pos in group:
             valid_coords = self.index_dict[15]
             valid_coord = random_choice(list(valid_coords), pos)
             self.organization[pos] = valid_coord
 
-    def _quit_thread(self, thread: QThread):
+    def _quit_thread(self, thread):
         thread.stop()
         thread.wait()
         if thread in self.current_threads:

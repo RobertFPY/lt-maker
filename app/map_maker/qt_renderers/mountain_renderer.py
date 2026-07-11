@@ -1,12 +1,15 @@
 from app.map_maker.painter_utils import Painter
-from app.map_maker.qt_renderers.qt_palette import QtPalette
+from app.map_maker.palette_collection import Palette
+from app.map_maker.qt_renderers.qt_palette import get_qt_palette
 from app.map_maker.qt_renderers import SimpleRenderer
 
 class MountainRenderer(SimpleRenderer):
-    def __init__(self, painter: Painter, palette: QtPalette):
+    def __init__(self, painter: Painter, palette: Palette):
         self.painter = painter
-        self.palette = palette
-        # Assign the painter the 
+        self.palette = get_qt_palette(palette)
+        # Mountains are solved on background Qt threads in the editor
+        self.painter.gui_processing = True
+        # Assign the painter the
         self.painter.mountain_process_finished = self.mountain_process_finished
         self.painter.mountain_processing = self.mountain_processing
 

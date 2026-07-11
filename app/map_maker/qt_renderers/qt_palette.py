@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict
 
 from dataclasses import dataclass
 
@@ -10,7 +10,7 @@ from app.utilities.typing import Pos
 from app.map_maker.painter_utils import Painter
 from app.map_maker.qt_renderers.renderer_utils import get_pixmap8, get_pixmap16
 if TYPE_CHECKING:
-    from app.map_maker.palette_collection import PaletteCollection
+    from app.map_maker.palette_collection import Palette, PaletteCollection
 
 @dataclass
 class QtPalette:
@@ -73,3 +73,14 @@ class QtPalette:
         painter.drawPixmap(8, 8, bottomright)
         painter.end()
         return base_pixmap
+
+_qt_palette_cache: Dict[int, QtPalette] = {}
+
+def get_qt_palette(palette: Palette) -> QtPalette:
+    """Wraps a framework-agnostic Palette in a QtPalette (cached by identity
+    so the underlying pixmaps are only loaded once per palette)."""
+    key = id(palette)
+    if key not in _qt_palette_cache:
+        _qt_palette_cache[key] = QtPalette(
+            palette.parent, palette.fn, palette.autotile_fn, palette.shading_fn)
+    return _qt_palette_cache[key]

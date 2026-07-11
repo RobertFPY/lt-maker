@@ -6,7 +6,7 @@ from app.utilities.data import Prefab
 import app.map_maker.utilities as map_utils
 from app.map_maker.terrain import Terrain
 from app.map_maker.palette_collection import PaletteCollection
-from app.map_maker.qt_renderers.renderer_database import RENDERERS
+from app.map_maker.painter_database import PAINTERS
 
 TILEX, TILEY = 15, 10
 
@@ -33,19 +33,19 @@ class MapPrefab(Prefab):
             self.terrain_grid_to_update.add(position)
 
     def set(self, pos: Pos, old_terrain: Terrain, new_terrain: Terrain):
-        old_terrain_renderer = RENDERERS.get(old_terrain)
-        new_terrain_renderer = RENDERERS.get(new_terrain)
-        if old_terrain and old_terrain_renderer.painter.check_flood_fill:
+        old_terrain_painter = PAINTERS.get(old_terrain)
+        new_terrain_painter = PAINTERS.get(new_terrain)
+        if old_terrain and old_terrain_painter.check_flood_fill:
             # Need to check flood fill both before and after changing terrain
-            self._update_flood_fill(pos, old_terrain_renderer.painter.check_flood_fill == 'diagonal')  
+            self._update_flood_fill(pos, old_terrain_painter.check_flood_fill == 'diagonal')
         self.terrain_grid[pos] = new_terrain
         self.terrain_grid_to_update.add(pos)
         self._update_adjacent(pos)
         self._update_diagonal(pos)
-        if new_terrain_renderer.painter.check_flood_fill:
-            self._update_flood_fill(pos, new_terrain_renderer.painter.check_flood_fill == 'diagonal')
+        if new_terrain_painter.check_flood_fill:
+            self._update_flood_fill(pos, new_terrain_painter.check_flood_fill == 'diagonal')
 
-        if new_terrain_renderer.painter.has_autotiles():
+        if new_terrain_painter.has_autotiles():
             self.autotile_set.add(pos)
         else:
             self.autotile_set.discard(pos)
@@ -55,8 +55,8 @@ class MapPrefab(Prefab):
         self.terrain_grid = terrain_grid
         self.autotile_set.clear()
         for pos, terrain in self.terrain_grid.items():
-            terrain_renderer = RENDERERS.get(terrain)
-            if terrain_renderer.painter.has_autotiles():
+            terrain_painter = PAINTERS.get(terrain)
+            if terrain_painter.has_autotiles():
                 self.autotile_set.add(pos)
         self.reset_all()
 
@@ -93,9 +93,9 @@ class MapPrefab(Prefab):
         return self.terrain_grid.get(pos)
 
     def erase_terrain(self, pos: Pos, old_terrain: Terrain):
-        old_terrain_renderer = RENDERERS.get(old_terrain)
-        if old_terrain and old_terrain_renderer.painter.check_flood_fill:
-            self._update_flood_fill(pos, old_terrain_renderer.painter.check_flood_fill == 'diagonal')
+        old_terrain_painter = PAINTERS.get(old_terrain)
+        if old_terrain and old_terrain_painter.check_flood_fill:
+            self._update_flood_fill(pos, old_terrain_painter.check_flood_fill == 'diagonal')
         if pos in self.terrain_grid:
             del self.terrain_grid[pos]
         self.autotile_set.discard(pos)

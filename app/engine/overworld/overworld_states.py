@@ -52,6 +52,17 @@ class OverworldFreeState(MapState):
             if next_level_node:
                 game.overworld_controller.set_node_property(next_level_node.nid, OverworldNodeProperty.IS_NEXT_LEVEL, True)
 
+        # Clear stale sprite transitions on logically-disabled entities.
+        # disable_overworld_entity starts a fade_out that clears the sprite's
+        # fake_position only when the fade finishes. If the overworld stops
+        # updating mid-fade (e.g. an event closes the curtain with t;close and
+        # leaves before the fade completes), fake_position is never cleared and
+        # display_position falls back to it, resurrecting the disabled entity on
+        # the next overworld visit.
+        for entity in game.overworld_controller.entities.values():
+            if entity.sprite and entity._display_position is None and entity.on_node is None:
+                entity.sprite.set_transition('normal')
+
     def start(self):
         OverworldFreeState.set_up_overworld_game_state()
         logging.info('Fade in Overworld Music')

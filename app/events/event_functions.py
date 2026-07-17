@@ -3554,6 +3554,23 @@ def open_unit_management(self: Event, panorama=None, flags=None):
         self.game.memory['next_state'] = 'base_manage'
         self.game.state.change('transition_to')
 
+def open_unit_info_screen(self: Event, unit, flags=None):
+    flags = flags or set()
+
+    unit_obj = self._get_unit(unit)
+    if not unit_obj:
+        self.logger.error("open_unit_info_screen: Could not find unit %s" % unit)
+        return
+
+    self.game.memory['current_unit'] = unit_obj
+
+    self.state = "paused"
+    if 'immediate' in flags:
+        self.game.state.change('info_menu')
+    else:
+        self.game.memory['next_state'] = 'info_menu'
+        self.game.state.change('transition_to')
+
 def open_trade(self: Event, unit1, unit2, flags=None):
     flags = flags or set()
 

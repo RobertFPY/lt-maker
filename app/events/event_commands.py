@@ -3270,6 +3270,21 @@ The (*Scroll*) flag determines whether the background image will move.
     keyword_types = ['Panorama']
     _flags = ["scroll", "immediate"]
 
+class OpenUnitInfoScreen(EventCommand):
+    nid = 'open_unit_info_screen'
+    tag = Tags.MISCELLANEOUS
+
+    desc = \
+        """
+Displays the unit's stat/info screen for the given unit, as if it were viewed from the unit menu.
+
+1. *immediate* flag skips the transition between screens
+        """
+
+    keywords = ['Unit']
+    keyword_types = ['Unit']
+    _flags = ["immediate"]
+
 class OpenTrade(EventCommand):
     nid = 'open_trade'
     tag = Tags.MISCELLANEOUS

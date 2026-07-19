@@ -46,10 +46,13 @@ def base_config() -> OrderedDict:
 
 def read_config_file():
     config = base_config()
+    
     def parse_ini(fn):
         with open(fn) as fp:
             for line in fp:
                 split_line = line.strip().split('=')
+                if len(split_line) < 2:
+                    continue
                 config[split_line[0]] = split_line[1]
 
     try:
@@ -62,19 +65,34 @@ def read_config_file():
     string_vals = ('animation', 'hp_map_team', 'hp_map_cull', 'forecast')
     key_vals = ('key_SELECT', 'key_BACK', 'key_INFO', 'key_AUX',
                 'key_START', 'key_LEFT', 'key_RIGHT', 'key_UP', 'key_DOWN')
-    for k, v in config.items():
+
+    def convert(k, v):
         if k in float_vals:
-            config[k] = float(v)
+            return float(v)
         elif k in string_vals:
-            pass
+            return v
         elif k in key_vals:
             if str_utils.is_int(v):
-                config[k] = int(v)
+                return int(v)
             elif v.startswith('K_'):  # pygame key constant
                 import pygame
-                config[k] = getattr(pygame, v)
-        else:  # convert to int
-            config[k] = int(v)
+                return getattr(pygame, v)
+            raise ValueError("Unknown key constant: %s" % v)
+        else:
+            return int(v)
+
+    defaults = base_config()
+    for k, v in list(config.items()):
+        if k not in defaults:
+            # Written by a different engine version; type unknown, so drop it
+            logging.warning("Ignoring unknown config key: %s", k)
+            del config[k]
+            continue
+        try:
+            config[k] = convert(k, v)
+        except (ValueError, AttributeError):
+            logging.warning("Bad config value %s=%s; using default %s", k, v, defaults[k])
+            config[k] = convert(k, defaults[k])
 
     return config
 

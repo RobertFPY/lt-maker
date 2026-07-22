@@ -1,10 +1,9 @@
-from typing import Callable, Optional, Set, Tuple
+from typing import Callable, Optional, Set
 import time
 
 from app.utilities.typing import Pos
 
-from app.map_maker.utilities import get_random_seed, random_choice
-from app.map_maker import rain_algorithm_x
+from app.map_maker.utilities import random_choice
 from app.map_maker.terrain import Terrain
 
 class NaiveBacktrackingProcess:
@@ -170,7 +169,7 @@ class NaiveBacktrackingProcess:
                 valid_coord_list += [valid_coord] * count
         if not valid_coord_list:
             valid_coord_list = valid_coords
-        valid_coord = random_choice(valid_coord_list, pos)
+        valid_coord = random_choice(valid_coord_list, pos, seed=tilemap.seed)
         # print("Final", valid_coord)
         self.organization[pos] = valid_coord
         return True
@@ -189,166 +188,3 @@ class NaiveBacktrackingProcess:
         if pos not in self.locked_values:
             self.locked_values[pos] = set()
         self.locked_values[pos].add(coord)
-        # print("Locking ", coord, "for ", pos)
-
-class AlgorithmXProcess:
-    def __init__(self, tilemap, mountain_data, noneless_rules,
-                 group: Set[Pos], gui_processing: bool = True,
-                 waiting_callback: Optional[Callable] = None):
-        # Sort from top left to bottom right
-        # Break ties starting from the left
-        self.tilemap = tilemap
-        self.mountain_data = mountain_data
-        self.noneless_rules = noneless_rules
-        self.group: Set[Pos] = group
-        self.gui_processing = gui_processing
-        # Called periodically during processing so a GUI can show partial progress
-        self.waiting_callback = waiting_callback
-
-        self.to_process = sorted(self.group, key=lambda x: (x[0] + x[1], x[0]))
-        self.organization = {}
-
-        self.did_complete = False
-        self.broke_out = False
-
-    def stop(self):
-        self.to_process.clear()
-        self.broke_out = True
-
-    def process_group(self, iteration: int = 0):
-        if not self.to_process:
-            print("No positions to process!")
-            return
-        print("--- Process Algorithm X Group %d --- %d" % (iteration, id(self)))
-
-        columns = [(pos, True) for pos in self.to_process]
-        # valid_coords = [self.find_valid_coords(pos) for pos in self.to_process]
-        valid_coords_dict = {pos: self.find_valid_coords(pos) for pos in self.to_process}
-
-        time.sleep(0.001)
-        if self.broke_out:
-            return
-
-        rows = []
-        row_names = []
-        column_names = [pos for pos in self.to_process]
-
-        for idx, pos in enumerate(self.to_process):
-            time.sleep(0.001)
-            if self.broke_out:
-                return
-            right = (pos[0] + 1, pos[1])
-            down = (pos[0], pos[1] + 1)
-            for valid_coord in valid_coords_dict[pos]:
-                row = [idx]
-                rows.append(row)
-                row_names.append((pos, valid_coord))
-
-                # Right
-                if right in valid_coords_dict:
-                    invalid_coords_right = {coord for coord in valid_coords_dict[right] if coord not in self.mountain_data[valid_coord]['right']}
-                    if invalid_coords_right:
-                        identifier = (pos, right, valid_coord, invalid_coords_right)
-                        column_names.append(identifier)
-                        columns.append((identifier, False))
-                        row.append(len(columns) - 1)
-
-                # Down
-                if down in valid_coords_dict:
-                    invalid_coords_down = {coord for coord in valid_coords_dict[down] if coord not in self.mountain_data[valid_coord]['down']}
-                    if invalid_coords_down:
-                        identifier = (pos, down, valid_coord, invalid_coords_down)
-                        column_names.append(identifier)
-                        columns.append((identifier, False))
-                        row.append(len(columns) - 1)
-
-        time.sleep(0.001)
-        if self.broke_out:
-            return
-
-        # Now we have each column and row, the primary columns are completely filled
-        # the secondary columns are halfway filled. They need their other sections to
-        # be filled to completion
-        assert len(row_names) == len(rows)
-        column_idxs_to_be_filled = range(len(self.to_process), len(columns))
-        for cidx in column_idxs_to_be_filled:
-            pos, partner_pos, valid_coord, invalid_coords = column_names[cidx]
-            for ridx, row_name in enumerate(row_names):
-                # Find the rows that apply to this partner pos and are in the set of invalid coords
-                if partner_pos == row_name[0] and row_name[1] in invalid_coords:
-                    # Add a 1 here
-                    rows[ridx].append(cidx)
-
-        time.sleep(0.001)
-        if self.broke_out:
-            return
-
-        print("Setup 1 complete", id(self), len(rows), len(columns), flush=True)
-        solver = rain_algorithm_x.RainAlgorithmX(columns, row_names, rows, self.to_process[0], get_random_seed() + iteration)
-        print("Setup 2 complete", id(self), flush=True)
-
-        time.sleep(0.001)
-        if self.broke_out:
-            return
-
-        # Now solve
-        counter = 0
-        limit = int(1e6)
-        while counter < limit:
-            # time.sleep(0)
-            if counter % 10000 == 0:
-                time.sleep(0.01)
-                print("Still Processing", id(self), counter, flush=True)
-            if self.broke_out:
-                return
-            counter += 1
-            output = solver.subsolve()
-            if output is True:
-                for pos, coord in solver.get_solution():
-                    self.organization[pos] = coord
-                if not self.broke_out:
-                    self.did_complete = True
-                print("Found solution at iteration %d" % counter, flush=True)
-                return True
-            elif output is False:
-                print("No valid solution!", flush=True)
-                return False  # No valid solutions
-        if counter >= limit:
-            print("Taking too long on this random seed!", flush=True)
-            self.process_group(iteration + 1)
-        return True
-
-    def find_valid_coords(self, pos) -> list:
-        north, east, south, west = self.get_cardinal_terrain(pos)
-        north_edge = not north
-        south_edge = not south
-        east_edge = not east
-        west_edge = not west
-        valid_coords = \
-            [coord for coord, rules in self.mountain_data.items() if
-             ((north_edge and None in rules['up']) or (not north_edge and self.noneless_rules[coord]['up'])) and
-             ((south_edge and None in rules['down']) or (not south_edge and self.noneless_rules[coord]['down'])) and
-             ((east_edge and None in rules['right']) or (not east_edge and self.noneless_rules[coord]['right'])) and
-             ((west_edge and None in rules['left']) or (not west_edge and self.noneless_rules[coord]['left']))]
-        # If in the middle, don't include objects with index 15
-        orig_valid_coords = valid_coords[:]
-        if not north_edge and not south_edge and not east_edge and not west_edge:
-            valid_coords = \
-                [coord for coord in valid_coords if
-                 None not in self.mountain_data[coord]['up'] or
-                 None not in self.mountain_data[coord]['down'] or
-                 None not in self.mountain_data[coord]['left'] or
-                 None not in self.mountain_data[coord]['right']]
-        if not valid_coords:
-            valid_coords = orig_valid_coords
-        return valid_coords
-
-    def get_cardinal_terrain(self, pos: Pos) -> Tuple[bool, bool, bool, bool]:
-        north = pos[1] == 0 or self.get_terrain((pos[0], pos[1] - 1))
-        east = pos[0] + 1 == self.tilemap.width or self.get_terrain((pos[0] + 1, pos[1]))
-        south = pos[1] + 1 == self.tilemap.height or self.get_terrain((pos[0], pos[1] + 1))
-        west = pos[0] == 0 or self.get_terrain((pos[0] - 1, pos[1]))
-        return north, east, south, west
-
-    def get_terrain(self, pos: Pos) -> bool:
-        return pos in self.to_process

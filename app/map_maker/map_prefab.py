@@ -28,6 +28,11 @@ class MapPrefab(Prefab):
         self.current_indoor_palette: PaletteCollection = None
         self.current_outdoor_palette: PaletteCollection = None
 
+        # Per-map RNG seed. Kept in sync with the module-level RANDOM_SEED in
+        # map_maker.utilities (which other painters still read); the mountain
+        # painter/solver read it off the prefab as self.tilemap.seed.
+        self.seed: int = 0
+
     def reset_all(self):
         for position in self.terrain_grid:
             self.terrain_grid_to_update.add(position)
@@ -193,7 +198,8 @@ class MapPrefab(Prefab):
         for str_coord in s_dict['autotile_set']:
             coord = tuple(int(_) for _ in str_coord.split(','))
             self.autotile_set.add(coord)
-        map_utils.set_random_seed(s_dict.get('seed', 0))
+        self.seed = s_dict.get('seed', 0)
+        map_utils.set_random_seed(self.seed)
         self.current_indoor_palette = s_dict.get('indoor_palette')
         self.current_outdoor_palette = s_dict.get('outdoor_palette')
         return self

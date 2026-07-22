@@ -160,6 +160,8 @@ class AutogenerateMapDialog(QDialog):
             chosen_preset = self.theme_presets_getter(chosen_preset_nid)
             
         for nid, value in chosen_preset.items():
+            if nid not in self.boxes:
+                continue  # Stale key from a theme saved before a parameter was renamed/removed
             parameter = self.theme_parameters.get(nid)
             editor = self.boxes[nid]
             if isinstance(editor, tuple):

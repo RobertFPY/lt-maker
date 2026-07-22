@@ -18,7 +18,7 @@ class MountainRenderer(SimpleRenderer):
         if thread.did_complete:
             self.painter.organization.update(thread.organization)
         else:
-            self.painter._generic_fill(thread.group)
+            self.painter._generic_fill(tilemap, thread.group)
         # Update the image since the user may not have requested a change -- this does it manually
         for pos in self.painter.organization.keys():
             sprite = self.determine_sprite(tilemap, pos, 0)

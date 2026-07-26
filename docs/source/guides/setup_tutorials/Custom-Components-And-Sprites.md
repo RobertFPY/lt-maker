@@ -9,6 +9,8 @@ If you've developed your own custom components or engine sprites, those custom a
 
 Well, now there's a third option. **Project Specific Custom Components and Sprites**
 
+**Note:** Do NOT make changes to the project's files outside of the editor while the editor is open!
+
 ## Project Specific Custom Components
 
 In your project's *resources* directory, there should be a directory called `custom_components`. Within that directory, there'll be two files: `custom_item_components.py` and `custom_skill_components.py`.

@@ -137,3 +137,36 @@ class EventProcessorUnitTests(unittest.TestCase):
         processor = EventProcessor('long', script_path.read_text(), self.text_evaluator)
         cmd = processor.fetch_next_command()
         self.assertIsNone(cmd)
+
+    def _run_combined_support_event(self, rank, strategy):
+        # A single support event that branches internally on support_rank_nid,
+        # as the Support Room replays it. Returns the Text of the played speak.
+        from app.events.mock_event import MockEventProcessor, IfStatementStrategy
+        script = ("if;support_rank_nid == 'C'\n"
+                  "speak;Seth;C support\n"
+                  "elif;support_rank_nid == 'B'\n"
+                  "speak;Seth;B support\n"
+                  "else\n"
+                  "speak;Seth;A support\n"
+                  "end")
+        local_args = {'unit1': None, 'unit2': None, 'position': None, 'support_rank_nid': rank}
+        text_evaluator = TextEvaluator(logging.getLogger(), self.mock_game, local_args=local_args)
+        processor = MockEventProcessor('support', script, text_evaluator, strategy)
+        played = []
+        while not processor.finished():
+            cmd = processor.fetch_next_command()
+            if cmd and isinstance(cmd, event_commands.Speak):
+                played.append(cmd.parameters['Text'])
+        return played
+
+    def test_mock_event_evaluate_branches_on_support_rank(self):
+        from app.events.mock_event import IfStatementStrategy
+        # Support Room: each rank plays its own branch, not always the first.
+        self.assertEqual(self._run_combined_support_event('C', IfStatementStrategy.EVALUATE), ['C support'])
+        self.assertEqual(self._run_combined_support_event('B', IfStatementStrategy.EVALUATE), ['B support'])
+        self.assertEqual(self._run_combined_support_event('A', IfStatementStrategy.EVALUATE), ['A support'])
+
+    def test_mock_event_always_true_takes_first_branch(self):
+        from app.events.mock_event import IfStatementStrategy
+        # Editor preview keeps its ALWAYS_TRUE behavior (first branch regardless).
+        self.assertEqual(self._run_combined_support_event('B', IfStatementStrategy.ALWAYS_TRUE), ['C support'])

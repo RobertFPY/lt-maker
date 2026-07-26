@@ -131,6 +131,21 @@ class LevelCursor(BaseCursor):
         self.path = self.game.path_system.get_path(self.cur_unit, self._last_valid_position, use_limit=limit)
         return self.path
 
+    def clamp_path_to_movement(self):
+        """If the built path overspends the current unit's normal movement, recompute a legal path.
+
+        The path arrow is built with the xcom movement budget (movement_left +
+        get_xcom_movement(), see _get_path), so a player can wind a route that ends on a
+        normally-reachable tile yet costs more than normal movement. Committing that as a
+        normal Move would let the unit traverse an over-budget route and still attack.
+        Recomputing keeps the unit on a legal route to the same tile.
+        """
+        unit = self.cur_unit
+        if self.game.path_system.get_path_cost(unit, self.path) > unit.movement_left:
+            new_path = self.game.path_system.get_path(unit, self.position, use_limit=unit.movement_left)
+            if new_path:
+                self.path = new_path
+
     def move(self, dx, dy, mouse=False, sound=True):
         super().move(dx, dy, mouse, sound)
 

@@ -52,14 +52,18 @@ def make_bg_surf(shimmer):
 
 def draw_unit_face(surf, topleft, unit, right):
     x, y = topleft
-    face_image, offset = icons.get_portrait(unit)
+    topleft_pad = (2, 4)     # Paddings from the bg sprite
+    bottomright_pad = (1, 5)
+    bg_surf_size = (104, 16 * DB.constants.total_items() + 8)   # Copied from above
+    width, height = utils.tuple_sub(bg_surf_size, topleft_pad, bottomright_pad)
+    face_image = icons.get_portrait_with_size(unit, width, height)
+    left = x + topleft_pad[0] + (width - face_image.get_width()) // 2           # blit at center
+    top = y - bottomright_pad[1] + bg_surf_size[1] - face_image.get_height()    # blit from bottom
+
+    face_image = face_image.convert_alpha()
     if right:
         face_image = engine.flip_horiz(face_image)
-    face_image = face_image.convert_alpha()
-    face_image = engine.subsurface(face_image, (0, max(0, offset - 4), 96, 76))
     face_image = image_mods.make_translucent(face_image, 0.5)
-    left = x + 4 + 1
-    top = y + (16 * DB.constants.total_items() + 8) - 4 - 76
     engine.blit(surf, face_image, (left, top))
 
 def draw_unit_items(surf, topleft, unit, include_top=False, include_bottom=True, include_face=False, right=True, shimmer=0, include_accessories=True):
@@ -569,11 +573,14 @@ class Choice(Simple):
                     if item:
                         unit = game.get_unit(item.owner_nid)
                     if unit:
-                        face_image, _ = icons.get_portrait(unit)
-                        face_image = face_image.convert_alpha()
-                        # face_image = engine.subsurface(face_image, (0, 0, 96, 76))
-                        face_image = image_mods.make_translucent(face_image, 0.5)
-                        surf.blit(face_image, (surf.get_width()//2 - face_image.get_width()//2 + 4, surf.get_height() - face_image.get_height() - 5))
+                        topleft_pad = (4, 8)     # Paddings from the bg sprite
+                        bottomright_pad = (1, 5)
+                        width, height = utils.tuple_sub(surf.get_size(), topleft_pad, bottomright_pad)
+                        portrait = icons.get_portrait_with_size(unit, width, height).convert_alpha()
+                        portrait = image_mods.make_translucent(portrait, 0.5)
+                        surf.blit(portrait, (topleft_pad[0] + (width - portrait.get_width()) // 2,
+                                             surf.get_height() - portrait.get_height() - bottomright_pad[1]))
+
                 surf = image_mods.make_translucent(surf, .1)
                 self._bg_surf = surf
             return self._bg_surf
@@ -991,17 +998,15 @@ class Trade(Simple):
 
         # Draw Portraits
         # Owner
-        owner_surf = engine.create_surface((96, 80), transparent=True)
-        icons.draw_portrait(owner_surf, self.owner, (0, 0))
-        owner_surf = engine.subsurface(owner_surf, (0, 3, 96, 68))
+        bg_surf_width = 104
+        portrait_size = (96, 68)
+        owner_surf = icons.get_portrait_with_size(self.owner, *portrait_size)
         owner_surf = engine.flip_horiz(owner_surf)
-        surf.blit(owner_surf, (11 + 52 - 48, 0))
+        surf.blit(owner_surf, (11 + (bg_surf_width - owner_surf.get_width()) // 2, 0))
 
         # Partner
-        partner_surf = engine.create_surface((96, 80), transparent=True)
-        icons.draw_portrait(partner_surf, self.partner, (0, 0))
-        partner_surf = engine.subsurface(partner_surf, (0, 3, 96, 68))
-        surf.blit(partner_surf, (125 + 52 - 48, 0))
+        partner_surf = icons.get_portrait_with_size(self.partner, *portrait_size)
+        surf.blit(partner_surf, (125 + (bg_surf_width - partner_surf.get_width()) // 2, 0))
 
         if self.menu1.info_flag:
             self.menu2.draw(surf)
@@ -1473,7 +1478,8 @@ class Convoy():
         for w_type in self.order:
             if w_type != 'Default':
                 sorted_dict[w_type] = [item for item in all_items if item_system.weapon_type(self.unit, item) == w_type]
-        sorted_dict['Default'] = [item for item in all_items if item_system.weapon_type(self.unit, item) is None]
+        sorted_dict['Default'] = [item for item in all_items if item_system.weapon_type(self.unit, item) is None
+                                  or item_system.weapon_type(self.unit, item) not in self.order]
         for key, value in sorted_dict.items():
             value.sort(key=lambda item: item_system.special_sort(self.unit, item) or 0)
             value.sort(key=lambda item: item.name)
@@ -1535,7 +1541,11 @@ class Convoy():
 
     def move_to_item_type(self, item):
         wtype = item_system.weapon_type(self.unit, item)
-        if wtype:
+        # A hidden weapon type (hide_from_convoy/hide_from_display) is absent
+        # from self.order, so its items live in the 'Default' bucket (see
+        # create_sorted_dict). Treat it like a typeless item and jump there
+        # instead of indexing self.order, which would raise ValueError.
+        if wtype and wtype in self.order:
             self.menu_index = self.order.index(wtype)
         else:
             self.menu_index = len(self.order) - 1
@@ -1659,11 +1669,9 @@ class Convoy():
         # Draw Portrait to left of menu
         # Owner
         if not self.disp_value:
-            owner_surf = engine.create_surface((96, 80), transparent=True)
-            icons.draw_portrait(owner_surf, self.owner, (0, 0))
-            owner_surf = engine.subsurface(owner_surf, (0, 0, 96, 68))
+            owner_surf = icons.get_portrait_with_size(self.owner, 96, 68)
             owner_surf = engine.flip_horiz(owner_surf)
-            surf.blit(owner_surf, (18, 0))
+            surf.blit(owner_surf, (18, 68 - owner_surf.get_height()))
 
         # Get item owner
         surf.blit(self.owner_surf, (156, 0))
@@ -1768,7 +1776,8 @@ class Market(Convoy):
         sorted_dict = {}
         for w_type in self.order:
             sorted_dict[w_type] = [item for item in all_items if item_system.weapon_type(self.unit, item) == w_type]
-        sorted_dict['Default'] = [item for item in all_items if item_system.weapon_type(self.unit, item) is None]
+        sorted_dict['Default'] = [item for item in all_items if item_system.weapon_type(self.unit, item) is None
+                                  or item_system.weapon_type(self.unit, item) not in self.order]
         for key, value in sorted_dict.items():
             value.sort(key=lambda item: item_system.special_sort(self.unit, item) or 0)
             value.sort(key=lambda item: item.name)

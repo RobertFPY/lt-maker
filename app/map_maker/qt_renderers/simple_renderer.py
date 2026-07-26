@@ -5,17 +5,18 @@ from app.utilities.typing import Pos
 from PyQt5.QtGui import QPixmap
 
 from app.map_maker.painter_utils import Painter
-from app.map_maker.qt_renderers.qt_palette import QtPalette
+from app.map_maker.palette_collection import Palette
+from app.map_maker.qt_renderers.qt_palette import get_qt_palette
 from app.map_maker.qt_renderers.renderer_utils import find_limit8, find_limit16
 
 class SimpleRenderer:
-    def __init__(self, painter: Painter, palette: QtPalette):
+    def __init__(self, painter: Painter, palette: Palette):
         self.painter = painter
         self.set_palette(palette)
 
-    def set_palette(self, palette: QtPalette):
-        self.palette = palette
-        limit = find_limit16(palette.get_full_pixmap(), 0)
+    def set_palette(self, palette: Palette):
+        self.palette = get_qt_palette(palette)
+        limit = find_limit16(self.palette.get_full_pixmap(), 0)
         self.painter.set_limit({0: limit})
 
     def get_display_pixmap(self) -> QPixmap:
@@ -26,12 +27,12 @@ class SimpleRenderer:
         return self.palette.get_pixmap16(self.painter, coord, autotile_num)
 
 class SimpleRenderer8(SimpleRenderer):
-    def __init__(self, painter: Painter, palette: QtPalette):
+    def __init__(self, painter: Painter, palette: Palette):
         self.painter = painter
 
-    def set_palette(self, palette: QtPalette):
-        self.palette = palette
-        limit = find_limit8(palette.get_full_pixmap(), 0)
+    def set_palette(self, palette: Palette):
+        self.palette = get_qt_palette(palette)
+        limit = find_limit8(self.palette.get_full_pixmap(), 0)
         self.painter.set_limit({0: limit})
 
     def get_display_pixmap(self) -> QPixmap:
@@ -46,7 +47,7 @@ class SimpleRenderer8(SimpleRenderer):
         return self.palette.get_pixmap8(self.painter, coord1, coord2, coord3, coord4, autotile_num)
 
 class DisplayRenderer8(SimpleRenderer8):
-    """Identical to SimpleRenderer8 just modifies 
+    """Identical to SimpleRenderer8 just modifies
     how the display pixmap is drawn
     to always use the base coord position of the base image
     """
@@ -62,13 +63,13 @@ class LimitRenderer16(SimpleRenderer):
     Finds the full vertical limit of the drawn part of the .png
     for each column (0 - 15)
     """
-    def __init__(self, painter: Painter, palette: QtPalette):
+    def __init__(self, painter: Painter, palette: Palette):
         self.painter = painter
         self.set_palette(palette)
 
-    def set_palette(self, palette: QtPalette):
-        self.palette = palette
-        limit: Dict[int, int] = {i: find_limit16(palette.get_full_pixmap(), i) for i in range(16)}
+    def set_palette(self, palette: Palette):
+        self.palette = get_qt_palette(palette)
+        limit: Dict[int, int] = {i: find_limit16(self.palette.get_full_pixmap(), i) for i in range(16)}
         self.painter.set_limit(limit)
 
 class LimitRenderer8(SimpleRenderer8):
@@ -76,11 +77,11 @@ class LimitRenderer8(SimpleRenderer8):
     Finds the full vertical limit of the drawn part of the .png
     for each column (0 - 15)
     """
-    def __init__(self, painter: Painter, palette: QtPalette):
+    def __init__(self, painter: Painter, palette: Palette):
         self.painter = painter
         self.set_palette(palette)
-        
-    def set_palette(self, palette: QtPalette):
-        self.palette = palette
-        limit: Dict[int, int] = {i: find_limit8(palette.get_full_pixmap(), i) for i in range(16)}
+
+    def set_palette(self, palette: Palette):
+        self.palette = get_qt_palette(palette)
+        limit: Dict[int, int] = {i: find_limit8(self.palette.get_full_pixmap(), i) for i in range(16)}
         self.painter.set_limit(limit)

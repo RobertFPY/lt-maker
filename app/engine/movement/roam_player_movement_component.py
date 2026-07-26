@@ -91,7 +91,7 @@ class RoamPlayerMovementComponent(MovementComponent):
             return
 
         if not self.unit.position:
-            logging.error("Unit %s is no longer on the map", self.unit)
+            logging.info("Unit %s is no longer on the map", self.unit)
             self.active = False
             return
 

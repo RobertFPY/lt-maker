@@ -201,7 +201,7 @@ class MapAnimationProperties(QWidget):
 
         self.frame_box = PropertyBox("Frames", SpinBoxXY, self)
         self.frame_box.edit.coordsChanged.connect(self.frames_changed)
-        self.frame_box.edit.setMinimum(1)
+        self.frame_box.edit.setMinimum(1, 1)
         frame_section.addWidget(self.frame_box)
 
         self.total_num_box = PropertyBox("Total Frames", QSpinBox, self)

@@ -97,8 +97,11 @@ def itergrid(width: int, height: int) -> List[Pos]:
 def dot_product(a: Tuple[float, ...], b: Tuple[float, ...]) -> float:
     return float(sum(a[i] * b[i] for i in range(len(b))))
 
-def tuple_sub(a: Tuple[float, ...], b: Tuple[float, ...]) -> Tuple[float, ...]:
-    return tuple(map(sub, a, b))
+def tuple_sub(a: Tuple[float, ...], *b: Tuple[float, ...]) -> Tuple[float, ...]:
+    res = a
+    for next_tup in b:
+        res = tuple(map(sub, res, next_tup))
+    return res
 
 def tuple_add(a: Tuple[float, ...], *b: Tuple[float, ...]) -> Tuple[float, ...]:
     accum = a
@@ -191,6 +194,8 @@ def smart_farthest_away_pos(position: Point, valid_moves: Collection[Point], ene
         return None
     avg_x, avg_y = 0.0, 0.0
     for pos, mag in enemy_pos:
+        if mag == 0:  # Make sure we don't divide by zero below
+            continue
         avg_x += (position[0] - pos[0]) / mag
         avg_y += (position[1] - pos[1]) / mag
     avg_x /= len(enemy_pos)

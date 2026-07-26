@@ -453,6 +453,9 @@ class UnitSprite():
             else:
                 self.set_image_state('down')
 
+    def clear_net_position(self):
+        self.net_position = None
+
     def update(self):
         self.update_state()
         self.update_transition()

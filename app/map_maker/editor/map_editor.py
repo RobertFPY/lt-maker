@@ -395,6 +395,7 @@ class MapEditor(QMainWindow):
 
     def random_seed_changed(self, val):
         map_utils.set_random_seed(val)
+        self.current.seed = val  # keep prefab attr in sync with the global
         print("--- Seed Changed to %d ---" % val)
         self.current.reset_all()
 

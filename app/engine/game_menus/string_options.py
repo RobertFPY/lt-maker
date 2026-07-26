@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Callable, Generic, Optional, TypeVar
 
 from app.constants import COLORKEY
+from app.data.resources.portraits import INFO_PORTRAIT_WIDTH, INFO_PORTRAIT_HEIGHT
 from app.data.resources.resources import RESOURCES
 from app.engine import engine, help_menu, icons, text_funcs
 from app.engine.game_state import game
@@ -174,25 +175,19 @@ class BasicPortraitOption(BaseOption[str]):
         super().__init__(idx, portrait_nid, portrait_nid, width, height, ignore)
 
     def width(self):
-        return self._width or 96
+        return self._width or INFO_PORTRAIT_WIDTH
 
     def height(self):
-        return self._height or 80
+        return self._height or INFO_PORTRAIT_HEIGHT
 
     def set(self, portrait_nid: str, _: Optional[str] = None):
         self._value = portrait_nid
 
     def draw(self, surf, x, y):
-        portrait = RESOURCES.portraits.get(self._value)
+        portrait, offset = icons.get_portrait_from_nid(self._value)
         if portrait:
-            main_portrait_coords = (0, 0, 96, 80)
-            if not portrait.image:
-                portrait.image = engine.image_load(portrait.full_path)
-            portrait.image = portrait.image.convert()
-            engine.set_colorkey(portrait.image, COLORKEY, rleaccel=True)
-            main_portrait = engine.subsurface(
-                portrait.image, main_portrait_coords)
-            surf.blit(main_portrait, (x, y))
+            portrait = engine.subsurface(portrait, (*offset, INFO_PORTRAIT_WIDTH, INFO_PORTRAIT_HEIGHT))
+            surf.blit(portrait, (x, y))
 
     def draw_highlight(self, surf, x, y, menu_width):
         self.draw(surf, x, y)

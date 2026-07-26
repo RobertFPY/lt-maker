@@ -31,6 +31,15 @@ class PromotionChoiceState(State):
         game.memory['current_unit'] = self.unit
         game.memory['next_class'] = next_class
         game.memory['next_state'] = 'promotion'
+        # Only an on-map promotion (Master Seal used during the unit's turn)
+        # has a tactical turn to finalize. The turn was deliberately left
+        # unfinalized so the choice could be cancelled; now that we're
+        # committing, finalize it after the promotion. Off-map promotions
+        # (base/prep "Use", base bonus exp, promote event command) have no turn
+        # to end -- finalizing there clears the base/event state stack and
+        # dumps the player onto the map.
+        if self.from_map_combat:
+            game.memory['_promo_finalize_turn'] = True
         game.state.change('transition_to_with_pop')
 
     def start(self):
@@ -38,6 +47,11 @@ class PromotionChoiceState(State):
 
         self.can_go_back = game.memory.get('can_go_back', False)
         game.memory['can_go_back'] = None
+        # Whether the promotion was launched from an on-map combat (and so owes
+        # a turn finalization on confirm). Set by the class-change item's
+        # end_combat; absent for base bonus exp and event-command promotions.
+        self.from_map_combat = game.memory.get('_promo_map_combat', False)
+        game.memory['_promo_map_combat'] = None
         self.combat_item = game.memory.get('combat_item')
         game.memory['combat_item'] = None
         self.unit = game.memory['current_unit']
@@ -230,6 +244,9 @@ class ClassChangeChoiceState(PromotionChoiceState):
         game.memory['current_unit'] = self.unit
         game.memory['next_class'] = next_class
         game.memory['next_state'] = 'class_change'
+        # See PromotionChoiceState._proceed.
+        if self.from_map_combat:
+            game.memory['_promo_finalize_turn'] = True
         game.state.change('transition_to_with_pop')
 
 class PromotionState(State, MockCombat):
@@ -244,6 +261,11 @@ class PromotionState(State, MockCombat):
 
     def start(self):
         self.create_background()
+
+        # Whether to finalize the unit's turn when the promotion finishes. Set
+        # when confirming a cancellable promotion choice, where the turn was
+        # left unfinalized up front so it could be backed out of.
+        self.finalize_turn = game.memory.pop('_promo_finalize_turn', False)
 
         music = 'music_%s' % self.name
         self.promotion_song = None
@@ -325,7 +347,14 @@ class PromotionState(State, MockCombat):
 
         elif self.state == 'leave':
             if current_time > utils.frames2ms(10):
-                game.state.change('transition_pop')
+                if self.finalize_turn:
+                    # Cancellable promotion was confirmed: the turn was not
+                    # finalized earlier, so end it cleanly now.
+                    game.state.clear()
+                    game.state.change('free')
+                    self.unit.wait()
+                else:
+                    game.state.change('transition_pop')
                 self.state = 'done'
                 if self.promotion_song:
                     get_sound_thread().fade_back()

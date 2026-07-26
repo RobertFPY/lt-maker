@@ -166,14 +166,17 @@ class StatusesOnHit(ItemComponent):
             total += ai_status_priority(unit, target, item, move, status_nid)
         return total
 
-class StatusAfterCombatOnHit(StatusOnHit):
+class StatusAfterCombatOnHit(ItemComponent):
     nid = 'status_after_combat_on_hit'
     desc = "If the target is hit they gain the specified status at the end of combat. Prevents changes being applied mid-combat."
     tag = ItemTags.SPECIAL
 
     expose = ComponentType.Skill  # Nid
 
-    _did_hit = set()
+    def __init__(self, value=None):
+        if value is not None:
+            self.value = value
+        self._did_hit = set()
 
     def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
         self._did_hit.add(target)

@@ -60,6 +60,7 @@ class NewSkillDatabase(NewEditorTab):
         affected_levels = [level for level in self._db.levels if any(nid in unit.get_skills() for unit in level.units)]
         affected_items = item_components.get_items_using(ComponentType.Skill, nid, self._db)
         affected_skills = skill_components.get_skills_using(ComponentType.Skill, nid, self._db)
+        affected_terrain = [terrain for terrain in self._db.terrain if terrain.status == nid]
 
         deletion_tabs = []
         if affected_units:
@@ -87,6 +88,11 @@ class NewSkillDatabase(NewEditorTab):
             model = SkillModel
             msg = "Deleting Skill <b>%s</b> would affect these skills" % nid
             deletion_tabs.append(DeletionTab(affected_skills, model, msg, "Skills"))
+        if affected_terrain:
+            from app.editor.terrain_editor.terrain_model import TerrainModel
+            model = TerrainModel
+            msg = "Deleting Skill <b>%s</b> would affect these terrain" % nid
+            deletion_tabs.append(DeletionTab(affected_terrain, model, msg, "Terrain"))
 
         if deletion_tabs:
             swap, ok = DeletionDialog.get_swap(deletion_tabs, SkillBox(self, exclude=skill), self)
@@ -106,6 +112,9 @@ class NewSkillDatabase(NewEditorTab):
                 unit.replace_skill_nid(old_nid, new_nid)
         swap_values(self._db.items.values(), ComponentType.Skill, old_nid, new_nid)
         swap_values(self._db.skills.values(), ComponentType.Skill, old_nid, new_nid)
+        for terrain in self._db.terrain:
+            if terrain.status == old_nid:
+                terrain.status = new_nid
 
     def import_xml(self):
         settings = MainSettingsController()

@@ -57,6 +57,8 @@ If you've made changes to the default project, you can save your changes easily 
 
 > Don't save your project as `default` or `autosave`. These projects are already used in the editor.
 
+> Don't save your project in a folder with cloud saving features (such as OneDrive or iCloud). This can cause serialization errors and corrupt project data which will prevent you from saving and opening your project in the future.
+
 ## Updating the Engine (Executable)
 
 New releases of the Lex Talionis Engine come out regularly. If you want to update to a new version, navigate to the same place you downloaded the engine in the first place: [https://gitlab.com/rainlash/lt-maker/-/releases](https://gitlab.com/rainlash/lt-maker/-/releases). Then, just download the latest release. You can start the newly downloaded engine and open your .ltproj just the same as the previous version you had. Feel free to discard the old version.

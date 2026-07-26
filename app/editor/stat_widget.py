@@ -429,31 +429,34 @@ class UnitStatAveragesModel(ClassStatAveragesModel):
         self.get_rows()
 
     def get_rows(self, all_levels=False):
+        # When promotion does not reset level back to 1, a unit promotes at its
+        # previous class's max level and carries that level into the new class, so the
+        # promoted class's displayed levels start there instead of at 1.
+        promote_reset = DB.constants.value('promote_level_reset')
         klass = DB.classes.get(self.current.klass)
-        max_level = klass.max_level
         self._rows = []
-        level_range = self._get_level_range(max_level, all_levels)
-        for i in level_range:
-            self._rows.append((klass.nid, i, i))
+        for i in self._get_level_range(klass.max_level, all_levels):
+            self._rows.append((klass.nid, i))
 
-        # Determine all possible promotion options for this unit and place them on the rows
+        # Determine all possible promotion options for this unit and place them on the rows.
+        # carried_levels tracks the level a unit would enter each promoted class at.
         promotion_options = klass.promotion_options(DB)
-        true_levels = [klass.max_level for _ in promotion_options]
+        carried_levels = [klass.max_level for _ in promotion_options]
         while promotion_options:
             next_klass_nid = promotion_options.pop(0)
+            carried = carried_levels.pop(0)
             klass = DB.classes.get(next_klass_nid)
-            current_true_level = true_levels.pop(0)
             if klass:
-                max_level = klass.max_level
-                level_range = self._get_level_range(max_level, all_levels)
+                start = 1 if promote_reset else min(carried, klass.max_level)
+                level_range = [start] + [lvl for lvl in self._get_level_range(klass.max_level, all_levels) if lvl > start]
                 for i in level_range:
-                    self._rows.append((klass.nid, i, i + current_true_level))
+                    self._rows.append((klass.nid, i))
                 # Now for the next iteration
                 # recalculate the promotion options and insert them in
                 next_options = klass.promotion_options(DB)
                 if next_options:
                     for option in reversed(next_options):
-                        true_levels.insert(0, current_true_level + max_level)
+                        carried_levels.insert(0, klass.max_level)
                         promotion_options.insert(0, option)
 
     def set_current(self, current, all_levels=False):
@@ -465,76 +468,96 @@ class UnitStatAveragesModel(ClassStatAveragesModel):
         if role != Qt.DisplayRole:
             return None
         if orientation == Qt.Vertical:
-            nid, level, true_level = self._rows[idx]
+            nid, level = self._rows[idx]
             long_name = DB.classes.get(nid).name
             row = long_name + " " + str(level)
             return row
         elif orientation == Qt.Horizontal:
             return self._columns[idx]
 
-    def determine_average(self, obj, stat_nid, level_ups, klass_nid):
+    def determine_average(self, obj, stat_nid, klass_nid, target_level):
+        promote_reset = DB.constants.value('promote_level_reset')
         stat_cap_modifier = obj.stat_cap_modifiers.get(stat_nid, 0)
+        use_bonus = DB.constants.value('unit_stats_as_bonus')
 
-        average = 0.5
-        quantile10 = 0
-        quantile90 = 0
-
-        # Figure out how to get to new klass
+        # Figure out the class path from the unit's base class to klass_nid
         base_klass = DB.classes.get(obj.klass)
-        path = []
-        to_explore = [([], k) for k in base_klass.promotion_options(DB)]
-        while to_explore:
-            path, klass = to_explore.pop()
-            if klass == klass_nid:
-                break
-            path.append(klass)
-            to_explore.extend([(path, k) for k in DB.classes.get(klass).promotion_options(DB)])
-        classes = [obj.klass] + path + [klass_nid]
+        if klass_nid == obj.klass:
+            classes = [obj.klass]
+        else:
+            path = []
+            to_explore = [([], k) for k in base_klass.promotion_options(DB)]
+            while to_explore:
+                cur_path, k = to_explore.pop()
+                if k == klass_nid:
+                    path = cur_path
+                    break
+                to_explore.extend([(cur_path + [k], nk) for nk in DB.classes.get(k).promotion_options(DB)])
+            classes = [obj.klass] + path + [klass_nid]
 
-        for idx, klass in enumerate(classes):
-            klass = DB.classes.get(klass)
+        # Track the running stat value (average and 10/90 quantiles) class by class
+        running_avg = 0.0
+        running_q10 = 0.0
+        running_q90 = 0.0
+        stat_max = DB.stats.get(stat_nid).maximum + stat_cap_modifier
 
+        for idx, cnid in enumerate(classes):
+            klass = DB.classes.get(cnid)
             stat_base = obj.bases.get(stat_nid, 0)
             stat_growth = obj.growths.get(stat_nid, 0)
-            if DB.constants.value('unit_stats_as_bonus'):
+            if use_bonus:
                 stat_base += klass.bases.get(stat_nid, 0)
                 stat_growth += klass.growths.get(stat_nid, 0)
-
-            if idx != 0:
-                level_ups -= 1  # Costs one level to move up a class
-            
-            stat_max = klass.max_stats.get(stat_nid, DB.stats.get(stat_nid).maximum)
-            stat_max += stat_cap_modifier
-            if idx == 0:
-                ticks = utils.clamp(level_ups, 0, klass.max_level - obj.level)
-            else:
-                ticks = utils.clamp(level_ups, 0, klass.max_level - 1)
-            level_ups -= ticks
             growth_bonus = klass.growth_bonus.get(stat_nid, 0)
-            if idx > 0:
-                promotion_bonus = klass.promotion.get(stat_nid, 0)
-                if promotion_bonus in (-99, -98, -97):
-                    prev_klass = classes[idx - 1]
-                    promotion_bonus = klass.bases.get(stat_nid, 0) \
-                        - DB.classes.get(prev_klass).bases.get(stat_nid, 0)
+            growth = (stat_growth + growth_bonus) / 100
+            stat_max = klass.max_stats.get(stat_nid, DB.stats.get(stat_nid).maximum) + stat_cap_modifier
+
+            if idx == 0:
+                start_level = obj.level
+                running_avg = running_q10 = running_q90 = stat_base
             else:
-                promotion_bonus = stat_base
-            growth = (stat_growth + growth_bonus)/100
-            average += min(stat_max, promotion_bonus + (growth * ticks))
-            while growth > 1:
-                growth -= 1
-                promotion_bonus += ticks
-            quantile10 += min(stat_max, Binomial.quantile(.1, ticks, growth) + promotion_bonus)
-            quantile90 += min(stat_max, Binomial.quantile(.9, ticks, growth) + promotion_bonus)
-            if level_ups <= 0:
-                break
-        return stat_max, int(average), quantile10, quantile90
+                # On promotion the unit either resets to level 1 or carries its level
+                start_level = 1 if promote_reset else min(DB.classes.get(classes[idx - 1]).max_level, klass.max_level)
+                # Apply the promotion stat bonus, mirroring action.Promote
+                promotion_bonus = klass.promotion.get(stat_nid, 0)
+                new_base = klass.bases.get(stat_nid, 0)
+                old_base = DB.classes.get(classes[idx - 1]).bases.get(stat_nid, 0)
+                if promotion_bonus == -99:  # Just use the new klass base
+                    running_avg = running_q10 = running_q90 = new_base
+                elif promotion_bonus == -98:  # Use the new klass base only if it's bigger
+                    running_avg = max(running_avg, new_base)
+                    running_q10 = max(running_q10, new_base)
+                    running_q90 = max(running_q90, new_base)
+                elif promotion_bonus == -97:  # Add the difference of the klass bases
+                    diff = new_base - old_base
+                    running_avg += diff
+                    running_q10 += diff
+                    running_q90 += diff
+                else:
+                    running_avg += promotion_bonus
+                    running_q10 += promotion_bonus
+                    running_q90 += promotion_bonus
+
+            is_last = (idx == len(classes) - 1)
+            end_level = target_level if is_last else klass.max_level
+            ticks = max(0, end_level - start_level)
+
+            running_avg = min(stat_max, running_avg + growth * ticks)
+            # Quantiles: peel off any guaranteed level-ups when growth exceeds 100%
+            g = growth
+            guaranteed = 0
+            while g > 1:
+                g -= 1
+                guaranteed += ticks
+            running_q10 = min(stat_max, running_q10 + guaranteed + Binomial.quantile(.1, ticks, g))
+            running_q90 = min(stat_max, running_q90 + guaranteed + Binomial.quantile(.9, ticks, g))
+
+        return stat_max, int(running_avg + 0.5), int(running_q10), int(running_q90)
 
     def get_data(self, index):
-        base_level = self.current.level
-        nid, level, true_level = self._rows[index.row()]
+        nid, level = self._rows[index.row()]
         stat_nid = self._columns[index.column()]
-        vals = self.determine_average(self.current, stat_nid, max(0, true_level - base_level), nid)
+        vals = self.determine_average(self.current, stat_nid, nid, level)
         avg = vals[self.average_idx]
         maxim = vals[0]
         return maxim, avg

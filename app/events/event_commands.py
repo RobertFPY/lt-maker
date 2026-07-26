@@ -2479,6 +2479,20 @@ Cannot be undone by the turnwheel.
     keywords = ["rng"]
     keyword_types = ["RNGType"]
 
+class SetModePermadeath(EventCommand):
+    nid = 'set_mode_permadeath'
+    tag = Tags.GAME_VARS
+
+    desc = \
+       """
+changes if permadeath is active in the game.
+Cannot be undone by the turnwheel.
+        """
+
+    keywords = ['Permadeath']
+    keyword_types = ["Bool"]
+
+
 class Promote(EventCommand):
     nid = 'promote'
     tag = Tags.MODIFY_UNIT_PROPERTIES
@@ -3368,6 +3382,21 @@ The (*Scroll*) flag determines whether the background image will move.
     optional_keywords = ['Panorama']
     keyword_types = ['Panorama']
     _flags = ["scroll", "immediate"]
+
+class OpenUnitInfoScreen(EventCommand):
+    nid = 'open_unit_info_screen'
+    tag = Tags.MISCELLANEOUS
+
+    desc = \
+        """
+Displays the unit's stat/info screen for the given unit, as if it were viewed from the unit menu.
+
+1. *immediate* flag skips the transition between screens
+        """
+
+    keywords = ['Unit']
+    keyword_types = ['Unit']
+    _flags = ["immediate"]
 
 class OpenTrade(EventCommand):
     nid = 'open_trade'

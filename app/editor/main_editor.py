@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import QMainWindow, QAction, QMenu, QMessageBox, QApplicati
 from PyQt5.QtGui import QIcon
 
 from app import autoupdate, dark_theme
+from app.utilities import file_utils
 
 from app.editor.file_manager.project_builder.project_builder import LTProjectBuilder
 from app.editor.font_editor.font_tab import FontDatabase
@@ -207,6 +208,9 @@ class MainEditor(QMainWindow):
 
         self.build_project = QAction(
             "Build project", self, triggered=lambda: self.project_builder.build(self.project_save_load_handler.current_proj))
+        if not file_utils.Pltfm.windows():
+            self.build_project.setEnabled(False)
+            self.build_project.setToolTip("Building is only supported on Windows.")
 
         self.preferences_act = QAction(
             _("&Preferences..."), self, triggered=self.edit_preferences)
@@ -542,7 +546,7 @@ class MainEditor(QMainWindow):
         dialog.exec_()
 
     def edit_supports(self, parent=None):
-        dialog = support_pair_tab.get_full_editor()
+        dialog = support_pair_tab.get_full_editor(self)
         dialog.exec_()
 
     def edit_mcost(self, parent=None):
@@ -558,19 +562,19 @@ class MainEditor(QMainWindow):
         dialog.exec_()
 
     def edit_icons(self, parent=None):
-        dialog = icon_tab.get_full_editor()
+        dialog = icon_tab.get_full_editor(self)
         dialog.exec_()
 
     def edit_combat_animations(self, parent=None):
-        dialog = new_combat_animation_tab.get_full_editor()
+        dialog = new_combat_animation_tab.get_full_editor(self)
         dialog.exec_()
 
     def edit_tilemaps(self, parent=None):
-        dialog = tile_tab.get_full_editor()
+        dialog = tile_tab.get_full_editor(self)
         dialog.exec_()
 
     def edit_sounds(self, parent=None):
-        dialog = sound_tab.get_full_editor()
+        dialog = sound_tab.get_full_editor(self)
         dialog.exec_()
 
     def edit_preferences(self):

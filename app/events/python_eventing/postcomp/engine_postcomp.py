@@ -33,7 +33,7 @@ class PostComp():
 
     @staticmethod
     def _get_yield_value(node: ast.Yield):
-        return node.value.elts[0].orelse.n
+        return node.value.elts[0].orelse.value
 
     @staticmethod
     def _insert_command_pointer_conditional_skips(script_with_yields: str):

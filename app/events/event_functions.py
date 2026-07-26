@@ -131,7 +131,7 @@ def add_portrait(self: Event, portrait, screen_position: Tuple | str, slide=None
         self.logger.error("add_portrait: Couldn't find portrait %s" % name)
         return False
 
-    position, mirror = parse_screen_position(screen_position)
+    position, mirror = parse_screen_position(screen_position, portrait_size=portrait_prefab.face_size)
 
     priority = self.priority_counter
     if 'low_priority' in flags:
@@ -231,7 +231,7 @@ def move_portrait(self: Event, portrait, screen_position: Tuple, speed_mult: flo
     if not event_portrait:
         return False
 
-    position, _ = parse_screen_position(screen_position)
+    position, _ = parse_screen_position(screen_position, portrait_size=event_portrait.get_size())
 
     if 'immediate' in flags or self.do_skip:
         event_portrait.quick_move(position)
@@ -2768,6 +2768,12 @@ def set_mode_rng(self: Event, rng: str, flags=None):
         return
     self.game.current_mode.rng_mode = RNGOption(new_mode)
 
+def set_mode_permadeath(self: Event, permadeath: bool, flags=None):
+    flags = flags or set()
+    
+    self.game.current_mode.permadeath = permadeath
+
+
 def promote(self: Event, global_unit, klass_list: Optional[List[NID]] = None, flags=None):
     flags = flags or set()
     unit = self._get_unit(global_unit)
@@ -3569,7 +3575,7 @@ def unchoice(self: Event, flags=None):
     except Exception as e:
         self.logger.error("unchoice: Unchoice failed: " + str(e))
 
-def textbox(self: Event, nid: str, text: str, box_position: Point | Alignments=None,
+def textbox(self: Event, nid: str, text: str, box_position: Point | Alignments = None,
             width=None, num_lines=None, style_nid=None, text_speed=None,
             font_color=None, font_type=None, bg=None, flags=None):
     flags = flags or set()
@@ -3651,7 +3657,8 @@ def textbox(self: Event, nid: str, text: str, box_position: Point | Alignments=N
                     self.logger.error("textbox: failed to eval %s", callback_expr)
                     return ""
             expr = lambda: tryexcept(text)
-        except:
+        except Exception as e:
+            self.logger.exception(e)
             self.logger.error('textbox: %s is not a valid python expression' % text)
         textbox = dialog.DynamicDialogWrapper(
             expr, background=box_bg, position=position, width=box_width,
@@ -3977,6 +3984,23 @@ def open_unit_management(self: Event, panorama=None, flags=None):
         self.game.state.change('base_manage')
     else:
         self.game.memory['next_state'] = 'base_manage'
+        self.game.state.change('transition_to')
+
+def open_unit_info_screen(self: Event, unit, flags=None):
+    flags = flags or set()
+
+    unit_obj = self._get_unit(unit)
+    if not unit_obj:
+        self.logger.error("open_unit_info_screen: Could not find unit %s" % unit)
+        return
+
+    self.game.memory['current_unit'] = unit_obj
+
+    self.state = "paused"
+    if 'immediate' in flags:
+        self.game.state.change('info_menu')
+    else:
+        self.game.memory['next_state'] = 'info_menu'
         self.game.state.change('transition_to')
 
 def open_trade(self: Event, unit1, unit2, flags=None):

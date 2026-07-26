@@ -1,5 +1,6 @@
 from __future__ import annotations
 from enum import Enum
+import logging
 import re
 from typing import Dict, List, Optional, Set, Tuple
 
@@ -99,6 +100,12 @@ class EventCatalog(Data[EventPrefab]):
         self.inspector = EventInspectorEngine(self)
 
     def get(self, trigger_nid, level_nid):
+        # A falsy trigger_nid - e.g. an event region created without a trigger name -
+        # must not match events that have no trigger set (event.trigger is None). Those
+        # events are call-only (triggered explicitly), so an empty region trigger would
+        # otherwise fire every triggerless event at once.
+        if not trigger_nid:
+            return []
         return [event for event in self._list if event.trigger == trigger_nid and
                 (not event.level_nid or event.level_nid == level_nid)]
 
@@ -134,15 +141,35 @@ class EventInspectorEngine():
         if event_nid not in self.parsed:
             event = self.event_db.get_by_nid_or_name(event_nid)[0]
             if event:
-                # TODO(mag/rainlash) How do we find which commands are used in Python source?
                 if event.version() != EventVersion.EVENT:
-                    return []
+                    self.parsed[event_nid] = self._parse_python_commands(event)
                 else:
                     parsed_commands = event_commands.parse_script_to_commands(event.source)
                     self.parsed[event_nid] = parsed_commands
             else:
                 return []
         return self.parsed[event_nid]
+
+    def _parse_python_commands(self, event: EventPrefab) -> List[EventCommand]:
+        """Extract the EventCommands invoked by a Python ($-prefixed) event script.
+
+        Only the explicit `$command ...` lines are recoverable - commands hidden behind
+        Python control flow or dynamic arguments stay opaque - but that is enough for the
+        inspector to e.g. discover which music a level can play so it can be preloaded.
+        """
+        from app.events.python_eventing.swscomp.swscompv1 import SWSCompilerV1
+        from app.events.python_eventing.utils import event_command_from_pyev_tokens
+        try:
+            sentinel_script = SWSCompilerV1(event.source).compile_sws()
+        except Exception:
+            logging.exception("Failed to parse python event %s for inspection", event.nid)
+            return []
+        commands = []
+        for tokens in sentinel_script.commands:
+            command = event_command_from_pyev_tokens(tokens)
+            if command:
+                commands.append(command)
+        return commands
 
     def find_all_variables_in_level(self, level_nid: Optional[NID]) -> Set[NID]:
         """returns all known user-defined symbols in level."""

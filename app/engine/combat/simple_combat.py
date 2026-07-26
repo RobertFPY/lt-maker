@@ -19,6 +19,11 @@ class SimpleCombat():
     event_combat: bool = False
     arena_combat: bool = False
     alerts: bool = False  # Whether to show end of combat alerts
+    # Whether ending this combat finalizes the attacker's tactical turn (the
+    # clear->free->wait in handle_state_stack). True for on-map combat; False
+    # for a base/prep "Use" (BaseCombat), which consumes no turn. Read when a
+    # cancellable promotion defers its turn finalization to PromotionState.
+    finalizes_turn: bool = True
     """
     Does the simple mechanical effects of combat without any effects
     """

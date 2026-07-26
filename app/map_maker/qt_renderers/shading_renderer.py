@@ -5,7 +5,8 @@ from PyQt5.QtGui import QPixmap, QPainter
 
 from app.map_maker.painter_utils import Painter
 from app.map_maker.painters import FloorPainter, RuinedFloorPainter, GrassFloorPainter
-from app.map_maker.qt_renderers.qt_palette import QtPalette
+from app.map_maker.palette_collection import Palette
+from app.map_maker.qt_renderers.qt_palette import get_qt_palette
 from app.map_maker.qt_renderers.renderer_utils import find_limit16
 from app.map_maker.qt_renderers import SimpleRenderer
 
@@ -30,9 +31,9 @@ class PoolShadingRenderer(SimpleShadingRenderer):
     Only difference is that limit is set to 2
     To handle both open and non-open pool
     """
-    def set_palette(self, palette: QtPalette):
-        self.palette = palette
-        limit: Dict[int, int] = {i: find_limit16(palette.get_full_pixmap(), i) for i in range(2)}
+    def set_palette(self, palette: Palette):
+        self.palette = get_qt_palette(palette)
+        limit: Dict[int, int] = {i: find_limit16(self.palette.get_full_pixmap(), i) for i in range(2)}
         self.painter.set_limit(limit)
 
 class FloorShadingRenderer(SimpleRenderer):
@@ -40,7 +41,7 @@ class FloorShadingRenderer(SimpleRenderer):
     Floor Shading Renderer needs to be able to switch between painters at runtime
     depending on which palette collection is selected
     """
-    def __init__(self, metadata_arg: str, palette: QtPalette):
+    def __init__(self, metadata_arg: str, palette: Palette):
         self.metadata_arg = metadata_arg
         self.painters = {
             'default': FloorPainter(),
@@ -48,11 +49,11 @@ class FloorShadingRenderer(SimpleRenderer):
             'grass': GrassFloorPainter(),
         }
 
-    def set_palette(self, palette: QtPalette):
-        self.palette = palette
-        zero_limit = find_limit16(palette.get_full_pixmap(), 0)
+    def set_palette(self, palette: Palette):
+        self.palette = get_qt_palette(palette)
+        zero_limit = find_limit16(self.palette.get_full_pixmap(), 0)
         self.painters['default'].set_limit({0: zero_limit})
-        full_limit = {k: find_limit16(palette.get_full_pixmap(), k) for k in range(16)}
+        full_limit = {k: find_limit16(self.palette.get_full_pixmap(), k) for k in range(16)}
         self.painters['ruins'].set_limit(full_limit)
         self.painters['grass'].set_limit(full_limit)
 

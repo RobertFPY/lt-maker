@@ -5,7 +5,6 @@ import logging
 import os
 from pathlib import Path
 import re
-import shutil
 from typing import Any, Dict, List
 
 from app.data.category import Categories, CategorizedCatalog
@@ -17,7 +16,7 @@ from app.data.database import (ai, constants, difficulty_modes, equations,
 from app.data.serialization import disk_loader
 from app.events import event_prefab
 from app.utilities.data_order import parse_order_keys_file
-from app.utilities.serialization import load_json, save_json
+from app.utilities.serialization import load_json, save_json, rmtree_robust
 from app.utilities.typing import NID
 
 CATEGORY_SUFFIX = '.category'
@@ -130,7 +129,7 @@ class Database(object):
                 if key in self.save_as_chunks and as_chunks:
                     save_dir = os.path.join(data_dir, key)
                     if os.path.exists(save_dir):
-                        shutil.rmtree(save_dir)
+                        rmtree_robust(save_dir)
                     os.mkdir(save_dir)
                     orderkeys: List[str] = []
                     for idx, subvalue in enumerate(value):
@@ -147,13 +146,21 @@ class Database(object):
                     # Which means deleting the old directory
                     save_dir = Path(data_dir, key)
                     if os.path.exists(save_dir):
-                        shutil.rmtree(save_dir)
+                        rmtree_robust(save_dir)
                     save_loc = Path(data_dir, key + '.json')
                     # logging.info("Serializing %s to %s" % (key, save_loc))
                     save_json(save_loc, value)
 
-        except OSError as e:  # In case we ran out of memory
-            logging.error("Editor was unable to save your project. Free up memory in your hard drive or try saving somewhere else, otherwise progress will be lost when the editor is closed.")
+        except PermissionError as e:  # Access denied (read-only file, AV lock, or cloud-sync handle)
+            logging.error("Editor was denied permission to save your project (%s). "
+                          "The project folder or a file inside it may be read-only, locked by "
+                          "antivirus, or held open by cloud sync (OneDrive/Dropbox). Try moving "
+                          "the project out of a synced folder, clearing read-only, or saving "
+                          "somewhere else, otherwise progress will be lost when the editor is closed.", e)
+            logging.exception(e)
+            return False
+        except OSError as e:  # e.g. disk full
+            logging.error("Editor was unable to save your project. Free up space on your hard drive or try saving somewhere else, otherwise progress will be lost when the editor is closed.")
             logging.exception(e)
             return False
 

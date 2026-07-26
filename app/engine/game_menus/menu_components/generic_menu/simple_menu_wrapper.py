@@ -2,11 +2,12 @@ from __future__ import annotations
 
 from typing import Callable, List, Tuple
 
-from app.constants import COLORKEY, PORTRAIT_HEIGHT
+from app.constants import COLORKEY
 from app.data.database.database import DB
 from app.data.database.items import ItemPrefab
 from app.data.database.klass import Klass
 from app.data.database.skills import SkillPrefab
+from app.data.resources.portraits import INFO_PORTRAIT_WIDTH, INFO_PORTRAIT_HEIGHT, CHIBI_HEIGHT
 from app.data.resources.resources import RESOURCES
 from app.engine import engine
 from app.engine.game_menus.menu_components.generic_menu.simple_menu import \
@@ -14,17 +15,14 @@ from app.engine.game_menus.menu_components.generic_menu.simple_menu import \
 from app.engine.game_state import game
 from app.engine.graphics.ui_framework.ui_framework import UIComponent
 from app.engine.graphics.ui_framework.ui_framework_layout import convert_align
-from app.engine.icons import draw_chibi, get_icon, get_icon_by_nid
+from app.engine.icons import draw_chibi, get_icon, get_icon_by_nid, get_portrait_from_nid
 from app.engine.objects.item import ItemObject
 from app.engine.objects.unit import UnitObject
-from app.events.event_portrait import EventPortrait
 from app.sprites import SPRITES
 from app.utilities.enums import Alignments, HAlignment, Orientation
 from app.utilities.typing import NID
 
 ICON_HEIGHT = 16
-PORTRAIT_HEIGHT = EventPortrait.main_portrait_coords[3]
-CHIBI_HEIGHT = EventPortrait.chibi_coords[3]
 
 HEIGHT_DATA_TYPE_MAP = {
     'type_base_item': ICON_HEIGHT,
@@ -32,7 +30,7 @@ HEIGHT_DATA_TYPE_MAP = {
     'type_skill': ICON_HEIGHT,
     'type_unit': ICON_HEIGHT,
     'type_class': ICON_HEIGHT,
-    'type_portrait': PORTRAIT_HEIGHT,
+    'type_portrait': INFO_PORTRAIT_HEIGHT,
     'type_chibi': CHIBI_HEIGHT,
     'type_icon': ICON_HEIGHT,
     'str': ICON_HEIGHT,
@@ -148,17 +146,12 @@ class SimpleMenuUI():
             return (get_icon(None), "ERR", "ERR")
 
     def parse_portrait(self, portrait_nid: NID) -> Tuple[engine.Surface, str, str]:
-        # mostly copied from EventPortrait
-        portrait = RESOURCES.portraits.get(portrait_nid)
-        if portrait:
-            if not portrait.image:
-                portrait.image = engine.image_load(portrait.full_path)
-            portrait.image = portrait.image.convert()
-            engine.set_colorkey(portrait.image, COLORKEY, rleaccel=True)
-            main_portrait = engine.subsurface(portrait.image, EventPortrait.main_portrait_coords)
+        portrait, offset = get_portrait_from_nid(portrait_nid)
+        if not portrait:
+            portrait = engine.create_surface((INFO_PORTRAIT_WIDTH, INFO_PORTRAIT_HEIGHT))
         else:
-            main_portrait = engine.create_surface((EventPortrait.main_portrait_coords[2], EventPortrait.main_portrait_coords[3]))
-        return (main_portrait, "", "")
+            portrait = engine.subsurface(portrait, (*offset, INFO_PORTRAIT_WIDTH, INFO_PORTRAIT_HEIGHT))
+        return (portrait, "", "")
 
     def parse_chibi(self, chibi_nid: NID) -> Tuple[engine.Surface, str, str]:
         chibi_surf = engine.create_surface((32, 32), True)

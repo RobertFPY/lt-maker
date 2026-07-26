@@ -426,5 +426,9 @@
     {
         "nid": "prep_gba_save_desc",
         "text": "Save any changes. Choose Restart Chapter to restart this chapter. You can't return to the world map after saving."
+    },
+    {
+        "nid": "forecast_desc",
+        "text": "What information is shown in the battle forecast."
     }
 ]

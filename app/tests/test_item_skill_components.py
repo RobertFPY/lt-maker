@@ -63,6 +63,48 @@ class ItemSkillComponentTests(unittest.TestCase):
         self._test_skill_hook_with_components([CanUseWeaponType(None), CanUseWeaponType("Sword"), CanUseWeaponType("Lance")], lambda unit: skill_system.usable_wtypes(unit), set(["Sword", "Lance"]))
         self._test_skill_hook_with_components([CanUseWeaponType("Sword"), CanUseWeaponType("Lance"), CanUseWeaponType("Lance")], lambda unit: skill_system.usable_wtypes(unit), set(["Sword", "Lance"]))
 
+    def test_combat_condition_invalidates_cache_after_publishing(self) -> None:
+        # Regression: CombatCondition.pre_combat must invalidate the ltcache AFTER it
+        # publishes self._condition. Evaluating its condition string routes back through
+        # item_override -> condition(), re-caching the old _condition under the freshly
+        # altered cache state; without a trailing invalidation that stale value sticks and
+        # the override (e.g. Weapon Triangle) fails to apply for the first hit.
+        from app.engine import skill_system
+        from app.engine.utils import ltcache
+        from app.engine.skill_components.conditional_components import CombatCondition
+        import app.engine.skill_components.conditional_components as cc
+
+        ltcache.init()
+
+        comp = CombatCondition()
+        comp._condition = False
+        skill = MagicMock()
+        skill.components = [comp]
+        comp.skill = skill
+        unit = MagicMock()
+        unit.equipped_weapon = None
+
+        # Forecast phase: condition is False and gets cached
+        self.assertFalse(skill_system.condition(skill, unit))
+
+        fake_game = MagicMock()
+        fake_game.on_alter_game_state.side_effect = ltcache.alter_state
+
+        # Stand in for a condition string that, while evaluating, reads condition() again
+        # (as weapon_type/weapon_triangle_override do via item_override) - re-caching the
+        # still-False value - before pre_combat sets _condition = True.
+        def fake_evaluate(*args, **kwargs):
+            skill_system.condition(skill, unit)
+            return True
+
+        with patch.object(cc, 'game', fake_game), \
+                patch('app.engine.evaluate.evaluate', side_effect=fake_evaluate):
+            comp.pre_combat(None, unit, None, None, None, 'attack')
+
+        self.assertTrue(comp._condition)
+        self.assertTrue(skill_system.condition(skill, unit),
+                        "condition() returned a stale cached value after pre_combat")
+
     def test_skill_hooks_all_false_priority(self) -> None:
         from app.engine import skill_system
         self._test_skill_hook_with_components([], lambda unit: skill_system.vantage(unit), False)

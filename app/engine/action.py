@@ -142,10 +142,15 @@ def recalc_unit(unit: UnitObject) -> None:
         if game.boundary:
             game.boundary.recalculate_unit(unit)
         # Fog of War Sight may have changed
-        # But we can't update it directly here, because the unit may have just gained
-        # this skill on a move, and the unit shouldn't be able to see until they press "Wait"
-        # So instead, we just change the sight range directly but not their vantage point
-        if game.board:
+        # Only refresh it when the unit is actually standing at its fog vantage point.
+        # During a move preview the vantage stays at the unit's starting tile (the unit
+        # shouldn't reveal new vision until it presses "Wait"). If we recomputed sight here
+        # from the destination tile, a terrain-conditional sight bonus (e.g. +sight while on
+        # a mountain) would be applied at the OLD vantage, revealing extra tiles from the
+        # start position - and since this writes straight to the board rather than as a
+        # reversible action, that bonus would also survive cancelling the move. UpdateFogOfWar
+        # re-syncs sight from the correct tile when the move is finalized (Wait) or reversed.
+        if game.board and game.board.fow_vantage_point.get(unit.nid) == unit.position:
             fog_of_war_radius = game.board.get_fog_of_war_radius(unit.team)
             sight_range = skill_system.sight_range(unit) + fog_of_war_radius
             game.board.change_sight_range(unit, sight_range)
@@ -2599,17 +2604,15 @@ class IncrementSupportPoints(Action):
         self.nid = nid
         self.inc = points
 
-        if self.nid not in game.supports.support_pairs:
-            game.supports.create_pair(self.nid)
-        pair = game.supports.support_pairs[self.nid]
+        pair = game.supports.create_pair(self.nid)
         self.saved_data = pair.save()
 
     def do(self):
-        pair = game.supports.support_pairs[self.nid]
+        pair = game.supports.create_pair(self.nid)
         pair.increment_points(self.inc)
 
     def reverse(self):
-        pair = game.supports.support_pairs[self.nid]
+        pair = game.supports.create_pair(self.nid)
         pair.points = int(self.saved_data['points'])
         pair.locked_ranks = self.saved_data['locked_ranks']
         pair.points_gained_this_chapter = int(self.saved_data['points_gained_this_chapter'])
@@ -2621,15 +2624,13 @@ class UnlockSupportRank(Action):
         self.nid = nid
         self.rank = rank
         self.was_locked: bool = False
-        if self.nid not in game.supports.support_pairs:
-            game.supports.create_pair(self.nid)
 
     def do(self):
         # Yea, this one can't be turnwheel-ed lol
         RECORDS.unlock_support_rank(self.nid, self.rank)
 
         self.was_locked = False
-        pair = game.supports.support_pairs[self.nid]
+        pair = game.supports.create_pair(self.nid)
         if self.rank in pair.locked_ranks:
             self.was_locked = True
             pair.locked_ranks.remove(self.rank)
@@ -2637,7 +2638,7 @@ class UnlockSupportRank(Action):
             pair.unlocked_ranks.append(self.rank)
 
     def reverse(self):
-        pair = game.supports.support_pairs[self.nid]
+        pair = game.supports.create_pair(self.nid)
         if self.rank in pair.unlocked_ranks:
             pair.unlocked_ranks.remove(self.rank)
         if self.was_locked and self.rank not in pair.locked_ranks:
@@ -2649,21 +2650,19 @@ class DisableSupportRank(Action):
         self.nid = nid
         self.rank = rank
         self.was_unlocked: bool = False
-        if self.nid not in game.supports.support_pairs:
-            game.supports.create_pair(self.nid)
-        pair = game.supports.support_pairs[self.nid]
+        pair = game.supports.create_pair(self.nid)
         self.locked_ranks = pair.locked_ranks[:]
         self.unlocked_ranks = pair.unlocked_ranks[:]
 
     def do(self):
-        pair = game.supports.support_pairs[self.nid]
+        pair = game.supports.create_pair(self.nid)
         if self.rank in pair.unlocked_ranks:
             pair.unlocked_ranks.remove(self.rank)
         if self.rank in pair.locked_ranks:
             pair.locked_ranks.remove(self.rank)
 
     def reverse(self):
-        pair = game.supports.support_pairs[self.nid]
+        pair = game.supports.create_pair(self.nid)
         pair.locked_ranks = self.locked_ranks
         pair.unlocked_ranks = self.unlocked_ranks
 
@@ -2676,19 +2675,17 @@ class LockAllSupportRanks(Action):
 
     def __init__(self, nid):
         self.nid = nid
-        if self.nid not in game.supports.support_pairs:
-            game.supports.create_pair(self.nid)
-        pair = game.supports.support_pairs[self.nid]
+        pair = game.supports.create_pair(self.nid)
         self.unlocked_ranks = pair.unlocked_ranks[:]
 
     def do(self):
-        pair = game.supports.support_pairs[self.nid]
+        pair = game.supports.create_pair(self.nid)
         for rank in pair.unlocked_ranks:
             pair.locked_ranks.append(rank)
         pair.unlocked_ranks.clear()
 
     def reverse(self):
-        pair = game.supports.support_pairs[self.nid]
+        pair = game.supports.create_pair(self.nid)
         for rank in self.unlocked_ranks:
             if rank in pair.locked_ranks:
                 pair.locked_ranks.remove(rank)

@@ -30,8 +30,8 @@ class SupportPairDatabase(DatabaseTab):
         dlg = support_ranks.SupportRankDialog.create()
         result = dlg.exec_()
 
-def get_full_editor():
-    editor = MultiDatabaseEditor((SupportPairDatabase, AffinityDatabase, SupportConstantDatabase))
+def get_full_editor(parent=None):
+    editor = MultiDatabaseEditor((SupportPairDatabase, AffinityDatabase, SupportConstantDatabase), parent)
     editor.setWindowTitle("Support Editor")
     return editor
 

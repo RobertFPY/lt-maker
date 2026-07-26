@@ -131,13 +131,10 @@ class FeatChoiceState(MapState):
         self.menu.update()
 
     def draw_face(self, surf):
-        im, offset = icons.get_portrait(self.unit)
+        im = icons.get_portrait_with_size(self.unit, 80, 72)
         if im:
-            x_pos = (im.get_width() - 80)//2
-            portrait_surf = engine.subsurface(im, (x_pos, offset, 80, 72))
-
             topleft = self.menu.get_topleft()
-            surf.blit(portrait_surf, (WINWIDTH//2 - 80//2, topleft[1] - 72))
+            surf.blit(im, ((WINWIDTH - im.get_width())//2, topleft[1] - im.get_height()))
 
     def draw_label(self, surf):
         label = text_funcs.translate('Feat Choice')

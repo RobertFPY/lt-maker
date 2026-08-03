@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from typing import List
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 
@@ -8,6 +7,7 @@ from app.constants import TILEHEIGHT, WINHEIGHT
 from app.engine import engine, help_menu, menus
 from app.engine.dialog import DialogState
 from app.engine.graphics.text.text_renderer import render_text
+from app.engine.performance import RUNTIME_PROFILER
 from app.utilities.enums import HAlignment
 
 info_states = ('personal_data', 'equipment', 'support_skills', 'skills', 'notes', 'spellbook')
@@ -63,6 +63,8 @@ def find_closest(current_bb: BoundingBox, boxes: List[BoundingBox], horiz: bool)
 
 class InfoGraph():
     draw_all_bbs: bool = False
+    HELP_ROW_OFFSET = 13
+    CURSOR_TOP_OFFSET = 3
 
     def __init__(self):
         self.registry: Dict[str, List[BoundingBox]] = {state: [] for state in info_states}
@@ -84,9 +86,13 @@ class InfoGraph():
         if state not in self.registry:
             self.registry[state] = []
 
-    def register(self, aabb: tuple[int, int, int, int], help_box: help_menu.HelpDialog, state: str, first:bool=False):
+    def register(
+            self, aabb: tuple[int, int, int, int],
+            help_box: help_menu.HelpDialog | List[help_menu.HelpDialog],
+            state: str, first: bool = False):
         if isinstance(help_box, str):
             help_box = help_menu.HelpDialog(help_box)
+        help_box = self._adapt_skill_help_pages(aabb, help_box)
 
         if state == 'all':
             for s in self.registry:
@@ -97,6 +103,58 @@ class InfoGraph():
                 self.registry[state] = []
             idx = len(self.registry[state])
             self.registry[state].append(BoundingBox(idx, aabb, help_box, state, first))
+
+    def _adapt_skill_help_pages(
+            self, aabb: tuple[int, int, int, int],
+            help_box: help_menu.HelpDialog | List[help_menu.HelpDialog]
+            ) -> help_menu.HelpDialog | List[help_menu.HelpDialog]:
+        """
+        Re-page skill help using the actual room around its selected row.
+
+        Cached multi-description lists may already contain fixed-size pages.
+        Keep only each source's first page and rebuild a fresh list so the
+        cached objects remain untouched and different rows can use different
+        capacities.
+        """
+        boxes = help_box if isinstance(help_box, list) else [help_box]
+        if not any(isinstance(box, help_menu.SkillHelpDialog) for box in boxes):
+            return help_box
+
+        max_body_lines = self._skill_help_body_capacity(aabb)
+        adapted_boxes: List[help_menu.HelpDialog] = []
+        for box in boxes:
+            if isinstance(box, help_menu.SkillHelpDialog):
+                if box.page != 0:
+                    continue
+                adapted_boxes.extend(
+                    help_menu.SkillHelpDialog.rebuild_pages(
+                        box, max_body_lines))
+            else:
+                adapted_boxes.append(box)
+
+        if not isinstance(help_box, list) and len(adapted_boxes) == 1:
+            return adapted_boxes[0]
+        return adapted_boxes
+
+    def _skill_help_body_capacity(
+            self, aabb: tuple[int, int, int, int]) -> int:
+        """Find the largest real skill panel that fits above or below the row."""
+        _, y, _, _ = aabb
+        # Match the same visual anchors used by ordinary info boxes. The
+        # selected skill pill can be taller than the visible hand cursor, so
+        # anchoring to the pill's bottom leaves an unwanted gap.
+        space_above = max(0, y + self.CURSOR_TOP_OFFSET)
+        space_below = max(0, WINHEIGHT - (y + self.HELP_ROW_OFFSET))
+        available_height = max(space_above, space_below)
+
+        for body_lines in range(
+                help_menu.SkillHelpDialog.MAX_BODY_LINES, 0, -1):
+            render_height = (
+                help_menu.SkillHelpDialog.render_height_for_body_lines(
+                    body_lines))
+            if render_height <= available_height:
+                return body_lines
+        return 1
 
     def set_transition_in(self):
         # only display help if registry has help
@@ -123,7 +181,6 @@ class InfoGraph():
         # reset last_bb_aabb, if it needs to be used it should have already been
         # prevents accidentally becoming valid again when transitioning info menus
         self.last_bb_aabb = None
-
     def set_transition_out(self):
         if self.current_bb:
             self.current_bb.help_box.set_transition_out()
@@ -149,7 +206,6 @@ class InfoGraph():
         self.current_bb = closest_box
         self.current_bb._page = 0
         return True
-
     def switch_info(self) -> None:
         if self.current_bb and self.current_bb.is_multiple():
             if self.current_bb._page < len(self.current_bb._help_box) - 1:
@@ -178,7 +234,13 @@ class InfoGraph():
         for bb in self.registry[self.current_state]:
             if bb.aabb[0] <= x < bb.aabb[0] + bb.aabb[2] and \
                     bb.aabb[1] <= y < bb.aabb[1] + bb.aabb[3]:
-                self.current_bb = bb
+                    self.current_bb = bb
+
+    def update(self):
+        """Advance the selected hand cursor and help text once per game step."""
+        if self.current_bb:
+            self.cursor.update()
+            self.current_bb.help_box.update()
 
     def box_at_top(self, pos: tuple[int, int]) -> bool:
         """
@@ -196,6 +258,29 @@ class InfoGraph():
             return True
         return False
 
+    def _skill_help_position(self, help_box: help_menu.SkillHelpDialog) -> tuple[int, int]:
+        """Place skill help against the hand cursor like ordinary info boxes."""
+        x, y, _, _ = self.current_bb.aabb
+        help_height = help_box.h_surf.get_height()
+        proposed_x = max(0, x - 32)
+
+        below_y = y + self.HELP_ROW_OFFSET
+        above_y = y + self.CURSOR_TOP_OFFSET - help_height
+        if below_y + help_height <= WINHEIGHT:
+            proposed_y = below_y
+        elif above_y >= 0:
+            proposed_y = above_y
+        else:
+            # Normal 16 px rows always leave room on at least one side.
+            # Keep a deterministic fallback for unusually tall custom regions.
+            space_above = y + self.CURSOR_TOP_OFFSET
+            space_below = WINHEIGHT - (y + self.HELP_ROW_OFFSET)
+            proposed_y = (
+                0 if space_above >= space_below
+                else WINHEIGHT - help_height)
+
+        return proposed_x, proposed_y
+
     def draw(self, surf):
         if self.draw_all_bbs:
             for bb in self.registry[self.current_state]:
@@ -204,21 +289,36 @@ class InfoGraph():
                 surf.blit(s, (bb.aabb[0], bb.aabb[1]))
         if self.current_bb:
             right = False
-            pos = (max(0, self.current_bb.aabb[0] - 32), self.current_bb.aabb[1] + 13)
-            box_at_top = self.box_at_top(pos)
+            if isinstance(self.current_bb.help_box, help_menu.SkillHelpDialog):
+                pos = self._skill_help_position(self.current_bb.help_box)
+                box_at_top = pos[1] < self.current_bb.aabb[1]
+            else:
+                pos = (
+                    max(0, self.current_bb.aabb[0] - 32),
+                    self.current_bb.aabb[1] + self.HELP_ROW_OFFSET)
+                box_at_top = self.box_at_top(pos)
 
             cursor_pos = (max(0, self.current_bb.aabb[0] - 4), self.current_bb.aabb[1])
-            self.cursor.update()
-            self.cursor.draw(surf, *cursor_pos)
+            with RUNTIME_PROFILER.section('info_graph_cursor'):
+                self.cursor.draw(surf, *cursor_pos)
 
-            self.current_bb.help_box.draw(surf, pos, right)
+            help_box = self.current_bb.help_box
+            dialog_stage = 'info_graph_dialog_%s' % type(help_box).__name__
+            with RUNTIME_PROFILER.section('info_graph_dialog'):
+                with RUNTIME_PROFILER.section(dialog_stage):
+                    help_box.draw(surf, pos, right)
             if self.current_bb.is_multiple() and len(self.current_bb._help_box) > 1:
                 # If the help_box has no dlg, then we don't need to wait for it to transition in.
                 if not self.current_bb.help_box.dlg or \
                     (self.current_bb.help_box.dlg and 
                      self.current_bb.help_box.dlg.state != DialogState.TRANSITION_IN):
                     pos = self.current_bb.help_box.top_left(pos)
-                    if box_at_top:
+                    if isinstance(self.current_bb.help_box, help_menu.SkillHelpDialog):
+                        # Keep the page counter inside the panel; placing it
+                        # above a lower panel would consume the cursor gap.
+                        pos = (pos[0] + self.current_bb.help_box.get_width() - 16,
+                               pos[1] + self.current_bb.help_box.get_height() - 8)
+                    elif box_at_top:
                         pos = (pos[0] + self.current_bb.help_box.get_width() - 16, pos[1] + self.current_bb.help_box.get_height() - 8)
                     else:
                         pos = (pos[0] + self.current_bb.help_box.get_width() - 16, pos[1] - 4)

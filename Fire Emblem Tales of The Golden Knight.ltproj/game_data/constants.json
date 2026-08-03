@@ -1,11 +1,15 @@
 [
     [
+        "split_inventory",
+        true
+    ],
+    [
         "num_weapons",
         4
     ],
     [
         "num_items",
-        5
+        4
     ],
     [
         "num_accessories",
@@ -33,7 +37,7 @@
     ],
     [
         "pairup",
-        false
+        true
     ],
     [
         "limit_attack_stance",
@@ -57,10 +61,6 @@
     ],
     [
         "rd_bexp_lvl",
-        true
-    ],
-    [
-        "support",
         true
     ],
     [

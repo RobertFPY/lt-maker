@@ -1,4 +1,5 @@
 from __future__ import annotations
+import copy
 from enum import Enum
 from typing import Any, List
 from app.engine.exp_calculator import ExpCalcType
@@ -36,7 +37,8 @@ class Constant(object):
         self.nid: NID = nid
         self.name: str = name
         self.attr: ConstantType | List[str] = attr
-        self.value: Any = default_value
+        self.default_value: Any = default_value
+        self.value: Any = copy.deepcopy(default_value)
         self.tag: ConstantTag = tag
 
     def set_value(self, val):
@@ -50,6 +52,11 @@ class ConstantCatalog(Data[Constant]):
         return [elem.save() for elem in self._list]
 
     def restore(self, ser_data):
+        # Catalog objects are shared between project loads. Reset first so a
+        # constant missing from an older project cannot inherit the value of
+        # the project that was loaded immediately before it.
+        for constant in self._list:
+            constant.value = copy.deepcopy(constant.default_value)
         # Assign each constant with the correct value
         for nid, value in ser_data:
             constant = self.get(nid)
@@ -63,9 +70,11 @@ class ConstantCatalog(Data[Constant]):
         raise ValueError("No such Constant %s" % const_nid)
 
     def total_items(self):
-        return self.value('num_weapons') + self.value('num_items') + self.value('num_accessories')
+        num_weapons = self.value('num_weapons') if self.value('split_inventory') else 0
+        return num_weapons + self.value('num_items') + self.value('num_accessories')
 
 constants = ConstantCatalog([
+    Constant('split_inventory', "Separate Weapon and Item inventory sections", ConstantType.BOOL, False, ConstantTag.INVENTORY),
     Constant('num_weapons', "Max number of Weapons in inventory", ConstantType.INT, 4, ConstantTag.INVENTORY),
     Constant('num_items', "Max number of Items in inventory", ConstantType.INT, 4, ConstantTag.INVENTORY),
     Constant('num_accessories', "Max number of Accessories in inventory", ConstantType.INT, 0, ConstantTag.INVENTORY),

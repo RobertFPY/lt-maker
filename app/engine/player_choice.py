@@ -20,6 +20,7 @@ from app.constants import WINWIDTH, WINHEIGHT
 class PlayerChoiceState(MapState):
     name = 'player_choice'
     transparent = True
+    blocks_fast_forward = True
 
     def start(self):
         self.nid, self.header, options_list, self.row_width, self.orientation, \
@@ -183,6 +184,11 @@ class PlayerChoiceState(MapState):
                 self.create_help_boxes(values)
 
         self.menu.update()
+        if self.info_flag:
+            idx = self.menu.get_selected_idx()
+            help_box = self.help_boxes[idx]
+            if help_box:
+                help_box.update()
         if self.made_choice and not self.should_persist:
             game.state.back()
             return 'repeat'

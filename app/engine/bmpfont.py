@@ -1,5 +1,6 @@
 from typing import Dict, Optional, Tuple
 from functools import lru_cache
+import copy
 from app.data.resources.fonts import Font, FontIndex
 
 from app.engine import engine, image_mods
@@ -119,6 +120,21 @@ class BmpFont():
             else:
                 palette_map = {orig: new for orig, new in zip(map(tuple, font_info.palettes[self.default_color]), map(tuple, palette))}
                 self.surfaces[color_name] = image_mods.color_convert_alpha(base_surf.copy(), palette_map)
+
+    def color_variant(self, default_color: str) -> "BmpFont":
+        """Return a lightweight font view that reuses this font's surfaces.
+
+        Font aliases differ only in their default palette. Reconstructing a
+        BmpFont for every alias reloads the same PNG and regenerates every
+        palette surface many times, which is especially expensive during the
+        Android cold start.
+        """
+        if default_color not in self.surfaces:
+            raise ValueError(f"Unknown font color {default_color!r}")
+        variant = copy.copy(self)
+        variant.default_color = default_color
+        variant.memory = {}
+        return variant
 
     @property
     def all_uppercase(self) -> bool:

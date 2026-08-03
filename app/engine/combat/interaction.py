@@ -1,3 +1,5 @@
+import logging
+
 from app.utilities import utils
 
 from app.engine import item_system, skill_system, battle_animation
@@ -12,6 +14,28 @@ from app.engine import config as cf
 
 from app.engine.objects.unit import UnitObject
 from app.engine.objects.item import ItemObject
+
+
+def _validated_num_targets(raw_num_targets, item: ItemObject) -> int:
+    """Keep an invalid custom-component result from crashing combat startup."""
+    try:
+        num_targets = int(raw_num_targets)
+    except (TypeError, ValueError):
+        logging.error(
+            "Item %s returned invalid num_targets=%r; using one target",
+            getattr(item, "nid", "<unknown>"),
+            raw_num_targets,
+        )
+        return 1
+    if num_targets < 1:
+        logging.error(
+            "Item %s returned non-positive num_targets=%r; using one target",
+            getattr(item, "nid", "<unknown>"),
+            raw_num_targets,
+        )
+        return 1
+    return num_targets
+
 
 def has_animation(attacker: UnitObject, item: ItemObject, main_target: tuple, force_animation=False, force_no_animation=False) -> bool:
     defender: UnitObject = game.board.get_unit(main_target)
@@ -116,13 +140,17 @@ def start_combat(unit: UnitObject, target: tuple, item: ItemObject, skip: bool =
     if item.sequence_item:
         targets = []
         for subitem in item.subitems:
-            num_targets = item_system.num_targets(unit, subitem)
+            num_targets = _validated_num_targets(
+                item_system.num_targets(unit, subitem), subitem
+            )
             if num_targets > 1:
                 targets.append([target] * num_targets)
             else:
                 targets.append(target)
     else:
-        num_targets = item_system.num_targets(unit, item)
+        num_targets = _validated_num_targets(
+            item_system.num_targets(unit, item), item
+        )
         if num_targets > 1:
             targets = [[target] * num_targets]
         else:

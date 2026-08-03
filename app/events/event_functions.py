@@ -154,6 +154,8 @@ def add_portrait(self: Event, portrait, screen_position: Tuple | str, slide=None
     self.portraits[name] = new_portrait
 
     new_portrait.set_expression(expression_list or set())
+    if transition:
+        self.request_present('portrait_add')
 
     if 'immediate' in flags or 'no_block' in flags or self.do_skip:
         pass
@@ -237,6 +239,7 @@ def move_portrait(self: Event, portrait, screen_position: Tuple, speed_mult: flo
         event_portrait.quick_move(position)
     else:
         event_portrait.move(position, speed_mult)
+        self.request_present('portrait_move')
 
     if 'immediate' in flags or 'no_block' in flags or self.do_skip:
         pass
@@ -494,6 +497,7 @@ def disp_cursor(self: Event, show_cursor: bool, flags=None):
         self.game.cursor.show()
     else:
         self.game.cursor.hide()
+    self.request_present('disp_cursor')
 
 def restrict_keys(self: Event, keys, flags=None):
     flags = flags or set()
@@ -1292,6 +1296,8 @@ def copy_stat(self: Event, unit, unit2, flags=None):
         return
 
     unit1.stats = unit2.stats.copy()
+    action.do(action.SetLevel(unit1, unit2.level))
+    action.do(action.SetExp(unit1, unit2.exp))
 
 def add_unit(self: Event, unit, position=None, entry_type=None, placement=None, animation_type=None, flags=None):
     new_unit = self._get_unit(unit)
@@ -1378,10 +1384,13 @@ def move_unit(self: Event, unit, position=None, movement_type=None, placement=No
         action.do(action.Teleport(unit, position))
     elif movement_type == 'warp':
         action.do(action.Warp(unit, position))
+        self.request_present('unit_warp')
     elif movement_type == 'swoosh':
         action.do(action.Swoosh(unit, position))
+        self.request_present('unit_swoosh')
     elif movement_type == 'fade':
         action.do(action.FadeMove(unit, position))
+        self.request_present('unit_fade')
     elif movement_type == 'normal':
         path = self.game.path_system.get_path(unit, position)
         if path:
@@ -1486,6 +1495,16 @@ def interact_unit(self: Event, unit, position, combat_script: Optional[List[str]
     total_rounds = utils.clamp(rounds, 1, 99)
 
     items = item_funcs.get_all_items(actor)
+    # Some units expose usable weapons outside their normal inventory (for
+    # example, Mari's spell loadout). Prefer those live ItemObjects when an
+    # event requests a specific ability so combat uses the acquired item's
+    # persistent state instead of creating a temporary duplicate.
+    if ability and getattr(self.game, 'target_system', None):
+        known_uids = {item.uid for item in items}
+        for weapon in self.game.target_system.get_weapons(actor):
+            if weapon.uid not in known_uids:
+                items.append(weapon)
+                known_uids.add(weapon.uid)
     item = None
     # Get item
     if ability:
@@ -3204,6 +3223,7 @@ def map_anim(self: Event, map_anim, float_position: Tuple[float, float] | NID, s
         anim = MapAnimation(anim, float_position, speed_adj=speed)
         anim.set_tint(mode)
         self.animations.append(anim)
+        self.request_present('map_anim')
 
     if 'no_block' in flags or self.do_skip or 'permanent' in flags:
         pass

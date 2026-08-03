@@ -318,7 +318,9 @@ class OverworldGameOptionMenuState(State):
         elif event == 'SELECT':
             get_sound_thread().play_sfx('Select 1')
             selection = self.menu.get_current()
-            if selection == 'Save':
+            if selection == 'Debug':
+                game.state.change('debug')
+            elif selection == 'Save':
                 self.make_save()
             elif selection == 'Guide':
                 game.memory['next_state'] = 'base_guide'

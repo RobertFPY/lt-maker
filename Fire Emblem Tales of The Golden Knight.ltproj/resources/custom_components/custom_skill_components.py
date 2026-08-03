@@ -788,6 +788,10 @@ class UpkeepAOESkillGain(SkillComponent):
             self.value.update(value)
 
     def on_upkeep(self, actions, playback, unit):
+        # Spatial effects require an on-map origin. A unit may have been
+        # removed by a phase-start event after the upkeep queue was created.
+        if unit.position is None:
+            return
         r = set(range(self.value.get('range') + 1))
         locations = game.target_system.get_shell({unit.position}, r, game.board.bounds)
         for loc in locations:
@@ -825,6 +829,8 @@ class EndstepAOESkillGain(SkillComponent):
             self.value.update(value)
 
     def on_endstep(self, actions, playback, unit):
+        if unit.position is None:
+            return
         r = set(range(self.value.get('range') + 1))
         locations = game.target_system.get_shell({unit.position}, r, game.board.bounds)
         for loc in locations:

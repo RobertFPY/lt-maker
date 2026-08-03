@@ -13,6 +13,7 @@ from app.engine.combat import interaction
 from app.engine.fluid_scroll import FluidScroll
 from app.engine.fonts import FONT
 from app.engine.game_state import game
+from app.engine.objects.item import ItemObject
 from app.engine.sound import get_sound_thread
 from app.engine.sprites import SPRITES
 from app.engine.state import MapState, State
@@ -189,6 +190,8 @@ class PrepPickUnitsState(State):
 
     def start(self):
         self.fluid = FluidScroll()
+        self.inventory_section = item_funcs.InventorySection.WEAPON
+        self.swap_inventory_hint = self.create_swap_inventory_hint()
         player_units = game.get_units_in_party()
         stuck_units = [unit for unit in player_units if unit.position and not game.check_for_region(unit.position, 'formation')]
         unstuck_units = [unit for unit in player_units if unit not in stuck_units]
@@ -202,6 +205,24 @@ class PrepPickUnitsState(State):
 
         game.state.change('transition_in')
         return 'repeat'
+
+    def create_swap_inventory_hint(self):
+        if not item_funcs.split_inventory_enabled():
+            return None
+        aux_icon = SPRITES.get('buttons').subsurface(1, 133, 16, 9)
+        command = text_funcs.translate('Swap Weapon / Item')
+        font = FONT['text']
+        raw_width = 32 + font.width(command)
+        width = raw_width + (-raw_width % 8)
+        hint_surf = base_surf.create_base_surf(
+            width, 24, 'menu_bg_brown')
+        hint_surf = image_mods.make_translucent(hint_surf, 0.1)
+        hint_surf.blit(
+            aux_icon,
+            (14 - aux_icon.get_width() // 2,
+             17 - aux_icon.get_height()))
+        font.blit(command, hint_surf, (26, 3))
+        return hint_surf
 
     def begin(self):
         self.fluid.reset_on_change_state()
@@ -292,6 +313,12 @@ class PrepPickUnitsState(State):
             game.memory['current_unit'] = self.menu.get_current()
             game.memory['next_state'] = 'info_menu'
             game.state.change('transition_to')
+        elif event == 'AUX' and item_funcs.split_inventory_enabled():
+            self.inventory_section = (
+                item_funcs.InventorySection.ITEM
+                if self.inventory_section == item_funcs.InventorySection.WEAPON
+                else item_funcs.InventorySection.WEAPON)
+            get_sound_thread().play_sfx('Select 3')
 
     def update(self):
         self.menu.update()
@@ -317,8 +344,8 @@ class PrepPickUnitsState(State):
 
     def draw_fatigue_card(self, surf):
         # Useful for telling at a glance which units are fatigued
-        bg_surf = base_surf.create_base_surf(132, 24)
-        topleft = (110, 128 + 4)
+        bg_surf = base_surf.create_base_surf(104, 24)
+        topleft = (4, 128 + 4)
         unit = self.menu.get_current()
         if 'Blacklist' in unit.tags:
             text = text_funcs.translate('Away')
@@ -326,20 +353,27 @@ class PrepPickUnitsState(State):
             text = text_funcs.translate('Fatigued')
         else:
             text = text_funcs.translate('Ready!')
-        FONT['text'].blit_center(text, bg_surf, (66, 4))
+        FONT['text'].blit_center(text, bg_surf, (52, 4))
         surf.blit(bg_surf, topleft)
 
     def draw(self, surf):
         if self.bg:
             self.bg.draw(surf)
         if self.menu.get_current():
-            menus.draw_unit_items(surf, (4, 44), self.menu.get_current(), include_top=True, include_accessories=False)
+            menus.draw_unit_items(
+                surf, (4, 44), self.menu.get_current(), include_top=True,
+                include_accessories=False,
+                active_section=self.inventory_section,
+                include_section_header=True)
 
         self.draw_pick_units_card(surf)
         if DB.constants.value('fatigue') and game.game_vars.get('_fatigue'):
             self.draw_fatigue_card(surf)
 
         self.menu.draw(surf)
+        if self.swap_inventory_hint:
+            hint_x = WINWIDTH - self.swap_inventory_hint.get_width() - 2
+            surf.blit(self.swap_inventory_hint, (hint_x, 132))
         return surf
 
 def _handle_info():
@@ -675,11 +709,31 @@ def draw_funds(surf, show_info_hint=True):
     money = str(game.get_money())
     FONT['text-blue'].blit_right(money, surf, (219, 141))
 
+def _get_manage_inventory_section():
+    section = game.memory.get(
+        'manage_inventory_section', item_funcs.InventorySection.WEAPON)
+    try:
+        return item_funcs.InventorySection(section)
+    except (TypeError, ValueError):
+        return item_funcs.InventorySection.WEAPON
+
+def _toggle_manage_inventory_section():
+    if not item_funcs.split_inventory_enabled():
+        return False
+    current = _get_manage_inventory_section()
+    next_section = (
+        item_funcs.InventorySection.ITEM
+        if current == item_funcs.InventorySection.WEAPON
+        else item_funcs.InventorySection.WEAPON)
+    game.memory['manage_inventory_section'] = next_section
+    return True
+
 class PrepManageState(State):
     name = 'prep_manage'
 
     def start(self):
         self.fluid = FluidScroll()
+        game.memory['manage_inventory_section'] = item_funcs.InventorySection.WEAPON
 
         units = game.get_units_in_party()
         self.units = sorted(units, key=lambda unit: bool(unit.position), reverse=True)
@@ -713,17 +767,32 @@ class PrepManageState(State):
 
     def create_quick_disp(self):
         sprite = SPRITES.get('buttons')
-        buttons = [sprite.subsurface(0, 66, 14, 13), sprite.subsurface(0, 165, 33, 9)]
+        buttons = [
+            sprite.subsurface(0, 66, 14, 13),
+            sprite.subsurface(0, 165, 33, 9)]
         font = FONT['text']
         commands = ['Manage', 'Optimize All']
+        command_fonts = [font, font]
+        if item_funcs.split_inventory_enabled():
+            buttons.append(sprite.subsurface(1, 133, 16, 9))
+            commands.append('Swap Wpn/Item')
+            command_fonts.append(FONT['narrow'])
         commands = [text_funcs.translate(c) for c in commands]
-        size = (49 + max(font.width(c) for c in commands), 40)
+        raw_width = 49 + max(
+            command_font.width(command)
+            for command_font, command in zip(command_fonts, commands))
+        size = (raw_width + (-raw_width % 8), 8 + 16 * len(commands))
         bg_surf = base_surf.create_base_surf(size[0], size[1], 'menu_bg_brown')
         bg_surf = image_mods.make_translucent(bg_surf, 0.1)
-        bg_surf.blit(buttons[0], (20 - buttons[0].get_width()//2, 18 - buttons[0].get_height()))
-        bg_surf.blit(buttons[1], (20 - buttons[1].get_width()//2, 32 - buttons[1].get_height()))
-        for idx, command in enumerate(commands):
-            font.blit(command, bg_surf, (38, idx * 16 + 3))
+        button_bottoms = (18, 32, 48)
+        for idx, button in enumerate(buttons):
+            bg_surf.blit(
+                button,
+                (20 - button.get_width() // 2,
+                 button_bottoms[idx] - button.get_height()))
+        for idx, (command, command_font) in enumerate(
+                zip(commands, command_fonts)):
+            command_font.blit(command, bg_surf, (38, idx * 16 + 3))
         return bg_surf
 
     def take_input(self, event):
@@ -761,6 +830,9 @@ class PrepManageState(State):
             game.memory['current_unit'] = self.menu.get_current()
             game.memory['next_state'] = 'info_menu'
             game.state.change('transition_to')
+        elif event == 'AUX':
+            if _toggle_manage_inventory_section():
+                get_sound_thread().play_sfx('Select 3')
         elif event == 'START':
             get_sound_thread().play_sfx('Select 1')
             # convoy_funcs.optimize_all()
@@ -777,14 +849,25 @@ class PrepManageState(State):
         if self.bg:
             self.bg.draw(surf)
         self.menu.draw(surf)
-        menus.draw_unit_items(surf, (6, 72), self.menu.get_current(), include_face=True, shimmer=2, include_accessories=False)
-        surf.blit(self.quick_disp, (WINWIDTH//2 + 10, WINHEIGHT//2 + 9))
+        menus.draw_unit_items(
+            surf, (6, 72), self.menu.get_current(), include_face=True,
+            shimmer=2, include_accessories=False,
+            active_section=_get_manage_inventory_section(),
+            include_section_header=True)
+        quick_x = min(
+            WINWIDTH // 2 + 10,
+            WINWIDTH - self.quick_disp.get_width() - 8)
+        quick_y = (
+            WINHEIGHT // 2 + 9 -
+            max(0, self.quick_disp.get_height() - 40))
+        surf.blit(self.quick_disp, (quick_x, quick_y))
         draw_funds(surf)
         return surf
 
 class OptimizeAllChoiceState(State):
     name = 'optimize_all_choice'
     transparent = True
+    blocks_fast_forward = True
     bg_surf = None
 
     def start(self):
@@ -809,7 +892,6 @@ class OptimizeAllChoiceState(State):
         elif event == 'BACK':
             get_sound_thread().play_sfx('Select 4')
             game.state.back()
-
         elif event == 'SELECT':
             selection = self.menu.get_current()
             if selection == 'Yes':
@@ -952,6 +1034,9 @@ class PrepManageSelectState(State):
         elif event == 'BACK':
             get_sound_thread().play_sfx('Select 4')
             game.state.back()
+        elif event == 'AUX':
+            if _toggle_manage_inventory_section():
+                get_sound_thread().play_sfx('Select 3')
 
     def update(self):
         self.menu.update()
@@ -961,7 +1046,11 @@ class PrepManageSelectState(State):
         if self.bg:
             self.bg.draw(surf)
         self.menu.draw(surf)
-        menus.draw_unit_items(surf, (6, 72), self.unit, include_face=True, include_top=True, shimmer=2, include_accessories=False)
+        menus.draw_unit_items(
+            surf, (6, 72), self.unit, include_face=True, include_top=True,
+            shimmer=2, include_accessories=False,
+            active_section=_get_manage_inventory_section(),
+            include_section_header=True)
         self.select_menu.draw(surf)
         draw_funds(surf, show_info_hint=False)
         return surf
@@ -1023,6 +1112,9 @@ class PrepTradeSelectState(State):
             game.memory['current_unit'] = self.menu.get_current()
             game.memory['next_state'] = 'info_menu'
             game.state.change('transition_to')
+        elif event == 'AUX':
+            if _toggle_manage_inventory_section():
+                get_sound_thread().play_sfx('Select 3')
 
     def update(self):
         self.menu.update()
@@ -1030,8 +1122,15 @@ class PrepTradeSelectState(State):
     def draw(self, surf):
         if self.bg:
             self.bg.draw(surf)
-        menus.draw_unit_items(surf, (6, 72), self.unit, include_face=True, shimmer=2, include_accessories=False)
-        menus.draw_unit_items(surf, (126, 72), self.menu.get_current(), include_face=True, right=False, shimmer=2, include_accessories=False)
+        active_section = _get_manage_inventory_section()
+        menus.draw_unit_items(
+            surf, (6, 72), self.unit, include_face=True, shimmer=2,
+            include_accessories=False, active_section=active_section,
+            include_section_header=True)
+        menus.draw_unit_items(
+            surf, (126, 72), self.menu.get_current(), include_face=True,
+            right=False, shimmer=2, include_accessories=False,
+            active_section=active_section, include_section_header=True)
 
         self.menu.draw(surf)
 
@@ -1286,6 +1385,9 @@ class PrepItemsState(State):
                     get_sound_thread().play_sfx('Info In')
                 else:
                     get_sound_thread().play_sfx('Info Out')
+        elif event == 'AUX' and self.state == 'free':
+            if self.menu.toggle_section():
+                get_sound_thread().play_sfx('Select 3')
 
     def update(self):
         self.menu.update()
@@ -1327,9 +1429,13 @@ class PrepRestockState(State):
         self.unit_menu = game.memory['manage_menu']
 
         topleft = (6, 72)
-        self.menu = menus.Inventory(self.unit, self.unit.items, topleft)
+        self.menu = menus.Inventory(
+            self.unit, self.unit.items, topleft,
+            mode='items', active_section=item_funcs.InventorySection.WEAPON)
         # ignore = [not convoy_funcs.can_restock(item) for item in self.unit.items]
-        ignore = [not convoy_funcs.can_restock(option.get()) if option.get() else True for option in self.menu.options]
+        ignore = [not convoy_funcs.can_restock(option.get())
+                  if isinstance(option.get(), ItemObject) else True
+                  for option in self.menu.options]
         self.menu.set_ignore(ignore)
 
     def begin(self):
@@ -1348,11 +1454,16 @@ class PrepRestockState(State):
             self.menu.move_up(first_push)
 
         if event == 'SELECT':
-            get_sound_thread().play_sfx('Select 1')
             item = self.menu.get_current()
+            if not item or self.menu.get_current_option().ignore:
+                get_sound_thread().play_sfx('Error')
+                return
+            get_sound_thread().play_sfx('Select 1')
             convoy_funcs.restock(item)
             true_ignore = [not convoy_funcs.can_restock(item) for item in self.unit.items]
-            ignore = [not convoy_funcs.can_restock(option.get()) if option.get() else True for option in self.menu.options]
+            ignore = [not convoy_funcs.can_restock(option.get())
+                      if isinstance(option.get(), ItemObject) else True
+                      for option in self.menu.options]
             if all(true_ignore):
                 self.menu.set_ignore(ignore)
                 game.state.back()
@@ -1369,6 +1480,13 @@ class PrepRestockState(State):
                 get_sound_thread().play_sfx('Info In')
             else:
                 get_sound_thread().play_sfx('Info Out')
+        elif event == 'AUX':
+            if self.menu.toggle_section():
+                ignore = [not convoy_funcs.can_restock(option.get())
+                          if isinstance(option.get(), ItemObject) else True
+                          for option in self.menu.options]
+                self.menu.set_ignore(ignore)
+                get_sound_thread().play_sfx('Select 3')
 
     def update(self):
         self.menu.update()
@@ -1395,7 +1513,9 @@ class PrepUseState(State):
         self._proceed_with_targets_item = False
 
         topleft = (6, 72)
-        self.menu = menus.Inventory(self.unit, self.unit.items, topleft)
+        self.menu = menus.Inventory(
+            self.unit, self.unit.items, topleft,
+            mode='items', active_section=item_funcs.InventorySection.ITEM)
 
     def begin(self):
         if self._proceed_with_targets_item:
@@ -1410,12 +1530,13 @@ class PrepUseState(State):
         self.menu.update_options(self.unit.items)
         ignore = self.get_ignore()
         self.menu.set_ignore(ignore)
-        if all(ignore):
+        if not any(item_funcs.can_be_used_in_base(self.unit, item)
+                   for item in self.unit.nonaccessories):
             game.state.back()
 
     def get_ignore(self) -> List[bool]:
         items = [option.get() for option in self.menu.options]
-        ignore = [not item_funcs.can_be_used_in_base(self.unit, item)
+        ignore = [not item_funcs.can_be_used_in_base(self.unit, item) if isinstance(item, ItemObject) else True
                   for item in items]
         return ignore
 
@@ -1432,8 +1553,11 @@ class PrepUseState(State):
             self.menu.move_up(first_push)
 
         if event == 'SELECT':
-            get_sound_thread().play_sfx('Select 1')
             item = self.menu.get_current()
+            if not item or self.menu.get_current_option().ignore:
+                get_sound_thread().play_sfx('Error')
+                return
+            get_sound_thread().play_sfx('Select 1')
             # Actually Use item
             if item_system.targets_items(self.unit, item):
                 game.memory['target'] = self.unit
@@ -1454,6 +1578,10 @@ class PrepUseState(State):
                 get_sound_thread().play_sfx('Info In')
             else:
                 get_sound_thread().play_sfx('Info Out')
+        elif event == 'AUX':
+            if self.menu.toggle_section():
+                self.menu.set_ignore(self.get_ignore())
+                get_sound_thread().play_sfx('Select 3')
 
     def update(self):
         self.menu.update()
@@ -1617,6 +1745,10 @@ class PrepMarketState(State):
                     get_sound_thread().play_sfx('Info In')
                 else:
                     get_sound_thread().play_sfx('Info Out')
+        elif event == 'AUX':
+            target_menu = self.display_menu if self.state == 'free' else self.menu
+            if target_menu.toggle_section():
+                get_sound_thread().play_sfx('Select 3')
 
     def update(self):
         self.menu.update()

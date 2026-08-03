@@ -110,12 +110,14 @@ class Database(object):
             # logging.info("Time taken: %s ms" % time2)
         return to_save
 
-    def serialize(self, proj_dir, as_chunks: bool=False) -> bool:
-        # Returns whether we were successful
+    def write_game_data(self, data_dir: Path | str, as_chunks: bool=False) -> None:
+        """Write the database into an exact ``game_data`` directory.
 
-        data_dir = os.path.join(proj_dir, 'game_data')
-        if not os.path.exists(data_dir):
-            os.mkdir(data_dir)
+        Filesystem errors intentionally propagate so a caller can stage all
+        database files before committing a project-level transaction.
+        """
+        data_dir = Path(data_dir)
+        data_dir.mkdir(parents=True, exist_ok=True)
         logging.info("Serializing data in %s..." % data_dir)
 
         import time
@@ -123,34 +125,41 @@ class Database(object):
 
         to_save = self.save()
         # This section is what takes so long!
-        try:
-            for key, value in to_save.items():
-                # divide save data into chunks based on key value
-                if key in self.save_as_chunks and as_chunks:
-                    save_dir = os.path.join(data_dir, key)
-                    if os.path.exists(save_dir):
-                        rmtree_robust(save_dir)
-                    os.mkdir(save_dir)
-                    orderkeys: List[str] = []
-                    for idx, subvalue in enumerate(value):
-                        # ordering
-                        name = subvalue['nid']
-                        name = re.sub(r'[\\/*?:"<>|]', "", name)
-                        name = name.replace(' ', '_')
-                        orderkeys.append(name)
-                        save_loc = Path(save_dir, name + '.json')
-                        # logging.info("Serializing %s to %s" % ('%s/%s.json' % (key, name), save_loc))
-                        save_json(save_loc, [subvalue])
-                    save_json(Path(save_dir, '.orderkeys'), orderkeys)
-                else:  # Save as a single file
-                    # Which means deleting the old directory
-                    save_dir = Path(data_dir, key)
-                    if os.path.exists(save_dir):
-                        rmtree_robust(save_dir)
-                    save_loc = Path(data_dir, key + '.json')
-                    # logging.info("Serializing %s to %s" % (key, save_loc))
-                    save_json(save_loc, value)
+        for key, value in to_save.items():
+            # divide save data into chunks based on key value
+            if key in self.save_as_chunks and as_chunks:
+                save_dir = os.path.join(data_dir, key)
+                if os.path.exists(save_dir):
+                    rmtree_robust(save_dir)
+                os.mkdir(save_dir)
+                orderkeys: List[str] = []
+                for idx, subvalue in enumerate(value):
+                    # ordering
+                    name = subvalue['nid']
+                    name = re.sub(r'[\\/*?:"<>|]', "", name)
+                    name = name.replace(' ', '_')
+                    orderkeys.append(name)
+                    save_loc = Path(save_dir, name + '.json')
+                    # logging.info("Serializing %s to %s" % ('%s/%s.json' % (key, name), save_loc))
+                    save_json(save_loc, [subvalue])
+                save_json(Path(save_dir, '.orderkeys'), orderkeys)
+            else:  # Save as a single file
+                # Which means deleting the old directory
+                save_dir = Path(data_dir, key)
+                if os.path.exists(save_dir):
+                    rmtree_robust(save_dir)
+                save_loc = Path(data_dir, key + '.json')
+                # logging.info("Serializing %s to %s" % (key, save_loc))
+                save_json(save_loc, value)
 
+        end = time.perf_counter() * 1000
+        logging.info("Total Time Taken for Database: %s ms" % (end - start))
+        logging.info("Done serializing!")
+
+    def serialize(self, proj_dir, as_chunks: bool=False) -> bool:
+        """Serialize to a project directory, preserving the legacy bool API."""
+        try:
+            self.write_game_data(Path(proj_dir) / 'game_data', as_chunks)
         except PermissionError as e:  # Access denied (read-only file, AV lock, or cloud-sync handle)
             logging.error("Editor was denied permission to save your project (%s). "
                           "The project folder or a file inside it may be read-only, locked by "
@@ -163,10 +172,6 @@ class Database(object):
             logging.error("Editor was unable to save your project. Free up space on your hard drive or try saving somewhere else, otherwise progress will be lost when the editor is closed.")
             logging.exception(e)
             return False
-
-        end = time.perf_counter() * 1000
-        logging.info("Total Time Taken for Database: %s ms" % (end - start))
-        logging.info("Done serializing!")
         return True
 
     def load(self, proj_dir: Path | str, version: int):

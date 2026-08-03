@@ -27,6 +27,8 @@ from app.engine.selection_helper import SelectionHelper
 from app.engine.abilities import ABILITIES, PRIMARY_ABILITIES, OTHER_ABILITIES, TradeAbility, SupplyAbility
 from app.engine.input_manager import get_input_manager
 from app.engine.fluid_scroll import FluidScroll
+from app.engine.android_runtime import is_android_runtime
+from app.engine.performance import RUNTIME_PROFILER
 import threading
 
 import logging
@@ -37,6 +39,12 @@ class LoadingState(State):
 
     # For A E S T H E T I C S
     duration = 1000  # How long to wait after we load in everything to actually move to the turn_change state
+
+    @staticmethod
+    def _flush_and_load_songs(sound_controller, level_songs) -> None:
+        sound_controller.flush()
+        if level_songs:
+            sound_controller.load_songs(level_songs)
 
     def start(self):
         logging.debug("Loading state...")
@@ -50,15 +58,14 @@ class LoadingState(State):
         # it didn't make sense that we originally tried to persist
         # bgm while we transitioned, which led to annoying stutters
         # it had no front-facing advantage for the player, afaik
-        get_sound_thread().clear()
-        # unload used assets
-        # unload music
-        get_sound_thread().flush()
-        get_sound_thread().set_music_volume(cf.SETTINGS['music_volume'])
-        get_sound_thread().set_sfx_volume(cf.SETTINGS['sound_volume'])
+        sound_controller = get_sound_thread()
+        sound_controller.clear()
+        sound_controller.set_music_volume(cf.SETTINGS['music_volume'])
+        sound_controller.set_sfx_volume(cf.SETTINGS['sound_volume'])
 
         # load music used in the level
         self.level_nid = game.level_nid
+        level_songs = set()
         if game.level:
             logging.debug("Loading music for level %s" % self.level_nid)
             level_songs = set(game.level.music.values())
@@ -67,9 +74,22 @@ class LoadingState(State):
                 level_songs.add(music_command.parameters.get('Music'))
             for music_command in inspector.find_all_calls_of_command(event_commands.ChangeMusic(), self.level_nid).values():
                 level_songs.add(music_command.parameters.get('Music'))
-            loading_music_thread = threading.Thread(target=get_sound_thread().load_songs, args=[level_songs])
+        if is_android_runtime():
+            # Releasing cached pygame Sound objects can take over 100 ms on
+            # Android. Do it in the same worker that preloads the next songs.
+            loading_music_thread = threading.Thread(
+                target=self._flush_and_load_songs,
+                args=(sound_controller, level_songs),
+            )
             loading_music_thread.start()
             self.loading_threads.append(loading_music_thread)
+        else:
+            sound_controller.flush()
+            if level_songs:
+                loading_music_thread = threading.Thread(
+                    target=sound_controller.load_songs, args=[level_songs])
+                loading_music_thread.start()
+                self.loading_threads.append(loading_music_thread)
 
     def update(self):
         if not self.completed_time and not any([thread.is_alive() for thread in self.loading_threads]):
@@ -464,6 +484,73 @@ def battle_save():
     game.state.change('in_chapter_save')
     game.state.change('transition_out')
 
+def load_save_slot(save_slot: save.SaveSlot):
+    """Replace the current session with a regular save-slot state."""
+    logging.info("Loading save of kind %s from the map menu...", save_slot.kind)
+    game.state.clear()
+    game.state.process_temp_state()
+    save.load_game(game, save_slot)
+    if save_slot.kind == 'start':
+        next_level_nid = game.game_vars['_next_level_nid']
+        game.load_states(['start_level_asset_loading'])
+        game.start_level(next_level_nid)
+    elif save_slot.kind == 'overworld':
+        game.load_states(['overworld'])
+    save.remove_suspend()
+
+class InChapterLoadState(MapState):
+    name = 'in_chapter_load'
+    blocks_fast_forward = True
+
+    def start(self):
+        game.cursor.hide()
+        # A battle save is written on a worker thread. Wait here so a save made
+        # immediately before opening this menu is complete and loadable.
+        if save.SAVE_THREAD:
+            save.SAVE_THREAD.join()
+        save.check_save_slots()
+        self.save_slots = save.SAVE_SLOTS
+        options, colors = save.get_save_title(self.save_slots)
+        self.menu = menus.ChapterSelect(options, colors)
+        if self.save_slots:
+            most_recent = self.save_slots.index(max(self.save_slots, key=lambda x: x.realtime))
+            self.menu.move_to(most_recent)
+
+    def begin(self):
+        self.fluid.reset_on_change_state()
+
+    def take_input(self, event):
+        first_push = self.fluid.update()
+        directions = self.fluid.get_directions()
+
+        self.menu.handle_mouse()
+        if 'DOWN' in directions:
+            if self.menu.move_down(first_push):
+                get_sound_thread().play_sfx('Select 6')
+        elif 'UP' in directions:
+            if self.menu.move_up(first_push):
+                get_sound_thread().play_sfx('Select 6')
+
+        if event == 'BACK':
+            get_sound_thread().play_sfx('Select 4')
+            game.state.back()
+        elif event == 'SELECT':
+            selection = self.menu.current_index
+            if selection < len(self.save_slots) and self.save_slots[selection].kind:
+                get_sound_thread().play_sfx('Save')
+                load_save_slot(self.save_slots[selection])
+                return 'repeat'
+            get_sound_thread().play_sfx('Error')
+
+    def update(self):
+        super().update()
+        self.menu.update()
+
+    def draw(self, surf):
+        surf = super().draw(surf)
+        self.menu.draw(surf, center=(WINWIDTH//2, WINHEIGHT//2))
+        return surf
+
 class OptionMenuState(MapState):
     name = 'option_menu'
 
@@ -487,7 +574,18 @@ class OptionMenuState(MapState):
             info_desc.append('Save_desc')
             ignore.append(False)
 
-        if cf.SETTINGS['fullscreen']:
+        if save.SAVE_THREAD:
+            save.SAVE_THREAD.join()
+        save.check_save_slots()
+        options.append('Load')
+        info_desc.append('Load a saved game.')
+        ignore.append(not any(save_slot.kind for save_slot in save.SAVE_SLOTS))
+
+        if is_android_runtime():
+            options.append('Restart Game')
+            info_desc.append('Return to the game title screen. Unsaved progress is lost.')
+            ignore.append(False)
+        elif cf.SETTINGS['fullscreen']:
             options.append('Quit Game')
             info_desc.append('Quit_Game_desc')
             ignore.append(False)
@@ -593,7 +691,9 @@ class OptionMenuState(MapState):
             elif selection == 'Unit':
                 game.memory['next_state'] = 'unit_menu'
                 game.state.change('transition_to')
-            elif selection == 'Quit Game':
+            elif selection == 'Load':
+                game.state.change('in_chapter_load')
+            elif selection in ('Quit Game', 'Restart Game'):
                 game.memory['option_owner'] = selection
                 game.memory['option_menu'] = self.menu
                 game.state.change('option_child')
@@ -686,6 +786,10 @@ class OptionChildState(State):
                     suspend()
                 elif self.menu.owner == "Quit Game":
                     engine.fast_quit = True
+                elif self.menu.owner == 'Restart Game':
+                    from app.engine.runtime_reset import queue_return_to_title
+                    queue_return_to_title(game, direct_to_title_main=True)
+                    return 'repeat'
                 elif self.menu.owner == 'Save':
                     game.state.back()
                     battle_save()
@@ -1395,8 +1499,12 @@ class ItemState(MapState):
     def start(self):
         self.cur_unit = game.cursor.cur_unit
         options = self._get_options()
-        self.menu = menus.Choice(self.cur_unit, options)
-        self.menu.set_limit(8)
+        self.menu = menus.Inventory(
+            self.cur_unit, options, mode='items',
+            active_section=item_funcs.InventorySection.ITEM)
+        self.menu.set_limit(5)
+        if item_funcs.split_inventory_enabled():
+            self.menu.set_extra_bottom_padding(8)
 
     def begin(self):
         self.fluid.reset_on_change_state()
@@ -1451,6 +1559,10 @@ class ItemState(MapState):
                 get_sound_thread().play_sfx('Info In')
             else:
                 get_sound_thread().play_sfx('Info Out')
+        elif event == 'AUX':
+            if self.menu.toggle_section():
+                self._item_desc_update()
+                get_sound_thread().play_sfx('Select 3')
 
     def update(self):
         super().update()
@@ -1721,10 +1833,13 @@ class ItemDiscardState(MapState):
             self.mode = self.ItemDiscardMode.DISCARD
 
         options = self.cur_unit.items
-        self.menu = menus.Choice(self.cur_unit, options)
-        ignore = self._get_locked(options, self.new_item if self.force_give else None)
-        self.menu.set_ignore(ignore)
-        self.menu.set_limit(8)
+        active_section = (item_funcs.get_inventory_section(self.cur_unit, self.new_item)
+                          if item_funcs.split_inventory_enabled()
+                          else item_funcs.InventorySection.ITEM)
+        self.menu = menus.Inventory(
+            self.cur_unit, options, mode='items', active_section=active_section)
+        self.menu.set_ignore(self._get_menu_locked())
+        self.menu.set_limit(5)
 
         if self.mode == self.ItemDiscardMode.STORAGE:
             self.pennant = banner.Pennant('Choose item to send to storage')
@@ -1742,6 +1857,19 @@ class ItemDiscardState(MapState):
             locked = [not bool(item_system.discardable(self.cur_unit, item)) or item == exclude for item in options]
         return locked
 
+    def _get_menu_locked(self) -> List[bool]:
+        exclude = self.new_item if self.force_give else None
+        result = []
+        for option in self.menu.options:
+            item = option.get()
+            if not isinstance(item, ItemObject):
+                result.append(True)
+            elif self.mode == self.ItemDiscardMode.STORAGE:
+                result.append(not bool(item_system.storeable(self.cur_unit, item)) or item == exclude)
+            else:
+                result.append(not bool(item_system.discardable(self.cur_unit, item)) or item == exclude)
+        return result
+
     def begin(self):
         if self._check_locked_inventory():
             game.state.back()
@@ -1751,8 +1879,7 @@ class ItemDiscardState(MapState):
         self.fluid.reset_on_change_state()
         options = self.cur_unit.items
         self.menu.update_options(options)
-        ignore = self._get_locked(options, self.new_item if self.force_give else None)
-        self.menu.set_ignore(ignore)
+        self.menu.set_ignore(self._get_menu_locked())
         # Don't need to do this if we are under items
         if not item_funcs.too_much_in_inventory(self.cur_unit):
             game.state.back()
@@ -1760,6 +1887,23 @@ class ItemDiscardState(MapState):
 
     def _check_locked_inventory(self) -> bool:
         locked = self._get_locked(self.cur_unit.items)
+        if item_funcs.split_inventory_enabled():
+            for section in item_funcs.InventorySection:
+                locked_in_section = [
+                    item for idx, item in enumerate(self.cur_unit.items)
+                    if locked[idx] and item_funcs.get_inventory_section(self.cur_unit, item) == section
+                ]
+                if len(locked_in_section) > item_funcs.get_inventory_capacity(self.cur_unit, section):
+                    overflow_item = locked_in_section[-1]
+                    if self.mode == self.ItemDiscardMode.STORAGE:
+                        game.alerts.append(banner.SentToConvoy(overflow_item))
+                        action.do(action.StoreItem(self.cur_unit, overflow_item))
+                    else:
+                        game.alerts.append(banner.LostItem(overflow_item))
+                        action.do(action.RemoveItem(self.cur_unit, overflow_item))
+                    return True
+            return False
+
         locked_items = [item for idx, item in enumerate(self.cur_unit.items) if locked[idx] and not item_system.is_accessory(self.cur_unit, item)]
 
         if len(locked_items) > item_funcs.get_num_items(self.cur_unit):
@@ -1797,11 +1941,20 @@ class ItemDiscardState(MapState):
             get_sound_thread().play_sfx('Error')
 
         elif event == 'SELECT':
-            if item_system.is_accessory(self.cur_unit, self.new_item) != item_system.is_accessory(self.cur_unit, self.menu.get_current()):
+            selection = self.menu.get_current()
+            if not selection or self.menu.get_current_option().ignore:
+                get_sound_thread().play_sfx('Error')
+                return
+            if item_funcs.split_inventory_enabled():
+                same_section = item_funcs.get_inventory_section(self.cur_unit, self.new_item) == \
+                    item_funcs.get_inventory_section(self.cur_unit, selection)
+            else:
+                same_section = item_system.is_accessory(self.cur_unit, self.new_item) == \
+                    item_system.is_accessory(self.cur_unit, selection)
+            if not same_section:
                 get_sound_thread().play_sfx('Error')
             else:
                 get_sound_thread().play_sfx('Select 1')
-                selection = self.menu.get_current()
                 owner = 'Storage' if self.mode == self.ItemDiscardMode.STORAGE else 'Discard'
                 game.memory['option_owner'] = owner
                 game.memory['option_item'] = selection
@@ -1827,6 +1980,7 @@ class ItemDiscardState(MapState):
 
 class WeaponChoiceState(MapState):
     name = 'weapon_choice'
+    blocks_fast_forward = True
 
     def get_options(self, unit) -> list:
         if game.memory.get('valid_weapons'):
@@ -2039,6 +2193,7 @@ class SpellLoadoutChoiceState(MapState):
     force-equip via EquipItem rather than going through can_equip. autoequip is
     taught to leave Mari's equipped loadout spell alone (see Unit.is_mari_loadout_item)."""
     name = 'spell_loadout_choice'
+    blocks_fast_forward = True
 
     def start(self):
         self.cur_unit = game.cursor.cur_unit
@@ -2210,6 +2365,7 @@ class AbilityMultiItemChoiceState(WeaponChoiceState):
 
 class AbilitySubmenuChoiceState(MapState):
     name = 'ability_submenu_choice'
+    blocks_fast_forward = True
 
     def start(self):
         # taking a page out of mag's book
@@ -2825,15 +2981,19 @@ class CombatState(MapState):
 
     def draw(self, surf):
         if self.is_animation_combat:
-            if self.combat.viewbox:
-                viewbox = self.combat.viewbox
-                viewbox_bg = self.fuzz_background.copy()
-                if viewbox[2] > 0:  # Width
-                    viewbox_bg.fill((0, 0, 0, 0), viewbox)
-                surf = super().draw(surf, culled_rect=viewbox)
-                surf.blit(viewbox_bg, (0, 0))
-            else:
-                surf = super().draw(surf)
+            if self.combat.map_underlay_visible():
+                if self.combat.viewbox:
+                    viewbox = self.combat.viewbox
+                    with RUNTIME_PROFILER.section('combat_map_underlay'):
+                        surf = super().draw(surf, culled_rect=viewbox)
+                    with RUNTIME_PROFILER.section('combat_fuzz_overlay'):
+                        viewbox_bg = self.fuzz_background.copy()
+                        if viewbox[2] > 0:  # Width
+                            viewbox_bg.fill((0, 0, 0, 0), viewbox)
+                        surf.blit(viewbox_bg, (0, 0))
+                else:
+                    with RUNTIME_PROFILER.section('combat_map_underlay'):
+                        surf = super().draw(surf)
         else:
             surf = super().draw(surf)
 
@@ -3076,7 +3236,7 @@ class ShopState(State):
         # Sell Menu
         if not self.preview:
             my_items = item_funcs.get_all_tradeable_items(self.unit)
-            self.sell_menu = menus.Shop(self.unit, my_items, topleft, disp_value='sell')
+            self.sell_menu = menus.SectionedShop(self.unit, my_items, topleft, disp_value='sell')
             self.sell_menu.set_limit(5)
             self.sell_menu.set_hard_limit(True)
             self.sell_menu.gem = True
@@ -3288,6 +3448,9 @@ class ShopState(State):
                     get_sound_thread().play_sfx('Info In')
                 else:
                     get_sound_thread().play_sfx('Info Out')
+        elif event == 'AUX' and self.state == 'sell':
+            if self.sell_menu.toggle_section():
+                get_sound_thread().play_sfx('Select 3')
 
     def update(self):
         if self.current_msg:
@@ -3359,7 +3522,7 @@ class RepairShopState(ShopState):
 
         items = self.unit.items[:]
         topleft = (44, WINHEIGHT - 16 * 5 - 8 - 4)
-        self.menu = menus.RepairShop(self.unit, items, topleft, disp_value='repair')
+        self.menu = menus.SectionedRepairShop(self.unit, items, topleft, disp_value='repair')
         self.menu.set_limit(5)
         self.menu.set_hard_limit(True)
         self.menu.gem = True
@@ -3381,7 +3544,12 @@ class RepairShopState(ShopState):
         self.fluid.reset_on_change_state()
 
     def update_options(self):
-        ignore = [not item_funcs.can_repair(self.unit, item) for item in self.unit.items]
+        self.menu.update_options(self.unit.items)
+        ignore = [
+            not item_funcs.can_repair(self.unit, option.get())
+            if isinstance(option.get(), ItemObject) else True
+            for option in self.menu.options
+        ]
         self.menu.set_ignore(ignore)
 
     def take_input(self, event):
@@ -3399,7 +3567,7 @@ class RepairShopState(ShopState):
 
         if event == 'SELECT':
             item = self.menu.get_current()
-            if item:
+            if item and not self.menu.get_current_option().ignore:
                 value = item_funcs.repair_price(self.unit, item)
                 if value:
                     if game.get_money() - value >= 0:
@@ -3437,6 +3605,10 @@ class RepairShopState(ShopState):
                 get_sound_thread().play_sfx('Info In')
             else:
                 get_sound_thread().play_sfx('Info Out')
+        elif event == 'AUX':
+            if self.menu.toggle_section():
+                self.update_options()
+                get_sound_thread().play_sfx('Select 3')
 
     def draw(self, surf):
         surf = self._draw(surf)

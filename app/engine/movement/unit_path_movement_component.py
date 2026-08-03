@@ -59,28 +59,43 @@ class UnitPathMovementComponent(MovementComponent):
             self.active = False
             return
 
-        dt = current_time - self._last_update
-        progress: float = utils.clamp(dt / max(self.speed, 1), 0, 1)
+        speed = max(self.speed, 1)
+        elapsed = max(0, current_time - self._last_update)
 
-        # Update sprite
-        if self.path:
-            next_position = self.path[-1]
-            net_position = (next_position[0] - self.unit.position[0], next_position[1] - self.unit.position[1])
-            self.unit.sprite.handle_net_position(net_position)
-            if progress >= 1:
-                self.unit.sprite.reset()
-            else:
-                self.unit.sprite.offset[0] = int(TILEWIDTH * progress * net_position[0])
-                self.unit.sprite.offset[1] = int(TILEHEIGHT * progress * net_position[1])
+        # Consume every completed tile in order, retaining the leftover time
+        # for interpolation into the next tile. Resetting _last_update to
+        # current_time lost that remainder and made walking cadence depend on
+        # how a frame happened to be partitioned.
+        while self.path and elapsed >= speed and self.active:
+            self.unit.sprite.reset()
+            self._last_update += speed
+            elapsed -= speed
+            self._handle_path()
 
-        if progress >= 1:
-            self._last_update = current_time
-
-            if self.path:
-                self._handle_path()
+            if not self.active:  # An obstacle finished movement early
+                return
             if not self.path:  # Path is empty, we are done
                 surprise = movement_funcs.check_region_interrupt(self.unit)
                 self.finish(surprise=surprise)
+                return
+
+        # Preserve the legacy one-speed delay for an empty path created by a
+        # caller. This is uncommon, but start() has already put the unit into
+        # its movement state and should not finish synchronously.
+        if not self.path:
+            if elapsed >= speed:
+                self._last_update += speed
+                surprise = movement_funcs.check_region_interrupt(self.unit)
+                self.finish(surprise=surprise)
+            return
+
+        # Interpolate the unfinished segment from the retained remainder.
+        next_position = self.path[-1]
+        net_position = (next_position[0] - self.unit.position[0], next_position[1] - self.unit.position[1])
+        progress: float = utils.clamp(elapsed / speed, 0, 1)
+        self.unit.sprite.handle_net_position(net_position)
+        self.unit.sprite.offset[0] = int(TILEWIDTH * progress * net_position[0])
+        self.unit.sprite.offset[1] = int(TILEHEIGHT * progress * net_position[1])
 
     def _handle_path(self):
         next_position = self.path.pop()

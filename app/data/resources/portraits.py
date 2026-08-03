@@ -66,17 +66,26 @@ class PortraitPrefab(WithResources, Prefab):
     @classmethod
     def restore(cls, s_dict):
         self = cls(s_dict['nid'])
-        self.blinking_offset = [int(_) for _ in s_dict['blinking_offset']]
-        self.smiling_offset = [int(_) for _ in s_dict['smiling_offset']]
-        self.info_offset = tuple(int(_) for _ in s_dict['info_offset'])
+        self.blinking_offset = [int(_) for _ in s_dict.get('blinking_offset', self.blinking_offset)]
+        self.smiling_offset = [int(_) for _ in s_dict.get('smiling_offset', self.smiling_offset)]
 
-        self.chibi_coord = tuple(int(_) for _ in s_dict['chibi_coord'])
-        self.full_size = tuple(int(_) for _ in s_dict['full_size'])
-        self.face_size = tuple(int(_) for _ in s_dict['face_size'])
-        self.blink_size = tuple(int(_) for _ in s_dict['blink_size'])
-        self.mouth_size = tuple(int(_) for _ in s_dict['mouth_size'])
-        self.blink_frames = int(s_dict.get('blink_frames', 0))
-        self.mouth_frames = int(s_dict.get('mouth_frames', 0))
+        info_offset = s_dict.get('info_offset', self.info_offset)
+        if isinstance(info_offset, (list, tuple)):
+            if len(info_offset) != 2:
+                raise ValueError("Portrait %s has an invalid info_offset" % self.nid)
+            self.info_offset = tuple(int(_) for _ in info_offset)
+        else:
+            # Older projects stored only the vertical coordinate. Their 80px
+            # information portrait crop was horizontally centered at x = 8.
+            self.info_offset = (8, int(info_offset))
+
+        self.chibi_coord = tuple(int(_) for _ in s_dict.get('chibi_coord', self.chibi_coord))
+        self.full_size = tuple(int(_) for _ in s_dict.get('full_size', self.full_size))
+        self.face_size = tuple(int(_) for _ in s_dict.get('face_size', self.face_size))
+        self.blink_size = tuple(int(_) for _ in s_dict.get('blink_size', self.blink_size))
+        self.mouth_size = tuple(int(_) for _ in s_dict.get('mouth_size', self.mouth_size))
+        self.blink_frames = int(s_dict.get('blink_frames', self.blink_frames))
+        self.mouth_frames = int(s_dict.get('mouth_frames', self.mouth_frames))
         return self
 
     def get_face_frame(self) -> Rect:

@@ -294,7 +294,6 @@ class Pennant():
     """
 
     font = 'convo'
-    bg_surf = SPRITES.get('pennant_bg')
 
     def __init__(self, text):
         self.change_text(text)
@@ -312,6 +311,10 @@ class Pennant():
         self.text_counter = 0
 
     def draw(self, surf, draw_on_top=False):
+        # Android defers sprite decoding until driver.start().  Pennant can be
+        # imported while project components load, so resolving this at class
+        # definition time would permanently cache None on Android.
+        bg_surf = SPRITES.get('pennant_bg')
         self.sprite_offset -= 4
         self.sprite_offset = max(0, self.sprite_offset)
 
@@ -319,12 +322,12 @@ class Pennant():
 
         # If cursor is all the way on the bottom of the map
         if draw_on_top:
-            surf.blit(engine.flip_vert(self.bg_surf), (0, -self.sprite_offset))
+            surf.blit(engine.flip_vert(bg_surf), (0, -self.sprite_offset))
             while counter < self.width:
                 render_text(surf, [self.font], [self.text], ['white'], (counter, -self.sprite_offset))
                 counter += self.text_width + 24
         else:
-            surf.blit(self.bg_surf, (0, WINHEIGHT - self.height + self.sprite_offset))
+            surf.blit(bg_surf, (0, WINHEIGHT - self.height + self.sprite_offset))
             while counter < self.width:
                 render_text(surf, [self.font], [self.text], ['white'], (counter, WINHEIGHT - self.height + self.sprite_offset))
                 counter += self.text_width + 24

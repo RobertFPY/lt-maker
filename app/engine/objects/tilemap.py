@@ -256,8 +256,11 @@ class TileMapObject(Prefab):
     def foreground_layers(self) -> List[LayerObject]:
         return [layer for layer in self.layers if layer.foreground]
 
-    def get_full_image(self, cull_rect):
-        image = engine.create_surface((cull_rect[2], cull_rect[3]))
+    def get_full_image(self, cull_rect, image=None):
+        """Compose background layers into ``image`` when a caller can reuse it."""
+        image = image or engine.create_surface((cull_rect[2], cull_rect[3]))
+        if image.get_size() != (cull_rect[2], cull_rect[3]):
+            raise ValueError('Tilemap destination surface does not match cull size')
         engine.fill(image, COLORKEY)
         engine.set_colorkey(image, COLORKEY)
         layers = self.background_layers()
@@ -271,8 +274,12 @@ class TileMapObject(Prefab):
                     image.blit(autotile_image, (0, 0))
         return image
 
-    def get_foreground_image(self, cull_rect):
-        image = engine.create_surface((cull_rect[2], cull_rect[3]), transparent=True)
+    def get_foreground_image(self, cull_rect, image=None):
+        """Compose foreground layers into ``image`` when a caller can reuse it."""
+        image = image or engine.create_surface((cull_rect[2], cull_rect[3]), transparent=True)
+        if image.get_size() != (cull_rect[2], cull_rect[3]):
+            raise ValueError('Tilemap destination surface does not match cull size')
+        engine.fill(image, (0, 0, 0, 0))
         layers = self.foreground_layers()
         for layer in layers:
             if (layer.visible or layer.state == 'fade_out') and \

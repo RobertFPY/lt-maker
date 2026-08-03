@@ -22,6 +22,7 @@ from app.engine.game_menus import menu_options
 from app.engine.achievements import Achievement
 from app.engine.graphics.text.text_renderer import fix_tags
 from app.engine.text_evaluator import TextEvaluator
+from app.engine.android_runtime import is_android_render_optimization_enabled
 
 from app.utilities import utils
 from app.utilities.enums import CharacterSet
@@ -42,19 +43,32 @@ def draw_unit_top(surf, topleft, unit):
         FONT['text-blue'].blit_right(str(unit.level), surf, (x + 72, y - 19))
         FONT['text-blue'].blit_right(str(unit.exp), surf, (x + 97, y - 19))
 
-def make_bg_surf(shimmer):
-    bg_surf = create_base_surf(104, 16 * DB.constants.total_items() + 8, 'menu_bg_base')
+def _inventory_panel_rows(unit, include_accessories=True, include_section_header=False):
+    if item_funcs.split_inventory_enabled() and unit:
+        accessory_rows = item_funcs.get_num_accessories(unit) if include_accessories else 0
+        item_rows = max(item_funcs.get_num_weapons(unit), item_funcs.get_num_items(unit))
+        header_rows = 1 if include_section_header else 0
+        return item_rows + accessory_rows + header_rows
+    if unit and not include_accessories:
+        return item_funcs.get_num_items(unit)
+    return DB.constants.total_items()
+
+def make_bg_surf(shimmer, unit=None, include_accessories=True, include_section_header=False):
+    bg_surf = create_base_surf(
+        104, 16 * _inventory_panel_rows(unit, include_accessories, include_section_header) + 8, 'menu_bg_base')
     if shimmer:
         img = SPRITES.get('menu_shimmer%d' % shimmer)
         bg_surf.blit(img, (bg_surf.get_width() - img.get_width() - 1, bg_surf.get_height() - img.get_height() - 5))
     bg_surf = image_mods.make_translucent(bg_surf, 0.1)
     return bg_surf
 
-def draw_unit_face(surf, topleft, unit, right):
+def draw_unit_face(surf, topleft, unit, right, include_accessories=True, include_section_header=False):
     x, y = topleft
     topleft_pad = (2, 4)     # Paddings from the bg sprite
     bottomright_pad = (1, 5)
-    bg_surf_size = (104, 16 * DB.constants.total_items() + 8)   # Copied from above
+    bg_surf_size = (
+        104,
+        16 * _inventory_panel_rows(unit, include_accessories, include_section_header) + 8)  # Copied from above
     width, height = utils.tuple_sub(bg_surf_size, topleft_pad, bottomright_pad)
     face_image = icons.get_portrait_with_size(unit, width, height)
     left = x + topleft_pad[0] + (width - face_image.get_width()) // 2           # blit at center
@@ -66,28 +80,70 @@ def draw_unit_face(surf, topleft, unit, right):
     face_image = image_mods.make_translucent(face_image, 0.5)
     engine.blit(surf, face_image, (left, top))
 
-def draw_unit_items(surf, topleft, unit, include_top=False, include_bottom=True, include_face=False, right=True, shimmer=0, include_accessories=True):
+def draw_unit_items(surf, topleft, unit, include_top=False, include_bottom=True,
+                    include_face=False, right=True, shimmer=0,
+                    include_accessories=True, active_section=None,
+                    include_section_header=False):
     x, y = topleft
     if include_top:
         draw_unit_top(surf, topleft, unit)
 
     if include_bottom:
-        bg_surf = make_bg_surf(shimmer)
+        bg_surf = make_bg_surf(
+            shimmer, unit, include_accessories, include_section_header)
         surf.blit(bg_surf, (x, y))
 
         if include_face:
-            draw_unit_face(surf, topleft, unit, right)
+            draw_unit_face(
+                surf, topleft, unit, right, include_accessories,
+                include_section_header)
 
-        # Blit items
-        for idx, item in enumerate(unit.nonaccessories):
+        if item_funcs.split_inventory_enabled():
+            active_section = active_section or item_funcs.InventorySection.WEAPON
+            items_to_draw = item_funcs.get_section_items(unit, active_section)
+            header_y = topleft[1] + 4 if include_section_header else topleft[1] - 14
+            weapon_font = (
+                'text-yellow'
+                if active_section == item_funcs.InventorySection.WEAPON
+                else 'text-grey')
+            item_font = (
+                'text-yellow'
+                if active_section == item_funcs.InventorySection.ITEM
+                else 'text-grey')
+            FONT[weapon_font].blit('Wpn', surf, (topleft[0] + 4, header_y))
+            FONT['text-blue'].blit_right(
+                '%d/%d' % (len(unit.weapon_items), item_funcs.get_num_weapons(unit)),
+                surf, (topleft[0] + 50, header_y))
+            FONT[item_font].blit('Item', surf, (topleft[0] + 54, header_y))
+            FONT['text-blue'].blit_right(
+                '%d/%d' % (len(unit.regular_items), item_funcs.get_num_items(unit)),
+                surf, (topleft[0] + 102, header_y))
+        else:
+            items_to_draw = unit.nonaccessories
+        # Blit the visible section
+        visible_rows = (
+            max(item_funcs.get_num_weapons(unit), item_funcs.get_num_items(unit))
+            if item_funcs.split_inventory_enabled()
+            else _inventory_panel_rows(unit, False))
+        item_y_offset = 20 if include_section_header and item_funcs.split_inventory_enabled() else 4
+        for idx, item in enumerate(items_to_draw[:visible_rows]):
             item_option = menu_options.ItemOption(idx, item)
-            item_option.draw(surf, topleft[0], topleft[1] + idx * 16 + 4)
+            item_option.draw(
+                surf, topleft[0],
+                topleft[1] + idx * 16 + item_y_offset)
         # Costume slot (accessory) is intentionally hidden in places where
         # accessories are managed by the dedicated Costume menu instead.
         if include_accessories:
             for idx, item in enumerate(unit.accessories):
                 item_option = menu_options.ItemOption(idx, item)
-                item_option.draw(surf, topleft[0], topleft[1] + item_funcs.get_num_items(unit) * 16 + idx * 16 + 4)
+                accessory_offset = (max(item_funcs.get_num_weapons(unit), item_funcs.get_num_items(unit))
+                                    if item_funcs.split_inventory_enabled()
+                                    else item_funcs.get_num_items(unit))
+                if include_section_header and item_funcs.split_inventory_enabled():
+                    accessory_offset += 1
+                item_option.draw(
+                    surf, topleft[0],
+                    topleft[1] + accessory_offset * 16 + idx * 16 + 4)
 
 
 def draw_unit_bexp(surf, topleft, unit, new_exp, new_bexp, current_bexp, include_top=False, include_bottom=True,
@@ -97,11 +153,11 @@ def draw_unit_bexp(surf, topleft, unit, new_exp, new_bexp, current_bexp, include
         draw_unit_top(surf, topleft, unit)
 
     if include_bottom:
-        bg_surf = make_bg_surf(shimmer)
+        bg_surf = make_bg_surf(shimmer, unit, False)
         surf.blit(bg_surf, (x, y))
 
         if include_face:
-            draw_unit_face(surf, topleft, unit, right)
+            draw_unit_face(surf, topleft, unit, right, False)
 
         # Blit bonus exp
         button_right = SPRITES.get('buttons').subsurface(1, 19, 13, 12)
@@ -290,7 +346,6 @@ class Simple():
         if self.limit < len(self.options):
             self.scroll = min(len(self.options) - self.limit, self.scroll)
         return True
-
     def move_up(self, first_push=True) -> bool:
         should_move = first_push or self.current_index > 0
         if not should_move:
@@ -355,6 +410,10 @@ class Simple():
     def update(self):
         if self.draw_cursor == 1:
             self.cursor.update()
+        if self.info_flag and self.options:
+            help_box = self.options[self.current_index].help_box
+            if help_box:
+                help_box.update()
 
     def draw_scroll_bar(self, surf, topleft):
         right = topleft[0] + self.get_menu_width()
@@ -722,11 +781,68 @@ class Inventory(Choice):
     # create_options is invoked (or update_options afterwards).
     mode = 'all'
 
+    def __init__(self, owner, options, topleft=None, background='menu_bg_base',
+                 info=None, mode='all', active_section=None):
+        self.mode = mode
+        self.active_section = active_section or item_funcs.InventorySection.WEAPON
+        self.extra_bottom_padding = 0
+        self.section_header_y_offset = 0
+        self._source_options = list(options)
+        super().__init__(owner, options, topleft, background, info)
+        if item_funcs.split_inventory_enabled() and mode != 'costume':
+            self.set_limit(5)
+            if topleft is None:
+                self.y_offset = 12
+
+    def get_menu_height(self):
+        return super().get_menu_height() + self.extra_bottom_padding
+
+    def set_extra_bottom_padding(self, padding):
+        self.extra_bottom_padding = max(0, padding)
+        self._bg_surf = None
+
     def set_mode(self, mode):
         self.mode = mode
+        if mode == 'costume':
+            self.active_section = item_funcs.InventorySection.ACCESSORY
+
+    def set_active_section(self, section):
+        if section not in (item_funcs.InventorySection.WEAPON, item_funcs.InventorySection.ITEM):
+            return False
+        if self.active_section == section:
+            return False
+        self.active_section = section
+        self.create_options(self._source_options)
+        self.current_index = 0
+        self.scroll = 0
+        self._bg_surf = None
+        return True
+
+    def toggle_section(self):
+        if not item_funcs.split_inventory_enabled() or self.mode == 'costume':
+            return False
+        new_section = (item_funcs.InventorySection.ITEM
+                       if self.active_section == item_funcs.InventorySection.WEAPON
+                       else item_funcs.InventorySection.WEAPON)
+        return self.set_active_section(new_section)
+
+    def update_options(self, options=None):
+        if options is not None:
+            self._source_options = list(options)
+        self.create_options(self._source_options)
+        self.current_index = utils.clamp(self.current_index, 0, len(self.options) - 1)
+        self._bg_surf = None
+
+    def get_slot_selection(self):
+        return self.get_current_option().get() if self.get_current_option() else None
+
+    def get_current(self):
+        value = super().get_current()
+        return value if isinstance(value, ItemObject) else None
 
     def create_options(self, options, info_desc=None):
         self.options.clear()
+        self._source_options = list(options)
         # Assumes all options are Item Objects
         accessories = [option for option in options if item_system.is_accessory(self.owner, option)]
         items = [option for option in options if option not in accessories]
@@ -734,6 +850,23 @@ class Inventory(Choice):
         num_accessories = item_funcs.get_num_accessories(self.owner)
         show_items = self.mode in ('all', 'items')
         show_accessories = self.mode in ('all', 'costume')
+        if item_funcs.split_inventory_enabled() and self.mode != 'costume':
+            section_items = [
+                option for option in options
+                if item_funcs.get_inventory_section(self.owner, option) == self.active_section
+            ]
+            for idx, item in enumerate(section_items):
+                option = menu_options.ItemOption(idx, item)
+                option.help_box = option.get_help_box()
+                self.options.append(option)
+            capacity = item_funcs.get_inventory_capacity(self.owner, self.active_section)
+            for section_idx in range(len(section_items), capacity):
+                slot = item_funcs.InventorySlot(self.active_section, section_idx)
+                self.options.append(menu_options.InventorySlotOption(len(self.options), slot))
+            if not self.options:
+                slot = item_funcs.InventorySlot(self.active_section, 0)
+                self.options.append(menu_options.InventorySlotOption(0, slot))
+            return
         # Get items
         if show_items:
             for idx, item in enumerate(items):
@@ -756,12 +889,113 @@ class Inventory(Choice):
             # at all (so the menu still has something to measure / draw a
             # cursor on without crashing).
             if self.mode == 'costume':
-                pad_count = 2 if len(accessories) == 0 else 1
+                pad_count = 1 if len(accessories) == 0 else 0
             else:
                 pad_count = num_accessories - len(accessories)
             for num in range(pad_count):
                 option = menu_options.EmptyOption(len(self.options) + num)
                 self.options.append(option)
+
+    def handle_mouse(self) -> bool:
+        if item_funcs.split_inventory_enabled() and self.mode != 'costume':
+            mouse_position = get_input_manager().get_mouse_position()
+            if mouse_position:
+                mouse_x, mouse_y = mouse_position
+                left, top = self.get_topleft()
+                tab_top = top if self.y_offset else top - 12
+                if tab_top <= mouse_y <= tab_top + 12:
+                    if left <= mouse_x < left + 42:
+                        return self.set_active_section(item_funcs.InventorySection.WEAPON)
+                    if left + 42 <= mouse_x < left + 84:
+                        return self.set_active_section(item_funcs.InventorySection.ITEM)
+        return super().handle_mouse()
+
+    def draw(self, surf):
+        surf = super().draw(surf)
+        if item_funcs.split_inventory_enabled() and self.mode != 'costume':
+            left, top = self.get_topleft()
+            tab_top = (
+                top if self.y_offset else top - 14
+            ) + self.section_header_y_offset
+            weapon_font = 'text-yellow' if self.active_section == item_funcs.InventorySection.WEAPON else 'text-grey'
+            item_font = 'text-yellow' if self.active_section == item_funcs.InventorySection.ITEM else 'text-grey'
+            FONT[weapon_font].blit('Wpn', surf, (left + 4, tab_top))
+            FONT[item_font].blit('Item', surf, (left + 44, tab_top))
+            section_items = item_funcs.get_section_items(self.owner, self.active_section)
+            capacity = item_funcs.get_inventory_capacity(self.owner, self.active_section)
+            FONT['text-blue'].blit_right('%d/%d' % (len(section_items), capacity),
+                                         surf, (left + self.get_menu_width() - 2, tab_top))
+        return surf
+
+class SplitTradeInventory(Choice):
+    """Five-row trade viewport over split Weapon and Item sections."""
+
+    def __init__(self, owner, topleft):
+        super().__init__(owner, owner.items, topleft)
+        self.set_limit(5)
+        # Lift the rows clear of the eight-pixel bottom border. The second
+        # pixel keeps the final item glyphs fully inside the panel.
+        self.y_offset = -2
+
+    def create_options(self, options, info_descs=None):
+        if not item_funcs.split_inventory_enabled():
+            return super().create_options(options, info_descs)
+        self.options.clear()
+        for section in (item_funcs.InventorySection.WEAPON, item_funcs.InventorySection.ITEM):
+            section_items = [
+                item for item in options
+                if item_funcs.get_inventory_section(self.owner, item) == section
+            ]
+            capacity = item_funcs.get_inventory_capacity(self.owner, section)
+            section_entries = list(section_items)
+            for section_idx in range(len(section_items), capacity):
+                slot = item_funcs.InventorySlot(section, section_idx)
+                section_entries.append(slot)
+            for section_idx, entry in enumerate(section_entries):
+                is_weapon_end = (
+                    section == item_funcs.InventorySection.WEAPON and
+                    section_idx == len(section_entries) - 1)
+                if isinstance(entry, ItemObject):
+                    option_cls = (
+                        menu_options.TradeSectionEndItemOption
+                        if is_weapon_end else menu_options.ItemOption)
+                    option = option_cls(len(self.options), entry)
+                    option.help_box = option.get_help_box()
+                else:
+                    option_cls = (
+                        menu_options.TradeSectionEndSlotOption
+                        if is_weapon_end else menu_options.InventorySlotOption)
+                    option = option_cls(len(self.options), entry)
+                self.options.append(option)
+
+    def get_menu_height(self):
+        height = super().get_menu_height()
+        # Match create_base_surf's eight-pixel slice grid so the background can
+        # be cached instead of being rebuilt every frame.
+        return height - height % 8
+
+    def update_options(self, options=None):
+        self.create_options(self.owner.items if options is None else options)
+        self.current_index = utils.clamp(self.current_index, 0, len(self.options) - 1)
+        self.scroll = utils.clamp(self.scroll, 0, max(0, len(self.options) - self.limit))
+        self._bg_surf = None
+
+    def draw(self, surf):
+        # Choice.draw renders its help box after the menu. Draw the split
+        # section label between those two layers so "Wpn" stays behind the
+        # Item Help dialog instead of bleeding through it.
+        draw_info = self.info_flag
+        self.info_flag = False
+        surf = super().draw(surf)
+        self.info_flag = draw_info
+        if item_funcs.split_inventory_enabled() and self.scroll == 0:
+            left, top = self.get_topleft()
+            FONT['text-yellow'].blit(
+                'Wpn', surf,
+                (left + self.get_menu_width() - 30, top - 10))
+        if draw_info:
+            self.vert_draw_info(surf)
+        return surf
 
 class Shop(Choice):
     default_option = menu_options.ValueItemOption
@@ -809,7 +1043,56 @@ class Shop(Choice):
                     option._width = 168
                 self.options.append(option)
 
+class SectionedShop(Shop):
+    """Sell menu that switches between the unit's Weapon and Item sections."""
+
+    def __init__(self, owner, options, topleft=None, disp_value='sell',
+                 background='menu_bg_base', info=None):
+        self.active_section = item_funcs.InventorySection.WEAPON
+        self._source_options = list(options)
+        super().__init__(owner, options, topleft, disp_value, background, info)
+
+    def create_options(self, options, info_descs=None):
+        self._source_options = list(options)
+        if item_funcs.split_inventory_enabled():
+            options = [
+                item for item in options
+                if item_funcs.get_inventory_section(self.owner, item) == self.active_section
+            ]
+        super().create_options(options, info_descs)
+
+    def update_options(self, options=None):
+        if options is not None:
+            self._source_options = list(options)
+        self.create_options(self._source_options)
+        self.current_index = utils.clamp(self.current_index, 0, len(self.options) - 1)
+        self.scroll = 0
+        self._bg_surf = None
+
+    def toggle_section(self):
+        if not item_funcs.split_inventory_enabled():
+            return False
+        self.active_section = (
+            item_funcs.InventorySection.ITEM
+            if self.active_section == item_funcs.InventorySection.WEAPON
+            else item_funcs.InventorySection.WEAPON)
+        self.update_options()
+        return True
+
+    def draw(self, surf):
+        surf = super().draw(surf)
+        if item_funcs.split_inventory_enabled():
+            left, top = self.get_topleft()
+            weapon_font = 'text-yellow' if self.active_section == item_funcs.InventorySection.WEAPON else 'text-grey'
+            item_font = 'text-yellow' if self.active_section == item_funcs.InventorySection.ITEM else 'text-grey'
+            FONT[weapon_font].blit('Wpn', surf, (left + 4, top - 14))
+            FONT[item_font].blit('Item', surf, (left + 44, top - 14))
+        return surf
+
 class RepairShop(Shop):
+    default_option = menu_options.RepairValueItemOption
+
+class SectionedRepairShop(SectionedShop):
     default_option = menu_options.RepairValueItemOption
 
 class Trade(Simple):
@@ -828,12 +1111,16 @@ class Trade(Simple):
         full_items1 = self.get_items(self.owner)
         full_items2 = self.get_items(self.partner)
 
-        self.menu1 = Choice(self.owner, full_items1, (11, 68))
-        self.menu1.set_limit(min(5, DB.constants.total_items()))
-        self.menu1.set_hard_limit(True)  # Makes hard limit
-        self.menu2 = Choice(self.partner, full_items2, (125, 68))
-        self.menu2.set_limit(min(5, DB.constants.total_items()))
-        self.menu2.set_hard_limit(True)  # Makes hard limit
+        if item_funcs.split_inventory_enabled():
+            self.menu1 = SplitTradeInventory(self.owner, (11, 64))
+            self.menu2 = SplitTradeInventory(self.partner, (125, 64))
+        else:
+            self.menu1 = Choice(self.owner, full_items1, (11, 68))
+            self.menu1.set_limit(min(5, DB.constants.total_items()))
+            self.menu1.set_hard_limit(True)  # Makes hard limit
+            self.menu2 = Choice(self.partner, full_items2, (125, 68))
+            self.menu2.set_limit(min(5, DB.constants.total_items()))
+            self.menu2.set_hard_limit(True)  # Makes hard limit
         self.menu2.set_cursor(0)
 
         self.selecting_hand = (0, 0)
@@ -845,10 +1132,27 @@ class Trade(Simple):
         # Accessories are intentionally excluded from unit-to-unit trade.
         # Costumes are managed exclusively through the dedicated Costume menu
         # in prep/base Manage, not through Trade.
+        if item_funcs.split_inventory_enabled():
+            return unit.nonaccessories
         items = unit.nonaccessories
         if len(items) < item_funcs.get_num_items(unit):
             items = items[:] + [''] * (item_funcs.get_num_items(unit) - len(items))
         return items
+
+    def _target_index(self, menu, selected_value, fallback_index):
+        if item_funcs.split_inventory_enabled():
+            if isinstance(selected_value, ItemObject):
+                desired_section = item_funcs.get_inventory_section(menu.owner, selected_value)
+            elif isinstance(selected_value, item_funcs.InventorySlot):
+                desired_section = selected_value.section
+            else:
+                desired_section = None
+            if desired_section:
+                for idx, option in enumerate(menu.options):
+                    value = option.get()
+                    if isinstance(value, item_funcs.InventorySlot) and value.section == desired_section:
+                        return idx
+        return utils.clamp(fallback_index, 0, len(menu.options) - 1)
 
     def selected_option(self):
         return self._selected_option
@@ -876,15 +1180,9 @@ class Trade(Simple):
         self.other_hand = self.selecting_hand
         if self.selecting_hand[0] == 0:
             self._selected_option = self.menu1.options[self.selecting_hand[1]]
-            good_options = [option for option in self.menu2.options if not option.ignore and option.get()]
-            empty_options = [idx for idx, option in enumerate(self.menu2.options) if option.ignore or not option.get()]
-            if len(good_options) > DB.constants.total_items():
-                self.menu2.move_to(self.selecting_hand[1])
-            else:
-                if empty_options:
-                    self.menu2.move_to(empty_options[0])
-                else:
-                    self.menu2.move_to(len(good_options))
+            target_idx = self._target_index(
+                self.menu2, self._selected_option.get(), self.selecting_hand[1])
+            self.menu2.move_to(target_idx)
             self.menu2.cursor.y_offset = 0
             self.selecting_hand = (1, self.menu2.current_index)
             self.menu1.set_fake_cursor(self.other_hand[1])
@@ -892,15 +1190,9 @@ class Trade(Simple):
             self.menu1.set_cursor(0)
         else:
             self._selected_option = self.menu2.options[self.selecting_hand[1]]
-            good_options = [option for option in self.menu1.options if not option.ignore and option.get()]
-            empty_options = [idx for idx, option in enumerate(self.menu1.options) if option.ignore or not option.get()]
-            if len(good_options) > DB.constants.total_items():
-                self.menu1.move_to(self.selecting_hand[1])
-            else:
-                if empty_options:
-                    self.menu1.move_to(empty_options[0])
-                else:
-                    self.menu1.move_to(len(good_options))
+            target_idx = self._target_index(
+                self.menu1, self._selected_option.get(), self.selecting_hand[1])
+            self.menu1.move_to(target_idx)
             self.menu1.cursor.y_offset = 0
             self.selecting_hand = (0, self.menu1.current_index)
             self.menu2.set_fake_cursor(self.other_hand[1])
@@ -1047,6 +1339,11 @@ class Trade(Simple):
 class Table(Simple):
     def __init__(self, owner, options, layout, topleft=None, background='menu_bg_base', info=None):
         self.mode = None
+        self._android_bg_surf = None
+        self._android_bg_key = None
+        self.cache_static_options = False
+        self._android_static_options_surf = None
+        self._android_static_options_key = None
         super().__init__(owner, options, topleft, background, info)
 
         self.rows, self.columns = layout
@@ -1062,7 +1359,33 @@ class Table(Simple):
 
     def set_mode(self, mode):
         self.mode = mode
+        self._invalidate_android_bg_cache()
         self.update_options()
+
+    def _invalidate_android_bg_cache(self):
+        self._android_bg_surf = None
+        self._android_bg_key = None
+        self._invalidate_android_static_options_cache()
+
+    def _invalidate_android_static_options_cache(self):
+        self._android_static_options_surf = None
+        self._android_static_options_key = None
+
+    def update_bg(self):
+        """Keep Android's cached background aligned with the standard API."""
+        self._invalidate_android_bg_cache()
+
+    def set_ignore(self, ignores):
+        super().set_ignore(ignores)
+        self._invalidate_android_static_options_cache()
+
+    def set_color(self, colors):
+        super().set_color(colors)
+        self._invalidate_android_static_options_cache()
+
+    def set_text(self, idx, text):
+        super().set_text(idx, text)
+        self._invalidate_android_static_options_cache()
 
     def set_fake_cursor(self, val):
         self.fake_cursor_idx = val
@@ -1083,6 +1406,7 @@ class Table(Simple):
             else:
                 option = menu_options.BasicOption(idx, option)
             self.options.append(option)
+        self._invalidate_android_bg_cache()
 
     def move_to(self, idx):
         scroll = self.scroll
@@ -1264,7 +1588,7 @@ class Table(Simple):
         max_height = max(option.height() for option in self.options)
         return (max_height - max_height%8) * self.rows + 8
 
-    def create_bg_surf(self):
+    def _create_bg_surf_uncached(self):
         bg_surf = create_base_surf(self.get_menu_width(), self.get_menu_height(), self.background)
         surf = engine.create_surface((bg_surf.get_width() + 2, bg_surf.get_height() + 4), transparent=True)
         surf.blit(bg_surf, (2, 4))
@@ -1278,6 +1602,20 @@ class Table(Simple):
             surf.blit(sprite, (surf.get_width() - sprite.get_width() - 1, surf.get_height() - sprite.get_height() - 5))
         surf = image_mods.make_translucent(surf, .1)
         return surf
+
+    def create_bg_surf(self):
+        if not is_android_render_optimization_enabled():
+            return self._create_bg_surf_uncached()
+
+        key = (
+            self.get_menu_width(), self.get_menu_height(), self.background,
+            self.gem, self.shimmer,
+        )
+        if getattr(self, '_android_bg_surf', None) is None \
+                or getattr(self, '_android_bg_key', None) != key:
+            self._android_bg_surf = self._create_bg_surf_uncached()
+            self._android_bg_key = key
+        return self._android_bg_surf
 
     def draw_info(self, surf):
         help_box = self.options[self.current_index].help_box
@@ -1299,6 +1637,55 @@ class Table(Simple):
         option_height = 32 if self.mode == 'achievements' else 16
         self.scroll_bar.draw(surf, topright, self.scroll, self.rows, num_rows, option_height)
 
+    def _can_cache_android_static_options(self, choices) -> bool:
+        return (
+            is_android_render_optimization_enabled()
+            and self.cache_static_options
+            and self.mode is None
+            and bool(choices)
+            and all(isinstance(choice, menu_options.BasicOption) for choice in choices)
+        )
+
+    def _draw_android_static_options(self, surf, topleft, choices, width, height):
+        key = (
+            self.scroll, self.rows, self.columns, width, height,
+            tuple((choice.idx, choice.display_text, choice.font, choice.get_color()) for choice in choices),
+        )
+        if self._android_static_options_surf is None or self._android_static_options_key != key:
+            cache_surf = engine.create_surface(
+                (self.get_menu_width(), self.get_menu_height()), transparent=True,
+            )
+            for idx, choice in enumerate(choices):
+                top = 4 + (idx // self.columns * height)
+                left = idx % self.columns * width
+                choice.draw(cache_surf, left, top)
+            self._android_static_options_surf = cache_surf
+            self._android_static_options_key = key
+        surf.blit(self._android_static_options_surf, topleft)
+
+    @staticmethod
+    def _draw_android_option_highlight(surf, left, top, menu_width):
+        highlight_surf = SPRITES.get('menu_highlight')
+        highlight_width = highlight_surf.get_width()
+        for slot in range((menu_width - 10) // highlight_width):
+            surf.blit(highlight_surf, (left + 5 + slot * highlight_width, top + 9))
+
+    def _draw_android_dynamic_options(self, surf, topleft, choices, width, height, draw_scroll_bar):
+        start_index = self.scroll * self.columns
+        menu_width = width - 8 if draw_scroll_bar else width
+        for idx, _choice in enumerate(choices):
+            option_index = start_index + idx
+            top = topleft[1] + 4 + (idx // self.columns * height)
+            left = topleft[0] + (idx % self.columns * width)
+            is_current = option_index == self.current_index and self.takes_input and self.draw_cursor
+            is_fake = option_index == self.fake_cursor_idx
+            if is_current or is_fake:
+                self._draw_android_option_highlight(surf, left, top, menu_width)
+            if is_fake:
+                self.stationary_cursor.draw(surf, left, top)
+            if is_current:
+                self.cursor.draw(surf, left, top)
+
     def draw(self, surf):
         topleft = self.get_topleft()
         bg_surf = self.create_bg_surf()
@@ -1316,6 +1703,12 @@ class Table(Simple):
         width -= width%8
         height = max(option.height() for option in self.options)
         if choices:
+            if self._can_cache_android_static_options(choices):
+                self._draw_android_static_options(surf, topleft, choices, width, height)
+                self._draw_android_dynamic_options(
+                    surf, topleft, choices, width, height, draw_scroll_bar,
+                )
+                return surf
             for idx, choice in enumerate(choices):
                 top = topleft[1] + 4 + (idx // self.columns * height)
                 left = topleft[0] + (idx % self.columns * width)
@@ -1392,14 +1785,18 @@ class Convoy():
         self.include_other_units = include_other_units
         # mode: 'all' (default), 'items' (hide accessories), 'costume' (only accessories)
         self.mode = mode
+        self.active_section = (item_funcs.InventorySection.WEAPON
+                               if item_funcs.split_inventory_enabled() and mode != 'costume'
+                               else item_funcs.InventorySection.ITEM)
 
         if mode == 'costume':
             # Costume menu only ever needs a single bucket — accessories don't
             # have weapon types, so collapse all tabs into 'Default' and we'll
             # hide the scroll arrows below.
-            self.order = ['Default']
+            self.weapon_order = ['Default']
         else:
-            self.order = [w.nid for w in DB.weapons.get_convoy_visible_weapon_types().values()]
+            self.weapon_order = [w.nid for w in DB.weapons.get_convoy_visible_weapon_types().values()]
+        self.order = self._order_for_active_section()
         self.build_menus()
 
         self._info_flag = False  # Whether to show item info
@@ -1420,6 +1817,42 @@ class Convoy():
         for name, menu in self.menus.items():
             menu.set_takes_input(False)
 
+    def _order_for_active_section(self):
+        if item_funcs.split_inventory_enabled() and self.mode != 'costume':
+            if self.active_section == item_funcs.InventorySection.ITEM:
+                # Item-section entries still use the Default bucket
+                # internally, but it is no longer shown beside weapon types.
+                return ['Default']
+            # In split inventory, AUX owns the Weapon/Item distinction. The
+            # old Default tab was the legacy Item category and is redundant.
+            weapon_order = [
+                weapon_nid for weapon_nid in self.weapon_order
+                if weapon_nid != 'Default']
+            return weapon_order or ['Default']
+        return self.weapon_order[:]
+
+    def set_active_section(self, section):
+        if not item_funcs.split_inventory_enabled() or self.mode == 'costume' or \
+                section == self.active_section:
+            return False
+        was_inventory = self.selection_index == 0 and self.inventory is not None
+        self.active_section = section
+        self.order = self._order_for_active_section()
+        self.build_menus()
+        self.menu_index = 0
+        self.selection_index = 0 if was_inventory else 1
+        if self.inventory:
+            self.inventory.set_takes_input(was_inventory)
+        for menu in self.menus.values():
+            menu.set_takes_input(not was_inventory)
+        return True
+
+    def toggle_section(self):
+        section = (item_funcs.InventorySection.ITEM
+                   if self.active_section == item_funcs.InventorySection.WEAPON
+                   else item_funcs.InventorySection.WEAPON)
+        return self.set_active_section(section)
+
     def build_menus(self):
         sorted_dict = self.get_sorted_dict()
         self.menus = {}
@@ -1432,20 +1865,33 @@ class Convoy():
             new_menu.shimmer = 2
             self.menus[w_type] = new_menu
 
-        # Anchor the inventory panel at the same Y position used by items
-        # mode (which sits cleanly beneath the unit portrait). The panel's
-        # background height is driven by len(options), so a costume-mode
-        # panel naturally renders short — we just don't want it pinned to
-        # the bottom of the screen, which is what would happen if we used
-        # its own (small) height in the Y calculation.
-        anchor_height = item_funcs.get_num_items(self.owner) * 16 + 8
-        self.inventory = Inventory(self.owner, self._owner_items_for_mode(), (12, WINHEIGHT - anchor_height - 4))
-        self.inventory.set_mode(self.mode)
-        # Rebuild option list now that mode is set so that the inventory only
-        # renders the slot section appropriate for this mode.
-        self.inventory.update_options(self._owner_items_for_mode())
+        # Regular inventory stays bottom-aligned. Costume inventory is only
+        # one slot tall and sits directly beneath the unit portrait.
+        if item_funcs.split_inventory_enabled() and self.mode != 'costume':
+            visible_capacity = max(item_funcs.get_num_weapons(self.owner),
+                                   item_funcs.get_num_items(self.owner))
+            section_header_height = 16
+        else:
+            visible_capacity = item_funcs.get_num_items(self.owner)
+            section_header_height = 0
+        anchor_height = visible_capacity * 16 + section_header_height + 8
+        inventory_top = (
+            68 if self.mode == 'costume'
+            else WINHEIGHT - anchor_height - 4)
+        self.inventory = Inventory(
+            self.owner, self._owner_items_for_mode(),
+            (12, inventory_top),
+            mode=self.mode, active_section=self.active_section)
+        if section_header_height:
+            # Keep Wpn/Item and their capacity count inside the panel instead
+            # of drawing them over the portrait and top border.
+            self.inventory.y_offset = section_header_height
+            self.inventory.section_header_y_offset = 4
+            self.inventory._bg_surf = None
         self.inventory.gem = False
-        self.inventory.shimmer = 2
+        # The shimmer sprite is taller than a one-row costume panel and
+        # overwrites its upper-right border when clipped into that surface.
+        self.inventory.shimmer = 0 if self.mode == 'costume' else 2
 
     def _owner_items_for_mode(self):
         if self.mode == 'items':
@@ -1473,6 +1919,11 @@ class Convoy():
         # Filter convoy + other-unit pool according to current mode so that
         # 'items' mode hides costumes and 'costume' mode hides regular gear.
         all_items = self._filter_items_by_mode(all_items)
+        if item_funcs.split_inventory_enabled() and self.mode != 'costume':
+            all_items = [
+                item for item in all_items
+                if item_funcs.get_inventory_section(self.unit, item) == self.active_section
+            ]
 
         sorted_dict = {}
         for w_type in self.order:
@@ -1492,6 +1943,7 @@ class Convoy():
     def update_options(self):
         if self.inventory:
             self.inventory.set_mode(self.mode)
+            self.inventory.active_section = self.active_section
             self.inventory.update_options(self._owner_items_for_mode())
         sorted_dict = self.get_sorted_dict()
         for name, menu in self.menus.items():
@@ -1502,7 +1954,8 @@ class Convoy():
 
     def get_current(self):
         if self.selection_index == 0:
-            return self.inventory.get_current()
+            current = self.inventory.get_current()
+            return current if isinstance(current, ItemObject) else None
         else:
             return self.get_menu().get_current()
 
@@ -1510,7 +1963,7 @@ class Convoy():
         return self.get_menu().get_current()
 
     def get_inventory_current(self):
-        return self.inventory.get_current()
+        return self.inventory.get_slot_selection()
 
     def get_current_index(self):
         if self.selection_index == 0:
@@ -1540,6 +1993,10 @@ class Convoy():
         self.locked = True
 
     def move_to_item_type(self, item):
+        if item_funcs.split_inventory_enabled() and self.mode != 'costume':
+            section = item_funcs.get_inventory_section(self.unit, item)
+            if section in (item_funcs.InventorySection.WEAPON, item_funcs.InventorySection.ITEM):
+                self.set_active_section(section)
         wtype = item_system.weapon_type(self.unit, item)
         # A hidden weapon type (hide_from_convoy/hide_from_display) is absent
         # from self.order, so its items live in the 'Default' bucket (see
@@ -1683,7 +2140,9 @@ class Convoy():
         # Draw item icons (skip the weapon-type tab strip in costume mode —
         # accessories don't belong to any weapon type so there's nothing
         # meaningful to render there).
-        if self.mode != 'costume':
+        if self.mode != 'costume' and (
+                not item_funcs.split_inventory_enabled() or
+                self.active_section == item_funcs.InventorySection.WEAPON):
             dist = (self.menu_width - 10)/len(self.order)
             for idx, weapon_nid in enumerate(reversed(self.order)):
                 true_idx = len(self.order) - idx - 1
@@ -1709,7 +2168,9 @@ class Convoy():
             unit_str = "Owner: ---"
         FONT['text'].blit(unit_str, surf, (160, 4))
 
-        if self.mode != 'costume':
+        if self.mode != 'costume' and (
+                not item_funcs.split_inventory_enabled() or
+                self.active_section == item_funcs.InventorySection.WEAPON):
             self.left_arrow.draw(surf)
             self.right_arrow.draw(surf)
         return surf
@@ -1729,12 +2190,11 @@ class Convoy():
                     did_move = True
 
             if self.inventory:  # Markets, which inherit from me, don't have inventories
-                idxs, option_rects = self.inventory.get_rects()
-                for idx, option_rect in zip(idxs, option_rects):
-                    x, y, width, height = option_rect
-                    if x <= mouse_x <= x + width and y <= mouse_y <= y + height:
-                        self.inventory.mouse_move(idx)
-                        did_move = True
+                old_section = self.inventory.active_section
+                if self.inventory.handle_mouse():
+                    did_move = True
+                    if self.inventory.active_section != old_section:
+                        self.set_active_section(self.inventory.active_section)
         return did_move
 
 class Market(Convoy):
@@ -1772,6 +2232,11 @@ class Market(Convoy):
             for unit in game.get_units_in_party():
                 items = item_funcs.get_all_tradeable_items(unit)
                 all_items += items
+        if item_funcs.split_inventory_enabled():
+            all_items = [
+                item for item in all_items
+                if item_funcs.get_inventory_section(self.unit, item) == self.active_section
+            ]
 
         sorted_dict = {}
         for w_type in self.order:

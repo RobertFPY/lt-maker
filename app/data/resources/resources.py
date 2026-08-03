@@ -32,6 +32,13 @@ from app.utilities.typing import NestedPrimitiveDict
 
 CATEGORY_SUFFIX = '.category'
 
+def _decode_desktop_sprites_before_component_imports():
+    """Make reset/customized UI sprites available to early engine imports."""
+    if os.environ.get("ANDROID_ARGUMENT"):
+        return
+    from app.engine import sprites as engine_sprites
+    engine_sprites.load_images(force=True)
+
 class Resources():
     save_data_types = ("icons16", "icons32", "icons80", "portraits", "animations", "panoramas", "fonts",
                        "map_icons", "map_sprites", "combat_palettes", "combat_anims", "combat_effects", "music", "sfx",
@@ -99,6 +106,7 @@ class Resources():
         # This should overwrite the regular sprites in the "/sprites" folder
         sprites.reset()
         sprites.load_sprites(os.path.join(self.main_folder, 'custom_sprites'))
+        _decode_desktop_sprites_before_component_imports()
 
         # Load Custom Platforms
         if(os.path.exists(os.path.join(self.main_folder, 'custom_sprites/platforms'))):
@@ -124,9 +132,11 @@ class Resources():
     def load_components(self):
         # For getting custom project components at runtime
         import importlib
+        import importlib.machinery
         import importlib.util
         import os
         import sys
+        from app.utilities.import_utils import import_submodules
 
         cc_path = self.get_custom_components_path()
 
@@ -134,21 +144,50 @@ class Resources():
             self.loaded_custom_components_path = None
             return
 
-        module_path = os.path.join(cc_path, '__init__.py')
-        if module_path != self.loaded_custom_components_path and os.path.exists(module_path):
+        init_suffixes = (
+            *importlib.machinery.SOURCE_SUFFIXES,
+            *importlib.machinery.BYTECODE_SUFFIXES,
+        )
+        module_path = next(
+            (
+                os.path.join(cc_path, "__init__" + suffix)
+                for suffix in init_suffixes
+                if os.path.exists(os.path.join(cc_path, "__init__" + suffix))
+            ),
+            None,
+        )
+        if module_path != self.loaded_custom_components_path and module_path:
             self.loaded_custom_components_path = module_path
             print("Importing Custom Components")
             try:
-                spec = importlib.util.spec_from_file_location('custom_components', module_path)
+                spec = importlib.util.spec_from_file_location(
+                    'custom_components',
+                    module_path,
+                    submodule_search_locations=[cc_path],
+                )
+                if not spec or not spec.loader:
+                    raise ImportError(
+                        "Could not create a loader for custom components at %s"
+                        % module_path
+                    )
                 module = importlib.util.module_from_spec(spec)
                 # spec.name is 'custom_components'
                 sys.modules[spec.name] = module
                 spec.loader.exec_module(module)
+                # Project package initializers historically scanned only ``.py``
+                # files. Android packages contain flat ``.pyc`` files instead,
+                # so explicitly import every child module using Python's own
+                # source/bytecode-aware discovery.
+                import_submodules(
+                    spec.name,
+                    [cc_path],
+                    reload_existing=True,
+                )
             except:
                 import_failure_msg = traceback.format_exc()
                 logging.error("Failed to import custom components: %s" % (import_failure_msg))
                 raise exceptions.CustomComponentsException("Failed to import custom components: %s" % (import_failure_msg))
-        if not os.path.exists(module_path):
+        if not module_path:
             self.loaded_custom_components_path = None
 
     def save_as_data(self, save_data_types) -> NestedPrimitiveDict:

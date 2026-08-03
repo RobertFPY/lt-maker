@@ -13,6 +13,9 @@ from app import autoupdate, dark_theme
 from app.utilities import file_utils
 
 from app.editor.file_manager.project_builder.project_builder import LTProjectBuilder
+from app.editor.file_manager.android_builder.android_build_dialog import (
+    AndroidBuildDialog,
+)
 from app.editor.font_editor.font_tab import FontDatabase
 from app.editor.settings.preferences_tabbed import TabbedPreferencesDialog
 from app.editor.settings import MainSettingsController
@@ -39,6 +42,7 @@ from app.editor.file_manager.project_file_backend import ProjectFileBackend, DEF
 from app.editor.global_editor.global_editor import GlobalEditor
 from app.editor.level_editor.level_editor import LevelEditor
 from app.editor.overworld_editor.overworld_editor import OverworldEditor
+from app.editor.data_editor import EditorWorkspace
 
 # Game interface
 import app.editor.game_actions.game_actions as GAME_ACTIONS
@@ -130,6 +134,7 @@ class MainEditor(QMainWindow):
         self.setCentralWidget(self.editor_stack)
         self.mode = MainEditorScreenStates.GLOBAL_EDITOR
         self.current_editor = self.global_editor
+        self.editor_workspace = EditorWorkspace(self)
 
         # initialize other UI elements
         self.create_actions()
@@ -211,6 +216,16 @@ class MainEditor(QMainWindow):
         if not file_utils.Pltfm.windows():
             self.build_project.setEnabled(False)
             self.build_project.setToolTip("Building is only supported on Windows.")
+        self.build_android_apk_act = QAction(
+            "Build Android APK...",
+            self,
+            triggered=self.build_android_apk,
+        )
+        if not file_utils.Pltfm.windows():
+            self.build_android_apk_act.setEnabled(False)
+            self.build_android_apk_act.setToolTip(
+                "Android APK building currently requires Windows and WSL2."
+            )
 
         self.preferences_act = QAction(
             _("&Preferences..."), self, triggered=self.edit_preferences)
@@ -307,6 +322,7 @@ class MainEditor(QMainWindow):
         file_menu.addAction(self.dump_script)
         if not is_editor_engine_built_version():
             file_menu.addAction(self.build_project)
+            file_menu.addAction(self.build_android_apk_act)
         file_menu.addSeparator()
         file_menu.addAction(self.quit_act)
 
@@ -372,6 +388,10 @@ class MainEditor(QMainWindow):
 
         # self.toolbar.addToolButton(self.test_button)
 
+    def build_android_apk(self):
+        dialog = AndroidBuildDialog(self.project_save_load_handler, self)
+        dialog.exec_()
+
     def recreate_toolbar(self):
         self.toolbar.clear()
         self.toolbar.addAction(self.database_button_action)
@@ -393,19 +413,28 @@ class MainEditor(QMainWindow):
         else:
             self.status_bar.clearMessage()
 
+    def open_editor_tab(self, editor):
+        """Open a database/resource editor in the shared non-modal workspace."""
+        self.editor_workspace.add_editor(editor)
+
     def closeEvent(self, event):
         if self.project_save_load_handler.maybe_save():
             logging.info("Setting current project %s" %
                          self.settings.get_current_project())
             self.settings.set_current_project(
                 self.settings.get_current_project())
+            # maybe_save() already committed or discarded the shared database
+            # session.  Do not let the child workspace restore its older
+            # Cancel snapshot while the application is shutting down.
+            self.editor_workspace.reset_for_project_change()
             event.accept()
+            for window in QApplication.topLevelWidgets():
+                if window is not self:
+                    window.close()
         else:
             event.ignore()
         self.settings.component_controller.set_geometry(
             self.__class__.__name__, self.saveGeometry())
-        for window in QApplication.topLevelWidgets():
-            window.close()
 
     def test_play_current(self):
         self.test_current_act.setEnabled(False)
@@ -460,6 +489,7 @@ class MainEditor(QMainWindow):
 
     def new(self):
         if self.project_save_load_handler.new():
+            self.editor_workspace.reset_for_project_change()
             # if we made a new game:
             self.set_window_title('Untitled')
             title = os.path.split(self.settings.get_current_project())[-1]
@@ -492,6 +522,7 @@ class MainEditor(QMainWindow):
 
     def open(self):
         if self.project_save_load_handler.open():
+            self.editor_workspace.reset_for_project_change()
             self._open()
 
     def auto_open(self, project_path: Optional[str]):
@@ -506,6 +537,7 @@ class MainEditor(QMainWindow):
         # Remove asterisk on window title
         if self.window_title.startswith('*'):
             self.window_title = self.window_title[1:]
+        self.editor_workspace.mark_project_saved()
         self.status_bar.showMessage('Saved project to %s' % current_proj)
 
     def save(self):
@@ -519,6 +551,7 @@ class MainEditor(QMainWindow):
     def remove_unused_resources(self):
         # Need to save first before cleaning
         if self.project_save_load_handler.save():
+            self.editor_workspace.mark_project_saved()
             unused_resources = self.project_save_load_handler.get_unused_files()
             # Don't bother if we have no unused resources
             if not any(fns for fns in unused_resources.values()):

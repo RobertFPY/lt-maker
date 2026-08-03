@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Set, Tuple, TYPE_CHECKING
+from typing import Callable, Dict, Generator, List, Optional, Set, Tuple, TYPE_CHECKING, TypeVar
 
 from app.data.database.database import DB
 from app.engine import line_of_sight
@@ -14,37 +14,91 @@ from app.utilities.typing import NID, Pos, UID
 if TYPE_CHECKING:
     from app.engine.objects.skill import SkillObject
 
+T = TypeVar('T')
+
 class GameBoard(object):
     def __init__(self, tilemap):
+        for _phase in self._initialize_iter(tilemap):
+            pass
+
+    @classmethod
+    def build_iter(
+        cls, tilemap, batch_size: int = 64,
+    ) -> Generator[str, None, GameBoard]:
+        """Build a board in slices and return it through StopIteration.value."""
+        board = cls.__new__(cls)
+        yield from board._initialize_iter(tilemap, batch_size)
+        return board
+
+    def _filled_grid_iter(
+        self, factory: Callable[[], T], batch_size: int,
+    ) -> Generator[str, None, Grid[T]]:
+        grid = Grid[T]((self.width, self.height))
+        cell_count = self.width * self.height
+        for index in range(cell_count):
+            grid.append(factory())
+            if (index + 1) % batch_size == 0:
+                yield 'collections'
+        return grid
+
+    def _initialize_iter(
+        self, tilemap, batch_size: int = 64,
+    ) -> Generator[str, None, None]:
+        batch_size = max(1, int(batch_size))
         self.width: int = tilemap.width
         self.height: int = tilemap.height
         self.bounds: Tuple[int, int, int, int] = (0, 0, self.width - 1, self.height - 1)
         self.mcost_grids: Dict[NID, Grid[Node]] = {}
 
-        self.reset_tile_grids(tilemap)
+        # Resolve terrain once for both movement type and opacity.  The old
+        # constructor walked the full tilemap twice before yielding control.
+        mtype_grid: Grid[NID] = Grid((self.width, self.height))
+        self.opacity_grid: Grid[bool] = Grid((self.width, self.height))
+        processed = 0
+        for x in range(self.width):
+            for y in range(self.height):
+                terrain_nid = game.get_terrain_nid(tilemap, (x, y))
+                terrain = DB.terrain.get(terrain_nid)
+                movement_terrain = terrain or DB.terrain[0]
+                mtype_grid.append(movement_terrain.mtype)
+                self.opacity_grid.append(bool(terrain.opaque) if terrain else False)
+                processed += 1
+                if processed % batch_size == 0:
+                    yield 'terrain'
+
+        for mode in DB.mcost.unit_types:
+            grid = Grid[Node]((self.width, self.height))
+            processed = 0
+            for x in range(self.width):
+                for y in range(self.height):
+                    mtype = mtype_grid.get((x, y))
+                    tile_cost = DB.mcost.get_mcost(mode, mtype) if mtype else 1
+                    grid.append(Node(x, y, tile_cost < 99, tile_cost))
+                    processed += 1
+                    if processed % batch_size == 0:
+                        yield 'movement'
+            self.mcost_grids[mode] = grid
 
         # Keeps track of what team occupies which tile
-        self.team_grid: Grid[List[NID]] = self.initialize_list_grid()
+        self.team_grid = yield from self._filled_grid_iter(list, batch_size)
         # Keeps track of which unit occupies which tile
-        self.unit_grid: Grid[List[UnitObject]] = self.initialize_list_grid()
+        self.unit_grid = yield from self._filled_grid_iter(list, batch_size)
 
         # Fog of War -- one for each team
         self.fog_of_war_grids = {}
         for team in DB.teams:
-            self.fog_of_war_grids[team.nid] = self.init_set_grid()
+            self.fog_of_war_grids[team.nid] = yield from self._filled_grid_iter(
+                set, batch_size)
         self.fow_vantage_point = {}  # Unit: Position where the unit is that's looking
-        self.fog_regions = self.init_set_grid()
+        self.fog_regions = yield from self._filled_grid_iter(set, batch_size)
         self.fog_region_set: Set[NID] = set()  # Set of Fog region nids so we can tell how many fog regions exist at all times
-        self.vision_regions = self.init_set_grid()
+        self.vision_regions = yield from self._filled_grid_iter(set, batch_size)
         self.previously_visited_tiles: Set[Pos] = set()  # Used for Hybrid Fog to mark where we have seen in the past
 
         # For Auras
-        self.aura_grid = self.init_set_grid()
+        self.aura_grid = yield from self._filled_grid_iter(set, batch_size)
         # Key: Aura Skill Uid, Value: Set of positions
         self.known_auras = {}
-
-        # For opacity
-        self.opacity_grid = self.init_opacity_grid(tilemap)
 
     def set_bounds(self, min_x: int, min_y: int, max_x: int, max_y: int):
         self.bounds = (min_x, min_y, max_x, max_y)

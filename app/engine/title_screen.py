@@ -1,4 +1,5 @@
 import os
+import time
 
 from app import autoupdate
 
@@ -10,11 +11,15 @@ from app.engine import banner, base_surf
 from app.engine import config as cf
 from app.engine import (dialog, engine, gui, image_mods, menus, particles,
                         save, text_funcs)
+from app.engine.android_runtime import (
+    is_android_render_optimization_enabled, is_android_runtime,
+)
 from app.engine.background import PanoramaBackground
 from app.engine.fluid_scroll import FluidScroll
 from app.engine.fonts import FONT
 from app.engine.game_state import game
 from app.engine.objects.difficulty_mode import DifficultyModeObject
+from app.engine.performance import RUNTIME_PROFILER
 from app.engine.sound import get_sound_thread
 from app.engine.sprites import SPRITES
 from app.engine.state import State
@@ -29,12 +34,19 @@ from app.utilities import utils
 
 import logging
 
+PLAYER_SELECTABLE_GROWTH_OPTIONS = (
+    GrowthOption.RANDOM,
+    GrowthOption.PITY,
+)
+
 class TitleStartState(State):
     name = "title_start"
     in_level = False
     show_map = False
 
     def start(self):
+        self._return_directly_to_title_menu = bool(
+            game.memory.pop('_return_directly_to_title_menu', False))
         logo = SPRITES.get('logo')
         imgs = RESOURCES.panoramas.get('title_background')
         self.bg = PanoramaBackground(imgs) if imgs else None
@@ -57,13 +69,19 @@ class TitleStartState(State):
         if DB.constants.value('title_particles'):
             bounds = (-WINHEIGHT, WINWIDTH, WINHEIGHT, WINHEIGHT + 16)
             self.particles = particles.MapParticleSystem('title', particles.Smoke, .075, bounds, (TILEX, TILEY))
-            self.particles.prefill()
+            if is_android_render_optimization_enabled():
+                with RUNTIME_PROFILER.section('title_particles_seed'):
+                    particles.seed_title_smoke(self.particles)
+            else:
+                with RUNTIME_PROFILER.section('title_particles_prefill'):
+                    self.particles.prefill()
         game.memory['title_particles'] = self.particles
         game.memory['transition_speed'] = 0.5
 
         # Wait until saving thread has finished
         if save.SAVE_THREAD:
-            save.SAVE_THREAD.join()
+            with RUNTIME_PROFILER.section('title_save_thread_join'):
+                save.SAVE_THREAD.join()
 
         game.state.refresh()
 
@@ -86,21 +104,28 @@ class TitleStartState(State):
         return 'repeat'
 
     def _start_title_music(self):
-        get_sound_thread().clear()
-        if RECORDS.get('_music_title_screen'):
-            get_sound_thread().fade_in(RECORDS.get('_music_title_screen'), fade_in=50)
-        elif DB.constants.value('music_main'):
-            get_sound_thread().fade_in(DB.constants.value('music_main'), fade_in=50)
+        sound_thread = get_sound_thread()
+        sound_thread.clear()
+        music = RECORDS.get('_music_title_screen') or DB.constants.value('music_main')
+        if music:
+            if is_android_runtime() and sound_thread.play_streamed_music(music, fade_in=50):
+                return
+            sound_thread.fade_in(music, fade_in=50)
 
     def begin(self):
-        if game.state.from_transition():
+        if game.state.from_transition() and not self._return_directly_to_title_menu:
             game.state.change('transition_in')
             return 'repeat'
         if self._events_triggered:
             self._events_triggered = False
             self._start_title_music()
+        if self._return_directly_to_title_menu:
+            game.state.change('title_main')
+            return 'repeat'
 
     def take_input(self, event):
+        if self._return_directly_to_title_menu:
+            return
         if event:
             get_sound_thread().play_sfx('Start')
             game.memory['next_state'] = 'title_main'
@@ -338,7 +363,7 @@ class TitleModeState(State):
 
         elif self.state == 'growth_setup':
             if self.growths_choice:
-                options = [growth.value for growth in GrowthOption if growth != GrowthOption.PLAYER_CHOICE]
+                options = [growth.value for growth in PLAYER_SELECTABLE_GROWTH_OPTIONS]
                 self.menu = menus.ModeSelect(options)
                 self.state = 'growth_wait'
                 game.state.change('transition_in')
@@ -483,6 +508,27 @@ class TitleLoadState(State):
     def begin(self):
         self.fluid.reset_on_change_state()
 
+    def _start_android_load(self, save_slot, *, transition_from, next_action,
+                            remove_suspend: bool) -> str:
+        """Move save I/O out of the input callback on Android only.
+
+        The old title state stays beneath the opaque loading state for one
+        frame.  This lets the normal state-machine lifecycle commit the push,
+        while the worker starts reading immediately and the next frame can
+        draw a loading screen instead of blocking ``take_input``.
+        """
+        job = save.SaveLoadJob(save_slot)
+        game.memory['_save_load_job'] = job
+        game.memory['_save_load_context'] = {
+            'transition_from': transition_from,
+            'next_action': next_action,
+            'remove_suspend': remove_suspend,
+            'title_menu': self.menu,
+        }
+        job.start()
+        game.state.change('title_load_job')
+        return 'repeat'
+
     def take_input(self, event):
         # Only take input in normal state
         if self.state != 'normal':
@@ -509,6 +555,18 @@ class TitleLoadState(State):
             if save_slot.kind:
                 get_sound_thread().play_sfx('Save')
                 logging.info("Loading save of kind %s...", save_slot.kind)
+                if is_android_runtime():
+                    next_action = (
+                        'start_level' if save_slot.kind == 'start'
+                        else 'overworld' if save_slot.kind == 'overworld'
+                        else None
+                    )
+                    return self._start_android_load(
+                        save_slot,
+                        transition_from='Load Game',
+                        next_action=next_action,
+                        remove_suspend=True,
+                    )
                 game.state.clear()
                 game.state.process_temp_state()
                 game.build_new()
@@ -592,6 +650,18 @@ class TitleRestartState(TitleLoadState):
             if save_slot.kind:
                 get_sound_thread().play_sfx('Save')
                 logging.info("Loading game...")
+                if is_android_runtime():
+                    target_slot = save_slot_main if save_slot_main.kind == 'overworld' else save_slot
+                    next_action = (
+                        'overworld' if save_slot_main.kind == 'overworld'
+                        else 'restart_level'
+                    )
+                    return self._start_android_load(
+                        target_slot,
+                        transition_from='Restart Level',
+                        next_action=next_action,
+                        remove_suspend=True,
+                    )
                 game.build_new()
                 # Restart level
                 if save_slot_main.kind == 'overworld':
@@ -841,6 +911,124 @@ class TitleAllSavesState(TitleLoadState):
         options, colors = save.get_save_title(self.save_slots)
         self.menu = menus.ChapterSelect(options, colors)
 
+
+class TitleLoadJobState(State):
+    """Opaque Android-only save loader that keeps slow work off input."""
+
+    name = 'title_load_job'
+    in_level = False
+    show_map = False
+    blocks_fast_forward = True
+
+    def start(self):
+        self.job = game.memory.get('_save_load_job')
+        self.context = game.memory.get('_save_load_context', {})
+        self.bg = game.memory.get('title_bg')
+        self.particles = game.memory.get('title_particles')
+        self.error = None
+        self.finished = False
+        self._restore_complete = False
+        self._post_load_iter = None
+        if self.job is None:
+            self.error = save.SaveLoadError('Title loader started without a save job')
+
+    def _recover_from_error(self) -> None:
+        logging.error(
+            'Staged save load failed: %s', self.error,
+            exc_info=(type(self.error), self.error, self.error.__traceback__) if self.error else None,
+        )
+        if self.job:
+            self.job.abort(game)
+        else:
+            game.clear()
+            game.build_new()
+        game.load_states(['title_start'])
+        game.memory['_return_directly_to_title_menu'] = True
+        self.finished = True
+
+    def _begin_post_load(self) -> bool:
+        """Start any level reconstruction that must follow save restoration."""
+        next_action = self.context.get('next_action')
+        if next_action == 'start_level':
+            next_level_nid = game.game_vars['_next_level_nid']
+            game.load_states(['start_level_asset_loading'])
+            self._post_load_iter = game.start_level_iter(next_level_nid)
+            return False
+        elif next_action == 'restart_level':
+            next_level_nid = game.game_vars['_next_level_nid']
+            self._post_load_iter = game.start_level_iter(next_level_nid)
+            return False
+        elif next_action == 'overworld':
+            game.load_states(['overworld'])
+        return True
+
+    def _advance_post_load(self, budget_ms: float = 8.0) -> bool:
+        if self._post_load_iter is None:
+            return True
+        deadline = time.perf_counter() + max(0.0, budget_ms) / 1000.0
+        while time.perf_counter() < deadline:
+            try:
+                next(self._post_load_iter)
+            except StopIteration:
+                self._post_load_iter = None
+                return True
+        return False
+
+    def _complete_load(self) -> None:
+        game.memory['transition_from'] = self.context.get('transition_from', 'Load Game')
+        game.memory['title_menu'] = self.context.get('title_menu')
+        game.state.change('title_wait')
+        game.state.process_temp_state()
+        if self.context.get('remove_suspend'):
+            save.remove_suspend()
+        game.memory.pop('_save_load_job', None)
+        game.memory.pop('_save_load_context', None)
+        self.finished = True
+
+    def take_input(self, event):
+        # Input is deliberately ignored while the save is not yet coherent.
+        return None
+
+    def update(self):
+        if self.finished:
+            return None
+        if self.error:
+            self._recover_from_error()
+            return 'repeat'
+        try:
+            if not self._restore_complete:
+                with RUNTIME_PROFILER.section('save_load_restore_step'):
+                    self._restore_complete = self.job.advance(game, budget_ms=8.0)
+                if self._restore_complete and self._begin_post_load():
+                    self._complete_load()
+                    return 'repeat'
+            elif self._post_load_iter is not None:
+                with RUNTIME_PROFILER.section('save_load_start_level_step'):
+                    if self._advance_post_load(budget_ms=8.0):
+                        self._complete_load()
+                        return 'repeat'
+        except Exception as exc:
+            self.error = save.SaveLoadError('Unable to restore staged save')
+            self.error.__cause__ = exc
+            self._recover_from_error()
+            return 'repeat'
+
+    def draw(self, surf):
+        if self.bg:
+            self.bg.draw(surf)
+        else:
+            surf.blit(SPRITES.get('bg_black'), (0, 0))
+        if self.particles:
+            self.particles.update()
+            self.particles.draw(surf)
+        label = 'Loading...'
+        if self.job and self.job.phase == 'reading':
+            label = 'Reading save...'
+        elif self.job and self.job.phase not in ('waiting_to_read', 'complete'):
+            label = 'Restoring save...'
+        FONT['text'].blit_center(label, surf, (WINWIDTH // 2, WINHEIGHT // 2))
+        return surf
+
 class TitleWaitState(State):
     name = 'title_wait'
     in_level = False
@@ -907,7 +1095,12 @@ class TitleSaveState(State):
         if DB.constants.value('title_particles'):
             bounds = (-WINHEIGHT, WINWIDTH, WINHEIGHT, WINHEIGHT + 16)
             self.particles = particles.MapParticleSystem('title', particles.Smoke, .075, bounds, (TILEX, TILEY))
-            self.particles.prefill()
+            if is_android_render_optimization_enabled():
+                with RUNTIME_PROFILER.section('title_particles_seed'):
+                    particles.seed_title_smoke(self.particles)
+            else:
+                with RUNTIME_PROFILER.section('title_particles_prefill'):
+                    self.particles.prefill()
         game.memory['title_particles'] = self.particles
 
         game.memory['transition_speed'] = 0.5

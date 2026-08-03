@@ -1,0 +1,503 @@
+[33mcommit e8ef8222b0f52155132329765b129145857842c8[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m)[m
+Author: RobertFPY <zzzchangngoxmaiyeuemzzz@gmail.com>
+Date:   Sun Jul 26 08:15:18 2026 +0700
+
+            modified:   app/engine/general_states.py
+
+[33mcommit a9432d4280118a16cd4c9148b306950d7d28b2f3[m[33m ([m[1;31morigin/master[m[33m, [m[1;31morigin/ghi-nho-vao-memorymd[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: RobertFPY <zzzchangngoxmaiyeuemzzz@gmail.com>
+Date:   Wed Jun 17 13:26:45 2026 +0700
+
+    17/6/2026
+    
+    Update tính năng duplicate frame trong combat effect editor
+
+[33mcommit 70b29a5ea896e05f41487ec549e5bc2e265197c7[m
+Author: RobertFPY <zzzchangngoxmaiyeuemzzz@gmail.com>
+Date:   Mon Jun 15 23:02:07 2026 +0700
+
+    15/6/2026 2
+    
+    Hoàn thành các yếu tố cần thiết để Mari học spell qua spell gốc. Thêm Battle Anim range
+
+[33mcommit c57087afb15ebed815e505c140d50b1ff3d00425[m
+Author: RobertFPY <zzzchangngoxmaiyeuemzzz@gmail.com>
+Date:   Mon Jun 15 18:18:09 2026 +0700
+
+    15/6/2026
+    
+    Chỉnh sửa lại cách Mari học skill thông qua book và thêm animation cho spell ember
+
+[33mcommit cceb1e1c4b5999ce83a20b8ba3f25b0e97be4d8d[m
+Author: RobertFPY <zzzchangngoxmaiyeuemzzz@gmail.com>
+Date:   Sun Jun 14 22:47:53 2026 +0700
+
+    14/6/2026
+    
+    Sửa 1 số lỗi, chỉnh sửa spell
+
+[33mcommit fbb5b5028a6ce0da93e0765a9dbda8d56512cd65[m
+Author: RobertFPY <zzzchangngoxmaiyeuemzzz@gmail.com>
+Date:   Sat Jun 13 15:21:51 2026 +0700
+
+    Change folder
+
+[33mcommit 5cb15eb08379ce60129334b97286db80e65205eb[m
+Author: RobertFPY <zzzchangngoxmaiyeuemzzz@gmail.com>
+Date:   Sat Jun 13 12:36:39 2026 +0700
+
+    13/6/2026
+    
+    Thêm flag cho event command interact, thêm skill nihil hidden dùng cho event, chỉnh sửa event
+
+[33mcommit 0b769c27a3572ad8699187f0baac578822d2293b[m
+Author: RobertFPY <zzzchangngoxmaiyeuemzzz@gmail.com>
+Date:   Thu Jun 11 18:10:58 2026 +0700
+
+    11/6/2026
+    
+    Thêm ký tự ngoặc kép 2 đầu vào font, cập nhật theo kịp lt-maker gốc, cập nhật trigger event beforecombatend
+
+[33mcommit 040a7c9d70ef1275db43eada2f384dc459ab1b8c[m
+Merge: 6c508554 6959638b
+Author: RobertFPY <zzzchangngoxmaiyeuemzzz@gmail.com>
+Date:   Thu Jun 11 18:02:17 2026 +0700
+
+    Merge https://gitlab.com/rainlash/lt-maker
+
+[33mcommit 6959638ba575fdb33aae3a60638551257ccb4d94[m
+Merge: f29c6f7c 039c8821
+Author: Sam Alhara <rain.pipe.ash@gmail.com>
+Date:   Thu Jun 11 05:47:14 2026 +0000
+
+    Merge branch 'fix-aura-orphaned-skills' into 'master'
+    
+    fix(aura): prevent permanent orphaned aura child skills
+    
+    See merge request rainlash/lt-maker!1585
+
+[33mcommit f29c6f7c38614876d8e8ad99448172e7a2111385[m
+Merge: 31646671 d1eba783
+Author: Sam Alhara <rain.pipe.ash@gmail.com>
+Date:   Thu Jun 11 03:26:32 2026 +0000
+
+    Merge branch 'master' into 'master'
+    
+    Toggle Black and White Fog of War
+    
+    See merge request rainlash/lt-maker!1578
+
+[33mcommit d1eba783da68cf6f8f46d74de9b45ccccf2daced[m
+Author: Windward <automated12176@gmail.com>
+Date:   Wed Jun 10 23:26:31 2026 -0400
+
+    Toggle Black and White Fog of War
+
+[33mcommit 039c882167d7d1bc95fc5a04919c50d48f354ffd[m
+Author: Clark Chambers <clarkchambers94@gmail.com>
+Date:   Tue Jun 9 22:58:09 2026 -0500
+
+    Added learned context - removed .claude stipulation in .gitignore.
+
+[33mcommit b15f4e3dccad747d7333945192f8b66da5a59952[m
+Author: Clark Chambers <clarkchambers94@gmail.com>
+Date:   Tue Jun 9 22:46:31 2026 -0500
+
+    Cool Awesome Save Fix.
+
+[33mcommit 941e5652b70b44bd79ce242541341eeebabe2a0c[m
+Author: Clark Chambers <clarkchambers94@gmail.com>
+Date:   Tue Jun 9 22:45:53 2026 -0500
+
+    fix(supports): gate support rank bonus on _supports var
+    
+    _supports is the runtime switch; bonus leaked into combat before the
+    feature was enabled, unlike the info screen and accumulation paths.
+    
+    Seed game_vars in the counter tests so they stop depending on global
+    game-singleton state left by earlier tests in the suite.
+    
+    Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+
+[33mcommit 0c56096e8cbbf88c1b2678e19c3de877dfc365ce[m
+Author: Clark Chambers <clarkchambers94@gmail.com>
+Date:   Tue Jun 9 22:45:31 2026 -0500
+
+    fix(aura): prevent permanent orphaned aura child skills
+    
+    Aura teardown was driven entirely by board-position bookkeeping with
+    no authoritative list of affected units. Any desync (re-propagation,
+    teardown ordering, save/load) stranded an AURA-sourced child skill on
+    a unit with no way to remove it: AURA skills are removable only via
+    their exact source, and children were serialized then restored with a
+    stale parent uid after a game-over restart.
+    
+    - game.leave strips all aura children by the unit's own skill list,
+      independent of board state
+    - aura children no longer serialized; re-derived from the live board
+      on load so source points at the current parent instance
+    - old saves with baked-in children self-heal on restore
+    
+    Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+
+[33mcommit 6c508554654986d615acc844439f028af0beeb76[m
+Author: RobertFPY <zzzchangngoxmaiyeuemzzz@gmail.com>
+Date:   Tue Jun 9 20:43:27 2026 +0700
+
+    6/9/2026
+    
+    Tách trang skills và trang notes ra riêng biệt, Cập nhật event Cho Mari, thêm chức năng spell cho riêng mari và chức năng build đè lên thư mục cũ
+
+[33mcommit 264ee490b89e65959b315e69233cdc0253c4a477[m
+Author: RobertFPY <zzzchangngoxmaiyeuemzzz@gmail.com>
+Date:   Fri Jun 5 23:00:38 2026 +0700
+
+    Cập nhật lại hệ thống loadout và nhận ma pháp cho Mari
+
+[33mcommit 5f252fcc02d457c04e6e6b2020a5d9196d5f35ce[m
+Author: RobertFPY <zzzchangngoxmaiyeuemzzz@gmail.com>
+Date:   Thu Jun 4 23:23:07 2026 +0700
+
+    Cật nhật trang spell trong info menu
+
+[33mcommit de312582be94d91791d5b542ffdb99160b897faa[m
+Author: RobertFPY <zzzchangngoxmaiyeuemzzz@gmail.com>
+Date:   Thu Jun 4 22:25:55 2026 +0700
+
+    Update hệ thống ma pháp của Mari
+    
+    Chuyển đổi spell_loadout thành Inventory thứ 2
+
+[33mcommit 942398e4bc510fb7eeba9bba4ff4b1c2e29c5228[m
+Author: RobertFPY <zzzchangngoxmaiyeuemzzz@gmail.com>
+Date:   Thu Jun 4 16:49:06 2026 +0700
+
+    Hệ thống ma pháp cho Mari
+
+[33mcommit 31646671857c7a35b1acebbe07027f72c664bcd4[m
+Merge: bdba33d1 649e15e9
+Author: Sam Alhara <rain.pipe.ash@gmail.com>
+Date:   Wed Jun 3 02:40:28 2026 +0000
+
+    Merge branch 'default-project-improvements' into 'master'
+    
+    Added documentation on glancing hits
+    
+    See merge request rainlash/lt-maker!1580
+
+[33mcommit 649e15e946dad32e3dd512e39ba411ab51bac962[m
+Author: PKLucky <kirstencaramba@gmail.com>
+Date:   Tue Jun 2 21:40:28 2026 -0500
+
+    Added documentation on glancing hits
+
+[33mcommit bdba33d1ffda531465a53a907bcb53af32b4fb84[m
+Merge: e21e3abc 81273050
+Author: Sam Alhara <rain.pipe.ash@gmail.com>
+Date:   Wed Jun 3 02:40:19 2026 +0000
+
+    Merge branch 'fix-default-project' into 'master'
+    
+    Fixed documentation on {command:???}
+    
+    See merge request rainlash/lt-maker!1582
+
+[33mcommit 81273050e8dcb06c2d593ddaa485aed7a37855ae[m
+Author: PKLucky <kirstencaramba@gmail.com>
+Date:   Tue Jun 2 21:40:18 2026 -0500
+
+    Fixed documentation on {command:???}
+
+[33mcommit e21e3abc4494538ed80556179fec2bada60e5a54[m
+Merge: c6bcd533 c99f477b
+Author: Sam Alhara <rain.pipe.ash@gmail.com>
+Date:   Wed Jun 3 02:40:08 2026 +0000
+
+    Merge branch 'master' into 'master'
+    
+    Droppable Item Icon Toggle Via Constant
+    
+    See merge request rainlash/lt-maker!1583
+
+[33mcommit c99f477bac8d7150e2b59e8dfacda5ede4e4edff[m
+Author: Windward <automated12176@gmail.com>
+Date:   Tue Jun 2 22:40:08 2026 -0400
+
+    Droppable Item Icon Toggle Via Constant
+
+[33mcommit cf8e15906fac521afc387358a709b9d9a7db5c0b[m
+Author: RobertFPY <zzzchangngoxmaiyeuemzzz@gmail.com>
+Date:   Mon Jun 1 22:42:01 2026 +0700
+
+    xoá save state
+
+[33mcommit 5616b8c00c68f1e556116cebf231917279ed96b7[m
+Author: RobertFPY <zzzchangngoxmaiyeuemzzz@gmail.com>
+Date:   Mon Jun 1 22:20:50 2026 +0700
+
+    update save state
+    
+    có thể load khi event đang xảy ra nhưng còn 1 số lỗi
+
+[33mcommit 40459855ef969b76b76c733c3f0d5ad83c655120[m
+Author: RobertFPY <zzzchangngoxmaiyeuemzzz@gmail.com>
+Date:   Mon Jun 1 19:42:33 2026 +0700
+
+    Update event tutorial
+    
+    Chính thức hoàn chỉnh (tạm thời) các event cần thiết để làm tutorial
+
+[33mcommit 9a6469a3bbd4bf1cba1aa998d83070b4604215e9[m
+Author: RobertFPY <zzzchangngoxmaiyeuemzzz@gmail.com>
+Date:   Mon Jun 1 00:00:14 2026 +0700
+
+    update cái nữa
+    
+    thêm 1 số event command, chủ yếu để tạo tutorial
+
+[33mcommit 523285366f0e3d79ba28858135b163f0077131aa[m
+Author: RobertFPY <zzzchangngoxmaiyeuemzzz@gmail.com>
+Date:   Sun May 31 21:55:40 2026 +0700
+
+    31/5
+    
+    Thêm music, thêm skill tutorial, xoá 1 số thứ không cần thiết, thêm skill component
+
+[33mcommit 8612f4be1067d837fb4df18bdd5ec780c5f24a45[m
+Author: RobertFPY <zzzchangngoxmaiyeuemzzz@gmail.com>
+Date:   Fri May 29 13:58:19 2026 +0700
+
+    29/5
+    
+    Thêm event
+
+[33mcommit 69d6405cd326b8b5273858e238a6c3adcad5468e[m
+Author: RobertFPY <zzzchangngoxmaiyeuemzzz@gmail.com>
+Date:   Tue May 26 22:31:30 2026 +0700
+
+    26/5/2026
+    
+    Chỉnh sửa event pro
+
+[33mcommit 55a7d5d872804a4d3654eec51394ab1ee2ffb465[m[33m ([m[1;31morigin/enemy-level-up-optimization[m[33m)[m
+Author: RobertFPY <zzzchangngoxmaiyeuemzzz@gmail.com>
+Date:   Mon May 25 17:04:36 2026 +0700
+
+    sửa convert_event
+
+[33mcommit 912071a803da87ef00f5de05f0c069583d0f7898[m
+Author: RobertFPY <zzzchangngoxmaiyeuemzzz@gmail.com>
+Date:   Mon May 25 13:59:11 2026 +0700
+
+    Sửa lại xoá banner
+
+[33mcommit 36cc9a6d962c8da180c4e99998c149e649356b11[m
+Author: RobertFPY <zzzchangngoxmaiyeuemzzz@gmail.com>
+Date:   Mon May 25 09:58:43 2026 +0700
+
+    xoá mission banner
+
+[33mcommit 418be90d57824ab76e370d49126a3d69d122e39a[m
+Author: RobertFPY <zzzchangngoxmaiyeuemzzz@gmail.com>
+Date:   Sun May 24 13:30:15 2026 +0700
+
+    24/5/2026 1:30
+    
+    thay đổi cách hệ thống hiển thị mission
+
+[33mcommit f6d5ec18da4a1b77e0c1561d9d6c2aa5d8322555[m
+Author: RobertFPY <zzzchangngoxmaiyeuemzzz@gmail.com>
+Date:   Sun May 24 08:55:59 2026 +0700
+
+    24/5/2026 9am
+    
+    thêm event cho các độ khó, thêm chức năng nhấn nút b để back về nhân vật khi đang ngoài vùng di chuyển của canto
+
+[33mcommit 1231a54539838d77d0d60c2d51a9791080448981[m
+Author: RobertFPY <zzzchangngoxmaiyeuemzzz@gmail.com>
+Date:   Sat May 23 20:33:34 2026 +0700
+
+    update 23/6/2026
+    
+    Thêm độ khó, thay đổi event pro, thêm màu cho font, thêm màu cho item forge
+
+[33mcommit c6bcd53362ed2f6bf8d5aef90ec845bf43f055c4[m
+Author: rainlash <rain.pipe.ash@gmail.com>
+Date:   Fri May 22 11:42:49 2026 -0600
+
+    name blue protect icon correctly
+
+[33mcommit 14b7267ba8b5b604cb8380534338c9a16f6c780e[m
+Merge: 5a03e245 eb1ce2f2
+Author: Sam Alhara <rain.pipe.ash@gmail.com>
+Date:   Fri May 22 17:42:14 2026 +0000
+
+    Merge branch 'default-project-improvements' into 'master'
+    
+    Added Protect tag to the default project and added documentation on the Protect tag
+    
+    See merge request rainlash/lt-maker!1579
+
+[33mcommit eb1ce2f28b7e0548c06e751e4f3f18a3c65df84a[m
+Author: PKLucky <kirstencaramba@gmail.com>
+Date:   Fri May 22 12:42:14 2026 -0500
+
+    Added Protect tag to the default project and added documentation on the Protect tag
+
+[33mcommit 5a03e245918e4550ea4b7b9a101bee306098fa7d[m
+Merge: fb86c47c ffce54dd
+Author: Sam Alhara <rain.pipe.ash@gmail.com>
+Date:   Fri May 22 17:38:26 2026 +0000
+
+    Merge branch 'gated_support_color' into 'master'
+    
+    Variable-locked support color
+    
+    See merge request rainlash/lt-maker!1576
+
+[33mcommit ffce54dd00af5e82513fba80736d99fdab610a0f[m
+Author: Squid1003 <jeffrey314271@gmail.com>
+Date:   Fri May 22 17:38:26 2026 +0000
+
+    Variable-locked support color
+
+[33mcommit fb86c47ce33abb8e4321f4429a977203e7c72e4f[m
+Merge: 0397ccc3 aeb1e606
+Author: Sam Alhara <rain.pipe.ash@gmail.com>
+Date:   Fri May 22 17:38:07 2026 +0000
+
+    Merge branch 'editor-improve-sound-table' into 'master'
+    
+    Improve Sound table & Add audio player
+    
+    See merge request rainlash/lt-maker!1572
+
+[33mcommit aeb1e60607c62c626a25c5da8e1806b197d857cd[m
+Author: Max Reeds <tenmadominik@gmail.com>
+Date:   Fri May 22 11:38:07 2026 -0600
+
+    Improve Sound table & Add audio player
+
+[33mcommit 0397ccc33fbdfabe75a91d8a23c9c269976f4a1d[m
+Merge: c198af67 e9e2d257
+Author: Sam Alhara <rain.pipe.ash@gmail.com>
+Date:   Fri May 22 17:36:51 2026 +0000
+
+    Merge branch 'prep-pairup-branch' into 'master'
+    
+    Improvement: Allow reposition of paired up units in prep formation
+    
+    See merge request rainlash/lt-maker!1571
+
+[33mcommit e9e2d2576112731aa1bf32c85e6fd296afcdf61f[m
+Author: Dang <27539049-lhdang@users.noreply.gitlab.com>
+Date:   Fri May 22 17:36:51 2026 +0000
+
+    Improvement: Allow reposition of paired up units in prep formation
+
+[33mcommit c198af67e4c9a915e654eebe060310cd61ae2ecb[m
+Merge: 656a3555 125933bc
+Author: Sam Alhara <rain.pipe.ash@gmail.com>
+Date:   Fri May 22 17:36:32 2026 +0000
+
+    Merge branch 'combat-script-branch' into 'master'
+    
+    Improvement: Add new event command allows modify current combat
+    
+    See merge request rainlash/lt-maker!1570
+
+[33mcommit 125933bcdb7e87d51fe628d707d05c4fd99022d8[m
+Author: Dang <27539049-lhdang@users.noreply.gitlab.com>
+Date:   Fri May 22 17:36:31 2026 +0000
+
+    Improvement: Add new event command allows modify current combat
+
+[33mcommit 75f620ea2717659cef2845315ca3475090a2bd09[m
+Author: RobertFPY <zzzchangngoxmaiyeuemzzz@gmail.com>
+Date:   Thu May 21 08:29:04 2026 +0700
+
+    21/5/2026
+
+[33mcommit 97928d5c87dc9161c2c2d00993fe7d1891e45286[m
+Author: RobertFPY <zzzchangngoxmaiyeuemzzz@gmail.com>
+Date:   Tue May 19 07:14:15 2026 +0700
+
+    a
+
+[33mcommit bb62016dc86211515725256c7655c7949157e734[m
+Author: RobertFPY <zzzchangngoxmaiyeuemzzz@gmail.com>
+Date:   Mon May 18 14:35:56 2026 +0700
+
+    18/5/2026
+
+[33mcommit fa17a617bdd692e3af238d4f0d1b1d209eca5950[m
+Author: RobertFPY <zzzchangngoxmaiyeuemzzz@gmail.com>
+Date:   Sun May 17 22:22:23 2026 +0700
+
+    17/5/2026
+
+[33mcommit 656a35554dcf5bbcd5d30e5c840f454033dcdcfc[m
+Merge: 63e2a5f1 506cfb84
+Author: rainlash <rain.pipe.ash@gmail.com>
+Date:   Sat May 16 14:01:02 2026 -0600
+
+    Merge branch 'master' of https://gitlab.com/rainlash/lt-maker
+
+[33mcommit 63e2a5f1c477cc4389cda5516639a4ae2c16e812[m
+Author: rainlash <rain.pipe.ash@gmail.com>
+Date:   Sat May 16 14:00:58 2026 -0600
+
+    fix restore component
+
+[33mcommit 2a8adc95b24926ffda6faa312054080dceb42cd3[m
+Author: RobertFPY <zzzchangngoxmaiyeuemzzz@gmail.com>
+Date:   Sat May 16 21:51:14 2026 +0700
+
+    Resolve merge conflicts
+
+[33mcommit 9e68c25fab49f27bf308212ec47dc2279b35445a[m
+Merge: f2f111a5 506cfb84
+Author: RobertFPY <zzzchangngoxmaiyeuemzzz@gmail.com>
+Date:   Sat May 16 21:49:20 2026 +0700
+
+    Resolve merge conflicts
+
+[33mcommit f2f111a51db31421d9bf48dffaeb62abeeed5cbb[m
+Author: RobertFPY <zzzchangngoxmaiyeuemzzz@gmail.com>
+Date:   Sat May 16 21:15:57 2026 +0700
+
+    a
+
+[33mcommit 65bb9c7586f2eb774167d5d942ec3bdc828c8420[m
+Author: RobertFPY <zzzchangngoxmaiyeuemzzz@gmail.com>
+Date:   Sat May 16 20:06:42 2026 +0700
+
+    Begin 2026
+
+[33mcommit 506cfb846caa69d7353468720a710f94dba592ba[m
+Merge: 740dd1c0 e167876b
+Author: Sam Alhara <rain.pipe.ash@gmail.com>
+Date:   Sat May 16 01:29:44 2026 +0000
+
+    Merge branch 'default-project-improvements' into 'master'
+    
+    Added Astra for Astra Proc component example
+    
+    See merge request rainlash/lt-maker!1575
+
+[33mcommit e167876b370083f97962c540ac4efe8f1233324c[m
+Author: PKLucky <kirstencaramba@gmail.com>
+Date:   Fri May 15 20:29:44 2026 -0500
+
+    Added Astra for Astra Proc component example
+
+[33mcommit 740dd1c0ff54b5d4ab5e414946100f00918f123a[m
+Merge: 64f1e3a9 6b90a0d9
+Author: Sam Alhara <rain.pipe.ash@gmail.com>
+Date:   Sat May 16 01:28:31 2026 +0000
+
+    Merge branch 'bugfix/heal-boop-error' into 'master'
+    
+    Bugfix: Heal Boop Error
+    
+    See merge request rainlash/lt-maker!1569

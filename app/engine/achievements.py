@@ -4,6 +4,7 @@ from app.utilities.data import Data, Prefab
 from app.engine import persistent_data
 
 from app.data.database.database import DB
+from app.utilities.user_data import save_path
 
 class Achievement(Prefab):
     def __init__(self, nid: str = '', name: str = '', desc: str = '', complete: bool = False, hidden=False):
@@ -71,9 +72,14 @@ class AchievementManager(Data):
         self.clear()
         persistent_data.serialize(self.location, self.save())
 
+
+def _achievement_location(game_id):
+    return save_path(game_id + '-achievements.p')
+
+
 def reset():
     game_id = str(DB.constants.value('game_nid'))
-    location = 'saves/' + game_id + '-achievements.p'
+    location = _achievement_location(game_id)
     ACHIEVEMENTS.location = location
     data = persistent_data.deserialize(location)
     if data:
@@ -83,7 +89,7 @@ def reset():
 
 # Make sure to reload all achievements whenever we start the engine
 game_id = str(DB.constants.value('game_nid'))
-location = 'saves/' + game_id + '-achievements.p'
+location = _achievement_location(game_id)
 achievement_data = persistent_data.deserialize(location)
 ACHIEVEMENTS = AchievementManager(location)
 if achievement_data:

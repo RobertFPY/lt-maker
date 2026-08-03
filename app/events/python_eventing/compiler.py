@@ -12,14 +12,16 @@ VERSION_MAP: Dict[EventVersion, Type[SWSCompilerV1]] = {
 
 class Compiler():
     @staticmethod
-    def compile(event_name: str, script: str, command_pointer: int = 0) -> CompiledEvent:
+    def compile(event_name: str, script: str, command_pointer: int = 0,
+                include_start_command: bool = False) -> CompiledEvent:
         version = get_event_version(script)
         if not version in VERSION_MAP:
             raise ValueError("In event %s: Unknown python event version: '%s'" %(event_name, version))
         sws_compiler = VERSION_MAP[version]
         original_script = script
         sentinel_script = sws_compiler(script).compile_sws()
-        compiled_script = PostComp.postcompile(sentinel_script, command_pointer)
+        compiled_script = PostComp.postcompile(
+            sentinel_script, command_pointer, include_start_command)
         return CompiledEvent(event_name, original_script, compiled_script)
 
     @staticmethod

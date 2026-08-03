@@ -6,6 +6,7 @@ from app.engine.state import MapState
 
 from app.engine import menus, action, base_surf, engine, banner
 from app.engine.game_state import game
+from app.engine.input_manager import get_input_manager
 
 class TextEntryState(MapState):
     name = 'text_entry'
@@ -58,7 +59,7 @@ class TextEntryState(MapState):
 
     def take_input(self, event):
         if self.keyboard_mode:
-            for pg_event in engine.events:
+            for pg_event in get_input_manager().get_input_events():
                 if pg_event.type == engine.KEYDOWN:
                     if pg_event.key == engine.key_map['enter']:
                         self.keyboard_mode = False
@@ -68,7 +69,7 @@ class TextEntryState(MapState):
                     else:
                         self._add(pg_event.unicode)
         else:
-            for pg_event in engine.events:
+            for pg_event in get_input_manager().get_input_events():
                 if pg_event.type == engine.KEYDOWN:
                     if pg_event.key == engine.key_map['enter']:
                         self.keyboard_mode = True
@@ -128,6 +129,7 @@ class TextEntryState(MapState):
 class TextConfirmState(MapState):
     name = 'text_confirm'
     transparent = True
+    blocks_fast_forward = True
 
     def start(self):
         self.header = 'Finish text entry?'

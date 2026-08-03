@@ -6,6 +6,8 @@ from app.engine.sprites import SPRITES
 from app.engine.sound import get_sound_thread
 from app.engine.game_state import game
 from app.engine import engine, image_mods, item_system, item_funcs, skill_system
+from app.engine.android_runtime import is_android_render_optimization_enabled
+from app.engine.performance import RUNTIME_PROFILER
 
 from app.data.resources.combat_anims import CombatAnimation, WeaponAnimation, EffectAnimation
 from app.data.resources.combat_palettes import Palette
@@ -131,8 +133,11 @@ class BattleAnimation():
         self.pan_away: bool = False
 
         self.lr_offset = []
+        self._android_lr_offset = 0
         self.effect_offset = (0, 0)
         self.personal_offset = (0, 0)
+        if not hasattr(self, '_android_logged_frame_keys'):
+            self._android_logged_frame_keys = set()
 
     def _generate_missing_poses(self):
         # Copy Stand -> RangedStand and Dodge -> RangedDodge if missing
@@ -417,6 +422,47 @@ class BattleAnimation():
         # Remove completed child effects
         self.child_effects = [child for child in self.child_effects if child.state != 'inert']
         self.under_child_effects = [child for child in self.under_child_effects if child.state != 'inert']
+
+        if is_android_render_optimization_enabled():
+            self._advance_android_render_state()
+
+    def _advance_android_render_state(self):
+        """Advance draw-owned counters during Android simulation steps.
+
+        Fast-forward intentionally renders only once.  Keeping these counters
+        in ``draw`` would make flashes, shakes and foreground effects run at
+        normal speed while the rest of the combat script is accelerated.
+        """
+        if self.lr_offset:
+            self._android_lr_offset = self.lr_offset.pop()
+        else:
+            self._android_lr_offset = 0
+
+        if self.flash_color:
+            self.flash_counter -= 1
+            if self.flash_counter <= 0:
+                self.flash_color.clear()
+                self.flash_counter = 0
+                self.flash_image = None
+
+        if self.screen_dodge_color:
+            self.screen_dodge_counter -= 1
+            if self.screen_dodge_counter <= 0:
+                self.screen_dodge_color = None
+                self.screen_dodge_counter = 0
+                self.screen_dodge_image = None
+
+        if self.foreground:
+            self.foreground_counter -= 1
+            if self.foreground_counter <= 0:
+                self.foreground = None
+                self.foreground_counter = 0
+
+        if self.background:
+            self.background_counter -= 1
+            if self.background_counter <= 0:
+                self.background = None
+                self.background_counter = 0
 
     def read_script(self):
         if not self.has_pose(self.current_pose):
@@ -743,7 +789,7 @@ class BattleAnimation():
             # Self screen dodge
             image = self.handle_screen_dodge(image)
 
-            old_image = image.copy()
+            old_image = image.copy() if self.blend and self.partial_blend else None
             if self.opacity != 255:
                 if self.blend:
                     image = image_mods.make_translucent_blend(image, 255 - self.opacity)
@@ -783,17 +829,19 @@ class BattleAnimation():
         # Screen flash
         if self.foreground:
             engine.blit(surf, self.foreground, (0, 0), None, engine.BLEND_RGB_ADD)
-            self.foreground_counter -= 1
-            if self.foreground_counter <= 0:
-                self.foreground = None
-                self.foreground_counter = 0
+            if not is_android_render_optimization_enabled():
+                self.foreground_counter -= 1
+                if self.foreground_counter <= 0:
+                    self.foreground = None
+                    self.foreground_counter = 0
 
         if self.background:
             # Draw above
-            self.background_counter -= 1
-            if self.background_counter <= 0:
-                self.background = None
-                self.background_counter = 0
+            if not is_android_render_optimization_enabled():
+                self.background_counter -= 1
+                if self.background_counter <= 0:
+                    self.background = None
+                    self.background_counter = 0
 
     def draw_under(self, surf, shake=(0, 0), range_offset=0, pan_offset=0):
         if self.state == 'inert':
@@ -815,12 +863,21 @@ class BattleAnimation():
             engine.blit(surf, image, offset, None, self.blend)
 
     def get_image(self, frame, shake, range_offset, pan_offset, static, y_offset=0) -> tuple:
-        image = self.image_directory[frame.nid].copy()
-        if not self.right:
-            image = engine.flip_horiz(image)
+        # A battle frame can be transformed by flash, opacity, palette effects,
+        # and partial blends later in draw().  Reusing the source frame on
+        # Android changed SDL's blit path and regressed large sprites badly.
+        # Keep desktop's copy semantics on every platform until a measured,
+        # display-format cache can prove equivalent on an Android device.
+        with RUNTIME_PROFILER.section('combat_frame_fetch'):
+            image = self.image_directory[frame.nid].copy()
+            if not self.right:
+                image = engine.flip_horiz(image)
+        self._log_android_frame_surface(frame, image)
         offset = frame.offset[0] + (WINWIDTH - 240)//2, frame.offset[1] + (WINHEIGHT - 160)
         # Handle offset (placement of the object on the screen)
-        if self.lr_offset:
+        if is_android_render_optimization_enabled():
+            offset = offset[0] + self._android_lr_offset, offset[1] + y_offset
+        elif self.lr_offset:
             offset = offset[0] + self.lr_offset.pop(), offset[1] + y_offset
         if self.effect_offset:
             offset = offset[0] + self.effect_offset[0], offset[1] + self.effect_offset[1] + y_offset
@@ -846,14 +903,29 @@ class BattleAnimation():
             offset = WINWIDTH - offset[0] - image.get_width() + left, offset[1] + shake[1]
         return image, offset
 
+    def _log_android_frame_surface(self, frame, image) -> None:
+        """Aggregate profiler metadata for a selected Android frame."""
+        if not (is_android_render_optimization_enabled() and RUNTIME_PROFILER.enabled):
+            return
+        colorkey = image.get_colorkey()
+        if colorkey is not None:
+            colorkey = tuple(colorkey)
+        key = (frame.nid, self.right, image.get_size(), image.get_flags(), colorkey)
+        logged = self._android_logged_frame_keys
+        if key in logged or len(logged) >= 128:
+            return
+        logged.add(key)
+        RUNTIME_PROFILER.count('combat_frame_surface')
+
     def handle_flash(self, image):
         if self.flash_color:
             flash_color = self.flash_color[self.flash_counter % len(self.flash_color)]
             self.flash_image = image_mods.change_color(image.convert_alpha(), flash_color)
-            self.flash_counter -= 1
+            if not is_android_render_optimization_enabled():
+                self.flash_counter -= 1
             image = self.flash_image
             # done
-            if self.flash_counter <= 0:
+            if not is_android_render_optimization_enabled() and self.flash_counter <= 0:
                 self.flash_color.clear()
                 self.flash_counter = 0
                 self.flash_image = None
@@ -863,10 +935,11 @@ class BattleAnimation():
         if self.screen_dodge_color:
             if not self.screen_dodge_image:
                 self.screen_dodge_image = image_mods.screen_dodge(image.convert_alpha(), self.screen_dodge_color)
-            self.screen_dodge_counter -= 1
+            if not is_android_render_optimization_enabled():
+                self.screen_dodge_counter -= 1
             image = self.screen_dodge_image
             # done
-            if self.screen_dodge_counter <= 0:
+            if not is_android_render_optimization_enabled() and self.screen_dodge_counter <= 0:
                 self.screen_dodge_color = None
                 self.screen_dodge_counter = 0
                 self.screen_dodge_image = None
@@ -996,4 +1069,5 @@ def get_battle_anim(unit, item, distance=1, klass=None, default_variant=False, a
                     return None
 
     battle_anim = BattleAnimation.get_anim(res, weapon_anim, palette_name, palette, unit, item)
+    battle_anim.combat_anim_nid = res.nid
     return battle_anim

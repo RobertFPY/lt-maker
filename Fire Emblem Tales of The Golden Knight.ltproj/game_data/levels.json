@@ -165,7 +165,7 @@
                 "generic": false
             },
             {
-                "nid": "Normal_0",
+                "nid": "Enemy_0",
                 "variant": null,
                 "level": 4,
                 "klass": "Mercenary",
@@ -189,7 +189,7 @@
                 "generic": true
             },
             {
-                "nid": "Normal_1",
+                "nid": "Enemy_1",
                 "variant": null,
                 "level": 4,
                 "klass": "Lance_Fighter",
@@ -217,7 +217,7 @@
                 "generic": true
             },
             {
-                "nid": "Normal_2",
+                "nid": "Enemy_2",
                 "variant": null,
                 "level": 4,
                 "klass": "Archer",
@@ -241,7 +241,7 @@
                 "generic": true
             },
             {
-                "nid": "Normal_3",
+                "nid": "Enemy_3",
                 "variant": null,
                 "level": 4,
                 "klass": "Fighter",
@@ -269,7 +269,7 @@
                 "generic": true
             },
             {
-                "nid": "Normal_4",
+                "nid": "Enemy_4",
                 "variant": null,
                 "level": 3,
                 "klass": "Mercenary",
@@ -293,7 +293,7 @@
                 "generic": true
             },
             {
-                "nid": "Normal_5",
+                "nid": "Enemy_5",
                 "variant": null,
                 "level": 3,
                 "klass": "Lance_Fighter",
@@ -317,7 +317,7 @@
                 "generic": true
             },
             {
-                "nid": "Normal_6",
+                "nid": "Enemy_6",
                 "variant": null,
                 "level": 3,
                 "klass": "Archer",
@@ -341,7 +341,7 @@
                 "generic": true
             },
             {
-                "nid": "Normal_7",
+                "nid": "Enemy_7",
                 "variant": null,
                 "level": 3,
                 "klass": "Fighter",
@@ -365,7 +365,7 @@
                 "generic": true
             },
             {
-                "nid": "Normal_8",
+                "nid": "Enemy_8",
                 "variant": null,
                 "level": 3,
                 "klass": "Brigand",
@@ -378,7 +378,7 @@
                 ],
                 "starting_skills": [],
                 "team": "enemy",
-                "ai": "Attack2Range",
+                "ai": "Defend",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": [
@@ -389,7 +389,7 @@
                 "generic": true
             },
             {
-                "nid": "Normal_9",
+                "nid": "Enemy_9",
                 "variant": null,
                 "level": 3,
                 "klass": "Brigand",
@@ -402,7 +402,7 @@
                 ],
                 "starting_skills": [],
                 "team": "enemy",
-                "ai": "Defend",
+                "ai": "Pursue",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": [
@@ -413,7 +413,73 @@
                 "generic": true
             },
             {
-                "nid": "Normal_10",
+                "nid": "Enemy_10",
+                "variant": null,
+                "level": 2,
+                "klass": "Brigand",
+                "faction": "Bandit",
+                "starting_items": [
+                    [
+                        "Bronze_Axe",
+                        false
+                    ]
+                ],
+                "starting_skills": [],
+                "team": "enemy",
+                "ai": "Pursue",
+                "roam_ai": null,
+                "ai_group": "",
+                "starting_position": [
+                    46,
+                    4
+                ],
+                "starting_traveler": null,
+                "generic": true
+            },
+            {
+                "nid": "Enemy_11",
+                "variant": null,
+                "level": 2,
+                "klass": "Brigand",
+                "faction": "Bandit",
+                "starting_items": [
+                    [
+                        "Bronze_Axe",
+                        false
+                    ]
+                ],
+                "starting_skills": [],
+                "team": "enemy",
+                "ai": "Pursue",
+                "roam_ai": null,
+                "ai_group": "",
+                "starting_position": null,
+                "starting_traveler": null,
+                "generic": true
+            },
+            {
+                "nid": "Enemy_12",
+                "variant": null,
+                "level": 2,
+                "klass": "Brigand",
+                "faction": "Bandit",
+                "starting_items": [
+                    [
+                        "Bronze_Axe",
+                        false
+                    ]
+                ],
+                "starting_skills": [],
+                "team": "enemy",
+                "ai": "Defend",
+                "roam_ai": null,
+                "ai_group": "",
+                "starting_position": null,
+                "starting_traveler": null,
+                "generic": true
+            },
+            {
+                "nid": "Enemy_13",
                 "variant": null,
                 "level": 2,
                 "klass": "Brigand",
@@ -429,636 +495,19 @@
                 "ai": "Attack2Range",
                 "roam_ai": null,
                 "ai_group": "",
-                "starting_position": [
-                    46,
-                    4
-                ],
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "Hard_0",
-                "variant": null,
-                "level": 4,
-                "klass": "Mercenary",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Iron_Sword",
-                        false
-                    ]
-                ],
-                "starting_skills": [
-                    "Axebreaker_T1"
-                ],
-                "team": "enemy",
-                "ai": "Attack2Range",
-                "roam_ai": null,
-                "ai_group": "",
                 "starting_position": null,
                 "starting_traveler": null,
                 "generic": true
             },
             {
-                "nid": "Hard_1",
-                "variant": null,
-                "level": 4,
-                "klass": "Lance_Fighter",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Iron_Lance",
-                        false
-                    ],
-                    [
-                        "Javelin",
-                        true
-                    ]
-                ],
-                "starting_skills": [
-                    "Seal_Speed_T1"
-                ],
-                "team": "enemy",
-                "ai": "Attack2Range",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "Hard_2",
-                "variant": null,
-                "level": 4,
-                "klass": "Archer",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Iron_Bow",
-                        false
-                    ]
-                ],
-                "starting_skills": [
-                    "Prescience_T1"
-                ],
-                "team": "enemy",
-                "ai": "Attack2Range",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "Hard_3",
-                "variant": null,
-                "level": 4,
-                "klass": "Fighter",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Iron_Axe",
-                        false
-                    ],
-                    [
-                        "Hand_Axe",
-                        true
-                    ]
-                ],
-                "starting_skills": [
-                    "Zeal_T1"
-                ],
-                "team": "enemy",
-                "ai": "Attack2Range",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "Hard_4",
-                "variant": null,
-                "level": 3,
-                "klass": "Mercenary",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Iron_Sword",
-                        true
-                    ]
-                ],
-                "starting_skills": [
-                    "Axebreaker_T1"
-                ],
-                "team": "enemy",
-                "ai": "Attack2Range",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "Hard_5",
-                "variant": null,
-                "level": 3,
-                "klass": "Lance_Fighter",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Iron_Lance",
-                        true
-                    ]
-                ],
-                "starting_skills": [
-                    "Seal_Speed_T1"
-                ],
-                "team": "enemy",
-                "ai": "Attack2Range",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "Hard_6",
-                "variant": null,
-                "level": 3,
-                "klass": "Archer",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Iron_Bow",
-                        false
-                    ]
-                ],
-                "starting_skills": [
-                    "Prescience_T1"
-                ],
-                "team": "enemy",
-                "ai": "Attack2Range",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "Hard_7",
-                "variant": null,
-                "level": 3,
-                "klass": "Fighter",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Iron_Axe",
-                        false
-                    ]
-                ],
-                "starting_skills": [
-                    "Zeal_T1"
-                ],
-                "team": "enemy",
-                "ai": "Attack2Range",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "Hard_8",
-                "variant": null,
-                "level": 3,
-                "klass": "Brigand",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Iron_Axe",
-                        false
-                    ]
-                ],
-                "starting_skills": [
-                    "Life_and_Death_T1"
-                ],
-                "team": "enemy",
-                "ai": "Defend",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "Hard_9",
-                "variant": null,
-                "level": 3,
-                "klass": "Brigand",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Iron_Axe",
-                        false
-                    ]
-                ],
-                "starting_skills": [
-                    "Life_and_Death_T1"
-                ],
-                "team": "enemy",
-                "ai": "Pursue",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "Hard_10",
+                "nid": "Enemy_14",
                 "variant": null,
                 "level": 2,
                 "klass": "Brigand",
                 "faction": "Bandit",
                 "starting_items": [
                     [
-                        "Iron_Axe",
-                        false
-                    ]
-                ],
-                "starting_skills": [],
-                "team": "enemy",
-                "ai": "Pursue",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "Hard_11",
-                "variant": null,
-                "level": 2,
-                "klass": "Brigand",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Iron_Axe",
-                        false
-                    ]
-                ],
-                "starting_skills": [],
-                "team": "enemy",
-                "ai": "Pursue",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "Hard_12",
-                "variant": null,
-                "level": 2,
-                "klass": "Brigand",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Iron_Axe",
-                        false
-                    ]
-                ],
-                "starting_skills": [],
-                "team": "enemy",
-                "ai": "Defend",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "Lunatic_0",
-                "variant": null,
-                "level": 4,
-                "klass": "Mercenary",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Steel_Sword",
-                        false
-                    ]
-                ],
-                "starting_skills": [
-                    "Axebreaker_T1"
-                ],
-                "team": "enemy",
-                "ai": "Attack2Range",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "Lunatic_1",
-                "variant": null,
-                "level": 4,
-                "klass": "Lance_Fighter",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Steel_Lance",
-                        false
-                    ],
-                    [
-                        "Javelin",
-                        true
-                    ]
-                ],
-                "starting_skills": [
-                    "Seal_Speed_T1"
-                ],
-                "team": "enemy",
-                "ai": "Attack2Range",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "Lunatic_2",
-                "variant": null,
-                "level": 4,
-                "klass": "Archer",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Steel_Bow",
-                        false
-                    ]
-                ],
-                "starting_skills": [
-                    "Prescience_T1"
-                ],
-                "team": "enemy",
-                "ai": "Attack2Range",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "Lunatic_3",
-                "variant": null,
-                "level": 4,
-                "klass": "Fighter",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Steel_Axe",
-                        false
-                    ],
-                    [
-                        "Hand_Axe",
-                        true
-                    ]
-                ],
-                "starting_skills": [
-                    "Zeal_T1"
-                ],
-                "team": "enemy",
-                "ai": "Attack2Range",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "Lunatic_4",
-                "variant": null,
-                "level": 3,
-                "klass": "Mercenary",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Iron_Sword",
-                        false
-                    ],
-                    [
-                        "Iron_Sword",
-                        true
-                    ]
-                ],
-                "starting_skills": [
-                    "Axebreaker_T1"
-                ],
-                "team": "enemy",
-                "ai": "Attack2Range",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "Lunatic_5",
-                "variant": null,
-                "level": 3,
-                "klass": "Lance_Fighter",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Iron_Lance",
-                        false
-                    ],
-                    [
-                        "Iron_Lance",
-                        true
-                    ]
-                ],
-                "starting_skills": [
-                    "Seal_Speed_T1"
-                ],
-                "team": "enemy",
-                "ai": "Attack2Range",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "Lunatic_6",
-                "variant": null,
-                "level": 3,
-                "klass": "Archer",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Iron_Bow",
-                        false
-                    ],
-                    [
-                        "Vulnerary",
-                        true
-                    ]
-                ],
-                "starting_skills": [
-                    "Prescience_T1"
-                ],
-                "team": "enemy",
-                "ai": "Attack2Range",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "Lunatic_7",
-                "variant": null,
-                "level": 3,
-                "klass": "Fighter",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Iron_Axe",
-                        false
-                    ]
-                ],
-                "starting_skills": [
-                    "Zeal_T1"
-                ],
-                "team": "enemy",
-                "ai": "Attack2Range",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "Lunatic_8",
-                "variant": null,
-                "level": 3,
-                "klass": "Brigand",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Iron_Axe",
-                        false
-                    ]
-                ],
-                "starting_skills": [
-                    "Life_and_Death_T1"
-                ],
-                "team": "enemy",
-                "ai": "Defend",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "Lunatic_9",
-                "variant": null,
-                "level": 3,
-                "klass": "Brigand",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Iron_Axe",
-                        false
-                    ]
-                ],
-                "starting_skills": [
-                    "Life_and_Death_T1"
-                ],
-                "team": "enemy",
-                "ai": "Pursue",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "Lunatic_10",
-                "variant": null,
-                "level": 2,
-                "klass": "Brigand",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Iron_Axe",
-                        false
-                    ]
-                ],
-                "starting_skills": [],
-                "team": "enemy",
-                "ai": "Pursue",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "Lunatic_11",
-                "variant": null,
-                "level": 2,
-                "klass": "Brigand",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Iron_Axe",
-                        false
-                    ]
-                ],
-                "starting_skills": [],
-                "team": "enemy",
-                "ai": "Pursue",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "Lunatic_12",
-                "variant": null,
-                "level": 2,
-                "klass": "Brigand",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Iron_Axe",
-                        false
-                    ]
-                ],
-                "starting_skills": [],
-                "team": "enemy",
-                "ai": "Defend",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "Lunatic_13",
-                "variant": null,
-                "level": 2,
-                "klass": "Brigand",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Iron_Axe",
+                        "Bronze_Axe",
                         false
                     ]
                 ],
@@ -1072,14 +521,14 @@
                 "generic": true
             },
             {
-                "nid": "Lunatic_14",
+                "nid": "Enemy_15",
                 "variant": null,
                 "level": 2,
                 "klass": "Brigand",
                 "faction": "Bandit",
                 "starting_items": [
                     [
-                        "Iron_Axe",
+                        "Bronze_Axe",
                         false
                     ]
                 ],
@@ -1093,388 +542,14 @@
                 "generic": true
             },
             {
-                "nid": "Nightmare_0",
-                "variant": null,
-                "level": 4,
-                "klass": "Mercenary",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Steel_Sword",
-                        false
-                    ]
-                ],
-                "starting_skills": [
-                    "Axebreaker_T1",
-                    "Vantage_T4"
-                ],
-                "team": "enemy",
-                "ai": "Attack2Range",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "Nightmare_1",
-                "variant": null,
-                "level": 4,
-                "klass": "Lance_Fighter",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Steel_Lance",
-                        false
-                    ],
-                    [
-                        "Javelin",
-                        true
-                    ]
-                ],
-                "starting_skills": [
-                    "Seal_Speed_T1",
-                    "Vantage_T4"
-                ],
-                "team": "enemy",
-                "ai": "Attack2Range",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "Nightmare_2",
-                "variant": null,
-                "level": 4,
-                "klass": "Archer",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Steel_Bow",
-                        false
-                    ]
-                ],
-                "starting_skills": [
-                    "Prescience_T1",
-                    "Vantage_T4"
-                ],
-                "team": "enemy",
-                "ai": "Attack2Range",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "Nightmare_3",
-                "variant": null,
-                "level": 4,
-                "klass": "Fighter",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Steel_Axe",
-                        false
-                    ],
-                    [
-                        "Hand_Axe",
-                        true
-                    ]
-                ],
-                "starting_skills": [
-                    "Zeal_T1",
-                    "Vantage_T4"
-                ],
-                "team": "enemy",
-                "ai": "Attack2Range",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "Nightmare_4",
-                "variant": null,
-                "level": 3,
-                "klass": "Mercenary",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Steel_Sword",
-                        false
-                    ],
-                    [
-                        "Iron_Sword",
-                        true
-                    ]
-                ],
-                "starting_skills": [
-                    "Axebreaker_T1",
-                    "Vantage_T4"
-                ],
-                "team": "enemy",
-                "ai": "Attack2Range",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "Nightmare_5",
-                "variant": null,
-                "level": 3,
-                "klass": "Lance_Fighter",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Steel_Lance",
-                        false
-                    ],
-                    [
-                        "Iron_Lance",
-                        true
-                    ]
-                ],
-                "starting_skills": [
-                    "Seal_Speed_T1",
-                    "Vantage_T4"
-                ],
-                "team": "enemy",
-                "ai": "Attack2Range",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "Nightmare_6",
-                "variant": null,
-                "level": 3,
-                "klass": "Archer",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Steel_Bow",
-                        false
-                    ],
-                    [
-                        "Vulnerary",
-                        true
-                    ]
-                ],
-                "starting_skills": [
-                    "Prescience_T1",
-                    "Vantage_T4"
-                ],
-                "team": "enemy",
-                "ai": "Attack2Range",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "Nightmare_7",
-                "variant": null,
-                "level": 3,
-                "klass": "Fighter",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Steel_Axe",
-                        false
-                    ]
-                ],
-                "starting_skills": [
-                    "Zeal_T1",
-                    "Vantage_T4"
-                ],
-                "team": "enemy",
-                "ai": "Attack2Range",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "Nightmare_8",
-                "variant": null,
-                "level": 3,
-                "klass": "Brigand",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Steel_Axe",
-                        false
-                    ]
-                ],
-                "starting_skills": [
-                    "Life_and_Death_T1",
-                    "Vantage_T4"
-                ],
-                "team": "enemy",
-                "ai": "Defend",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "Nightmare_9",
-                "variant": null,
-                "level": 3,
-                "klass": "Brigand",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Steel_Axe",
-                        false
-                    ]
-                ],
-                "starting_skills": [
-                    "Life_and_Death_T1",
-                    "Vantage_T4"
-                ],
-                "team": "enemy",
-                "ai": "Pursue",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "Nightmare_10",
-                "variant": null,
-                "level": 3,
-                "klass": "Brigand",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Steel_Axe",
-                        false
-                    ]
-                ],
-                "starting_skills": [
-                    "Life_and_Death_T1",
-                    "Vantage_T4"
-                ],
-                "team": "enemy",
-                "ai": "Attack2Range",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "Nightmare_11",
-                "variant": null,
-                "level": 3,
-                "klass": "Brigand",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Steel_Axe",
-                        false
-                    ]
-                ],
-                "starting_skills": [
-                    "Life_and_Death_T1",
-                    "Vantage_T4"
-                ],
-                "team": "enemy",
-                "ai": "Attack2Range",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "Nightmare_12",
-                "variant": null,
-                "level": 3,
-                "klass": "Brigand",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Steel_Axe",
-                        false
-                    ]
-                ],
-                "starting_skills": [
-                    "Life_and_Death_T1",
-                    "Vantage_T4"
-                ],
-                "team": "enemy",
-                "ai": "Attack2Range",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "Nightmare_13",
+                "nid": "Enemy_16",
                 "variant": null,
                 "level": 2,
                 "klass": "Brigand",
                 "faction": "Bandit",
                 "starting_items": [
                     [
-                        "Steel_Axe",
-                        false
-                    ]
-                ],
-                "starting_skills": [],
-                "team": "enemy",
-                "ai": "Pursue",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "Nightmare_14",
-                "variant": null,
-                "level": 2,
-                "klass": "Brigand",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Steel_Axe",
-                        false
-                    ]
-                ],
-                "starting_skills": [],
-                "team": "enemy",
-                "ai": "Pursue",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "Nightmare_15",
-                "variant": null,
-                "level": 2,
-                "klass": "Brigand",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Steel_Axe",
+                        "Bronze_Axe",
                         false
                     ]
                 ],
@@ -1488,35 +563,14 @@
                 "generic": true
             },
             {
-                "nid": "Nightmare_16",
+                "nid": "Enemy_17",
                 "variant": null,
                 "level": 2,
                 "klass": "Brigand",
                 "faction": "Bandit",
                 "starting_items": [
                     [
-                        "Steel_Axe",
-                        false
-                    ]
-                ],
-                "starting_skills": [],
-                "team": "enemy",
-                "ai": "Attack2Range",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": null,
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "Nightmare_17",
-                "variant": null,
-                "level": 2,
-                "klass": "Brigand",
-                "faction": "Bandit",
-                "starting_items": [
-                    [
-                        "Steel_Axe",
+                        "Bronze_Axe",
                         false
                     ]
                 ],
@@ -1613,66 +667,66 @@
                 "nid": "Enemy1Normal",
                 "units": [
                     "Bandit",
-                    "Normal_0",
-                    "Normal_1",
-                    "Normal_2",
-                    "Normal_3",
-                    "Normal_4",
-                    "Normal_5",
-                    "Normal_6",
-                    "Normal_7",
-                    "Normal_8",
-                    "Normal_9",
-                    "Normal_10"
+                    "Enemy_0",
+                    "Enemy_1",
+                    "Enemy_2",
+                    "Enemy_3",
+                    "Enemy_4",
+                    "Enemy_5",
+                    "Enemy_6",
+                    "Enemy_7",
+                    "Enemy_8",
+                    "Enemy_9",
+                    "Enemy_10"
                 ],
                 "positions": {
                     "Bandit": [
                         25,
                         6
                     ],
-                    "Normal_0": [
+                    "Enemy_0": [
                         25,
                         9
                     ],
-                    "Normal_1": [
+                    "Enemy_1": [
                         22,
                         7
                     ],
-                    "Normal_2": [
+                    "Enemy_2": [
                         23,
                         3
                     ],
-                    "Normal_3": [
+                    "Enemy_3": [
                         27,
                         8
                     ],
-                    "Normal_4": [
+                    "Enemy_4": [
                         36,
                         7
                     ],
-                    "Normal_5": [
+                    "Enemy_5": [
                         37,
                         8
                     ],
-                    "Normal_6": [
+                    "Enemy_6": [
                         38,
                         3
                     ],
-                    "Normal_7": [
+                    "Enemy_7": [
                         37,
                         10
                     ],
-                    "Normal_8": [
+                    "Enemy_8": [
                         41,
                         6
                     ],
-                    "Normal_10": [
-                        17,
-                        10
-                    ],
-                    "Normal_9": [
+                    "Enemy_9": [
                         46,
                         4
+                    ],
+                    "Enemy_10": [
+                        17,
+                        10
                     ]
                 }
             },
@@ -1680,74 +734,74 @@
                 "nid": "Enemy1Hard",
                 "units": [
                     "Bandit",
-                    "Hard_0",
-                    "Hard_1",
-                    "Hard_2",
-                    "Hard_3",
-                    "Hard_4",
-                    "Hard_5",
-                    "Hard_6",
-                    "Hard_7",
-                    "Hard_8",
-                    "Hard_9",
-                    "Hard_10",
-                    "Hard_11",
-                    "Hard_12"
+                    "Enemy_0",
+                    "Enemy_1",
+                    "Enemy_2",
+                    "Enemy_3",
+                    "Enemy_4",
+                    "Enemy_5",
+                    "Enemy_6",
+                    "Enemy_7",
+                    "Enemy_8",
+                    "Enemy_9",
+                    "Enemy_10",
+                    "Enemy_11",
+                    "Enemy_12"
                 ],
                 "positions": {
                     "Bandit": [
                         25,
                         6
                     ],
-                    "Hard_0": [
+                    "Enemy_0": [
                         25,
                         9
                     ],
-                    "Hard_1": [
+                    "Enemy_1": [
                         22,
                         7
                     ],
-                    "Hard_2": [
+                    "Enemy_2": [
                         23,
                         3
                     ],
-                    "Hard_3": [
+                    "Enemy_3": [
                         27,
                         8
                     ],
-                    "Hard_4": [
+                    "Enemy_4": [
                         36,
                         7
                     ],
-                    "Hard_5": [
+                    "Enemy_5": [
                         37,
                         8
                     ],
-                    "Hard_6": [
+                    "Enemy_6": [
                         38,
                         3
                     ],
-                    "Hard_7": [
+                    "Enemy_7": [
                         37,
                         10
                     ],
-                    "Hard_8": [
+                    "Enemy_8": [
                         17,
                         10
                     ],
-                    "Hard_9": [
+                    "Enemy_9": [
                         41,
                         6
                     ],
-                    "Hard_10": [
+                    "Enemy_10": [
                         42,
                         7
                     ],
-                    "Hard_11": [
+                    "Enemy_11": [
                         41,
                         8
                     ],
-                    "Hard_12": [
+                    "Enemy_12": [
                         12,
                         7
                     ]
@@ -1757,84 +811,84 @@
                 "nid": "Enemy1Lunatic",
                 "units": [
                     "Bandit",
-                    "Lunatic_0",
-                    "Lunatic_1",
-                    "Lunatic_2",
-                    "Lunatic_3",
-                    "Lunatic_4",
-                    "Lunatic_5",
-                    "Lunatic_6",
-                    "Lunatic_7",
-                    "Lunatic_8",
-                    "Lunatic_9",
-                    "Lunatic_10",
-                    "Lunatic_11",
-                    "Lunatic_12",
-                    "Lunatic_13",
-                    "Lunatic_14"
+                    "Enemy_0",
+                    "Enemy_1",
+                    "Enemy_2",
+                    "Enemy_3",
+                    "Enemy_4",
+                    "Enemy_5",
+                    "Enemy_6",
+                    "Enemy_7",
+                    "Enemy_8",
+                    "Enemy_9",
+                    "Enemy_10",
+                    "Enemy_11",
+                    "Enemy_12",
+                    "Enemy_13",
+                    "Enemy_14"
                 ],
                 "positions": {
                     "Bandit": [
                         25,
                         6
                     ],
-                    "Lunatic_0": [
+                    "Enemy_0": [
                         25,
                         9
                     ],
-                    "Lunatic_1": [
+                    "Enemy_1": [
                         22,
                         7
                     ],
-                    "Lunatic_2": [
+                    "Enemy_2": [
                         23,
                         3
                     ],
-                    "Lunatic_3": [
+                    "Enemy_3": [
                         27,
                         8
                     ],
-                    "Lunatic_4": [
+                    "Enemy_4": [
                         36,
                         7
                     ],
-                    "Lunatic_5": [
+                    "Enemy_5": [
                         37,
                         8
                     ],
-                    "Lunatic_6": [
+                    "Enemy_6": [
                         38,
                         3
                     ],
-                    "Lunatic_7": [
+                    "Enemy_7": [
                         37,
                         10
                     ],
-                    "Lunatic_8": [
+                    "Enemy_8": [
                         17,
                         10
                     ],
-                    "Lunatic_9": [
+                    "Enemy_9": [
                         41,
                         6
                     ],
-                    "Lunatic_10": [
+                    "Enemy_10": [
                         42,
                         7
                     ],
-                    "Lunatic_11": [
+                    "Enemy_11": [
                         41,
                         8
                     ],
-                    "Lunatic_12": [
+                    "Enemy_12": [
                         12,
                         7
                     ],
-                    "Lunatic_13": [
+                    "Enemy_13": [
                         46,
                         4
                     ],
-                    "Lunatic_14": [
+                    "Enemy_14": [
                         17,
                         6
                     ]
@@ -1844,101 +898,101 @@
                 "nid": "Enemy1Nightmare",
                 "units": [
                     "Bandit",
-                    "Nightmare_0",
-                    "Nightmare_1",
-                    "Nightmare_2",
-                    "Nightmare_3",
-                    "Nightmare_4",
-                    "Nightmare_5",
-                    "Nightmare_6",
-                    "Nightmare_7",
-                    "Nightmare_8",
-                    "Nightmare_9",
-                    "Nightmare_10",
-                    "Nightmare_11",
-                    "Nightmare_12",
-                    "Nightmare_13",
-                    "Nightmare_14",
-                    "Nightmare_15",
-                    "Nightmare_16",
-                    "Nightmare_17"
+                    "Enemy_0",
+                    "Enemy_1",
+                    "Enemy_2",
+                    "Enemy_3",
+                    "Enemy_4",
+                    "Enemy_5",
+                    "Enemy_6",
+                    "Enemy_7",
+                    "Enemy_8",
+                    "Enemy_9",
+                    "Enemy_10",
+                    "Enemy_11",
+                    "Enemy_12",
+                    "Enemy_13",
+                    "Enemy_14",
+                    "Enemy_15",
+                    "Enemy_16",
+                    "Enemy_17"
                 ],
                 "positions": {
                     "Bandit": [
                         25,
                         6
                     ],
-                    "Nightmare_0": [
+                    "Enemy_0": [
                         25,
                         9
                     ],
-                    "Nightmare_1": [
+                    "Enemy_1": [
                         22,
                         7
                     ],
-                    "Nightmare_2": [
+                    "Enemy_2": [
                         23,
                         3
                     ],
-                    "Nightmare_3": [
+                    "Enemy_3": [
                         27,
                         8
                     ],
-                    "Nightmare_4": [
+                    "Enemy_4": [
                         36,
                         7
                     ],
-                    "Nightmare_5": [
+                    "Enemy_5": [
                         37,
                         8
                     ],
-                    "Nightmare_6": [
+                    "Enemy_6": [
                         38,
                         3
                     ],
-                    "Nightmare_7": [
+                    "Enemy_7": [
                         37,
                         10
                     ],
-                    "Nightmare_8": [
+                    "Enemy_8": [
                         17,
                         10
                     ],
-                    "Nightmare_9": [
+                    "Enemy_9": [
                         41,
                         6
                     ],
-                    "Nightmare_10": [
-                        37,
-                        6
-                    ],
-                    "Nightmare_11": [
-                        38,
-                        9
-                    ],
-                    "Nightmare_12": [
-                        18,
-                        11
-                    ],
-                    "Nightmare_13": [
+                    "Enemy_10": [
                         42,
                         7
                     ],
-                    "Nightmare_14": [
+                    "Enemy_11": [
                         41,
                         8
                     ],
-                    "Nightmare_15": [
-                        46,
-                        4
-                    ],
-                    "Nightmare_16": [
+                    "Enemy_12": [
                         12,
                         7
                     ],
-                    "Nightmare_17": [
+                    "Enemy_13": [
+                        46,
+                        4
+                    ],
+                    "Enemy_14": [
+                        37,
+                        6
+                    ],
+                    "Enemy_15": [
+                        38,
+                        9
+                    ],
+                    "Enemy_16": [
                         17,
                         6
+                    ],
+                    "Enemy_17": [
+                        18,
+                        11
                     ]
                 }
             }
@@ -1986,34 +1040,140 @@
                 "generic": false
             },
             {
-                "nid": "101",
+                "nid": "Rudolf",
                 "variant": null,
-                "level": 7,
-                "klass": "Soldier_Elite",
+                "level": 20,
+                "klass": "Lance_Rider",
                 "faction": "Monster",
                 "starting_items": [
                     [
-                        "Short_Spear",
+                        "Iron_Lance",
                         false
                     ]
                 ],
-                "starting_skills": [],
+                "starting_skills": [
+                    "Shadow_Energy_Ultra"
+                ],
                 "team": "enemy",
-                "ai": "Attack2Range",
+                "ai": "Defend",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": [
-                    14,
+                    8,
                     14
                 ],
                 "starting_traveler": null,
                 "generic": true
             },
             {
-                "nid": "102",
+                "nid": "Iote",
                 "variant": null,
-                "level": 7,
-                "klass": "Mage_Elite",
+                "level": 20,
+                "klass": "Axe_Wyvern_Rider",
+                "faction": "Monster",
+                "starting_items": [
+                    [
+                        "Iron_Axe",
+                        false
+                    ]
+                ],
+                "starting_skills": [
+                    "Shadow_Energy_Ultra"
+                ],
+                "team": "enemy",
+                "ai": "Defend",
+                "roam_ai": null,
+                "ai_group": "",
+                "starting_position": [
+                    7,
+                    13
+                ],
+                "starting_traveler": null,
+                "generic": true
+            },
+            {
+                "nid": "Brigid",
+                "variant": null,
+                "level": 20,
+                "klass": "ArcherFemale",
+                "faction": "Monster",
+                "starting_items": [
+                    [
+                        "Iron_Bow",
+                        false
+                    ]
+                ],
+                "starting_skills": [
+                    "Shadow_Energy_Ultra"
+                ],
+                "team": "enemy",
+                "ai": "Defend",
+                "roam_ai": null,
+                "ai_group": "",
+                "starting_position": [
+                    5,
+                    10
+                ],
+                "starting_traveler": null,
+                "generic": true
+            },
+            {
+                "nid": "Pleione",
+                "variant": null,
+                "level": 20,
+                "klass": "Fighter_Female",
+                "faction": "Monster",
+                "starting_items": [
+                    [
+                        "Iron_Axe",
+                        false
+                    ]
+                ],
+                "starting_skills": [
+                    "Shadow_Energy_Ultra"
+                ],
+                "team": "enemy",
+                "ai": "Defend",
+                "roam_ai": null,
+                "ai_group": "",
+                "starting_position": [
+                    7,
+                    8
+                ],
+                "starting_traveler": null,
+                "generic": true
+            },
+            {
+                "nid": "Adrah",
+                "variant": null,
+                "level": 20,
+                "klass": "Thief",
+                "faction": "Monster",
+                "starting_items": [
+                    [
+                        "Iron_Dagger",
+                        false
+                    ]
+                ],
+                "starting_skills": [
+                    "Shadow_Energy_Ultra"
+                ],
+                "team": "enemy",
+                "ai": "Defend",
+                "roam_ai": null,
+                "ai_group": "",
+                "starting_position": [
+                    9,
+                    6
+                ],
+                "starting_traveler": null,
+                "generic": true
+            },
+            {
+                "nid": "Athos",
+                "variant": null,
+                "level": 20,
+                "klass": "Mage",
                 "faction": "Monster",
                 "starting_items": [
                     [
@@ -2021,238 +1181,120 @@
                         false
                     ]
                 ],
-                "starting_skills": [],
-                "team": "enemy",
-                "ai": "Attack2Range",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": [
-                    14,
-                    7
+                "starting_skills": [
+                    "Shadow_Energy_Ultra"
                 ],
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "103",
-                "variant": null,
-                "level": 14,
-                "klass": "Thief",
-                "faction": "Monster",
-                "starting_items": [
-                    [
-                        "Steel_Dagger",
-                        false
-                    ]
-                ],
-                "starting_skills": [],
-                "team": "enemy",
-                "ai": "Attack2Range",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": [
-                    8,
-                    5
-                ],
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "104",
-                "variant": null,
-                "level": 7,
-                "klass": "Axe_Wyvern_Rider_Elite",
-                "faction": "Monster",
-                "starting_items": [
-                    [
-                        "Steel_Axe",
-                        false
-                    ],
-                    [
-                        "Short_Axe",
-                        false
-                    ]
-                ],
-                "starting_skills": [],
                 "team": "enemy",
                 "ai": "Defend",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": [
                     12,
-                    6
+                    14
                 ],
                 "starting_traveler": null,
                 "generic": true
             },
             {
-                "nid": "105",
-                "variant": null,
-                "level": 7,
-                "klass": "Archer_Elite",
+                "nid": "Ike",
+                "variant": "Ike",
+                "level": 20,
+                "klass": "Mercenary",
                 "faction": "Monster",
                 "starting_items": [
                     [
-                        "Steel_Bow",
+                        "Iron_Sword",
                         false
                     ]
                 ],
-                "starting_skills": [],
+                "starting_skills": [
+                    "Shadow_Energy_Ultra"
+                ],
                 "team": "enemy",
-                "ai": "Attack2Range",
+                "ai": "Defend",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": [
-                    17,
+                    12,
                     7
                 ],
                 "starting_traveler": null,
                 "generic": true
             },
             {
-                "nid": "106",
+                "nid": "Zelgius",
                 "variant": null,
-                "level": 14,
+                "level": 20,
+                "klass": "Armored_Sword_Melee",
+                "faction": "Soldier",
+                "starting_items": [
+                    [
+                        "Iron_Sword",
+                        false
+                    ]
+                ],
+                "starting_skills": [
+                    "Shadow_Energy_Ultra"
+                ],
+                "team": "enemy",
+                "ai": "Defend",
+                "roam_ai": null,
+                "ai_group": "",
+                "starting_position": [
+                    13,
+                    13
+                ],
+                "starting_traveler": null,
+                "generic": true
+            },
+            {
+                "nid": "Kaoru",
+                "variant": null,
+                "level": 20,
                 "klass": "MyrmidonFemale",
                 "faction": "Monster",
                 "starting_items": [
                     [
-                        "Shamshir",
+                        "Iron_Sword",
                         false
                     ]
                 ],
-                "starting_skills": [],
+                "starting_skills": [
+                    "Shadow_Energy_Ultra"
+                ],
                 "team": "enemy",
-                "ai": "Attack2Range",
+                "ai": "Defend",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": [
-                    6,
-                    7
-                ],
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "107",
-                "variant": null,
-                "level": 7,
-                "klass": "Armored_Sword_Elite_Melee",
-                "faction": "Soldier",
-                "starting_items": [
-                    [
-                        "Iron_Blade",
-                        false
-                    ]
-                ],
-                "starting_skills": [],
-                "team": "enemy",
-                "ai": "Attack2Range",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": [
-                    16,
-                    11
-                ],
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "108",
-                "variant": null,
-                "level": 7,
-                "klass": "Lance_Rider_Elite",
-                "faction": "Monster",
-                "starting_items": [
-                    [
-                        "Steel_Lance",
-                        false
-                    ],
-                    [
-                        "Short_Spear",
-                        false
-                    ]
-                ],
-                "starting_skills": [],
-                "team": "enemy",
-                "ai": "Attack2Range",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": [
-                    2,
-                    10
-                ],
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "109",
-                "variant": null,
-                "level": 7,
-                "klass": "Mercenary_Elite",
-                "faction": "Monster",
-                "starting_items": [
-                    [
-                        "Steel_Sword",
-                        false
-                    ]
-                ],
-                "starting_skills": [],
-                "team": "enemy",
-                "ai": "Attack2Range",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": [
-                    2,
+                    13,
                     8
                 ],
                 "starting_traveler": null,
                 "generic": true
             },
             {
-                "nid": "110",
+                "nid": "Finn",
                 "variant": null,
-                "level": 7,
-                "klass": "Troubadour_Elite",
+                "level": 20,
+                "klass": "Soldier",
                 "faction": "Monster",
                 "starting_items": [
                     [
-                        "Physic",
+                        "Iron_Lance",
                         false
                     ]
                 ],
-                "starting_skills": [],
-                "team": "enemy",
-                "ai": "HealCoward",
-                "roam_ai": null,
-                "ai_group": "",
-                "starting_position": [
-                    9,
-                    5
+                "starting_skills": [
+                    "Shadow_Energy_Ultra"
                 ],
-                "starting_traveler": null,
-                "generic": true
-            },
-            {
-                "nid": "111",
-                "variant": null,
-                "level": 7,
-                "klass": "Fighter_Elite",
-                "faction": "Monster",
-                "starting_items": [
-                    [
-                        "Steel_Axe",
-                        false
-                    ]
-                ],
-                "starting_skills": [],
                 "team": "enemy",
                 "ai": "Defend",
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": [
-                    6,
-                    14
+                    11,
+                    6
                 ],
                 "starting_traveler": null,
                 "generic": true
@@ -2336,22 +1378,61 @@
             {
                 "nid": "Enemy1",
                 "units": [
-                    "101",
-                    "102",
-                    "111",
-                    "106",
-                    "105",
-                    "103",
-                    "104",
-                    "107",
-                    "108",
-                    "109",
-                    "110"
+                    "Finn",
+                    "Athos",
+                    "Pleione",
+                    "Kaoru",
+                    "Brigid",
+                    "Adrah",
+                    "Iote",
+                    "Zelgius",
+                    "Rudolf",
+                    "Ike"
                 ],
                 "positions": {
                     "Martin_Shadow": [
                         8,
                         7
+                    ],
+                    "Finn": [
+                        8,
+                        6
+                    ],
+                    "Athos": [
+                        8,
+                        5
+                    ],
+                    "Pleione": [
+                        8,
+                        4
+                    ],
+                    "Kaoru": [
+                        9,
+                        4
+                    ],
+                    "Brigid": [
+                        9,
+                        5
+                    ],
+                    "Adrah": [
+                        9,
+                        6
+                    ],
+                    "Iote": [
+                        10,
+                        4
+                    ],
+                    "Zelgius": [
+                        11,
+                        4
+                    ],
+                    "Rudolf": [
+                        11,
+                        5
+                    ],
+                    "Ike": [
+                        11,
+                        6
                     ]
                 }
             }
@@ -6276,11 +5357,11 @@
                 "nid": "110",
                 "variant": null,
                 "level": 1,
-                "klass": "Armored_Axe_Melee",
+                "klass": "Sniper",
                 "faction": "Soldier",
                 "starting_items": [
                     [
-                        "Bronze_Sword",
+                        "Iron_Bow",
                         false
                     ]
                 ],
@@ -6290,8 +5371,8 @@
                 "roam_ai": null,
                 "ai_group": "",
                 "starting_position": [
-                    14,
-                    4
+                    6,
+                    11
                 ],
                 "starting_traveler": null,
                 "generic": true
@@ -6318,6 +5399,108 @@
                 "starting_position": [
                     9,
                     9
+                ],
+                "starting_traveler": null,
+                "generic": false
+            },
+            {
+                "nid": "111",
+                "variant": null,
+                "level": 1,
+                "klass": "Thief",
+                "faction": "Soldier",
+                "starting_items": [
+                    [
+                        "Knife",
+                        false
+                    ]
+                ],
+                "starting_skills": [],
+                "team": "enemy",
+                "ai": "None",
+                "roam_ai": null,
+                "ai_group": "",
+                "starting_position": [
+                    7,
+                    9
+                ],
+                "starting_traveler": null,
+                "generic": true
+            },
+            {
+                "nid": "Ross",
+                "team": "player",
+                "ai": "None",
+                "roam_ai": null,
+                "ai_group": "",
+                "starting_position": [
+                    5,
+                    14
+                ],
+                "starting_traveler": null,
+                "generic": false
+            },
+            {
+                "nid": "Garcia",
+                "team": "player",
+                "ai": "None",
+                "roam_ai": null,
+                "ai_group": "",
+                "starting_position": [
+                    4,
+                    14
+                ],
+                "starting_traveler": null,
+                "generic": false
+            },
+            {
+                "nid": "Neimi",
+                "team": "player",
+                "ai": "None",
+                "roam_ai": null,
+                "ai_group": "",
+                "starting_position": [
+                    3,
+                    14
+                ],
+                "starting_traveler": null,
+                "generic": false
+            },
+            {
+                "nid": "Colm",
+                "team": "player",
+                "ai": "None",
+                "roam_ai": null,
+                "ai_group": "",
+                "starting_position": [
+                    2,
+                    14
+                ],
+                "starting_traveler": null,
+                "generic": false
+            },
+            {
+                "nid": "Artur",
+                "team": "player",
+                "ai": "None",
+                "roam_ai": null,
+                "ai_group": "",
+                "starting_position": [
+                    1,
+                    14
+                ],
+                "starting_traveler": null,
+                "generic": false
+            },
+            {
+                "nid": "Lute",
+                "team": "player",
+                "ai": "None",
+                "roam_ai": null,
+                "ai_group": "",
+                "starting_position": [
+                    0,
+                    14
                 ],
                 "starting_traveler": null,
                 "generic": false

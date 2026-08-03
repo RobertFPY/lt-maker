@@ -7,12 +7,15 @@ from app.engine.fonts import FONT
 from app.engine.game_menus import menu_options
 from app.engine import text_funcs, image_mods, \
     gui, base_surf, help_menu, engine, menus
+from app.engine.android_runtime import is_android_render_optimization_enabled
 
 class ControlOption(menu_options.BasicOption):
     def __init__(self, idx, name, icon):
         self.idx = idx
         self.name = name
         self.display_name = text_funcs.translate(name)
+        if name == 'key_FAST_FORWARD' and self.display_name == name:
+            self.display_name = 'Fast Forward'
         self.icon = icon
         self.help_box = None
         self.ignore = False
@@ -27,13 +30,18 @@ class ControlOption(menu_options.BasicOption):
         return 16
 
     def draw(self, surf, x, y, active=False, get_input=False):
-        name_font = 'text'
+        self.draw_static(surf, x, y)
+        self.draw_dynamic(surf, x, y, active, get_input)
+
+    def draw_static(self, surf, x, y):
+        surf.blit(self.icon, (x + 32 - self.icon.get_width()//2, y + 8 - self.icon.get_height()//2))
+        FONT['text'].blit(self.display_name, surf, (x + 56, y))
+
+    def draw_dynamic(self, surf, x, y, active=False, get_input=False):
         key_font = 'text-blue'
         if active and get_input:
-            name_font = 'text-yellow'
             key_font = 'text-yellow'
-        surf.blit(self.icon, (x + 32 - self.icon.get_width()//2, y + 8 - self.icon.get_height()//2))
-        FONT[name_font].blit(self.display_name, surf, (x + 56, y))
+            FONT['text-yellow'].blit(self.display_name, surf, (x + 56, y))
         key_name = engine.get_key_name(cf.SETTINGS[self.name])
         FONT[key_font].blit(key_name, surf, (x + 128, y))
 
@@ -89,6 +97,10 @@ class ConfigOption(menu_options.BasicOption):
         else:
             cf.SETTINGS[self.name] = self.values[-1]
 
+    def draw_static(self, surf, x, y):
+        surf.blit(self.icon, (x + 16, y))
+        FONT['text'].blit(self.display_name, surf, (x + 32, y))
+
 class SliderOption(ConfigOption):
     def __init__(self, idx, name, values, icon):
         super().__init__(idx, name, values, icon)
@@ -96,14 +108,20 @@ class SliderOption(ConfigOption):
         self.anim = [0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
 
     def draw(self, surf, x, y, active=False):
+        self.draw_static(surf, x, y)
+        self.draw_dynamic(surf, x, y, active)
+
+    def draw_static(self, surf, x, y):
+        super().draw_static(surf, x, y)
+        slider_bar = SPRITES.get('health_bar_bg')
+        if slider_bar:
+            surf.blit(slider_bar, (x + 112, y + 4))
+
+    def draw_dynamic(self, surf, x, y, active=False):
         self.counter = (self.counter + 1) % len(self.anim)
-        surf.blit(self.icon, (x + 16, y))
-        name_font = 'text'
-        FONT[name_font].blit(self.display_name, surf, (x + 32, y))
         slider_bar = SPRITES.get('health_bar_bg')
         if not slider_bar:
             return
-        surf.blit(slider_bar, (x + 112, y + 4))
         slider_cursor = SPRITES.get('slider_cursor')
         if not slider_cursor:
             return
@@ -146,9 +164,10 @@ class ChoiceOption(ConfigOption):
         self.right_arrow.pulse()
 
     def draw(self, surf, x, y, active=False):
-        surf.blit(self.icon, (x + 16, y))
-        name_font = FONT['text']
-        name_font.blit(self.display_name, surf, (x + 32, y))
+        self.draw_static(surf, x, y)
+        self.draw_dynamic(surf, x, y, active)
+
+    def draw_dynamic(self, surf, x, y, active=False):
         value_font = FONT['text-blue']
         value = cf.SETTINGS[self.name]
         display_value = text_funcs.translate(value)
@@ -162,14 +181,24 @@ class ChoiceOption(ConfigOption):
         self.left_arrow.draw(surf)
         self.right_arrow.draw(surf)
 
+class PercentOption(ChoiceOption):
+    def draw(self, surf, x, y, active=False):
+        self.draw_static(surf, x, y)
+        self.draw_dynamic(surf, x, y, active)
+
+    def draw_dynamic(self, surf, x, y, active=False):
+        FONT['text-blue'].blit_center(f'{self.get_value()}%', surf, (x + 164, y))
+        self.draw_side_arrows(surf, x, y, active)
+
 class SimpleOption(ConfigOption):
     def get_value(self):
         return str(cf.SETTINGS[self.name])
 
     def draw(self, surf, x, y, active=False):
-        surf.blit(self.icon, (x + 16, y))
-        name_font = FONT['text']
-        name_font.blit(self.display_name, surf, (x + 32, y))
+        self.draw_static(surf, x, y)
+        self.draw_dynamic(surf, x, y, active)
+
+    def draw_dynamic(self, surf, x, y, active=False):
         value = str(cf.SETTINGS[self.name])
 
         running_width = 0
@@ -228,9 +257,10 @@ class BoolOption(ConfigOption):
             cf.SETTINGS[self.name] = 1
 
     def draw(self, surf, x, y, active=False):
-        surf.blit(self.icon, (x + 16, y))
-        name_font = FONT['text']
-        name_font.blit(self.display_name, surf, (x + 32, y))
+        self.draw_static(surf, x, y)
+        self.draw_dynamic(surf, x, y, active)
+
+    def draw_dynamic(self, surf, x, y, active=False):
         value = cf.SETTINGS[self.name]
 
         if value:
@@ -246,6 +276,10 @@ class BoolOption(ConfigOption):
 class Controls(menus.Simple):
     def __init__(self, owner, options, background, icons, info=None):
         self.icons = icons
+        self._android_bg_surf = None
+        self._android_bg_key = None
+        self._android_static_surf = None
+        self._android_static_key = None
         super().__init__(owner, options, None, background, info)
         self.set_limit((WINHEIGHT - 64)// 16)
 
@@ -256,6 +290,36 @@ class Controls(menus.Simple):
             if info_descs:
                 option.help_box = help_menu.HelpDialog(info_descs[idx])
             self.options.append(option)
+        self._invalidate_android_bg_cache()
+
+    def _invalidate_android_bg_cache(self):
+        self._android_bg_surf = None
+        self._android_bg_key = None
+        self._android_static_surf = None
+        self._android_static_key = None
+
+    def _create_android_static_surf(self, choices):
+        width, height = self.get_menu_width(), self.get_menu_height()
+        bg_surf = base_surf.create_base_surf(width, height, self.background)
+        bg_surf = image_mods.make_translucent(bg_surf, .1)
+        static_surf = engine.create_surface((width + 8, height), transparent=True)
+        static_surf.blit(bg_surf, (4, 0))
+
+        running_height = 0
+        for choice in choices:
+            choice.draw_static(static_surf, 0, 4 + running_height)
+            running_height += choice.height()
+        return static_surf
+
+    def _get_android_static_surf(self, choices):
+        key = (
+            self.get_menu_width(), self.get_menu_height(), self.background,
+            self.scroll, self.limit,
+        )
+        if self._android_static_surf is None or self._android_static_key != key:
+            self._android_static_surf = self._create_android_static_surf(choices)
+            self._android_static_key = key
+        return self._android_static_surf
 
     def move_left(self):
         pass
@@ -268,15 +332,19 @@ class Controls(menus.Simple):
 
     def draw(self, surf, get_input=False):
         topleft = ((WINWIDTH - self.get_menu_width()) // 2, (WINHEIGHT - self.get_menu_height()) // 2 + 8)
-        bg_surf = base_surf.create_base_surf(self.get_menu_width(), self.get_menu_height(), self.background)
-        bg_surf = image_mods.make_translucent(bg_surf, .1)
-        surf.blit(bg_surf, topleft)
+        end_index = self.scroll + self.limit
+        choices = self.options[self.scroll:end_index]
+        if is_android_render_optimization_enabled():
+            static_surf = self._get_android_static_surf(choices)
+            surf.blit(static_surf, (topleft[0] - 4, topleft[1]))
+        else:
+            bg_surf = base_surf.create_base_surf(self.get_menu_width(), self.get_menu_height(), self.background)
+            bg_surf = image_mods.make_translucent(bg_surf, .1)
+            surf.blit(bg_surf, topleft)
 
         if len(self.options) > self.limit:
             self.draw_scroll_bar(surf, topleft)
 
-        end_index = self.scroll + self.limit
-        choices = self.options[self.scroll:end_index]
         running_height = 0
 
         for idx, choice in enumerate(choices):
@@ -285,9 +353,15 @@ class Controls(menus.Simple):
 
             active = (idx + self.scroll == self.current_index and self.takes_input)
             if get_input:
-                choice.draw(surf, left, top, active, True)
+                if is_android_render_optimization_enabled():
+                    choice.draw_dynamic(surf, left, top, active, True)
+                else:
+                    choice.draw(surf, left, top, active, True)
             else:
-                choice.draw(surf, left, top, active)
+                if is_android_render_optimization_enabled():
+                    choice.draw_dynamic(surf, left, top, active)
+                else:
+                    choice.draw(surf, left, top, active)
             if active:
                 self.cursor.draw(surf, left + 8, top)
 
@@ -322,6 +396,8 @@ class Config(Controls):
                 option = BoolOption(idx, option[0], option[1], self.icons[idx])
             elif option[0] == 'screen_size':
                 option = ScreenSizeOption(idx, option[0], option[1], self.icons[idx])
+            elif option[0] == 'fast_forward_speed':
+                option = PercentOption(idx, option[0], option[1], self.icons[idx])
             elif isinstance(option[1][0], int) or isinstance(option[1][0], float):
                 option = SliderOption(idx, option[0], option[1], self.icons[idx])
             else:  # Is a list of text options or bool
@@ -332,6 +408,7 @@ class Config(Controls):
             if info_descs:
                 option.help_box = help_menu.HelpDialog(info_descs[idx])
             self.options.append(option)
+        self._invalidate_android_bg_cache()
 
     def move_left(self):
         option = self.get_current_option()

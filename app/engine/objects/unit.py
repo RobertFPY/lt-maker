@@ -646,6 +646,16 @@ class UnitObject(Prefab):
         return [item for item in self.items if not item_system.is_accessory(self, item)]
 
     @property
+    def weapon_items(self) -> List[ItemObject]:
+        """Items assigned to the Weapon section."""
+        return item_funcs.get_section_items(self, item_funcs.InventorySection.WEAPON)
+
+    @property
+    def regular_items(self) -> List[ItemObject]:
+        """Items assigned to the non-weapon Item section."""
+        return item_funcs.get_section_items(self, item_funcs.InventorySection.ITEM)
+
+    @property
     def movement_left(self) -> int:
         if not self.has_moved:
             return self.get_movement()
@@ -698,6 +708,56 @@ class UnitObject(Prefab):
         """Return True if the unit can equip *item*"""
         return item_system.equippable(self, item) and item_funcs.available(self, item)
 
+    def _inventory_section_sort_key(self, item: ItemObject) -> int:
+        if not item_funcs.split_inventory_enabled():
+            return int(item_system.is_accessory(self, item))
+        section = item_funcs.get_inventory_section(self, item)
+        return {
+            item_funcs.InventorySection.WEAPON: 0,
+            item_funcs.InventorySection.ITEM: 1,
+            item_funcs.InventorySection.ACCESSORY: 2,
+        }[section]
+
+    def sort_inventory_sections(self) -> None:
+        """Keep sections contiguous while preserving order within each one."""
+        self.items = sorted(self.items, key=self._inventory_section_sort_key)
+
+    def get_item_section_index(self, item: ItemObject) -> int:
+        section = item_funcs.get_inventory_section(self, item)
+        return item_funcs.get_section_items(self, section).index(item)
+
+    def insert_item_in_section(self, index: int, item: ItemObject) -> None:
+        """Insert ``item`` at an index relative to its own inventory section."""
+        section = item_funcs.get_inventory_section(self, item)
+        section_items = item_funcs.get_section_items(self, section)
+        index = max(0, min(index, len(section_items)))
+        was_present = item in self.items
+        if was_present:
+            self.items.remove(item)
+            section_items = item_funcs.get_section_items(self, section)
+            index = max(0, min(index, len(section_items)))
+
+        if section_items and index < len(section_items):
+            global_index = self.items.index(section_items[index])
+        elif section_items:
+            global_index = self.items.index(section_items[-1]) + 1
+        else:
+            preceding_sections = {
+                item_funcs.InventorySection.WEAPON: (),
+                item_funcs.InventorySection.ITEM: (item_funcs.InventorySection.WEAPON,),
+                item_funcs.InventorySection.ACCESSORY: (
+                    item_funcs.InventorySection.WEAPON,
+                    item_funcs.InventorySection.ITEM,
+                ),
+            }[section]
+            global_index = sum(len(item_funcs.get_section_items(self, value))
+                               for value in preceding_sections)
+        if was_present:
+            self.items.insert(global_index, item)
+            self.sort_inventory_sections()
+        else:
+            self.insert_item(global_index, item)
+
     def is_mari_loadout_item(self, item) -> bool:
         """True if *item* is one of Mari's materialized spell-loadout spells.
 
@@ -739,8 +799,7 @@ class UnitObject(Prefab):
                     if self.can_equip(item):
                         self.equip(item)
                         break
-        # keep accessories sorted after items
-        self.items = sorted(self.items, key=lambda item: item_system.is_accessory(self, item))
+        self.sort_inventory_sections()
 
     def equip(self, item):
         if item_system.is_accessory(self, item) and item is self.equipped_accessory:
@@ -770,11 +829,16 @@ class UnitObject(Prefab):
             item_system.on_unequip_item(self, item)
 
     def add_item(self, item):
-        index = len(self.items)
-        self.insert_item(index, item)
+        if item_funcs.split_inventory_enabled():
+            section = item_funcs.get_inventory_section(self, item)
+            self.insert_item_in_section(len(item_funcs.get_section_items(self, section)), item)
+        else:
+            self.insert_item(len(self.items), item)
 
     def bring_to_top_item(self, item):
-        if item_system.is_accessory(self, item):
+        if item_funcs.split_inventory_enabled():
+            self.insert_item_in_section(0, item)
+        elif item_system.is_accessory(self, item):
             self.items.remove(item)
             self.items.insert(len(self.nonaccessories), item)
         else:
@@ -792,6 +856,7 @@ class UnitObject(Prefab):
             # Statuses here
             item_system.on_add_item(self, item)
             skill_system.on_add_item(self, item)
+        self.sort_inventory_sections()
 
     def remove_item(self, item):
         # Remove item before we unequip, so that the autoequip does not
@@ -1000,6 +1065,7 @@ class UnitObject(Prefab):
         else:
             self.starting_position = None
         self._fields = s_dict.get('_fields', {})
+        self.sort_inventory_sections()
 
         self.equipped_weapon = None
         self.equipped_accessory = None

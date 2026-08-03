@@ -408,6 +408,10 @@
         "text": "Stats gained from level ups are random."
     },
     {
+        "nid": "Pity_desc",
+        "text": "The first four level ups after recruitment gain +100% growth rates, then return to normal."
+    },
+    {
         "nid": "Fixed_desc",
         "text": "Predetermined stat gains. Units will turn out the same each time."
     },

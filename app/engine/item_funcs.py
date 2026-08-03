@@ -1,6 +1,8 @@
 from __future__ import annotations
 import logging
 import math
+from dataclasses import dataclass
+from enum import Enum
 from typing import TYPE_CHECKING, Dict, List, Set
 
 from app.data.database.database import DB
@@ -14,6 +16,19 @@ from app.engine.game_state import game
 if TYPE_CHECKING:
     from app.engine.objects.unit import UnitObject
     from app.utilities.typing import NID
+
+class InventorySection(str, Enum):
+    WEAPON = 'weapon'
+    ITEM = 'item'
+    ACCESSORY = 'accessory'
+
+@dataclass(frozen=True)
+class InventorySlot:
+    section: InventorySection
+    index: int
+
+def split_inventory_enabled() -> bool:
+    return bool(DB.constants.value('split_inventory'))
 
 def is_magic(unit: UnitObject, item: ItemObject, distance: int = 0) -> bool:
     """
@@ -433,15 +448,38 @@ def get_all_storeable_items(unit: UnitObject) -> List[ItemObject]:
             items.append(item)
     return items
 
+def get_inventory_section(unit: UnitObject, item: ItemObject) -> InventorySection:
+    """Return the inventory section that owns ``item``.
+
+    Accessories take precedence. Multi-items belong to the weapon section if
+    any nested entry is a weapon or spell so their parent is never split away
+    from the combat entry that the player selects.
+    """
+    if item_system.is_accessory(unit, item):
+        return InventorySection.ACCESSORY
+    if is_weapon_recursive(unit, item) or is_spell_recursive(unit, item):
+        return InventorySection.WEAPON
+    return InventorySection.ITEM
+
+def get_section_items(unit: UnitObject, section: InventorySection) -> List[ItemObject]:
+    return [item for item in unit.items if get_inventory_section(unit, item) == section]
+
+def get_num_weapons(unit: UnitObject) -> int:
+    """Return the maximum weapon-section entries for a split inventory."""
+    if not split_inventory_enabled():
+        return 0
+    return DB.constants.value('num_weapons')
+
 def get_num_items(unit: UnitObject) -> int:
     """
-    Retrieves the maximum number of non-accessories a unit can carry.
+    Retrieves the maximum number of regular Item-section entries a unit can
+    carry. In legacy mode this remains the shared non-accessory capacity.
 
     Args:
         unit (UnitObject): The unit to query.
 
     Returns:
-        int: The maximum number of non-accessories the unit can carry.
+        int: The maximum Item-section or legacy non-accessory capacity.
     """
     return DB.constants.value('num_items') + skill_system.num_items_offset(unit)
 
@@ -457,6 +495,16 @@ def get_num_accessories(unit: UnitObject) -> int:
     """
     return DB.constants.value('num_accessories') + skill_system.num_accessories_offset(unit)
 
+def get_inventory_capacity(unit: UnitObject, section: InventorySection) -> int:
+    if section == InventorySection.ACCESSORY:
+        return get_num_accessories(unit)
+    if section == InventorySection.WEAPON:
+        return get_num_weapons(unit)
+    return get_num_items(unit)
+
+def get_total_inventory_capacity(unit: UnitObject) -> int:
+    return get_num_weapons(unit) + get_num_items(unit) + get_num_accessories(unit)
+
 def too_much_in_inventory(unit: UnitObject) -> bool:
     """
     Checks if a unit is carrying too many items.
@@ -467,8 +515,13 @@ def too_much_in_inventory(unit: UnitObject) -> bool:
     Returns:
         bool: True if the unit is carrying too many items, False otherwise.
     """
-    return len(unit.accessories) > get_num_accessories(unit) or \
-        len(unit.nonaccessories) > get_num_items(unit)
+    if not split_inventory_enabled():
+        return len(unit.accessories) > get_num_accessories(unit) or \
+            len(unit.nonaccessories) > get_num_items(unit)
+    return any(
+        len(get_section_items(unit, section)) > get_inventory_capacity(unit, section)
+        for section in InventorySection
+    )
 
 def inventory_full(unit: UnitObject, item: ItemObject) -> bool:
     """
@@ -483,8 +536,10 @@ def inventory_full(unit: UnitObject, item: ItemObject) -> bool:
     """
     if item_system.is_accessory(unit, item):
         return len(unit.accessories) >= get_num_accessories(unit)
-    else:
+    if not split_inventory_enabled():
         return len(unit.nonaccessories) >= get_num_items(unit)
+    section = get_inventory_section(unit, item)
+    return len(get_section_items(unit, section)) >= get_inventory_capacity(unit, section)
 
 def get_range(unit: UnitObject, item: ItemObject) -> Set[int]:
     """

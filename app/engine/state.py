@@ -9,6 +9,7 @@ class State():
     in_level = True
     show_map = True
     transparent = False
+    blocks_fast_forward = False
 
     started = False
     processed = False
@@ -33,6 +34,24 @@ class State():
 
     def update(self):
         pass
+
+    def update_visuals(self):
+        """Advance simulation-timed visuals for this visible state.
+
+        Fast-forward can run several updates while rendering only the final
+        surface.  Time-dependent visual state belongs here rather than in
+        ``draw`` so visible underlays stay synchronized with the game clock.
+        """
+        pass
+
+    def should_defer_render(self) -> bool:
+        """Whether this state must retain the last presented surface this step.
+
+        Updates and lifecycle commits still run.  This is only for an atomic
+        visual mutation that cannot be shown until its event command batch has
+        reached a present-safe boundary.
+        """
+        return False
 
     def draw(self, surf):
         return surf
@@ -61,9 +80,15 @@ class MapState(State):
     def update(self):
         pass
 
+    def update_visuals(self):
+        if game.camera:
+            game.camera.update()
+        if game.highlight:
+            game.highlight.update()
+        if game.map_view:
+            game.map_view.update_visuals()
+
     def draw(self, surf, culled_rect=None):
-        game.camera.update()
-        game.highlight.update()
         camera_cull = int(game.camera.get_x() * TILEWIDTH), int(game.camera.get_y() * TILEHEIGHT), WINWIDTH, WINHEIGHT
         map_surf = game.map_view.draw(camera_cull, culled_rect)
         surf.blit(map_surf, (0, 0))

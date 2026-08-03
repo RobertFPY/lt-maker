@@ -1286,6 +1286,9 @@ class MoveItem(Action):
         self.owner = owner
         self.unit = unit
         self.item = item
+        self.owner_index = owner.items.index(item)
+        self.owner_section_index = (owner.get_item_section_index(item)
+                                    if item_funcs.split_inventory_enabled() else 0)
 
     @recalculate_unit
     def do(self):
@@ -1298,7 +1301,10 @@ class MoveItem(Action):
     @recalculate_unit
     def reverse(self):
         self.unit.remove_item(self.item)
-        self.owner.add_item(self.item)
+        if item_funcs.split_inventory_enabled():
+            self.owner.insert_item_in_section(self.owner_section_index, self.item)
+        else:
+            self.owner.insert_item(self.owner_index, self.item)
 
         if self.owner.position and game.tilemap and game.boundary:
             game.boundary.recalculate_unit(self.owner)
@@ -1310,20 +1316,35 @@ class TradeItemWithConvoy(Action):
         self.convoy_item = convoy_item
         self.unit_item = unit_item
         self.unit_idx = self.unit.items.index(self.unit_item)
+        self.unit_section_idx = (self.unit.get_item_section_index(self.unit_item)
+                                 if item_funcs.split_inventory_enabled() else 0)
+        self.unit_section = (item_funcs.get_inventory_section(self.unit, self.unit_item)
+                             if item_funcs.split_inventory_enabled() else None)
 
     @recalculate_unit
     def do(self):
         self.unit.remove_item(self.unit_item)
         game.party.convoy.remove(self.convoy_item)
         game.party.convoy.append(self.unit_item)
-        self.unit.insert_item(self.unit_idx, self.convoy_item)
+        if item_funcs.split_inventory_enabled():
+            section_items = item_funcs.get_section_items(
+                self.unit, item_funcs.get_inventory_section(self.unit, self.convoy_item))
+            convoy_section = item_funcs.get_inventory_section(self.unit, self.convoy_item)
+            insert_idx = (min(self.unit_section_idx, len(section_items))
+                          if convoy_section == self.unit_section else len(section_items))
+            self.unit.insert_item_in_section(insert_idx, self.convoy_item)
+        else:
+            self.unit.insert_item(self.unit_idx, self.convoy_item)
 
     @recalculate_unit
     def reverse(self):
         self.unit.remove_item(self.convoy_item)
         game.party.convoy.remove(self.unit_item)
         game.party.convoy.append(self.convoy_item)
-        self.unit.insert_item(self.unit_idx, self.unit_item)
+        if item_funcs.split_inventory_enabled():
+            self.unit.insert_item_in_section(self.unit_section_idx, self.unit_item)
+        else:
+            self.unit.insert_item(self.unit_idx, self.unit_item)
 
 
 class GiveItem(Action):
@@ -1394,6 +1415,8 @@ class StoreItem(Action):
         self.unit = unit
         self.item = item
         self.item_index = self.unit.items.index(self.item)
+        self.item_section_index = (self.unit.get_item_section_index(self.item)
+                                   if item_funcs.split_inventory_enabled() else 0)
 
     @recalculate_unit
     def do(self):
@@ -1403,7 +1426,10 @@ class StoreItem(Action):
     @recalculate_unit
     def reverse(self):
         game.party.convoy.remove(self.item)
-        self.unit.insert_item(self.item_index, self.item)
+        if item_funcs.split_inventory_enabled():
+            self.unit.insert_item_in_section(self.item_section_index, self.item)
+        else:
+            self.unit.insert_item(self.item_index, self.item)
 
 class RemoveItem(StoreItem):
     @recalculate_unit
@@ -1412,7 +1438,10 @@ class RemoveItem(StoreItem):
 
     @recalculate_unit
     def reverse(self):
-        self.unit.insert_item(self.item_index, self.item)
+        if item_funcs.split_inventory_enabled():
+            self.unit.insert_item_in_section(self.item_section_index, self.item)
+        else:
+            self.unit.insert_item(self.item_index, self.item)
 
 
 class EquipItem(Action):
@@ -1469,22 +1498,75 @@ class BringToTopItem(Action):
         self.unit = unit
         self.item = item
         self.old_idx = unit.items.index(item)
+        self.old_section_idx = (unit.get_item_section_index(item)
+                                if item_funcs.split_inventory_enabled() else 0)
 
     def do(self):
         self.unit.bring_to_top_item(self.item)
 
     def reverse(self):
-        self.unit.insert_item(self.old_idx, self.item)
+        if item_funcs.split_inventory_enabled():
+            self.unit.insert_item_in_section(self.old_section_idx, self.item)
+        else:
+            self.unit.insert_item(self.old_idx, self.item)
 
 
 class TradeItem(Action):
     def __init__(self, unit1, unit2, item1, item2):
         self.unit1 = unit1
         self.unit2 = unit2
-        self.item1 = item1
-        self.item2 = item2
-        self.item_index1 = unit1.items.index(item1) if item1 else DB.constants.total_items() - 1
-        self.item_index2 = unit2.items.index(item2) if item2 else DB.constants.total_items() - 1
+        self.selection1 = item1
+        self.selection2 = item2
+        self.item1 = item1 if isinstance(item1, ItemObject) else None
+        self.item2 = item2 if isinstance(item2, ItemObject) else None
+        self.item_index1 = unit1.items.index(self.item1) if self.item1 else DB.constants.total_items() - 1
+        self.item_index2 = unit2.items.index(self.item2) if self.item2 else DB.constants.total_items() - 1
+        if item_funcs.split_inventory_enabled():
+            self.slot1 = self._selection_slot(unit1, item1)
+            self.slot2 = self._selection_slot(unit2, item2)
+        else:
+            self.slot1 = None
+            self.slot2 = None
+
+    def _selection_slot(self, unit, selection):
+        if isinstance(selection, item_funcs.InventorySlot):
+            return selection
+        if isinstance(selection, ItemObject):
+            return item_funcs.InventorySlot(
+                item_funcs.get_inventory_section(unit, selection),
+                unit.get_item_section_index(selection))
+        return None
+
+    def _insert_at_slot(self, unit, item, slot):
+        if not item:
+            return
+        section = item_funcs.get_inventory_section(unit, item)
+        section_items = item_funcs.get_section_items(unit, section)
+        if slot and slot.section == section:
+            index = min(slot.index, len(section_items))
+        else:
+            index = len(section_items)
+        unit.insert_item_in_section(index, item)
+
+    def split_swap(self, reverse=False):
+        if reverse:
+            if self.item2 and self.item2 in self.unit1.items:
+                self.unit1.remove_item(self.item2)
+            if self.item1 and self.item1 in self.unit2.items:
+                self.unit2.remove_item(self.item1)
+            self._insert_at_slot(self.unit1, self.item1, self.slot1)
+            self._insert_at_slot(self.unit2, self.item2, self.slot2)
+            return
+        else:
+            source1, source2 = self.item1, self.item2
+            target1, target2 = self.slot1, self.slot2
+
+        if source1 and source1 in self.unit1.items:
+            self.unit1.remove_item(source1)
+        if source2 and source2 in self.unit2.items:
+            self.unit2.remove_item(source2)
+        self._insert_at_slot(self.unit2, source1, target2)
+        self._insert_at_slot(self.unit1, source2, target1)
 
     def swap(self, unit1, unit2, item1, item2, item_index1, item_index2):
         # Do the swap
@@ -1496,13 +1578,19 @@ class TradeItem(Action):
             unit1.insert_item(item_index1, item2)
 
     def do(self):
-        self.swap(self.unit1, self.unit2, self.item1, self.item2, self.item_index1, self.item_index2)
+        if item_funcs.split_inventory_enabled():
+            self.split_swap()
+        else:
+            self.swap(self.unit1, self.unit2, self.item1, self.item2, self.item_index1, self.item_index2)
 
         recalc_unit(self.unit1)
         recalc_unit(self.unit2)
 
     def reverse(self):
-        self.swap(self.unit1, self.unit2, self.item2, self.item1, self.item_index2, self.item_index1)
+        if item_funcs.split_inventory_enabled():
+            self.split_swap(reverse=True)
+        else:
+            self.swap(self.unit1, self.unit2, self.item2, self.item1, self.item_index2, self.item_index1)
 
         recalc_unit(self.unit1)
         recalc_unit(self.unit2)

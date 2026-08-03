@@ -85,3 +85,7 @@ Temporary Items
 # Cython compilation results
 *.c
 *.pyd
+
+.codex-remote-attachments
+
+utilities/enemy_event_generator

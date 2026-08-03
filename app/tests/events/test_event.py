@@ -272,5 +272,62 @@ class EventUnitTests(unittest.TestCase):
         add_unit_command = add_unit("Eirika", "2,5", "Normal")
         self.MACRO_test_event([add_unit_command])
 
+    def test_copy_stat_copies_stats_level_and_exp(self):
+        from app.engine import action
+        from app.events import event_functions
+
+        event = MagicMock()
+        destination = MagicMock()
+        destination.stats = {'HP': 1}
+        destination.level = 1
+        destination.exp = 0
+        source = MagicMock()
+        source.stats = {'HP': 24, 'STR': 8}
+        source.level = 7
+        source.exp = 42
+        event.game.get_unit.side_effect = lambda nid: {
+            'Destination': destination,
+            'Source': source,
+        }.get(nid)
+
+        with patch('app.events.event_functions.action.do') as action_do:
+            event_functions.copy_stat(event, 'Destination', 'Source')
+
+        self.assertEqual(destination.stats, source.stats)
+        self.assertIsNot(destination.stats, source.stats)
+        level_action, exp_action = [mock_call.args[0] for mock_call in action_do.call_args_list]
+        self.assertIsInstance(level_action, action.SetLevel)
+        self.assertEqual(level_action.new_level, source.level)
+        self.assertIsInstance(exp_action, action.SetExp)
+        self.assertEqual(exp_action.exp_gain, source.exp)
+
+    def test_interact_unit_uses_target_system_weapon(self):
+        from app.events import event_functions
+
+        event = MagicMock()
+        actor = MagicMock()
+        actor.position = (1, 1)
+        target = MagicMock()
+        target.position = (2, 1)
+        loadout_weapon = MagicMock()
+        loadout_weapon.nid = 'Staff_of_Mari'
+        loadout_weapon.uid = 123
+
+        event._get_unit.return_value = actor
+        event._parse_pos.return_value = target
+        event.game.target_system.get_weapons.return_value = [loadout_weapon]
+
+        with patch('app.events.event_functions.item_funcs.get_all_items', return_value=[]), \
+                patch('app.events.event_functions.interaction.start_combat') as start_combat:
+            event_functions.interact_unit(
+                event, 'Mari', 'Bandit', ability='Staff_of_Mari', flags={'force_animation'})
+
+        start_combat.assert_called_once_with(
+            actor, target, loadout_weapon, skip=False, event_combat=True,
+            script=None, total_rounds=1, arena=False, force_animation=True,
+            force_no_animation=False, no_exp=False, no_wexp=False,
+            no_weapon_use=False)
+        self.assertEqual(event.state, 'paused')
+
 if __name__ == '__main__':
     unittest.main()

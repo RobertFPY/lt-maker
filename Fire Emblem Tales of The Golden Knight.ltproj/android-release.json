@@ -1,0 +1,10 @@
+{
+  "app_name": "Fire Emblem Tales of Golden Knight",
+  "arch": "arm64-v8a",
+  "icon": null,
+  "mode": "debug",
+  "package_id": "org.lextalionis.fire_emblem_tales_of_the_golden_knight",
+  "runtime_debugger": true,
+  "version_code": 1026410,
+  "version_name": "0.5.17"
+}

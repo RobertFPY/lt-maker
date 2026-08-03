@@ -11,6 +11,7 @@ class PermadeathOption(str, Enum):
 class GrowthOption(str, Enum):
     PLAYER_CHOICE = 'Player Choice'
     RANDOM = 'Random'
+    PITY = 'Pity'
     FIXED = 'Fixed'
     DYNAMIC = 'Dynamic'
     LUCKY = 'Lucky'

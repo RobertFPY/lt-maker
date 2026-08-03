@@ -9,6 +9,8 @@ import pygame
 from app.utilities import utils
 from app.data.resources.resources import RESOURCES
 from app.engine import engine
+from app.engine.android_runtime import is_android_render_optimization_enabled
+from app.engine.performance import RUNTIME_PROFILER
 
 import logging
 
@@ -144,7 +146,7 @@ class Channel():
 
     def _play(self):
         logging.debug('%s _Play: %s %s', self.nid, self.last_state, self.num_plays)
-        self.last_play = engine.get_time()
+        self.last_play = engine.get_true_time()
         if self.num_plays == 0:
             self.last_state = "stopped"
             self.state = "stopped"
@@ -197,7 +199,7 @@ class Channel():
             self._play()
         self.last_state = "playing"
         self.state = "fade_in"
-        self.last_update = engine.get_time()
+        self.last_update = engine.get_true_time()
 
     def fade_out(self):
         logging.debug("%s Fade Out: %s", self.nid, self.last_state)
@@ -211,17 +213,17 @@ class Channel():
             self.reset_volume()
             self.last_state = "playing"
         self.state = "fade_out"
-        self.last_update = engine.get_time()
+        self.last_update = engine.get_true_time()
 
     def crossfade_in(self):
         self.last_state = "playing"
         self.state = "crossfade_in"
-        self.last_update = engine.get_time()
+        self.last_update = engine.get_true_time()
 
     def crossfade_out(self):
         self.last_state = "playing"
         self.state = "crossfade_out"
-        self.last_update = engine.get_time()
+        self.last_update = engine.get_true_time()
 
     def pause(self):
         logging.debug("%s Pause: %s", self.nid, self.last_state)
@@ -428,6 +430,33 @@ class SoundController(ABC):
         return None
 
     @abstractmethod
+    def play_streamed_music(
+            self, next_song: NID, battle=False, fade_in=DEFAULT_FADE_TIME_MS,
+            play_intro=True) -> bool:
+        """Play music through the single streaming mixer channel."""
+        return False
+
+    @abstractmethod
+    def play_streamed_preview(self, next_song: NID, battle=False) -> bool:
+        """Play a Sound Room preview through the single streaming music channel."""
+        return False
+
+    @abstractmethod
+    def play_legacy_preview(self, next_song: NID, battle=False) -> bool:
+        """Restore a Sound Room preview through the legacy channel mixer."""
+        return False
+
+    @abstractmethod
+    def stop_streamed_preview(self):
+        """Stop and unload the active Sound Room streaming preview."""
+        pass
+
+    @abstractmethod
+    def stop_streamed_music(self):
+        """Stop and unload the active streaming music channel."""
+        pass
+
+    @abstractmethod
     def fade_back(self, fade_out=DEFAULT_FADE_TIME_MS):
         pass
 
@@ -520,6 +549,23 @@ class NullSoundController(ABC):
     def fade_in(self, next_song: NID, num_plays=-1, fade_in=DEFAULT_FADE_TIME_MS, from_start=False) -> Optional[SongObject]:
         return None
 
+    def play_streamed_music(
+            self, next_song: NID, battle=False, fade_in=DEFAULT_FADE_TIME_MS,
+            play_intro=True) -> bool:
+        return False
+
+    def play_streamed_preview(self, next_song: NID, battle=False) -> bool:
+        return False
+
+    def play_legacy_preview(self, next_song: NID, battle=False) -> bool:
+        return False
+
+    def stop_streamed_preview(self):
+        pass
+
+    def stop_streamed_music(self):
+        pass
+
     def fade_back(self, fade_out=DEFAULT_FADE_TIME_MS):
         pass
 
@@ -570,6 +616,8 @@ class DefaultSoundController(SoundController):
         self._state = GlobalMusicState.STOPPED
 
         self.PRELOADTHREAD = None
+        self._stream_preview_active = False
+        self._stream_preview_nid = None
 
     @property
     def state(self) -> GlobalMusicState:
@@ -583,14 +631,17 @@ class DefaultSoundController(SoundController):
     # === Volume ===
     def mute(self):
         self.current_channel.set_volume(0)
+        self._set_stream_volume(0)
 
     def lower(self):
         for channel in self.channel_stack:
             channel.set_volume(0.25 * self.global_music_volume)
+        self._set_stream_volume(0.25 * self.global_music_volume)
 
     def unmute(self):
         for channel in self.channel_stack:
             channel.set_volume(self.global_music_volume)
+        self._set_stream_volume(self.global_music_volume)
 
     def get_music_volume(self) -> float:
         return self.global_music_volume
@@ -599,6 +650,15 @@ class DefaultSoundController(SoundController):
         self.global_music_volume = volume
         for channel in self.channel_stack:
             channel.set_volume(self.global_music_volume)
+        self._set_stream_volume(self.global_music_volume)
+
+    def _set_stream_volume(self, volume):
+        if not self._stream_preview_active:
+            return
+        try:
+            pygame.mixer.music.set_volume(volume)
+        except (pygame.error, AttributeError):
+            pass
 
     def get_sfx_volume(self) -> float:
         return self.global_sfx_volume
@@ -613,6 +673,7 @@ class DefaultSoundController(SoundController):
 
     def clear(self):
         logging.debug("Clear")
+        self.stop_streamed_preview()
         self.stop()
         for channel in self.channel_stack:
             channel.clear()
@@ -620,6 +681,7 @@ class DefaultSoundController(SoundController):
 
     def fade_clear(self, fade_out=DEFAULT_FADE_TIME_MS):
         logging.debug('Fade to Clear')
+        self.stop_streamed_preview()
         self.current_channel.set_fade_out_time(fade_out)
         self.current_channel.fade_out()
         self.song_stack.clear()
@@ -761,6 +823,115 @@ class DefaultSoundController(SoundController):
 
         return self.song_stack[-1]
 
+    def play_streamed_music(
+            self, next_song_nid: NID, battle=False, fade_in=DEFAULT_FADE_TIME_MS,
+            play_intro=True) -> bool:
+        """Stream music without constructing the full legacy ``SongObject``."""
+        prefab = RESOURCES.music.get(next_song_nid)
+        if not prefab:
+            return False
+        if battle:
+            path = prefab.battle_full_path
+            queued_path = None
+        elif play_intro and prefab.intro_full_path:
+            path = prefab.intro_full_path
+            queued_path = prefab.full_path
+        else:
+            path = prefab.full_path
+            queued_path = None
+        if not path:
+            return False
+
+        def load_stream() -> bool:
+            self._stop_streamed_preview_channel()
+            self._stream_preview_active = False
+            self._stream_preview_nid = None
+            try:
+                # ``fadeout`` is deliberately avoided: it waits for the
+                # fade to finish on the caller thread.  stop/unload/load is
+                # immediate, then play performs the short fade-in.
+                pygame.mixer.music.load(path)
+                if queued_path:
+                    pygame.mixer.music.queue(queued_path, loops=-1)
+                pygame.mixer.music.set_volume(self.global_music_volume)
+                pygame.mixer.music.play(
+                    loops=0 if queued_path else -1, fade_ms=fade_in,
+                )
+            except (pygame.error, OSError, FileNotFoundError, AttributeError) as exc:
+                logging.warning("Unable to stream music '%s': %s", next_song_nid, exc)
+                self._stop_streamed_preview_channel()
+                return False
+
+            # Do not tear down legacy playback until the new stream has
+            # successfully started.  A failed load must leave it available
+            # for the Sound Room fallback path.
+            self._stop_legacy_music_for_stream()
+            return True
+
+        if RUNTIME_PROFILER.enabled:
+            with RUNTIME_PROFILER.section('music_stream_load'):
+                started = load_stream()
+        else:
+            started = load_stream()
+
+        if not started:
+            return False
+
+        self._stream_preview_active = True
+        self._stream_preview_nid = next_song_nid
+        return True
+
+    def play_streamed_preview(self, next_song_nid: NID, battle=False) -> bool:
+        """Stream one Android Sound Room preview without an intro track."""
+        if not is_android_render_optimization_enabled():
+            return False
+        return self.play_streamed_music(
+            next_song_nid, battle=battle, fade_in=100, play_intro=False,
+        )
+
+    def play_legacy_preview(self, next_song_nid: NID, battle=False) -> bool:
+        """Use the normal mixer as a safe fallback after a stream failure.
+
+        Battle previews must first install the song into a ``ChannelPair``;
+        ``battle_fade_in`` alone only crossfades an already configured pair.
+        """
+        self.stop_streamed_music()
+        song = self.fade_in(next_song_nid, fade_in=100, from_start=True)
+        if battle:
+            song = self.battle_fade_in(next_song_nid, fade=100, from_start=True)
+        return bool(song)
+
+    def _stop_legacy_music_for_stream(self):
+        """Detach channel playback before the single music stream takes over."""
+        for channel in getattr(self, 'channel_stack', ()):
+            channel.clear()
+        song_stack = getattr(self, 'song_stack', None)
+        if song_stack is not None:
+            song_stack.clear()
+        if hasattr(self, '_state'):
+            self._state = GlobalMusicState.STOPPED
+
+    def _stop_streamed_preview_channel(self):
+        try:
+            pygame.mixer.music.stop()
+        except (pygame.error, AttributeError):
+            pass
+        try:
+            pygame.mixer.music.unload()
+        except (pygame.error, AttributeError):
+            pass
+
+    def stop_streamed_music(self):
+        if not getattr(self, '_stream_preview_active', False):
+            self._stream_preview_nid = None
+            return
+        self._stop_streamed_preview_channel()
+        self._stream_preview_active = False
+        self._stream_preview_nid = None
+
+    def stop_streamed_preview(self):
+        self.stop_streamed_music()
+
     def fade_back(self, fade_out=DEFAULT_FADE_TIME_MS):
         logging.info("Fade back")
 
@@ -785,11 +956,12 @@ class DefaultSoundController(SoundController):
         self.channel_stack.insert(0, current_channel)
 
     def stop(self):
+        self.stop_streamed_preview()
         self.current_channel.stop()
         self.state = GlobalMusicState.STOPPED
 
     def update(self, event_list):
-        current_time = engine.get_time()
+        current_time = engine.get_true_time()
 
         any_changes = False
         for channel in self.channel_stack:
@@ -862,6 +1034,7 @@ class DefaultSoundController(SoundController):
         so if the main editor runs the engine again
         we can reload everything like new
         """
+        self.stop_streamed_preview()
         MUSIC.clear()
         SFX.clear()
         self.__init__()

@@ -56,7 +56,6 @@ def stretch_skill_bg(sprite, desired_width):
     return surf
 
 class HelpDialog():
-    help_logo = SPRITES.get('help_logo')
     font: NID = 'convo'
 
     def __init__(self, desc: str = '', name: str = ''):
@@ -64,6 +63,7 @@ class HelpDialog():
         self.last_time = self.start_time = 0
         self.transition_in = False
         self.transition_out = 0
+        self._invalidate_render_cache()
 
         desc = text_funcs.translate(desc)
         num_lines, self.greatest_line_len = self.measure_dialog(desc)
@@ -77,8 +77,14 @@ class HelpDialog():
         self.help_surf = base_surf.create_base_surf(self.dlg.width, height, 'help_bg_base')
         self.h_surf = engine.create_surface((self.dlg.width, height + 3), transparent=True)
 
+    def _invalidate_render_cache(self) -> None:
+        self._cached_help_surf: Optional[engine.Surface] = None
+        self._cached_final_surf: Optional[engine.Surface] = None
+        self._cached_help_logo: Optional[engine.Surface] = None
+
     def create_dialog(self, desc):
         from app.engine import dialog
+        self._invalidate_render_cache()
         desc = desc.replace('\n', '{br}')
         self.dlg = \
             dialog.Dialog.from_style(game.speak_styles.get('__default_help'), desc,
@@ -105,7 +111,9 @@ class HelpDialog():
         greatest = max(d.tagged_text[t.start:t.stop].width() for t in d.text_indices)
         return len(d.text_indices), max(8, greatest)
 
-    def measure_dialog(self, desc: str) -> Tuple[int, int]:
+    def measure_dialog(
+            self, desc: str,
+            max_text_width: int = MAX_TEXT_WIDTH) -> Tuple[int, int]:
         '''Measure how the description should wrap, returning
         (num_lines, greatest_line_len).
 
@@ -117,7 +125,7 @@ class HelpDialog():
         (e.g. <nconvo>) are sized with their own metrics rather than the base
         help font.'''
         styled = desc.replace('\n', '{br}')
-        num_lines, greatest = self._wrap_at(styled, MAX_TEXT_WIDTH + 16)
+        num_lines, greatest = self._wrap_at(styled, max_text_width + 16)
         if num_lines <= 1:
             return max(1, num_lines), greatest
         # A box of width `greatest + 16` is the widest we need (it fits the
@@ -170,11 +178,34 @@ class HelpDialog():
             pos = (0, pos[1])
         return pos
 
+    def _can_cache_help_surf(self) -> bool:
+        """Return whether this dialog's rendered pixels are currently static."""
+        if self.transition_in or self.transition_out:
+            return False
+        if not self.dlg:
+            return True
+        return bool(
+            self.dlg.is_done_or_wait()
+            and not self.dlg.y_offset
+            and not self.dlg.draw_cursor_flag
+            and self.dlg.tagged_text.get_cycle_period() == 1
+        )
+
     def final_draw(self, surf, pos, time, help_surf):
-        # Draw help logo
-        h_surf = engine.copy_surface(self.h_surf)
-        h_surf.blit(help_surf, (0, 3))
-        h_surf.blit(self.help_logo, (9, 0))
+        # Custom components can import this module before driver.start() has
+        # decoded SPRITES. Resolve the surface when it is used instead of
+        # permanently caching None during that early import.
+        help_logo = SPRITES.get('help_logo')
+        h_surf = getattr(self, '_cached_final_surf', None)
+        cached_help_logo = getattr(self, '_cached_help_logo', None)
+        if h_surf is None or cached_help_logo is not help_logo:
+            h_surf = engine.copy_surface(self.h_surf)
+            h_surf.blit(help_surf, (0, 3))
+            h_surf.blit(help_logo, (9, 0))
+            if (getattr(self, '_cached_help_surf', None) is help_surf
+                    and self._can_cache_help_surf()):
+                self._cached_final_surf = h_surf
+                self._cached_help_logo = help_logo
 
         if self.transition_in:
             h_surf = self.handle_transition_in(time, h_surf)
@@ -184,21 +215,40 @@ class HelpDialog():
         surf.blit(h_surf, pos)
         return surf
 
-    def draw(self, surf, pos, right=False):
+    def _restart_after_inactive(self, desc):
+        """Restart the typewriter when this help box returns after a pause."""
+        self.start_time = engine.get_time() - 16
+        self.transition_in = True
+        self.transition_out = 0
+        replacement = self.create_dialog(desc)
+        # Most subclasses assign self.dlg inside create_dialog(). Item help
+        # returns a new dialog instead, so retain it explicitly there.
+        if replacement is not None:
+            self.dlg = replacement
+
+    def _update_visibility(self, restart_desc):
         time = engine.get_time()
-        if time > self.last_time + 1000:  # If it's been at least a second since last update
-            self.start_time = time - 16
-            self.transition_in = True
-            self.transition_out = 0
-            self.create_dialog(self.dlg.plain_text)
+        if time > self.last_time + 1000:
+            self._restart_after_inactive(restart_desc)
         self.last_time = time
 
-        help_surf = engine.copy_surface(self.help_surf)
-        if self.name:
-            render_text(help_surf, [self.font], [self.name], [game.speak_styles.get('__default_help').font_color], (8, 8))
+    def update(self):
+        """Advance typewriter text in the simulation step, not in draw()."""
+        self._update_visibility(self.dlg.plain_text)
+        if self.dlg:
+            self.dlg.update()
 
-        self.dlg.update()
-        self.dlg.draw(help_surf)
+    def draw(self, surf, pos, right=False):
+        time = engine.get_time()
+
+        help_surf = self._cached_help_surf
+        if help_surf is None:
+            help_surf = engine.copy_surface(self.help_surf)
+            if self.name:
+                render_text(help_surf, [self.font], [self.name], [game.speak_styles.get('__default_help').font_color], (8, 8))
+            self.dlg.draw(help_surf)
+            if self._can_cache_help_surf():
+                self._cached_help_surf = help_surf
         surf = self.final_draw(surf, self.top_left(pos, right), time, help_surf)
         return surf
 
@@ -224,6 +274,10 @@ class StatDialog(HelpDialog):
 
     def create_dialog(self, desc):
         from app.engine import dialog
+        # The rendered panel is only reusable after this dialog finishes its
+        # typewriter animation. Recreating the dialog must always invalidate
+        # the old pixels.
+        self._invalidate_render_cache()
         desc = desc.replace('\n', '{br}')
 
         bonuses = sorted(self.bonuses.items(), key=lambda x: x[0] != 'Base Value')
@@ -250,21 +304,22 @@ class StatDialog(HelpDialog):
 
     def draw(self, surf, pos, right=False):
         time = engine.get_time()
-        if time > self.last_time + 1000:  # If it's been at least a second since last update
-            self.start_time = time - 16
-            self.transition_in = True
-            self.transition_out = 0
-            self.create_dialog(self.plain_desc)
-        self.last_time = time
 
-        help_surf = engine.copy_surface(self.help_surf)
-
-        if self.dlg:
-            self.dlg.update()
-            self.dlg.draw(help_surf)
+        help_surf = self._cached_help_surf
+        if help_surf is None:
+            help_surf = engine.copy_surface(self.help_surf)
+            if self.dlg:
+                self.dlg.draw(help_surf)
+            if self._can_cache_help_surf():
+                self._cached_help_surf = help_surf
 
         surf = self.final_draw(surf, self.top_left(pos, right), time, help_surf)
         return surf
+
+    def update(self):
+        self._update_visibility(self.plain_desc)
+        if self.dlg:
+            self.dlg.update()
 
 ITEM_HELP_WIDTH = 160
 
@@ -275,6 +330,7 @@ class ItemHelpDialog(HelpDialog):
         self.last_time = self.start_time = 0
         self.transition_in = False
         self.transition_out = 0
+        self._invalidate_render_cache()
             
         self.item = item
         self.unit = self._resolve_unit(self.item, unit_override)
@@ -388,7 +444,7 @@ class ItemHelpDialog(HelpDialog):
             height = 48 + font_height(self.font) * num_lines
         else:
             height = 32 + font_height(self.font) * num_lines
-            
+
         height += self.v_offset
 
         self.help_surf = base_surf.create_base_surf(ITEM_HELP_WIDTH, height, 'help_bg_base')
@@ -402,6 +458,7 @@ class ItemHelpDialog(HelpDialog):
         return None
             
     def create_dialog(self, desc: str):
+        self._invalidate_render_cache()
         if desc:
             from app.engine import dialog
             desc = desc.replace('\n', '{br}')
@@ -430,51 +487,63 @@ class ItemHelpDialog(HelpDialog):
 
     def draw(self, surf, pos, right=False):
         time = engine.get_time()
-        if time > self.last_time + 1000:  # If it's been at least a second since last update
-            self.start_time = time - 16
-            self.transition_in = True
-            self.transition_out = 0
+
+        help_surf = self._cached_help_surf
+        if help_surf is None:
+            help_surf = engine.copy_surface(self.help_surf)
+            weapon_type = item_system.weapon_type(self.unit, self.item)
+            if weapon_type:
+                icons.draw_weapon(help_surf, weapon_type, (8, 8 + self.v_offset))
+            # Weapon rank uses val_colors[0] (always blue)
+            render_text(help_surf, [self.text_font], [str(self.vals[0])], [self.val_colors[0]], (50, 8 + self.v_offset), HAlignment.RIGHT)
+
+            if self.name_override is not None:
+                render_text(help_surf, ['text'], [self.name_override], ['blue'], (8, 6))
+
+            name_positions = [(56, 8), (106, 8), (8, 24), (56, 24), (106, 24)]
+            name_positions.reverse()
+            val_positions = [(100, 8), (144, 8), (50, 24), (100, 24), (144, 24)]
+            val_positions.reverse()
+            names = ['Rng', 'Wt', 'Mt', 'Hit', 'Crit']
+
+            # Use val_colors[1:] for stats after weapon_rank (rng, weight, might, hit, crit)
+            for idx, (v, n) in enumerate(zip(self.vals[1:], names)):
+                if v is not None:
+                    name_pos = name_positions.pop()
+                    render_text(help_surf, [self.text_font], [n], ['yellow'], (name_pos[0], name_pos[1] + self.v_offset))
+                    val_pos = val_positions.pop()
+                    # idx+1 because val_colors[0] is weapon_rank, so val_colors[1] is for first stat (rng)
+                    color = self.val_colors[idx + 1] if idx + 1 < len(self.val_colors) else 'blue'
+                    render_text(help_surf, [self.text_font], [str(v)], [color], (val_pos[0], val_pos[1] + self.v_offset), HAlignment.RIGHT)
+
             if self.dlg:
-                self.create_dialog(self.dlg.plain_text)
-        self.last_time = time
-
-        help_surf = engine.copy_surface(self.help_surf)
-        weapon_type = item_system.weapon_type(self.unit, self.item)
-        if weapon_type:
-            icons.draw_weapon(help_surf, weapon_type, (8, 8 + self.v_offset))
-        # Weapon rank uses val_colors[0] (always blue)
-        render_text(help_surf, [self.text_font], [str(self.vals[0])], [self.val_colors[0]], (50, 8 + self.v_offset), HAlignment.RIGHT)
-
-        if self.name_override is not None:
-            render_text(help_surf, ['text'], [self.name_override], ['blue'], (8, 6))
-            
-        name_positions = [(56, 8), (106, 8), (8, 24), (56, 24), (106, 24)]
-        name_positions.reverse()
-        val_positions = [(100, 8), (144, 8), (50, 24), (100, 24), (144, 24)]
-        val_positions.reverse()
-        names = ['Rng', 'Wt', 'Mt', 'Hit', 'Crit']
-
-        # Use val_colors[1:] for stats after weapon_rank (rng, weight, might, hit, crit)
-        for idx, (v, n) in enumerate(zip(self.vals[1:], names)):
-            if v is not None:
-                name_pos = name_positions.pop()
-                render_text(help_surf, [self.text_font], [n], ['yellow'], (name_pos[0], name_pos[1] + self.v_offset))
-                val_pos = val_positions.pop()
-                # idx+1 because val_colors[0] is weapon_rank, so val_colors[1] is for first stat (rng)
-                color = self.val_colors[idx + 1] if idx + 1 < len(self.val_colors) else 'blue'
-                render_text(help_surf, [self.text_font], [str(v)], [color], (val_pos[0], val_pos[1] + self.v_offset), HAlignment.RIGHT)
-
-        if self.dlg:
-            self.dlg.update()
-            self.dlg.draw(help_surf)
+                self.dlg.draw(help_surf)
+            if self._can_cache_help_surf():
+                self._cached_help_surf = help_surf
 
         surf = self.final_draw(surf, self.top_left(pos, right), time, help_surf)
         return surf
 
+    def update(self):
+        if self.dlg:
+            self._update_visibility(self.dlg.plain_text)
+            self.dlg.update()
+
 class SkillHelpDialog(HelpDialog):
+    MAX_BODY_LINES = 5
+    HORIZONTAL_PADDING = 16
+
     def __init__(self, skill: SkillObject, first: bool = True,
-                 unit_override: Optional[UnitObject] = None, category: str = ''):
+                 unit_override: Optional[UnitObject] = None, category: str = '',
+                 page: int = 0, max_body_lines: int = 3,
+                 evaluated_desc: Optional[str] = None):
         import re
+        self.skill = skill
+        self.first = first
+        self.unit_override = unit_override
+        self.category = category
+        self.max_body_lines = max(1, max_body_lines)
+
         # Detect tier/rarity tag from the skill nid (T1/T2/T3/T4/Ultra). The
         # tag is inserted between the category label and the skill name so
         # players can tell apart upgrade tiers at a glance.
@@ -503,38 +572,183 @@ class SkillHelpDialog(HelpDialog):
             # maintain parity with skill evals allowing access to the skill object via the 'skill' name
             self.name = text_funcs.translate_and_text_evaluate(name_override, unit, self=skill, local_args={'skill': skill})
 
-        desc = skill.desc
-        desc = text_funcs.translate_and_text_evaluate(desc, unit=unit_override, self=skill, local_args={'skill': skill})
-        num_lines, self.greatest_line_len = self.measure_dialog(desc)
-        if self.name:
-            self.greatest_line_len = max(self.greatest_line_len, text_width(self.font, self.name))
-            num_lines += 1
+        if evaluated_desc is None:
+            evaluated_desc = text_funcs.translate_and_text_evaluate(
+                skill.desc, unit=unit_override, self=skill,
+                local_args={'skill': skill})
+        self.evaluated_desc = evaluated_desc
 
-        self.create_dialog(desc)
+        # Skill-info backgrounds are authored at a fixed GBA-safe width.
+        # Keep all text inside that width and reflow long descriptions instead
+        # of stretching the background; stretching custom sprites can leave
+        # transparent holes in the rendered panel.
+        base_panel_width = min(
+            SPRITES.get('skill_info').get_width(),
+            WINWIDTH - self.HORIZONTAL_PADDING)
+        max_text_width = max(
+            8, base_panel_width - self.HORIZONTAL_PADDING)
+        _, self.greatest_line_len = self.measure_dialog(
+            evaluated_desc, max_text_width)
+        if self.name:
+            self.name = self._truncate_to_width(
+                self.name, max_text_width)
+            self.greatest_line_len = max(
+                self.greatest_line_len,
+                text_width(self.font, self.name))
+
+        # Build the complete dialog once so its own wrapping logic determines
+        # the exact styled-text line boundaries. Individual pages then render
+        # slices of these lines, preserving inline font/color/effect tags.
+        self.create_dialog(evaluated_desc)
+        self.dlg.warp_speed()
+        all_indices = list(self.dlg.text_indices)
+        if not all_indices:
+            all_indices = [self.dlg.TextIndex(0, 0)]
+        self.page_count = max(
+            1, (len(all_indices) + self.max_body_lines - 1) // self.max_body_lines)
+        self.page = int(utils.clamp(page, 0, self.page_count - 1))
+        start = self.page * self.max_body_lines
+        self.page_text_indices = all_indices[start:start + self.max_body_lines]
+        # A single-page description uses only the height it actually needs.
+        # Multi-page descriptions reserve the full page capacity so switching
+        # pages does not make the panel jump or resize on the final short page.
+        panel_body_lines = (
+            self.max_body_lines
+            if self.page_count > 1
+            else len(all_indices))
+        num_lines = panel_body_lines + (1 if self.name else 0)
 
         # Pick vertical sprite based on number of lines (height tiers).
-        if num_lines == 2:
-            self.bg_sprite = 'skill_info_small'
-        elif num_lines == 4:
-            self.bg_sprite = 'skill_info_large'
-        elif num_lines == 5:
-            self.bg_sprite = 'skill_info_xlarge'
-        elif num_lines >= 6:
-            self.bg_sprite = 'skill_info_xxlarge'
-        else:
-            self.bg_sprite = 'skill_info'
+        self.bg_sprite = self._sprite_for_num_lines(num_lines)
 
-        sprite = SPRITES.get(self.bg_sprite)
+        # Custom skill-info assets are not guaranteed to use the same PNG
+        # pixel format. In particular, a paletted (indexed) PNG keeps its
+        # palette when loaded by pygame; drawing the title/body onto a copy of
+        # that surface can remap colors and alpha, making the panel appear
+        # transparent or fragmented. Convert a private copy to RGBA before
+        # any text is rendered onto it.
+        sprite = SPRITES.get(self.bg_sprite).convert_alpha()
         base_width = sprite.get_width()
         height = sprite.get_height()
 
-        # Horizontal: stretch if content needs more room than the base sprite provides.
-        desired_width = self.greatest_line_len + 16
-        width = max(base_width, desired_width)
+        # Never stretch Skill Info beyond its authored width. Description text
+        # has already been wrapped and the title truncated to fit.
+        desired_width = self.greatest_line_len + self.HORIZONTAL_PADDING
+        width = min(
+            max(base_width, desired_width),
+            base_panel_width)
 
         self.panel_width = width
-        self.help_surf = stretch_skill_bg(sprite, width)
+        self.help_surf = (
+            engine.copy_surface(sprite)
+            if width == base_width
+            else engine.subsurface(sprite, (0, 0, width, height)))
         self.h_surf = engine.create_surface((width, height + 3), transparent=True)
+
+    def _truncate_to_width(self, text: str, max_width: int) -> str:
+        """Keep a skill title inside the fixed-width help background."""
+        if text_width(self.font, text) <= max_width:
+            return text
+
+        suffix = '.'
+        truncated = text
+        while truncated and text_width(
+                self.font, truncated + suffix) > max_width:
+            truncated = truncated[:-1]
+        return truncated.rstrip() + suffix if truncated else suffix
+
+    @classmethod
+    def build_pages(cls, skill: SkillObject, first: bool = True,
+                    unit_override: Optional[UnitObject] = None, category: str = '',
+                    max_body_lines: int = 3,
+                    evaluated_desc: Optional[str] = None) -> List[SkillHelpDialog]:
+        """Build AUX-switchable pages without losing styled description tags."""
+        if evaluated_desc is None:
+            evaluated_desc = text_funcs.translate_and_text_evaluate(
+                skill.desc, unit=unit_override, self=skill,
+                local_args={'skill': skill})
+        first_page = cls(
+            skill, first=first, unit_override=unit_override, category=category,
+            page=0, max_body_lines=max_body_lines,
+            evaluated_desc=evaluated_desc)
+        return [first_page] + [
+            cls(
+                skill, first=first, unit_override=unit_override,
+                category=category, page=page,
+                max_body_lines=max_body_lines,
+                evaluated_desc=evaluated_desc)
+            for page in range(1, first_page.page_count)
+        ]
+
+    @classmethod
+    def rebuild_pages(cls, dialog: SkillHelpDialog,
+                      max_body_lines: int) -> List[SkillHelpDialog]:
+        """Re-page an existing dialog without evaluating its description again."""
+        return cls.build_pages(
+            dialog.skill, first=dialog.first,
+            unit_override=dialog.unit_override, category=dialog.category,
+            max_body_lines=max_body_lines,
+            evaluated_desc=dialog.evaluated_desc)
+
+    @classmethod
+    def render_height_for_body_lines(cls, body_lines: int,
+                                     has_name: bool = True) -> int:
+        """Return the real rendered height, including the three-pixel logo area."""
+        body_lines = int(utils.clamp(body_lines, 1, cls.MAX_BODY_LINES))
+        num_lines = body_lines + (1 if has_name else 0)
+        sprite = SPRITES.get(cls._sprite_for_num_lines(num_lines))
+        return sprite.get_height() + 3
+
+    @staticmethod
+    def _sprite_for_num_lines(num_lines: int) -> str:
+        if num_lines == 2:
+            return 'skill_info_small'
+        if num_lines == 4:
+            return 'skill_info_large'
+        if num_lines == 5:
+            return 'skill_info_xlarge'
+        if num_lines >= 6:
+            return 'skill_info_xxlarge'
+        return 'skill_info'
+
+    def draw(self, surf, pos, right=False):
+        """Draw only this page's wrapped lines while retaining their styling."""
+        time = engine.get_time()
+
+        help_surf = self._cached_help_surf
+        if help_surf is None:
+            help_surf = engine.copy_surface(self.help_surf)
+            if self.name:
+                render_text(
+                    help_surf, [self.font], [self.name],
+                    [game.speak_styles.get('__default_help').font_color], (8, 8))
+
+            self.dlg.tagged_text.update_effects()
+            line_height = font_height(self.font)
+            body_y = 24 if self.name else 8
+            for idx, text_index in enumerate(self.page_text_indices):
+                tagged_line = self.dlg.tagged_text[text_index.start:text_index.stop]
+                tagged_line.draw(help_surf, (8, body_y + idx * line_height))
+            if self._can_cache_help_surf():
+                self._cached_help_surf = help_surf
+
+        return self.final_draw(
+            surf, self.top_left(pos, right), time, help_surf)
+
+    def update(self):
+        # This specialized panel intentionally warps the description at
+        # construction time. Its text effects remain present-timed in draw().
+        self._update_visibility(self.evaluated_desc)
+
+    def _can_cache_help_surf(self) -> bool:
+        # Skill pages draw their already-warped line slices directly rather
+        # than using Dialog.draw(), so only text effects and outer transitions
+        # can make the panel change.
+        return bool(
+            not self.transition_in
+            and not self.transition_out
+            and self.dlg.tagged_text.get_cycle_period() == 1
+        )
 
     def _get_charge_str(self, skill: SkillObject) -> str:
         if skill.data.get('total_charge'): # this is so programmer-coded

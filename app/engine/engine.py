@@ -1,3 +1,4 @@
+import os
 import sys
 from typing import Tuple, TypeAlias
 from enum import Enum
@@ -15,6 +16,7 @@ import logging
 constants = {'current_time': 0,
              'last_time': 0,
              'delta_t': 0,
+             'true_time': None,
              'standalone': True,
              'running': True}
 
@@ -39,6 +41,17 @@ def set_title(text):
 def build_display(size):
     try:
         if cf.SETTINGS['fullscreen']:
+            if os.environ.get('LT_HARDWARE_SCALE') == '1' and hasattr(pygame, 'SCALED'):
+                flags = pygame.FULLSCREEN | pygame.SCALED
+                # The engine already limits itself to FPS through Clock. Asking
+                # SDL for vsync as well adds a second frame limiter and causes
+                # uneven pacing on some Android displays.
+                display = pygame.display.set_mode(size, flags)
+                logging.info(
+                    "Hardware-scaled fullscreen display initialized at logical size %s",
+                    display.get_size(),
+                )
+                return display
             return pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
         else:
             return pygame.display.set_mode(size, pygame.RESIZABLE)
@@ -52,7 +65,12 @@ def build_display(size):
 def get_screen_size():
     return pygame.display.get_surface().get_size()
 
+_scaled_display_surface = None
+_scaled_display_size = None
+
+
 def push_display(surf, size, new_surf):
+    global _scaled_display_surface, _scaled_display_size
     win_w, win_h = size
     base_w, base_h = surf.get_size()
 
@@ -63,7 +81,15 @@ def push_display(surf, size, new_surf):
     new_w = int(base_w * scale)
     new_h = int(base_h * scale)
 
-    scaled_surf = pygame.transform.scale(surf, (new_w, new_h))
+    target_size = (new_w, new_h)
+    if target_size == surf.get_size():
+        scaled_surf = surf
+    else:
+        if _scaled_display_surface is None or _scaled_display_size != target_size:
+            _scaled_display_surface = pygame.Surface(target_size).convert()
+            _scaled_display_size = target_size
+        pygame.transform.scale(surf, target_size, _scaled_display_surface)
+        scaled_surf = _scaled_display_surface
 
     # Center view
     x = (win_w - new_w) // 2
@@ -88,14 +114,35 @@ def terminate(crash=False):
         sys.exit()
 
 def on_end(crash=False):
+    try:
+        from app.engine.android_runtime import is_android_runtime
+        if not is_android_runtime():
+            from app.engine import runtime_debugger_service
+            runtime_debugger_service.stop(close_window=True)
+    except Exception:
+        logging.exception("Could not close runtime debugger during game shutdown.")
     cf.save_settings()
 
 # === timing functions ===
 def update_time():
-    # All measured in milliseconds
+    """Advance game time by the real time elapsed since the last frame."""
+    true_time = pygame.time.get_ticks()
+    last_true_time = constants['true_time']
+    if last_true_time is None or true_time < last_true_time:
+        # pygame's clock resets when the editor closes and reopens the engine.
+        constants['current_time'] = true_time
+        constants['last_time'] = true_time
+        constants['delta_t'] = 0
+    else:
+        advance_time(true_time - last_true_time)
+    constants['true_time'] = true_time
+
+def advance_time(milliseconds: int):
+    """Advance virtual game time without changing pygame's real clock."""
+    milliseconds = max(0, int(milliseconds))
     constants['last_time'] = constants['current_time']
-    constants['current_time'] = pygame.time.get_ticks()
-    constants['delta_t'] = constants['current_time'] - constants['last_time']
+    constants['current_time'] += milliseconds
+    constants['delta_t'] = milliseconds
 
 def get_time() -> int:
     return constants['current_time']
@@ -192,12 +239,44 @@ def subsurface(surf: Surface, rect: Tuple[int, int, int, int]) -> Surface:
     return surf.subsurface(rect)
 
 def image_load(fn, convert=False, convert_alpha=False):
+    started = None
+    try:
+        from app.engine.performance import RUNTIME_PROFILER
+        if RUNTIME_PROFILER.enabled:
+            import time
+            started = time.perf_counter()
+    except ImportError:
+        RUNTIME_PROFILER = None
     image = pygame.image.load(fn)
     if convert:
         image = image.convert()
     elif convert_alpha:
         image = image.convert_alpha()
+    if started is not None:
+        elapsed = (time.perf_counter() - started) * 1000.0
+        if elapsed >= 20.0:
+            RUNTIME_PROFILER.record('asset_load:%s' % fn, elapsed)
     return image
+
+def display_format_signature():
+    """Return the active display format, or None before set_mode()."""
+    display = pygame.display.get_surface()
+    if display is None:
+        return None
+    return display.get_bitsize(), display.get_masks()
+
+def convert_for_display(image):
+    """Convert an image once after set_mode(), preserving alpha semantics."""
+    if display_format_signature() is None:
+        return image
+    try:
+        if image.get_flags() & pygame.SRCALPHA:
+            return image.convert_alpha()
+        return image.convert()
+    except pygame.error:
+        # Asset loading must remain resilient if SDL has just lost its display
+        # during Android activity recreation.
+        return image
 
 def surf_to_raw(surf: pygame.Surface, format: str) -> str:
     """Converts a given surface into a raw byte representation.
@@ -267,6 +346,8 @@ key_map = {"enter": pygame.K_RETURN,
            "tab": pygame.K_TAB,
            "backspace": pygame.K_BACKSPACE,
            "pageup": pygame.K_PAGEUP,
+           "r": pygame.K_r,
+           "f11": pygame.K_F11,
            "f12": pygame.K_F12,
            "`": pygame.K_BACKQUOTE,
            "1": pygame.K_1,
@@ -274,6 +355,7 @@ key_map = {"enter": pygame.K_RETURN,
            "3": pygame.K_3,
            "4": pygame.K_4,
            "5": pygame.K_5,
+           "0": pygame.K_0,
            }
 
 events = []
@@ -299,6 +381,7 @@ def get_events():
 QUIT = pygame.QUIT
 KEYUP = pygame.KEYUP
 KEYDOWN = pygame.KEYDOWN
+KMOD_CTRL = pygame.KMOD_CTRL
 MOUSEBUTTONDOWN = pygame.MOUSEBUTTONDOWN
 MOUSEBUTTONUP = pygame.MOUSEBUTTONUP
 MOUSEMOTION = pygame.MOUSEMOTION
@@ -307,6 +390,12 @@ def get_pressed():
     return pygame.key.get_pressed()
 
 def joystick_avail() -> bool:
+    # SDL2 exposes Android's accelerometer as joystick 0 by default. The
+    # Android runtime supplies virtual touch controls instead, so allowing that
+    # pseudo-joystick makes the phone's tilt look like a permanently held
+    # direction. Keep desktop controller support unchanged.
+    if os.environ.get('LT_DISABLE_JOYSTICK') == '1':
+        return False
     return pygame.joystick.get_init() and pygame.joystick.get_count()
 
 def get_joystick():
@@ -332,6 +421,8 @@ class Clock():
         self.clock = pygame.time.Clock()
 
     def tick(self) -> int:
+        if os.environ.get('LT_PRECISE_FRAME_PACING') == '1':
+            return self.clock.tick_busy_loop(FPS)
         return self.clock.tick(FPS)
 
 # === System Messages

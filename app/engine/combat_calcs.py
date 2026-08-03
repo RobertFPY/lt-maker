@@ -8,12 +8,31 @@ from app.data.database import weapons
 from app.engine import equations, item_system, item_funcs, skill_system, line_of_sight
 from app.engine.combat.utils import resolve_weapon
 
-def get_weapon_rank_bonus(unit, item):
+def _get_weapon_rank_requirement(unit, item) -> int:
+    if not unit or not item:
+        return -1
+    weapon_type = item_system.weapon_type(unit, item)
+    if not weapon_type:
+        return -1
+    rank = DB.weapon_ranks.get_rank_from_wexp(unit.wexp.get(weapon_type, 0))
+    return rank.requirement if rank else -1
+
+def get_weapon_rank_bonus(unit, item, target=None, target_item=None):
     weapon_type = item_system.weapon_type(unit, item)
     if not weapon_type:
         return None
-    rank_bonus = DB.weapons.get(weapon_type).rank_bonus
-    wexp = unit.wexp[weapon_type]
+    weapon = DB.weapons.get(weapon_type)
+    if not weapon:
+        return None
+
+    wexp = unit.wexp.get(weapon_type, 0)
+    if target is not None:
+        unit_rank = _get_weapon_rank_requirement(unit, item)
+        target_rank = _get_weapon_rank_requirement(target, target_item)
+        if unit_rank <= target_rank:
+            return None
+
+    rank_bonus = weapon.rank_bonus
     best_combat_bonus = None
     highest_requirement = -1
     for combat_bonus in rank_bonus:
@@ -147,7 +166,7 @@ def can_counterattack(attacker, aweapon, defender, dweapon) -> bool:
         return True
     return False
 
-def accuracy(unit, item=None):
+def accuracy(unit, item=None, target=None, target_item=None):
     if not item:
         item = unit.get_weapon()
     if not item:
@@ -164,7 +183,7 @@ def accuracy(unit, item=None):
         skill_system.Defaults.accuracy_formula)
     accuracy += equations.parser.get(equation, unit)
 
-    weapon_rank_bonus = get_weapon_rank_bonus(unit, item)
+    weapon_rank_bonus = get_weapon_rank_bonus(unit, item, target, target_item)
     if weapon_rank_bonus:
         accuracy += int(weapon_rank_bonus.accuracy)
 
@@ -261,7 +280,7 @@ def crit_avoid(unit, item, item_to_avoid=None):
     avoid += skill_system.modify_crit_avoid(unit, item)
     return avoid
 
-def damage(unit, item=None):
+def damage(unit, item=None, target=None, target_item=None):
     if not item:
         item = unit.get_weapon()
     if not item:
@@ -278,7 +297,7 @@ def damage(unit, item=None):
         skill_system.Defaults.damage_formula)
     might += equations.parser.get(equation, unit)
 
-    weapon_rank_bonus = get_weapon_rank_bonus(unit, item)
+    weapon_rank_bonus = get_weapon_rank_bonus(unit, item, target, target_item)
     if weapon_rank_bonus:
         might += int(weapon_rank_bonus.damage)
 
@@ -377,7 +396,7 @@ def compute_hit(unit, target, item, def_item, mode, attack_info, *, clamp_hit=Tr
     if not item:
         return None
 
-    hit = accuracy(unit, item)
+    hit = accuracy(unit, item, target, def_item)
     if hit is None:
         return 10000
 
@@ -457,7 +476,7 @@ def compute_damage_before_resist(unit, target, item, def_item, mode, attack_info
     if not item:
         return None
 
-    might = damage(unit, item)
+    might = damage(unit, item, target, def_item)
     if might is None:
         return None
 
@@ -496,7 +515,7 @@ def compute_resist(unit, target, item, def_item, mode, attack_info, crit=False, 
     if not item:
         return None
 
-    might = damage(unit, item)
+    might = damage(unit, item, target, def_item)
     if might is None:
         return None
 
@@ -538,7 +557,7 @@ def compute_damage(unit, target, item, def_item, mode, attack_info, crit=False, 
     if not item:
         return None
 
-    might = damage(unit, item)
+    might = damage(unit, item, target, def_item)
     if might is None:
         return None
 

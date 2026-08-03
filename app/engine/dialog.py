@@ -181,7 +181,9 @@ class Dialog:
         self.tail = None
         self.dialog_transparency = transparency
 
-        if background and background not in ("None", "clear"):
+        self._background_is_visible = bool(
+            background and background not in ("None", "clear"))
+        if self._background_is_visible:
             self.background = self.make_background(background)
         else:
             self.background = engine.create_surface((self.width, self.height), True)
@@ -673,7 +675,11 @@ class Dialog:
         return surf
 
     def draw(self, surf: engine.Surface) -> engine.Surface:
-        if self.background:
+        # Background-less dialogs retain a transparent sizing surface for
+        # compatibility, but copying, alpha-multiplying, and blitting it is a
+        # pure no-op. This is the common path for Info help panels.
+        if (self.background
+                and getattr(self, '_background_is_visible', True)):
             if self.state == DialogState.TRANSITION_IN:
                 # bg = image_mods.resize(self.background, (1, .5 + self.transition_progress/2.))
                 new_width = max(

@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import List, Tuple, Dict, Optional
 from app.constants import WINWIDTH, WINHEIGHT
 from app.utilities import utils
+from app.utilities.typing import NID
 
 from app.data.resources.resources import RESOURCES
 from app.data.database.database import DB
@@ -14,6 +15,8 @@ from app.engine.achievements import ACHIEVEMENTS
 
 from app.engine.sprites import SPRITES
 from app.engine.sound import get_sound_thread
+from app.engine.android_runtime import is_android_render_optimization_enabled
+from app.engine.performance import RUNTIME_PROFILER
 from app.engine.fonts import FONT
 from app.engine.input_manager import get_input_manager
 from app.engine.state import State
@@ -1611,8 +1614,13 @@ class BaseAchievementState(State):
 
 class BaseSoundRoomState(State):
     name = 'base_sound_room'
+    blocks_fast_forward = is_android_render_optimization_enabled()
 
     def start(self):
+        self.blocks_fast_forward = bool(is_android_render_optimization_enabled())
+        self._android_title_cache = None
+        self._android_title_cache_key = None
+        self._pending_stream_preview = None
         self.fluid = FluidScroll()
         self.bg = game.memory.get('base_bg')
 
@@ -1627,6 +1635,8 @@ class BaseSoundRoomState(State):
         self.menu = menus.Table(None, [str(i + 1) for i in range(len(self.music_names))], layout, topleft)
         self.menu.gem = True
         self.menu.shimmer = 2
+        if is_android_render_optimization_enabled():
+            self.menu.cache_static_options = True
 
         if DB.constants.value('locked_soundroom'):
             ignore = [not RECORDS.check_song_unlocked(music) for music in self.music_names]
@@ -1647,13 +1657,48 @@ class BaseSoundRoomState(State):
     def begin(self):
         self.fluid.reset_on_change_state()
 
+        self._pending_stream_preview = None
         self.prev_state_music = None
+        get_sound_thread().stop_streamed_preview()
         if get_sound_thread().get_current_song():
             self.prev_state_music = get_sound_thread().get_current_song().nid
 
         get_sound_thread().fade_clear()
         self.playing = False
         self.last_choice = None
+
+    def _queue_stream_preview(self, music: NID, battle: bool = False) -> str:
+        """Present once before a potentially expensive Android stream load.
+
+        pygame's music loader is synchronous. Running it on a worker thread is
+        not safe for every SDL mixer backend, so defer it to the next physical
+        frame instead. The requested presentation makes the input response
+        visible before the mixer can block on decoding.
+        """
+        self._pending_stream_preview = music, battle
+        game.state.request_present('soundroom_stream_preview')
+        return 'repeat'
+
+    def _play_pending_stream_preview(self):
+        pending = self._pending_stream_preview
+        if not pending:
+            return False
+        self._pending_stream_preview = None
+        music, battle = pending
+        sound_thread = get_sound_thread()
+        started = sound_thread.play_streamed_preview(music, battle=battle)
+        if not started:
+            started = sound_thread.play_legacy_preview(music, battle=battle)
+        if started:
+            self.playing = True
+            self.last_choice = music
+        else:
+            # A failed stream fallback must not leave the UI showing a track
+            # that is not actually playing or allow its battle variant.
+            self.playing = False
+            self.last_choice = None
+            sound_thread.play_sfx('Error')
+        return started
 
     def take_input(self, event):
         first_push = self.fluid.update()
@@ -1675,7 +1720,9 @@ class BaseSoundRoomState(State):
                 get_sound_thread().play_sfx('Select 5')
 
         if event == 'BACK':
+            self._pending_stream_preview = None
             get_sound_thread().play_sfx('Select 4')
+            get_sound_thread().stop_streamed_preview()
             game.state.change('transition_pop')
             if self.name == 'base_sound_room':
                 music = game.game_vars.get('_base_music')
@@ -1695,11 +1742,16 @@ class BaseSoundRoomState(State):
         elif event == 'SELECT':
             current_music_index = int(self.menu.get_current()) - 1
             music = self.music_names[current_music_index]
-            get_sound_thread().fade_in(music)
+            if is_android_render_optimization_enabled():
+                return self._queue_stream_preview(music)
+            else:
+                get_sound_thread().fade_in(music)
             self.playing = True
             self.last_choice = music
 
         elif event == 'START':
+            self._pending_stream_preview = None
+            get_sound_thread().stop_streamed_preview()
             get_sound_thread().fade_clear()
             self.playing = False
 
@@ -1707,28 +1759,46 @@ class BaseSoundRoomState(State):
             rand_idx = random.choice(self.unlocked_idxes)
             self.menu.move_to(rand_idx)
             music = self.music_names[rand_idx]
-            get_sound_thread().fade_in(music)
+            if is_android_render_optimization_enabled():
+                return self._queue_stream_preview(music)
+            else:
+                get_sound_thread().fade_in(music)
             self.playing = True
+            if is_android_render_optimization_enabled():
+                self.last_choice = music
 
         elif event == 'AUX':
             current_music_index = int(self.menu.get_current()) - 1
             music = self.music_names[current_music_index]
             song_prefab = RESOURCES.music.get(music)
 
-            if self.playing and song_prefab.battle_full_path \
-                    and get_sound_thread().get_current_song() \
-                    and get_sound_thread().get_current_song().nid == music:
-                get_sound_thread().battle_fade_in(music)
+            if self.playing and song_prefab.battle_full_path:
+                if is_android_render_optimization_enabled():
+                    if self.last_choice == music:
+                        return self._queue_stream_preview(music, battle=True)
+                    else:
+                        get_sound_thread().play_sfx('Error')
+                elif get_sound_thread().get_current_song() \
+                        and get_sound_thread().get_current_song().nid == music:
+                    get_sound_thread().battle_fade_in(music)
+                else:
+                    get_sound_thread().play_sfx('Error')
             else:
                 get_sound_thread().play_sfx('Error')
 
     def update(self):
         if self.menu:
             self.menu.update()
+        self._play_pending_stream_preview()
 
     def draw(self, surf):
+        profile_enabled = RUNTIME_PROFILER.enabled
         if self.bg:
-            self.bg.draw(surf)
+            if profile_enabled:
+                with RUNTIME_PROFILER.section('soundroom_background'):
+                    self.bg.draw(surf)
+            else:
+                self.bg.draw(surf)
 
         player = 'sound_player'
         music = ''
@@ -1743,15 +1813,51 @@ class BaseSoundRoomState(State):
         surf.blit(SPRITES.get(player), (8, 56))
 
         if self.playing:
-            self.draw_volume(surf)
-        self.menu.draw(surf)
-        self.draw_sound_room_title(surf, (WINWIDTH//2, 22), music)
+            if profile_enabled:
+                with RUNTIME_PROFILER.section('soundroom_volume'):
+                    self.draw_volume(surf)
+            else:
+                self.draw_volume(surf)
+        if profile_enabled:
+            with RUNTIME_PROFILER.section('soundroom_menu'):
+                self.menu.draw(surf)
+            with RUNTIME_PROFILER.section('soundroom_title'):
+                self.draw_sound_room_title(surf, (WINWIDTH//2, 22), music)
+        else:
+            self.menu.draw(surf)
+            self.draw_sound_room_title(surf, (WINWIDTH//2, 22), music)
         return surf
 
     def draw_sound_room_title(self, surf, center, music_name):
+        if is_android_render_optimization_enabled():
+            if self._android_title_cache is None or self._android_title_cache_key != music_name:
+                title_surf = engine.create_surface((WINWIDTH, WINHEIGHT), transparent=True)
+                engine.blit_center(title_surf, SPRITES.get('chapter_select_green'), center)
+                render_text(
+                    title_surf, ['convo'], [music_name], ['white'],
+                    (center[0], center[1] - 8), HAlignment.CENTER,
+                )
+                bounds = title_surf.get_bounding_rect()
+                if bounds.width and bounds.height:
+                    self._android_title_cache = (
+                        engine.subsurface(
+                            title_surf, (bounds.x, bounds.y, bounds.width, bounds.height),
+                        ).copy(),
+                        (bounds.x, bounds.y),
+                    )
+                else:
+                    self._android_title_cache = title_surf, (0, 0)
+                self._android_title_cache_key = music_name
+            title_cache, title_pos = self._android_title_cache
+            surf.blit(title_cache, title_pos)
+            return surf
         engine.blit_center(surf, SPRITES.get('chapter_select_green'), center)
         render_text(surf, ['convo'], [music_name], ['white'], (center[0], center[1] - 8), HAlignment.CENTER)
         return surf
+
+    def finish(self):
+        self._pending_stream_preview = None
+        get_sound_thread().stop_streamed_preview()
 
     def draw_volume(self, surf):
         scale = 1500

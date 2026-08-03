@@ -19,14 +19,16 @@ class CombatBonus(Prefab):
         self.dodge = int(effects[5])
         self.attack_speed = int(effects[6])
         self.defense_speed = int(effects[7])
+        self.heal = int(effects[8]) if len(effects) > 8 else 0
 
     @property
     def effects(self):
-        return (self.damage, self.resist, self.accuracy, self.avoid, self.crit, self.dodge, self.attack_speed, self.defense_speed)
+        return (self.damage, self.resist, self.accuracy, self.avoid, self.crit, self.dodge,
+                self.attack_speed, self.defense_speed, self.heal)
 
     @classmethod
     def default(cls):
-        return cls(None, None, [0]*8)
+        return cls(None, None, [0]*9)
 
     @classmethod
     def copy(cls, other):
@@ -43,6 +45,7 @@ class CombatBonus(Prefab):
         self.dodge *= w_mod
         self.attack_speed *= w_mod
         self.defense_speed *= w_mod
+        self.heal *= w_mod
 
 class CombatBonusList(list):
     def contains(self, weapon_type: str):

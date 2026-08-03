@@ -1,6 +1,6 @@
 from PyQt5 import QtGui
 from PyQt5.QtWidgets import QDialog, QGridLayout, QDialogButtonBox, QTabWidget, \
-    QSizePolicy
+    QSizePolicy, QVBoxLayout
 from PyQt5.QtCore import Qt
 
 from app.data.resources.resources import RESOURCES
@@ -30,6 +30,195 @@ def restore_db_and_resync(saved_data, main_editor):
             state_manager.change_and_broadcast(
                 'selected_level', current_level_nid)
 
+
+class EditorWorkspace(QDialog):
+    """Non-modal host for the database and resource editors.
+
+    The old editor dialogs each owned a snapshot of the entire database.  That
+    is safe while only one modal dialog can exist, but it is not safe once
+    several editors are open: cancelling one dialog could restore its old
+    snapshot over changes made in another dialog.  The workspace therefore
+    owns one shared transaction and one set of OK/Cancel/Apply buttons for all
+    open editor tabs.
+    """
+
+    def __init__(self, main_editor):
+        super().__init__(main_editor)
+        self.main_editor = main_editor
+        self.settings = MainSettingsController()
+        self.saved_data = None
+        self.resource_types = set()
+        self._editors = {}
+        self._finishing = False
+
+        self.setWindowTitle(self.tr('Editor Workspace'))
+        self.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
+        self.setWindowFlag(Qt.WindowMinMaxButtonsHint, True)
+        self.setModal(False)
+        self.resize(1000, 700)
+
+        layout = QVBoxLayout(self)
+        self.tab_bar = QTabWidget(self)
+        self.tab_bar.setTabsClosable(True)
+        self.tab_bar.setMovable(True)
+        self.tab_bar.setDocumentMode(True)
+        self.tab_bar.tabCloseRequested.connect(self.close_tab)
+        layout.addWidget(self.tab_bar)
+
+        self.buttonbox = QDialogButtonBox(
+            QDialogButtonBox.Ok | QDialogButtonBox.Cancel | QDialogButtonBox.Apply,
+            Qt.Horizontal,
+            self)
+        self.buttonbox.accepted.connect(self.accept)
+        self.buttonbox.rejected.connect(self.reject)
+        self.buttonbox.button(QDialogButtonBox.Apply).clicked.connect(self.apply)
+        layout.addWidget(self.buttonbox)
+
+        geometry = self.settings.component_controller.get_geometry(
+            self.__class__.__name__)
+        if geometry:
+            self.restoreGeometry(geometry)
+
+    def _editor_key(self, editor):
+        return '%s:%s' % (editor.__class__.__name__, editor._type())
+
+    def _editor_title(self, editor):
+        if hasattr(editor, 'tabs'):
+            titles = [tab.windowTitle() for tab in editor.tabs]
+            combined_title = ' / '.join(title for title in titles if title)
+            if combined_title:
+                return combined_title
+        title = editor.windowTitle()
+        if title:
+            return title
+        return editor._type()
+
+    def add_editor(self, editor):
+        key = self._editor_key(editor)
+        existing = self._editors.get(key)
+        if existing is not None:
+            self.tab_bar.setCurrentWidget(existing)
+            editor.deleteLater()
+            self.show()
+            self.raise_()
+            self.activateWindow()
+            return
+
+        if self.saved_data is None:
+            self.saved_data = DB.save()
+            self.resource_types.clear()
+
+        if getattr(editor, 'resource_types', None):
+            self.resource_types.update(editor.resource_types)
+
+        # The workspace supplies the shared buttons.  The dialog itself is
+        # embedded as an ordinary widget so opening it never blocks MainEditor.
+        editor.buttonbox.hide()
+        editor.buttonbox.setEnabled(False)
+        editor.setWindowFlags(Qt.Widget)
+        editor.setParent(self.tab_bar)
+        editor.editor_workspace = self
+        editor.setProperty('editor_workspace_key', key)
+        editor.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self._editors[key] = editor
+        index = self.tab_bar.addTab(editor, self._editor_title(editor))
+        self.tab_bar.setCurrentIndex(index)
+
+        self.show()
+        self.raise_()
+        self.activateWindow()
+
+    def close_editor(self, editor):
+        index = self.tab_bar.indexOf(editor)
+        if index >= 0:
+            self.close_tab(index)
+
+    def close_tab(self, index):
+        editor = self.tab_bar.widget(index)
+        if editor is None:
+            return
+        key = editor.property('editor_workspace_key')
+        editor.workspace_close()
+        self.tab_bar.removeTab(index)
+        self._editors.pop(key, None)
+        editor.deleteLater()
+
+    def _save_resources(self):
+        current_proj = self.settings.get_current_project()
+        if (self.resource_types and current_proj and
+                current_proj != 'default.ltproj'):
+            RESOURCES.save(current_proj, sorted(self.resource_types))
+
+    def apply(self):
+        if self.saved_data is None:
+            return
+        self._save_resources()
+        for editor in self._editors.values():
+            editor.save_geometry()
+        self.saved_data = DB.save()
+
+    def mark_project_saved(self):
+        """Advance Cancel's restore point after MainEditor saved the project."""
+        if self.saved_data is not None:
+            self.saved_data = DB.save()
+
+    def _close_all_tabs(self):
+        while self.tab_bar.count():
+            self.close_tab(self.tab_bar.count() - 1)
+
+    def _finish_session(self):
+        self._close_all_tabs()
+        self.saved_data = None
+        self.resource_types.clear()
+
+    def accept(self):
+        self.apply()
+        self._finishing = True
+        self._finish_session()
+        self._save_geometry()
+        super().accept()
+        self._finishing = False
+
+    def reject(self):
+        if self.saved_data is not None:
+            current_proj = self.settings.get_current_project()
+            if self.resource_types and current_proj:
+                RESOURCES.load(current_proj, CURRENT_SERIALIZATION_VERSION)
+            restore_db_and_resync(self.saved_data, self.main_editor)
+        self._finishing = True
+        self._finish_session()
+        self._save_geometry()
+        super().reject()
+        self._finishing = False
+
+    def reset_for_project_change(self):
+        """Discard editor widgets after MainEditor loaded another project.
+
+        The project backend already handled saving/discarding the previous
+        project, so restoring the workspace snapshot here would corrupt the
+        newly-loaded project.
+        """
+        self._finishing = True
+        self._finish_session()
+        self._save_geometry()
+        super().reject()
+        self._finishing = False
+
+    def _save_geometry(self):
+        self.settings.component_controller.set_geometry(
+            self.__class__.__name__, self.saveGeometry())
+
+    def closeEvent(self, event):
+        if not self._finishing and self.saved_data is not None:
+            # Closing the workspace with the window X has the same safe
+            # semantics as Cancel.
+            self.reject()
+            event.accept()
+            return
+        self._save_geometry()
+        super().closeEvent(event)
+
+
 class SingleDatabaseEditor(QDialog):
     def __init__(self, tab, parent=None):
         super().__init__(parent)
@@ -54,7 +243,11 @@ class SingleDatabaseEditor(QDialog):
 
     def keyPressEvent(self, keypress: QtGui.QKeyEvent) -> None:
         if keypress.key() == self.settings.get_preference(Preference.EDITOR_CLOSE_BUTTON):
-            self.reject()
+            workspace = getattr(self, 'editor_workspace', None)
+            if workspace:
+                workspace.close_editor(self)
+            else:
+                self.reject()
         else:
             pass
 
@@ -103,6 +296,22 @@ class SingleDatabaseEditor(QDialog):
 
     def apply(self):
         self.save()
+
+    def exec_(self):
+        opener = getattr(self.main_editor, 'open_editor_tab', None)
+        if opener:
+            opener(self)
+            return QDialog.Accepted
+        return super().exec_()
+
+    def workspace_close(self):
+        self.save_geometry()
+        if hasattr(self, 'tabs'):
+            for tab in self.tabs:
+                if hasattr(tab, 'on_tab_close'):
+                    tab.on_tab_close()
+        elif hasattr(self, 'tab') and hasattr(self.tab, 'on_tab_close'):
+            self.tab.on_tab_close()
 
     def closeEvent(self, event):
         self.save_geometry()
@@ -254,6 +463,32 @@ class SingleResourceEditor(QDialog):
             RESOURCES.save(current_proj, self.resource_types)
         self.save()
         self.save_geometry()
+
+    def keyPressEvent(self, keypress: QtGui.QKeyEvent) -> None:
+        if keypress.key() == self.settings.get_preference(Preference.EDITOR_CLOSE_BUTTON):
+            workspace = getattr(self, 'editor_workspace', None)
+            if workspace:
+                workspace.close_editor(self)
+            else:
+                self.reject()
+        else:
+            pass
+
+    def exec_(self):
+        opener = getattr(self.main_editor, 'open_editor_tab', None)
+        if opener:
+            opener(self)
+            return QDialog.Accepted
+        return super().exec_()
+
+    def workspace_close(self):
+        self.save_geometry()
+        if hasattr(self, 'tabs'):
+            for tab in self.tabs:
+                if hasattr(tab, 'on_tab_close'):
+                    tab.on_tab_close()
+        elif hasattr(self, 'tab') and hasattr(self.tab, 'on_tab_close'):
+            self.tab.on_tab_close()
 
     def closeEvent(self, event):
         self.save_geometry()

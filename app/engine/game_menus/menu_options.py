@@ -5,12 +5,18 @@ from app.data.database.database import DB
 from app.engine.sprites import SPRITES
 from app.engine.fonts import FONT
 from app.engine import engine, image_mods, icons, help_menu, text_funcs, item_system, item_funcs
+from app.engine.android_runtime import is_android_render_optimization_enabled
 from app.engine.game_state import game
 from app.engine.unit_sprite import load_map_sprite
 
 from app.engine.graphics.text.text_renderer import render_text, text_width, rendered_text_width
 from app.utilities.enums import HAlignment
 from app.engine.game_menus.icon_options import UsesDisplayConfig
+
+
+# Thirty cached colours keep the title pulse visually smooth while bounding the
+# number of Android surfaces retained by each visible menu option.
+_ANDROID_TITLE_OUTLINE_PHASES = 30
 
 class EmptyOption():
     def __init__(self, idx):
@@ -44,6 +50,17 @@ class EmptyOption():
             top = y + 9
             surf.blit(highlight_surf, (left, top))
         return surf
+
+class InventorySlotOption(EmptyOption):
+    """Selectable empty slot that retains its inventory section and index."""
+
+    def __init__(self, idx, slot: item_funcs.InventorySlot):
+        super().__init__(idx)
+        self.slot = slot
+        self.ignore = False
+
+    def get(self):
+        return self.slot
 
 class BasicOption():
     def __init__(self, idx, text):
@@ -177,6 +194,7 @@ class TitleOption():
         self.font = 'chapter'
         self.color = 'grey'
         self.ignore = False
+        self._invalidate_android_text_cache()
 
     def get(self):
         return self.text
@@ -184,6 +202,53 @@ class TitleOption():
     def set_text(self, text):
         self.text = text
         self.display_text = text_funcs.translate(text)
+        self._invalidate_android_text_cache()
+
+    def _invalidate_android_text_cache(self):
+        self._android_text_cache_key = None
+        self._android_text_surf = None
+        self._android_outline_base = None
+        self._android_outline_cache = {}
+
+    def _draw_android_cached_text(self, surf, text_size, position):
+        """Draw Android title text without rebuilding glyph and colour surfaces.
+
+        ChapterSelect, TitleSave and TitleLoad all reuse this class.  Desktop
+        keeps its historical per-frame path; this cache is strictly behind the
+        Android render optimisation switch.
+        """
+        text = self.display_text
+        cache_key = self.font, text, self.color
+        if cache_key != self._android_text_cache_key:
+            self._invalidate_android_text_cache()
+            self._android_text_cache_key = cache_key
+
+        if self._android_text_surf is None:
+            self._android_text_surf = engine.create_surface(text_size, transparent=True)
+            render_text(self._android_text_surf, [self.font], [text], [self.color], (0, 0))
+
+        if self._android_outline_base is None:
+            self._android_outline_base = engine.create_surface(
+                (text_size[0] + 4, text_size[1] + 2), transparent=True)
+            render_text(self._android_outline_base, [self.font], [text], [self.color], (1, 0))
+            render_text(self._android_outline_base, [self.font], [text], [self.color], (0, 1))
+            render_text(self._android_outline_base, [self.font], [text], [self.color], (1, 2))
+            render_text(self._android_outline_base, [self.font], [text], [self.color], (2, 1))
+
+        phase = (engine.get_time() // 10) % 180
+        phase_index = phase * _ANDROID_TITLE_OUTLINE_PHASES // 180
+        outline_surf = self._android_outline_cache.get(phase_index)
+        if outline_surf is None:
+            phase_center = (phase_index * 180 + 90) // _ANDROID_TITLE_OUTLINE_PHASES
+            t = math.sin(math.radians(phase_center))
+            color_transition = image_mods.blend_colors(
+                (192, 248, 248), (56, 48, 40), t)
+            outline_surf = image_mods.change_color(
+                self._android_outline_base, color_transition)
+            self._android_outline_cache[phase_index] = outline_surf
+
+        surf.blit(outline_surf, (position[0] - 1, position[1] - 1))
+        surf.blit(self._android_text_surf, position)
 
     def width(self):
         return SPRITES.get(self.option_bg_name).get_width()
@@ -197,6 +262,10 @@ class TitleOption():
         text = self.display_text
         text_size = font.size(text)
         position = (x - text_size[0]//2, y - text_size[1]//2)
+
+        if is_android_render_optimization_enabled():
+            self._draw_android_cached_text(surf, text_size, position)
+            return
 
         # Handle outline
         t = math.sin(math.radians((engine.get_time()//10) % 180))
@@ -234,6 +303,7 @@ class ChapterSelectOption(TitleOption):
         self.font = 'chapter'
         self.color = 'grey'
         self.ignore = False
+        self._invalidate_android_text_cache()
 
     def set_bg_color(self, color):
         self.bg_color = color
@@ -362,6 +432,32 @@ class ItemOption(BasicOption):
             uses_string = str(self.item.data['cooldown'])
         left = x + 99
         render_text(surf, [uses_font], [uses_string], [uses_color], (left, y), HAlignment.RIGHT)
+
+class TradeSectionEndItemOption(ItemOption):
+    """Last weapon row, including the ten-pixel Item section header."""
+
+    def height(self):
+        return super().height() + 10
+
+    def draw(self, surf, x, y):
+        super().draw(surf, x, y)
+        FONT['text-yellow'].blit_right(
+            'Item', surf, (x + self.width() - 8, y + 13))
+
+class TradeSectionEndSlotOption(InventorySlotOption):
+    """Last empty weapon slot, including the Item section header."""
+
+    def height(self):
+        return super().height() + 10
+
+    def draw(self, surf, x, y):
+        FONT['text-yellow'].blit_right(
+            'Item', surf, (x + self.width() - 8, y + 13))
+
+    def draw_highlight(self, surf, x, y, menu_width):
+        surf = super().draw_highlight(surf, x, y, menu_width)
+        self.draw(surf, x, y)
+        return surf
 
 class ConvoyItemOption(ItemOption):
     def __init__(self, idx, item, owner):

@@ -26,5 +26,9 @@
     {
         "rank": "SS",
         "requirement": 331
+    },
+    {
+        "rank": "--",
+        "requirement": 9999
     }
 ]

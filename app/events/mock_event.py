@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List
+from typing import Callable, List, Optional
 
 from app.data.database.database import DB
 
@@ -19,6 +19,13 @@ class IfStatementStrategy(Enum):
     ALWAYS_TRUE = 1
     ALWAYS_FALSE = 2
     EVALUATE = 3  # Actually evaluate the condition (needs local_args context)
+
+PREVIEW_SETUP_COMMAND_NIDS = frozenset({
+    "add_portrait", "multi_add_portrait",
+    "remove_portrait", "multi_remove_portrait", "remove_all_portraits",
+    "move_portrait", "mirror_portrait", "expression",
+    "change_background", "speak_style",
+})
 
 class MockGame():
     """
@@ -88,7 +95,7 @@ class MockGame():
     def get_terrain_at_pos(self, pos):
         return None
 
-    def get_all_units(self):
+    def get_all_units(self, only_on_field: bool = True):
         return []
 
     def get_all_units_in_party(self, party=None):
@@ -135,9 +142,14 @@ class MockEvent(Event):
                                             position=local_args.get('position'),
                                             local_args=local_args)
         if event_prefab.version() != EventVersion.EVENT:
-            self.processor = MockPythonEventProcessor('Mock', event_prefab.source, self.game)
+            self.processor = MockPythonEventProcessor(
+                'Mock', event_prefab.source, self.game, command_idx,
+                self._preload_setup_command, context=local_args)
         else:
-            self.processor = MockEventProcessor('Mock', event_prefab.source, self.text_evaluator, if_statement_strategy, command_idx)
+            self.processor = MockEventProcessor(
+                'Mock', event_prefab.source, self.text_evaluator,
+                if_statement_strategy, command_idx,
+                self._preload_setup_command)
 
         # Runs the `on_startup` trigger event commands before running the main MockEvent (to load speak_style)
         startup_event_prefabs = DB.events.get('on_startup', None)
@@ -150,6 +162,7 @@ class MockEvent(Event):
         self.should_update = {name: to_update for name, to_update in self.should_update.items() if not to_update(self.do_skip)}
 
         self._update_state(dialog_log=False)
+        self._update_text_boxes()
         self._update_transition()
 
     def draw(self, surf):
@@ -164,16 +177,72 @@ class MockEvent(Event):
         if command.nid in self.available:
             super().run_command(command)
 
+    def _preload_setup_command(
+            self, command: event_commands.EventCommand) -> None:
+        """Rebuild visual state before starting at the editor caret.
+
+        Dialogue, audio, waits, and transitions are deliberately ignored. Setup
+        commands run in skip mode so portrait adds/removals/moves settle
+        immediately instead of replaying their animations.
+        """
+        if command.nid not in PREVIEW_SETUP_COMMAND_NIDS:
+            return
+
+        previous_skip = self.do_skip
+        self.do_skip = True
+        try:
+            self.run_command(command)
+            # Multi-portrait commands expand into individual queued commands.
+            # Drain them now so a following move/expression sees the portraits.
+            while self.command_queue:
+                queued_command = self.command_queue.pop(0)
+                if queued_command.nid in PREVIEW_SETUP_COMMAND_NIDS:
+                    self.run_command(queued_command)
+        finally:
+            self.do_skip = previous_skip
+            self.state = 'processing'
+            self.wait_time = 0
+
     def _get_unit(self, text):
         return None
 
 class MockEventProcessor(EventProcessor):
     def __init__(self, nid: NID, script: str, text_evaluator: TextEvaluator, 
                  if_statement_strategy=IfStatementStrategy.ALWAYS_TRUE,
-                 command_pointer: int = 0):
+                 command_pointer: int = 0,
+                 skipped_command_callback: Optional[
+                     Callable[[event_commands.EventCommand], None]
+                 ] = None):
         super().__init__(nid, script, text_evaluator)
         self.if_statement_strategy = if_statement_strategy
+        self.start_command_pointer = command_pointer
         self.command_pointer = command_pointer
+        self.skipped_command_callback = skipped_command_callback
+        self._preloaded_prior_commands = command_pointer <= 0
+
+    def fetch_next_command(self) -> Optional[event_commands.EventCommand]:
+        if not self._preloaded_prior_commands:
+            self._preload_commands_before_start()
+        return super().fetch_next_command()
+
+    def _preload_commands_before_start(self) -> None:
+        """Walk prior classic-event commands once, then restore the exact start."""
+        self.command_pointer = 0
+        self.iterator_stack.clear()
+        while self.command_pointer < self.start_command_pointer:
+            command = super().fetch_next_command()
+            if not command:
+                break
+            if self.get_current_line() >= self.start_command_pointer:
+                break
+            if self.skipped_command_callback:
+                self.skipped_command_callback(command)
+
+        # Preserve the original editor behavior: the selected source line is
+        # always the first normally executed line, even inside a conditional.
+        self.command_pointer = self.start_command_pointer
+        self.iterator_stack.clear()
+        self._preloaded_prior_commands = True
 
     def _get_truth(self, command: event_commands.EventCommand) -> bool:
         if self.if_statement_strategy == IfStatementStrategy.EVALUATE:
@@ -186,5 +255,13 @@ class MockEventProcessor(EventProcessor):
         return truth
 
 class MockPythonEventProcessor(PythonEventProcessor):
-    def __init__(self, nid, source, mock_game=None, command_pointer: int = 0):
-        super().__init__(nid, source, mock_game)
+    def __init__(self, nid, source, mock_game=None, command_pointer: int = 0,
+                 skipped_command_callback: Optional[
+                     Callable[[event_commands.EventCommand], None]
+                 ] = None,
+                 context: dict = None):
+        super().__init__(
+            nid, source, mock_game, command_pointer,
+            context=context,
+            include_start_command=True,
+            skipped_command_callback=skipped_command_callback)

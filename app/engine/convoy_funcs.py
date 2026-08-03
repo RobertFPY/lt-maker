@@ -165,6 +165,13 @@ def store_item(item, unit):
     action.do(action.StoreItem(unit, item))
 
 def trade_items(convoy_item, unit_item, unit):
+    if isinstance(unit_item, item_funcs.InventorySlot):
+        if convoy_item.owner_nid:
+            owner = game.get_unit(convoy_item.owner_nid)
+            action.do(action.MoveItem(owner, unit, convoy_item))
+        else:
+            action.do(action.TakeItemFromConvoy(unit, convoy_item))
+        return
     if not convoy_item:
         store_item(unit_item, unit)
     elif convoy_item.owner_nid:

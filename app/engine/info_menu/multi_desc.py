@@ -30,8 +30,7 @@ def build_dialog_list(obj: SkillObject | ItemObject,
     local_seen: set[Page] = set()
     root: InfoSource = InfoSource(obj, page_type)
         
-    root_box = get_dlg_box(root, page_type, unit, is_first=True)   
-    boxes.append(root_box)
+    boxes.extend(get_dlg_boxes(root, page_type, unit, is_first=True))
     local_seen.add((root.nid, page_type))
     
     pages = _collect(root, page_type, unit)
@@ -44,12 +43,20 @@ def build_dialog_list(obj: SkillObject | ItemObject,
         if (nid, p_type) in local_seen:
             continue
         
-        box = get_dlg_box(InfoSource(nid, p_type), p_type, unit)
-        if box:
-            boxes.append(box)
+        boxes.extend(get_dlg_boxes(InfoSource(nid, p_type), p_type, unit))
         local_seen.add((nid, p_type))
     
     return boxes
+
+def get_dlg_boxes(source: InfoSource, page_type: PageType,
+                  unit: Optional[UnitObject],
+                  is_first: bool = False) -> list[HelpDialog]:
+    """Return every visual page needed for one info source."""
+    if page_type == PageType.SKILL and source.type is not None:
+        return SkillHelpDialog.build_pages(
+            source, first=is_first, unit_override=unit, max_body_lines=3)
+    box = get_dlg_box(source, page_type, unit, is_first)
+    return [box] if box else []
 
 def _collect(entry: InfoSource | NID, page_type: PageType, unit: Optional[UnitObject], visited:Optional[set[Page]]=None) -> list[Page]:
     """Recursively collect all pages from the first entry."""

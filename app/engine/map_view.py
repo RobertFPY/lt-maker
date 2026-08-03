@@ -5,6 +5,7 @@ from app.events.regions import RegionType
 
 from app.engine import config as cf
 from app.engine import engine
+from app.engine.performance import RUNTIME_PROFILER
 from app.engine.fonts import FONT
 from app.engine.game_state import game
 
@@ -15,6 +16,12 @@ class MapView():
         self._unit_surf = engine.create_surface((WINWIDTH, WINHEIGHT), transparent=True)
         self._line_surf = engine.copy_surface(self._unit_surf)
         self._line_surf.fill((0, 0, 0, 0))
+        # These buffers are cleared and reused every frame.  On Android this
+        # avoids several 240x160 Surface allocations, conversions and GC/C
+        # allocator churn in the hot map draw path.
+        self._map_surf = engine.create_surface((WINWIDTH, WINHEIGHT))
+        self._background_surf = engine.create_surface((WINWIDTH, WINHEIGHT))
+        self._foreground_surf = engine.create_surface((WINWIDTH, WINHEIGHT), transparent=True)
 
     def save_screenshot(self):
         import os
@@ -43,11 +50,46 @@ class MapView():
         engine.save_surface(surf, 'screenshots/LT_%s_map_view.png' % current_time)
 
     def draw_units(self, surf, cull_rect, subsurface_rect=None):
-        unit_surf = engine.copy_surface(self._unit_surf)
+        with RUNTIME_PROFILER.section('map_units'):
+            return self._draw_units(surf, cull_rect, subsurface_rect)
+
+    @staticmethod
+    def _advance_animations(animations):
+        """Keep a completed animation through the next draw of its last frame."""
+        for anim in animations:
+            if not getattr(anim, '_pending_remove_after_draw', False) and anim.update():
+                anim._pending_remove_after_draw = True
+
+    @staticmethod
+    def _prune_presented_animations(animations):
+        return [anim for anim in animations
+                if not getattr(anim, '_pending_remove_after_draw', False)]
+
+    def update_visuals(self):
+        """Advance map visuals without composing surfaces or spatial audio."""
+        with RUNTIME_PROFILER.section('map_visual_update'):
+            game.tilemap.update()
+            if game.bg_tilemap:
+                game.bg_tilemap.update()
+
+            for unit in game.units:
+                if unit.sprite.position:
+                    unit.sprite.update()
+
+            self._advance_animations(game.tilemap.animations)
+            self._advance_animations(game.tilemap.high_animations)
+
+            for weather in game.tilemap.weather:
+                weather.update()
+
+    def _draw_units(self, surf, cull_rect, subsurface_rect=None):
+        unit_surf = self._unit_surf
+        engine.fill(unit_surf, (0, 0, 0, 0))
         cull_rect_in_tiles = cull_rect[0] / TILEWIDTH, cull_rect[1] / TILEHEIGHT, cull_rect[2] / TILEWIDTH, cull_rect[3] / TILEHEIGHT
         cull_rect_center_in_tiles = tuple_add(cull_rect_in_tiles[:2], tmult(cull_rect_in_tiles[2:], 0.5))
 
-        # Update all units
+        # Unit simulation advances in update_visuals().  Spatial sound remains
+        # present-timed so fast-forward never queues it eight times per frame.
         update_units = [unit for unit in game.units if unit.sprite.position]
         for unit in update_units:
             if game.is_roam():
@@ -57,7 +99,6 @@ class MapView():
                     norm_dist_from_center = 0.0
             else:
                 norm_dist_from_center = 1.0
-            unit.sprite.update()
             unit.sound.update(volume=norm_dist_from_center)
 
         # Determine main unit
@@ -102,9 +143,6 @@ class MapView():
             surf.blit(unit_surf, (0, 0))
 
     def draw(self, camera_cull=None, subsurface_cull=None):
-        game.tilemap.update()
-        if game.bg_tilemap:
-            game.bg_tilemap.update()
         # Camera Cull
         cull_rect = camera_cull
         shake = game.camera.get_shake()
@@ -112,6 +150,65 @@ class MapView():
 
         full_size = game.tilemap.width * TILEWIDTH, game.tilemap.height * TILEHEIGHT
 
+        with RUNTIME_PROFILER.section('map_compose'):
+            surf = self._compose_map(cull_rect, shake, full_size)
+
+        with RUNTIME_PROFILER.section('map_auras'):
+            surf = game.boundary.draw_auras(surf, full_size, cull_rect)
+        with RUNTIME_PROFILER.section('map_boundary'):
+            surf = game.boundary.draw(surf, full_size, cull_rect)
+        with RUNTIME_PROFILER.section('map_fog'):
+            surf = game.boundary.draw_fog_of_war(surf, full_size, cull_rect)
+        with RUNTIME_PROFILER.section('map_highlight'):
+            surf = game.highlight.draw(surf, cull_rect)
+
+        with RUNTIME_PROFILER.section('map_grid'):
+            self.draw_grid(surf, cull_rect)
+
+        with RUNTIME_PROFILER.section('map_anims'):
+            for anim in game.tilemap.animations:
+                anim.draw(surf, offset=(-game.camera.get_x(), -game.camera.get_y()))
+            game.tilemap.animations = self._prune_presented_animations(
+                game.tilemap.animations)
+
+        if subsurface_cull:  # Forced smaller cull rect from animation combat black background
+            # Make sure it has a width
+            # Make the cull rect even smaller
+            if subsurface_cull[2] > 0:
+                subsurface_rect = cull_rect[0] + subsurface_cull[0], cull_rect[1] + subsurface_cull[1], subsurface_cull[2], subsurface_cull[3]
+                self.draw_units(surf, cull_rect, subsurface_rect)
+            else:
+                pass  # Don't draw units
+        else:
+            self.draw_units(surf, cull_rect)
+
+        with RUNTIME_PROFILER.section('map_high_anims'):
+            for anim in game.tilemap.high_animations:
+                anim.draw(surf, offset=(-game.camera.get_x(), -game.camera.get_y()))
+            game.tilemap.high_animations = self._prune_presented_animations(
+                game.tilemap.high_animations)
+
+        if game.tilemap.foreground_layers():
+            with RUNTIME_PROFILER.section('map_foreground'):
+                foreground_image = game.tilemap.get_foreground_image(cull_rect, self._foreground_surf)
+                surf.blit(foreground_image, (0, 0))
+
+        # Handle time region text
+        with RUNTIME_PROFILER.section('map_region_text'):
+            self.time_region_text(surf, cull_rect)
+
+        with RUNTIME_PROFILER.section('map_cursor'):
+            surf = game.cursor.draw(surf, cull_rect)
+
+        with RUNTIME_PROFILER.section('map_weather'):
+            for weather in game.tilemap.weather:
+                weather.draw(surf, cull_rect[0], cull_rect[1])
+
+        with RUNTIME_PROFILER.section('map_ui'):
+            surf = game.ui_view.draw(surf)
+        return surf
+
+    def _compose_map(self, cull_rect, shake, full_size):
         if game.bg_tilemap:
             # cull calculations
             bg_size = game.bg_tilemap.width * TILEWIDTH, game.bg_tilemap.height * TILEHEIGHT
@@ -128,57 +225,13 @@ class MapView():
                 bg_y = 0
 
             parallax_cull = (bg_x, bg_y, cull_rect[2], cull_rect[3])
-            base_image = game.bg_tilemap.get_full_image(parallax_cull)
-            map_image = game.tilemap.get_full_image(cull_rect)
-            surf = engine.copy_surface(base_image)
-            surf = surf.convert_alpha()
+            base_image = game.bg_tilemap.get_full_image(parallax_cull, self._background_surf)
+            map_image = game.tilemap.get_full_image(cull_rect, self._map_surf)
+            surf = self._background_surf
             surf.blit(map_image, shake)
         else:
-            surf = engine.create_surface(cull_rect[2:])
-            map_image = game.tilemap.get_full_image(cull_rect)
-            surf.blit(map_image, shake)
-            surf = surf.convert_alpha()
+            surf = game.tilemap.get_full_image(cull_rect, self._map_surf)
 
-        surf = game.boundary.draw_auras(surf, full_size, cull_rect)
-        surf = game.boundary.draw(surf, full_size, cull_rect)
-        surf = game.boundary.draw_fog_of_war(surf, full_size, cull_rect)
-        surf = game.highlight.draw(surf, cull_rect)
-
-        self.draw_grid(surf, cull_rect)
-
-        game.tilemap.animations = [anim for anim in game.tilemap.animations if not anim.update()]
-        for anim in game.tilemap.animations:
-            anim.draw(surf, offset=(-game.camera.get_x(), -game.camera.get_y()))
-
-        if subsurface_cull:  # Forced smaller cull rect from animation combat black background
-            # Make sure it has a width
-            # Make the cull rect even smaller
-            if subsurface_cull[2] > 0:
-                subsurface_rect = cull_rect[0] + subsurface_cull[0], cull_rect[1] + subsurface_cull[1], subsurface_cull[2], subsurface_cull[3]
-                self.draw_units(surf, cull_rect, subsurface_rect)
-            else:
-                pass  # Don't draw units
-        else:
-            self.draw_units(surf, cull_rect)
-
-        game.tilemap.high_animations = [anim for anim in game.tilemap.high_animations if not anim.update()]
-        for anim in game.tilemap.high_animations:
-            anim.draw(surf, offset=(-game.camera.get_x(), -game.camera.get_y()))
-
-        if game.tilemap.foreground_layers():
-            foreground_image = game.tilemap.get_foreground_image(cull_rect)
-            surf.blit(foreground_image, (0, 0))
-
-        # Handle time region text
-        self.time_region_text(surf, cull_rect)
-
-        surf = game.cursor.draw(surf, cull_rect)
-
-        for weather in game.tilemap.weather:
-            weather.update()
-            weather.draw(surf, cull_rect[0], cull_rect[1])
-
-        surf = game.ui_view.draw(surf)
         return surf
 
     def time_region_text(self, surf, cull_rect):
@@ -194,7 +247,8 @@ class MapView():
 
     def draw_grid(self, surf, cull_rect):
         # Draw board grid
-        line_surf = engine.copy_surface(self._line_surf)
+        line_surf = self._line_surf
+        engine.fill(line_surf, (0, 0, 0, 0))
 
         bounds = game.board.bounds
         

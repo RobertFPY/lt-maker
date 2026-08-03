@@ -8,6 +8,7 @@ from app.engine.objects.skill import SkillObject
 from app.engine.text_evaluator import TextEvaluator
 
 import logging
+import time
 from typing import Any, Callable, Dict, List, Tuple, Optional
 
 import app.engine.config as cf
@@ -16,10 +17,12 @@ from app.constants import WINHEIGHT, WINWIDTH
 from app.data.database.database import DB
 from app.engine import (action, background, dialog, engine, evaluate,
                         image_mods, item_funcs)
+from app.engine.android_runtime import is_android_render_optimization_enabled
 from app.engine.game_state import GameState
 from app.engine.movement import movement_funcs
 from app.engine.objects.overworld import OverworldNodeObject
 from app.engine.objects.unit import UnitObject
+from app.engine.performance import RUNTIME_PROFILER
 from app.engine.sound import get_sound_thread
 from app.events import event_commands, triggers
 from app.events.event_processor import EventProcessor
@@ -42,6 +45,9 @@ class EvaluateException(EventError):
 class Event():
     skippable = {"wait", "bop_portrait", "sound",
                  "location_card", "credits", "ending"}
+    # Event command batches must leave time for drawing and input on Android.
+    # A single command can still request its own incremental implementation.
+    android_process_budget_seconds = 0.002
 
     def __init__(self, event_prefab: EventPrefab, trigger: triggers.EventTrigger, game: GameState = None):
         self._transition_speed: int = 250
@@ -83,6 +89,7 @@ class Event():
     def _generic_setup(self):
         self.portraits: Dict[str, EventPortrait] = {}
         self.text_boxes: List[dialog.Dialog] = []
+        self._last_visible_text_boxes: List[dialog.Dialog] = []
         self.other_boxes: List[Tuple[NID, Any]] = []
         self.overlay_ui = uif.UIComponent.create_base_component()
         self.overlay_ui.name = self.nid
@@ -182,7 +189,60 @@ class Event():
         if self.game.movement:
             self.game.movement.update()
 
+        # A presentation fence ends a fast-forward host frame. Resume the
+        # processor only when the next host frame begins, after that cue has
+        # actually been presented once.
+        if getattr(self, 'state', None) == 'waiting_for_present':
+            self.state = 'processing'
         self._update_state()
+        self._update_text_boxes()
+
+    def update_visuals(self):
+        """Advance event-only visual state on every simulated game step."""
+        for anim in self.animations:
+            if not getattr(anim, '_pending_remove_after_draw', False) and anim.update():
+                anim._pending_remove_after_draw = True
+
+        delete = [key for key, portrait in self.portraits.items()
+                  if portrait.update()]
+        for key in delete:
+            del self.portraits[key]
+
+        self.other_boxes = [
+            (nid, box) for nid, box in self.other_boxes if box.update()]
+        self._update_transition()
+
+    def request_present(self, reason: str):
+        """Yield once so a short event cue cannot be skipped by fast-forward."""
+        if self.do_skip:
+            return
+        state_machine = getattr(self.game, 'state', None)
+        if state_machine and hasattr(state_machine, 'request_present'):
+            state_machine.request_present(reason)
+            self.state = 'waiting_for_present'
+
+    def _visible_text_boxes(self) -> List[dialog.Dialog]:
+        if self.do_skip:
+            return []
+        visible_text_boxes = []
+        for dialog_box in reversed(self.text_boxes):
+            if not dialog_box.is_complete():
+                visible_text_boxes.insert(0, dialog_box)
+            if dialog_box.solo_flag:
+                break
+        return visible_text_boxes
+
+    def _update_text_boxes(self):
+        # Dialogue is simulation, not rendering. Fast-forward performs several
+        # simulation steps but presents one final frame, so ticking here keeps
+        # text, punctuation pauses, and waits in the same virtual timeline.
+        self._last_visible_text_boxes = self._visible_text_boxes()
+        for dialog_box in self._last_visible_text_boxes:
+            dialog_box.update()
+
+    def _draw_text_boxes(self, surf):
+        for dialog_box in self._last_visible_text_boxes:
+            dialog_box.draw(surf)
 
     def _update_state(self, dialog_log=True):
         current_time = engine.get_time()
@@ -200,11 +260,21 @@ class Event():
                 else:
                     break
 
+            elif self.state == 'waiting_for_present':
+                # The state machine draws the requested visual before the
+                # driver ends this fast-forward host frame. Resume on the next
+                # host frame, never in the same processor loop.
+                break
+
             elif self.state == 'processing':
                 if self.finished():
                     self.end()
                 else:
                     self.process()
+                if getattr(self, '_android_process_yielded', False):
+                    # ``_update_state`` may otherwise call process up to five
+                    # times in this host frame, silently defeating the budget.
+                    break
                 if self.state == 'paused':
                     break  # Necessary so we don't go right back to processing
 
@@ -273,46 +343,51 @@ class Event():
         for listener in self.functions_listening_for_input.values():
             listener(event)
 
+    @staticmethod
+    def _overlay_has_renderable_content(overlay) -> bool:
+        """Avoid composing an otherwise transparent fullscreen UI root."""
+        background = getattr(overlay.props, 'bg', None)
+        background_color = getattr(overlay.props, 'bg_color', (0, 0, 0, 0))
+        return bool(
+            overlay.children
+            or overlay.manual_surfaces
+            or background is not None
+            or background_color != (0, 0, 0, 0)
+        )
+
+    def _draw_overlay_if_present(self, surf, overlay, profile_section: str) -> None:
+        if is_android_render_optimization_enabled() and not self._overlay_has_renderable_content(overlay):
+            return
+        with RUNTIME_PROFILER.section(profile_section):
+            ui_surf = overlay.to_surf()
+            surf.blit(ui_surf, (0, 0))
+
     def draw(self, surf):
-        self.animations = [anim for anim in self.animations if not anim.update()]
         for anim in self.animations:
             anim.draw(surf, offset=(-self.game.camera.get_x(), -self.game.camera.get_y()))
+        self.animations = [anim for anim in self.animations
+                           if not getattr(anim, '_pending_remove_after_draw', False)]
 
         if self.background:
             self.background.draw(surf)
 
-        delete = [key for key, portrait in self.portraits.items() if portrait.update()]
-        for key in delete:
-            del self.portraits[key]
-
         # draw all uiframework elements
-        ui_surf = self.overlay_ui.to_surf()
-        surf.blit(ui_surf, (0, 0))
+        self._draw_overlay_if_present(surf, self.overlay_ui, 'event_overlay_ui')
 
         sorted_portraits = sorted(self.portraits.values(), key=lambda x: x.priority)
         for portrait in sorted_portraits:
             portrait.draw(surf)
 
         # Draw other boxes
-        self.other_boxes = [(nid, box) for (nid, box) in self.other_boxes if box.update()]
         for _, box in self.other_boxes:
             box.draw(surf)
 
-        # Draw text/dialog boxes
-        # if self.state == 'dialog':
-        if not self.do_skip:
-            to_draw = []
-            for dialog_box in reversed(self.text_boxes):
-                if not dialog_box.is_complete():
-                    to_draw.insert(0, dialog_box)
-                if dialog_box.solo_flag:
-                    break
-            for dialog_box in to_draw:
-                dialog_box.update()
-                dialog_box.draw(surf)
+        # Draw text/dialog boxes. Their state advances during update(), so
+        # deferred fast-forward renders cannot slow dialogue to one tick per
+        # host frame.
+        self._draw_text_boxes(surf)
 
         # Fade to black
-        self._update_transition()
         if self.transition_state:
             s = engine.create_surface((WINWIDTH, WINHEIGHT), transparent=True)
             if self.transition_background:
@@ -323,8 +398,9 @@ class Event():
             surf.blit(s, (0, 0))
 
         # draw all achievements
-        ui_surf = self.foreground_overlay_ui.to_surf()
-        surf.blit(ui_surf, (0, 0))
+        self._draw_overlay_if_present(
+            surf, self.foreground_overlay_ui, 'event_foreground_overlay_ui'
+        )
 
         return surf
 
@@ -338,7 +414,16 @@ class Event():
         self.state = 'almost_complete'
 
     def process(self):
+        self._android_process_yielded = False
+        deadline = None
+        if is_android_render_optimization_enabled():
+            deadline = time.perf_counter() + self.android_process_budget_seconds
+        commands_run = 0
         while self.state == 'processing':
+            if commands_run and deadline is not None and time.perf_counter() >= deadline:
+                self._android_process_yielded = True
+                RUNTIME_PROFILER.count('event_budget_yield')
+                break
             if not self.command_queue:
                 next_command = self.processor.fetch_next_command()
                 if not next_command:
@@ -359,11 +444,15 @@ class Event():
                 if self.do_skip and command.nid in self.skippable:
                     pass
                 else:
-                    self.run_command(command)
+                    with RUNTIME_PROFILER.section('event_command:%s' % command.nid):
+                        self.run_command(command)
+                commands_run += 1
             except EventError as e:
                 raise e
             except Exception as e:
                 raise Exception("Event execution failed with error in command %s" % self.processor.get_source_line(self.processor.get_current_line())) from e
+            if self.state == 'waiting_for_present':
+                break
 
     def skip(self, super_skip: bool = False):
         self.do_skip = True

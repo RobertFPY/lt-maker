@@ -4,33 +4,76 @@ from app.engine.game_state import game
 from app.engine import action, menus, item_system, item_funcs
 from app.engine.objects.item import ItemObject
 
-def check_trade(item1: ItemObject, item1_owner, item2: ItemObject, item2_owner) -> bool:
+def _selection_item(selection):
+    return selection if isinstance(selection, ItemObject) else None
+
+def _selection_slot(selection):
+    return selection if isinstance(selection, item_funcs.InventorySlot) else None
+
+def _split_trade_fits(item1, item1_owner, item2, item2_owner) -> bool:
+    selections = ((item1, item1_owner, item2), (item2, item2_owner, item1))
+    for outgoing_selection, owner, incoming_selection in selections:
+        if owner is None:
+            continue
+        outgoing = _selection_item(outgoing_selection)
+        incoming = _selection_item(incoming_selection)
+        before = {
+            section: len(item_funcs.get_section_items(owner, section))
+            for section in item_funcs.InventorySection
+        }
+        after = dict(before)
+        if outgoing:
+            after[item_funcs.get_inventory_section(owner, outgoing)] -= 1
+        if incoming:
+            after[item_funcs.get_inventory_section(owner, incoming)] += 1
+        for section in item_funcs.InventorySection:
+            capacity = item_funcs.get_inventory_capacity(owner, section)
+            if after[section] > max(before[section], capacity):
+                return False
+    return True
+
+def check_trade(item1, item1_owner, item2, item2_owner) -> bool:
     # Can't trade the same item to itself
     if item1 is item2:
+        return False
+    actual_item1 = _selection_item(item1)
+    actual_item2 = _selection_item(item2)
+    if not actual_item1 and not actual_item2:
         return False
     # Can always trade within the same menu
     if item1_owner is item2_owner:
         return True
     # Can't trade locked items
-    if isinstance(item1, ItemObject) and not item_system.tradeable(item1_owner, item1):
+    if actual_item1 and not item_system.tradeable(item1_owner, actual_item1):
         return False
-    if isinstance(item2, ItemObject) and not item_system.tradeable(item2_owner, item2):
+    if actual_item2 and not item_system.tradeable(item2_owner, actual_item2):
         return False
+    if item_funcs.split_inventory_enabled():
+        slot1 = _selection_slot(item1)
+        slot2 = _selection_slot(item2)
+        if slot2 and actual_item1 and item2_owner is not None and \
+                item_funcs.get_inventory_section(item2_owner, actual_item1) != slot2.section:
+            return False
+        if slot1 and actual_item2 and item1_owner is not None and \
+                item_funcs.get_inventory_section(item1_owner, actual_item2) != slot1.section:
+            return False
+        return _split_trade_fits(item1, item1_owner, item2, item2_owner)
+
     # If items are the same type, we are good
-    if isinstance(item1, ItemObject) and isinstance(item2, ItemObject) and \
-            item_system.is_accessory(item1_owner, item1) == item_system.is_accessory(item2_owner, item2):
+    if actual_item1 and actual_item2 and \
+            item_system.is_accessory(item1_owner, actual_item1) == item_system.is_accessory(item2_owner, actual_item2):
         return True
 
     # Now check if the trade is bad
-    if isinstance(item1, ItemObject):
-        if item_system.is_accessory(item1_owner, item1):
+    if actual_item1:
+        if item_system.is_accessory(item1_owner, actual_item1):
             if item2_owner and len(item2_owner.accessories) >= item_funcs.get_num_accessories(item2_owner):
                 return False
         else:
             if item2_owner and len(item2_owner.nonaccessories) >= item_funcs.get_num_items(item2_owner):
                 return False
-    if isinstance(item2, ItemObject):
-        if item_system.is_accessory(item2_owner, item2):
+    if actual_item2:
+        if item_system.is_accessory(item2_owner, actual_item2):
             if item1_owner and len(item1_owner.accessories) >= item_funcs.get_num_accessories(item1_owner):
                 return False
         else:

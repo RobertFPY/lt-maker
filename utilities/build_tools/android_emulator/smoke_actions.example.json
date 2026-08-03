@@ -1,0 +1,11 @@
+[
+  {
+    "action": "wait",
+    "milliseconds": 3000
+  },
+  {
+    "action": "screenshot",
+    "name": "after-wait"
+  }
+]
+

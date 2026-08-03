@@ -23,6 +23,10 @@ def get_leveling_method(unit, custom_method=None) -> str:
         method = custom_method.capitalize()
     elif unit.team == 'player':
         method = game.current_mode.growths
+    elif unit.generic and game.current_mode.growths == GrowthOption.PITY:
+        # Pity Mode applies to generic enemies even when the project's normal
+        # enemy leveling method is configured as Random.
+        method = GrowthOption.PITY
     else:
         method = DB.constants.value('enemy_leveling')
         if method == 'Match':
@@ -125,12 +129,12 @@ def _fixed_levelup(unit, level, get_growth_rate=growth_rate) -> dict:
                 stat_changes[nid] -= 1
     return stat_changes
 
-def _random_levelup(unit, level) -> dict:
+def _random_levelup(unit, level, get_growth_rate=growth_rate) -> dict:
     rng = static_random.get_levelup(unit.nid, level)
     stat_changes = {nid: 0 for nid in DB.stats.keys()}
 
     for nid in DB.stats.keys():
-        growth = growth_rate(unit, nid)
+        growth = get_growth_rate(unit, nid)
         counter = 0
         if growth > 0:
             while growth > 0:
@@ -143,6 +147,49 @@ def _random_levelup(unit, level) -> dict:
                 growth -= 100
         stat_changes[nid] += counter
     return stat_changes
+
+def _pity_class_level(unit: UnitObject, level: int) -> int:
+    """
+    Converts an internal level to the displayed level in the unit's current
+    class. Auto-leveling passes each simulated internal level while the unit
+    itself remains at its final level, so the offset must come from the unit.
+    """
+    klass = DB.classes.get(unit.klass)
+    if klass and klass.tier == 0 and level <= 0:
+        return level + klass.max_level
+    return level - (unit.get_internal_level() - unit.level)
+
+def _is_pity_level(unit: UnitObject, level: int) -> bool:
+    """
+    Pity growths apply to every generic unit and to unique player units only.
+
+    Unique players receive four pity level-ups beginning at their recruitment
+    level. After changing class they follow the generic rule: the first four
+    level-ups in the new class receive pity growths. Named enemies remain on
+    the normal Random path.
+    """
+    if not unit.generic and unit.team != 'player':
+        return False
+
+    class_level = _pity_class_level(unit, level)
+    first_pity_level = 1
+
+    if not unit.generic:
+        prefab = DB.units.get(unit.prefab_nid)
+        if prefab and unit.klass == prefab.klass:
+            first_pity_level = prefab.level
+
+    return first_pity_level <= class_level < first_pity_level + 4
+
+def _pity_levelup(unit, level) -> dict:
+    pity_bonus = 100 if _is_pity_level(unit, level) else 0
+
+    def get_pity_growth_rate(pity_unit, nid):
+        if nid in ('CON', 'MOV'):
+            return growth_rate(pity_unit, nid)
+        return growth_rate(pity_unit, nid) + pity_bonus
+
+    return _random_levelup(unit, level, get_pity_growth_rate)
 
 def _dynamic_levelup(unit, level) -> dict:
     """
@@ -254,6 +301,8 @@ def get_next_level_up(unit: UnitObject, level: int, custom_method: Optional[str]
         stat_changes = _fixed_levelup(unit, level)
     elif method == GrowthOption.RANDOM:
         stat_changes = _random_levelup(unit, level)
+    elif method == GrowthOption.PITY:
+        stat_changes = _pity_levelup(unit, level)
     elif method == GrowthOption.DYNAMIC:
         stat_changes = _dynamic_levelup(unit, level)
     elif method == GrowthOption.LUCKY:

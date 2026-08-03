@@ -59,9 +59,11 @@ class WeaponProperties(QWidget):
         self.hide_from_convoy_box.setToolTip(_("Hides this weapon type from the Convoy display only, but still appears in the Info Menu. Useful for dummy or hidden weapon types."))
         name_section.addWidget(self.hide_from_convoy_box)
 
-        attrs = ('weapon_rank', 'damage', 'resist', 'accuracy', 'avoid', 'crit', 'dodge', 'attack_speed', 'defense_speed')
+        attrs = ('weapon_rank', 'damage', 'resist', 'accuracy', 'avoid', 'crit', 'dodge',
+                 'attack_speed', 'defense_speed', 'heal')
         self.rank_bonus = AppendMultiListWidget(CombatBonusList(), _("Rank Bonus"), attrs, RankBonusDelegate, self)
-        attrs = ('weapon_type', 'weapon_rank', 'damage', 'resist', 'accuracy', 'avoid', 'crit', 'dodge', 'attack_speed', 'defense_speed')
+        attrs = ('weapon_type', 'weapon_rank', 'damage', 'resist', 'accuracy', 'avoid',
+                 'crit', 'dodge', 'attack_speed', 'defense_speed', 'heal')
         self.advantage = AppendMultiListWidget(CombatBonusList(), _("Advantage versus"), attrs, CombatBonusDelegate, self)
         self.disadvantage = AppendMultiListWidget(CombatBonusList(), _("Disadvantage versus"), attrs, CombatBonusDelegate, self)
 
@@ -118,7 +120,7 @@ class WeaponProperties(QWidget):
 class CombatBonusDelegate(QStyledItemDelegate):
     type_column = 0
     rank_column = 1
-    int_columns = (2, 3, 4, 5, 6, 7, 8, 9)
+    int_columns = (2, 3, 4, 5, 6, 7, 8, 9, 10)
 
     def createEditor(self, parent, option, index):
         if index.column() in self.int_columns:
@@ -147,4 +149,4 @@ class CombatBonusDelegate(QStyledItemDelegate):
 class RankBonusDelegate(CombatBonusDelegate):
     type_column = -2
     rank_column = 0
-    int_columns = (1, 2, 3, 4, 5, 6, 7, 8)
+    int_columns = (1, 2, 3, 4, 5, 6, 7, 8, 9)

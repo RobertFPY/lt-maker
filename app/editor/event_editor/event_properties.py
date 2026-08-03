@@ -19,6 +19,8 @@ from PyQt5.QtWidgets import (QAbstractItemView, QAction, QApplication,
                              QSpinBox, QSplitter, QStyle, QStyledItemDelegate,
                              QTextEdit, QToolBar, QVBoxLayout, QWidget)
 from app.editor.event_editor.commands_dialog import ShowCommandsDialog
+from app.editor.event_editor.event_converter_dialog import EventConverterDialog
+from app.editor.event_editor.event_test_context_dialog import EventTestContextDialog
 from app.editor.event_editor.event_function_hinter import EventScriptFunctionHinter, PythonFunctionHinter
 from app.editor.event_editor.event_text_editor import EventTextEditor
 
@@ -39,7 +41,7 @@ from app.editor.map_view import SimpleMapView
 from app.editor.settings import MainSettingsController
 from app.editor.settings.preference_definitions import Preference
 from app.events import event_commands, event_validators
-from app.events.event_prefab import EventPrefab
+from app.events.event_prefab import EventPrefab, get_event_command_pointer_from_line
 from app.events.event_version import EventVersion
 from app.events.mock_event import IfStatementStrategy
 from app.events.regions import RegionType
@@ -385,6 +387,10 @@ class EventProperties(QWidget):
         self.show_commands_button.clicked.connect(self.show_commands)
         bottom_section.addWidget(self.show_commands_button)
 
+        self.convert_event_button = QPushButton("Convert Event")
+        self.convert_event_button.clicked.connect(self.show_event_converter)
+        bottom_section.addWidget(self.convert_event_button)
+
         self.test_event_button = QPushButton("Test Event")
         test_menu = QMenu("Test", self)
         test_menu.addAction(QAction("with If Statements always True", self, triggered=functools.partial(self.test_event, IfStatementStrategy.ALWAYS_TRUE)))
@@ -457,6 +463,20 @@ class EventProperties(QWidget):
             self.show_commands_dialog.done(0)
             self.show_commands_dialog = None
 
+    def show_event_converter(self):
+        if not self.current:
+            return
+        dialog = EventConverterDialog(
+            self.text_box.toPlainText(),
+            self.current.version(),
+            self.code_font,
+            self,
+        )
+        if dialog.exec_() == QDialog.Accepted:
+            self.text_box.setPlainText(dialog.converted_text)
+            self.text_box.moveCursor(QTextCursor.Start)
+            self.text_box.debug_point_line_number = None
+
     def show_find_and_replace(self):
         if not self.find_and_replace_window:
             self.find_and_replace_window = find_and_replace.Find(self)
@@ -470,18 +490,48 @@ class EventProperties(QWidget):
 
     def test_event(self, strategy):
         if self.current:
-            # If not debug_point_line_number default to 0 (the start)
-            command_pointer = (self.text_box.debug_point_line_number or 1) - 1
+            context = self.get_event_test_context()
+            if context is None:
+                return
+            command_pointer = get_event_command_pointer_from_line(
+                self.text_box.toPlainText(),
+                self.text_box.textCursor().blockNumber())
             timer.get_timer().stop()
-            GAME_ACTIONS.test_event(self.current, command_pointer, strategy)
-            timer.get_timer().start()
+            try:
+                GAME_ACTIONS.test_event(
+                    self.current, command_pointer, strategy, *context)
+            finally:
+                timer.get_timer().start()
 
     def test_python_event(self):
         if self.current:
-            command_pointer = 0
+            context = self.get_event_test_context()
+            if context is None:
+                return
+            command_pointer = get_event_command_pointer_from_line(
+                self.text_box.toPlainText(),
+                self.text_box.textCursor().blockNumber())
             timer.get_timer().stop()
-            GAME_ACTIONS.test_event(self.current, command_pointer)
-            timer.get_timer().start()
+            try:
+                GAME_ACTIONS.test_event(
+                    self.current, command_pointer, None, *context)
+            finally:
+                timer.get_timer().start()
+
+    def get_event_test_context(self):
+        level_nid = GAME_ACTIONS.get_event_test_level_nid(self.current)
+        level = DB.levels.get(level_nid)
+        trigger_type = next(
+            (trigger for trigger in ALL_TRIGGERS
+             if trigger.nid == self.current.trigger),
+            None,
+        )
+        unit_required = bool(
+            trigger_type and 'unit1' in trigger_type.__dataclass_fields__)
+        dialog = EventTestContextDialog(level, unit_required, self)
+        if dialog.exec_() != QDialog.Accepted:
+            return None
+        return dialog.unit_nid, dialog.unit2_nid
 
     def name_changed(self, text):
         self.current.name = text

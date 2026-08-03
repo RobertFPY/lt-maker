@@ -1,10 +1,5 @@
-import os
-import importlib
+from app.utilities.import_utils import import_submodules
 
-for module in os.listdir(os.path.dirname(__file__)):
-    if module == '__init__.py' or module[-3:] != '.py':
-        continue
-    print("Importing Item Components in %s..." % module)
-    # importlib.import_module(module[:-3], 'app.engine.item_components')
-    importlib.import_module('app.engine.item_components.' + module[:-3])
-del module
+
+for module in import_submodules(__name__, __path__):
+    print("Imported Item Components in %s..." % module.__name__)

@@ -4,7 +4,7 @@ from functools import lru_cache
 import sys
 import traceback
 
-from typing import Optional
+from typing import Callable, Optional
 from app.engine.game_state import GameState
 
 from app.events import event_commands
@@ -14,12 +14,19 @@ from app.events.python_eventing.utils import DO_NOT_EXECUTE_SENTINEL
 from app.utilities.typing import NID
 
 class PythonEventProcessor():
-    def __init__(self, nid: NID, source: str, game: GameState, curr_cmd_idx: int = 0, context: dict = None):
+    def __init__(self, nid: NID, source: str, game: GameState,
+                 curr_cmd_idx: int = 0, context: dict = None,
+                 include_start_command: bool = False,
+                 skipped_command_callback: Optional[
+                     Callable[[event_commands.EventCommand], None]
+                 ] = None):
         self.nid = nid
         self.source = source
         self.curr_cmd_idx = curr_cmd_idx
         self.is_finished = False
-        self._compiled_script = Compiler.compile(nid, source, 0)
+        self.skipped_command_callback = skipped_command_callback
+        self._compiled_script = Compiler.compile(
+            nid, source, curr_cmd_idx, include_start_command)
         self._executable = self._compiled_script.get_runnable(game, context)
 
     @lru_cache()
@@ -34,6 +41,8 @@ class PythonEventProcessor():
         try:
             command_idx, next_command = next(self._executable)
             while command_idx is DO_NOT_EXECUTE_SENTINEL:
+                if self.skipped_command_callback and next_command:
+                    self.skipped_command_callback(next_command)
                 command_idx, next_command = next(self._executable)
             self.curr_cmd_idx = command_idx
             return next_command

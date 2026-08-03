@@ -52,6 +52,23 @@ class EventState(State):
         elif self.event.state == 'complete':
             return self.end_event()
 
+    def update_visuals(self):
+        if self.event:
+            self.event.update_visuals()
+
+    def should_defer_render(self) -> bool:
+        """Keep event command batches visually atomic on Android.
+
+        A budget yield can occur immediately after a costly command such as
+        ``change_tilemap``.  Drawing then would expose that partial mutation
+        before the event's following transition command runs.
+        """
+        return bool(
+            self.event
+            and self.event.state == 'processing'
+            and getattr(self.event, '_android_process_yielded', False)
+        )
+
     def draw(self, surf):
         if self.event:
             self.event.draw(surf)
@@ -117,6 +134,17 @@ class EventState(State):
         if not self.previous_turnwheel_lock:
             action.do(action.LockTurnwheel(False))
         game.events.end(self.event)
+
+        # An editor Event Test runs on a real level so every gameplay command
+        # has the normal map, units, board, and query systems available. It is
+        # still only a preview, though: once its selected event finishes, do
+        # not honor flags such as end_turn/finish by entering normal gameplay.
+        # Returning to EventTestExitState closes the preview before FreeState,
+        # AI, or upkeep can run against partially reconstructed test state.
+        if getattr(self.event, 'is_editor_event_test', False):
+            game.state.back()
+            return 'repeat'
+
         if game.level_vars.get('_win_game') or self.is_handling_end_event:
             logging.info("Player Wins!")
             game.level_vars['_win_game'] = False

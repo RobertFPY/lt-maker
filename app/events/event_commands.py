@@ -1389,7 +1389,7 @@ class CopyStat(EventCommand):
 
     desc = \
         """
-Copy stat of *Unit*2 to *Unit*. 
+Copy stats, level, and experience of *Unit*2 to *Unit*.
         """
 
     keywords = ["Unit", "Unit2"]

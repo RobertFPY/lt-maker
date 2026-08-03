@@ -5,6 +5,7 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 from app.events import event_commands
+from app.events.event_prefab import get_event_command_pointer_from_line
 from app.events.python_eventing.python_event_processor import PythonEventProcessor
 from app.tests.mocks.mock_game import get_mock_game
 
@@ -83,6 +84,52 @@ class PythonEventProcessorUnitTests(unittest.TestCase):
 
         processor.fetch_next_command()
         self.assertTrue(processor.is_finished)
+
+    def test_processor_starts_at_selected_python_event_command(self):
+        script_source = (
+            "#pyev1\n"
+            "$speak \"MU\" \"Before\"\n"
+            "if False:\n"
+            "    # The resume compiler must still enter this branch.\n"
+            "    $speak \"Seth\" \"Selected\"\n"
+            "$speak \"MU\" \"After\""
+        )
+        selected_source_line = 4
+        command_pointer = get_event_command_pointer_from_line(
+            script_source, selected_source_line)
+
+        processor = PythonEventProcessor(
+            'test_start_pointer', script_source, self.mock_game,
+            command_pointer, include_start_command=True)
+        selected_command = processor.fetch_next_command()
+
+        self.assertTrue(isinstance(selected_command, event_commands.Speak))
+        self.assertEqual(selected_command.parameters['SpeakerOrStyle'], 'Seth')
+        self.assertEqual(selected_command.parameters['Text'], 'Selected')
+
+    def test_processor_reports_skipped_commands_before_selected_command(self):
+        script_source = (
+            "#pyev1\n"
+            "$change_background \"House\"\n"
+            "$add_portrait \"Seth\" \"Left\"\n"
+            "$speak \"MU\" \"Do not replay this dialogue\"\n"
+            "$move_portrait \"Seth\" \"CenterLeft\"\n"
+            "$speak \"Seth\" \"Selected\""
+        )
+        command_pointer = get_event_command_pointer_from_line(script_source, 5)
+        skipped_commands = []
+        processor = PythonEventProcessor(
+            'test_preload_pointer', script_source, self.mock_game,
+            command_pointer, include_start_command=True,
+            skipped_command_callback=skipped_commands.append)
+
+        selected_command = processor.fetch_next_command()
+
+        self.assertEqual(
+            [command.nid for command in skipped_commands],
+            ['change_background', 'add_portrait', 'speak', 'move_portrait'])
+        self.assertTrue(isinstance(selected_command, event_commands.Speak))
+        self.assertEqual(selected_command.parameters['SpeakerOrStyle'], 'Seth')
 
     def test_save_restore_processor_state(self):
         script_path = Path(__file__).parent / 'data' / 'test_save_event_state.pyevent'

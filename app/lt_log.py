@@ -130,8 +130,13 @@ def create_logger() -> bool:
     except PermissionError:
         print("No permission to write to AppData.")
         return False
+    # Android storage is substantially slower than desktop storage.  A DEBUG
+    # file write from sound/update code every frame causes visible jank.  Keep
+    # warnings/errors (and opt-in PERF summaries) while preserving desktop
+    # debug logs for development.
+    logfile_level = "warning" if os.environ.get('ANDROID_ARGUMENT') else "debug"
     success = setup_logging(console_log_output="stdout", console_log_level="warning", console_log_color=False,
-                            logfile_file=debug_fn, logfile_log_level="debug", logfile_log_color=False,
+                            logfile_file=debug_fn, logfile_log_level=logfile_level, logfile_log_color=False,
                             log_line_template="%(color_on)s%(relativeCreated)d %(levelname)7s:%(module)16s: %(message)s")
     if not success:
         print("Failed to setup logging")

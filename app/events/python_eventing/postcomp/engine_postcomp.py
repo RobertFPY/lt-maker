@@ -8,10 +8,13 @@ from app.events.python_eventing.utils import EVENT_GEN_NAME, EVENT_INSTANCE, to_
 
 class PostComp():
     @staticmethod
-    def postcompile(sentinel_script: ScriptWithSentinel, command_pointer: int = 0) -> str:
+    def postcompile(sentinel_script: ScriptWithSentinel,
+                    command_pointer: int = 0,
+                    include_start_command: bool = False) -> str:
         script = PostComp._assemble_script_with_yields_and_command_pointer(sentinel_script)
         script = PostComp._insert_command_pointer_conditional_skips(script)
-        script = PostComp._wrap_generator(script, command_pointer)
+        script = PostComp._wrap_generator(
+            script, command_pointer, include_start_command)
         script = PostComp._insert_header(script)
         return script
 
@@ -69,14 +72,18 @@ class PostComp():
         return '\n'.join(as_lines)
 
     @staticmethod
-    def _wrap_generator(script: str, resume_command_pointer = -1):
+    def _wrap_generator(script: str, resume_command_pointer = -1,
+                        include_start_command: bool = False):
         # wraps the entire script in a generator
         as_lines = script.split("\n")
         as_lines = [f"\t{line}" for line in as_lines]
         as_lines = [f"_PTR = {resume_command_pointer}",
                     f"def {EVENT_GEN_NAME}():"] + as_lines
         if resume_command_pointer:
-            as_lines = [f'RESUME_CHECK = ResumeCheck({resume_command_pointer})'] + as_lines
+            as_lines = [
+                f'RESUME_CHECK = ResumeCheck({resume_command_pointer}, '
+                f'{include_start_command})'
+            ] + as_lines
         return '\n'.join(as_lines)
 
 

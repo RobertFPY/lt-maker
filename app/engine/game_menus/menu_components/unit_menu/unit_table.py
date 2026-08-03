@@ -23,6 +23,7 @@ from app.engine import skill_system
 
 CURSOR_PERTURBATION = [0, 1, 2, 3, 4, 3, 2, 1]
 ICON_SIZE = (16, 16)
+UNIT_MENU_BOTTOM_BORDER_THICKNESS = 8
 
 class Column():
     def __init__(self, width: str, stat_name: str, header_align: uif.HAlignment,
@@ -46,6 +47,114 @@ class Column():
             self.get_font = lambda _, font=self.font: font
         else:
             self.get_font = get_font
+
+
+class UnitTableColumnGeometry:
+    """Resolved pixel geometry for one statistics column."""
+
+    def __init__(self, left: int, width: int):
+        self.left = left
+        self.width = width
+
+    @property
+    def right(self) -> int:
+        return self.left + self.width
+
+
+class UnitTableGeometry:
+    """Shared pixel layout for the desktop table and Android's lazy renderer.
+
+    The UI framework resolves widths from the same percentages below.  Keeping
+    that calculation here prevents Android from assuming every data column is
+    24 pixels wide: Character, Equipment, and Weapon Level intentionally use
+    different layouts.
+    """
+
+    HEADER_TOP = 3
+    HEADER_HEIGHT = 16
+    ROW_HEIGHT = 16
+    NAME_PADDING_LEFT = 3
+    NAME_ICON_WIDTH = ICON_SIZE[0]
+    HIGHLIGHT_LEFT = 4
+    HIGHLIGHT_TOP = 28
+
+    def __init__(self, table_width: int = WINWIDTH - 8,
+                 table_height: int = int(WINHEIGHT * 0.75)):
+        self.table_width = table_width
+        self.table_height = table_height
+        self.table_left = (WINWIDTH - table_width) // 2
+        self.table_top = WINHEIGHT - table_height - 3
+        self.name_width = UIMetric.parse('30%').to_pixels(table_width)
+        self.data_width = UIMetric.parse('65%').to_pixels(table_width)
+
+    @property
+    def table_size(self) -> Tuple[int, int]:
+        return self.table_width, self.table_height
+
+    @property
+    def data_left(self) -> int:
+        return self.name_width
+
+    @property
+    def highlight_width(self) -> int:
+        return self.table_width - 8
+
+    @property
+    def header_y(self) -> int:
+        return self.HEADER_TOP
+
+    def row_y(self, visible_index: int) -> int:
+        return self.HEADER_TOP + self.HEADER_HEIGHT + visible_index * self.ROW_HEIGHT
+
+    def highlight_y(self, visible_index: int) -> int:
+        return self.HIGHLIGHT_TOP + visible_index * self.ROW_HEIGHT
+
+    def column_widths(self, columns: List[Column], width: int | None = None) -> List[int]:
+        parent_width = self.data_width if width is None else width
+        return [UIMetric.parse(column.width).to_pixels(parent_width) for column in columns]
+
+    def columns_for_page(self, columns: List[Column]) -> List[UnitTableColumnGeometry]:
+        left = self.data_left
+        layout = []
+        for width in self.column_widths(columns):
+            layout.append(UnitTableColumnGeometry(left, width))
+            left += width
+        return layout
+
+
+def create_unit_table_background(geometry: UnitTableGeometry) -> engine.Surface:
+    """Build the fixed Unit Menu panel without constructing a UI tree."""
+    background_surf = engine.create_surface(geometry.table_size, True)
+
+    bottom_border_thickness = UNIT_MENU_BOTTOM_BORDER_THICKNESS
+    header_thickness = 20
+
+    menu_bg_before_processing = create_base_surf(
+        geometry.table_width, header_thickness + bottom_border_thickness,
+        'menu_bg_white',
+    )
+    translucent_menu_bg = image_mods.make_translucent(menu_bg_before_processing, 0.1)
+    background_header = engine.subsurface(
+        translucent_menu_bg, (0, 0, geometry.table_width, header_thickness),
+    )
+    header_shadow: engine.Surface = image_mods.make_translucent(SPRITES.get('header_shadow'), 0.7)
+    header_shadow = engine.transform_scale(
+        header_shadow, (geometry.table_width - 8, header_shadow.get_height()),
+    )
+    background_header.blit(header_shadow, (0, 10))
+
+    body_menu_bg_before_processing = create_base_surf(
+        geometry.table_width, geometry.table_height, 'menu_bg_base',
+    )
+    translucent_body_bg = image_mods.make_translucent(body_menu_bg_before_processing, 0.1)
+    background_body = engine.subsurface(
+        translucent_body_bg,
+        (0, header_thickness, geometry.table_width, geometry.table_height - header_thickness),
+    )
+
+    background_surf.blit(background_header, (0, 0))
+    background_surf.blit(background_body, (0, header_thickness))
+    return background_surf
 
 def get_all_weapon_types() -> List[WeaponType]:
     return [wtype for wtype in DB.weapons.get_visible_weapon_types().values() if wtype.nid != "Default"]
@@ -119,6 +228,7 @@ class UnitStatisticsTable(uif.UIComponent):
     def __init__(self, name: str = None, parent: UnitInformationTable = None, data: List[UnitObject]=None):
         super().__init__(name=name, parent=parent)
         self.parent = parent
+        self.geometry = parent.geometry
         self.STAT_PAGES = get_formatted_stat_pages()
         self.MAX_PAGES = len(self.STAT_PAGES)
         self.size = ('65%', '100%')
@@ -147,16 +257,14 @@ class UnitStatisticsTable(uif.UIComponent):
         self.children.clear()
         for page in self.STAT_PAGES:
             page_width_so_far: int = 0
+            column_widths = self.geometry.column_widths(page[1], self.width)
             for idx, column in enumerate(page[1]):
                 left_margin = 0
                 right_margin = 0
+                col_width = column_widths[idx]
                 if idx != len(page[1]) - 1:
-                    col_width = UIMetric.parse(column.width).to_pixels(self.width)
                     page_width_so_far += col_width
-                    right_margin = 0
                 else:
-                    col_width = self.width - page_width_so_far
-                    col_width = UIMetric.parse(column.width).to_pixels(self.width)
                     right_margin = self.width - col_width - page_width_so_far
                 col_list: uif.HeaderList = uif.HeaderList(
                     name=column.stat_name,
@@ -264,13 +372,14 @@ class UnitStatisticsTable(uif.UIComponent):
             return None
 
 class UnitInformationTable(uif.UIComponent):
-    MENU_BOTTOM_BORDER_THICKNESS = 8
+    MENU_BOTTOM_BORDER_THICKNESS = UNIT_MENU_BOTTOM_BORDER_THICKNESS
 
     def __init__(self, name: str = None, parent: uif.UIComponent = None, data: List[UnitObject] = None):
         super().__init__(name=name, parent=parent)
         self.page_num = 1
         self.data = data
-        self.size = (WINWIDTH - 8, WINHEIGHT * 0.75) # specifically, 232 x 120
+        self.geometry = UnitTableGeometry()
+        self.size = self.geometry.table_size # specifically, 232 x 120
         self.overflow = (16, 16, 16, 0)
         self.margin = (0, 0, 0, 3)
         self.padding = (0, 0, 3, 0)
@@ -288,7 +397,6 @@ class UnitInformationTable(uif.UIComponent):
         self.cursor_pos = (0, 0)
         self.left_unit_name_list = None
         self.right_unit_data_grid = None
-
         self.initialize_components()
 
         # UIF X GUI crossover pog
@@ -344,29 +452,7 @@ class UnitInformationTable(uif.UIComponent):
         self.right_unit_data_grid.sort_rows(sort_func)
 
     def initialize_background(self):
-        # background hackery
-        background_surf = engine.create_surface(self.size, True)
-
-        bottom_border_thickness = self.MENU_BOTTOM_BORDER_THICKNESS # we want the menu bg, but without the bottom border
-        header_thickness = 20
-
-        # make header
-        menu_bg_before_processing = create_base_surf(self.width, header_thickness + bottom_border_thickness, 'menu_bg_white')
-        translucent_menu_bg = image_mods.make_translucent(menu_bg_before_processing, 0.1)
-        background_header = engine.subsurface(translucent_menu_bg, (0, 0, self.width, header_thickness))
-        header_shadow: engine.Surface = image_mods.make_translucent(SPRITES.get('header_shadow'), 0.7)
-        header_shadow = engine.transform_scale(header_shadow, (self.width - 8, header_shadow.get_height()))
-        background_header.blit(header_shadow, (0, 10))
-
-        # make body; we don't have to know the thickness of the top since we can just cut the entire top part off and replace it with our header
-        body_menu_bg_before_processing = create_base_surf(self.width, self.height, 'menu_bg_base')
-        translucent_body_bg = image_mods.make_translucent(body_menu_bg_before_processing, 0.1)
-        background_body = engine.subsurface(translucent_body_bg, (0, header_thickness, self.width, self.height - header_thickness))
-
-        # combine header and body
-        background_surf.blit(background_header, (0, 0))
-        background_surf.blit(background_body, (0, header_thickness))
-        self.props.bg = background_surf
+        self.props.bg = create_unit_table_background(self.geometry)
 
     def generate_name_rows(self):
         rows = []

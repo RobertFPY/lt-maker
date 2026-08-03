@@ -20,8 +20,13 @@ class InfoMenuPortrait():
         self.blink_counter = \
             counters.BlinkCounter(portrait.blink_frames, [7000 + random.choice(offset_blinking), utils.frames2ms(3)])
         self.blink_counter.last_update = engine.get_time()
+        self._cached_blink_frame = None
+        self._cached_image = None
 
     def create_image(self):
+        blink_frame = self.blink_counter.count if self.should_blink else 0
+        if self._cached_image is not None and self._cached_blink_frame == blink_frame:
+            return self._cached_image
         main_image = self.main_portrait.copy()
 
         if self.should_blink and self.blink_counter.count:
@@ -30,6 +35,8 @@ class InfoMenuPortrait():
             main_image.blit(blink_image, self.portrait.get_blink_coord())
 
         main_image.blit(self.mouth_section, self.portrait.get_mouth_coord())
+        self._cached_blink_frame = blink_frame
+        self._cached_image = main_image
         return main_image
 
     def update(self):

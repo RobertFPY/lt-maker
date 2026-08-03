@@ -1,14 +1,13 @@
 from __future__ import annotations
 import functools
 
-import json
 import logging
 import os
 from pathlib import Path
 import shutil
 from datetime import datetime
 import traceback
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import Any, Dict, List, Literal, Optional, TYPE_CHECKING
 
 from PyQt5.QtCore import QDir, Qt
 from PyQt5.QtWidgets import QFileDialog, QMessageBox, QProgressDialog, QVBoxLayout, QLabel, QDialogButtonBox, QCheckBox
@@ -24,6 +23,12 @@ from app.editor.error_viewer import show_error_report
 from app.editor.settings.preference_definitions import Preference
 from app.extensions.message_box import show_warning_message
 from app.utilities.file_manager import FileManager
+from app.utilities.serialization import (
+    ProjectBackupMergeTransaction,
+    ProjectSaveTransaction,
+    replace_with_retry,
+    save_json,
+)
 from app.data.metadata import Metadata
 from app.editor.file_manager.project_initializer import ProjectInitializer
 from app.editor.lib.csv import csv_data_exporter, text_data_exporter
@@ -39,6 +44,7 @@ if TYPE_CHECKING:
 
 RESERVED_PROJECT_PATHS = ("default.ltproj", 'autosave.ltproj', 'autosave', 'default')
 DEFAULT_PROJECT = "default.ltproj"
+RecoveryResult = Literal["none", "finalized", "completed", "restored", "cancelled", "failed"]
 
 class FatalErrorDialog(SimpleDialog):
     def __init__(self, main_window_reference: MainEditor, on_accept_do_not_show_callback):
@@ -79,10 +85,9 @@ class ProjectFileBackend():
         self.current_proj = self.settings.get_current_project()
         self.file_manager = FileManager(self.current_proj)
         self.is_saving = False
-        try:
-            self.metadata: Metadata = dataclass_from_dict(Metadata, self.file_manager.load_json(Path('metadata.json')))
-        except Exception:
-            self.metadata = Metadata()
+        # Metadata is loaded by ``load`` only after it has recovered any
+        # interrupted project-save transaction.
+        self.metadata = Metadata()
 
         self.save_progress = QProgressDialog(
             "Saving project to %s" % self.current_proj, None, 0, 100, self.parent)
@@ -151,6 +156,229 @@ class ProjectFileBackend():
                 return result
         return wrapper
 
+    def _build_metadata_payload(self, has_fatal_errors: bool, as_chunks: bool) -> dict[str, Any]:
+        updated_metadata: dict[str, Any] = {
+            'date': str(datetime.now()),
+            'engine_version': VERSION,
+            # Always use the current version. It is required to select the
+            # deserializer when the project is loaded.
+            'serialization_version': CURRENT_SERIALIZATION_VERSION,
+            'project': DB.constants.get('game_nid').value,
+            'has_fatal_errors': has_fatal_errors,
+            'as_chunks': as_chunks,
+        }
+        return self.metadata.update(updated_metadata)
+
+    def _save_database_transaction(
+        self,
+        save_dir: Path | str,
+        has_fatal_errors: bool,
+        as_chunks: bool,
+    ) -> None:
+        transaction = ProjectSaveTransaction(save_dir)
+        transaction.stage(
+            lambda data_dir: DB.write_game_data(data_dir, as_chunks=as_chunks),
+            self._build_metadata_payload(has_fatal_errors, as_chunks),
+        )
+        transaction.commit()
+
+    def _choose_pending_save_recovery(self, project_dir: Path) -> Optional[str]:
+        dialog = QMessageBox(self.parent)
+        dialog.setIcon(QMessageBox.Warning)
+        dialog.setWindowTitle("Interrupted Project Save")
+        dialog.setText("An interrupted Save was found for this project.")
+        dialog.setInformativeText(
+            "Choose which complete snapshot to keep. The resources folder is unchanged.\n\n"
+            "Project: %s" % project_dir
+        )
+        finish_button = dialog.addButton("Finish Pending Save", QMessageBox.AcceptRole)
+        restore_button = dialog.addButton("Restore Previous Project", QMessageBox.DestructiveRole)
+        cancel_button = dialog.addButton(QMessageBox.Cancel)
+        dialog.exec_()
+        if dialog.clickedButton() is finish_button:
+            return "complete"
+        if dialog.clickedButton() is restore_button:
+            return "restore"
+        if dialog.clickedButton() is cancel_button:
+            return None
+        return None
+
+    def _recover_pending_project_save(
+        self,
+        project_dir: Path | str,
+        interactive: bool,
+    ) -> RecoveryResult:
+        project_path = Path(project_dir)
+        try:
+            # SAVE_BACKUP has its own series of file renames. Recover that
+            # outer operation first, before looking for a nested database
+            # transaction inside the project directory.
+            if ProjectBackupMergeTransaction.has_pending(project_path):
+                if ProjectBackupMergeTransaction.is_active(project_path):
+                    error = RuntimeError(
+                        "Another LT Maker process is still merging this project's backup"
+                    )
+                    logging.warning("%s: %s", error, project_path)
+                    if interactive:
+                        QMessageBox.warning(
+                            self.parent,
+                            "Project Save In Progress",
+                            "Another LT Maker instance is still finishing this project's "
+                            "backup. Wait for it to finish before opening, saving, or "
+                            "recovering it.\n\nProject: %s" % project_path,
+                        )
+                    return "failed"
+                backup_result = ProjectBackupMergeTransaction.recover(project_path)
+                if backup_result == "restored":
+                    logging.warning(
+                        "Recovered the previous SAVE_BACKUP project snapshot at %s",
+                        project_path,
+                    )
+                    return "restored"
+                if backup_result == "finalized":
+                    logging.info(
+                        "Finalized the completed SAVE_BACKUP project snapshot at %s",
+                        project_path,
+                    )
+                    return "finalized"
+
+            # A journal alone is not proof that its owner crashed.  Do not let
+            # another editor instance discard or complete staging while the
+            # writer still holds the OS-level transaction lock.
+            if (
+                ProjectSaveTransaction.has_pending(project_path)
+                and ProjectSaveTransaction.is_active(project_path)
+            ):
+                error = RuntimeError(
+                    "Another LT Maker process is still saving this project"
+                )
+                logging.warning("%s: %s", error, project_path)
+                if interactive:
+                    QMessageBox.warning(
+                        self.parent,
+                        "Project Save In Progress",
+                        "Another LT Maker instance is still saving this project. "
+                        "Wait for it to finish before opening, saving, or recovering it.\n\n"
+                        "Project: %s" % project_path,
+                    )
+                return "failed"
+
+            transaction = ProjectSaveTransaction.load_pending(project_path)
+            if transaction is None:
+                return "none"
+
+            if transaction.is_installed:
+                ProjectSaveTransaction.recover(project_path, "complete")
+                return "finalized"
+
+            if not transaction.can_complete:
+                logging.warning(
+                    "Discarding incomplete project-save staging at %s and keeping the old project.",
+                    project_path,
+                )
+                ProjectSaveTransaction.recover(project_path, "restore")
+                return "restored"
+
+            if not interactive:
+                logging.warning(
+                    "Autosave found a recoverable transaction at %s; keeping its previous database and metadata.",
+                    project_path,
+                )
+                ProjectSaveTransaction.recover(project_path, "restore")
+                return "restored"
+
+            action = self._choose_pending_save_recovery(project_path)
+            if action is None:
+                return "cancelled"
+            if action == "complete":
+                ProjectSaveTransaction.recover(project_path, "complete")
+                return "completed"
+            ProjectSaveTransaction.recover(project_path, "restore")
+            return "restored"
+        except (OSError, RuntimeError) as error:
+            logging.exception("Could not recover pending project save at %s", project_path)
+            if interactive:
+                QMessageBox.critical(
+                    self.parent,
+                    "Project Save Recovery Failed",
+                    "LT Maker could not safely recover the interrupted Save.\n\n"
+                    "Project: %s\n\nDetails: %s" % (project_path, error),
+                )
+            return "failed"
+
+    def _restore_project_backup(self, backup_path: Path | str) -> None:
+        project_path = Path(self.current_proj)
+        backup_path = Path(backup_path)
+        expected_backup_name = project_path.name + '.lttmp'
+        if (
+            backup_path.parent != project_path.parent
+            or backup_path.name != expected_backup_name
+            or not backup_path.is_dir()
+        ):
+            raise RuntimeError("Refusing to restore an unexpected project backup path")
+        if project_path.exists():
+            shutil.rmtree(project_path)
+        replace_with_retry(backup_path, project_path)
+
+    def _restore_project_backup_after_failure(
+        self,
+        backup_path: Optional[Path],
+        transaction: Optional[ProjectBackupMergeTransaction] = None,
+    ) -> bool:
+        if backup_path is None:
+            return True
+        try:
+            if transaction is not None:
+                transaction.abort()
+            else:
+                self._restore_project_backup(backup_path)
+            return True
+        except (OSError, RuntimeError):
+            logging.exception("Could not restore project backup at %s", backup_path)
+            return False
+
+    def _merge_project_backup(
+        self,
+        backup_path: Path,
+        transaction: Optional[ProjectBackupMergeTransaction] = None,
+    ) -> None:
+        transaction = transaction or ProjectBackupMergeTransaction(self.current_proj)
+        if Path(backup_path) != transaction.backup_path:
+            raise RuntimeError("Refusing to merge an unexpected project backup path")
+        transaction.merge()
+
+    def _display_save_error(self, section: str, error: Optional[BaseException] = None) -> None:
+        self.save_progress.setValue(100)
+        error_msg = QMessageBox()
+        error_msg.setIcon(QMessageBox.Critical)
+        error_msg.setWindowTitle("Serialization Error")
+        if isinstance(error, PermissionError):
+            source_path = error.filename or self.current_proj
+            destination_path = error.filename2
+            path_details = source_path
+            if destination_path:
+                path_details = "%s\n\u2192 %s" % (source_path, destination_path)
+            error_msg.setText(
+                "LT Maker could not replace this file or folder:\n%s\n\n"
+                "Windows reports that one of these paths is in use or access is denied. Close any editor, "
+                "sync client, or antivirus scan using it, then try Save again. The previous "
+                "game data and metadata were kept for recovery.\n\nDetails: %s"
+                % (path_details, error)
+            )
+        elif error is not None:
+            error_msg.setText(
+                "LT Maker could not save your project's %s.\n\n"
+                "The previous game data and metadata were kept when possible.\n\nDetails: %s"
+                % (section, error)
+            )
+        else:
+            error_msg.setText(
+                "LT Maker could not save your project's %s. Check disk space and folder permissions, "
+                "then try again. For detailed logs, use View Logs in the Extra menu."
+                % section
+            )
+        error_msg.exec_()
+
     @save_mutex
     def save(self, new:bool=False, as_chunks:Optional[bool]=None) -> bool:
         # make sure no errors in DB exist
@@ -199,76 +427,74 @@ class ProjectFileBackend():
                 else:
                     return False
 
+        recovery_result = self._recover_pending_project_save(self.current_proj, interactive=True)
+        if recovery_result != "none":
+            if recovery_result not in ("cancelled", "failed"):
+                # The selected snapshot is now on disk. Reload it instead of
+                # applying the current in-memory edits over the user's choice.
+                self.load()
+            return False
+
+        backup_path: Optional[Path] = None
+        backup_transaction: Optional[ProjectBackupMergeTransaction] = None
         # Make directory for saving if it doesn't already exist
         if not new and self.settings.get_preference(Preference.SAVE_BACKUP):
             # we will copy the existing save (whichever is more recent)
             # as a backup
             self.tmp_proj = self.current_proj + '.lttmp'
+            backup_path = Path(self.tmp_proj)
             self.save_progress.setLabelText(
                 "Making backup to %s" % self.tmp_proj)
             self.save_progress.setValue(1)
-            if os.path.exists(self.tmp_proj):
-                shutil.rmtree(self.tmp_proj)
+            try:
+                if os.path.exists(self.tmp_proj):
+                    shutil.rmtree(self.tmp_proj)
 
-            most_recent_path = self.current_proj
-            shutil.move(most_recent_path, self.tmp_proj)
+                backup_transaction = ProjectBackupMergeTransaction(self.current_proj)
+                backup_transaction.begin_backup()
+                backup_path = backup_transaction.backup_path
+            except (OSError, RuntimeError) as error:
+                self._display_save_error("backup", error)
+                return False
         self.save_progress.setLabelText(
             "Saving project to %s" % self.current_proj)
         self.save_progress.setValue(10)
 
-        # Actually save project
-        def display_error(section: str):
-            self.save_progress.setValue(100)
-            error_msg = QMessageBox()
-            error_msg.setIcon(QMessageBox.Critical)
-            error_msg.setText("Editor was unable to save your project's %s. \nFree up memory in your hard drive or try saving somewhere else, \notherwise progress will be lost when the editor is closed. \nFor more detailed logs, please click View Logs in the Extra menu.\n\n" % section)
-            error_msg.setWindowTitle("Serialization Error")
-            error_msg.exec_()
-
         success = RESOURCES.save(self.current_proj, progress=self.save_progress)
         if not success:
-            display_error("resources")
+            self._restore_project_backup_after_failure(backup_path, backup_transaction)
+            self._display_save_error("resources")
+            return False
+        try:
+            if backup_transaction is not None:
+                backup_transaction.mark_resources_saved()
+        except (OSError, RuntimeError) as error:
+            self._restore_project_backup_after_failure(backup_path, backup_transaction)
+            self._display_save_error("resources", error)
             return False
         self.save_progress.setValue(75)
 
         if as_chunks is None:
             as_chunks = self.settings.get_preference(Preference.SAVE_CHUNKS)
 
-        success = DB.serialize(self.current_proj, as_chunks=as_chunks)
-        if not success:
-            display_error("database")
+        try:
+            self._save_database_transaction(self.current_proj, has_fatal_errors, as_chunks)
+            if backup_transaction is not None:
+                backup_transaction.mark_database_committed()
+        except (OSError, RuntimeError) as error:
+            self._restore_project_backup_after_failure(backup_path, backup_transaction)
+            self._display_save_error("database", error)
             return False
         self.save_progress.setValue(85)
 
-        # Save metadata
-        self.save_metadata(self.current_proj, has_fatal_errors, as_chunks)
         self.save_progress.setValue(87)
-        if not new and self.settings.get_preference(Preference.SAVE_BACKUP):
-            # we have fully saved the current project.
-            # first, delete the .json files that don't appear in the new project
-            for old_dir, dirs, files in os.walk(self.tmp_proj):
-                new_dir = old_dir.replace(self.tmp_proj, self.current_proj)
-                for f in files:
-                    if f.endswith('.json'):
-                        old_file = os.path.join(old_dir, f)
-                        new_file = os.path.join(new_dir, f)
-                        if not os.path.exists(new_file):
-                            os.remove(old_file)
-            # then replace the files in the original backup folder and rename it back
-            for src_dir, dirs, files in os.walk(self.current_proj):
-                dst_dir = src_dir.replace(self.current_proj, self.tmp_proj)
-                for f in files:
-                    src_file = os.path.join(src_dir, f)
-                    dst_file = os.path.join(dst_dir, f)
-                    if os.path.exists(dst_file + '.bak'):
-                        os.remove(dst_file)
-                    os.rename(src_file, dst_file + '.bak')
-                    if os.path.exists(dst_file):
-                        os.remove(dst_file)
-                    os.rename(dst_file + '.bak', dst_file)
-            if os.path.isdir(self.current_proj):
-                shutil.rmtree(self.current_proj)
-            os.rename(self.tmp_proj, self.current_proj)
+        if backup_path is not None:
+            try:
+                self._merge_project_backup(backup_path, backup_transaction)
+            except (OSError, RuntimeError) as error:
+                logging.exception("Could not finalize SAVE_BACKUP merge at %s", backup_path)
+                self._display_save_error("backup merge", error)
+                return False
         self.save_progress.setValue(100)
 
         self.settings.append_or_bump_project(DB.constants.value('title') or os.path.basename(self.current_proj), self.current_proj)
@@ -310,7 +536,11 @@ class ProjectFileBackend():
     def auto_open(self, project_path: Optional[str] = None):
         path = project_path or self.settings.get_current_project()
         logging.info("Auto Open: %s" % path)
-        if path and os.path.exists(path):
+        if path and (
+            os.path.exists(path)
+            or ProjectBackupMergeTransaction.has_pending(path)
+            or ProjectSaveTransaction.has_pending(path)
+        ):
             try:
                 self.current_proj = path
                 self.settings.set_current_project(self.current_proj)
@@ -335,10 +565,12 @@ class ProjectFileBackend():
         return False
 
     def load(self) -> bool:
-        if not os.path.exists(self.current_proj):
-            return False
-
         curr_proj_path = Path(self.current_proj)
+        recovery_result = self._recover_pending_project_save(curr_proj_path, interactive=True)
+        if recovery_result in ("cancelled", "failed"):
+            return False
+        if not curr_proj_path.exists():
+            return False
         self.file_manager = FileManager(curr_proj_path)
         try:
             self.metadata = dataclass_from_dict(Metadata, self.file_manager.load_json(Path('metadata.json')))
@@ -375,6 +607,14 @@ class ProjectFileBackend():
         # Make directory for saving if it doesn't already exist
         if not os.path.isdir(autosave_dir):
             os.mkdir(autosave_dir)
+        recovery_result = self._recover_pending_project_save(autosave_dir, interactive=False)
+        if recovery_result != "none":
+            if recovery_result == "failed":
+                logging.error("Autosave recovery failed at %s; the previous autosave was left unchanged.", autosave_dir)
+            else:
+                logging.info("Autosave recovery completed at %s; skipping this autosave tick.", autosave_dir)
+            self.autosave_progress.setValue(100)
+            return
         self.autosave_progress.setValue(1)
 
         try:
@@ -388,11 +628,26 @@ class ProjectFileBackend():
         RESOURCES.autosave(self.current_proj, autosave_dir,
                            self.autosave_progress)
         self.autosave_progress.setValue(75)
-        DB.serialize(autosave_dir, as_chunks=self.settings.get_preference(Preference.SAVE_CHUNKS))
+        as_chunks = self.settings.get_preference(Preference.SAVE_CHUNKS)
+        try:
+            self._save_database_transaction(
+                autosave_dir,
+                self.metadata.has_fatal_errors,
+                as_chunks,
+            )
+        except (OSError, RuntimeError):
+            logging.exception(
+                "Autosave database transaction failed at %s; the previous database and metadata were kept.",
+                autosave_dir,
+            )
+            try:
+                self.parent.status_bar.showMessage(
+                    'Autosave could not finish; the previous autosave was kept.')
+            except Exception:
+                pass
+            self.autosave_progress.setValue(100)
+            return
         self.autosave_progress.setValue(99)
-
-        # Save metadata
-        self.save_metadata(autosave_dir, self.metadata.has_fatal_errors, self.settings.get_preference(Preference.SAVE_CHUNKS))
 
         try:
             self.parent.status_bar.showMessage(
@@ -402,22 +657,10 @@ class ProjectFileBackend():
         self.autosave_progress.setValue(100)
 
     def save_metadata(self, save_dir: Path, has_fatal_errors: bool, as_chunks: bool) -> None:
-        updated_metadata: dict[str, Any] = {
-            'date': str(datetime.now()),
-            'engine_version': VERSION,
-            # always uses the current version to save. this is only required to select the deserializer on the load side
-            'serialization_version': CURRENT_SERIALIZATION_VERSION,
-            'project': DB.constants.get('game_nid').value,
-            'has_fatal_errors': has_fatal_errors,
-            'as_chunks': as_chunks
-        }
-
-        # static to serialized
-        serialized_metadata = self.metadata.update(updated_metadata)
-
-        metadata_loc = os.path.join(save_dir, 'metadata.json')
-        with open(metadata_loc, 'w') as serialize_file:
-            json.dump(serialized_metadata, serialize_file, indent=4)
+        save_json(
+            Path(save_dir) / 'metadata.json',
+            self._build_metadata_payload(has_fatal_errors, as_chunks),
+        )
 
     def get_unused_files(self) -> Dict[str, List[str]]:
         return RESOURCES.get_unused_files(self.current_proj)

@@ -67,6 +67,15 @@ class UIView():
         self._mission_pulse_duration = 1500  # ms - longer pulse with glow
         self._mission_glow_start = 0
         self._mission_glow_duration = 2500  # ms - yellow border glow
+        self._mission_signature = None
+        self._mission_glow_surf = None
+        self._mission_glow_size = None
+        self._objective_signature = None
+        self._objective_lines = None
+        self._objective_last_refresh = 0
+        # Dynamic objective expressions still refresh four times per second,
+        # but their surfaces are no longer allocated and rendered every frame.
+        self._objective_refresh_interval = 250
 
     def remove_unit_display(self):
         self.remove_unit_info = True
@@ -101,6 +110,19 @@ class UIView():
         else:
             self.current_tile_pos = game.cursor.position
 
+    def _get_objective_lines(self):
+        current_time = engine.get_time()
+        raw_objective = game.level.objective['simple'] or ""
+        if (self._objective_lines is not None and
+                current_time - self._objective_last_refresh < self._objective_refresh_interval):
+            return self._objective_lines
+        text_parser = TextEvaluator(logging.getLogger(), game)
+        text_lines = text_parser._evaluate_all(raw_objective).split(',')
+        self._objective_lines = tuple(fix_tags(
+            [line.replace('{comma}', ',') for line in text_lines]))
+        self._objective_last_refresh = current_time
+        return self._objective_lines
+
     def draw(self, surf):
         self.update()
         # Unit info handling
@@ -120,7 +142,10 @@ class UIView():
 
         # Objective info handling
         if game.state.current() in self.legal_states and cf.SETTINGS['show_objective']:
-            self.obj_info_disp = self.create_obj_info()
+            objective_lines = self._get_objective_lines()
+            if objective_lines != self._objective_signature:
+                self.obj_info_disp = self.create_obj_info(objective_lines)
+                self._objective_signature = objective_lines
             self.obj_info_offset -= 10
             self.obj_info_offset = max(0, self.obj_info_offset)
         elif self.obj_info_disp:
@@ -135,7 +160,11 @@ class UIView():
         # enemy phase, etc.). This block only handles rendering the box itself.
         mission_info = self._get_mission_info()
         if game.state.current() in self.legal_states and cf.SETTINGS.get('show_mission', 1) and mission_info is not None:
-            self.mission_info_disp = self.create_mission_info(mission_info)
+            mission_signature = (
+                mission_info['done'], mission_info['total'], mission_info.get('title'))
+            if mission_signature != self._mission_signature:
+                self.mission_info_disp = self.create_mission_info(mission_info)
+                self._mission_signature = mission_signature
             self.mission_info_offset -= 10
             self.mission_info_offset = max(0, self.mission_info_offset)
         elif self.mission_info_disp:
@@ -332,13 +361,15 @@ class UIView():
                     glow_alpha = max(0.0, 1.0 - glow_progress)
                     glow_alpha *= 0.5 + 0.5 * math.sin(glow_elapsed * 0.012)
                     glow_alpha = max(0.0, min(1.0, glow_alpha))
-                    glow_color = (255, 230, 80)
                     box_w = self.mission_info_disp.get_width()
                     box_h = self.mission_info_disp.get_height()
-                    glow_surf = engine.create_surface((box_w + 6, box_h + 6), transparent=True)
-                    engine.fill(glow_surf, glow_color, None, engine.BLEND_RGB_ADD)
-                    glow_surf = image_mods.make_translucent(glow_surf, 1.0 - glow_alpha * 0.6)
-                    surf.blit(glow_surf, (pos_x - 3, pos_y - 3))
+                    glow_size = (box_w + 6, box_h + 6)
+                    if self._mission_glow_surf is None or self._mission_glow_size != glow_size:
+                        self._mission_glow_surf = engine.create_surface(glow_size, transparent=True)
+                        engine.fill(self._mission_glow_surf, (255, 230, 80, 255))
+                        self._mission_glow_size = glow_size
+                    self._mission_glow_surf.set_alpha(int(glow_alpha * 153))
+                    surf.blit(self._mission_glow_surf, (pos_x - 3, pos_y - 3))
 
                 surf.blit(self.mission_info_disp, (pos_x, pos_y))
 
@@ -552,12 +583,9 @@ class UIView():
         render_text(surf, [font_key], [text], [None], (pos_x, pos_y))
         return surf
 
-    def create_obj_info(self):
-        obj = game.level.objective['simple'] or ""
-        text_parser = TextEvaluator(logging.getLogger(), game)
-        text_lines = text_parser._evaluate_all(obj).split(',')
-        text_lines = [line.replace('{comma}', ',') for line in text_lines]
-        text_lines = fix_tags(text_lines)
+    def create_obj_info(self, text_lines=None):
+        if text_lines is None:
+            text_lines = self._get_objective_lines()
         longest_surf_width = text_funcs.get_max_width('text', text_lines)
         bg_surf = base_surf.create_base_surf(longest_surf_width + 16, 16 * len(text_lines) + 8)
 

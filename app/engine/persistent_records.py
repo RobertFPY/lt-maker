@@ -4,6 +4,7 @@ from app.utilities.data import Data, Prefab
 from app.engine import persistent_data
 
 from app.data.database.database import DB
+from app.utilities.user_data import save_path
 
 class PersistentRecord(Prefab):
     def __init__(self, nid: str = '', value=None):
@@ -124,9 +125,14 @@ class PersistentRecordManager(Data):
     def check_support_room_unlocked(self):
         return self.get('_support_room_unlocked')
 
+
+def _persistent_records_location(game_id):
+    return save_path(game_id + '-persistent_records.p')
+
+
 def reset():
     game_id = str(DB.constants.value('game_nid'))
-    location = 'saves/' + game_id + '-persistent_records.p'
+    location = _persistent_records_location(game_id)
     RECORDS.location = location
     data = persistent_data.deserialize(location)
     if data:
@@ -136,7 +142,7 @@ def reset():
 
 # Make sure to reload all persistent records whenever we start the engine
 game_id = str(DB.constants.value('game_nid'))
-location = 'saves/' + game_id + '-persistent_records.p'
+location = _persistent_records_location(game_id)
 data = persistent_data.deserialize(location)
 RECORDS = PersistentRecordManager(location)
 if data:

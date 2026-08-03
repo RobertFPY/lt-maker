@@ -1296,6 +1296,29 @@ class IgnoreWeaponDisadvantage(ItemComponent):
     def on_equip_item(self, unit, item):        for u in self.value['list_unit']:            if u == unit.nid:                action.do(action.ChangeItemDesc(item, self.value['desc_for_unit']))            else:                action.do(action.ChangeItemDesc(item, self.value['desc_for_other']))
 
     def on_unequip_item(self, unit, item):        action.do(action.ChangeItemDesc(item, self.value['item_desc']))
+class PrfUnitOrTags(ItemComponent):
+    nid = 'prf_unit_or_tags'
+    desc = 'Item can only be wielded by listed units or units with one of the listed tags.'
+    tag = ItemTags.USES
+
+    expose = ComponentType.NewMultipleOptions
+
+    options = {
+        'units': (ComponentType.List, ComponentType.Unit),
+        'tags': (ComponentType.List, ComponentType.Tag),
+    }
+
+    def __init__(self, value=None):
+        self.value = {
+            'units': [],
+            'tags': [],
+        }
+        if value:
+            self.value.update(value)
+
+    def available(self, unit, item) -> bool:
+        return unit.nid in self.value['units'] or any(tag in unit.tags for tag in self.value['tags'])
+
 class ChangeAnimation(ItemComponent):
     nid = 'change_animation'
     desc = "Change the unit's animation"

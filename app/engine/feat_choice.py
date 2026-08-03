@@ -69,6 +69,7 @@ class FeatChoice(menus.Table):
 class FeatChoiceState(MapState):
     name = 'feat_choice'
     transparent = True
+    blocks_fast_forward = True
     menu = None
     unit = None
 

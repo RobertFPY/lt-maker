@@ -48,6 +48,19 @@ class StatusUpkeepState(MapState):
     def can_process(self, cur_unit) -> bool:
         return cur_unit.position or self.is_traveler(cur_unit)
 
+    def get_next_unit(self):
+        """Return the next unit that is still eligible for upkeep.
+
+        The unit list is captured when this state starts. Events may remove a
+        unit from the map while the upkeep state is paused, so eligibility must
+        be checked again after popping each queued unit.
+        """
+        while self.units:
+            unit = self.units.pop()
+            if self.can_process(unit):
+                return unit
+        return None
+
     def update(self):
         super().update()
 
@@ -55,8 +68,8 @@ class StatusUpkeepState(MapState):
             self.health_bar.update()
 
         if self.state == 'processing':
-            if (not self.cur_unit or not self.can_process(self.cur_unit)) and self.units:
-                self.cur_unit = self.units.pop()
+            if not self.cur_unit or not self.can_process(self.cur_unit):
+                self.cur_unit = self.get_next_unit()
 
             if self.cur_unit:
                 self.actions.clear()

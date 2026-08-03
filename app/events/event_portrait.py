@@ -67,6 +67,7 @@ class EventPortrait():
         self.moving = False
         self.orig_position = None
         self.next_position = None
+        self.move_start_time = 0
 
         # For talking
         self.talk_state = 0
@@ -124,9 +125,11 @@ class EventPortrait():
 
         self.travel_time = self.determine_travel_time(utils.distance(self.next_position, self.orig_position))
         self.travel_time = int(self.travel_time / speed_mult)
+        self.move_start_time = engine.get_time()
 
     def quick_move(self, position):
         self.position = position
+        self.moving = False
 
     def determine_travel_time(self, distance):
         counter = 0
@@ -237,32 +240,17 @@ class EventPortrait():
                     return True
 
         if self.moving:
-            distance = utils.distance(self.next_position, self.position)
-            if distance == 0:
+            progress = utils.clamp(
+                (current_time - self.move_start_time) / max(1, self.travel_time),
+                0, 1)
+            if progress >= 1:
                 self.position = self.next_position
                 self.moving = False
                 self.bop_state = False
-                # self.bop(num=1, height=1)
             else:
-                # The below does not actually contain the CORRECT true-to-GBA algorithm
-                # Just a close simple approximation, because I could not determine the GBA algorithm perfectly
-                # 15 frames (250 ms) to lerp 24 pixels
-                # 30 frames (500 ms) to lerp 120 pixels
-                # 45 frames? (750 ms) to lerp 264 pixels
-                travel_mag = int(round(distance / 8))
-                travel_mag = utils.clamp(travel_mag, 1, 8)
-                if travel_mag in (1, 4, 5, 6, 7):
-                    self.bop_state = True
-                    self.bop_height = 1
-                # Multiply by travel speed
-                travel_mag = min(self.travel_speed_mult * travel_mag, distance)
-                diff_x = self.next_position[0] - self.position[0]
-                diff_y = self.next_position[1] - self.position[1]
-                angle = math.atan2(diff_y, diff_x)
-                updated_position = (self.position[0] + (travel_mag * math.cos(angle)),
-                                    self.position[1] + (travel_mag * math.sin(angle)))
-                # updated_position = (self.position[0] + (travel_mag * direction), self.position[1])
-                self.position = updated_position
+                self.position = (
+                    self.orig_position[0] + (self.next_position[0] - self.orig_position[0]) * progress,
+                    self.orig_position[1] + (self.next_position[1] - self.orig_position[1]) * progress)
 
         if self.bops_remaining:
             if current_time - self.last_bop > self.bop_time:

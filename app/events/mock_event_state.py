@@ -39,6 +39,10 @@ class MockEventState(State):
         elif self.event.state == 'complete':
             return self.end_event()
 
+    def update_visuals(self):
+        if self.event:
+            self.event.update_visuals()
+
     def draw(self, surf):
         if self.event:
             self.event.draw(surf)

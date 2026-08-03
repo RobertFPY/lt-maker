@@ -157,11 +157,16 @@ class OverworldObject():
         return self._music
 
     @classmethod
-    def from_prefab(cls, prefab: OverworldPrefab, party_registry: Dict[NID, PartyObject], unit_registry: Dict[NID, UnitObject]):
+    def from_prefab(
+            cls, prefab: OverworldPrefab,
+            party_registry: Dict[NID, PartyObject],
+            unit_registry: Dict[NID, UnitObject], *,
+            build_tilemap: bool = True):
         overworld = cls()
-        tilemap_prefab = RESOURCES.tilemaps.get(prefab.tilemap)
-        if tilemap_prefab:
-            overworld.tilemap = TileMapObject.from_prefab(tilemap_prefab)
+        if build_tilemap:
+            tilemap_prefab = RESOURCES.tilemaps.get(prefab.tilemap)
+            if tilemap_prefab:
+                overworld.tilemap = TileMapObject.from_prefab(tilemap_prefab)
         overworld.prefab = prefab
         for pnid in party_registry.keys():
             overworld_party = OverworldEntityObject.from_party_prefab(None, pnid, unit_registry)
@@ -189,7 +194,11 @@ class OverworldObject():
 
     @classmethod
     def restore(cls, s_dict: Dict, game: GameState) -> OverworldObject:
-        overworld = OverworldObject.from_prefab(DB.overworlds.get(s_dict['prefab_nid']), game.parties, game.unit_registry)
+        overworld = OverworldObject.from_prefab(
+            DB.overworlds.get(s_dict['prefab_nid']),
+            game.parties, game.unit_registry,
+            build_tilemap=False,
+        )
         overworld.tilemap = TileMapObject.restore(s_dict['tilemap']) if s_dict['tilemap'] else None
         overworld.enabled_nodes = set(s_dict['enabled_nodes'])
         overworld.enabled_roads = set(s_dict['enabled_roads'])

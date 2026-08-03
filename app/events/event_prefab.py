@@ -11,7 +11,7 @@ from app.utilities.typing import NID
 from app.events.event_commands import EventCommand, GameVar, LevelVar
 from app.utilities import str_utils
 
-def get_event_version(script: str) -> EventVersion.EVENT:
+def get_event_version(script: str) -> EventVersion:
     if not script.startswith('#pyev'):
         return EventVersion.EVENT
     # should always look like
@@ -23,6 +23,22 @@ def get_event_version(script: str) -> EventVersion.EVENT:
         return EventVersion(int(version))
     except:
         return EventVersion.EVENT
+
+def get_event_command_pointer_from_line(script: str, source_line_idx: int) -> int:
+    """Convert an editor source line into the processor's resume pointer.
+
+    Legacy events preserve one parsed command (including comments) per source
+    line, so their pointer is the zero-based line number. Python events number
+    only explicit ``$`` event commands starting at one. The editor's inclusive
+    test pointer is therefore the next command number at or after the selected
+    source line.
+    """
+    lines = script.split('\n')
+    source_line_idx = max(0, min(source_line_idx, len(lines) - 1))
+    if get_event_version(script) == EventVersion.EVENT:
+        return source_line_idx
+    return 1 + sum(1 for line in lines[:source_line_idx]
+                   if line.strip().startswith('$'))
 
 class EventPrefab(Prefab):
     def __init__(self, name):

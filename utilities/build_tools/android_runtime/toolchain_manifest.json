@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "phase": 4,
+  "runtime_version": "0.4.0",
+  "python": "3.11.9",
+  "pygame_ce": "2.3.2",
+  "python_for_android": "2026.05.09",
+  "python_for_android_commit": "58d21141f17c889bf8585f5665921d72028f8831",
+  "android_api": 36,
+  "android_minapi": 26,
+  "android_ndk": 29,
+  "android_arch": "arm64-v8a",
+  "serialization_version": 1,
+  "build_mode": "debug",
+  "development_signer": {
+    "profile": "development",
+    "certificate_sha256": "fa4a28469cfc207988510dfeb5609fd097c3c3360ae46363287bd0ba7ce8c1e4"
+  },
+  "default_build": {
+    "package_id": "org.lextalionis.ltandroidruntime",
+    "app_name": "LT Android Runtime",
+    "version_name": "0.4.0",
+    "version_code": 1026400,
+    "runtime_debugger": false
+  },
+  "supported_audio_extensions": [
+    ".ogg"
+  ],
+  "minimum_linux_build_free_bytes": 8589934592
+}

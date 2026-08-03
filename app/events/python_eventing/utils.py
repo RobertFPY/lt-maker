@@ -17,14 +17,18 @@ EVENT_CALL_COMMAND_NIDS: Set[str] = set([cmd.nid for cmd in EVENT_CALL_COMMANDS]
 DO_NOT_EXECUTE_SENTINEL = -1
 
 class ResumeCheck():
-    def __init__(self, line_no_to_catch: int) -> None:
+    def __init__(self, line_no_to_catch: int,
+                 include_target_command: bool = False) -> None:
         self.catching_up = True
         self.line_no = line_no_to_catch
+        self.include_target_command = include_target_command
 
     def check_set_caught_up(self, line_no):
         is_catching_up = self.catching_up
         if line_no == self.line_no:
             self.catching_up = False
+            if self.include_target_command:
+                return False
         return is_catching_up
 
 def to_py_event_command(tokens: EventCommandTokens) -> Tuple[str, int]:

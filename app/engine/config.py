@@ -6,6 +6,15 @@ from pathlib import Path
 from pathlib import Path
 
 from app.utilities import str_utils
+from app.utilities.user_data import save_path
+
+FAST_FORWARD_SPEEDS = tuple(range(200, 801, 100))
+DEFAULT_FAST_FORWARD_SPEED = 300
+
+def normalize_fast_forward_speed(speed: int) -> int:
+    if speed in FAST_FORWARD_SPEEDS:
+        return speed
+    return DEFAULT_FAST_FORWARD_SPEED
 
 
 def base_config() -> OrderedDict:
@@ -17,6 +26,7 @@ def base_config() -> OrderedDict:
                         ('sound_buffer_size', 2),
                         ('animation', 'Always'),
                         ('display_fps', 1),
+                        ('fast_forward_speed', DEFAULT_FAST_FORWARD_SPEED),
                         ('battle_bg', 1),
                         ('unit_speed', 120),
                         ('text_speed', 32),
@@ -42,6 +52,7 @@ def base_config() -> OrderedDict:
                         ('key_INFO', 'K_c'),
                         ('key_AUX', 'K_a'),
                         ('key_START', 'K_s'),
+                        ('key_FAST_FORWARD', 'K_SPACE'),
                         ('key_LEFT', 'K_LEFT'),
                         ('key_RIGHT', 'K_RIGHT'),
                         ('key_UP', 'K_UP'),
@@ -59,7 +70,7 @@ def read_config_file():
                 config[split_line[0]] = split_line[1]
 
     try:
-        parse_ini('saves/config.ini')
+        parse_ini(save_path('config.ini'))
     except OSError:
         if os.path.exists('data/config.ini'):
             parse_ini('data/config.ini')
@@ -67,7 +78,8 @@ def read_config_file():
     float_vals = ('music_volume', 'sound_volume')
     string_vals = ('animation', 'hp_map_team', 'hp_map_cull', 'forecast')
     key_vals = ('key_SELECT', 'key_BACK', 'key_INFO', 'key_AUX',
-                'key_START', 'key_LEFT', 'key_RIGHT', 'key_UP', 'key_DOWN')
+                'key_START', 'key_FAST_FORWARD', 'key_LEFT', 'key_RIGHT',
+                'key_UP', 'key_DOWN')
 
     def convert(k, v):
         if k in float_vals:
@@ -97,6 +109,13 @@ def read_config_file():
             logging.warning("Bad config value %s=%s; using default %s", k, v, defaults[k])
             config[k] = convert(k, defaults[k])
 
+    normalized_speed = normalize_fast_forward_speed(config['fast_forward_speed'])
+    if normalized_speed != config['fast_forward_speed']:
+        logging.warning(
+            "Bad fast_forward_speed=%s; using default %s",
+            config['fast_forward_speed'], DEFAULT_FAST_FORWARD_SPEED)
+        config['fast_forward_speed'] = normalized_speed
+
     return config
 
 def save_config(cfg: OrderedDict, path: Path):
@@ -105,11 +124,11 @@ def save_config(cfg: OrderedDict, path: Path):
             fp.write('%s=%s\n' % (k, v))
 
 def save_settings():
-    save_config(SETTINGS, 'saves/config.ini')
+    save_config(SETTINGS, save_path('config.ini'))
 
 def save_debug_commands(commands):
     try:
-        with open('saves/debug_commands.txt', 'w') as fp:
+        with open(save_path('debug_commands.txt'), 'w') as fp:
             write_out = '\n'.join(commands)
             fp.write(write_out)
     except OSError as e:
@@ -117,8 +136,9 @@ def save_debug_commands(commands):
 
 def get_debug_commands() -> list:
     commands = []
-    if os.path.exists('saves/debug_commands.txt'):
-        with open('saves/debug_commands.txt', 'r') as fp:
+    debug_commands_path = save_path('debug_commands.txt')
+    if os.path.exists(debug_commands_path):
+        with open(debug_commands_path, 'r') as fp:
             for line in fp.readlines():
                 commands.append(line.strip())
     return commands

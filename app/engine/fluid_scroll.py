@@ -20,7 +20,10 @@ class FluidScroll():
         self.move_down = False
 
     def reset_on_change_state(self):
-        current_time = engine.get_time()
+        # Directional input must repeat in wall-clock time, not virtual game
+        # time.  Virtual time advances several times per host frame while
+        # fast-forwarding.
+        current_time = engine.get_true_time()
         self.left_update = current_time
         self.right_update = current_time
         self.up_update = current_time
@@ -84,7 +87,7 @@ class FluidScroll():
 
     def get_directions(self, double_speed=False, slow_speed=False):
         directions = []
-        current_time = engine.get_time()
+        current_time = engine.get_true_time()
 
         if slow_speed:
             speed = self.slow_speed

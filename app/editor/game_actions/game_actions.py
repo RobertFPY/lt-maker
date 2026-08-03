@@ -87,11 +87,42 @@ def test_combat(left_combat_anim, left_weapon_anim, left_palette_name, left_pale
     except Exception as e:
         handle_exception(e)
 
-def test_event(event_prefab, starting_command_idx=0, strategy=None):
+def _event_test_level_nid(event_prefab):
+    level_nid = str(event_prefab.level_nid) if event_prefab.level_nid is not None else None
+    if level_nid and DB.levels.get(level_nid):
+        return level_nid
+    if DB.levels:
+        return DB.levels[0].nid
+    raise ValueError(
+        "Event Test requires at least one level so it can load a map and "
+        "execute gameplay commands.")
+
+
+def get_event_test_level_nid(event_prefab):
+    return _event_test_level_nid(event_prefab)
+
+
+def test_event(event_prefab, starting_command_idx=0, strategy=None,
+               unit_nid=None, unit2_nid=None):
     try:
         driver.start("Event Test", from_editor=True)
-        from app.events.mock_event import MockEvent
-        mock_event = MockEvent('Test Event', event_prefab, starting_command_idx, strategy)
-        driver.run_event(mock_event)
+        level_nid = _event_test_level_nid(event_prefab)
+        game = game_state.start_level(level_nid)
+        game.game_vars['_chapter_test'] = True
+        from app.events.event_test import (EventTestEvent,
+                                           build_event_test_trigger)
+        trigger = build_event_test_trigger(game, unit_nid, unit2_nid)
+        test_event = EventTestEvent(
+            event_prefab, game, starting_command_idx, strategy, trigger)
+        game.events.append(test_event)
+
+        # Replace the asset-loading placeholder with a real map underneath the
+        # normal Event state. The inert exit sentinel displays the map without
+        # entering FreeState; after the preview event ends it closes this test
+        # instead of starting turn hooks, AI, and status upkeep.
+        game.state.state.clear()
+        game.state.temp_state.clear()
+        game.load_states(['event_test_exit', 'event'])
+        driver.run(game)
     except Exception as e:
         handle_exception(e)

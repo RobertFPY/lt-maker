@@ -16,6 +16,7 @@ from app.engine.fluid_scroll import FluidScroll
 
 class PromotionChoiceState(State):
     name = 'promotion_choice'
+    blocks_fast_forward = True
     bg = None
 
     def __init__(self, name=None):

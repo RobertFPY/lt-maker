@@ -287,14 +287,24 @@ def draw_glow(surf: engine.Surface, font_obj: BmpFont, text: str, topright: Tupl
     # Rescale to be between 0 and 1
     white = (white + 1) / 2
     
-    stat_surf = engine.create_surface(surf.get_size(), True)
+    # Palette-swapping a full info-page surface for every glowing stat is very
+    # expensive on Android's software pygame surfaces.  Render into a tight
+    # temporary surface instead, while retaining enough padding for bitmap
+    # glyphs whose visual width exceeds their logical advance width.
+    text_width = font_obj.width(text)
+    if not text_width:
+        return surf
+    padding = max(1, font_obj._width)
+    stat_surf = engine.create_surface(
+        (text_width + padding * 2, font_obj.height), transparent=True)
+    font_obj.blit(text, stat_surf, (padding, 0))
 
     if align == HAlignment.RIGHT:
-        font_obj.blit_right(text, stat_surf, topright)
+        text_left = topright[0] - text_width
     elif align == HAlignment.CENTER:
-        font_obj.blit_center(text, stat_surf, topright)
+        text_left = topright[0] - text_width // 2
     else:
-        font_obj.blit(text, stat_surf, topright)
+        text_left = topright[0]
 
     if not color:
         color = font_obj.default_color
@@ -309,6 +319,6 @@ def draw_glow(surf: engine.Surface, font_obj: BmpFont, text: str, topright: Tupl
         conv_dict[tuple(default_color)] = tuple(new_color)
 
     image_mods.color_convert_alpha(stat_surf, conv_dict)
-    surf.blit(stat_surf, (0, 0))
+    surf.blit(stat_surf, (text_left - padding, topright[1]))
 
     return surf

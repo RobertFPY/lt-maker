@@ -136,5 +136,185 @@
                 "defense_speed": 0.0
             }
         ]
+    },
+    {
+        "unit1": "Camus",
+        "unit2": "UnitTest_2",
+        "one_way": false,
+        "requirements": [
+            {
+                "support_rank": "S",
+                "requirement": 0,
+                "gate": "",
+                "damage": 0.0,
+                "resist": 0.0,
+                "accuracy": 0.0,
+                "avoid": 0.0,
+                "crit": 0.0,
+                "dodge": 0.0,
+                "attack_speed": 0.0,
+                "defense_speed": 0.0
+            }
+        ]
+    },
+    {
+        "unit1": "Michalis",
+        "unit2": "UnitTest_2",
+        "one_way": false,
+        "requirements": [
+            {
+                "support_rank": "S",
+                "requirement": 0,
+                "gate": "",
+                "damage": 1.0,
+                "resist": 2.0,
+                "accuracy": 3.0,
+                "avoid": 4.0,
+                "crit": 6.0,
+                "dodge": 8.0,
+                "attack_speed": 9.0,
+                "defense_speed": 7.0
+            }
+        ]
+    },
+    {
+        "unit1": "Martin",
+        "unit2": "UnitTest_2",
+        "one_way": false,
+        "requirements": [
+            {
+                "support_rank": "S",
+                "requirement": 0,
+                "gate": "",
+                "damage": 99.0,
+                "resist": 99.0,
+                "accuracy": 99.0,
+                "avoid": 99.0,
+                "crit": 99.0,
+                "dodge": 99.0,
+                "attack_speed": 99.0,
+                "defense_speed": 99.0
+            }
+        ]
+    },
+    {
+        "unit1": "Mari",
+        "unit2": "UnitTest_2",
+        "one_way": false,
+        "requirements": [
+            {
+                "support_rank": "S",
+                "requirement": 0,
+                "gate": "",
+                "damage": 0.0,
+                "resist": 0.0,
+                "accuracy": 0.0,
+                "avoid": 0.0,
+                "crit": 0.0,
+                "dodge": 0.0,
+                "attack_speed": 0.0,
+                "defense_speed": 0.0
+            }
+        ]
+    },
+    {
+        "unit1": "Ross",
+        "unit2": "UnitTest_2",
+        "one_way": false,
+        "requirements": [
+            {
+                "support_rank": "S",
+                "requirement": 0,
+                "gate": "",
+                "damage": 0.0,
+                "resist": 0.0,
+                "accuracy": 0.0,
+                "avoid": 0.0,
+                "crit": 0.0,
+                "dodge": 0.0,
+                "attack_speed": 0.0,
+                "defense_speed": 0.0
+            }
+        ]
+    },
+    {
+        "unit1": "Garcia",
+        "unit2": "UnitTest_2",
+        "one_way": false,
+        "requirements": [
+            {
+                "support_rank": "S",
+                "requirement": 0,
+                "gate": "",
+                "damage": 0.0,
+                "resist": 0.0,
+                "accuracy": 0.0,
+                "avoid": 0.0,
+                "crit": 0.0,
+                "dodge": 0.0,
+                "attack_speed": 0.0,
+                "defense_speed": 0.0
+            }
+        ]
+    },
+    {
+        "unit1": "Neimi",
+        "unit2": "UnitTest_2",
+        "one_way": false,
+        "requirements": [
+            {
+                "support_rank": "S",
+                "requirement": 0,
+                "gate": "",
+                "damage": 0.0,
+                "resist": 0.0,
+                "accuracy": 0.0,
+                "avoid": 0.0,
+                "crit": 0.0,
+                "dodge": 0.0,
+                "attack_speed": 0.0,
+                "defense_speed": 0.0
+            }
+        ]
+    },
+    {
+        "unit1": "Colm",
+        "unit2": "UnitTest_2",
+        "one_way": false,
+        "requirements": [
+            {
+                "support_rank": "S",
+                "requirement": 0,
+                "gate": "",
+                "damage": 0.0,
+                "resist": 0.0,
+                "accuracy": 0.0,
+                "avoid": 0.0,
+                "crit": 0.0,
+                "dodge": 0.0,
+                "attack_speed": 0.0,
+                "defense_speed": 0.0
+            }
+        ]
+    },
+    {
+        "unit1": "Artur",
+        "unit2": "UnitTest_2",
+        "one_way": false,
+        "requirements": [
+            {
+                "support_rank": "S",
+                "requirement": 0,
+                "gate": "",
+                "damage": 0.0,
+                "resist": 0.0,
+                "accuracy": 0.0,
+                "avoid": 0.0,
+                "crit": 0.0,
+                "dodge": 0.0,
+                "attack_speed": 0.0,
+                "defense_speed": 0.0
+            }
+        ]
     }
 ]

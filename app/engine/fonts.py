@@ -25,8 +25,7 @@ def load_fonts(headless: bool = False):
         FONT[font.nid] = bmp_font
         for color_name in font.palettes:
             font_name_with_color = '%s-%s' % (font.nid, color_name)
-            alias = bmpfont.BmpFont(font, headless=headless)
-            alias.default_color = color_name
+            alias = bmp_font.color_variant(color_name)
             FONT[font_name_with_color] = alias
     NORMAL_FONT_COLORS = RESOURCES.fonts.get("text").palettes.keys()
 

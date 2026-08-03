@@ -48,7 +48,12 @@ class Pltfm(Enum):
         else:
             return Pltfm.UNKNOWN
 
-def startfile(fn: str):
+def startfile(fn: str) -> bool:
+    # Android reports itself as Linux, but desktop launchers such as xdg-open
+    # do not exist inside an APK sandbox.  The Android build exposes app data
+    # through its DocumentsProvider instead.
+    if os.environ.get("ANDROID_ARGUMENT"):
+        return False
     if Pltfm.windows():
         os.startfile(fn)
     elif Pltfm.mac():
@@ -57,4 +62,5 @@ def startfile(fn: str):
     else:  # Linux??
         opener = "xdg-open"
         subprocess.call([opener, fn])
+    return True
 

@@ -7,6 +7,8 @@ if TYPE_CHECKING:
 
 import logging
 
+from app.engine.performance import RUNTIME_PROFILER
+
 
 class SimpleStateMachine():
     def __init__(self, starting_state):
@@ -33,9 +35,23 @@ class StateMachine():
         self.temp_state: List[str] = []
         self.prev_state: State = None
         self.prior_state: State = None
+        self._presentation_request: str | None = None
+        self._presentation_barrier_drawn = False
+
+    def _new_state(self, state_name: str) -> State:
+        """Create a state with explicit lifecycle flags.
+
+        Many engine states do not call ``State.__init__``.  Keeping these
+        flags on every instance here makes lifecycle and draw safety uniform
+        for all state implementations.
+        """
+        state = self.all_states[state_name](state_name)
+        state.started = False
+        state.processed = False
+        return state
 
     def load_states(self, starting_states=None, temp_state=None):
-        from app.engine import (base, chapter_title, debug_mode, dialog_log,
+        from app.engine import (android_debugger, base, chapter_title, debug_mode, dialog_log,
                                 feat_choice, game_over, general_states,
                                 level_up, minimap, objective_menu,
                                 player_choice, prep, prep_gba, promotion,
@@ -46,11 +62,12 @@ class StateMachine():
         from app.engine.info_menu import info_menu_state
         from app.engine.overworld import overworld_states
         from app.engine.roam import free_roam_state, free_roam_rationalize
-        from app.events import event_state, mock_event_state
+        from app.events import event_state, event_test, mock_event_state
         self.all_states = \
             {'title_start': title_screen.TitleStartState,
              'title_main': title_screen.TitleMainState,
              'title_load': title_screen.TitleLoadState,
+             'title_load_job': title_screen.TitleLoadJobState,
              'title_restart': title_screen.TitleRestartState,
              'title_mode': title_screen.TitleModeState,
              'title_new': title_screen.TitleNewState,
@@ -72,7 +89,9 @@ class StateMachine():
              'free': general_states.FreeState,
              'option_menu': general_states.OptionMenuState,
              'option_child': general_states.OptionChildState,
+             'in_chapter_load': general_states.InChapterLoadState,
              'settings_menu': settings.SettingsMenuState,
+             'android_controls_editor': settings.AndroidControlsEditorState,
              'objective_menu': objective_menu.ObjectiveMenuState,
              'unit_menu': unit_menu_state.UnitMenuState,
              'info_menu': info_menu_state.InfoMenuState,
@@ -115,6 +134,7 @@ class StateMachine():
              'game_over': game_over.GameOverState,
              'chapter_title': chapter_title.ChapterTitleState,
              'event': event_state.EventState,
+             'event_test_exit': event_test.EventTestExitState,
              'mock_event': mock_event_state.MockEventState,
              'player_choice': player_choice.PlayerChoiceState,
              'text_entry': text_entry.TextEntryState,
@@ -163,6 +183,9 @@ class StateMachine():
              'free_roam': free_roam_state.FreeRoamState,
              'free_roam_rationalize': free_roam_rationalize.FreeRoamRationalizeState,
              'debug': debug_mode.DebugState,
+             'android_debugger': android_debugger.AndroidDebuggerState,
+             'debug_pick_position': debug_mode.DebugPositionPickerState,
+             'debug_console': debug_mode.DebugConsoleState,
              'overworld': overworld_states.OverworldFreeState,
              'overworld_movement': overworld_states.OverworldMovementState,
              'overworld_game_option_menu': overworld_states.OverworldGameOptionMenuState,
@@ -177,7 +200,7 @@ class StateMachine():
 
         if starting_states:
             for state_name in starting_states:
-                self.state.append(self.all_states[state_name](state_name))
+                self.state.append(self._new_state(state_name))
         if temp_state:
             self.temp_state = temp_state
 
@@ -217,8 +240,16 @@ class StateMachine():
     def exit_state(self, state):
         if state.processed:
             state.processed = False
-            state.end()
-        state.finish()
+            if RUNTIME_PROFILER.enabled:
+                with RUNTIME_PROFILER.section('state_end:' + state.name):
+                    state.end()
+            else:
+                state.end()
+        if RUNTIME_PROFILER.enabled:
+            with RUNTIME_PROFILER.section('state_finish:' + state.name):
+                state.finish()
+        else:
+            state.finish()
 
     def from_transition(self):
         return self.prev_state in ('transition_out', 'transition_to', 'transition_pop', 'transition_double_pop')
@@ -239,59 +270,155 @@ class StateMachine():
                     self.exit_state(state)
                 self.state.clear()
             else:
-                new_state = self.all_states[transition](transition)
+                new_state = self._new_state(transition)
                 self.prior_state = self.state[-1] if self.state else None
                 self.state.append(new_state)
         if self.temp_state:
             logging.debug("State: %s", self.state_names())
         self.temp_state.clear()
 
-    def update(self, event, surf):
+    def visible_states(self) -> List[State]:
+        """Return the state stack segment that composes the current scene."""
+        if not self.state:
+            return []
+        # Handles transparency of states
+        idx = -1
+        while True:
+            if self.state[idx].transparent and len(self.state) >= (abs(idx) + 1):
+                idx -= 1
+            else:
+                break
+        return self.state[idx:]
+
+    def update_visuals(self):
+        """Advance every state that is visible, including paused underlays."""
+        # Several transparent UI states inherit MapState. They compose the
+        # same map behind them, so advancing each would make cursor/weather/
+        # warp effects run twice in one simulation step.
+        from app.engine.state import MapState
+        map_visuals_updated = False
+        for visible_state in self.visible_states():
+            if isinstance(visible_state, MapState):
+                if map_visuals_updated:
+                    continue
+                map_visuals_updated = True
+            update_visuals = getattr(visible_state, 'update_visuals', None)
+            if update_visuals:
+                if RUNTIME_PROFILER.enabled:
+                    with RUNTIME_PROFILER.section('state_visual:' + visible_state.name):
+                        update_visuals()
+                else:
+                    update_visuals()
+
+    def request_present(self, reason: str):
+        """Ensure a newly-created visual cue reaches the next display update."""
+        if self._presentation_request is None:
+            self._presentation_request = reason
+
+    def consume_presentation_barrier(self) -> bool:
+        """Return whether this update forced a render, then clear the marker."""
+        was_drawn = self._presentation_barrier_drawn
+        self._presentation_barrier_drawn = False
+        return was_drawn
+
+    def draw(self, surf):
+        """Draw the visible state stack at the normal state-machine draw point.
+
+        A state below a transparent overlay may have been paused with
+        ``end()`` and therefore no longer be ``processed``.  It is still part
+        of the visible scene and must be allowed to draw.
+        """
+        for visible_state in self.visible_states():
+            if RUNTIME_PROFILER.enabled:
+                with RUNTIME_PROFILER.section('state_draw:' + visible_state.name):
+                    surf = visible_state.draw(surf)
+            else:
+                surf = visible_state.draw(surf)
+        return surf
+
+    def update(self, event, surf, draw=True):
         if not self.state:
             return None, False
         state = self.state[-1]
         repeat_flag = False  # Whether we run the state machine again in the same frame
+        profile_enabled = RUNTIME_PROFILER.enabled
         # Start
         if not state.started:
             state.started = True
-            start_output = state.start()
+            if profile_enabled:
+                with RUNTIME_PROFILER.section('state_start:' + state.name):
+                    start_output = state.start()
+            else:
+                start_output = state.start()
             if start_output == 'repeat':
                 repeat_flag = True
             self.prev_state = state.name
         # Begin
         if not repeat_flag and not state.processed:
             state.processed = True
-            begin_output = state.begin()
+            if profile_enabled:
+                with RUNTIME_PROFILER.section('state_begin:' + state.name):
+                    begin_output = state.begin()
+            else:
+                begin_output = state.begin()
             if begin_output == 'repeat':
                 repeat_flag = True
         # Take Input
         if not repeat_flag:
-            input_output = state.take_input(event)
+            if profile_enabled:
+                with RUNTIME_PROFILER.section('state_input:' + state.name):
+                    input_output = state.take_input(event)
+            else:
+                input_output = state.take_input(event)
             if input_output == 'repeat':
                 repeat_flag = True
         # Update
         if not repeat_flag:
-            update_output = state.update()
+            if profile_enabled:
+                with RUNTIME_PROFILER.section('state_update:' + state.name):
+                    update_output = state.update()
+            else:
+                update_output = state.update()
             if update_output == 'repeat':
                 repeat_flag = True
-        # Draw
-        if not repeat_flag:
-            # Handles transparency of states
-            idx = -1
-            while True:
-                if self.state[idx].transparent and len(self.state) >= (abs(idx) + 1):
-                    idx -= 1
-                else:
-                    break
-            while idx <= -1:
-                surf = self.state[idx].draw(surf)
-                idx += 1
+        # Rendering is deferred during fast-forward, but visible simulation
+        # visuals must still advance once for this logical substep.  Skip it
+        # for a repeat chain: that chain runs at the same timestamp and should
+        # not make frame-based effects advance twice.
+        force_draw = self._presentation_request is not None
+        if not repeat_flag or force_draw:
+            self.update_visuals()
+
+        # A presentation request is a lightweight fence for a cue such as a
+        # briefly shown cursor.  It forces this otherwise deferred substep to
+        # compose one frame; the driver will stop remaining substeps.
+        # Draw.  ``draw`` defaults to True to preserve the desktop sequence.
+        # An event command batch can yield after mutating the map but before
+        # its next transition command.  Retain the already-presented surface
+        # for that one host frame rather than exposing the intermediate map.
+        should_draw = (draw or force_draw) and (not repeat_flag or force_draw)
+        defer_render = bool(getattr(state, 'should_defer_render', lambda: False)())
+        if should_draw and (force_draw or not defer_render):
+            surf = self.draw(surf)
+            if force_draw:
+                self._presentation_request = None
+                self._presentation_barrier_drawn = True
+        elif should_draw and defer_render and profile_enabled:
+            RUNTIME_PROFILER.count('event_budget_deferred_draw')
         # End
         if self.temp_state and state.processed:
             state.processed = False
-            state.end()
+            if profile_enabled:
+                with RUNTIME_PROFILER.section('state_end:' + state.name):
+                    state.end()
+            else:
+                state.end()
         # Finish
-        self.process_temp_state()  # This is where FINISH is taken care of
+        if profile_enabled:
+            with RUNTIME_PROFILER.section('state_transition_commit'):
+                self.process_temp_state()  # This is where FINISH is taken care of
+        else:
+            self.process_temp_state()  # This is where FINISH is taken care of
         return surf, repeat_flag
 
     def save(self):

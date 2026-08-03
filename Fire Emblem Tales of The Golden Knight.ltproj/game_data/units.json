@@ -295,6 +295,10 @@
             [
                 1,
                 "Dragon_Blood_Personal_1"
+            ],
+            [
+                1,
+                "Death_Blow_T1"
             ]
         ],
         "unit_notes": [],
@@ -485,7 +489,7 @@
         "desc": "A young man who don't like fighting, but forced to.",
         "variant": null,
         "level": 1,
-        "klass": "Martin_Lord",
+        "klass": "Martin_Dragon",
         "tags": [
             "Lord"
         ],
@@ -525,11 +529,20 @@
             "HP": 0,
             "MOV": 0
         },
-        "starting_items": [],
+        "starting_items": [
+            [
+                "Divine_Breath",
+                false
+            ]
+        ],
         "learned_skills": [
             [
                 1,
                 "Dragon_Blood_Personal_1"
+            ],
+            [
+                1,
+                "Death_Blow_T1"
             ]
         ],
         "unit_notes": [],
@@ -541,7 +554,7 @@
             ],
             "Lance": [
                 false,
-                31,
+                0,
                 251
             ],
             "Axe": [
@@ -587,6 +600,11 @@
             "RangedDragonstone": [
                 false,
                 4000,
+                null
+            ],
+            "Dragon": [
+                false,
+                9999,
                 null
             ]
         },
@@ -3572,7 +3590,7 @@
         "desc": "A Shadow who figured like Martin.",
         "variant": null,
         "level": 20,
-        "klass": "Martin_Lord",
+        "klass": "Martin_Dark_Dragon",
         "tags": [
             "Boss"
         ],
@@ -4546,7 +4564,7 @@
             ]
         },
         "alternate_classes": [],
-        "portrait_nid": "Gotoh {Blaze, Nickt} [F2E]",
+        "portrait_nid": "Gotoh {Blaze, Nickt}",
         "affinity": null,
         "fields": []
     },
@@ -4771,6 +4789,11 @@
                 false,
                 0,
                 251
+            ],
+            "Fire": [
+                false,
+                1,
+                null
             ]
         },
         "alternate_classes": [],
@@ -4842,9 +4865,42 @@
             [
                 "Steel_Axe",
                 false
+            ],
+            [
+                "Bronze_Sword",
+                false
+            ],
+            [
+                "Pure_Water",
+                false
+            ],
+            [
+                "Lunar_Brace",
+                false
             ]
         ],
-        "learned_skills": [],
+        "learned_skills": [
+            [
+                1,
+                "Test"
+            ],
+            [
+                1,
+                "Test2"
+            ],
+            [
+                1,
+                "Test4"
+            ],
+            [
+                1,
+                "Test3"
+            ],
+            [
+                1,
+                "Test3_1"
+            ]
+        ],
         "unit_notes": [],
         "wexp_gain": {
             "Sword": [
@@ -4879,7 +4935,7 @@
             ],
             "Anima": [
                 false,
-                251,
+                0,
                 251
             ],
             "Dark": [
@@ -4891,6 +4947,41 @@
                 false,
                 0,
                 251
+            ],
+            "Dagger": [
+                false,
+                250,
+                null
+            ],
+            "Fire": [
+                false,
+                1,
+                null
+            ],
+            "Wind": [
+                false,
+                1,
+                null
+            ],
+            "Thunder": [
+                false,
+                1,
+                null
+            ],
+            "Water": [
+                false,
+                1,
+                null
+            ],
+            "Earth": [
+                false,
+                1,
+                null
+            ],
+            "Dragon": [
+                false,
+                250,
+                null
             ]
         },
         "alternate_classes": [],

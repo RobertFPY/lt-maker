@@ -8,8 +8,9 @@ class InputManager():
     def __init__(self):
         self.init_joystick()
 
-        self.buttons = ('UP', 'DOWN', 'LEFT', 'RIGHT', 'SELECT', 'BACK', 'INFO', 'AUX', 'START')
-        self.toggle_buttons = self.buttons[4:]  # These buttons cause state to change
+        self.buttons = ('UP', 'DOWN', 'LEFT', 'RIGHT', 'SELECT', 'BACK', 'INFO', 'AUX', 'START',
+                        'FAST_FORWARD')
+        self.toggle_buttons = ('SELECT', 'BACK', 'INFO', 'AUX', 'START')  # These buttons cause state to change
 
         self.update_key_map()
 
@@ -22,6 +23,8 @@ class InputManager():
 
         self.key_up_events = []
         self.key_down_events = []
+        self.input_events = []
+        self.transient_input_consumed = False
         self.change_keymap_mode = False
         self.current_mouse_position = None
 
@@ -61,6 +64,8 @@ class InputManager():
         suspends and loads. When no game is running (e.g. title screen) or no
         restriction is set, all buttons are allowed.
         """
+        if button == 'FAST_FORWARD':
+            return True
         try:
             from app.engine.game_state import game
         except Exception:
@@ -99,9 +104,33 @@ class InputManager():
         return self.keys_pressed[button] or self.joys_pressed[button]
 
     def just_pressed(self, button):
-        if not self.is_button_allowed(button):
+        if self.transient_input_consumed or not self.is_button_allowed(button):
             return False
         return button in self.key_down_events
+
+    def consume_transient_input(self):
+        """Hide this host frame's edges, mouse events, and raw key events.
+
+        Fast-forward simulates several game updates from one OS input poll.
+        Held button state must remain available to the simulation, but a
+        key-down/click/text event must only be handled by the first update.
+        ``process_input`` reopens the transient snapshot on the next host
+        frame.
+        """
+        if self.transient_input_consumed:
+            return
+        self.transient_input_consumed = True
+        # ``raw_events`` in the driver still references the original list for
+        # sound and screenshots.  Rebinding instead of clearing prevents code
+        # that reads ``engine.events`` directly from replaying the same event
+        # in a fast-forward substep.
+        engine.events = []
+
+    def get_input_events(self):
+        """Return raw input events while this host frame's input is active."""
+        if self.transient_input_consumed:
+            return []
+        return self.input_events
     
     def directional_input_pressed(self):
         directional_inputs = ('UP', 'DOWN', 'LEFT', 'RIGHT')
@@ -124,7 +153,7 @@ class InputManager():
         return mx, my
 
     def get_mouse_position(self) -> tuple[int, int] | None:
-        if self.is_mouse_disabled():
+        if self.transient_input_consumed or self.is_mouse_disabled():
             return None
         if self.current_mouse_position:
             return self._raw_to_game_coords(self.current_mouse_position)
@@ -134,7 +163,7 @@ class InputManager():
         """
         Works whether or not mouse has been moved recently.
         """
-        if not cf.SETTINGS['mouse'] or self.is_mouse_disabled():
+        if self.transient_input_consumed or not cf.SETTINGS['mouse'] or self.is_mouse_disabled():
             return None
         mouse_pos = engine.get_mouse_pos()
         if not mouse_pos or not engine.get_mouse_focus():
@@ -145,6 +174,8 @@ class InputManager():
         """
         Return mouse coordinates mapped to the game surface.
         """
+        if self.transient_input_consumed:
+            return None
         mouse_pos = engine.get_mouse_pos()
         if not mouse_pos or not engine.get_mouse_focus():
             return None
@@ -156,6 +187,10 @@ class InputManager():
 
     def update_key_map(self):
         self.key_map = {}
+        # Register FAST_FORWARD first. If a config file was manually edited to
+        # duplicate a gameplay key, the gameplay action wins instead of making
+        # SELECT/BACK/etc. unavailable.
+        self.key_map['FAST_FORWARD'] = cf.SETTINGS['key_FAST_FORWARD']
         self.key_map['UP'] = cf.SETTINGS['key_UP']
         self.key_map['LEFT'] = cf.SETTINGS['key_LEFT']
         self.key_map['RIGHT'] = cf.SETTINGS['key_RIGHT']
@@ -176,6 +211,7 @@ class InputManager():
         self.joystick_control['START'] = [('is_button', 3), ('is_button', 6), ('is_button', 7)]  # Y, Select, Start
         self.joystick_control['INFO'] = [('is_button', 2), ('is_button', 5), ('is_axis', 2, -0.5, 4)] # X, RB, R2
         self.joystick_control['AUX'] = [('is_button', 4), ('is_axis', 2, 0.5, 5)] # LB, L2
+        self.joystick_control['FAST_FORWARD'] = []  # Keyboard-only, configurable in Settings
         # hat
         self.joystick_control['LEFT'] = [('is_hat', 0, 'x', -1, 0), ('is_axis', 0, -0.5, 0)]
         self.joystick_control['RIGHT'] = [('is_hat', 0, 'x', 1, 1), ('is_axis', 0, 0.5, 1)]
@@ -188,6 +224,8 @@ class InputManager():
         self.axis_state = {k: False for k in range(6)}
 
     def process_input(self, events):
+        self.transient_input_consumed = False
+        self.input_events = events
         self.key_up_events.clear()
         self.key_down_events.clear()
 
@@ -257,6 +295,8 @@ class InputManager():
                 return button
         # If only arrow keys pressed, return last one pressed
         for button in reversed(self.key_down_events):
+            if button == 'FAST_FORWARD':
+                continue
             if self.is_button_allowed(button):
                 return button
 

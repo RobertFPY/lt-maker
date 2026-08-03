@@ -1,5 +1,6 @@
 from app.data.database.database import DB
 
+from app.engine.android_runtime import is_android_runtime
 from app.engine.sound import get_sound_thread
 from app.engine.sprites import SPRITES
 from app.engine.state import State
@@ -21,10 +22,11 @@ class GameOverState(State):
         self.state = initial_state
         self.text_transparency = 1
         # Music
-        if game.game_vars.get('_music_game_over'):
-            get_sound_thread().fade_in(game.game_vars.get('_music_game_over'))
-        elif DB.constants.value('music_game_over'):
-            get_sound_thread().fade_in(DB.constants.value('music_game_over'))
+        music = game.game_vars.get('_music_game_over') or DB.constants.value('music_game_over')
+        if music:
+            sound_thread = get_sound_thread()
+            if not (is_android_runtime() and sound_thread.play_streamed_music(music)):
+                sound_thread.fade_in(music)
 
         self.text_surf = SPRITES.get('game_over_text')
 

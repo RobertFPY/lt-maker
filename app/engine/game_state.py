@@ -4,7 +4,7 @@ from functools import lru_cache
 import random
 import time
 from collections import Counter
-from typing import TYPE_CHECKING, Dict, Set, Iterable, List, Optional, Tuple
+from typing import TYPE_CHECKING, Dict, Set, Iterable, Iterator, List, Optional, Tuple
 
 from app.engine.query_engine import GameQueryEngine
 from app.engine.utils import ltcache
@@ -244,6 +244,32 @@ class GameState():
         self.sweep()
         self.generic()
 
+    def prepare_for_load(self):
+        """Clear runtime-owned data without constructing a throwaway new game.
+
+        A staged save restore replaces every registry below.  Building prefab
+        parties, teams, overworld tilemaps, and map controllers first only to
+        overwrite them caused a visible main-thread spike on Android.
+        """
+        logging.info("Preparing Game State for Load")
+        self.unit_registry = {}
+        self.item_registry = {}
+        self.skill_registry = {}
+        self.terrain_status_registry = {}
+        self.region_registry = {}
+        self.overworld_registry = {}
+        self.parties = {}
+        self.teams = {}
+        self._current_level = None
+        self.board = None
+        self.cursor = None
+        self.camera = None
+        self.boundary = None
+        self.movement = None
+        self.overworld_controller = None
+        self.map_sprite_registry = {}
+        self.alerts.clear()
+
     def sweep(self):
         """
         Cleans up variables that need to be reset at the end of each level
@@ -296,6 +322,10 @@ class GameState():
         self.get_region_under_pos.cache_clear()
 
     def level_setup(self):
+        for _phase in self.level_setup_iter():
+            pass
+
+    def level_setup_iter(self):
         from app.engine.initiative import InitiativeTracker
         from app.engine import action
 
@@ -304,24 +334,33 @@ class GameState():
             self._build_party(self.current_party)
 
         # Assign every unit the levels party if they don't already have one
-        for unit in self._current_level.units:
+        for idx, unit in enumerate(self._current_level.units):
             if not unit.party:
                 unit.party = self.current_party
-        self.set_up_game_board(self._current_level.tilemap)
+            if (idx + 1) % 8 == 0:
+                yield 'parties'
+        for _board_phase in self.set_up_game_board_iter(self._current_level.tilemap):
+            yield 'board'
 
-        for region in self._current_level.regions:
+        for idx, region in enumerate(self._current_level.regions):
             self.register_region(region)
+            if (idx + 1) % 8 == 0:
+                yield 'regions'
 
         # The fog and vision regions affect the game board
-        for region in self._current_level.regions:
+        for idx, region in enumerate(self._current_level.regions):
             if region.region_type == RegionType.FOG:
                 action.AddFogRegion(region).execute()
             elif region.region_type == RegionType.VISION:
                 action.AddVisionRegion(region).execute()
+            if (idx + 1) % 8 == 0:
+                yield 'fog_regions'
 
-        for unit in self._current_level.units:
+        for idx, unit in enumerate(self._current_level.units):
             self.full_register(unit)
-        for unit in self._current_level.units:
+            if (idx + 1) % 8 == 0:
+                yield 'register_units'
+        for idx, unit in enumerate(self._current_level.units):
             # Only let unit's that have a VALID position spawn onto the map
             if unit.position:
                 if self._current_level.tilemap.check_bounds(unit.position):
@@ -329,18 +368,26 @@ class GameState():
                 else:
                     logging.warning("Unit %s's position not on map. Removing...", unit.nid)
                     unit.position = None
+            if (idx + 1) % 4 == 0:
+                yield 'unit_arrival'
 
         # Handle initiative
         if DB.constants.value('initiative'):
             self.initiative = InitiativeTracker()
             self.initiative.start(self.get_all_units())
+        yield 'complete'
 
     def start_level(self, level_nid, with_party=None):
+        for _phase in self.start_level_iter(level_nid, with_party):
+            pass
+
+    def start_level_iter(self, level_nid, with_party=None):
         """
-        Done at the beginning of a new level to start the level up
+        Yieldable version of level startup used by Android save loading.
         """
         self.boundary = None
         self.generic()
+        yield 'controllers'
         logging.debug("Starting Level %s", level_nid)
 
         from app.engine.level_cursor import LevelCursor
@@ -355,6 +402,7 @@ class GameState():
         bg_tilemap = TileMapObject.from_prefab(RESOURCES.tilemaps.get(level_prefab.bg_tilemap)) if level_prefab.bg_tilemap else None
         self.cursor = LevelCursor(self)
         self._current_level = LevelObject.from_prefab(level_prefab, tilemap, bg_tilemap, self.unit_registry, self.current_mode)
+        yield 'level'
         if with_party:
             self.current_party = with_party
         else:
@@ -362,7 +410,8 @@ class GameState():
 
         self.roam_info = RoamInfo(level_prefab.roam, level_prefab.roam_unit)
 
-        self.level_setup()
+        for phase in self.level_setup_iter():
+            yield phase
 
     def build_level_from_scratch(self, level_nid, tilemap):
         """
@@ -391,13 +440,19 @@ class GameState():
             self.register_skill(skill)
 
     def set_up_game_board(self, tilemap, bounds=None, fog_state=None):
+        for _phase in self.set_up_game_board_iter(
+                tilemap, bounds=bounds, fog_state=fog_state):
+            pass
+
+    def set_up_game_board_iter(self, tilemap, bounds=None, fog_state=None):
         from app.engine import boundary, game_board
-        self.board = game_board.GameBoard(tilemap)
+        self.board = yield from game_board.GameBoard.build_iter(tilemap)
         if bounds:
             self.board.set_bounds(*bounds)
         if fog_state:
             self.board.set_previously_visited_tiles(fog_state)
         self.boundary = boundary.BoundaryInterface(tilemap.width, tilemap.height)
+        yield 'boundary'
 
     def save(self):
         s_dict = {'units': [unit.save() for unit in self.unit_registry.values()],
@@ -453,6 +508,25 @@ class GameState():
         return s_dict, meta_dict
 
     def load(self, s_dict):
+        """Restore a save synchronously for desktop callers and tests.
+
+        ``load_iter`` is the single source of restore ordering.  Keeping this
+        public method synchronous preserves the long-standing API while the
+        Android title loader can advance the same restore in bounded slices.
+        """
+        for _phase in self.load_iter(s_dict):
+            pass
+
+    def load_iter(self, s_dict, *, replace_state_machine: bool = False) -> Iterator[str]:
+        """Restore a save in dependency-safe, yieldable phases.
+
+        The iterator never changes the save schema.  Each yield occurs after a
+        coherent boundary (registries, links, board, arrivals, auras, events),
+        so a loading state can budget work per frame without making consumers
+        observe a partially linked registry.  ``replace_state_machine`` is
+        used by the Android title loading state: it retains that loading state
+        until all game data is ready, then atomically installs the saved stack.
+        """
         from app.engine import action, aura_funcs, records, save, supports, turnwheel, dialog_log
         from app.engine.objects.difficulty_mode import DifficultyModeObject
         from app.engine.objects.item import ItemObject
@@ -478,17 +552,62 @@ class GameState():
         self.current_party = s_dict['current_party']
         self.turncount = int(s_dict['turncount'])
 
-        self.state.load_states(s_dict['state'][0], s_dict['state'][1])
+        # Desktop's synchronous path preserves the historical point at which
+        # saved states are restored.  The staged path defers it until the
+        # successful final commit so its loading state remains drawable.
+        if not replace_state_machine:
+            self.state.load_states(s_dict['state'][0], s_dict['state'][1])
+        yield 'registries'
 
-        self.item_registry = {item['uid']: ItemObject.restore(item) for item in s_dict['items']}
-        self.skill_registry = {skill['uid']: SkillObject.restore(skill) for skill in s_dict['skills']}
+        self.item_registry = {}
+        for idx, item_data in enumerate(s_dict['items']):
+            self.item_registry[item_data['uid']] = ItemObject.restore(item_data)
+            if (idx + 1) % 16 == 0:
+                yield 'items'
+        yield 'items'
+
+        self.skill_registry = {}
+        for idx, skill_data in enumerate(s_dict['skills']):
+            self.skill_registry[skill_data['uid']] = SkillObject.restore(skill_data)
+            if (idx + 1) % 16 == 0:
+                yield 'skills'
+        yield 'skills'
         save.set_next_uids(self)
         self.terrain_status_registry = s_dict.get('terrain_status_registry', {})
-        self.unit_registry = {unit['nid']: UnitObject.restore(unit, self) for unit in s_dict['units']}
-        self.region_registry = {region['nid']: RegionObject.restore(region) for region in s_dict.get('regions', [])}
+
+        # Units may query party/team relationships while restoring skills and
+        # derived stats, so install the saved world registries before units.
+        self.parties = {
+            party_data['nid']: PartyObject.restore(party_data)
+            for party_data in s_dict['parties']
+        }
+        if s_dict.get('teams'):
+            self.teams = {
+                team['nid']: TeamObject.restore(team)
+                for team in s_dict['teams']
+            }
+        else:
+            self.teams = {
+                team.nid: TeamObject.from_prefab(team)
+                for team in DB.teams.values()
+            }
+
+        self.unit_registry = {}
+        for idx, unit_data in enumerate(s_dict['units']):
+            self.unit_registry[unit_data['nid']] = UnitObject.restore(unit_data, self)
+            if (idx + 1) % 8 == 0:
+                yield 'units'
+        yield 'units'
+
+        self.region_registry = {}
+        for idx, region_data in enumerate(s_dict.get('regions', [])):
+            self.region_registry[region_data['nid']] = RegionObject.restore(region_data)
+            if (idx + 1) % 16 == 0:
+                yield 'regions'
+        yield 'regions'
 
         # Handle subitems
-        for item in self.item_registry.values():
+        for idx, item in enumerate(self.item_registry.values()):
             for subitem_uid in item.subitem_uids:
                 subitem = self.item_registry.get(subitem_uid)
                 item.subitems.append(subitem)
@@ -500,14 +619,20 @@ class GameState():
                 for component in command_item.components:
                     component.item = item
                 item.command_item = command_item
+            if (idx + 1) % 16 == 0:
+                yield 'item_links'
+        yield 'item_links'
+
         # Handle subskill
-        for skill in self.skill_registry.values():
+        for idx, skill in enumerate(self.skill_registry.values()):
             if skill.subskill_uid is not None:
                 subskill = self.skill_registry.get(skill.subskill_uid)
                 skill.subskill = subskill
                 subskill.parent_skill = skill
+            if (idx + 1) % 16 == 0:
+                yield 'skill_links'
+        yield 'skill_links'
 
-        self.parties = {party_data['nid']: PartyObject.restore(party_data) for party_data in s_dict['parties']}
         self.market_items = s_dict.get('market_items', {})
         self.unlocked_lore = s_dict.get('unlocked_lore', [])
         self.dialog_log = dialog_log.DialogLog.restore(s_dict.get('dialog_log', []))
@@ -517,20 +642,21 @@ class GameState():
         self.talk_hidden = s_dict.get('talk_hidden', set())
         self.base_convos = s_dict.get('base_convos', {})
 
-        # load team objects, make sure it compatible with non-updated game saves
-        if s_dict.get('teams'):
-            self.teams = {team['nid']: TeamObject.restore(team) for team in s_dict['teams']}
-        else:
-            self.teams = {team.nid : TeamObject.from_prefab(team) for team in DB.teams.values()}
+        yield 'world_data'
 
         # load all overworlds, or initialize them
         if 'overworlds' in s_dict:
-            for overworld in s_dict['overworlds']:
+            for idx, overworld in enumerate(s_dict['overworlds']):
                 overworld_obj = OverworldObject.restore(overworld, self)
                 self.overworld_registry[overworld_obj.nid] = overworld_obj
-        for overworld in DB.overworlds.values():
+                if (idx + 1) % 8 == 0:
+                    yield 'overworlds'
+        for idx, overworld in enumerate(DB.overworlds.values()):
             if overworld.nid not in self.overworld_registry:
                 self.overworld_registry[overworld.nid] = OverworldObject.from_prefab(overworld, self.parties, self.unit_registry)
+            if (idx + 1) % 8 == 0:
+                yield 'overworlds'
+        yield 'overworlds'
 
         self.action_log = turnwheel.ActionLog.restore(s_dict['action_log'])
         if s_dict.get('supports'):
@@ -550,25 +676,38 @@ class GameState():
             static_random.set_combat_random_state(s_dict['current_random_state'])
 
         self.roam_info = s_dict.get('roam_info', RoamInfo())
+        if not s_dict['level']:
+            # Level saves rebuild these after their board.  Overworld/title
+            # saves still need the generic controller set previously supplied
+            # by build_new().
+            self.generic()
+        yield 'controllers'
 
         if s_dict['level']:
             logging.info("Loading Level...")
             self._current_level = LevelObject.restore(s_dict['level'], self)
-            self.set_up_game_board(self._current_level.tilemap, s_dict.get('bounds'), s_dict.get('fog_state'))
+            for _board_phase in self.set_up_game_board_iter(
+                    self._current_level.tilemap,
+                    s_dict.get('bounds'), s_dict.get('fog_state')):
+                yield 'board'
 
             self.generic()
             from app.engine.level_cursor import LevelCursor
             self.cursor = LevelCursor(self)
+            yield 'level_controllers'
 
             # The fog and vision regions affect the game board
-            for region in self._current_level.regions:
+            for idx, region in enumerate(self._current_level.regions):
                 if region.region_type == RegionType.FOG:
                     action.AddFogRegion(region).execute()
                 elif region.region_type == RegionType.VISION:
                     action.AddVisionRegion(region).execute()
+                if (idx + 1) % 8 == 0:
+                    yield 'fog_regions'
+            yield 'fog_regions'
 
             # Now have units actually arrive on map
-            for unit in self.units:
+            for idx, unit in enumerate(self.units):
                 if unit.position:
                     self.board.set_unit(unit.position, unit)
                     for skill in unit.all_skills:
@@ -577,19 +716,37 @@ class GameState():
                     self.boundary.register_unit_auras(unit)
                     self.boundary.arrive(unit)
                     action.UpdateFogOfWar(unit).execute()
+                if (idx + 1) % 8 == 0:
+                    yield 'unit_arrival'
+            yield 'unit_arrival'
 
             # Re-derive aura child skills now that every source's aura is on the
             # board. Children are not serialized (see UnitObject.save/restore);
             # rebuilding them here guarantees each one's source points at the live
             # parent skill instance, so it can be removed later. Otherwise a
             # save/load or game-over restart leaves orphaned, unremovable auras.
-            for unit in self.units:
+            for idx, unit in enumerate(self.units):
                 if unit.position:
                     aura_funcs.pull_auras(unit, self, test=True)
+                if (idx + 1) % 8 == 0:
+                    yield 'auras'
+            yield 'auras'
 
             self.cursor.autocursor(True)
 
         self.events = event_manager.EventManager.restore(s_dict.get('events'))
+        yield 'events'
+
+        if replace_state_machine:
+            # Let the loading state render once with every registry coherent
+            # before atomically swapping in the saved stack.  The next
+            # ``next()`` performs the swap and immediately completes, so the
+            # caller remains in control for its final transition.
+            yield 'state_prepare'
+            self.state = state_machine.StateMachine()
+            self.state.load_states(s_dict['state'][0], s_dict['state'][1])
+        else:
+            yield 'state'
 
     def clean_up(self, full: bool = True):
         '''

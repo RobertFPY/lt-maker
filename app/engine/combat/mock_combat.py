@@ -9,6 +9,7 @@ from app.utilities import utils
 from app.utilities.typing import NID
 
 from app.engine import engine, gui, image_mods, background
+from app.engine.android_runtime import is_android_render_optimization_enabled
 from app.engine.animations import Animation
 
 
@@ -131,6 +132,13 @@ class MockCombat():
             self.platform_current_shake += 1
             if self.platform_current_shake > len(self.platform_shake_set):
                 self.platform_current_shake = 0
+
+    def update_android_transient_visuals(self):
+        """Advance visual overlays during Android simulation, not drawing."""
+        self.animations = [anim for anim in self.animations if not anim.update()]
+        for damage_num in self.damage_numbers:
+            damage_num.update()
+        self.damage_numbers = [d for d in self.damage_numbers if not d.done]
 
     def take_input(self, event):
         pass
@@ -424,20 +432,23 @@ class MockCombat():
         return left_range_offset, right_range_offset, total_shake_x, total_shake_y
 
     def draw_anims(self, surf):
-        self.animations = [anim for anim in self.animations if not anim.update()]
+        if not is_android_render_optimization_enabled():
+            self.animations = [anim for anim in self.animations if not anim.update()]
         for anim in self.animations:
             anim.draw(surf)
 
     def draw_damage_numbers(self, surf, offsets):
         left_range_offset, right_range_offset, total_shake_x, total_shake_y = offsets
         for damage_num in self.damage_numbers:
-            damage_num.update()
+            if not is_android_render_optimization_enabled():
+                damage_num.update()
             if damage_num.left:
                 x_pos = WINWIDTH//2 - 26 + left_range_offset - total_shake_x + self.pan_offset
             else:
                 x_pos = WINWIDTH//2 + 26 + right_range_offset - total_shake_x + self.pan_offset
             damage_num.draw(surf, (x_pos, WINHEIGHT - 120))
-        self.damage_numbers = [d for d in self.damage_numbers if not d.done]
+        if not is_android_render_optimization_enabled():
+            self.damage_numbers = [d for d in self.damage_numbers if not d.done]
 
     def draw(self, surf):
         self.bg.draw(surf)

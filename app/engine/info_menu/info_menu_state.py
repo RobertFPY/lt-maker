@@ -11,6 +11,7 @@ from app.engine import (background, combat_calcs, engine, equations, gui,
                         help_menu, icons, image_mods, item_funcs, item_system,
                         skill_system, text_funcs, unit_funcs)
 from app.engine.fluid_scroll import FluidScroll
+from app.engine.android_runtime import is_android_render_optimization_enabled
 from app.engine.game_menus.icon_options import BasicItemOption, BasicCostumeOption
 from app.engine.game_menus.uses_display_config import ItemOptionModes
 from app.engine.game_state import game
@@ -20,6 +21,7 @@ from app.engine.info_menu.info_graph import InfoGraph, info_states
 from app.engine.info_menu.info_menu_portrait import InfoMenuPortrait
 from app.engine.input_manager import get_input_manager
 from app.engine.objects.unit import UnitObject
+from app.engine.performance import RUNTIME_PROFILER
 from app.engine.sound import get_sound_thread
 from app.engine.sprites import SPRITES
 from app.engine.state import State
@@ -101,6 +103,8 @@ class InfoMenuState(State):
         if self.state == 'notes' and not (DB.constants.value('unit_notes') and self.unit.notes):
             self.state = 'personal_data'
         self.growth_flag = False
+        self.equipment_section = item_funcs.InventorySection.WEAPON
+        self.support_skills_section = 'weapon'
 
         self.fluid = FluidScroll(200, 1)
 
@@ -141,6 +145,8 @@ class InfoMenuState(State):
         self.info_graph.clear(keep_last_aabb=keep_last_info_graph_aabb)
         self.portrait_surf = None
         self.current_portrait = None
+        self._android_portrait_cache = None
+        self._android_portrait_cache_key = None
 
         self.personal_data_surf: engine.Surface = None
         self.growths_surf: engine.Surface = None
@@ -148,6 +154,7 @@ class InfoMenuState(State):
         self.equipment_surf: engine.Surface = None
         self.support_surf: engine.Surface = None
         self.skill_surf: engine.Surface = None
+        self.skill_icon_layout = []
         self.class_skill_surf: engine.Surface = None
         self.fatigue_surf: engine.Surface = None
         self.notes_surf: engine.Surface = None
@@ -194,7 +201,7 @@ class InfoMenuState(State):
 
         self.handle_mouse()
         if self.info_flag:
-            if event == 'INFO' or event == 'BACK':
+            if event in ('INFO', 'BACK'):
                 get_sound_thread().play_sfx('Info Out')
                 self.info_graph.set_transition_out()
                 self.info_flag = False
@@ -231,6 +238,22 @@ class InfoMenuState(State):
                         self.info_graph.set_current_state('growths')
                     else:
                         self.info_graph.set_current_state('personal_data')
+                elif self.state == 'equipment' and item_funcs.split_inventory_enabled():
+                    get_sound_thread().play_sfx('Select 3')
+                    self.equipment_section = (
+                        item_funcs.InventorySection.ITEM
+                        if self.equipment_section == item_funcs.InventorySection.WEAPON
+                        else item_funcs.InventorySection.WEAPON)
+                    self.reset_surfs()
+                    self.info_graph.set_current_state('equipment')
+                elif self.state == 'support_skills' and game.game_vars.get('_supports'):
+                    get_sound_thread().play_sfx('Select 3')
+                    self.support_skills_section = (
+                        'support'
+                        if self.support_skills_section == 'weapon'
+                        else 'weapon')
+                    self.reset_surfs()
+                    self.info_graph.set_current_state('support_skills')
             elif event == 'BACK':
                 if self.rescuer:
                     self.move_up()
@@ -368,6 +391,8 @@ class InfoMenuState(State):
             self.info_graph.handle_mouse(mouse_position)
 
     def update(self):
+        if self.info_flag:
+            self.info_graph.update()
         # Up and Down
         if self.next_unit:
             self.transition_counter += 1
@@ -445,28 +470,34 @@ class InfoMenuState(State):
                     self.transition_counter = 0
 
     def draw(self, surf):
-        if self.bg:
-            self.bg.draw(surf)
-        else:
-            # info menu shouldn't be transparent
-            surf.blit(SPRITES.get('bg_black'), (0, 0))
+        with RUNTIME_PROFILER.section('info_background'):
+            if self.bg:
+                self.bg.draw(surf)
+            else:
+                # info menu shouldn't be transparent
+                surf.blit(SPRITES.get('bg_black'), (0, 0))
 
         # Image flashy thing at the top of the InfoMenu
-        num_frames = 8
-        # 8 frames long, 8 different frames
-        blend_perc = abs(num_frames - ((engine.get_time()/134) % (num_frames * 2))) / float(num_frames)
-        sprite = SPRITES.get('info_menu_flash')
-        im = image_mods.make_translucent_blend(sprite, 128. * blend_perc)
-        surf.blit(im, (98, 0), None, engine.BLEND_RGB_ADD)
+        with RUNTIME_PROFILER.section('info_flash'):
+            num_frames = 8
+            # 8 frames long, 8 different frames
+            blend_perc = abs(num_frames - ((engine.get_time()/134) % (num_frames * 2))) / float(num_frames)
+            sprite = SPRITES.get('info_menu_flash')
+            im = image_mods.make_translucent_blend(sprite, 128. * blend_perc)
+            surf.blit(im, (98, 0), None, engine.BLEND_RGB_ADD)
 
-        self.draw_portrait(surf)
-        self.draw_slide(surf)
+        with RUNTIME_PROFILER.section('info_portrait'):
+            self.draw_portrait(surf)
+        with RUNTIME_PROFILER.section('info_slide'):
+            self.draw_slide(surf)
 
         if self.info_graph.current_bb:
-            self.info_graph.draw(surf)
+            with RUNTIME_PROFILER.section('info_graph'):
+                self.info_graph.draw(surf)
 
         if not self.transition:
-            self.mouse_indicator.draw(surf)
+            with RUNTIME_PROFILER.section('info_mouse'):
+                self.mouse_indicator.draw(surf)
 
         return surf
 
@@ -474,7 +505,11 @@ class InfoMenuState(State):
         # Only create if we don't have one in memory
         if not self.portrait_surf:
             self.portrait_surf = self.create_portrait_section()
-        portrait_surf = self.portrait_surf.copy()
+        steady = not self.transparency and not self.scroll_offset_y
+        if steady:
+            portrait_surf = None
+        else:
+            portrait_surf = self.portrait_surf.copy()
 
         # If no portrait for this unit, either create one or default to class card using icons.get_portrait
         if not self.current_portrait:
@@ -488,14 +523,36 @@ class InfoMenuState(State):
             self.current_portrait.update()
             im = self.current_portrait.create_image()
             offset = self.current_portrait.portrait.get_info_coord()
+        if steady and not im:
+            # Class-card fallback may deliberately return no portrait image;
+            # retain the static left panel in that case.
+            surf.blit(self.portrait_surf, (0, 0))
+
         # Draw portrait onto the portrait surf
         if im:
             im_surf = engine.subsurface(im, (*offset, INFO_PORTRAIT_WIDTH, INFO_PORTRAIT_HEIGHT))
-            portrait_surf.blit(im_surf, (8 + (INFO_PORTRAIT_WIDTH - im_surf.get_width()) // 2,
-                                         8 + (INFO_PORTRAIT_HEIGHT- im_surf.get_height())// 2))
+            portrait_pos = (
+                8 + (INFO_PORTRAIT_WIDTH - im_surf.get_width()) // 2,
+                8 + (INFO_PORTRAIT_HEIGHT - im_surf.get_height()) // 2,
+            )
+            if steady:
+                if is_android_render_optimization_enabled():
+                    cache_key = (id(self.portrait_surf), id(im), portrait_pos)
+                    if cache_key != getattr(self, '_android_portrait_cache_key', None):
+                        self._android_portrait_cache = self.portrait_surf.copy()
+                        self._android_portrait_cache.blit(im_surf, portrait_pos)
+                        self._android_portrait_cache_key = cache_key
+                    surf.blit(self._android_portrait_cache, (0, 0))
+                else:
+                    surf.blit(self.portrait_surf, (0, 0))
+                    surf.blit(im_surf, portrait_pos)
+            else:
+                portrait_surf.blit(im_surf, portrait_pos)
 
         # Stick it on the surface
-        if self.transparency:
+        if steady:
+            pass
+        elif self.transparency:
             im = image_mods.make_translucent(portrait_surf, self.transparency)
             surf.blit(im, (0, self.scroll_offset_y))
         else:
@@ -503,7 +560,7 @@ class InfoMenuState(State):
 
         # Blit the unit's active/focus map sprite
         if not self.transparency:
-            active_sprite = self.unit.sprite.create_image('active')
+            active_sprite = self.unit.sprite.create_image('active', copy=False)
             x_pos = 81 - active_sprite.get_width()//2
             y_pos = WINHEIGHT - 61
             surf.blit(active_sprite, (x_pos, y_pos + self.scroll_offset_y))
@@ -577,7 +634,7 @@ class InfoMenuState(State):
         # Blit accessories
         if accessory:
             for idx, item in enumerate(self.unit.accessories):
-                aidx = item_funcs.get_num_items(self.unit) + idx
+                aidx = item_funcs.get_num_weapons(self.unit) + item_funcs.get_num_items(self.unit) + idx
                 y_pos = 81
                 equipped_subitem: Optional[ItemObject] = None
                 if item.multi_item and any(subitem is accessory for subitem in item.subitems):
@@ -603,25 +660,38 @@ class InfoMenuState(State):
         self.left_arrow.draw(surf)
         self.right_arrow.draw(surf)
 
-    def draw_slide(self, surf):
-        top_surf = engine.create_surface((WINWIDTH, WINHEIGHT), transparent=True)
-        main_surf = engine.copy_surface(top_surf)
-
+    def _draw_slide_header(self, surf):
         # Blit title of menu
-        top_surf.blit(SPRITES.get('info_title_background'), (112, 8))
+        surf.blit(SPRITES.get('info_title_background'), (112, 8))
         if self.logo:
             self.logo.update()
-            self.logo.draw(top_surf)
+            self.logo.draw(surf)
         # Blit page numbers
         states = self.get_available_states()
         num_states = len(states)
         current_index = states.index(self.state) if self.state in states else 0
         page = str(current_index + 1) + '/' + str(num_states)
         typeface = 'number_small4' if 'number_small4' in FONT else 'small'
-        render_text(top_surf, [typeface], [page], [], (236, 13), HAlignment.RIGHT)
+        render_text(surf, [typeface], [page], [], (236, 13), HAlignment.RIGHT)
 
         if num_states > 1:
-            self.draw_top_arrows(top_surf)
+            self.draw_top_arrows(surf)
+
+    def draw_slide(self, surf):
+        steady = (
+            not self.transparency and not self.scroll_offset_x
+            and not self.scroll_offset_y
+        )
+        if steady:
+            # The background and portrait have already refreshed the final
+            # frame. Draw cached page pieces directly onto it. This avoids two
+            # full-screen SRCALPHA surfaces and their alpha blits every frame.
+            main_surf = surf
+            top_surf = None
+        else:
+            top_surf = engine.create_surface((WINWIDTH, WINHEIGHT), transparent=True)
+            main_surf = engine.copy_surface(top_surf)
+            self._draw_slide_header(top_surf)
 
         if self.state == 'personal_data':
             if self.growth_flag:
@@ -631,7 +701,8 @@ class InfoMenuState(State):
             else:
                 if not self.personal_data_surf:
                     self.personal_data_surf = self.create_personal_data_surf()
-                self.draw_stat_surf(self.personal_data_surf)
+                with RUNTIME_PROFILER.section('info_stats'):
+                    self.draw_stat_surf(self.personal_data_surf)
                 self.draw_personal_data_surf(main_surf)
             if DB.constants.value('fatigue') and self.unit.team == 'player' and \
                     game.game_vars.get('_fatigue'):
@@ -646,15 +717,18 @@ class InfoMenuState(State):
 
         elif self.state == 'support_skills':
             main_surf.blit(SPRITES.get('status_logo'), (100, WINHEIGHT - 42))
+            self.draw_support_skills_tabs(main_surf)
             if not self.skill_surf:
                 self.skill_surf = self.create_skill_surf()
             self.draw_skill_surf(main_surf)
-            if not self.wexp_surf:
-                self.wexp_surf = self.create_wexp_surf()
-            self.draw_wexp_surf(main_surf)
-            if not self.support_surf:
-                self.support_surf = self.create_support_surf()
-            self.draw_support_surf(main_surf)
+            if self.support_skills_section == 'support' and game.game_vars.get('_supports'):
+                if not self.support_surf:
+                    self.support_surf = self.create_support_surf()
+                self.draw_support_surf(main_surf)
+            else:
+                if not self.wexp_surf:
+                    self.wexp_surf = self.create_wexp_surf()
+                self.draw_wexp_surf(main_surf)
 
         elif self.state == 'skills':
             if not self.class_skill_surf:
@@ -669,6 +743,11 @@ class InfoMenuState(State):
             if not self.spellbook_surf:
                 self.spellbook_surf = self.create_spellbook_surf()
             self.draw_spellbook_surf(main_surf)
+
+        if steady:
+            # Header is the topmost layer in the established composition order.
+            self._draw_slide_header(surf)
+            return
 
         # Now put it in the right place
         offset_x = max(96, 96 - self.scroll_offset_x)
@@ -865,22 +944,70 @@ class InfoMenuState(State):
     def draw_growths_surf(self, surf):
         surf.blit(self.growths_surf, (96, 0))
 
+    def draw_support_skills_tabs(self, surf):
+        tab_texts = ['Weapon Rank', ' / ', 'Support']
+        tab_colors = [
+            ('yellow' if self.support_skills_section == 'weapon' else 'grey'),
+            'white',
+            ('yellow' if self.support_skills_section == 'support' else 'grey'),
+        ]
+        render_text(
+            surf, ['narrow'] * len(tab_texts), tab_texts, tab_colors,
+            (96 + (WINWIDTH - 96) // 2, 20), HAlignment.CENTER)
+
+    def _weapon_rank_help(self, weapon: str, value: int) -> str:
+        weapon_prefab = DB.weapons.get(weapon)
+        weapon_name = weapon_prefab.name if weapon_prefab else weapon
+        weapon_rank = DB.weapon_ranks.get_rank_from_wexp(value)
+        next_weapon_rank = DB.weapon_ranks.get_next_rank_from_wexp(value)
+        rank_name = weapon_rank.nid if weapon_rank else '--'
+        if next_weapon_rank:
+            wexp_text = '%d/%d' % (value, next_weapon_rank.requirement)
+        else:
+            wexp_text = 'MAX'
+        return '%s Rank: %s\nWEXP: %s' % (weapon_name, rank_name, wexp_text)
+
     def create_wexp_surf(self):
         wexp_to_draw: List[Tuple[str, int]] = []
         for weapon, wexp in self.unit.wexp.items():
             if wexp > 0 and weapon in unit_funcs.usable_wtypes(self.unit) \
                 and weapon in DB.weapons.get_visible_weapon_types():
                 wexp_to_draw.append((weapon, wexp))
-        width = (WINWIDTH - 102) // 2
-        height = 16 * 2 + 4
 
-        surf = engine.create_surface((WINWIDTH - 96, height), transparent=True)
+        surf = engine.create_surface((WINWIDTH - 96, 84), transparent=True)
         if not wexp_to_draw:
+            render_text(
+                surf, ['text'], ['--'], ['blue'],
+                ((WINWIDTH - 96) // 2, 32), HAlignment.CENTER)
             return surf
-        counter = 0
-        for y in range(0, 32, 16):
-            for x in range(0, 2):
-                weapon, value = wexp_to_draw[counter]
+
+        # Preserve the original detailed presentation while it fits in four
+        # rows. Only inventories with more than eight weapon ranks switch to
+        # the compact 4x5 grid.
+        if len(wexp_to_draw) <= 8:
+            panel_width = WINWIDTH - 96
+            content_height = 80
+            row_height = 16
+            width = (WINWIDTH - 102) // 2
+            visual_width = width - 6
+            row_count = (len(wexp_to_draw) + 1) // 2
+            vertical_gap = (
+                (content_height - row_count * row_height) /
+                (row_count + 1))
+            for counter, (weapon, value) in enumerate(wexp_to_draw):
+                x, y = counter % 2, counter // 2
+                items_in_row = min(2, len(wexp_to_draw) - y * 2)
+                if items_in_row == 1:
+                    offset = (panel_width - visual_width) // 2
+                    help_x = (panel_width - width) // 2
+                else:
+                    pair_width = visual_width + width
+                    pair_left = (panel_width - pair_width) // 2
+                    offset = pair_left + x * width
+                    help_x = (panel_width - width * 2) // 2 + x * width
+                y_offset = int(round(
+                    (y + 1) * vertical_gap + y * row_height))
+
                 weapon_rank = DB.weapon_ranks.get_rank_from_wexp(value)
                 next_weapon_rank = DB.weapon_ranks.get_next_rank_from_wexp(value)
                 if not weapon_rank:
@@ -889,29 +1016,60 @@ class InfoMenuState(State):
                     perc = 1
                 else:
                     perc = (value - weapon_rank.requirement) / (next_weapon_rank.requirement - weapon_rank.requirement)
-                offset = 8 + x * width
 
-                icons.draw_weapon(surf, weapon, (offset, 4 + y))
+                icons.draw_weapon(surf, weapon, (offset, y_offset))
 
                 # Build groove
-                build_groove(surf, (offset + 18, 10 + y), width - 24, perc)
+                build_groove(surf, (offset + 18, y_offset + 6), width - 24, perc)
                 # Add text
-                pos = (offset + 7 + width//2, 4 + y)
+                pos = (offset + 7 + width//2, y_offset)
+                rank_name = weapon_rank.nid if weapon_rank else '--'
                 if FONT.get('rank'):
-                    render_text(surf, ['rank'], [weapon_rank.nid], ['blue'], pos, HAlignment.CENTER)
+                    render_text(surf, ['rank'], [rank_name], ['blue'], pos, HAlignment.CENTER)
                 else:
-                    render_text(surf, ['text'], [weapon_rank.nid], ['blue'], pos, HAlignment.CENTER)
-                self.info_graph.register((96 + pos[0] - width//2 - 8, 24 + pos[1], width, 16), "%s mastery level: %d" % (DB.weapons.get(weapon).name, value), 'support_skills', first=(counter==0))
-                counter += 1
-                if counter >= len(wexp_to_draw):
-                    break
-            if counter >= len(wexp_to_draw):
-                break
+                    render_text(surf, ['text'], [rank_name], ['blue'], pos, HAlignment.CENTER)
+                self.info_graph.register(
+                    (96 + help_x, 36 + y_offset, width, row_height),
+                    self._weapon_rank_help(weapon, value),
+                    'support_skills',
+                    first=(counter == 0))
+        else:
+            panel_width = WINWIDTH - 96
+            content_height = 80
+            row_height = 16
+            cell_width = (panel_width - 4) // 4
+            visible_wexp = wexp_to_draw[:20]
+            row_count = (len(visible_wexp) + 3) // 4
+            vertical_gap = (
+                (content_height - row_count * row_height) /
+                (row_count + 1))
+            for counter, (weapon, value) in enumerate(visible_wexp):
+                x, y = counter % 4, counter // 4
+                items_in_row = min(4, len(visible_wexp) - y * 4)
+                row_width = items_in_row * cell_width
+                row_left = (panel_width - row_width) // 2
+                x_offset = row_left + x * cell_width
+                y_offset = int(round(
+                    (y + 1) * vertical_gap + y * row_height))
+                weapon_rank = DB.weapon_ranks.get_rank_from_wexp(value)
+                rank_name = weapon_rank.nid if weapon_rank else '--'
+
+                icons.draw_weapon(surf, weapon, (x_offset + 1, y_offset))
+                rank_font = 'rank' if FONT.get('rank') else 'text'
+                render_text(
+                    surf, [rank_font], [rank_name], ['blue'],
+                    (x_offset + cell_width - 2, y_offset),
+                    HAlignment.RIGHT)
+                self.info_graph.register(
+                    (96 + x_offset, 36 + y_offset, cell_width, row_height),
+                    self._weapon_rank_help(weapon, value),
+                    'support_skills',
+                    first=(counter == 0))
 
         return surf
 
     def draw_wexp_surf(self, surf):
-        surf.blit(self.wexp_surf, (96, 24))
+        surf.blit(self.wexp_surf, (96, 36))
 
     def create_equipment_surf(self):
         def create_item_option(idx, item):
@@ -921,12 +1079,59 @@ class InfoMenuState(State):
 
         weapon = self.unit.get_weapon()
         accessory = self.unit.get_accessory()
+        split_inventory = item_funcs.split_inventory_enabled()
+        if split_inventory:
+            weapon_items = item_funcs.get_section_items(
+                self.unit, item_funcs.InventorySection.WEAPON)
+            regular_items = item_funcs.get_section_items(
+                self.unit, item_funcs.InventorySection.ITEM)
+            inventory_items = (
+                weapon_items
+                if self.equipment_section == item_funcs.InventorySection.WEAPON
+                else regular_items)
+            list_top = 40
+            weapon_count = '%d/%d' % (
+                len(weapon_items),
+                item_funcs.get_inventory_capacity(
+                    self.unit, item_funcs.InventorySection.WEAPON))
+            item_count = '%d/%d' % (
+                len(regular_items),
+                item_funcs.get_inventory_capacity(
+                    self.unit, item_funcs.InventorySection.ITEM))
+            tab_texts = [
+                'Wpn', ' ', weapon_count, ' / ',
+                'Item', ' ', item_count]
+            tab_colors = [
+                ('yellow' if self.equipment_section == item_funcs.InventorySection.WEAPON else 'grey'),
+                'white',
+                'blue',
+                'white',
+                ('yellow' if self.equipment_section == item_funcs.InventorySection.ITEM else 'grey'),
+                'white',
+                'blue',
+            ]
+            tab_font = 'text'
+            tab_text_width = sum(
+                text_width(tab_font, text) for text in tab_texts)
+            if tab_text_width > (WINWIDTH - 96 - 8):
+                tab_font = 'narrow'
+            render_text(
+                surf, [tab_font] * len(tab_texts), tab_texts, tab_colors,
+                (72, 22), HAlignment.CENTER)
+        else:
+            inventory_items = self.unit.nonaccessories
+            list_top = 24
+        if split_inventory:
+            # Four rows leave the lower 56 px for the GBA-sized battle stat panel.
+            visible_inventory_items = inventory_items[:4]
+        else:
+            visible_inventory_items = inventory_items
 
         # Blit items
-        for idx, item in enumerate(self.unit.nonaccessories):
+        for idx, item in enumerate(visible_inventory_items):
             equipped_subitem: Optional[ItemObject] = None
             if item.multi_item and any(subitem is weapon for subitem in item.subitems):
-                surf.blit(SPRITES.get('equipment_highlight'), (8, idx * 16 + 24 + 8))
+                surf.blit(SPRITES.get('equipment_highlight'), (8, idx * 16 + list_top + 8))
                 for subitem in item.subitems:
                     if subitem is weapon:
                         equipped_subitem = subitem
@@ -936,11 +1141,15 @@ class InfoMenuState(State):
                     item_option = create_item_option(idx, item)
             else:
                 if item is weapon:
-                    surf.blit(SPRITES.get('equipment_highlight'), (8, idx * 16 + 24 + 8))
+                    surf.blit(SPRITES.get('equipment_highlight'), (8, idx * 16 + list_top + 8))
                 item_option = create_item_option(idx, item)
-            item_option.draw(surf, 8, idx * 16 + 24)
+            item_option.draw(surf, 8, idx * 16 + list_top)
             help_dlg = build_dialog_list(equipped_subitem if equipped_subitem else item, PageType.ITEM, unit=self.unit)
-            self.info_graph.register((96 + 8, idx * 16 + 24, 120, 16), help_dlg, 'equipment', first=(idx == 0))
+            self.info_graph.register((96 + 8, idx * 16 + list_top, 120, 16), help_dlg, 'equipment', first=(idx == 0))
+
+        if split_inventory and self.equipment_section == item_funcs.InventorySection.ITEM:
+            if not inventory_items:
+                FONT['text-grey'].blit('Nothing', surf, (16, list_top))
 
         # Battle stats
         battle_surf = SPRITES.get('battle_info')
@@ -1096,23 +1305,76 @@ class InfoMenuState(State):
                 unique_skills.append(skill)
             else:
                 skill_counter[skill.nid] += 1
-        for idx, skill in enumerate(unique_skills[:6]):
-            left_pos = idx * 24
-            icons.draw_skill(surf, skill, (left_pos + 8, 4), compact=False, grey=skill_system.is_grey(skill, self.unit))
-            if skill_counter[skill.nid] > 1:
-                text = str(skill_counter[skill.nid])
-                render_text(surf, ['small'], [text], ['white'], (left_pos + 20 - 4 * len(text), 6))
-            text = text_funcs.translate_and_text_evaluate(
-                skill.desc,
-                unit=game.get_unit(skill.owner_nid),
-                self=skill)
+
+        panel_width = WINWIDTH - 96
+        icon_width = 16
+        normal_step = 24
+        minimum_visible_width = 4
+        left_margin = 8
+        right_margin = 8
+        max_icon_x = panel_width - right_margin - icon_width
+        available_span = max_icon_x - left_margin
+        num_skills = len(unique_skills)
+        if num_skills <= 1:
+            icon_positions = [left_margin] if num_skills else []
+        elif num_skills < 6:
+            icon_positions = [
+                left_margin + idx * normal_step
+                for idx in range(num_skills)]
+        else:
+            step = min(
+                normal_step,
+                available_span / (num_skills - 1))
+            step = max(minimum_visible_width, step)
+            icon_positions = [
+                min(max_icon_x, int(round(left_margin + idx * step)))
+                for idx in range(num_skills)]
+
+        self.skill_icon_layout = []
+        for idx, (skill, icon_x) in enumerate(
+                zip(unique_skills, icon_positions)):
+            count = skill_counter[skill.nid]
+            self._draw_status_skill_icon(
+                surf, skill, count, (icon_x, 4))
             help_dlg = build_dialog_list(skill, PageType.SKILL, unit=self.unit)
-            self.info_graph.register((96 + left_pos + 8, WINHEIGHT - 28, 16, 16), help_dlg, 'support_skills')
+            if idx + 1 < len(icon_positions):
+                visible_width = min(
+                    icon_width,
+                    max(
+                        minimum_visible_width,
+                        icon_positions[idx + 1] - icon_x))
+            else:
+                visible_width = icon_width
+            skill_aabb = (
+                96 + icon_x, WINHEIGHT - 28, visible_width, icon_width)
+            self.info_graph.register(
+                skill_aabb, help_dlg, 'support_skills')
+            self.skill_icon_layout.append(
+                (skill, count, icon_x, skill_aabb))
 
         return surf
 
+    def _draw_status_skill_icon(self, surf, skill, count, pos):
+        icons.draw_skill(
+            surf, skill, pos, compact=False,
+            grey=skill_system.is_grey(skill, self.unit))
+        if count > 1:
+            text = str(count)
+            render_text(
+                surf, ['small'], [text], ['white'],
+                (pos[0] + 12 - 4 * len(text), pos[1] + 2))
+
     def draw_skill_surf(self, surf):
         surf.blit(self.skill_surf, (96, WINHEIGHT - 32))
+        if not self.info_flag or not self.info_graph.current_bb:
+            return
+        current_aabb = self.info_graph.current_bb.aabb
+        for skill, count, icon_x, skill_aabb in self.skill_icon_layout:
+            if skill_aabb == current_aabb:
+                self._draw_status_skill_icon(
+                    surf, skill, count,
+                    (96 + icon_x, WINHEIGHT - 28))
+                break
 
     def create_class_skill_surf(self):
         import pygame
@@ -1198,7 +1460,9 @@ class InfoMenuState(State):
                 render_text(surf, ['text'], [truncated], ['white'], (name_x, y + 2))
                 # Register the whole pill for info graph hover help
                 self.info_graph.register((96 + pill_x, y, pill_w, pill_h),
-                                         help_menu.SkillHelpDialog(skill, category=category), 'skills')
+                                         help_menu.SkillHelpDialog.build_pages(
+                                             skill, category=category,
+                                             max_body_lines=2), 'skills')
             else:
                 # Empty slot indicator
                 dash_x = icon_x + 18
@@ -1211,34 +1475,168 @@ class InfoMenuState(State):
 
     def create_support_surf(self):
         surf = engine.create_surface((WINWIDTH - 96, WINHEIGHT), transparent=True)
-        width = (WINWIDTH - 102) // 2
+        panel_width = WINWIDTH - 96
 
-        if game.game_vars.get('_supports'):
-            pairs = game.supports.get_pairs(self.unit.nid)
-            pairs = [pair for pair in pairs if pair.unlocked_ranks]
-        else:
-            pairs = []
+        pairs = game.supports.get_pairs(self.unit.nid)
+        pairs = [pair for pair in pairs if pair.unlocked_ranks]
 
-        pairs = pairs[:6] # max six supports displayed
-
-        top = self.wexp_surf.get_height() + 24
-        for idx, pair in enumerate(pairs):
-            x, y = (idx) % 2, idx // 2
-            other_unit = None
-            if pair.unit1 == self.unit.nid:
-                other_unit = game.get_unit(pair.unit2)
-            elif pair.unit2 == self.unit.nid:
-                other_unit = game.get_unit(pair.unit1)
+        partner_rows = []
+        for pair in pairs:
+            other_nid = pair.unit2 if pair.unit1 == self.unit.nid else pair.unit1
+            # An unlocked partner can be absent from the current map. Fall
+            # back to its database prefab so the Support page still lists it.
+            other_unit = game.get_unit(other_nid) or DB.units.get(other_nid)
             if not other_unit:
                 continue
-            affinity = DB.affinities.get(other_unit.affinity)
-            if affinity:
-                icons.draw_item(surf, affinity, (x * width + 8, y * 16 + top))
-                affinity_desc = text_funcs.translate_and_text_evaluate(affinity.desc, unit=self.unit)
-                self.info_graph.register((96 + x * width + 8, y * 16 + top, WINWIDTH - 120, 16), affinity_desc, 'support_skills')
-            render_text(surf, ['narrow'], [other_unit.name], [], (x * width + 22, y * 16 + top))
             highest_rank = pair.unlocked_ranks[-1]
-            render_text(surf, ['text'], [highest_rank], ['yellow'], (x * width + surf.get_width()/2 - 2, y * 16 + top), HAlignment.RIGHT)
+            partner_rows.append((other_unit, highest_rank))
+
+        visible_partner_rows = partner_rows[:6]
+        partner_columns = 2
+        partner_column_gap = 4
+        partner_outer_margin = 4
+        partner_column_width = (
+            panel_width - partner_column_gap -
+            partner_outer_margin * 2) // partner_columns
+        partner_area_top = 36
+        partner_area_height = 50
+        partner_row_height = 16
+        partner_row_count = (len(visible_partner_rows) + 1) // 2
+        partner_vertical_gap = (
+            (partner_area_height - partner_row_count * partner_row_height) /
+            (partner_row_count + 1)
+            if partner_row_count else 0)
+        for idx, (other_unit, highest_rank) in enumerate(visible_partner_rows):
+            x, y = idx % partner_columns, idx // partner_columns
+            items_in_row = min(
+                partner_columns, len(visible_partner_rows) - y * partner_columns)
+            row_width = (
+                items_in_row * partner_column_width +
+                max(0, items_in_row - 1) * partner_column_gap)
+            row_left = (panel_width - row_width) // 2
+            cell_x = x * (partner_column_width + partner_column_gap) + row_left
+            row_y = partner_area_top + int(round(
+                (y + 1) * partner_vertical_gap + y * partner_row_height))
+
+            rank_width = text_width('narrow', highest_rank)
+            rank_x = cell_x + partner_column_width - 2
+            name_x = cell_x + 1
+            max_name_width = max(8, partner_column_width - 5 - rank_width)
+            display_name = other_unit.name
+            while display_name and text_width('narrow', display_name) > max_name_width:
+                display_name = display_name[:-1]
+            if display_name != other_unit.name and len(display_name) > 1:
+                display_name = display_name[:-1] + '.'
+
+            render_text(surf, ['narrow'], [display_name], [], (name_x, row_y + 1))
+            render_text(
+                surf, ['narrow'], [highest_rank], ['yellow'],
+                (rank_x, row_y), HAlignment.RIGHT)
+            self.info_graph.register(
+                (96 + cell_x, row_y, partner_column_width, 16),
+                '%s Support Rank: %s' % (other_unit.name, highest_rank),
+                'support_skills',
+                first=(idx == 0))
+
+        if not visible_partner_rows:
+            render_text(
+                surf, ['narrow'], ['--'], ['blue'],
+                (panel_width // 2, partner_area_top + 17),
+                HAlignment.CENTER)
+
+        bonuses, _allies = combat_calcs.get_support_rank_bonus(self.unit)
+        bonus_fields = (
+            ('Atk', 'damage'),
+            ('Def', 'resist'),
+            ('Hit', 'accuracy'),
+            ('Avo', 'avoid'),
+            ('Crit', 'crit'),
+            ('Ddg', 'dodge'),
+            ('AS', 'attack_speed'),
+            ('DS', 'defense_speed'),
+        )
+        stat_entries = []
+        for label, attribute in bonus_fields:
+            value = int(sum(
+                getattr(bonus, attribute, 0) for bonus in bonuses))
+            if value > 0:
+                sign_text = '+'
+                number_text = str(value)
+            elif value < 0:
+                sign_text = '-'
+                number_text = str(abs(value))
+            else:
+                sign_text = ''
+                number_text = '0'
+            label_width = text_width('narrow', label)
+            sign_width = text_width('narrow', sign_text)
+            number_width = text_width('narrow', number_text)
+            value_width = (
+                sign_width + (1 if sign_text else 0) + number_width)
+            stat_entries.append(
+                (label, sign_text, number_text, label_width, value_width))
+
+        stat_rows = (
+            stat_entries[:4],
+            stat_entries[4:],
+        )
+        stat_column_layouts = []
+        for column in range(4):
+            top_entry = stat_rows[0][column]
+            bottom_entry = stat_rows[1][column]
+            label_slot_width = max(top_entry[3], bottom_entry[3])
+            value_slot_width = max(top_entry[4], bottom_entry[4])
+            group_width = label_slot_width + 2 + value_slot_width
+            stat_column_layouts.append(
+                (label_slot_width, value_slot_width, group_width))
+
+        total_group_width = sum(layout[2] for layout in stat_column_layouts)
+        horizontal_gap = max(
+            0, (panel_width - total_group_width) / 5)
+        stat_group_xs = []
+        consumed_width = 0
+        for column, (_, _, group_width) in enumerate(stat_column_layouts):
+            group_x = int(round(
+                (column + 1) * horizontal_gap + consumed_width))
+            stat_group_xs.append(group_x)
+            consumed_width += group_width
+
+        stat_area_top = 88
+        stat_area_height = 29
+        stat_row_height = 13
+        vertical_gap = (
+            (stat_area_height - stat_row_height * 2) / 3)
+        for row, row_entries in enumerate(stat_rows):
+            row_y = stat_area_top + int(round(
+                (row + 1) * vertical_gap + row * stat_row_height))
+
+            for column, (
+                    label, sign_text, number_text, _label_width,
+                    _value_width) in enumerate(row_entries):
+                label_slot_width, _, group_width = stat_column_layouts[column]
+                group_x = stat_group_xs[column]
+                label_right = group_x + label_slot_width
+                value_x = label_right + 2
+                render_text(
+                    surf, ['narrow'], [label], ['yellow'],
+                    (label_right, row_y), HAlignment.RIGHT)
+                if sign_text:
+                    render_text(
+                        surf, ['narrow'], [sign_text], ['blue'],
+                        (value_x, row_y))
+                    number_x = (
+                        value_x + text_width('narrow', sign_text) + 1)
+                else:
+                    number_x = value_x
+                render_text(
+                    surf, ['narrow'], [number_text], ['blue'],
+                    (number_x, row_y))
+                self.info_graph.register(
+                    (96 + group_x, row_y, group_width, stat_row_height),
+                    '%s support bonus: %s%s' % (
+                        label, sign_text, number_text),
+                    'support_skills',
+                    first=(not visible_partner_rows and row == 0 and column == 0))
         return surf
 
     def draw_support_surf(self, surf):

@@ -445,11 +445,24 @@ class CombatPhaseSolver():
         return int(round(hit + (40 / 3) * (hit / 100) * math.sin(math.radians((0.02 * hit - 1) * 180))))
 
     def process(self, actions, playback, attacker, defender, def_pos, item, def_item, mode, attack_info, assist=False):
-        # Is the item I am processing the first one?
-        first_item = item in (self.main_item, self.def_item, self.items[0])
         if assist:
             item = attacker.get_weapon()
 
+        # Event combat scripts can explicitly request a defender phase (hit2,
+        # miss2, or crit2) even when that unit has no currently equipped
+        # weapon.  There is no strike to resolve in that case.  Treat the
+        # scripted phase as a no-op instead of passing None through
+        # compute_hit and crashing in utils.clamp.
+        if item is None:
+            logging.warning(
+                "Skipping scripted combat phase %s for %s: no item is equipped",
+                self.current_command,
+                getattr(attacker, "nid", attacker),
+            )
+            return
+
+        # Is the item I am processing the first one?
+        first_item = item in (self.main_item, self.def_item, self.items[0])
         unclamped_hit = combat_calcs.compute_hit(attacker, defender, item, def_item, mode, attack_info, clamp_hit=False)
         rng_mode = game.rng_mode
         if rng_mode == RNGOption.FATES_HIT:

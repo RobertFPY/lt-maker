@@ -6,7 +6,7 @@ from app.events.regions import RegionType
 from app.events import triggers
 
 from app.engine import action
-from app.engine import item_system, item_funcs, skill_system, equations
+from app.engine import combat_calcs, item_system, item_funcs, skill_system, equations
 from app.engine.game_state import game
 from app.engine.combat import playback as pb
 
@@ -24,6 +24,10 @@ class Heal(ItemComponent):
         empower_heal_received = skill_system.empower_heal_received(target, unit)
         return self.value + empower_heal + empower_heal_received
 
+    def _get_rank_heal_bonus(self, unit, item):
+        rank_bonus = combat_calcs.get_weapon_rank_bonus(unit, item)
+        return int(rank_bonus.heal) if rank_bonus else 0
+
     def target_restrict(self, unit, item, def_pos, splash) -> bool:
         # Restricts target based on whether any unit has < full hp
         defender = game.board.get_unit(def_pos)
@@ -39,7 +43,7 @@ class Heal(ItemComponent):
         return unit and unit.get_hp() < unit.get_max_hp()
 
     def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
-        heal = self._get_heal_amount(unit, target)
+        heal = self._get_heal_amount(unit, target) + self._get_rank_heal_bonus(unit, item)
         true_heal = min(heal, target.get_max_hp() - target.get_hp())
         actions.append(action.ChangeHP(target, heal))
 
@@ -60,7 +64,7 @@ class Heal(ItemComponent):
             max_hp = target.get_max_hp()
             missing_health = max_hp - target.get_hp()
             help_term = utils.clamp(missing_health / float(max_hp), 0, 1)
-            heal = self._get_heal_amount(unit, target)
+            heal = self._get_heal_amount(unit, target) + self._get_rank_heal_bonus(unit, item)
             heal_term = utils.clamp(min(heal, missing_health) / float(max_hp), 0, 1)
             return help_term * heal_term
         return 0

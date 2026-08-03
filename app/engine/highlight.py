@@ -4,6 +4,7 @@ from app.events.regions import RegionType
 
 from app.engine.sprites import SPRITES
 from app.engine import engine, line_of_sight, aura_funcs, skill_system
+from app.engine.android_runtime import is_android_render_optimization_enabled
 from app.engine.game_state import game
 
 import logging
@@ -28,10 +29,22 @@ class HighlightController():
         self.last_update = 0
         self.update_idx = 0
 
+        # Android renders the fully-open highlight tiles into one cache.  The
+        # revision is intentionally local runtime state: it never changes a
+        # project or save schema and it makes cache ownership explicit.
+        self.revision = 0
+        self._android_cache_surf = None
+        self._android_cache_key = None
+
         self.current_hover = None
 
         self.formation_highlights = []
         self.escape_highlights = []
+
+    def _bump_revision(self):
+        self.revision += 1
+        self._android_cache_surf = None
+        self._android_cache_key = None
 
     def check_in_move(self, position):
         return position in self.highlights['move']
@@ -48,6 +61,7 @@ class HighlightController():
                 self.highlights[k].discard(position)
         self.highlights[name].add(position)
         self.transitions[name] = self.starting_cutoff
+        self._bump_revision()
 
     def add_highlights(self, positions: set, name: str, allow_overlap: bool = False):
         if not allow_overlap:
@@ -55,6 +69,7 @@ class HighlightController():
                 self.highlights[k] -= positions
         self.highlights[name] |= positions
         self.transitions[name] = self.starting_cutoff
+        self._bump_revision()
 
     def remove_highlights(self, name=None):
         if name:
@@ -65,9 +80,11 @@ class HighlightController():
                 self.highlights[k].clear()
                 self.transitions[k] = self.starting_cutoff
         self.current_hover = None
+        self._bump_revision()
 
     def remove_aura_highlights(self):
         self.highlights['aura'].clear()
+        self._bump_revision()
 
     def handle_hover(self):
         hover_unit = game.cursor.get_hover()
@@ -126,14 +143,85 @@ class HighlightController():
 
     def show_formation(self, positions: list):
         self.formation_highlights += positions
+        self._bump_revision()
 
     def hide_formation(self):
         self.formation_highlights.clear()
+        self._bump_revision()
 
     def update(self):
         self.update_idx = (self.update_idx + 1) % 64
 
+    def _region_cache_signature(self):
+        if not getattr(game, 'level', None):
+            return ()
+        signature = []
+        for region in game.level.regions:
+            is_highlighted = region.highlight is not None and region.region_type in (
+                RegionType.NORMAL, RegionType.STATUS, RegionType.TERRAIN, RegionType.EVENT,
+            )
+            is_escape = region.region_type == RegionType.EVENT and region.sub_nid in ('Escape', 'Arrive')
+            if is_highlighted or is_escape:
+                signature.append((
+                    region.nid, region.highlight, region.region_type, region.sub_nid,
+                    tuple(region.get_all_positions()),
+                ))
+        return tuple(signature)
+
+    def _draw_android_static_highlights(self, surf, cull_rect):
+        """Draw the settled, fully-open Android highlight frame into a cache."""
+        rect = (0, 0, TILEWIDTH, TILEHEIGHT)
+
+        formation_image = engine.subsurface(SPRITES.get('highlight_blue'), rect)
+        for position in self.formation_highlights:
+            surf.blit(formation_image, (
+                position[0] * TILEWIDTH - cull_rect[0],
+                position[1] * TILEHEIGHT - cull_rect[1],
+            ))
+
+        escape_image = engine.subsurface(SPRITES.get('highlight_yellow'), rect)
+        for region in game.level.regions:
+            if region.highlight is not None and region.region_type in (
+                    RegionType.NORMAL, RegionType.STATUS, RegionType.TERRAIN, RegionType.EVENT):
+                highlight_image = engine.subsurface(SPRITES.get('highlight_' + region.highlight), rect)
+                for position in region.get_all_positions():
+                    surf.blit(highlight_image, (
+                        position[0] * TILEWIDTH - cull_rect[0],
+                        position[1] * TILEHEIGHT - cull_rect[1],
+                    ))
+            elif region.region_type == RegionType.EVENT and region.sub_nid in ('Escape', 'Arrive'):
+                for position in region.get_all_positions():
+                    surf.blit(escape_image, (
+                        position[0] * TILEWIDTH - cull_rect[0],
+                        position[1] * TILEHEIGHT - cull_rect[1],
+                    ))
+
+        for name, highlight_set in self.highlights.items():
+            if not highlight_set:
+                continue
+            image = engine.subsurface(self.images[name], rect)
+            for position in highlight_set:
+                surf.blit(image, (
+                    position[0] * TILEWIDTH - cull_rect[0],
+                    position[1] * TILEHEIGHT - cull_rect[1],
+                ))
+        return surf
+
+    def _draw_android_cached(self, surf, cull_rect):
+        cache_key = (self.revision, tuple(cull_rect), self._region_cache_signature())
+        if self._android_cache_surf is None or self._android_cache_key != cache_key:
+            self._android_cache_surf = engine.create_surface(
+                (int(cull_rect[2]), int(cull_rect[3])), transparent=True,
+            )
+            self._draw_android_static_highlights(self._android_cache_surf, cull_rect)
+            self._android_cache_key = cache_key
+        surf.blit(self._android_cache_surf, (0, 0))
+        return surf
+
     def draw(self, surf, cull_rect):
+        if is_android_render_optimization_enabled():
+            return self._draw_android_cached(surf, cull_rect)
+
         # Handle Formation Highlight
         formation_image = SPRITES.get('highlight_blue')
         rect = (self.update_idx//4 * TILEWIDTH, 0, TILEWIDTH, TILEHEIGHT)

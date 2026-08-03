@@ -1,17 +1,22 @@
 from __future__ import annotations
 
+import logging
 import random
+from collections import OrderedDict
+from dataclasses import dataclass, field
 from typing import List, Optional
 
-import logging
+import pygame
 
 import app.engine.config as cf
-from app.constants import (TILEHEIGHT, TILEWIDTH, TILEX, TILEY, WINHEIGHT,
+from app.constants import (COLORKEY, TILEHEIGHT, TILEWIDTH, TILEX, TILEY, WINHEIGHT,
                            WINWIDTH)
 from app.data.database.database import DB
 from app.engine import (action, background, battle_animation, combat_calcs,
                         engine, gui, icons, image_mods, item_funcs,
                         item_system, skill_system)
+from app.engine.android_runtime import is_android_render_optimization_enabled
+from app.engine.performance import RUNTIME_PROFILER
 from app.engine.combat import playback as pb
 from app.engine.combat.playback import PlaybackBrush
 from app.engine.combat.base_combat import BaseCombat
@@ -19,6 +24,7 @@ from app.engine.combat.map_combat import MapCombat
 from app.engine.combat.mock_combat import MockCombat
 from app.engine.combat.solver import CombatPhaseSolver
 from app.engine.fonts import FONT
+from app.engine.game_counters import ANIMATION_COUNTERS
 from app.engine.game_state import game
 from app.engine.health_bar import CombatHealthBar
 from app.engine.objects.item import ItemObject
@@ -32,6 +38,13 @@ from app.utilities import utils
 from app.utilities.typing import NID
 from app.utilities.enums import HAlignment
 from app.engine.combat.utils import resolve_weapon
+
+
+@dataclass(eq=False)
+class _AndroidCombatUILayer:
+    """Immutable UI pixels plus lazily-built Android display variants."""
+    raw: pygame.Surface
+    variants: dict[int, pygame.Surface] = field(default_factory=dict)
 
 
 class AnimationCombat(BaseCombat, MockCombat):
@@ -591,10 +604,35 @@ class AnimationCombat(BaseCombat, MockCombat):
         self.right_hp_bar.update()
 
         self.update_anims()
+        if is_android_render_optimization_enabled():
+            self.update_android_transient_visuals()
+            for proc_icon in self.proc_icons:
+                proc_icon.update()
+            self.proc_icons = [proc_icon for proc_icon in self.proc_icons if not proc_icon.done]
+
+        if RUNTIME_PROFILER.enabled and self.state != current_state:
+            battle_anim = self.current_battle_anim
+            logging.warning(
+                "PERF combat-transition phase=%s pose=%s frame=%s/%s effects=%d",
+                self.state,
+                getattr(battle_anim, 'current_pose', None),
+                getattr(battle_anim, 'frame_count', 0),
+                getattr(battle_anim, 'num_frames', 0),
+                len(getattr(battle_anim, 'child_effects', ())) +
+                len(getattr(battle_anim, 'under_child_effects', ())),
+            )
 
         return False
 
     def initial_paint_setup(self):
+        self._android_ui_cache_key = None
+        self._android_left_bar_base = None
+        self._android_right_bar_base = None
+        self._android_bar_layers = {'left': OrderedDict(), 'right': OrderedDict()}
+        self._android_gauge_layers = OrderedDict()
+        self._android_bar_strip_layers = OrderedDict()
+        self._android_name_strip_layers = OrderedDict()
+        self._android_arrow_layers = OrderedDict()
         crit_flag = DB.constants.value('crit')
         # Left
         left_color = self.get_color(self.left.team)
@@ -783,6 +821,22 @@ class AnimationCombat(BaseCombat, MockCombat):
         vb_width = int(WINWIDTH - vb_x - (vb_multiplier * (TILEX - true_x)) * TILEWIDTH)
         vb_height = int(WINHEIGHT - vb_y - (vb_multiplier * (TILEY - true_y)) * TILEHEIGHT)
         self.viewbox = (vb_x, vb_y, vb_width, vb_height)
+
+    def map_underlay_visible(self) -> bool:
+        """Whether the map must be composed behind this combat frame.
+
+        A normal panorama covers the complete logical combat surface.  Drawing
+        the map beneath it is therefore invisible work; all transition states
+        and battles without a panorama retain the established map path.
+        """
+        battle_background = self.battle_background
+        if not battle_background or battle_background.fade_state != 'normal':
+            return True
+        images = getattr(getattr(battle_background, 'panorama', None), 'images', ())
+        if not images:
+            return True
+        image = images[battle_background.counter % len(images)]
+        return not image or image.get_width() < WINWIDTH or image.get_height() < WINHEIGHT
 
     def start_battle_music(self):
         attacker_battle = item_system.battle_music(self.attacker, self.main_item, self.defender, resolve_weapon(self.defender), 'attack') \
@@ -1060,26 +1114,32 @@ class AnimationCombat(BaseCombat, MockCombat):
         second_main_battle_anim, second_offset, second_partner, sp_offset = second
         # Actor is second main battle anim
 
-        first_main_battle_anim.draw_under(surf, shake, first_offset, self.pan_offset)
-        second_main_battle_anim.draw_under(surf, shake, second_offset, self.pan_offset)
+        with RUNTIME_PROFILER.section('combat_battle_under'):
+            first_main_battle_anim.draw_under(surf, shake, first_offset, self.pan_offset)
+            second_main_battle_anim.draw_under(surf, shake, second_offset, self.pan_offset)
 
-        if first_partner:
-            first_partner.draw(surf, shake, fp_offset, self.pan_offset, y_offset=y_offset)
-        first_main_battle_anim.draw(surf, shake, first_offset, self.pan_offset)
+        with RUNTIME_PROFILER.section('combat_battle_first'):
+            if first_partner:
+                first_partner.draw(surf, shake, fp_offset, self.pan_offset, y_offset=y_offset)
+            first_main_battle_anim.draw(surf, shake, first_offset, self.pan_offset)
 
-        if second_partner:
-            second_partner.draw(surf, shake, sp_offset, self.pan_offset, y_offset=y_offset)
-        second_main_battle_anim.draw(surf, shake, second_offset, self.pan_offset)
+        with RUNTIME_PROFILER.section('combat_battle_second'):
+            if second_partner:
+                second_partner.draw(surf, shake, sp_offset, self.pan_offset, y_offset=y_offset)
+            second_main_battle_anim.draw(surf, shake, second_offset, self.pan_offset)
 
-        second_main_battle_anim.draw_over(surf, shake, second_offset, self.pan_offset)
-        first_main_battle_anim.draw_over(surf, shake, first_offset, self.pan_offset)
+        with RUNTIME_PROFILER.section('combat_battle_over'):
+            second_main_battle_anim.draw_over(surf, shake, second_offset, self.pan_offset)
+            first_main_battle_anim.draw_over(surf, shake, first_offset, self.pan_offset)
 
     def draw(self, surf):
-        if self.battle_background:
-            self.battle_background.draw(surf)
+        with RUNTIME_PROFILER.section('combat_background'):
+            if self.battle_background:
+                self.battle_background.draw(surf)
         # This code is so ugly, sorry rain
-        left_range_offset, right_range_offset, total_shake_x, total_shake_y = \
-            self.draw_ui(surf)
+        with RUNTIME_PROFILER.section('combat_ui'):
+            left_range_offset, right_range_offset, total_shake_x, total_shake_y = \
+                self.draw_ui(surf)
 
         shake = (-total_shake_x, total_shake_y)
         lp_range_offset = left_range_offset - 20
@@ -1095,17 +1155,20 @@ class AnimationCombat(BaseCombat, MockCombat):
                 else:  # Normal right anim
                     anim_order = [(self.left_battle_anim, left_range_offset, self.lp_battle_anim, lp_range_offset),
                                   (self.right_battle_anim, right_range_offset, self.rp_battle_anim, rp_range_offset)]
-                self.draw_battle_anims(surf, shake, anim_order, y_offset)
+                with RUNTIME_PROFILER.section('combat_battle_anims'):
+                    self.draw_battle_anims(surf, shake, anim_order, y_offset)
             # Right partner is main boi
             elif self.rp_battle_anim and self.current_battle_anim is self.rp_battle_anim:
                 anim_order = [(self.left_battle_anim, left_range_offset, self.lp_battle_anim, lp_range_offset),
                               (self.rp_battle_anim, right_range_offset, self.right_battle_anim, rp_range_offset)]
-                self.draw_battle_anims(surf, shake, anim_order, y_offset)
+                with RUNTIME_PROFILER.section('combat_battle_anims'):
+                    self.draw_battle_anims(surf, shake, anim_order, y_offset)
             # Left partner is main boi
             elif self.lp_battle_anim and self.current_battle_anim is self.lp_battle_anim:
                 anim_order = [(self.right_battle_anim, right_range_offset, self.rp_battle_anim, rp_range_offset),
                               (self.lp_battle_anim, left_range_offset, self.left_battle_anim, lp_range_offset)]
-                self.draw_battle_anims(surf, shake, anim_order, y_offset)
+                with RUNTIME_PROFILER.section('combat_battle_anims'):
+                    self.draw_battle_anims(surf, shake, anim_order, y_offset)
             # Left is main boi
             else:
                 # Right unit is being guarded right now!
@@ -1115,23 +1178,30 @@ class AnimationCombat(BaseCombat, MockCombat):
                 else:  # Normal left anim
                     anim_order = [(self.right_battle_anim, right_range_offset, self.rp_battle_anim, rp_range_offset),
                                   (self.left_battle_anim, left_range_offset, self.lp_battle_anim, lp_range_offset)]
-                self.draw_battle_anims(surf, shake, anim_order, y_offset)
+                with RUNTIME_PROFILER.section('combat_battle_anims'):
+                    self.draw_battle_anims(surf, shake, anim_order, y_offset)
         else:  # When battle hasn't started yet
             anim_order = [(self.left_battle_anim, left_range_offset, self.lp_battle_anim, lp_range_offset),
                           (self.right_battle_anim, right_range_offset, self.rp_battle_anim, rp_range_offset)]
-            self.draw_battle_anims(surf, shake, anim_order, y_offset)
+            with RUNTIME_PROFILER.section('combat_battle_anims'):
+                self.draw_battle_anims(surf, shake, anim_order, y_offset)
 
         # Animations
-        self.draw_anims(surf)
+        with RUNTIME_PROFILER.section('combat_effect_draw'):
+            self.draw_anims(surf)
 
         # Proc Icons
-        for proc_icon in self.proc_icons:
-            proc_icon.update()
-            proc_icon.draw(surf)
-        self.proc_icons = [proc_icon for proc_icon in self.proc_icons if not proc_icon.done]
+        with RUNTIME_PROFILER.section('combat_proc_icons'):
+            for proc_icon in self.proc_icons:
+                if not is_android_render_optimization_enabled():
+                    proc_icon.update()
+                proc_icon.draw(surf)
+            if not is_android_render_optimization_enabled():
+                self.proc_icons = [proc_icon for proc_icon in self.proc_icons if not proc_icon.done]
 
         # Damage Numbers
-        self.draw_damage_numbers(surf, (left_range_offset, right_range_offset, total_shake_x, total_shake_y))
+        with RUNTIME_PROFILER.section('combat_damage_numbers'):
+            self.draw_damage_numbers(surf, (left_range_offset, right_range_offset, total_shake_x, total_shake_y))
 
         # make the combat ui (nametags & bars) fade out when appropriate
         ui_fade_states = ['name_tags_out', 'all_out', 'entrance',
@@ -1145,79 +1215,372 @@ class AnimationCombat(BaseCombat, MockCombat):
             self.name_offset = 1
             self.bar_offset = 1
 
-        # Combat surf
+        with RUNTIME_PROFILER.section('combat_final_compose'):
+            crit = 7 if DB.constants.value('crit') else 0
+            if is_android_render_optimization_enabled():
+                self._draw_android_final_ui(surf, crit)
+            else:
+                self._draw_legacy_final_ui(surf, crit)
+
+            with RUNTIME_PROFILER.section('combat_foreground'):
+                self.foreground.draw(surf)
+
+            if self.bg_black:
+                with RUNTIME_PROFILER.section('combat_fade'):
+                    bg_black = image_mods.make_translucent(self.bg_black, self.bg_black_progress)
+                    surf.blit(bg_black, (0, 0))
+
+    def _draw_legacy_final_ui(self, surf, crit) -> None:
+        """Desktop's established full-surface composition path."""
         combat_surf = engine.copy_surface(self.combat_surf)
-        # bar
-        left_bar = self.left_bar.copy()
-        right_bar = self.right_bar.copy()
-        crit = 7 if DB.constants.value('crit') else 0
-        # HP bar
-        self.left_hp_bar.draw(left_bar, 27, 30 + crit)
-        self.right_hp_bar.draw(right_bar, 25, 30 + crit)
-        # Item
-        if self.left_item:
-            self.draw_item(left_bar, self.left_item, self.right_item, self.left, self.right, (45, 2 + crit))
-        if self.right_item:
-            self.draw_item(right_bar, self.right_item, self.left_item, self.right, self.left, (1, 2 + crit))
-        # Stats
-        self.draw_stats(left_bar, self.left_stats, (42, 0))
-        self.draw_stats(right_bar, self.right_stats, (WINWIDTH//2 - 3, 0))
+        with RUNTIME_PROFILER.section('combat_bars'):
+            left_bar = self.left_bar.copy()
+            right_bar = self.right_bar.copy()
+            if self.left_item:
+                self.draw_item(left_bar, self.left_item, self.right_item, self.left, self.right, (45, 2 + crit))
+            if self.right_item:
+                self.draw_item(right_bar, self.right_item, self.left_item, self.right, self.left, (1, 2 + crit))
+            self.draw_stats(left_bar, self.left_stats, (42, 0))
+            self.draw_stats(right_bar, self.right_stats, (WINWIDTH//2 - 3, 0))
+            self.left_hp_bar.draw(left_bar, 27, 30 + crit)
+            self.right_hp_bar.draw(right_bar, 25, 30 + crit)
 
-        bar_trans = 52
-        left_pos_x = -3 + self.shake_offset[0]
-        left_pos_y = WINHEIGHT - left_bar.get_height() + (bar_trans - self.bar_offset * bar_trans) + self.shake_offset[1]
-        right_pos_x = WINWIDTH // 2 + self.shake_offset[0]
-        right_pos_y = left_pos_y
-        combat_surf.blit(left_bar, (left_pos_x, left_pos_y))
-        combat_surf.blit(right_bar, (right_pos_x, right_pos_y))
+            bar_trans = 52
+            left_pos_x = -3 + self.shake_offset[0]
+            left_pos_y = WINHEIGHT - left_bar.get_height() + (bar_trans - self.bar_offset * bar_trans) + self.shake_offset[1]
+            right_pos_x = WINWIDTH // 2 + self.shake_offset[0]
+            right_pos_y = left_pos_y
+            combat_surf.blit(left_bar, (left_pos_x, left_pos_y))
+            combat_surf.blit(right_bar, (right_pos_x, right_pos_y))
 
-        # Guard gauge counter
-        if DB.constants.value('pairup') and not DB.constants.value('attack_stance_only'):
-            left_color = self.get_color(self.left.team)
-            right_color = self.get_color(self.right.team)
-            right_gauge = None
-            left_gauge = None
-            left_gauge = SPRITES.get('guard_' + left_color).copy()
-            font = FONT['number_small2']
-            text = str(self.left.get_guard_gauge()) + '-' + str(self.left.get_max_guard_gauge())
-            font.blit_center(text, left_gauge, (18, -1))
-            right_gauge = SPRITES.get('guard_' + right_color).copy()
-            font = FONT['number_small2']
-            text = str(self.right.get_guard_gauge()) + '-' + str(self.right.get_max_guard_gauge())
-            font.blit_center(text, right_gauge, (18, -1))
-            # Pair up info
-            if right_gauge:
-                combat_surf.blit(right_gauge, (right_pos_x, WINHEIGHT - 52 + (bar_trans - self.bar_offset * bar_trans) + self.shake_offset[1]))
-            if left_gauge:
-                combat_surf.blit(left_gauge, (right_pos_x - 37, WINHEIGHT - 52 + (bar_trans - self.bar_offset * bar_trans) + self.shake_offset[1]))
+        with RUNTIME_PROFILER.section('combat_guard_gauges'):
+            if DB.constants.value('pairup') and not DB.constants.value('attack_stance_only'):
+                left_color = self.get_color(self.left.team)
+                right_color = self.get_color(self.right.team)
+                left_gauge = SPRITES.get('guard_' + left_color).copy()
+                font = FONT['number_small2']
+                text = str(self.left.get_guard_gauge()) + '-' + str(self.left.get_max_guard_gauge())
+                font.blit_center(text, left_gauge, (18, -1))
+                right_gauge = SPRITES.get('guard_' + right_color).copy()
+                text = str(self.right.get_guard_gauge()) + '-' + str(self.right.get_max_guard_gauge())
+                font.blit_center(text, right_gauge, (18, -1))
+                gauge_y = WINHEIGHT - 52 + (bar_trans - self.bar_offset * bar_trans) + self.shake_offset[1]
+                combat_surf.blit(right_gauge, (right_pos_x, gauge_y))
+                combat_surf.blit(left_gauge, (right_pos_x - 37, gauge_y))
 
-        # Nametag
-        top = -60 + self.name_offset * 60 + self.shake_offset[1]
-        if self.lp_battle_anim:
-            combat_surf.blit(self.lp_name, (left_pos_x, top + 19))
-        if self.rp_battle_anim:
-            combat_surf.blit(self.rp_name, (WINWIDTH + 3 - self.rp_name.get_width() + self.shake_offset[0], top + 19))
-        combat_surf.blit(self.left_name, (left_pos_x, top))
-        combat_surf.blit(self.right_name, (WINWIDTH + 3 - self.right_name.get_width() + self.shake_offset[0], top))
+        with RUNTIME_PROFILER.section('combat_names'):
+            top = -60 + self.name_offset * 60 + self.shake_offset[1]
+            if self.lp_battle_anim:
+                combat_surf.blit(self.lp_name, (left_pos_x, top + 19))
+            if self.rp_battle_anim:
+                combat_surf.blit(self.rp_name, (WINWIDTH + 3 - self.rp_name.get_width() + self.shake_offset[0], top + 19))
+            combat_surf.blit(self.left_name, (left_pos_x, top))
+            combat_surf.blit(self.right_name, (WINWIDTH + 3 - self.right_name.get_width() + self.shake_offset[0], top))
 
-        self.color_ui(combat_surf)
-
+        with RUNTIME_PROFILER.section('combat_ui_tint_build'):
+            self.color_ui(combat_surf)
         surf.blit(combat_surf, (0, 0))
 
-        self.foreground.draw(surf)
+    def _draw_android_final_ui(self, surf, crit) -> None:
+        """Draw small cached UI layers; position and arrows stay dynamic."""
+        tint_phase = self._android_ui_tint_phase()
+        with RUNTIME_PROFILER.section('combat_bars'):
+            left_base, right_base = self._android_cached_bars(crit)
+            left_layer = self._android_cached_health_bar('left', left_base, self.left_hp_bar, 27, 30 + crit)
+            right_layer = self._android_cached_health_bar('right', right_base, self.right_hp_bar, 25, 30 + crit)
+            bar_trans = 52
+            left_pos_x = -3 + self.shake_offset[0]
+            left_pos_y = WINHEIGHT - left_layer.raw.get_height() + (bar_trans - self.bar_offset * bar_trans) + self.shake_offset[1]
+            right_pos_x = WINWIDTH // 2 + self.shake_offset[0]
 
-        if self.bg_black:
-            bg_black = image_mods.make_translucent(self.bg_black, self.bg_black_progress)
-            surf.blit(bg_black, (0, 0))
+        with RUNTIME_PROFILER.section('combat_guard_gauges'):
+            left_gauge = right_gauge = None
+            if DB.constants.value('pairup') and not DB.constants.value('attack_stance_only'):
+                left_gauge = self._android_cached_guard_gauge(
+                    self.get_color(self.left.team), self.left.get_guard_gauge(), self.left.get_max_guard_gauge(),
+                )
+                right_gauge = self._android_cached_guard_gauge(
+                    self.get_color(self.right.team), self.right.get_guard_gauge(), self.right.get_max_guard_gauge(),
+                )
+            bar_strip, bar_top = self._android_cached_bar_strip(
+                left_layer, right_layer, left_gauge, right_gauge,
+            )
+
+        with RUNTIME_PROFILER.section('combat_names'):
+            top = -60 + self.name_offset * 60 + self.shake_offset[1]
+            name_strip = self._android_cached_name_strip()
+
+        with RUNTIME_PROFILER.section('combat_ui_blit'):
+            surf.blit(self._android_layer_variant(bar_strip, tint_phase), (
+                self.shake_offset[0], left_pos_y + bar_top,
+            ))
+            surf.blit(self._android_layer_variant(name_strip, tint_phase), (
+                self.shake_offset[0], top,
+            ))
+
+        with RUNTIME_PROFILER.section('combat_ui_arrows'):
+            self._draw_android_advantage_arrows(surf, left_pos_x, left_pos_y, right_pos_x, crit, tint_phase)
+
+    def _android_ui_tint_phase(self) -> int:
+        """Mirror MockCombat.color_ui's finite darken/lighten state machine."""
+        phase = self.darken_ui_background
+        if phase:
+            phase = min(phase, 4)
+            self.darken_ui_background = phase + 1
+        return phase
+
+    def _android_cached_bars(self, crit):
+        """Return immutable bar pixels without the animated advantage arrow."""
+        cache_key = (
+            id(self.left_bar), id(self.right_bar), id(self.left_item), id(self.right_item),
+            tuple(self.left_stats or ()), tuple(self.right_stats or ()), crit,
+        )
+        if cache_key != getattr(self, '_android_ui_cache_key', None):
+            with RUNTIME_PROFILER.section('combat_ui_cache_build'):
+                left_base = self.left_bar.copy()
+                right_base = self.right_bar.copy()
+                if self.left_item:
+                    self._draw_item_icon(left_base, self.left_item, self.right_item, self.left, self.right, (45, 2 + crit))
+                if self.right_item:
+                    self._draw_item_icon(right_base, self.right_item, self.left_item, self.right, self.left, (1, 2 + crit))
+                self.draw_stats(left_base, self.left_stats, (42, 0))
+                self.draw_stats(right_base, self.right_stats, (WINWIDTH//2 - 3, 0))
+                self._android_ui_cache_key = cache_key
+                self._android_left_bar_base = left_base
+                self._android_right_bar_base = right_base
+                self._android_bar_layers = {'left': OrderedDict(), 'right': OrderedDict()}
+        return self._android_left_bar_base, self._android_right_bar_base
+
+    def _android_cached_health_bar(self, side, base, health_bar, left, top):
+        cache = getattr(self, '_android_bar_layers', {}).get(side)
+        if cache is None:
+            cache = OrderedDict()
+            if not hasattr(self, '_android_bar_layers'):
+                self._android_bar_layers = {}
+            self._android_bar_layers[side] = cache
+        health_key = (
+            id(base), id(health_bar), getattr(health_bar, 'displayed_val', None),
+            health_bar.get_max_val() if hasattr(health_bar, 'get_max_val') else None,
+            health_bar.big_number() if hasattr(health_bar, 'big_number') else None,
+        )
+        layer = cache.get(health_key)
+        if layer is None:
+            with RUNTIME_PROFILER.section('combat_ui_cache_build'):
+                raw = base.copy()
+                health_bar.draw(raw, left, top)
+                layer = _AndroidCombatUILayer(raw)
+                cache[health_key] = layer
+                while len(cache) > 8:
+                    cache.popitem(last=False)
+        else:
+            cache.move_to_end(health_key)
+        return layer
+
+    def _android_cached_guard_gauge(self, color, current, maximum):
+        cache = getattr(self, '_android_gauge_layers', None)
+        if cache is None:
+            cache = self._android_gauge_layers = OrderedDict()
+        key = (color, current, maximum)
+        layer = cache.get(key)
+        if layer is None:
+            with RUNTIME_PROFILER.section('combat_ui_cache_build'):
+                raw = SPRITES.get('guard_' + color).copy()
+                FONT['number_small2'].blit_center(str(current) + '-' + str(maximum), raw, (18, -1))
+                layer = _AndroidCombatUILayer(raw)
+                cache[key] = layer
+                while len(cache) > 8:
+                    cache.popitem(last=False)
+        else:
+            cache.move_to_end(key)
+        return layer
+
+    def _android_cached_bar_strip(self, left_layer, right_layer, left_gauge, right_gauge):
+        """Combine static bottom UI pieces so a settled frame needs one blit."""
+        cache = getattr(self, '_android_bar_strip_layers', None)
+        if cache is None:
+            cache = self._android_bar_strip_layers = OrderedDict()
+        key = (
+            left_layer, right_layer, left_gauge, right_gauge,
+        )
+        strip = cache.get(key)
+        if strip is None:
+            with RUNTIME_PROFILER.section('combat_ui_cache_build'):
+                gauge_y = left_layer.raw.get_height() - 52
+                minimum_y = min(0, gauge_y) if left_gauge else 0
+                content_y = -minimum_y
+                height = max(
+                    content_y + left_layer.raw.get_height(),
+                    content_y + right_layer.raw.get_height(),
+                    content_y + gauge_y + (left_gauge.raw.get_height() if left_gauge else 0),
+                    content_y + gauge_y + (right_gauge.raw.get_height() if right_gauge else 0),
+                )
+                raw = engine.create_surface((WINWIDTH, height), transparent=True)
+                raw.blit(left_layer.raw, (-3, content_y))
+                raw.blit(right_layer.raw, (WINWIDTH // 2, content_y))
+                if right_gauge:
+                    raw.blit(right_gauge.raw, (WINWIDTH // 2, content_y + gauge_y))
+                if left_gauge:
+                    raw.blit(left_gauge.raw, (WINWIDTH // 2 - 37, content_y + gauge_y))
+                strip = (_AndroidCombatUILayer(raw), minimum_y)
+                cache[key] = strip
+                while len(cache) > 8:
+                    cache.popitem(last=False)
+        else:
+            cache.move_to_end(key)
+        return strip
+
+    def _android_cached_name_strip(self):
+        """Combine immutable name tags; slide and shake stay at blit time."""
+        entries = [
+            (self.left_name, -3, 0),
+            (self.right_name, WINWIDTH + 3 - self.right_name.get_width(), 0),
+        ]
+        if self.lp_battle_anim:
+            entries.append((self.lp_name, -3, 19))
+        if self.rp_battle_anim:
+            entries.append((self.rp_name, WINWIDTH + 3 - self.rp_name.get_width(), 19))
+        key = tuple((id(raw), raw.get_size(), x, y) for raw, x, y in entries)
+        cache = getattr(self, '_android_name_strip_layers', None)
+        if cache is None:
+            cache = self._android_name_strip_layers = OrderedDict()
+        layer = cache.get(key)
+        if layer is None:
+            with RUNTIME_PROFILER.section('combat_ui_cache_build'):
+                height = max(y + raw.get_height() for raw, _x, y in entries)
+                raw = engine.create_surface((WINWIDTH, height), transparent=True)
+                for name, x, y in entries:
+                    raw.blit(name, (x, y))
+                layer = _AndroidCombatUILayer(raw)
+                cache[key] = layer
+                while len(cache) > 4:
+                    cache.popitem(last=False)
+        else:
+            cache.move_to_end(key)
+        return layer
+
+    def _android_layer_variant(self, layer, tint_phase):
+        variant = layer.variants.get(tint_phase)
+        if variant is None:
+            section = 'combat_ui_tint_build' if tint_phase else 'combat_ui_cache_build'
+            with RUNTIME_PROFILER.section(section):
+                source = layer.raw if not tint_phase else layer.raw.copy()
+                if tint_phase:
+                    color = 255 - abs(tint_phase * 24)
+                    engine.fill(source, (color, color, color), None, engine.BLEND_RGB_MULT)
+                variant = self._android_prepare_cached_surface(source)
+                layer.variants[tint_phase] = variant
+        return variant
+
+    @staticmethod
+    def _android_prepare_cached_surface(source):
+        """Prepare an immutable Android UI layer without changing its pixels.
+
+        SDL's fast paths depend on the source format.  A SRCALPHA surface that
+        happens to be fully opaque still takes the alpha path on Android, so
+        copy it once to an opaque display surface.  Binary transparent pixels
+        can use a non-conflicting colorkey and RLE.  Any semi-transparent or
+        globally-alpha layer must stay on the exact alpha path.
+        """
+        if not source.get_flags() & pygame.SRCALPHA:
+            colorkey = source.get_colorkey()
+            if colorkey is None:
+                return source
+            prepared = source.copy()
+            engine.set_colorkey(prepared, tuple(colorkey)[:3], rleaccel=True)
+            return prepared
+
+        if source.get_alpha() not in (None, 255):
+            return source
+
+        visible_colors = set()
+        has_transparent_pixels = False
+        for y in range(source.get_height()):
+            for x in range(source.get_width()):
+                pixel = source.get_at((x, y))
+                if pixel.a not in (0, 255):
+                    return source
+                if pixel.a:
+                    visible_colors.add((pixel.r, pixel.g, pixel.b))
+                else:
+                    has_transparent_pixels = True
+
+        if not has_transparent_pixels:
+            prepared = engine.create_surface(source.get_size())
+            prepared.blit(source, (0, 0))
+            return prepared
+
+        for colorkey in (COLORKEY, (255, 0, 255), (0, 255, 0), (1, 2, 3)):
+            if colorkey not in visible_colors:
+                prepared = engine.create_surface(source.get_size())
+                engine.fill(prepared, colorkey)
+                prepared.blit(source, (0, 0))
+                engine.set_colorkey(prepared, colorkey, rleaccel=True)
+                return prepared
+        return source
+
+    def _draw_android_advantage_arrows(self, surf, left_x, left_y, right_x, crit, tint_phase):
+        if self.left_item:
+            layer = self._android_advantage_arrow_layer(self.left, self.right, self.left_item, self.right_item)
+            if layer:
+                surf.blit(self._android_layer_variant(layer, tint_phase), (left_x + 56, left_y + 10 + crit))
+        if self.right_item:
+            layer = self._android_advantage_arrow_layer(self.right, self.left, self.right_item, self.left_item)
+            if layer:
+                surf.blit(self._android_layer_variant(layer, tint_phase), (right_x + 12, left_y + 10 + crit))
+
+    def _android_advantage_arrow_layer(self, attacker, defender, weapon, def_weapon):
+        direction = self._android_advantage_direction(attacker, defender, weapon, def_weapon)
+        if direction is None:
+            return None
+        cache = getattr(self, '_android_arrow_layers', None)
+        if cache is None:
+            cache = self._android_arrow_layers = OrderedDict()
+        key = (direction, ANIMATION_COUNTERS.arrow_counter.count)
+        layer = cache.get(key)
+        if layer is None:
+            with RUNTIME_PROFILER.section('combat_ui_cache_build'):
+                y = 0 if direction == 'up' else 10
+                raw = engine.subsurface(SPRITES.get('arrow_advantage'), (key[1] * 7, y, 7, 10)).copy()
+                layer = _AndroidCombatUILayer(raw)
+                cache[key] = layer
+                while len(cache) > 6:
+                    cache.popitem(last=False)
+        else:
+            cache.move_to_end(key)
+        return layer
+
+    @staticmethod
+    def _android_advantage_direction(attacker, defender, weapon, def_weapon):
+        if not skill_system.check_enemy(attacker, defender):
+            return None
+        if item_system.show_weapon_advantage(attacker, weapon, defender, def_weapon):
+            return 'up'
+        if item_system.show_weapon_disadvantage(attacker, weapon, defender, def_weapon):
+            return 'down'
+        advantage = combat_calcs.compute_advantage(attacker, defender, weapon, def_weapon)
+        disadvantage = combat_calcs.compute_advantage(attacker, defender, weapon, def_weapon, False)
+        if advantage and advantage.modification > 0:
+            return 'up'
+        if advantage and advantage.modification < 0:
+            return 'down'
+        if disadvantage and disadvantage.modification > 0:
+            return 'down'
+        if disadvantage and disadvantage.modification < 0:
+            return 'up'
+        return None
 
     def draw_item(self, surf, item, other_item, unit, other, topleft):
+        self._draw_item_icon(surf, item, other_item, unit, other, topleft)
+
+        if skill_system.check_enemy(unit, other):
+            game.ui_view.draw_adv_arrows(surf, unit, other, item, other_item, (topleft[0] + 11, topleft[1] + 8))
+
+    @staticmethod
+    def _draw_item_icon(surf, item, other_item, unit, other, topleft):
         icon = icons.get_icon(item)
         if icon:
             icon = item_system.item_icon_mod(unit, item, other, other_item, icon)
             surf.blit(icon, (topleft[0] + 2, topleft[1] + 4))
-
-        if skill_system.check_enemy(unit, other):
-            game.ui_view.draw_adv_arrows(surf, unit, other, item, other_item, (topleft[0] + 11, topleft[1] + 8))
 
     def draw_stats(self, surf, stats, topright):
         right, top = topright

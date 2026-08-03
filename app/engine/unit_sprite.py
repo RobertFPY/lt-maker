@@ -48,11 +48,13 @@ class SingleMapSprite():
         sprite.counter = GenericAnimCounter.from_frames(frame_timings, loop=False, get_time=engine.get_time)
         return sprite
 
-    def get_frame(self) -> engine.Surface:
-        return self.frames[self.counter.count].copy()
+    def get_frame(self, copy: bool = True) -> engine.Surface:
+        frame = self.frames[self.counter.count]
+        return frame.copy() if copy else frame
 
-    def get_stationary_frame(self) -> engine.Surface:
-        return self.frames[0].copy()
+    def get_stationary_frame(self, copy: bool = True) -> engine.Surface:
+        frame = self.frames[0]
+        return frame.copy() if copy else frame
 
 class MapSprite():
     def __init__(self, map_sprite: map_sprites.MapSprite, team: NID, palette_override: NID = None):
@@ -153,9 +155,9 @@ class MapSprite():
             # engine.set_colorkey(img, COLORKEY, rleaccel=True)
         return imgs
 
-    def create_image(self, state, stationary=False):
+    def create_image(self, state, stationary=False, copy=True):
         image: SingleMapSprite = self.__dict__.get(state)  # This is roughly 2x as fast as getattr, but getattr is safer
-        return image.get_stationary_frame() if stationary else image.get_frame()
+        return image.get_stationary_frame(copy) if stationary else image.get_frame(copy)
 
 def load_map_sprite(unit: UnitObject | UnitPrefab, team='player'):
     klass = DB.classes.get(unit.klass)
@@ -461,8 +463,11 @@ class UnitSprite():
         self.update_transition()
         self.health_bar.update()
 
-        # update animations
-        self.animations = {k: v for (k, v) in self.animations.items() if not v.update()}
+        # Keep a completed animation through one present so fast-forward does
+        # not remove its final visible frame before draw() gets a chance.
+        for anim in self.animations.values():
+            if not getattr(anim, '_pending_remove_after_draw', False) and anim.update():
+                anim._pending_remove_after_draw = True
 
         # update personal particles
         self.particles = [ps for ps in self.particles if not ps.remove_me_flag]
@@ -553,14 +558,14 @@ class UnitSprite():
             elif self.transition_state == 'swoosh_move':
                 self.set_transition('swoosh_in')
 
-    def create_image(self, state, stationary=False):
+    def create_image(self, state, stationary=False, copy=True):
         stationary = stationary or self.unit.is_dying
         if not self.map_sprite:  # This shouldn't happen, but if it does...
             res = RESOURCES.map_sprites[0]
             self.map_sprite = MapSprite(res, self.unit.team)
         if self.transition_state == 'swoosh_in':
             state = 'down'
-        return self.map_sprite.create_image(state, stationary)
+        return self.map_sprite.create_image(state, stationary, copy)
 
     def get_topleft(self, cull_rect):
         if self._fake_position:
@@ -575,7 +580,9 @@ class UnitSprite():
 
     def draw(self, surf, cull_rect):
         current_time = engine.get_time()
-        image = self.create_image(self.image_state)
+        # The normal map path only blits this frame. Effects below first create
+        # their own alpha/transform surface, so skip a needless Surface.copy().
+        image = self.create_image(self.image_state, copy=False)
         left, top = self.get_topleft(cull_rect)
 
         anim_top = top
@@ -670,6 +677,9 @@ class UnitSprite():
         for animation in self.animations.values():
             if not animation.contingent or animation.nid in valid_anims:
                 animation.draw(surf, (left, anim_top))
+        self.animations = {
+            nid: animation for nid, animation in self.animations.items()
+            if not getattr(animation, '_pending_remove_after_draw', False)}
 
         # Draw personal particles
         for particle_system in self.particles:

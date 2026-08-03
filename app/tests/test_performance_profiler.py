@@ -166,6 +166,16 @@ class RuntimeProfilerTests(unittest.TestCase):
         self.assertLess(playback, action_state)
         self.assertLess(action_state, apply_actions)
 
+    def test_map_combat_defers_cleanup0_until_after_solver_exhaustion(self):
+        source = (Path(__file__).parents[1] / 'engine' / 'combat' /
+                  'map_combat.py').read_text(encoding='utf-8')
+
+        begin_phase = source.index("elif self.state == 'begin_phase':")
+        cleanup_state = source.index("elif self.state == 'cleanup0':")
+        cleanup = source.index('self.clean_up0()', cleanup_state)
+        self.assertLess(begin_phase, cleanup_state)
+        self.assertLess(cleanup_state, cleanup)
+
 
 if __name__ == '__main__':
     unittest.main()

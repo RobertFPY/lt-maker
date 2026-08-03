@@ -71,11 +71,15 @@ class MapCombat(SimpleCombat):
         # print("Map Combat %s" % self.state)
         elif self.state == 'begin_phase':
             if not self.state_machine.get_state():
-                self.clean_up0()
-                self.set_state('exp_wait')
-                return False
+                self.set_state('cleanup0')
 
-            self.set_state('solve_phase')
+            else:
+                self.set_state('solve_phase')
+
+        elif self.state == 'cleanup0':
+            with RUNTIME_PROFILER.section('combat.cleanup0'):
+                self.clean_up0()
+            self.set_state('exp_wait')
 
         elif self.state == 'solve_phase':
             with RUNTIME_PROFILER.section('combat.solver_do'):
@@ -275,17 +279,19 @@ class MapCombat(SimpleCombat):
                 
         elif self.state == 'exp_wait':
             self.health_bars.clear()
-            self.clean_up1()
+            with RUNTIME_PROFILER.section('combat.cleanup1'):
+                self.clean_up1()
             self.set_state('post_combat')
             
         elif self.state == 'post_combat':
-            self.clean_up2()
+            with RUNTIME_PROFILER.section('combat.cleanup2'):
+                self.clean_up2()
             return True
 
         if self.state != current_state:
             self.last_update = engine.get_time()
 
-        if self.state not in ('begin_phase', 'proc_animations', 'apply_actions'):
+        if self.state not in ('begin_phase', 'cleanup0', 'proc_animations', 'apply_actions'):
             for hp_bar in self.health_bars.values():
                 hp_bar.update()
 

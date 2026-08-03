@@ -154,6 +154,18 @@ class RuntimeProfilerTests(unittest.TestCase):
         self.assertLess(solver, visual_setup)
         self.assertLess(visual_setup, health_bars)
 
+    def test_map_combat_defers_actions_until_after_playback_effects(self):
+        source = (Path(__file__).parents[1] / 'engine' / 'combat' /
+                  'map_combat.py').read_text(encoding='utf-8')
+
+        anim_state = source.index("elif self.state == 'anim':")
+        action_state = source.index("elif self.state == 'apply_actions':")
+        playback = source.index('self._handle_playback()', anim_state)
+        apply_actions = source.index('self._apply_actions()', action_state)
+        self.assertLess(anim_state, action_state)
+        self.assertLess(playback, action_state)
+        self.assertLess(action_state, apply_actions)
+
 
 if __name__ == '__main__':
     unittest.main()

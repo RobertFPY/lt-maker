@@ -258,6 +258,22 @@ class AndroidDebuggerTextInputTests(unittest.TestCase):
         self.assertGreaterEqual(self.state.scroll, len(entries) - self.state.MAX_ROWS - 1)
         self.state._activate.assert_not_called()
 
+    def test_draw_reuses_a_settled_panel_and_rebuilds_after_selection_changes(self):
+        self.state._panel_cache = None
+        self.state._panel_cache_key = None
+        self.state._snapshot_revision = 0
+        panel = MagicMock()
+        self.state._rebuild_panel_cache = MagicMock(return_value=panel)
+        surface = MagicMock()
+
+        self.state.draw(surface)
+        self.state.draw(surface)
+        self.state.selection = 1
+        self.state.draw(surface)
+
+        self.assertEqual(2, self.state._rebuild_panel_cache.call_count)
+        self.assertEqual(3, surface.blit.call_count)
+
 
 if __name__ == '__main__':
     unittest.main()

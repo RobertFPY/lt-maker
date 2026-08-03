@@ -43,7 +43,10 @@ class EditorWorkspace(QDialog):
     """
 
     def __init__(self, main_editor):
-        super().__init__(main_editor)
+        # A QDialog with a parent stays above that parent on Windows.  Keep the
+        # Python reference below, but make this a peer top-level window so the
+        # last window the user activates is the one in front.
+        super().__init__()
         self.main_editor = main_editor
         self.settings = MainSettingsController()
         self.saved_data = None

@@ -84,6 +84,10 @@ class MapCombat(SimpleCombat):
             if not self.actions and not self.playback:
                 self.state_machine.setup_next_state()
                 return False
+
+            self.set_state('setup_phase_visuals')
+
+        elif self.state == 'setup_phase_visuals':
             if not item_system.no_map_hp_display(self.attacker, self.main_item):
                 with RUNTIME_PROFILER.section('combat.health_bar_build'):
                     self._build_health_bars()

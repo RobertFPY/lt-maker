@@ -144,6 +144,16 @@ class RuntimeProfilerTests(unittest.TestCase):
         solver = source.index("RUNTIME_PROFILER.section('combat.solver_do')")
         self.assertLess(solve_state, solver)
 
+    def test_map_combat_defers_visual_setup_until_after_solver(self):
+        source = (Path(__file__).parents[1] / 'engine' / 'combat' /
+                  'map_combat.py').read_text(encoding='utf-8')
+
+        solver = source.index("RUNTIME_PROFILER.section('combat.solver_do')")
+        visual_setup = source.index("elif self.state == 'setup_phase_visuals':")
+        health_bars = source.index("RUNTIME_PROFILER.section('combat.health_bar_build')")
+        self.assertLess(solver, visual_setup)
+        self.assertLess(visual_setup, health_bars)
+
 
 if __name__ == '__main__':
     unittest.main()

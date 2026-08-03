@@ -1121,47 +1121,144 @@ def change_tilemap(self: Event, tilemap, position_offset=None, load_tilemap=None
         if region.position:
             previous_region_pos[region.nid] = region.position
 
-    def commit(pending_tilemap, pending_board, pending_boundary):
-        # Keep the old behavior in one final transaction.  The costly board
-        # construction already happened offscreen; these operations preserve
-        # action ordering for auras, terrain skills, fog, and regions.
-        self.game.cursor.set_pos((0, 0))
-        for unit in self.game.units:
-            if unit.position:
-                action.LeaveMap(unit).execute()
-        self.game.level_vars['_prev_pos_%s' % current_tilemap_nid] = previous_unit_pos
+    # A failed commit must not strand the player on a partly detached map.
+    # Capture the mutable state that LeaveMap/ArriveOnMap alter; recovery is
+    # intentionally synchronous because it only runs on an exceptional path.
+    old_tilemap = self.game.level.tilemap
+    old_regions = list(self.game.level.regions)
+    old_region_positions = {region.nid: region.position for region in old_regions}
+    old_unit_state = [
+        (unit, unit.position, unit.previous_position, list(unit._skills),
+         list(unit._visible_skills_cache))
+        for unit in self.game.units
+    ]
+    old_level_vars = dict(self.game.level_vars)
+    old_skill_registry = dict(self.game.skill_registry)
+    old_terrain_status_registry = dict(self.game.terrain_status_registry)
+    old_action_log = list(self.game.action_log.actions)
+    old_action_index = self.game.action_log.action_index
+    old_first_free_action = self.game.action_log._first_free_action
+    old_bounds = self.game.board.bounds
+    old_fog_state = set(self.game.board.previously_visited_tiles)
+    old_cursor = self.game.cursor
+    old_movement = self.game.movement
+    old_map_view = self.game.map_view
 
-        for region in list(self.game.level.regions):
-            if region.position:
-                action.RemoveRegion(region).execute()
-        self.game.level_vars['_prev_region_%s' % current_tilemap_nid] = previous_region_pos
+    def rollback() -> None:
+        from app.engine import aura_funcs
+        from app.engine.game_board import GameBoard
+        from app.events.regions import RegionType
 
-        self.game.level.tilemap = pending_tilemap
-        self.game.board = pending_board
-        self.game.boundary = pending_boundary
-        if self.game.is_displaying_overworld():
-            from app.engine import level_cursor, map_view
-            from app.engine.movement import movement_system
-            self.game.cursor = level_cursor.LevelCursor(self.game)
-            self.game.movement = movement_system.MovementSystem(self.game.cursor, self.game.camera)
-            self.game.map_view = map_view.MapView()
+        self.game.level.tilemap = old_tilemap
+        self.game.level.regions.restore(old_regions)
+        for region in old_regions:
+            region.position = old_region_positions[region.nid]
+        self.game.level_vars.clear()
+        self.game.level_vars.update(old_level_vars)
+        self.game.skill_registry = old_skill_registry
+        self.game.terrain_status_registry = old_terrain_status_registry
+        self.game.cursor = old_cursor
+        self.game.movement = old_movement
+        self.game.map_view = old_map_view
+        self.game.get_region_under_pos.cache_clear()
 
-        if reload_map and self.game.level_vars.get('_prev_pos_%s' % reload_map_nid):
-            for unit_nid, pos in self.game.level_vars['_prev_pos_%s' % reload_map_nid].items():
-                final_pos = pos[0] + position_offset[0], pos[1] + position_offset[1]
-                if self.game.tilemap.check_bounds(final_pos):
-                    unit = self.game.get_unit(unit_nid)
-                    action.ArriveOnMap(unit, final_pos).execute()
+        self.game.board = GameBoard(old_tilemap)
+        self.game.board.set_bounds(*old_bounds)
+        self.game.board.set_previously_visited_tiles(old_fog_state)
+        from app.engine.boundary import BoundaryInterface
+        self.game.boundary = BoundaryInterface(old_tilemap.width, old_tilemap.height)
 
-        if reload_map and self.game.level_vars.get('_prev_region_%s' % reload_map_nid):
-            for region_nid, pos in self.game.level_vars['_prev_region_%s' % reload_map_nid].items():
-                region = self.game.get_region(region_nid)
-                if region:
-                    region.position = pos[0] + position_offset[0], pos[1] + position_offset[1]
-                    action.AddRegion(region).execute()
+        for region in old_regions:
+            if region.region_type == RegionType.FOG:
+                action.AddFogRegion(region).execute()
+            elif region.region_type == RegionType.VISION:
+                action.AddVisionRegion(region).execute()
 
-        self.game.action_log.set_first_free_action()
+        for unit, position, previous_position, skills, visible_skills in old_unit_state:
+            unit.position = position
+            unit.previous_position = previous_position
+            unit._skills = skills
+            unit._visible_skills_cache = visible_skills
+            if position:
+                self.game.board.set_unit(position, unit)
+
+        for unit, position, _previous_position, _skills, _visible_skills in old_unit_state:
+            if position:
+                for skill in unit.all_skills:
+                    if skill.aura:
+                        aura_funcs.repopulate_aura(unit, skill, self.game)
+                self.game.boundary.register_unit_auras(unit)
+                self.game.boundary.arrive(unit)
+                action.UpdateFogOfWar(unit).execute()
+
+        self.game.action_log.actions = old_action_log
+        self.game.action_log.action_index = old_action_index
+        self.game.action_log._first_free_action = old_first_free_action
         self.game.on_alter_game_state()
+
+    def commit(pending_tilemap, pending_board, pending_boundary):
+        try:
+            self.game.cursor.set_pos((0, 0))
+            detached_units = 0
+            for unit in self.game.units:
+                if unit.position:
+                    action.LeaveMap(unit).execute()
+                    detached_units += 1
+                    if detached_units % 8 == 0:
+                        yield 'DETACH_UNITS'
+            yield 'DETACH_UNITS'
+            self.game.level_vars['_prev_pos_%s' % current_tilemap_nid] = previous_unit_pos
+
+            detached_regions = 0
+            for region in list(self.game.level.regions):
+                if region.position:
+                    action.RemoveRegion(region).execute()
+                    detached_regions += 1
+                    if detached_regions % 16 == 0:
+                        yield 'DETACH_REGIONS'
+            yield 'DETACH_REGIONS'
+            self.game.level_vars['_prev_region_%s' % current_tilemap_nid] = previous_region_pos
+
+            self.game.level.tilemap = pending_tilemap
+            self.game.board = pending_board
+            self.game.boundary = pending_boundary
+            yield 'COMMIT'
+            if self.game.is_displaying_overworld():
+                from app.engine import level_cursor, map_view
+                from app.engine.movement import movement_system
+                self.game.cursor = level_cursor.LevelCursor(self.game)
+                self.game.movement = movement_system.MovementSystem(self.game.cursor, self.game.camera)
+                self.game.map_view = map_view.MapView()
+
+            restored_units = 0
+            if reload_map and self.game.level_vars.get('_prev_pos_%s' % reload_map_nid):
+                for unit_nid, pos in self.game.level_vars['_prev_pos_%s' % reload_map_nid].items():
+                    final_pos = pos[0] + position_offset[0], pos[1] + position_offset[1]
+                    if self.game.tilemap.check_bounds(final_pos):
+                        unit = self.game.get_unit(unit_nid)
+                        action.ArriveOnMap(unit, final_pos).execute()
+                        restored_units += 1
+                        if restored_units % 4 == 0:
+                            yield 'RESTORE_UNITS'
+            yield 'RESTORE_UNITS'
+
+            restored_regions = 0
+            if reload_map and self.game.level_vars.get('_prev_region_%s' % reload_map_nid):
+                for region_nid, pos in self.game.level_vars['_prev_region_%s' % reload_map_nid].items():
+                    region = self.game.get_region(region_nid)
+                    if region:
+                        region.position = pos[0] + position_offset[0], pos[1] + position_offset[1]
+                        action.AddRegion(region).execute()
+                        restored_regions += 1
+                        if restored_regions % 16 == 0:
+                            yield 'RESTORE_REGIONS'
+            yield 'RESTORE_REGIONS'
+
+            self.game.action_log.set_first_free_action()
+            self.game.on_alter_game_state()
+        except Exception:
+            rollback()
+            raise
 
     def build_board(pending_tilemap):
         from app.engine.game_board import GameBoard

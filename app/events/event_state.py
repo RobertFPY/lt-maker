@@ -65,8 +65,13 @@ class EventState(State):
         """
         return bool(
             self.event
-            and self.event.state == 'processing'
-            and getattr(self.event, '_android_process_yielded', False)
+            and (
+                getattr(self.event, '_defer_render', False)
+                or (
+                    self.event.state == 'processing'
+                    and getattr(self.event, '_android_process_yielded', False)
+                )
+            )
         )
 
     def draw(self, surf):

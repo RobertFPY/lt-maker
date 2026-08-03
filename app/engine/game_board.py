@@ -24,10 +24,11 @@ class GameBoard(object):
     @classmethod
     def build_iter(
         cls, tilemap, batch_size: int = 64,
+        terrain_nid_resolver: Optional[Callable[[object, Pos], NID]] = None,
     ) -> Generator[str, None, GameBoard]:
         """Build a board in slices and return it through StopIteration.value."""
         board = cls.__new__(cls)
-        yield from board._initialize_iter(tilemap, batch_size)
+        yield from board._initialize_iter(tilemap, batch_size, terrain_nid_resolver)
         return board
 
     def _filled_grid_iter(
@@ -43,6 +44,7 @@ class GameBoard(object):
 
     def _initialize_iter(
         self, tilemap, batch_size: int = 64,
+        terrain_nid_resolver: Optional[Callable[[object, Pos], NID]] = None,
     ) -> Generator[str, None, None]:
         batch_size = max(1, int(batch_size))
         self.width: int = tilemap.width
@@ -54,10 +56,11 @@ class GameBoard(object):
         # constructor walked the full tilemap twice before yielding control.
         mtype_grid: Grid[NID] = Grid((self.width, self.height))
         self.opacity_grid: Grid[bool] = Grid((self.width, self.height))
+        terrain_nid_resolver = terrain_nid_resolver or game.get_terrain_nid
         processed = 0
         for x in range(self.width):
             for y in range(self.height):
-                terrain_nid = game.get_terrain_nid(tilemap, (x, y))
+                terrain_nid = terrain_nid_resolver(tilemap, (x, y))
                 terrain = DB.terrain.get(terrain_nid)
                 movement_terrain = terrain or DB.terrain[0]
                 mtype_grid.append(movement_terrain.mtype)

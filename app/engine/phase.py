@@ -11,21 +11,23 @@ from app.engine.sound import get_sound_thread
 from app.engine import config as cf
 from app.engine import engine, image_mods
 from app.engine.game_state import game
+from app.engine.performance import RUNTIME_PROFILER
 
 import logging
 
 def fade_in_phase_music(at_turn_change: bool = False):
-    logging.info('Fade in Phase Music')
-    team = game.phase.get_current()
-    music = game.level.music.get(team + '_phase', None)
-    fade = game.game_vars.get('_phase_music_fade_ms', 400)
-    if music:
-        if at_turn_change and DB.constants.value('restart_phase_music'):
-            get_sound_thread().fade_in(music, fade_in=fade, from_start=True)
+    with RUNTIME_PROFILER.section('phase.music_fade_in'):
+        logging.info('Fade in Phase Music')
+        team = game.phase.get_current()
+        music = game.level.music.get(team + '_phase', None)
+        fade = game.game_vars.get('_phase_music_fade_ms', 400)
+        if music:
+            if at_turn_change and DB.constants.value('restart_phase_music'):
+                get_sound_thread().fade_in(music, fade_in=fade, from_start=True)
+            else:
+                get_sound_thread().fade_in(music, fade_in=fade)
         else:
-            get_sound_thread().fade_in(music, fade_in=fade)
-    else:
-        get_sound_thread().fade_to_pause(fade_out=fade)
+            get_sound_thread().fade_to_pause(fade_out=fade)
 
 def fade_out_phase_music():
     logging.info('Fade out Phase Music')

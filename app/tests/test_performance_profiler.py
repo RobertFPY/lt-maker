@@ -1,5 +1,6 @@
 import logging
 import unittest
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -102,6 +103,20 @@ class RuntimeProfilerTests(unittest.TestCase):
         self.assertEqual('Chapter1', counters['level'])
         self.assertEqual('castle', counters['tilemap'])
         self.assertEqual(1, counters['regions'])
+
+    def test_phase_change_and_music_have_actionable_child_scopes(self):
+        root = Path(__file__).parents[1]
+        phase_state = (root / 'engine' / 'general_states.py').read_text(
+            encoding='utf-8')
+        phase_music = (root / 'engine' / 'phase.py').read_text(encoding='utf-8')
+
+        for scope in (
+            'phase_change.save_snapshot', 'phase_change.fade_out_music',
+            'phase_change.transition_setup', 'phase_change.reset_units',
+            'phase_change.resolve_next_music', 'phase_change.music_fade_in',
+        ):
+            self.assertIn("RUNTIME_PROFILER.section('%s')" % scope, phase_state)
+        self.assertIn("RUNTIME_PROFILER.section('phase.music_fade_in')", phase_music)
 
 
 if __name__ == '__main__':

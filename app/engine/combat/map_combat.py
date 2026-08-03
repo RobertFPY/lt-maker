@@ -70,12 +70,14 @@ class MapCombat(SimpleCombat):
 
         # print("Map Combat %s" % self.state)
         elif self.state == 'begin_phase':
-            # Get playback
             if not self.state_machine.get_state():
                 self.clean_up0()
                 self.set_state('exp_wait')
                 return False
 
+            self.set_state('solve_phase')
+
+        elif self.state == 'solve_phase':
             with RUNTIME_PROFILER.section('combat.solver_do'):
                 self.actions, self.playback = self.state_machine.do()
             self.full_playback += self.playback

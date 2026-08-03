@@ -135,6 +135,15 @@ class RuntimeProfilerTests(unittest.TestCase):
         ):
             self.assertIn("RUNTIME_PROFILER.section('%s')" % scope, source)
 
+    def test_map_combat_defers_solver_to_its_own_update_state(self):
+        source = (Path(__file__).parents[1] / 'engine' / 'combat' /
+                  'map_combat.py').read_text(encoding='utf-8')
+
+        self.assertIn("self.set_state('solve_phase')", source)
+        solve_state = source.index("elif self.state == 'solve_phase':")
+        solver = source.index("RUNTIME_PROFILER.section('combat.solver_do')")
+        self.assertLess(solve_state, solver)
+
 
 if __name__ == '__main__':
     unittest.main()

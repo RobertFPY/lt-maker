@@ -14,7 +14,7 @@ import os
 import threading
 import time
 from contextlib import contextmanager
-from typing import Dict, Iterator, Mapping, Optional
+from typing import Any, Dict, Iterator, Mapping, Optional, Tuple
 
 from app.engine.android_runtime import is_android_runtime
 
@@ -31,9 +31,15 @@ class RuntimeProfiler:
         self.interval_seconds = float(os.environ.get("LT_PROFILE_INTERVAL", "5"))
         self.slow_frame_ms = float(os.environ.get("LT_PROFILE_SLOW_FRAME_MS", "100"))
         self._lock = threading.Lock()
-        self._frame_started = 0.0
+        self._frame_started_ns = 0
         self._frame_stages: Dict[str, float] = {}
+        self._frame_scopes: list[Dict[str, Any]] = []
+        self._scope_stack: list[Dict[str, Any]] = []
+        self._last_frame_scopes: Tuple[Dict[str, Any], ...] = ()
+        self._next_scope_id = 0
         self._frames: collections.deque[float] = collections.deque(maxlen=300)
+        self._frame_history: collections.deque[Dict[str, Any]] = collections.deque(
+            maxlen=241)
         self._stage_totals: collections.Counter[str] = collections.Counter()
         self._stage_samples: Dict[str, collections.deque[float]] = {}
         self._event_counts: collections.Counter[str] = collections.Counter()
@@ -53,20 +59,53 @@ class RuntimeProfiler:
     def begin_frame(self) -> None:
         if not self.enabled:
             return
-        self._frame_started = time.perf_counter()
+        self._frame_started_ns = time.perf_counter_ns()
         self._frame_stages = {}
+        self._frame_scopes = []
+        self._scope_stack = []
+
+    def latest_frame_scopes(self) -> Tuple[Dict[str, Any], ...]:
+        """Return a read-only snapshot of the most recently completed frame.
+
+        This intentionally exposes milliseconds for testability and log export,
+        while collection uses nanoseconds to keep nested exclusive timings
+        precise.
+        """
+        return tuple(dict(scope) for scope in self._last_frame_scopes)
 
     @contextmanager
     def section(self, name: str) -> Iterator[None]:
         if not self.enabled:
             yield
             return
-        started = time.perf_counter()
+        parent = self._scope_stack[-1] if self._scope_stack else None
+        scope = {
+            'scope_id': self._next_scope_id,
+            'name': name,
+            'parent_scope_id': parent['scope_id'] if parent else None,
+            'start_ns': time.perf_counter_ns(),
+            'end_ns': 0,
+            'inclusive_ns': 0,
+            'exclusive_ns': 0,
+            'child_inclusive_ns': 0,
+            'invocation_count': 1,
+            'thread_id': threading.get_ident(),
+        }
+        self._next_scope_id += 1
+        self._frame_scopes.append(scope)
+        self._scope_stack.append(scope)
         try:
             yield
         finally:
-            elapsed = (time.perf_counter() - started) * 1000.0
-            self._frame_stages[name] = self._frame_stages.get(name, 0.0) + elapsed
+            scope['end_ns'] = time.perf_counter_ns()
+            scope['inclusive_ns'] = scope['end_ns'] - scope['start_ns']
+            scope['exclusive_ns'] = max(
+                0, scope['inclusive_ns'] - scope['child_inclusive_ns'])
+            self._scope_stack.pop()
+            if parent:
+                parent['child_inclusive_ns'] += scope['inclusive_ns']
+            elapsed_ms = scope['inclusive_ns'] / 1_000_000.0
+            self._frame_stages[name] = self._frame_stages.get(name, 0.0) + elapsed_ms
 
     def record(self, name: str, elapsed_ms: float) -> None:
         """Record work outside the game loop, such as decoding or save I/O."""
@@ -85,8 +124,24 @@ class RuntimeProfiler:
     def finish_frame(self, counters: Optional[Mapping[str, object]] = None) -> None:
         if not self.enabled:
             return
-        frame_ms = (time.perf_counter() - self._frame_started) * 1000.0
+        frame_ms = (time.perf_counter_ns() - self._frame_started_ns) / 1_000_000.0
         with self._lock:
+            completed_scopes = tuple({
+                'scope_id': scope['scope_id'],
+                'name': scope['name'],
+                'parent_scope_id': scope['parent_scope_id'],
+                'inclusive_ms': scope['inclusive_ns'] / 1_000_000.0,
+                'exclusive_ms': scope['exclusive_ns'] / 1_000_000.0,
+                'invocation_count': scope['invocation_count'],
+                'thread_id': scope['thread_id'],
+            } for scope in self._frame_scopes)
+            self._last_frame_scopes = completed_scopes
+            metadata = dict(counters or {})
+            self._frame_history.append({
+                'frame_ms': frame_ms,
+                'scopes': completed_scopes,
+                'metadata': metadata,
+            })
             self._frames.append(frame_ms)
             self._stage_totals.update(self._frame_stages)
             for name, elapsed in self._frame_stages.items():
@@ -98,10 +153,12 @@ class RuntimeProfiler:
             now = time.monotonic()
             report_due = now - self._last_report >= self.interval_seconds
             if frame_ms >= self.slow_frame_ms:
-                stages = ", ".join(
-                    f"{name}={elapsed:.1f}" for name, elapsed in sorted(self._frame_stages.items())
-                )
-                logging.warning("PERF slow-frame total=%.1fms %s", frame_ms, stages)
+                scopes = self._format_scope_tree(completed_scopes)
+                metadata_text = " ".join(
+                    f"{key}={value}" for key, value in sorted(metadata.items()))
+                logging.warning(
+                    "PERF slow-frame total=%.1fms scopes=%s metadata=%s",
+                    frame_ms, scopes, metadata_text)
             if not report_due or not self._frames:
                 return
             frames = sorted(self._frames)
@@ -132,6 +189,29 @@ class RuntimeProfiler:
     def _percentile(samples: collections.deque[float], percentile: float) -> float:
         ordered = sorted(samples)
         return ordered[min(len(ordered) - 1, int(len(ordered) * percentile))]
+
+    @staticmethod
+    def _format_scope_tree(scopes: Tuple[Dict[str, Any], ...]) -> str:
+        """Make the slow-frame log actionable without emitting per-frame logs."""
+        names = {scope['scope_id']: scope['name'] for scope in scopes}
+        parents = {
+            scope['scope_id']: scope['parent_scope_id'] for scope in scopes
+        }
+        return ", ".join(
+            "%s=inc:%.1f/exc:%.1f" % (
+                RuntimeProfiler._scope_path(scope, names, parents),
+                scope['inclusive_ms'], scope['exclusive_ms'])
+            for scope in scopes)
+
+    @staticmethod
+    def _scope_path(scope: Dict[str, Any], names: Mapping[int, str],
+                    parents: Mapping[int, Optional[int]]) -> str:
+        path = [scope['name']]
+        parent_id = scope['parent_scope_id']
+        while parent_id is not None:
+            path.append(names[parent_id])
+            parent_id = parents[parent_id]
+        return '/'.join(reversed(path))
 
 
 RUNTIME_PROFILER = RuntimeProfiler()

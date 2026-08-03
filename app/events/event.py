@@ -55,6 +55,8 @@ class Event():
 
         self.nid = event_prefab.nid
         self.command_queue: List[event_commands.EventCommand] = []
+        self._profile_command_nid: Optional[str] = None
+        self._profile_command_index: Optional[int] = None
 
         self.background = None
 
@@ -441,6 +443,9 @@ class Event():
 
             self.logger.debug("Run Event Command: %s", command)
             try:
+                if RUNTIME_PROFILER.enabled:
+                    self._profile_command_nid = command.nid
+                    self._profile_command_index = self.processor.get_current_line()
                 if self.do_skip and command.nid in self.skippable:
                     pass
                 else:

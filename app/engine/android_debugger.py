@@ -93,6 +93,9 @@ class AndroidDebuggerState(State):
         self.message_until = 0
         self.snapshot: Dict[str, Any] = {}
         self._last_snapshot_time = -9999
+        self._snapshot_revision = 0
+        self._panel_cache = None
+        self._panel_cache_key = None
 
     @property
     def panel_x(self) -> int:
@@ -122,6 +125,7 @@ class AndroidDebuggerState(State):
         if force or current_time - self._last_snapshot_time >= 250:
             self.snapshot = self.controller.build_snapshot()
             self._last_snapshot_time = current_time
+            self._snapshot_revision += 1
             self.turnwheel_uses = self.snapshot.get('turnwheel', {}).get(
                 'current_uses', self.turnwheel_uses)
             self.turnwheel_enabled = self.snapshot.get('turnwheel', {}).get(
@@ -896,7 +900,7 @@ class AndroidDebuggerState(State):
             display = display[:-3] + '...' if len(display) >= 3 else '...'
         font.blit(display, surface, position)
 
-    def draw(self, surf):
+    def _rebuild_panel_cache(self):
         panel = engine.create_surface((self.PANEL_WIDTH, WINHEIGHT), transparent=True)
         panel.fill((8, 16, 29, 235))
         draw = engine.pygame.draw
@@ -931,11 +935,36 @@ class AndroidDebuggerState(State):
             if track and thumb:
                 draw.rect(panel, (31, 49, 72, 255), track.move(-self.panel_x, 0))
                 draw.rect(panel, (110, 157, 208, 255), thumb.move(-self.panel_x, 0))
+        return panel
+
+    def _panel_key(self):
+        # Number and confirmation screens mutate in-place. They are uncommon
+        # compared with the catalogue views, so favour correctness over a
+        # cache that would need a separate invalidation for every button.
+        if self.view in ('confirm', 'number', 'text'):
+            return None
+        return (
+            self.page, self.view, self.selection, self.scroll,
+            self._snapshot_revision, self.selected_nid,
+            self.unit_filter, self.item_filter, self.command_filter,
+            self.event_script, self.teleport_x, self.teleport_y,
+            self.turnwheel_uses, self.turnwheel_enabled,
+        )
+
+    def draw(self, surf):
+        cache_key = self._panel_key()
+        if cache_key is None or self._panel_cache is None or \
+                self._panel_cache_key != cache_key:
+            self._panel_cache = self._rebuild_panel_cache()
+            self._panel_cache_key = cache_key
+        surf.blit(self._panel_cache, (self.panel_x, 0))
         if self.message and engine.get_true_time() < self.message_until:
             color = (47, 130, 78, 245) if self.message_ok else (132, 51, 65, 245)
-            draw.rect(panel, color, (2, WINHEIGHT - 12, self.PANEL_WIDTH - 4, 10))
-            self._draw_text(panel, self.message, (4, WINHEIGHT - 11), False)
-        surf.blit(panel, (self.panel_x, 0))
+            engine.pygame.draw.rect(
+                surf, color,
+                (self.panel_x + 2, WINHEIGHT - 12, self.PANEL_WIDTH - 4, 10))
+            self._draw_text(surf, self.message,
+                            (self.panel_x + 4, WINHEIGHT - 11), False)
         if self.view == 'text' and self._native_text_request_id is None:
             self._draw_input_dialog(surf)
         return surf

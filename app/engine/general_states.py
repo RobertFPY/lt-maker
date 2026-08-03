@@ -225,7 +225,8 @@ class PhaseChangeState(MapState):
             action.do(action.ChangeFatigue(unit, -unit.get_fatigue()))
 
     def begin(self):
-        self.save_state()
+        with RUNTIME_PROFILER.section('phase_change.save_snapshot'):
+            self.save_state()
         logging.info("Phase Change Start")
         # These are done here instead of in turnchange because
         # introScript and other event scripts will have to go on the stack
@@ -235,13 +236,16 @@ class PhaseChangeState(MapState):
 
         # we want to skip aesthetics if we're in free roam mode though
         if not self.is_roam():
-            phase.fade_out_phase_music()
-            game.phase.slide_in()
+            with RUNTIME_PROFILER.section('phase_change.fade_out_music'):
+                phase.fade_out_phase_music()
+            with RUNTIME_PROFILER.section('phase_change.transition_setup'):
+                game.phase.slide_in()
         game.cursor.hide()
         action.do(action.LockTurnwheel(game.phase.get_current() != 'player'))
         if DB.constants.value('fatigue') and DB.constants.value('reset_fatigue') and game.turncount == 1 and game.phase.get_current() == 'player':
             self.refresh_fatigue()
-        action.do(action.ResetAll([unit for unit in game.units if not unit.dead]))
+        with RUNTIME_PROFILER.section('phase_change.reset_units'):
+            action.do(action.ResetAll([unit for unit in game.units if not unit.dead]))
 
         if DB.constants.value('initiative'):
             unit = game.initiative.get_current_unit()
@@ -267,7 +271,9 @@ class PhaseChangeState(MapState):
         logging.info("Phase Change End")
         if self.is_roam():
             return
-        phase.fade_in_phase_music(at_turn_change=True)
+        with RUNTIME_PROFILER.section('phase_change.resolve_next_music'):
+            with RUNTIME_PROFILER.section('phase_change.music_fade_in'):
+                phase.fade_in_phase_music(at_turn_change=True)
 
     def finish(self):
         if game.turncount == 1 and game.phase.get_current() == 'player':

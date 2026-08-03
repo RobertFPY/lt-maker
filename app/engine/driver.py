@@ -269,13 +269,36 @@ def _performance_counters(game, requested_updates=1, updates_run=1,
     units = getattr(game, 'units', ())
     positioned = sum(1 for unit in units if getattr(unit, 'position', None))
     tilemap = getattr(game, 'tilemap', None)
+    level = getattr(game, 'level', None)
+    state_machine = getattr(game, 'state', None)
+    current_state = state_machine.current_state() if state_machine else None
     counters = {
-        'state': game.state.current(),
+        'state': state_machine.current() if state_machine else None,
+        'state_stack': state_machine.state_names() if state_machine else (),
         'units': len(units),
         'on_map': positioned,
         'anims': len(getattr(tilemap, 'animations', ())) if tilemap else 0,
         'weather': len(getattr(tilemap, 'weather', ())) if tilemap else 0,
+        'level': getattr(level, 'nid', None),
+        'tilemap': getattr(tilemap, 'nid', None),
+        'regions': len(getattr(level, 'regions', ())) if level else 0,
     }
+    active_event = getattr(current_state, 'event', None)
+    if active_event:
+        counters['event_nid'] = getattr(active_event, 'nid', None)
+        processor = getattr(active_event, 'processor', None)
+        command_index = getattr(active_event, '_profile_command_index', None)
+        if command_index is None:
+            command_index = getattr(processor, 'command_pointer', None)
+        if command_index is None:
+            command_index = getattr(processor, 'curr_cmd_idx', None)
+        counters['event_command_index'] = command_index
+        counters['event_command'] = getattr(
+            active_event, '_profile_command_nid', None)
+        if counters['event_command'] is None:
+            commands = getattr(processor, 'commands', ())
+            if isinstance(command_index, int) and 0 <= command_index < len(commands):
+                counters['event_command'] = getattr(commands[command_index], 'nid', None)
     if RUNTIME_PROFILER.enabled:
         counters.update({
             'ff_requested': requested_updates,
@@ -284,7 +307,6 @@ def _performance_counters(game, requested_updates=1, updates_run=1,
             'ff_presents': 1,
             'ff_step_ms': fast_forward_step_ms,
         })
-        current_state = game.state.current_state()
         combat = getattr(current_state, 'combat', None)
         if combat and hasattr(combat, 'state'):
             counters['combat_phase'] = combat.state

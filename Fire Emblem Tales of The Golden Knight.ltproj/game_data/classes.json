@@ -5233,6 +5233,11 @@
                 0,
                 251
             ],
+            "Dagger": [
+                false,
+                0,
+                null
+            ],
             "Lance": [
                 false,
                 0,
@@ -5258,6 +5263,31 @@
                 0,
                 251
             ],
+            "Fire": [
+                false,
+                0,
+                null
+            ],
+            "Wind": [
+                false,
+                0,
+                null
+            ],
+            "Thunder": [
+                false,
+                0,
+                null
+            ],
+            "Water": [
+                false,
+                0,
+                null
+            ],
+            "Earth": [
+                false,
+                0,
+                null
+            ],
             "Anima": [
                 false,
                 0,
@@ -5267,6 +5297,11 @@
                 false,
                 0,
                 251
+            ],
+            "Dragon": [
+                false,
+                0,
+                null
             ],
             "Default": [
                 false,
@@ -5279,11 +5314,6 @@
                 null
             ],
             "Dragonstone": [
-                false,
-                0,
-                null
-            ],
-            "Dagger": [
                 false,
                 0,
                 null
@@ -5380,6 +5410,11 @@
                 0,
                 251
             ],
+            "Dagger": [
+                false,
+                0,
+                null
+            ],
             "Lance": [
                 false,
                 0,
@@ -5405,6 +5440,31 @@
                 0,
                 251
             ],
+            "Fire": [
+                false,
+                0,
+                null
+            ],
+            "Wind": [
+                false,
+                0,
+                null
+            ],
+            "Thunder": [
+                false,
+                0,
+                null
+            ],
+            "Water": [
+                false,
+                0,
+                null
+            ],
+            "Earth": [
+                false,
+                0,
+                null
+            ],
             "Anima": [
                 false,
                 0,
@@ -5414,6 +5474,11 @@
                 false,
                 0,
                 251
+            ],
+            "Dragon": [
+                false,
+                0,
+                null
             ],
             "Default": [
                 false,
@@ -5426,11 +5491,6 @@
                 null
             ],
             "Dragonstone": [
-                false,
-                0,
-                null
-            ],
-            "Dagger": [
                 false,
                 0,
                 null
@@ -5821,6 +5881,11 @@
                 0,
                 251
             ],
+            "Dagger": [
+                false,
+                0,
+                null
+            ],
             "Lance": [
                 true,
                 31,
@@ -5846,6 +5911,31 @@
                 0,
                 251
             ],
+            "Fire": [
+                false,
+                0,
+                null
+            ],
+            "Wind": [
+                false,
+                0,
+                null
+            ],
+            "Thunder": [
+                false,
+                0,
+                null
+            ],
+            "Water": [
+                false,
+                0,
+                null
+            ],
+            "Earth": [
+                false,
+                0,
+                null
+            ],
             "Anima": [
                 false,
                 0,
@@ -5855,6 +5945,11 @@
                 false,
                 0,
                 251
+            ],
+            "Dragon": [
+                false,
+                0,
+                null
             ],
             "Default": [
                 false,
@@ -5867,11 +5962,6 @@
                 null
             ],
             "Dragonstone": [
-                false,
-                0,
-                null
-            ],
-            "Dagger": [
                 false,
                 0,
                 null
@@ -5968,6 +6058,11 @@
                 0,
                 251
             ],
+            "Dagger": [
+                false,
+                0,
+                null
+            ],
             "Lance": [
                 true,
                 71,
@@ -5993,6 +6088,31 @@
                 0,
                 251
             ],
+            "Fire": [
+                false,
+                0,
+                null
+            ],
+            "Wind": [
+                false,
+                0,
+                null
+            ],
+            "Thunder": [
+                false,
+                0,
+                null
+            ],
+            "Water": [
+                false,
+                0,
+                null
+            ],
+            "Earth": [
+                false,
+                0,
+                null
+            ],
             "Anima": [
                 false,
                 0,
@@ -6002,6 +6122,11 @@
                 false,
                 0,
                 251
+            ],
+            "Dragon": [
+                false,
+                0,
+                null
             ],
             "Default": [
                 false,
@@ -6017,11 +6142,6 @@
                 false,
                 0,
                 null
-            ],
-            "Dagger": [
-                false,
-                0,
-                null
             ]
         },
         "icon_nid": "Lance Rider",
@@ -6030,6 +6150,183 @@
             0
         ],
         "map_sprite_nid": "Lance_Rider",
+        "combat_anim_nid": "Lance_Rider",
+        "fields": []
+    },
+    {
+        "nid": "Bow_Rider",
+        "name": "Bow Rider",
+        "desc": "Mounted knights with superior movement.",
+        "tier": 1,
+        "movement_group": "Heavy Cav",
+        "promotes_from": null,
+        "turns_into": [
+            "Lance_Paladin"
+        ],
+        "tags": [
+            "Horse",
+            "Mounted"
+        ],
+        "max_level": 20,
+        "bases": {
+            "HP": 19,
+            "STR": 7,
+            "MAG": 0,
+            "SKL": 6,
+            "SPD": 7,
+            "LCK": 0,
+            "DEF": 7,
+            "CON": 9,
+            "MOV": 8,
+            "RES": 0
+        },
+        "growths": {
+            "HP": 70,
+            "STR": 55,
+            "MAG": 15,
+            "SKL": 40,
+            "SPD": 55,
+            "LCK": 25,
+            "DEF": 40,
+            "CON": 0,
+            "MOV": 0,
+            "RES": 40
+        },
+        "growth_bonus": {
+            "HP": 0,
+            "STR": 0,
+            "MAG": 0,
+            "SKL": 0,
+            "SPD": 0,
+            "LCK": 0,
+            "DEF": 0,
+            "CON": 0,
+            "MOV": 0,
+            "RES": 0
+        },
+        "promotion": {
+            "HP": 0,
+            "STR": 0,
+            "MAG": 0,
+            "SKL": 0,
+            "SPD": 0,
+            "LCK": 0,
+            "DEF": 0,
+            "CON": 0,
+            "MOV": 0,
+            "RES": 0
+        },
+        "max_stats": {
+            "HP": 40,
+            "STR": 20,
+            "MAG": 10,
+            "SKL": 20,
+            "SPD": 20,
+            "LCK": 30,
+            "DEF": 20,
+            "CON": 25,
+            "MOV": 15,
+            "RES": 10
+        },
+        "learned_skills": [],
+        "wexp_gain": {
+            "Sword": [
+                false,
+                0,
+                251
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
+            ],
+            "Lance": [
+                true,
+                31,
+                181
+            ],
+            "Axe": [
+                false,
+                0,
+                251
+            ],
+            "Bow": [
+                false,
+                0,
+                251
+            ],
+            "Staff": [
+                false,
+                0,
+                251
+            ],
+            "Light": [
+                false,
+                0,
+                251
+            ],
+            "Fire": [
+                false,
+                0,
+                null
+            ],
+            "Wind": [
+                false,
+                0,
+                null
+            ],
+            "Thunder": [
+                false,
+                0,
+                null
+            ],
+            "Water": [
+                false,
+                0,
+                null
+            ],
+            "Earth": [
+                false,
+                0,
+                null
+            ],
+            "Anima": [
+                false,
+                0,
+                251
+            ],
+            "Dark": [
+                false,
+                0,
+                251
+            ],
+            "Dragon": [
+                false,
+                0,
+                null
+            ],
+            "Default": [
+                false,
+                0,
+                251
+            ],
+            "Knife": [
+                false,
+                0,
+                null
+            ],
+            "Dragonstone": [
+                false,
+                0,
+                null
+            ]
+        },
+        "icon_nid": "BowKnight (U) Helmet {Flasuban, RobertFPY}",
+        "icon_index": [
+            0,
+            0
+        ],
+        "map_sprite_nid": "Bow Knight {flasuban}",
         "combat_anim_nid": "Lance_Rider",
         "fields": []
     },
@@ -6115,6 +6412,11 @@
                 0,
                 251
             ],
+            "Dagger": [
+                false,
+                0,
+                null
+            ],
             "Lance": [
                 false,
                 0,
@@ -6140,6 +6442,31 @@
                 0,
                 251
             ],
+            "Fire": [
+                false,
+                0,
+                null
+            ],
+            "Wind": [
+                false,
+                0,
+                null
+            ],
+            "Thunder": [
+                false,
+                0,
+                null
+            ],
+            "Water": [
+                false,
+                0,
+                null
+            ],
+            "Earth": [
+                false,
+                0,
+                null
+            ],
             "Anima": [
                 false,
                 0,
@@ -6149,6 +6476,11 @@
                 false,
                 0,
                 251
+            ],
+            "Dragon": [
+                false,
+                0,
+                null
             ],
             "Default": [
                 false,
@@ -6161,11 +6493,6 @@
                 null
             ],
             "Dragonstone": [
-                false,
-                0,
-                null
-            ],
-            "Dagger": [
                 false,
                 0,
                 null
@@ -6262,6 +6589,11 @@
                 0,
                 251
             ],
+            "Dagger": [
+                false,
+                0,
+                null
+            ],
             "Lance": [
                 false,
                 0,
@@ -6287,6 +6619,31 @@
                 0,
                 251
             ],
+            "Fire": [
+                false,
+                0,
+                null
+            ],
+            "Wind": [
+                false,
+                0,
+                null
+            ],
+            "Thunder": [
+                false,
+                0,
+                null
+            ],
+            "Water": [
+                false,
+                0,
+                null
+            ],
+            "Earth": [
+                false,
+                0,
+                null
+            ],
             "Anima": [
                 false,
                 0,
@@ -6296,6 +6653,11 @@
                 false,
                 0,
                 251
+            ],
+            "Dragon": [
+                false,
+                0,
+                null
             ],
             "Default": [
                 false,
@@ -6308,11 +6670,6 @@
                 null
             ],
             "Dragonstone": [
-                false,
-                0,
-                null
-            ],
-            "Dagger": [
                 false,
                 0,
                 null
@@ -6409,6 +6766,11 @@
                 71,
                 251
             ],
+            "Dagger": [
+                false,
+                0,
+                null
+            ],
             "Lance": [
                 false,
                 0,
@@ -6434,6 +6796,31 @@
                 0,
                 251
             ],
+            "Fire": [
+                false,
+                0,
+                null
+            ],
+            "Wind": [
+                false,
+                0,
+                null
+            ],
+            "Thunder": [
+                false,
+                0,
+                null
+            ],
+            "Water": [
+                false,
+                0,
+                null
+            ],
+            "Earth": [
+                false,
+                0,
+                null
+            ],
             "Anima": [
                 false,
                 0,
@@ -6443,6 +6830,11 @@
                 false,
                 0,
                 251
+            ],
+            "Dragon": [
+                false,
+                0,
+                null
             ],
             "Default": [
                 false,
@@ -6455,11 +6847,6 @@
                 null
             ],
             "Dragonstone": [
-                false,
-                0,
-                null
-            ],
-            "Dagger": [
                 false,
                 0,
                 null
@@ -6556,6 +6943,11 @@
                 181,
                 251
             ],
+            "Dagger": [
+                false,
+                0,
+                null
+            ],
             "Lance": [
                 false,
                 0,
@@ -6581,6 +6973,31 @@
                 0,
                 251
             ],
+            "Fire": [
+                false,
+                0,
+                null
+            ],
+            "Wind": [
+                false,
+                0,
+                null
+            ],
+            "Thunder": [
+                false,
+                0,
+                null
+            ],
+            "Water": [
+                false,
+                0,
+                null
+            ],
+            "Earth": [
+                false,
+                0,
+                null
+            ],
             "Anima": [
                 false,
                 0,
@@ -6590,6 +7007,11 @@
                 false,
                 0,
                 251
+            ],
+            "Dragon": [
+                false,
+                0,
+                null
             ],
             "Default": [
                 false,
@@ -6602,11 +7024,6 @@
                 null
             ],
             "Dragonstone": [
-                false,
-                0,
-                null
-            ],
-            "Dagger": [
                 false,
                 0,
                 null
@@ -6703,6 +7120,11 @@
                 0,
                 251
             ],
+            "Dagger": [
+                false,
+                0,
+                null
+            ],
             "Lance": [
                 true,
                 71,
@@ -6728,6 +7150,31 @@
                 0,
                 251
             ],
+            "Fire": [
+                false,
+                0,
+                null
+            ],
+            "Wind": [
+                false,
+                0,
+                null
+            ],
+            "Thunder": [
+                false,
+                0,
+                null
+            ],
+            "Water": [
+                false,
+                0,
+                null
+            ],
+            "Earth": [
+                false,
+                0,
+                null
+            ],
             "Anima": [
                 false,
                 0,
@@ -6737,6 +7184,11 @@
                 false,
                 0,
                 251
+            ],
+            "Dragon": [
+                false,
+                0,
+                null
             ],
             "Default": [
                 false,
@@ -6749,11 +7201,6 @@
                 null
             ],
             "Dragonstone": [
-                false,
-                0,
-                null
-            ],
-            "Dagger": [
                 false,
                 0,
                 null
@@ -6850,6 +7297,11 @@
                 0,
                 251
             ],
+            "Dagger": [
+                false,
+                0,
+                null
+            ],
             "Lance": [
                 true,
                 121,
@@ -6875,6 +7327,31 @@
                 0,
                 251
             ],
+            "Fire": [
+                false,
+                0,
+                null
+            ],
+            "Wind": [
+                false,
+                0,
+                null
+            ],
+            "Thunder": [
+                false,
+                0,
+                null
+            ],
+            "Water": [
+                false,
+                0,
+                null
+            ],
+            "Earth": [
+                false,
+                0,
+                null
+            ],
             "Anima": [
                 false,
                 0,
@@ -6884,6 +7361,11 @@
                 false,
                 0,
                 251
+            ],
+            "Dragon": [
+                false,
+                0,
+                null
             ],
             "Default": [
                 false,
@@ -6899,11 +7381,6 @@
                 false,
                 0,
                 null
-            ],
-            "Dagger": [
-                false,
-                0,
-                null
             ]
         },
         "icon_nid": "Lance Paladin",
@@ -6913,6 +7390,181 @@
         ],
         "map_sprite_nid": "Lance_Paladin",
         "combat_anim_nid": "Paladin",
+        "fields": []
+    },
+    {
+        "nid": "Bow_Paladin",
+        "name": "Bow Paladin",
+        "desc": "Mounted archers who can\nswiftly ride through forests.",
+        "tier": 3,
+        "movement_group": "Heavy Cav",
+        "promotes_from": "Sniper",
+        "turns_into": [],
+        "tags": [
+            "Horse",
+            "Mounted"
+        ],
+        "max_level": 20,
+        "bases": {
+            "HP": 38,
+            "STR": 12,
+            "MAG": -4,
+            "SKL": 3,
+            "SPD": 11,
+            "LCK": -7,
+            "DEF": 12,
+            "RES": -1,
+            "CON": 10,
+            "MOV": 9
+        },
+        "growths": {
+            "HP": 50,
+            "STR": 40,
+            "MAG": 35,
+            "SKL": 80,
+            "SPD": 30,
+            "LCK": 35,
+            "DEF": 30,
+            "RES": 50,
+            "CON": 0,
+            "MOV": 0
+        },
+        "growth_bonus": {
+            "HP": 0,
+            "STR": 0,
+            "MAG": 0,
+            "SKL": 0,
+            "SPD": 0,
+            "LCK": 0,
+            "DEF": 0,
+            "RES": 0,
+            "CON": 0,
+            "MOV": 0
+        },
+        "promotion": {
+            "HP": 3,
+            "STR": 2,
+            "MAG": 0,
+            "SKL": 2,
+            "SPD": 1,
+            "LCK": 0,
+            "DEF": 3,
+            "RES": 3,
+            "CON": 3,
+            "MOV": -99
+        },
+        "max_stats": {
+            "HP": 50,
+            "STR": 33,
+            "MAG": 20,
+            "SKL": 36,
+            "SPD": 35,
+            "LCK": 50,
+            "DEF": 27,
+            "RES": 30,
+            "CON": 30,
+            "MOV": 30
+        },
+        "learned_skills": [],
+        "wexp_gain": {
+            "Sword": [
+                true,
+                71,
+                251
+            ],
+            "Dagger": [
+                false,
+                0,
+                null
+            ],
+            "Lance": [
+                false,
+                0,
+                251
+            ],
+            "Axe": [
+                false,
+                0,
+                251
+            ],
+            "Bow": [
+                true,
+                121,
+                331
+            ],
+            "Staff": [
+                false,
+                0,
+                251
+            ],
+            "Light": [
+                false,
+                0,
+                251
+            ],
+            "Fire": [
+                false,
+                0,
+                null
+            ],
+            "Wind": [
+                false,
+                0,
+                null
+            ],
+            "Thunder": [
+                false,
+                0,
+                null
+            ],
+            "Water": [
+                false,
+                0,
+                null
+            ],
+            "Earth": [
+                false,
+                0,
+                null
+            ],
+            "Anima": [
+                false,
+                0,
+                251
+            ],
+            "Dark": [
+                false,
+                0,
+                251
+            ],
+            "Dragon": [
+                false,
+                0,
+                null
+            ],
+            "Default": [
+                false,
+                0,
+                251
+            ],
+            "Knife": [
+                false,
+                0,
+                null
+            ],
+            "Dragonstone": [
+                false,
+                0,
+                null
+            ]
+        },
+        "icon_nid": "Bow Knight (M) Updated {Der, HyperGammaSpaces}",
+        "icon_index": [
+            0,
+            0
+        ],
+        "map_sprite_nid": "Arch_Knight",
+        "combat_anim_nid": "Bow_Paladin",
         "fields": []
     },
     {
@@ -6995,6 +7647,11 @@
                 30,
                 181
             ],
+            "Dagger": [
+                false,
+                0,
+                null
+            ],
             "Lance": [
                 true,
                 71,
@@ -7020,6 +7677,31 @@
                 0,
                 251
             ],
+            "Fire": [
+                false,
+                0,
+                null
+            ],
+            "Wind": [
+                false,
+                0,
+                null
+            ],
+            "Thunder": [
+                false,
+                0,
+                null
+            ],
+            "Water": [
+                false,
+                0,
+                null
+            ],
+            "Earth": [
+                false,
+                0,
+                null
+            ],
             "Anima": [
                 false,
                 0,
@@ -7029,6 +7711,11 @@
                 false,
                 0,
                 251
+            ],
+            "Dragon": [
+                false,
+                0,
+                null
             ],
             "Default": [
                 false,
@@ -7041,11 +7728,6 @@
                 null
             ],
             "Dragonstone": [
-                false,
-                0,
-                null
-            ],
-            "Dagger": [
                 false,
                 0,
                 null
@@ -7141,6 +7823,11 @@
                 0,
                 251
             ],
+            "Dagger": [
+                false,
+                0,
+                null
+            ],
             "Lance": [
                 true,
                 71,
@@ -7166,6 +7853,31 @@
                 0,
                 251
             ],
+            "Fire": [
+                false,
+                0,
+                null
+            ],
+            "Wind": [
+                false,
+                0,
+                null
+            ],
+            "Thunder": [
+                false,
+                0,
+                null
+            ],
+            "Water": [
+                false,
+                0,
+                null
+            ],
+            "Earth": [
+                false,
+                0,
+                null
+            ],
             "Anima": [
                 false,
                 0,
@@ -7175,6 +7887,11 @@
                 false,
                 0,
                 251
+            ],
+            "Dragon": [
+                false,
+                0,
+                null
             ],
             "Default": [
                 false,
@@ -7187,11 +7904,6 @@
                 null
             ],
             "Dragonstone": [
-                false,
-                0,
-                null
-            ],
-            "Dagger": [
                 false,
                 0,
                 null
@@ -7287,6 +7999,11 @@
                 0,
                 251
             ],
+            "Dagger": [
+                false,
+                0,
+                null
+            ],
             "Lance": [
                 true,
                 121,
@@ -7312,6 +8029,31 @@
                 0,
                 251
             ],
+            "Fire": [
+                false,
+                0,
+                null
+            ],
+            "Wind": [
+                false,
+                0,
+                null
+            ],
+            "Thunder": [
+                false,
+                0,
+                null
+            ],
+            "Water": [
+                false,
+                0,
+                null
+            ],
+            "Earth": [
+                false,
+                0,
+                null
+            ],
             "Anima": [
                 false,
                 0,
@@ -7321,6 +8063,11 @@
                 false,
                 0,
                 251
+            ],
+            "Dragon": [
+                false,
+                0,
+                null
             ],
             "Default": [
                 false,
@@ -7333,11 +8080,6 @@
                 null
             ],
             "Dragonstone": [
-                false,
-                0,
-                null
-            ],
-            "Dagger": [
                 false,
                 0,
                 null
@@ -7432,6 +8174,11 @@
                 121,
                 331
             ],
+            "Dagger": [
+                false,
+                0,
+                null
+            ],
             "Lance": [
                 false,
                 0,
@@ -7457,6 +8204,31 @@
                 0,
                 251
             ],
+            "Fire": [
+                false,
+                0,
+                null
+            ],
+            "Wind": [
+                false,
+                0,
+                null
+            ],
+            "Thunder": [
+                false,
+                0,
+                null
+            ],
+            "Water": [
+                false,
+                0,
+                null
+            ],
+            "Earth": [
+                false,
+                0,
+                null
+            ],
             "Anima": [
                 false,
                 0,
@@ -7466,6 +8238,11 @@
                 false,
                 0,
                 251
+            ],
+            "Dragon": [
+                false,
+                0,
+                null
             ],
             "Default": [
                 false,
@@ -7478,11 +8255,6 @@
                 null
             ],
             "Dragonstone": [
-                false,
-                0,
-                null
-            ],
-            "Dagger": [
                 false,
                 0,
                 null
@@ -7722,6 +8494,11 @@
                 71,
                 251
             ],
+            "Dagger": [
+                false,
+                0,
+                null
+            ],
             "Lance": [
                 true,
                 121,
@@ -7747,6 +8524,31 @@
                 0,
                 251
             ],
+            "Fire": [
+                false,
+                0,
+                null
+            ],
+            "Wind": [
+                false,
+                0,
+                null
+            ],
+            "Thunder": [
+                false,
+                0,
+                null
+            ],
+            "Water": [
+                false,
+                0,
+                null
+            ],
+            "Earth": [
+                false,
+                0,
+                null
+            ],
             "Anima": [
                 false,
                 0,
@@ -7756,6 +8558,11 @@
                 false,
                 0,
                 251
+            ],
+            "Dragon": [
+                false,
+                0,
+                null
             ],
             "Default": [
                 false,
@@ -7768,11 +8575,6 @@
                 null
             ],
             "Dragonstone": [
-                false,
-                0,
-                null
-            ],
-            "Dagger": [
                 false,
                 0,
                 null
@@ -7867,6 +8669,11 @@
                 121,
                 251
             ],
+            "Dagger": [
+                false,
+                0,
+                null
+            ],
             "Lance": [
                 true,
                 181,
@@ -7892,6 +8699,31 @@
                 0,
                 251
             ],
+            "Fire": [
+                false,
+                0,
+                null
+            ],
+            "Wind": [
+                false,
+                0,
+                null
+            ],
+            "Thunder": [
+                false,
+                0,
+                null
+            ],
+            "Water": [
+                false,
+                0,
+                null
+            ],
+            "Earth": [
+                false,
+                0,
+                null
+            ],
             "Anima": [
                 false,
                 0,
@@ -7901,6 +8733,11 @@
                 false,
                 0,
                 251
+            ],
+            "Dragon": [
+                false,
+                0,
+                null
             ],
             "Default": [
                 false,
@@ -7913,11 +8750,6 @@
                 null
             ],
             "Dragonstone": [
-                false,
-                0,
-                null
-            ],
-            "Dagger": [
                 false,
                 0,
                 null
@@ -16018,6 +16850,11 @@
                 0,
                 251
             ],
+            "Dagger": [
+                false,
+                0,
+                null
+            ],
             "Lance": [
                 false,
                 0,
@@ -16043,6 +16880,31 @@
                 0,
                 251
             ],
+            "Fire": [
+                false,
+                0,
+                null
+            ],
+            "Wind": [
+                false,
+                0,
+                null
+            ],
+            "Thunder": [
+                false,
+                0,
+                null
+            ],
+            "Water": [
+                false,
+                0,
+                null
+            ],
+            "Earth": [
+                false,
+                0,
+                null
+            ],
             "Anima": [
                 false,
                 0,
@@ -16052,6 +16914,11 @@
                 false,
                 0,
                 251
+            ],
+            "Dragon": [
+                false,
+                0,
+                null
             ],
             "Default": [
                 false,
@@ -16064,11 +16931,6 @@
                 null
             ],
             "Dragonstone": [
-                false,
-                0,
-                null
-            ],
-            "Dagger": [
                 false,
                 0,
                 null
@@ -17415,7 +18277,7 @@
             "DEF": 5,
             "RES": 1,
             "CON": 7,
-            "MOV": 6
+            "MOV": 5
         },
         "growths": {
             "HP": 65,
@@ -17472,6 +18334,11 @@
                 0,
                 251
             ],
+            "Dagger": [
+                false,
+                0,
+                null
+            ],
             "Lance": [
                 false,
                 0,
@@ -17497,6 +18364,31 @@
                 0,
                 251
             ],
+            "Fire": [
+                false,
+                0,
+                null
+            ],
+            "Wind": [
+                false,
+                0,
+                null
+            ],
+            "Thunder": [
+                false,
+                0,
+                null
+            ],
+            "Water": [
+                false,
+                0,
+                null
+            ],
+            "Earth": [
+                false,
+                0,
+                null
+            ],
             "Anima": [
                 false,
                 0,
@@ -17506,6 +18398,11 @@
                 false,
                 0,
                 251
+            ],
+            "Dragon": [
+                false,
+                0,
+                null
             ],
             "Default": [
                 false,
@@ -17518,11 +18415,6 @@
                 null
             ],
             "Dragonstone": [
-                false,
-                0,
-                null
-            ],
-            "Dagger": [
                 false,
                 0,
                 null
@@ -17561,7 +18453,7 @@
             "DEF": 5,
             "RES": 1,
             "CON": 7,
-            "MOV": 6
+            "MOV": 5
         },
         "growths": {
             "HP": 65,
@@ -17618,6 +18510,11 @@
                 0,
                 251
             ],
+            "Dagger": [
+                false,
+                0,
+                null
+            ],
             "Lance": [
                 false,
                 0,
@@ -17643,6 +18540,31 @@
                 0,
                 251
             ],
+            "Fire": [
+                false,
+                0,
+                null
+            ],
+            "Wind": [
+                false,
+                0,
+                null
+            ],
+            "Thunder": [
+                false,
+                0,
+                null
+            ],
+            "Water": [
+                false,
+                0,
+                null
+            ],
+            "Earth": [
+                false,
+                0,
+                null
+            ],
             "Anima": [
                 false,
                 0,
@@ -17652,6 +18574,11 @@
                 false,
                 0,
                 251
+            ],
+            "Dragon": [
+                false,
+                0,
+                null
             ],
             "Default": [
                 false,
@@ -17664,11 +18591,6 @@
                 null
             ],
             "Dragonstone": [
-                false,
-                0,
-                null
-            ],
-            "Dagger": [
                 false,
                 0,
                 null
@@ -17707,7 +18629,7 @@
             "DEF": 5,
             "RES": 1,
             "CON": 7,
-            "MOV": 6
+            "MOV": 5
         },
         "growths": {
             "HP": 130,
@@ -17764,6 +18686,11 @@
                 0,
                 251
             ],
+            "Dagger": [
+                false,
+                0,
+                null
+            ],
             "Lance": [
                 false,
                 0,
@@ -17789,6 +18716,31 @@
                 0,
                 251
             ],
+            "Fire": [
+                false,
+                0,
+                null
+            ],
+            "Wind": [
+                false,
+                0,
+                null
+            ],
+            "Thunder": [
+                false,
+                0,
+                null
+            ],
+            "Water": [
+                false,
+                0,
+                null
+            ],
+            "Earth": [
+                false,
+                0,
+                null
+            ],
             "Anima": [
                 false,
                 0,
@@ -17798,6 +18750,11 @@
                 false,
                 0,
                 251
+            ],
+            "Dragon": [
+                false,
+                0,
+                null
             ],
             "Default": [
                 false,
@@ -17810,11 +18767,6 @@
                 null
             ],
             "Dragonstone": [
-                false,
-                0,
-                null
-            ],
-            "Dagger": [
                 false,
                 0,
                 null
@@ -17854,7 +18806,7 @@
             "DEF": 5,
             "RES": 5,
             "CON": 8,
-            "MOV": 7
+            "MOV": 6
         },
         "growths": {
             "HP": 60,
@@ -17911,6 +18863,11 @@
                 0,
                 251
             ],
+            "Dagger": [
+                false,
+                0,
+                null
+            ],
             "Lance": [
                 false,
                 0,
@@ -17936,6 +18893,31 @@
                 0,
                 251
             ],
+            "Fire": [
+                false,
+                0,
+                null
+            ],
+            "Wind": [
+                false,
+                0,
+                null
+            ],
+            "Thunder": [
+                false,
+                0,
+                null
+            ],
+            "Water": [
+                false,
+                0,
+                null
+            ],
+            "Earth": [
+                false,
+                0,
+                null
+            ],
             "Anima": [
                 false,
                 0,
@@ -17945,6 +18927,11 @@
                 false,
                 0,
                 251
+            ],
+            "Dragon": [
+                false,
+                0,
+                null
             ],
             "Default": [
                 false,
@@ -17957,11 +18944,6 @@
                 null
             ],
             "Dragonstone": [
-                false,
-                0,
-                null
-            ],
-            "Dagger": [
                 false,
                 0,
                 null
@@ -18001,7 +18983,7 @@
             "DEF": 5,
             "RES": 5,
             "CON": 8,
-            "MOV": 7
+            "MOV": 6
         },
         "growths": {
             "HP": 60,
@@ -18058,6 +19040,11 @@
                 0,
                 251
             ],
+            "Dagger": [
+                false,
+                0,
+                null
+            ],
             "Lance": [
                 false,
                 0,
@@ -18083,6 +19070,31 @@
                 0,
                 251
             ],
+            "Fire": [
+                false,
+                0,
+                null
+            ],
+            "Wind": [
+                false,
+                0,
+                null
+            ],
+            "Thunder": [
+                false,
+                0,
+                null
+            ],
+            "Water": [
+                false,
+                0,
+                null
+            ],
+            "Earth": [
+                false,
+                0,
+                null
+            ],
             "Anima": [
                 false,
                 0,
@@ -18092,6 +19104,11 @@
                 false,
                 0,
                 251
+            ],
+            "Dragon": [
+                false,
+                0,
+                null
             ],
             "Default": [
                 false,
@@ -18104,11 +19121,6 @@
                 null
             ],
             "Dragonstone": [
-                false,
-                0,
-                null
-            ],
-            "Dagger": [
                 false,
                 0,
                 null
@@ -18148,7 +19160,7 @@
             "DEF": 5,
             "RES": 5,
             "CON": 8,
-            "MOV": 7
+            "MOV": 6
         },
         "growths": {
             "HP": 120,
@@ -18205,6 +19217,11 @@
                 0,
                 251
             ],
+            "Dagger": [
+                false,
+                0,
+                null
+            ],
             "Lance": [
                 false,
                 0,
@@ -18230,6 +19247,31 @@
                 0,
                 251
             ],
+            "Fire": [
+                false,
+                0,
+                null
+            ],
+            "Wind": [
+                false,
+                0,
+                null
+            ],
+            "Thunder": [
+                false,
+                0,
+                null
+            ],
+            "Water": [
+                false,
+                0,
+                null
+            ],
+            "Earth": [
+                false,
+                0,
+                null
+            ],
             "Anima": [
                 false,
                 0,
@@ -18239,6 +19281,11 @@
                 false,
                 0,
                 251
+            ],
+            "Dragon": [
+                false,
+                0,
+                null
             ],
             "Default": [
                 false,
@@ -18251,11 +19298,6 @@
                 null
             ],
             "Dragonstone": [
-                false,
-                0,
-                null
-            ],
-            "Dagger": [
                 false,
                 0,
                 null
@@ -18349,6 +19391,11 @@
                 0,
                 251
             ],
+            "Dagger": [
+                false,
+                0,
+                null
+            ],
             "Lance": [
                 false,
                 0,
@@ -18374,6 +19421,31 @@
                 0,
                 251
             ],
+            "Fire": [
+                false,
+                0,
+                null
+            ],
+            "Wind": [
+                false,
+                0,
+                null
+            ],
+            "Thunder": [
+                false,
+                0,
+                null
+            ],
+            "Water": [
+                false,
+                0,
+                null
+            ],
+            "Earth": [
+                false,
+                0,
+                null
+            ],
             "Anima": [
                 false,
                 0,
@@ -18383,6 +19455,11 @@
                 false,
                 0,
                 251
+            ],
+            "Dragon": [
+                false,
+                0,
+                null
             ],
             "Default": [
                 false,
@@ -18395,11 +19472,6 @@
                 null
             ],
             "Dragonstone": [
-                false,
-                0,
-                null
-            ],
-            "Dagger": [
                 false,
                 0,
                 null
@@ -18493,6 +19565,11 @@
                 0,
                 251
             ],
+            "Dagger": [
+                false,
+                0,
+                null
+            ],
             "Lance": [
                 false,
                 0,
@@ -18518,6 +19595,31 @@
                 0,
                 251
             ],
+            "Fire": [
+                false,
+                0,
+                null
+            ],
+            "Wind": [
+                false,
+                0,
+                null
+            ],
+            "Thunder": [
+                false,
+                0,
+                null
+            ],
+            "Water": [
+                false,
+                0,
+                null
+            ],
+            "Earth": [
+                false,
+                0,
+                null
+            ],
             "Anima": [
                 false,
                 0,
@@ -18527,6 +19629,11 @@
                 false,
                 0,
                 251
+            ],
+            "Dragon": [
+                false,
+                0,
+                null
             ],
             "Default": [
                 false,
@@ -18539,11 +19646,6 @@
                 null
             ],
             "Dragonstone": [
-                false,
-                0,
-                null
-            ],
-            "Dagger": [
                 false,
                 0,
                 null
@@ -18637,6 +19739,11 @@
                 0,
                 251
             ],
+            "Dagger": [
+                false,
+                0,
+                null
+            ],
             "Lance": [
                 false,
                 0,
@@ -18662,6 +19769,31 @@
                 0,
                 251
             ],
+            "Fire": [
+                false,
+                0,
+                null
+            ],
+            "Wind": [
+                false,
+                0,
+                null
+            ],
+            "Thunder": [
+                false,
+                0,
+                null
+            ],
+            "Water": [
+                false,
+                0,
+                null
+            ],
+            "Earth": [
+                false,
+                0,
+                null
+            ],
             "Anima": [
                 false,
                 0,
@@ -18671,6 +19803,11 @@
                 false,
                 0,
                 251
+            ],
+            "Dragon": [
+                false,
+                0,
+                null
             ],
             "Default": [
                 false,
@@ -18683,11 +19820,6 @@
                 null
             ],
             "Dragonstone": [
-                false,
-                0,
-                null
-            ],
-            "Dagger": [
                 false,
                 0,
                 null
@@ -18700,151 +19832,6 @@
         ],
         "map_sprite_nid": "Marksman",
         "combat_anim_nid": "Marksman",
-        "fields": []
-    },
-    {
-        "nid": "Bow_Paladin",
-        "name": "Bow Paladin",
-        "desc": "Mounted archers who can\nswiftly ride through forests.",
-        "tier": 3,
-        "movement_group": "Heavy Cav",
-        "promotes_from": "Sniper",
-        "turns_into": [],
-        "tags": [
-            "Horse",
-            "Mounted"
-        ],
-        "max_level": 20,
-        "bases": {
-            "HP": 38,
-            "STR": 12,
-            "MAG": -4,
-            "SKL": 3,
-            "SPD": 11,
-            "LCK": -7,
-            "DEF": 12,
-            "RES": -1,
-            "CON": 10,
-            "MOV": 9
-        },
-        "growths": {
-            "HP": 50,
-            "STR": 40,
-            "MAG": 35,
-            "SKL": 80,
-            "SPD": 30,
-            "LCK": 35,
-            "DEF": 30,
-            "RES": 50,
-            "CON": 0,
-            "MOV": 0
-        },
-        "growth_bonus": {
-            "HP": 0,
-            "STR": 0,
-            "MAG": 0,
-            "SKL": 0,
-            "SPD": 0,
-            "LCK": 0,
-            "DEF": 0,
-            "RES": 0,
-            "CON": 0,
-            "MOV": 0
-        },
-        "promotion": {
-            "HP": 3,
-            "STR": 2,
-            "MAG": 0,
-            "SKL": 2,
-            "SPD": 1,
-            "LCK": 0,
-            "DEF": 3,
-            "RES": 3,
-            "CON": 3,
-            "MOV": -99
-        },
-        "max_stats": {
-            "HP": 50,
-            "STR": 33,
-            "MAG": 20,
-            "SKL": 36,
-            "SPD": 35,
-            "LCK": 50,
-            "DEF": 27,
-            "RES": 30,
-            "CON": 30,
-            "MOV": 30
-        },
-        "learned_skills": [],
-        "wexp_gain": {
-            "Sword": [
-                true,
-                71,
-                251
-            ],
-            "Lance": [
-                false,
-                0,
-                251
-            ],
-            "Axe": [
-                false,
-                0,
-                251
-            ],
-            "Bow": [
-                true,
-                121,
-                331
-            ],
-            "Staff": [
-                false,
-                0,
-                251
-            ],
-            "Light": [
-                false,
-                0,
-                251
-            ],
-            "Anima": [
-                false,
-                0,
-                251
-            ],
-            "Dark": [
-                false,
-                0,
-                251
-            ],
-            "Default": [
-                false,
-                0,
-                251
-            ],
-            "Knife": [
-                false,
-                0,
-                null
-            ],
-            "Dragonstone": [
-                false,
-                0,
-                null
-            ],
-            "Dagger": [
-                false,
-                0,
-                null
-            ]
-        },
-        "icon_nid": "Bow Knight (M) Updated {Der, HyperGammaSpaces}",
-        "icon_index": [
-            0,
-            0
-        ],
-        "map_sprite_nid": "BowKnight",
-        "combat_anim_nid": "Bow_Paladin",
         "fields": []
     },
     {
@@ -18927,6 +19914,11 @@
                 121,
                 251
             ],
+            "Dagger": [
+                false,
+                0,
+                null
+            ],
             "Lance": [
                 false,
                 0,
@@ -18952,6 +19944,31 @@
                 0,
                 251
             ],
+            "Fire": [
+                false,
+                0,
+                null
+            ],
+            "Wind": [
+                false,
+                0,
+                null
+            ],
+            "Thunder": [
+                false,
+                0,
+                null
+            ],
+            "Water": [
+                false,
+                0,
+                null
+            ],
+            "Earth": [
+                false,
+                0,
+                null
+            ],
             "Anima": [
                 false,
                 0,
@@ -18961,6 +19978,11 @@
                 false,
                 0,
                 251
+            ],
+            "Dragon": [
+                false,
+                0,
+                null
             ],
             "Default": [
                 false,
@@ -18976,11 +19998,6 @@
                 false,
                 0,
                 null
-            ],
-            "Dagger": [
-                false,
-                0,
-                null
             ]
         },
         "icon_nid": "Bow Knight (M) Updated {Der, HyperGammaSpaces}",
@@ -18988,7 +20005,7 @@
             0,
             0
         ],
-        "map_sprite_nid": "BowKnight",
+        "map_sprite_nid": "Arch_Knight",
         "combat_anim_nid": "Bow_Paladin",
         "fields": []
     },
@@ -22293,6 +23310,11 @@
                 0,
                 251
             ],
+            "Dagger": [
+                false,
+                0,
+                null
+            ],
             "Lance": [
                 false,
                 0,
@@ -22318,8 +23340,33 @@
                 0,
                 251
             ],
-            "Anima": [
+            "Fire": [
                 true,
+                0,
+                251
+            ],
+            "Wind": [
+                true,
+                0,
+                251
+            ],
+            "Thunder": [
+                true,
+                0,
+                251
+            ],
+            "Water": [
+                true,
+                0,
+                251
+            ],
+            "Earth": [
+                true,
+                0,
+                251
+            ],
+            "Anima": [
+                false,
                 31,
                 251
             ],
@@ -22327,6 +23374,11 @@
                 false,
                 0,
                 251
+            ],
+            "Dragon": [
+                false,
+                0,
+                null
             ],
             "Default": [
                 false,
@@ -22339,11 +23391,6 @@
                 null
             ],
             "Dragonstone": [
-                false,
-                0,
-                null
-            ],
-            "Dagger": [
                 false,
                 0,
                 null

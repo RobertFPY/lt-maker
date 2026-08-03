@@ -22774,6 +22774,14 @@
                                 ]
                             ],
                             [
+                                "hit_spark",
+                                null
+                            ],
+                            [
+                                "start_hit",
+                                null
+                            ],
+                            [
                                 "dual_frame",
                                 [
                                     3,
@@ -22832,14 +22840,6 @@
                                     4,
                                     "Sword_031"
                                 ]
-                            ],
-                            [
-                                "hit_spark",
-                                null
-                            ],
-                            [
-                                "start_hit",
-                                null
                             ],
                             [
                                 "frame",
@@ -23267,12 +23267,20 @@
                                 ]
                             ],
                             [
+                                "start_hit",
+                                null
+                            ],
+                            [
                                 "dual_frame",
                                 [
                                     3,
                                     "Sword_030",
                                     "Sword_030_under"
                                 ]
+                            ],
+                            [
+                                "crit_spark",
+                                null
                             ],
                             [
                                 "screen_blend",
@@ -23349,17 +23357,6 @@
                                 ]
                             ],
                             [
-                                "enemy_tint",
-                                [
-                                    8,
-                                    [
-                                        255,
-                                        255,
-                                        255
-                                    ]
-                                ]
-                            ],
-                            [
                                 "frame",
                                 [
                                     1,
@@ -23367,21 +23364,6 @@
                                 ]
                             ],
                             [
-                                "foreground_blend",
-                                [
-                                    2,
-                                    [
-                                        255,
-                                        255,
-                                        255
-                                    ]
-                                ]
-                            ],
-                            [
-                                "start_hit",
-                                null
-                            ],
-                            [
                                 "frame",
                                 [
                                     2,
@@ -23389,13 +23371,9 @@
                                 ]
                             ],
                             [
-                                "crit_spark",
-                                null
-                            ],
-                            [
                                 "frame",
                                 [
-                                    18,
+                                    2,
                                     "Sword_051"
                                 ]
                             ],
@@ -23823,6 +23801,10 @@
                                 ]
                             ],
                             [
+                                "miss",
+                                null
+                            ],
+                            [
                                 "frame",
                                 [
                                     2,
@@ -23855,10 +23837,6 @@
                                     1,
                                     "Sword_033"
                                 ]
-                            ],
-                            [
-                                "miss",
-                                null
                             ],
                             [
                                 "frame",

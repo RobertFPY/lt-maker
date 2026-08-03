@@ -2,7 +2,7 @@
     {
         "nid": "Bronze_Sword",
         "name": "Bronze Sword",
-        "desc": "A bronze sword. Can't critical with it. A bronze sword. Can't critical with it. A bronze sword. Can't critical with it. A bronze sword. Can't critical with it. A bronze sword. Can't critical with it.",
+        "desc": "A bronze sword. Can't critical with it.",
         "icon_nid": "{LordGlenn} {ArchaneaIconProject} 2019",
         "icon_index": [
             0,

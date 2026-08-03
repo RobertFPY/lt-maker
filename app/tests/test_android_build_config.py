@@ -80,6 +80,8 @@ class AndroidBuildConfigTests(unittest.TestCase):
                         "app_name": "Sample Game",
                         "version_name": "9.9.9",
                         "version_code": 999,
+                        "mode": "release",
+                        "runtime_debugger": False,
                     }
                 ),
                 encoding="utf-8",
@@ -91,6 +93,8 @@ class AndroidBuildConfigTests(unittest.TestCase):
             self.assertEqual("org.example.sample", loaded.package_id)
             self.assertEqual("9.9.9", loaded.version_name)
             self.assertEqual(999, loaded.version_code)
+            self.assertEqual("release", loaded.mode)
+            self.assertFalse(loaded.runtime_debugger)
             self.assertTrue(loaded.output_directory)
 
     def test_release_and_invalid_identity_are_validated_independently(self):

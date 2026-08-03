@@ -368,7 +368,12 @@
     },
     {
         "nid": "Bow Knight (M) Updated {Der, HyperGammaSpaces}",
-        "subicon_dict": {}
+        "subicon_dict": {
+            "Bow Knight (M) Updated {Der, HyperGammaSpaces} 0, 0": [
+                0,
+                0
+            ]
+        }
     },
     {
         "nid": "Sniper (F) Bow {L95}",
@@ -596,6 +601,14 @@
     },
     {
         "nid": "Swordmaster (F) Sword {L95}",
+        "subicon_dict": {}
+    },
+    {
+        "nid": "BowKnight (U) Helmet {Flasuban, RobertFPY}",
+        "subicon_dict": {}
+    },
+    {
+        "nid": "Paladin (M) Bow {Leif}",
         "subicon_dict": {}
     }
 ]

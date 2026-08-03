@@ -1,11 +1,15 @@
 {
-  "classes": {},
+  "classes": {
+    "Mercnary": "Mercenary"
+  },
   "items": {},
   "skills": {
     "Vantage+": "Vantage_T4",
     "Quick Reposte+": "Quick_Riposte_T4",
     "Luna+": "Luna_T4",
-    "Sol+": "Sol_T4"
+    "Sol+": "Sol_T4",
+    "Light and Death 1": "Life_and_Death_T1",
+    "Vantage 1": "Vantage_T1"
   },
   "ai": {}
 }

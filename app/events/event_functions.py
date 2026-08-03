@@ -1881,25 +1881,40 @@ def add_group(self: Event, group, starting_group=None, entry_type=None, placemen
     if not placement:
         placement = 'giveup'
     create = 'create' in flags
-    for unit_nid in group.units:
+
+    def place_unit(unit_nid: str) -> None:
         unit = self.game.get_unit(unit_nid)
         if create:
             unit = self._copy_unit(unit_nid)
             if not unit:
-                continue
+                return
         elif unit.position or unit.dead:
-            continue
+            return
         position = self._get_position(next_pos, unit, group, unit_nid)
         if not position:
-            continue
+            return
         position = tuple(position)
         position = self._check_placement(unit, position, placement)
         if not position:
             self.logger.warning("add_group: Couldn't determine valid position for %s?", unit.nid)
-            continue
+            return
         if DB.constants.value('initiative'):
             action.do(action.InsertInitiative(unit))
         self._place_unit(unit, position, entry_type)
+
+    from app.engine.jobs.add_group_job import AddGroupJob
+    job = AddGroupJob(group.units, place_unit)
+    self._add_group_job = job
+
+    def update_add_group(should_skip: bool) -> bool:
+        complete = job.update(should_skip)
+        if complete and job.failed:
+            self.logger.error('add_group: %s', job.error)
+        return complete
+
+    self.should_update['add_group'] = update_add_group
+    self.should_remain_blocked.append(lambda: not job.is_finished)
+    self.state = 'blocked'
 
 def spawn_group(self: Event, group, cardinal_direction, starting_group, movement_type=None, placement=None, flags=None):
     flags = flags or set()

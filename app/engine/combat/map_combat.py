@@ -8,6 +8,7 @@ from app.engine import engine, combat_calcs, gui, action, item_system, skill_sys
 from app.engine.health_bar import MapCombatInfo
 from app.engine.animations import MapAnimation
 from app.engine.game_state import game
+from app.engine.performance import RUNTIME_PROFILER
 
 from app.engine.combat.simple_combat import SimpleCombat
 
@@ -57,8 +58,10 @@ class MapCombat(SimpleCombat):
         # Only for the very first phase
         if self.state == 'init':
             game.highlight.remove_highlights()
-            self.start_combat()
-            self.start_event()
+            with RUNTIME_PROFILER.section('combat.start_hooks'):
+                self.start_combat()
+            with RUNTIME_PROFILER.section('combat.start_event'):
+                self.start_event()
             self.set_state('init_pause')
 
         elif self.state == 'init_pause':
@@ -73,17 +76,20 @@ class MapCombat(SimpleCombat):
                 self.set_state('exp_wait')
                 return False
 
-            self.actions, self.playback = self.state_machine.do()
+            with RUNTIME_PROFILER.section('combat.solver_do'):
+                self.actions, self.playback = self.state_machine.do()
             self.full_playback += self.playback
             if not self.actions and not self.playback:
                 self.state_machine.setup_next_state()
                 return False
             if not item_system.no_map_hp_display(self.attacker, self.main_item):
-                self._build_health_bars()
+                with RUNTIME_PROFILER.section('combat.health_bar_build'):
+                    self._build_health_bars()
             if self.first_phase:
-                self.set_up_pre_proc_animation('attack_pre_proc')
-                self.set_up_pre_proc_animation('defense_pre_proc')
-                self.set_up_other_proc_icons()
+                with RUNTIME_PROFILER.section('combat.proc_animation_build'):
+                    self.set_up_pre_proc_animation('attack_pre_proc')
+                    self.set_up_pre_proc_animation('defense_pre_proc')
+                    self.set_up_other_proc_icons()
                 self.first_phase = False
             self.add_proc_icon.memory.clear()
 

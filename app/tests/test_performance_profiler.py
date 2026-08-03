@@ -118,6 +118,16 @@ class RuntimeProfilerTests(unittest.TestCase):
             self.assertIn("RUNTIME_PROFILER.section('%s')" % scope, phase_state)
         self.assertIn("RUNTIME_PROFILER.section('phase.music_fade_in')", phase_music)
 
+    def test_map_combat_breaks_solver_and_visual_setup_into_child_scopes(self):
+        source = (Path(__file__).parents[1] / 'engine' / 'combat' /
+                  'map_combat.py').read_text(encoding='utf-8')
+
+        for scope in (
+            'combat.start_hooks', 'combat.start_event', 'combat.solver_do',
+            'combat.health_bar_build', 'combat.proc_animation_build',
+        ):
+            self.assertIn("RUNTIME_PROFILER.section('%s')" % scope, source)
+
 
 if __name__ == '__main__':
     unittest.main()

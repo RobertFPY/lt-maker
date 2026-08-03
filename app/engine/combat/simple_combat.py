@@ -79,10 +79,7 @@ class SimpleCombat():
         self.full_playback: List[PlaybackBrush] = []
         self.playback: List[PlaybackBrush] = []
         self.actions = []
-        self.state = 'combat'
-
-        self.start_combat()
-        self.start_event()
+        self.state = 'init'
 
     def get_from_playback(self, s):
         return [brush for brush in self.playback if brush.nid == s]
@@ -100,6 +97,18 @@ class SimpleCombat():
         self.state_machine.total_rounds = 0  # So that we are forced out next time
 
     def update(self) -> bool:
+        if self.state == 'init':
+            with RUNTIME_PROFILER.section('combat.start_hooks'):
+                self.start_combat()
+            self.state = 'start_event'
+            return False
+
+        if self.state == 'start_event':
+            with RUNTIME_PROFILER.section('combat.start_event'):
+                self.start_event()
+            self.state = 'combat'
+            return False
+
         if self.state == 'combat':
             if self.state_machine.get_state():
                 with RUNTIME_PROFILER.section('combat.solver_do'):

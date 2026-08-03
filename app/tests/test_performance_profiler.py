@@ -210,6 +210,31 @@ class RuntimeProfilerTests(unittest.TestCase):
         self.assertFalse(combat.update())
         combat.clean_up0.assert_called_once_with()
 
+    def test_simple_combat_stages_start_hooks_before_solver(self):
+        source = (Path(__file__).parents[1] / 'engine' / 'combat' /
+                  'simple_combat.py').read_text(encoding='utf-8')
+
+        constructor = source.index('def __init__')
+        update = source.index('def update')
+        constructor_body = source[constructor:update]
+        self.assertNotIn('self.start_combat()', constructor_body)
+        self.assertNotIn('self.start_event()', constructor_body)
+        self.assertIn("if self.state == 'init':", source[update:])
+        self.assertIn("if self.state == 'start_event':", source[update:])
+
+        from app.engine.combat.simple_combat import SimpleCombat
+        combat = SimpleCombat.__new__(SimpleCombat)
+        combat.state = 'init'
+        combat.start_combat = Mock()
+        combat.start_event = Mock()
+
+        self.assertFalse(combat.update())
+        combat.start_combat.assert_called_once_with()
+        self.assertEqual('start_event', combat.state)
+        self.assertFalse(combat.update())
+        combat.start_event.assert_called_once_with()
+        self.assertEqual('combat', combat.state)
+
 
 if __name__ == '__main__':
     unittest.main()

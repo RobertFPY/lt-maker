@@ -34,7 +34,10 @@ class MusicDict(dict):
             prefab = RESOURCES.music.get(val)
             if prefab:
                 try:
-                    self[val] = SongObject(prefab)
+                    with RUNTIME_PROFILER.section('sound.song_object_create'):
+                        song = SongObject(prefab)
+                    with RUNTIME_PROFILER.section('sound.cache_insert'):
+                        self[val] = song
                 except Exception as e:
                     self[val] = None
                     logging.warning(e)

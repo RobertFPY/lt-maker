@@ -118,6 +118,13 @@ class RuntimeProfilerTests(unittest.TestCase):
             self.assertIn("RUNTIME_PROFILER.section('%s')" % scope, phase_state)
         self.assertIn("RUNTIME_PROFILER.section('phase.music_fade_in')", phase_music)
 
+    def test_music_cache_load_has_actionable_child_scopes(self):
+        source = (Path(__file__).parents[1] / 'engine' / 'sound.py').read_text(
+            encoding='utf-8')
+
+        for scope in ('sound.song_object_create', 'sound.cache_insert'):
+            self.assertIn("RUNTIME_PROFILER.section('%s')" % scope, source)
+
     def test_map_combat_breaks_solver_and_visual_setup_into_child_scopes(self):
         source = (Path(__file__).parents[1] / 'engine' / 'combat' /
                   'map_combat.py').read_text(encoding='utf-8')

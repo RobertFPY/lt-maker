@@ -2,7 +2,7 @@ import logging
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from app.engine import driver
 from app.engine.performance import RuntimeProfiler
@@ -175,6 +175,40 @@ class RuntimeProfilerTests(unittest.TestCase):
         cleanup = source.index('self.clean_up0()', cleanup_state)
         self.assertLess(begin_phase, cleanup_state)
         self.assertLess(cleanup_state, cleanup)
+
+    def test_simple_combat_resolves_phases_from_update_not_constructor(self):
+        from app.engine.combat.simple_combat import SimpleCombat
+
+        source = (Path(__file__).parents[1] / 'engine' / 'combat' /
+                  'simple_combat.py').read_text(encoding='utf-8')
+
+        constructor = source.index('def __init__')
+        update = source.index('def update')
+        constructor_body = source[constructor:update]
+        self.assertNotIn('while self.state_machine.get_state()', constructor_body)
+        self.assertIn("if self.state == 'combat':", source[update:])
+
+        state_machine = Mock()
+        state_machine.get_state.side_effect = [True, False]
+        state_machine.do.return_value = (['action'], ['playback'])
+        combat = SimpleCombat.__new__(SimpleCombat)
+        combat.state = 'combat'
+        combat.state_machine = state_machine
+        combat.full_playback = []
+        combat._apply_actions = Mock()
+        combat.clean_up0 = Mock()
+        combat.clean_up1 = Mock()
+        combat.clean_up2 = Mock()
+
+        self.assertFalse(combat.update())
+        self.assertEqual(['playback'], combat.full_playback)
+        combat._apply_actions.assert_called_once_with()
+        state_machine.setup_next_state.assert_called_once_with()
+
+        self.assertFalse(combat.update())
+        self.assertEqual('cleanup0', combat.state)
+        self.assertFalse(combat.update())
+        combat.clean_up0.assert_called_once_with()
 
 
 if __name__ == '__main__':

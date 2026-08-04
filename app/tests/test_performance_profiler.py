@@ -297,6 +297,31 @@ class RuntimeProfilerTests(unittest.TestCase):
         combat.start_battle_music.assert_called_once_with()
         self.assertEqual('check_transform', combat.state)
 
+    def test_animation_combat_stages_transform_rebuild_before_repairing(self):
+        from app.engine.combat.animation_combat import AnimationCombat
+
+        source = (Path(__file__).parents[1] / 'engine' / 'combat' /
+                  'animation_combat.py').read_text(encoding='utf-8')
+        update = source.index('def update')
+        transform = source.index("elif self.state == 'transform':", update)
+        rebuild = source.index("elif self.state == 'rebuild_transform_animations':", transform)
+        repair = source.index("elif self.state == 'repair_transform_animations':", rebuild)
+        self.assertLess(transform, rebuild)
+        self.assertLess(rebuild, repair)
+
+        combat = AnimationCombat.__new__(AnimationCombat)
+        combat.state = 'transform'
+        combat.left_battle_anim = Mock()
+        combat.left_battle_anim.done.return_value = True
+        combat.right_battle_anim = Mock()
+        combat.right_battle_anim.done.return_value = True
+        combat.lp_battle_anim = None
+        combat.rp_battle_anim = None
+        combat.last_update = 0
+
+        self.assertFalse(combat.update())
+        self.assertEqual('rebuild_transform_animations', combat.state)
+
     def test_map_combat_defers_actions_until_after_playback_effects(self):
         source = (Path(__file__).parents[1] / 'engine' / 'combat' /
                   'map_combat.py').read_text(encoding='utf-8')

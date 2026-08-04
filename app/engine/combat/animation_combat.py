@@ -388,18 +388,24 @@ class AnimationCombat(BaseCombat, MockCombat):
             if self.left_battle_anim.done() and self.right_battle_anim.done() and \
                     (not self.lp_battle_anim or self.lp_battle_anim.done()) and \
                     (not self.rp_battle_anim or self.rp_battle_anim.done()):
-                # Get new battle anims
-                if self.left_battle_anim.is_transform():
-                    self.left_battle_anim = battle_animation.get_battle_anim(self.left, self.left_item, self.distance)
-                if self.right_battle_anim.is_transform():
-                    self.right_battle_anim = battle_animation.get_battle_anim(self.right, self.right_item, self.distance)
-                if self.lp_battle_anim and self.lp_battle_anim.is_transform():
-                    self.lp_battle_anim = battle_animation.get_battle_anim(self.left_partner, self.left_partner.get_weapon(), self.distance)
-                if self.rp_battle_anim and self.rp_battle_anim.is_transform():
-                    self.rp_battle_anim = battle_animation.get_battle_anim(self.right_partner, self.right_partner.get_weapon(), self.distance)
-                # re-pair
-                self.pair_battle_animations(0)
-                self.state = 'pre_proc'
+                self.state = 'rebuild_transform_animations'
+                return False
+
+        elif self.state == 'rebuild_transform_animations':
+            if self.left_battle_anim.is_transform():
+                self.left_battle_anim = battle_animation.get_battle_anim(self.left, self.left_item, self.distance)
+            if self.right_battle_anim.is_transform():
+                self.right_battle_anim = battle_animation.get_battle_anim(self.right, self.right_item, self.distance)
+            if self.lp_battle_anim and self.lp_battle_anim.is_transform():
+                self.lp_battle_anim = battle_animation.get_battle_anim(self.left_partner, self.left_partner.get_weapon(), self.distance)
+            if self.rp_battle_anim and self.rp_battle_anim.is_transform():
+                self.rp_battle_anim = battle_animation.get_battle_anim(self.right_partner, self.right_partner.get_weapon(), self.distance)
+            self.state = 'repair_transform_animations'
+            return False
+
+        elif self.state == 'repair_transform_animations':
+            self.pair_battle_animations(0)
+            self.state = 'pre_proc'
 
         elif self.state == 'pre_proc':
             if self.left_battle_anim.done() and self.right_battle_anim.done() and \

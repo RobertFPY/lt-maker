@@ -9,7 +9,9 @@ import pygame
 from app.utilities import utils
 from app.data.resources.resources import RESOURCES
 from app.engine import engine
-from app.engine.android_runtime import is_android_render_optimization_enabled
+from app.engine.android_runtime import (
+    is_android_render_optimization_enabled, is_android_runtime,
+)
 from app.engine.performance import RUNTIME_PROFILER
 
 import logging
@@ -886,7 +888,7 @@ class DefaultSoundController(SoundController):
 
     def play_streamed_preview(self, next_song_nid: NID, battle=False) -> bool:
         """Stream one Android Sound Room preview without an intro track."""
-        if not is_android_render_optimization_enabled():
+        if not is_android_runtime():
             return False
         return self.play_streamed_music(
             next_song_nid, battle=battle, fade_in=100, play_intro=False,

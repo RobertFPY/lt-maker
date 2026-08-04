@@ -15,7 +15,9 @@ from app.engine.achievements import ACHIEVEMENTS
 
 from app.engine.sprites import SPRITES
 from app.engine.sound import get_sound_thread
-from app.engine.android_runtime import is_android_render_optimization_enabled
+from app.engine.android_runtime import (
+    is_android_render_optimization_enabled, is_android_runtime,
+)
 from app.engine.performance import RUNTIME_PROFILER
 from app.engine.fonts import FONT
 from app.engine.input_manager import get_input_manager
@@ -1742,7 +1744,7 @@ class BaseSoundRoomState(State):
         elif event == 'SELECT':
             current_music_index = int(self.menu.get_current()) - 1
             music = self.music_names[current_music_index]
-            if is_android_render_optimization_enabled():
+            if is_android_runtime():
                 return self._queue_stream_preview(music)
             else:
                 get_sound_thread().fade_in(music)
@@ -1759,12 +1761,12 @@ class BaseSoundRoomState(State):
             rand_idx = random.choice(self.unlocked_idxes)
             self.menu.move_to(rand_idx)
             music = self.music_names[rand_idx]
-            if is_android_render_optimization_enabled():
+            if is_android_runtime():
                 return self._queue_stream_preview(music)
             else:
                 get_sound_thread().fade_in(music)
             self.playing = True
-            if is_android_render_optimization_enabled():
+            if is_android_runtime():
                 self.last_choice = music
 
         elif event == 'AUX':
@@ -1773,7 +1775,7 @@ class BaseSoundRoomState(State):
             song_prefab = RESOURCES.music.get(music)
 
             if self.playing and song_prefab.battle_full_path:
-                if is_android_render_optimization_enabled():
+                if is_android_runtime():
                     if self.last_choice == music:
                         return self._queue_stream_preview(music, battle=True)
                     else:

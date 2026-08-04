@@ -32,6 +32,7 @@ class RuntimeProfiler:
         self.slow_frame_ms = float(os.environ.get("LT_PROFILE_SLOW_FRAME_MS", "100"))
         self._lock = threading.Lock()
         self._frame_started_ns = 0
+        self._frame_thread_id: Optional[int] = None
         self._frame_stages: Dict[str, float] = {}
         self._frame_scopes: list[Dict[str, Any]] = []
         self._scope_stack: list[Dict[str, Any]] = []
@@ -59,6 +60,7 @@ class RuntimeProfiler:
     def begin_frame(self) -> None:
         if not self.enabled:
             return
+        self._frame_thread_id = threading.get_ident()
         self._frame_started_ns = time.perf_counter_ns()
         self._frame_stages = {}
         self._frame_scopes = []
@@ -75,7 +77,12 @@ class RuntimeProfiler:
 
     @contextmanager
     def section(self, name: str) -> Iterator[None]:
-        if not self.enabled:
+        # The frame scope stack is intentionally main-thread-only.  Android
+        # preloads songs on a worker thread; allowing that worker to mutate
+        # this shared stack corrupts nesting and can leave a main-thread scope
+        # trying to pop an already-empty list.
+        if (not self.enabled or
+                threading.get_ident() != self._frame_thread_id):
             yield
             return
         parent = self._scope_stack[-1] if self._scope_stack else None

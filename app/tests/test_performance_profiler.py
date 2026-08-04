@@ -55,6 +55,21 @@ class RuntimeProfilerTests(unittest.TestCase):
         self.assertEqual((40.0, 20.0), tuple(scope['inclusive_ms'] for scope in scopes))
         self.assertEqual((20.0, 20.0), tuple(scope['exclusive_ms'] for scope in scopes))
 
+    def test_enabled_profiler_ignores_worker_scopes_during_a_main_thread_frame(self):
+        profiler = RuntimeProfiler()
+        profiler.enabled = True
+        profiler.slow_frame_ms = 100000
+        profiler.begin_frame()
+
+        with profiler.section('main'):
+            with patch('app.engine.performance.threading.get_ident', return_value=-1):
+                with profiler.section('worker'):
+                    pass
+
+        profiler.finish_frame()
+        self.assertEqual(('main',), tuple(
+            scope['name'] for scope in profiler.latest_frame_scopes()))
+
     def test_slow_frame_output_includes_scope_path_and_metadata(self):
         profiler = RuntimeProfiler()
         profiler.enabled = True

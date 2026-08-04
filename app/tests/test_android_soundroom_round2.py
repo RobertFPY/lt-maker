@@ -35,11 +35,17 @@ class AndroidStreamingControllerTests(unittest.TestCase):
             create=True,
         )
         self.android_patch.start()
+        self.android_runtime_patch = patch.object(
+            self.sound, 'is_android_runtime', return_value=True,
+            create=True,
+        )
+        self.android_runtime_patch.start()
         self.music_patch = patch.object(self.sound.pygame.mixer, 'music', self.music)
         self.music_patch.start()
 
     def tearDown(self):
         self.music_patch.stop()
+        self.android_runtime_patch.stop()
         self.android_patch.stop()
         self.resource_patch.stop()
 
@@ -52,6 +58,16 @@ class AndroidStreamingControllerTests(unittest.TestCase):
         self.music.play.assert_called_once_with(loops=-1, fade_ms=100)
         self.assertTrue(self.controller._stream_preview_active)
         self.assertEqual('track', self.controller._stream_preview_nid)
+
+    def test_android_preview_streams_when_render_caches_are_disabled(self):
+        with patch.object(self.sound, 'is_android_runtime', return_value=True), \
+                patch.object(
+                    self.sound, 'is_android_render_optimization_enabled',
+                    return_value=False,
+                ):
+            self.assertTrue(self.controller.play_streamed_preview('track'))
+
+        self.music.load.assert_called_once_with('track.ogg')
 
     def test_gameplay_stream_plays_intro_once_then_loops_main_track(self):
         self.assertTrue(self.controller.play_streamed_music('track', fade_in=50))

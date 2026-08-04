@@ -335,7 +335,12 @@ class AnimationCombat(BaseCombat, MockCombat):
             return False
 
         elif self.state == 'arena_visuals':
-            self._set_stats(self.playback)
+            with RUNTIME_PROFILER.section('combat.initial_stats'):
+                self._set_stats(self.playback)
+            self.state = 'arena_pair_animations'
+            return False
+
+        elif self.state == 'arena_pair_animations':
             self.pair_battle_animations(0)
             if not self.ui_should_be_hidden():
                 self.bar_offset = 1

@@ -235,6 +235,36 @@ class RuntimeProfilerTests(unittest.TestCase):
         combat.start_event.assert_called_once_with()
         self.assertEqual('combat', combat.state)
 
+    def test_base_combat_resolves_one_phase_per_update(self):
+        from app.engine.combat.base_combat import BaseCombat
+
+        source = (Path(__file__).parents[1] / 'engine' / 'combat' /
+                  'base_combat.py').read_text(encoding='utf-8')
+
+        update = source.index('def update')
+        update_body = source[update:]
+        self.assertNotIn('while self.state_machine.get_state()', update_body)
+        self.assertIn("if self.state == 'init':", update_body)
+        self.assertIn("if self.state == 'cleanup0':", update_body)
+
+        state_machine = Mock()
+        state_machine.get_state.side_effect = [True, False]
+        state_machine.do.return_value = (['action'], ['playback'])
+        combat = BaseCombat.__new__(BaseCombat)
+        combat.state = 'init'
+        combat.state_machine = state_machine
+        combat.full_playback = []
+        combat._apply_actions = Mock()
+        combat.clean_up0 = Mock()
+
+        self.assertFalse(combat.update())
+        self.assertEqual(['playback'], combat.full_playback)
+        combat._apply_actions.assert_called_once_with()
+        self.assertFalse(combat.update())
+        self.assertEqual('cleanup0', combat.state)
+        self.assertFalse(combat.update())
+        combat.clean_up0.assert_called_once_with()
+
 
 if __name__ == '__main__':
     unittest.main()

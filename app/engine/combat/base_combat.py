@@ -10,6 +10,7 @@ from app.engine.objects.item import ItemObject
 
 from app.utilities import static_random
 from app.engine.combat.utils import resolve_weapon
+from app.engine.performance import RUNTIME_PROFILER
 
 class BaseCombat(SimpleCombat):
     alerts: bool = True
@@ -22,7 +23,6 @@ class BaseCombat(SimpleCombat):
 
     def __init__(self, attacker: UnitObject, main_item: ItemObject,
                  main_target: UnitObject, script: list, total_rounds: int = 1):
-        self._counter: int = 0
         self.state = 'init'
         self.attacker = attacker
         self.defender = main_target
@@ -129,26 +129,32 @@ class BaseCombat(SimpleCombat):
         return all_units
 
     def update(self):
-        if self._counter == 0:
-            while self.state_machine.get_state():
-                self.actions, self.playback = self.state_machine.do()
+        if self.state == 'init':
+            if self.state_machine.get_state():
+                with RUNTIME_PROFILER.section('combat.solver_do'):
+                    self.actions, self.playback = self.state_machine.do()
                 self.full_playback += self.playback
                 self._apply_actions()
                 self.state_machine.setup_next_state()
-            self._counter += 1
+            else:
+                self.state = 'cleanup0'
             return False
-        else:
-            if self.state == 'init':
-                self.clean_up0()
-                self.state = 'cleanup1'
-                return False
-            elif self.state == 'cleanup1':
-                self.clean_up1()
-                self.state = 'cleanup2'
-                return False
-            elif self.state == 'cleanup2':
-                self.clean_up2()
-        return True
+
+        if self.state == 'cleanup0':
+            self.clean_up0()
+            self.state = 'cleanup1'
+            return False
+
+        if self.state == 'cleanup1':
+            self.clean_up1()
+            self.state = 'cleanup2'
+            return False
+
+        if self.state == 'cleanup2':
+            self.clean_up2()
+            return True
+
+        raise ValueError('Unknown BaseCombat state: %s' % self.state)
 
     def handle_state_stack(self):
         pass

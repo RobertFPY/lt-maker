@@ -276,6 +276,27 @@ class RuntimeProfilerTests(unittest.TestCase):
         combat._set_stats.assert_called_once_with([])
         self.assertEqual('arena_pair_animations', combat.state)
 
+    def test_animation_combat_stages_transform_check_after_battle_music(self):
+        from app.engine.combat.animation_combat import AnimationCombat
+
+        source = (Path(__file__).parents[1] / 'engine' / 'combat' /
+                  'animation_combat.py').read_text(encoding='utf-8')
+        update = source.index('def update')
+        music = source.index("elif self.state == 'battle_music':", update)
+        transform_check = source.index("elif self.state == 'check_transform':", music)
+        load_music = source.index('self.start_battle_music()', music)
+        self.assertLess(music, load_music)
+        self.assertLess(load_music, transform_check)
+
+        combat = AnimationCombat.__new__(AnimationCombat)
+        combat.state = 'battle_music'
+        combat.start_battle_music = Mock()
+        combat.last_update = 0
+
+        self.assertFalse(combat.update())
+        combat.start_battle_music.assert_called_once_with()
+        self.assertEqual('check_transform', combat.state)
+
     def test_map_combat_defers_actions_until_after_playback_effects(self):
         source = (Path(__file__).parents[1] / 'engine' / 'combat' /
                   'map_combat.py').read_text(encoding='utf-8')

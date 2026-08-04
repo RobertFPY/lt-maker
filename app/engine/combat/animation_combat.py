@@ -363,8 +363,12 @@ class AnimationCombat(BaseCombat, MockCombat):
                 self.state = 'battle_music'
 
         elif self.state == 'battle_music':
-            self.start_battle_music()
-            # Check for transforms here
+            with RUNTIME_PROFILER.section('combat.battle_music_setup'):
+                self.start_battle_music()
+            self.state = 'check_transform'
+            return False
+
+        elif self.state == 'check_transform':
             if self.left_battle_anim.is_transform() or self.right_battle_anim.is_transform() or \
                     (self.lp_battle_anim and self.lp_battle_anim.is_transform()) or \
                     (self.rp_battle_anim and self.rp_battle_anim.is_transform()):

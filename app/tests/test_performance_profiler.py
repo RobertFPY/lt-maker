@@ -164,6 +164,31 @@ class RuntimeProfilerTests(unittest.TestCase):
         self.assertLess(begin_phase, solver)
         self.assertLess(solver, visual_setup)
 
+    def test_animation_combat_stages_initial_paint_setup_before_combat_init(self):
+        from app.engine.combat.animation_combat import AnimationCombat
+
+        source = (Path(__file__).parents[1] / 'engine' / 'combat' /
+                  'animation_combat.py').read_text(encoding='utf-8')
+        constructor = source.index('def __init__')
+        update = source.index('def update')
+        constructor_body = source[constructor:update]
+        self.assertNotIn('self.initial_paint_setup()', constructor_body)
+        self.assertIn("if self.state in ('paint_setup', 'arena_paint_setup'):",
+                      source[update:])
+
+        combat = AnimationCombat.__new__(AnimationCombat)
+        combat.state = 'paint_setup'
+        combat.arena_combat = False
+        combat.initial_paint_setup = Mock()
+        combat._set_stats = Mock()
+        combat.playback = []
+        combat.last_update = 0
+
+        self.assertFalse(combat.update())
+        combat.initial_paint_setup.assert_called_once_with()
+        combat._set_stats.assert_called_once_with([])
+        self.assertEqual('init', combat.state)
+
     def test_map_combat_defers_actions_until_after_playback_effects(self):
         source = (Path(__file__).parents[1] / 'engine' / 'combat' /
                   'map_combat.py').read_text(encoding='utf-8')

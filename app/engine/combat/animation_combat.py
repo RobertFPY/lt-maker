@@ -103,11 +103,11 @@ class AnimationCombat(BaseCombat, MockCombat):
         self.last_update = engine.get_time()
         self.arena_combat = arena_combat
         if self.arena_combat:
-            self.state = 'arena_init'
+            self.state = 'arena_paint_setup'
             self.bg_black = SPRITES.get('bg_black').copy()
             self.bg_black_progress = 0
         else:
-            self.state = 'init'
+            self.state = 'paint_setup'
             self.bg_black = None
             self.bg_black_progress = 1
 
@@ -164,9 +164,6 @@ class AnimationCombat(BaseCombat, MockCombat):
                 self.rp_battle_anim = battle_animation.get_battle_anim(pp, pp.get_weapon(), self.distance, allow_transform=True)
 
         self.current_battle_anim = None
-
-        self.initial_paint_setup()
-        self._set_stats(self.playback)
 
         self._delay_death = False
 
@@ -255,6 +252,14 @@ class AnimationCombat(BaseCombat, MockCombat):
     def update(self) -> bool:
         current_time = engine.get_time() - self.last_update
         current_state = self.state
+
+        if self.state in ('paint_setup', 'arena_paint_setup'):
+            with RUNTIME_PROFILER.section('combat.initial_paint_setup'):
+                self.initial_paint_setup()
+                self._set_stats(self.playback)
+            self.state = 'arena_init' if self.arena_combat else 'init'
+            self.last_update = engine.get_time()
+            return False
 
         if self.state == 'init':
             self.start_combat()

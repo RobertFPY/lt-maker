@@ -286,12 +286,17 @@ class AnimationCombat(BaseCombat, MockCombat):
         elif self.state == 'init_visuals':
             self.attacker.sprite.change_state('combat_attacker')
             self.defender.sprite.change_state('combat_defender')
-            self.state = 'red_cursor'
             game.cursor.combat_show()
             game.cursor.set_pos(self.view_pos)
             if not self._skip:
                 game.state.change('move_camera')
-            self._set_stats(self.playback)  # For start combat changes
+            self.state = 'init_stats'
+
+        elif self.state == 'init_stats':
+            with RUNTIME_PROFILER.section('combat.initial_stats'):
+                self._set_stats(self.playback)  # For start combat changes
+            self.state = 'red_cursor'
+            return False
 
         elif self.state == 'red_cursor':
             if self._skip or current_time > 400:

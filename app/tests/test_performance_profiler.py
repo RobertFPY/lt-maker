@@ -232,6 +232,28 @@ class RuntimeProfilerTests(unittest.TestCase):
         combat.start_combat.assert_called_once_with()
         self.assertEqual('init_visuals', combat.state)
 
+    def test_animation_combat_stages_initial_stats_after_cursor_setup(self):
+        from app.engine.combat.animation_combat import AnimationCombat
+
+        source = (Path(__file__).parents[1] / 'engine' / 'combat' /
+                  'animation_combat.py').read_text(encoding='utf-8')
+        update = source.index('def update')
+        visuals = source.index("elif self.state == 'init_visuals':", update)
+        stats = source.index("elif self.state == 'init_stats':", visuals)
+        refresh = source.index('self._set_stats(self.playback)', stats)
+        self.assertLess(visuals, stats)
+        self.assertLess(stats, refresh)
+
+        combat = AnimationCombat.__new__(AnimationCombat)
+        combat.state = 'init_stats'
+        combat._set_stats = Mock()
+        combat.playback = []
+        combat.last_update = 0
+
+        self.assertFalse(combat.update())
+        combat._set_stats.assert_called_once_with([])
+        self.assertEqual('red_cursor', combat.state)
+
     def test_map_combat_defers_actions_until_after_playback_effects(self):
         source = (Path(__file__).parents[1] / 'engine' / 'combat' /
                   'map_combat.py').read_text(encoding='utf-8')

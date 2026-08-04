@@ -440,6 +440,10 @@ class AnimationCombat(BaseCombat, MockCombat):
                 self.actions.clear()
                 self.playback.clear()
                 return False
+            self.state = 'solve_phase'
+            return False
+
+        elif self.state == 'solve_phase':
             self.actions, self.playback = self.state_machine.do()
             self.full_playback += self.playback
             if not self.actions and not self.playback:

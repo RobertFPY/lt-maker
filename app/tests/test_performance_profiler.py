@@ -344,6 +344,29 @@ class RuntimeProfilerTests(unittest.TestCase):
         self.assertFalse(combat.update())
         self.assertEqual('setup_pre_proc', combat.state)
 
+    def test_animation_combat_stages_solver_after_begin_phase_end_check(self):
+        from app.engine.combat.animation_combat import AnimationCombat
+
+        source = (Path(__file__).parents[1] / 'engine' / 'combat' /
+                  'animation_combat.py').read_text(encoding='utf-8')
+        update = source.index('def update')
+        begin_phase = source.index("elif self.state == 'begin_phase':", update)
+        solve_phase = source.index("elif self.state == 'solve_phase':", begin_phase)
+        solver = source.index('self.state_machine.do()', solve_phase)
+        self.assertLess(begin_phase, solve_phase)
+        self.assertLess(solve_phase, solver)
+
+        state_machine = Mock()
+        state_machine.get_state.return_value = True
+        combat = AnimationCombat.__new__(AnimationCombat)
+        combat.state = 'begin_phase'
+        combat.state_machine = state_machine
+        combat.last_update = 0
+
+        self.assertFalse(combat.update())
+        state_machine.do.assert_not_called()
+        self.assertEqual('solve_phase', combat.state)
+
     def test_map_combat_defers_actions_until_after_playback_effects(self):
         source = (Path(__file__).parents[1] / 'engine' / 'combat' /
                   'map_combat.py').read_text(encoding='utf-8')

@@ -103,11 +103,11 @@ class AnimationCombat(BaseCombat, MockCombat):
         self.last_update = engine.get_time()
         self.arena_combat = arena_combat
         if self.arena_combat:
-            self.state = 'arena_paint_setup'
+            self.state = 'arena_animation_setup'
             self.bg_black = SPRITES.get('bg_black').copy()
             self.bg_black_progress = 0
         else:
-            self.state = 'paint_setup'
+            self.state = 'animation_setup'
             self.bg_black = None
             self.bg_black_progress = 1
 
@@ -138,31 +138,12 @@ class AnimationCombat(BaseCombat, MockCombat):
 
         self.llast_gauge = self.left.get_guard_gauge()
         self.rlast_gauge = self.right.get_guard_gauge()
-        self.left_battle_anim = battle_animation.get_battle_anim(self.left, self.left_item, self.distance, allow_transform=True)
-        self.right_battle_anim = battle_animation.get_battle_anim(self.right, self.right_item, self.distance, allow_transform=True)
         self.lp_battle_anim = None
         self.rp_battle_anim = None
         self.left_partner = None
         self.right_partner = None
-
-        if DB.constants.value('pairup'):
-            if self.left.strike_partner:
-                pp = self.left.strike_partner
-                self.left_partner = pp
-                self.lp_battle_anim = battle_animation.get_battle_anim(pp, pp.get_weapon(), self.distance, allow_transform=True)
-            elif self.left.traveler and item_system.is_weapon(self.right, self.right_item):
-                pp = game.get_unit(self.left.traveler)
-                self.left_partner = pp
-                self.lp_battle_anim = battle_animation.get_battle_anim(pp, pp.get_weapon(), self.distance, allow_transform=True)
-            if self.right.strike_partner:
-                pp = self.right.strike_partner
-                self.right_partner = pp
-                self.rp_battle_anim = battle_animation.get_battle_anim(pp, pp.get_weapon(), self.distance, allow_transform=True)
-            elif self.right.traveler and item_system.is_weapon(self.left, self.left_item):
-                pp = game.get_unit(self.right.traveler)
-                self.right_partner = pp
-                self.rp_battle_anim = battle_animation.get_battle_anim(pp, pp.get_weapon(), self.distance, allow_transform=True)
-
+        self.left_battle_anim = None
+        self.right_battle_anim = None
         self.current_battle_anim = None
 
         self._delay_death = False
@@ -174,6 +155,34 @@ class AnimationCombat(BaseCombat, MockCombat):
     def end_skip(self):
         self._skip = False
         battle_animation.battle_anim_speed = 1
+
+    def setup_battle_animations(self):
+        self.left_battle_anim = battle_animation.get_battle_anim(
+            self.left, self.left_item, self.distance, allow_transform=True)
+        self.right_battle_anim = battle_animation.get_battle_anim(
+            self.right, self.right_item, self.distance, allow_transform=True)
+
+        if DB.constants.value('pairup'):
+            if self.left.strike_partner:
+                pp = self.left.strike_partner
+                self.left_partner = pp
+                self.lp_battle_anim = battle_animation.get_battle_anim(
+                    pp, pp.get_weapon(), self.distance, allow_transform=True)
+            elif self.left.traveler and item_system.is_weapon(self.right, self.right_item):
+                pp = game.get_unit(self.left.traveler)
+                self.left_partner = pp
+                self.lp_battle_anim = battle_animation.get_battle_anim(
+                    pp, pp.get_weapon(), self.distance, allow_transform=True)
+            if self.right.strike_partner:
+                pp = self.right.strike_partner
+                self.right_partner = pp
+                self.rp_battle_anim = battle_animation.get_battle_anim(
+                    pp, pp.get_weapon(), self.distance, allow_transform=True)
+            elif self.right.traveler and item_system.is_weapon(self.left, self.left_item):
+                pp = game.get_unit(self.right.traveler)
+                self.right_partner = pp
+                self.rp_battle_anim = battle_animation.get_battle_anim(
+                    pp, pp.get_weapon(), self.distance, allow_transform=True)
 
     def get_actors(self):
         if self.get_from_playback('defender_phase'):
@@ -252,6 +261,13 @@ class AnimationCombat(BaseCombat, MockCombat):
     def update(self) -> bool:
         current_time = engine.get_time() - self.last_update
         current_state = self.state
+
+        if self.state in ('animation_setup', 'arena_animation_setup'):
+            with RUNTIME_PROFILER.section('combat.battle_animation_setup'):
+                self.setup_battle_animations()
+            self.state = 'arena_paint_setup' if self.arena_combat else 'paint_setup'
+            self.last_update = engine.get_time()
+            return False
 
         if self.state in ('paint_setup', 'arena_paint_setup'):
             with RUNTIME_PROFILER.section('combat.initial_paint_setup'):
@@ -1141,6 +1157,10 @@ class AnimationCombat(BaseCombat, MockCombat):
             first_main_battle_anim.draw_over(surf, shake, first_offset, self.pan_offset)
 
     def draw(self, surf):
+        if self.state in ('animation_setup', 'arena_animation_setup',
+                          'paint_setup', 'arena_paint_setup'):
+            return surf
+
         with RUNTIME_PROFILER.section('combat_background'):
             if self.battle_background:
                 self.battle_background.draw(surf)

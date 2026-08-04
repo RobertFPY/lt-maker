@@ -278,7 +278,12 @@ class AnimationCombat(BaseCombat, MockCombat):
             return False
 
         if self.state == 'init':
-            self.start_combat()
+            with RUNTIME_PROFILER.section('combat.start_hooks'):
+                self.start_combat()
+            self.state = 'init_visuals'
+            return False
+
+        elif self.state == 'init_visuals':
             self.attacker.sprite.change_state('combat_attacker')
             self.defender.sprite.change_state('combat_defender')
             self.state = 'red_cursor'
@@ -319,7 +324,12 @@ class AnimationCombat(BaseCombat, MockCombat):
                 self.state = 'init_pause'
 
         elif self.state == 'arena_init':
-            self.start_combat()
+            with RUNTIME_PROFILER.section('combat.start_hooks'):
+                self.start_combat()
+            self.state = 'arena_visuals'
+            return False
+
+        elif self.state == 'arena_visuals':
             self._set_stats(self.playback)
             self.pair_battle_animations(0)
             if not self.ui_should_be_hidden():

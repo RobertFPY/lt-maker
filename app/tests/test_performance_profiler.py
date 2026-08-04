@@ -211,6 +211,27 @@ class RuntimeProfilerTests(unittest.TestCase):
         combat.setup_battle_animations.assert_called_once_with()
         self.assertEqual('paint_setup', combat.state)
 
+    def test_animation_combat_stages_start_hooks_before_visual_init(self):
+        from app.engine.combat.animation_combat import AnimationCombat
+
+        source = (Path(__file__).parents[1] / 'engine' / 'combat' /
+                  'animation_combat.py').read_text(encoding='utf-8')
+        update = source.index('def update')
+        init_state = source.index("if self.state == 'init':", update)
+        visual_state = source.index("elif self.state == 'init_visuals':", init_state)
+        start_hook = source.index('self.start_combat()', init_state)
+        self.assertLess(init_state, start_hook)
+        self.assertLess(start_hook, visual_state)
+
+        combat = AnimationCombat.__new__(AnimationCombat)
+        combat.state = 'init'
+        combat.start_combat = Mock()
+        combat.last_update = 0
+
+        self.assertFalse(combat.update())
+        combat.start_combat.assert_called_once_with()
+        self.assertEqual('init_visuals', combat.state)
+
     def test_map_combat_defers_actions_until_after_playback_effects(self):
         source = (Path(__file__).parents[1] / 'engine' / 'combat' /
                   'map_combat.py').read_text(encoding='utf-8')

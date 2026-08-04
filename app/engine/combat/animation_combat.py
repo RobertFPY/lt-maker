@@ -410,18 +410,22 @@ class AnimationCombat(BaseCombat, MockCombat):
         elif self.state == 'pre_proc':
             if self.left_battle_anim.done() and self.right_battle_anim.done() and \
                     not self.proc_icons:
-                # These would have happened from pre_combat and start_combat
-                if self.get_from_full_playback('attack_pre_proc'):
-                    self.set_up_pre_proc_animation('attack_pre_proc')
-                elif self.get_from_full_playback('defense_pre_proc'):
-                    self.set_up_pre_proc_animation('defense_pre_proc')
-                elif self.set_up_other_proc_icons(self.attacker):
-                    pass  # Processing is done in the if check above
-                elif self.set_up_other_proc_icons(self.defender):
-                    pass  # Processing is done in the if check above
-                else:
-                    self.add_proc_icon.memory.clear()
-                    self.state = 'begin_phase'
+                self.state = 'setup_pre_proc'
+                return False
+
+        elif self.state == 'setup_pre_proc':
+            # These would have happened from pre_combat and start_combat
+            if self.get_from_full_playback('attack_pre_proc'):
+                self.set_up_pre_proc_animation('attack_pre_proc')
+            elif self.get_from_full_playback('defense_pre_proc'):
+                self.set_up_pre_proc_animation('defense_pre_proc')
+            elif self.set_up_other_proc_icons(self.attacker):
+                pass  # Processing is done in the if check above
+            elif self.set_up_other_proc_icons(self.defender):
+                pass  # Processing is done in the if check above
+            else:
+                self.add_proc_icon.memory.clear()
+                self.state = 'begin_phase'
 
         elif self.state == 'begin_phase':
             # Get playback

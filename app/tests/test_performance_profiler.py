@@ -322,6 +322,28 @@ class RuntimeProfilerTests(unittest.TestCase):
         self.assertFalse(combat.update())
         self.assertEqual('rebuild_transform_animations', combat.state)
 
+    def test_animation_combat_stages_pre_proc_setup_after_readiness_check(self):
+        from app.engine.combat.animation_combat import AnimationCombat
+
+        source = (Path(__file__).parents[1] / 'engine' / 'combat' /
+                  'animation_combat.py').read_text(encoding='utf-8')
+        update = source.index('def update')
+        pre_proc = source.index("elif self.state == 'pre_proc':", update)
+        setup = source.index("elif self.state == 'setup_pre_proc':", pre_proc)
+        self.assertLess(pre_proc, setup)
+
+        combat = AnimationCombat.__new__(AnimationCombat)
+        combat.state = 'pre_proc'
+        combat.left_battle_anim = Mock()
+        combat.left_battle_anim.done.return_value = True
+        combat.right_battle_anim = Mock()
+        combat.right_battle_anim.done.return_value = True
+        combat.proc_icons = []
+        combat.last_update = 0
+
+        self.assertFalse(combat.update())
+        self.assertEqual('setup_pre_proc', combat.state)
+
     def test_map_combat_defers_actions_until_after_playback_effects(self):
         source = (Path(__file__).parents[1] / 'engine' / 'combat' /
                   'map_combat.py').read_text(encoding='utf-8')

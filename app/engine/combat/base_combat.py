@@ -45,8 +45,6 @@ class BaseCombat(SimpleCombat):
         self.playback = []
         self.actions = []
 
-        self.start_combat()
-        self.start_event()
 
     def start_combat(self):
         self.initial_random_state = static_random.get_combat_random_state()
@@ -130,6 +128,18 @@ class BaseCombat(SimpleCombat):
 
     def update(self):
         if self.state == 'init':
+            with RUNTIME_PROFILER.section('combat.start_hooks'):
+                self.start_combat()
+            self.state = 'start_event'
+            return False
+
+        if self.state == 'start_event':
+            with RUNTIME_PROFILER.section('combat.start_event'):
+                self.start_event()
+            self.state = 'combat'
+            return False
+
+        if self.state == 'combat':
             if self.state_machine.get_state():
                 with RUNTIME_PROFILER.section('combat.solver_do'):
                     self.actions, self.playback = self.state_machine.do()

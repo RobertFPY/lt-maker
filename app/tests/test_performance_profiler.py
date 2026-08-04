@@ -184,7 +184,8 @@ class RuntimeProfilerTests(unittest.TestCase):
 
         constructor = source.index('def __init__')
         update = source.index('def update')
-        constructor_body = source[constructor:update]
+        constructor_end = source.index('def start_combat', constructor)
+        constructor_body = source[constructor:constructor_end]
         self.assertNotIn('while self.state_machine.get_state()', constructor_body)
         self.assertIn("if self.state == 'combat':", source[update:])
 
@@ -251,7 +252,7 @@ class RuntimeProfilerTests(unittest.TestCase):
         state_machine.get_state.side_effect = [True, False]
         state_machine.do.return_value = (['action'], ['playback'])
         combat = BaseCombat.__new__(BaseCombat)
-        combat.state = 'init'
+        combat.state = 'combat'
         combat.state_machine = state_machine
         combat.full_playback = []
         combat._apply_actions = Mock()
@@ -264,6 +265,33 @@ class RuntimeProfilerTests(unittest.TestCase):
         self.assertEqual('cleanup0', combat.state)
         self.assertFalse(combat.update())
         combat.clean_up0.assert_called_once_with()
+
+    def test_base_combat_stages_start_hooks_before_solver(self):
+        from app.engine.combat.base_combat import BaseCombat
+
+        source = (Path(__file__).parents[1] / 'engine' / 'combat' /
+                  'base_combat.py').read_text(encoding='utf-8')
+
+        constructor = source.index('def __init__')
+        update = source.index('def update')
+        constructor_end = source.index('def start_combat', constructor)
+        constructor_body = source[constructor:constructor_end]
+        self.assertNotIn('self.start_combat()', constructor_body)
+        self.assertNotIn('self.start_event()', constructor_body)
+        self.assertIn("if self.state == 'init':", source[update:])
+        self.assertIn("if self.state == 'start_event':", source[update:])
+
+        combat = BaseCombat.__new__(BaseCombat)
+        combat.state = 'init'
+        combat.start_combat = Mock()
+        combat.start_event = Mock()
+
+        self.assertFalse(combat.update())
+        combat.start_combat.assert_called_once_with()
+        self.assertEqual('start_event', combat.state)
+        self.assertFalse(combat.update())
+        combat.start_event.assert_called_once_with()
+        self.assertEqual('combat', combat.state)
 
 
 if __name__ == '__main__':

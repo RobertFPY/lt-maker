@@ -3,6 +3,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from app.engine.state_machine import StateMachine
+from app.engine.state import MapState
 from app.events.event_state import EventState
 
 
@@ -70,6 +71,21 @@ class _State:
 
 
 class StateMachineLifecycleTests(unittest.TestCase):
+    def test_map_visuals_skip_camera_until_tilemap_is_ready(self):
+        camera = MagicMock()
+        highlight = MagicMock()
+        map_view = MagicMock()
+        loading_game = SimpleNamespace(
+            camera=camera, tilemap=None, highlight=highlight, map_view=map_view,
+        )
+
+        with patch('app.engine.state.game', loading_game):
+            MapState().update_visuals()
+
+        camera.update.assert_not_called()
+        highlight.update.assert_called_once_with()
+        map_view.update_visuals.assert_called_once_with()
+
     def _machine(self, specs):
         machine = StateMachine()
         trace = []

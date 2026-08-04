@@ -81,7 +81,11 @@ class MapState(State):
         pass
 
     def update_visuals(self):
-        if game.camera:
+        # Android's staged save restore can expose a saved MapState for one
+        # frame before its level/overworld tilemap has been rebuilt.  Camera
+        # bounds require a real tilemap; the other visual controllers remain
+        # safe to advance during that loading boundary.
+        if game.camera and game.tilemap:
             game.camera.update()
         if game.highlight:
             game.highlight.update()

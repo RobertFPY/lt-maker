@@ -392,6 +392,9 @@ class AnimationCombat(BaseCombat, MockCombat):
                 self.state_machine.setup_next_state()
                 return False
             # self._set_stats()
+            self.state = 'setup_phase_visuals'
+
+        elif self.state == 'setup_phase_visuals':
 
             # Set up combat effects (legendary)
             attacker, item, defender, d_item, self.current_battle_anim = self.get_actors()

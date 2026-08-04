@@ -154,6 +154,16 @@ class RuntimeProfilerTests(unittest.TestCase):
         self.assertLess(solver, visual_setup)
         self.assertLess(visual_setup, health_bars)
 
+    def test_animation_combat_defers_visual_setup_until_after_solver(self):
+        source = (Path(__file__).parents[1] / 'engine' / 'combat' /
+                  'animation_combat.py').read_text(encoding='utf-8')
+
+        begin_phase = source.index("elif self.state == 'begin_phase':")
+        visual_setup = source.index("elif self.state == 'setup_phase_visuals':")
+        solver = source.index('self.state_machine.do()', begin_phase)
+        self.assertLess(begin_phase, solver)
+        self.assertLess(solver, visual_setup)
+
     def test_map_combat_defers_actions_until_after_playback_effects(self):
         source = (Path(__file__).parents[1] / 'engine' / 'combat' /
                   'map_combat.py').read_text(encoding='utf-8')

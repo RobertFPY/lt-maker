@@ -308,10 +308,14 @@ class AnimationCombat(BaseCombat, MockCombat):
             self.build_viewbox(current_time)
             if current_time > self.viewbox_time:
                 self.viewbox = (self.viewbox[0], self.viewbox[1], 0, 0)
-                self.state = 'entrance'
-                self.pair_battle_animations(14)
-                # Unit should be facing down
-                self.attacker.sprite.change_state('selected')
+                self.state = 'pair_entrance_animations'
+                return False
+
+        elif self.state == 'pair_entrance_animations':
+            self.pair_battle_animations(14)
+            # Unit should be facing down
+            self.attacker.sprite.change_state('selected')
+            self.state = 'entrance'
 
         elif self.state == 'entrance':
             entrance_time = utils.frames2ms(10)
@@ -359,8 +363,14 @@ class AnimationCombat(BaseCombat, MockCombat):
             if self._skip or current_time > utils.frames2ms(25):
                 if self.battle_background:
                     self.battle_background.set_normal()
+                self.state = 'start_event'
+                return False
+
+        elif self.state == 'start_event':
+            with RUNTIME_PROFILER.section('combat.start_event'):
                 self.start_event(True)
-                self.state = 'battle_music'
+            self.state = 'battle_music'
+            return False
 
         elif self.state == 'battle_music':
             with RUNTIME_PROFILER.section('combat.battle_music_setup'):
@@ -372,17 +382,20 @@ class AnimationCombat(BaseCombat, MockCombat):
             if self.left_battle_anim.is_transform() or self.right_battle_anim.is_transform() or \
                     (self.lp_battle_anim and self.lp_battle_anim.is_transform()) or \
                     (self.rp_battle_anim and self.rp_battle_anim.is_transform()):
-                self.state = 'transform'
-                if self.left_battle_anim.is_transform():
-                    self.left_battle_anim.initiate_transform()
-                if self.right_battle_anim.is_transform():
-                    self.right_battle_anim.initiate_transform()
-                if self.lp_battle_anim and self.lp_battle_anim.is_transform():
-                    self.lp_battle_anim.initiate_transform()
-                if self.rp_battle_anim and self.rp_battle_anim.is_transform():
-                    self.rp_battle_anim.initiate_transform()
+                self.state = 'initiate_transform'
             else:
                 self.state = 'pre_proc'
+
+        elif self.state == 'initiate_transform':
+            if self.left_battle_anim.is_transform():
+                self.left_battle_anim.initiate_transform()
+            if self.right_battle_anim.is_transform():
+                self.right_battle_anim.initiate_transform()
+            if self.lp_battle_anim and self.lp_battle_anim.is_transform():
+                self.lp_battle_anim.initiate_transform()
+            if self.rp_battle_anim and self.rp_battle_anim.is_transform():
+                self.rp_battle_anim.initiate_transform()
+            self.state = 'transform'
 
         elif self.state == 'transform':
             if self.left_battle_anim.done() and self.right_battle_anim.done() and \
@@ -454,7 +467,6 @@ class AnimationCombat(BaseCombat, MockCombat):
             self.state = 'setup_phase_visuals'
 
         elif self.state == 'setup_phase_visuals':
-
             # Set up combat effects (legendary)
             attacker, item, defender, d_item, self.current_battle_anim = self.get_actors()
             any_effect: bool = False
@@ -469,7 +481,11 @@ class AnimationCombat(BaseCombat, MockCombat):
 
             if any_effect:
                 self.state = 'combat_effect'
-            elif self.get_from_playback('attack_proc'):
+            else:
+                self.state = 'setup_phase_followup'
+
+        elif self.state == 'setup_phase_followup':
+            if self.get_from_playback('attack_proc'):
                 self.set_up_proc_animation('attack_proc')
             elif self.get_from_playback('defense_proc'):
                 self.set_up_proc_animation('defense_proc')
@@ -479,35 +495,25 @@ class AnimationCombat(BaseCombat, MockCombat):
 
         elif self.state == 'combat_effect':
             if not self.left_battle_anim.effect_playing() and not self.right_battle_anim.effect_playing() and current_time > 400:
-                if self.get_from_playback('attack_proc'):
-                    self.set_up_proc_animation('attack_proc')
-                elif self.get_from_playback('defense_proc'):
-                    self.set_up_proc_animation('defense_proc')
-                else:
-                    self.add_proc_icon.memory.clear()
-                    self.set_up_combat_animation()
+                self.state = 'setup_phase_followup'
+                return False
 
         elif self.state == 'attack_proc':
             if self.left_battle_anim.done() and self.right_battle_anim.done() and not self.proc_icons:
-                if self.get_from_playback('attack_proc'):
-                    self.set_up_proc_animation('attack_proc')
-                elif self.get_from_playback('defense_proc'):
-                    self.set_up_proc_animation('defense_proc')
-                else:
-                    self.add_proc_icon.memory.clear()
-                    self.set_up_combat_animation()
+                self.state = 'setup_phase_followup'
+                return False
 
         elif self.state == 'defense_proc':
             if self.left_battle_anim.done() and self.right_battle_anim.done() and not self.proc_icons:
-                if self.get_from_playback('defense_proc'):
-                    self.set_up_proc_animation('defense_proc')
-                else:
-                    self.add_proc_icon.memory.clear()
-                    self.set_up_combat_animation()
+                self.state = 'setup_phase_followup'
+                return False
 
         elif self.state == 'combat_hit':
             self.clean_up0()
-            
+            self.state = 'setup_hit_effect'
+            return False
+
+        elif self.state == 'setup_hit_effect':
             # Set up on-hit effects for magic stuff
             attacker, item, defender, d_item, self.current_battle_anim = self.get_actors()   
             if item:
@@ -523,15 +529,19 @@ class AnimationCombat(BaseCombat, MockCombat):
         elif self.state == 'hp_change':
             proceed = self.current_battle_anim.can_proceed()
             if current_time > utils.frames2ms(27) and self.left_hp_bar.done() and self.right_hp_bar.done() and proceed:
-                self.current_battle_anim.resume()
-                if not self._delay_death:
-                    if self.left.get_hp() <= 0:
-                        self.left_battle_anim.start_dying_animation()
-                    if self.right.get_hp() <= 0:
-                        self.right_battle_anim.start_dying_animation()
-                    if (self.left.get_hp() <= 0 or self.right.get_hp() <= 0) and self.current_battle_anim.state != 'dying':
-                        self.current_battle_anim.wait_for_dying()
-                self.state = 'anim'
+                self.state = 'resume_hit_animation'
+                return False
+
+        elif self.state == 'resume_hit_animation':
+            self.current_battle_anim.resume()
+            if not self._delay_death:
+                if self.left.get_hp() <= 0:
+                    self.left_battle_anim.start_dying_animation()
+                if self.right.get_hp() <= 0:
+                    self.right_battle_anim.start_dying_animation()
+                if (self.left.get_hp() <= 0 or self.right.get_hp() <= 0) and self.current_battle_anim.state != 'dying':
+                    self.current_battle_anim.wait_for_dying()
+            self.state = 'anim'
 
         elif self.state == 'anim':
             if self.left_battle_anim.done() and self.right_battle_anim.done() and \
@@ -544,6 +554,10 @@ class AnimationCombat(BaseCombat, MockCombat):
             self.state = 'begin_phase'
 
         elif self.state == 'delayed_death':
+            self.state = 'setup_delayed_death'
+            return False
+
+        elif self.state == 'setup_delayed_death':
             if self.left.get_hp() <= 0:
                 self.left_battle_anim.start_dying_animation()
             if self.right.get_hp() <= 0:
@@ -561,48 +575,69 @@ class AnimationCombat(BaseCombat, MockCombat):
 
         elif self.state == 'end_combat':
             if self.left_battle_anim.done() and self.right_battle_anim.done():
-                self.focus_exp()
-                self.move_camera()
-                self.state = 'exp_pause'
+                self.state = 'end_combat_focus'
+                return False
+
+        elif self.state == 'end_combat_focus':
+            self.focus_exp()
+            self.state = 'end_combat_camera'
+            return False
+
+        elif self.state == 'end_combat_camera':
+            self.move_camera()
+            self.state = 'exp_pause'
 
         elif self.state == 'exp_pause':
             if self._skip or current_time > 450:
-                self.clean_up1()
-                self.state = 'exp_wait'
+                self.state = 'cleanup1'
+                return False
+
+        elif self.state == 'cleanup1':
+            self.clean_up1()
+            self.state = 'exp_wait'
 
         elif self.state == 'exp_wait':
             # waits here for exp_gain state to finish
             self.state = 'revert_transform'
 
         elif self.state == 'revert_transform':
-            # Get new battle anims
-            if not self._skip:
-                if not self.left.is_dying:
-                    new_left_battle_anim = battle_animation.get_battle_anim(self.left, self.left_item, self.distance, allow_revert=True)
-                    if new_left_battle_anim:  # Need to check that the new animation actually exists
-                        self.left_battle_anim = new_left_battle_anim
-                if not self.right.is_dying:
-                    new_right_battle_anim = battle_animation.get_battle_anim(self.right, self.right_item, self.distance, allow_revert=True)
-                    if new_right_battle_anim:
-                        self.right_battle_anim = new_right_battle_anim
-                if self.lp_battle_anim:
-                    new_lp_battle_anim = battle_animation.get_battle_anim(self.left_partner, self.left_partner.get_weapon(), self.distance, allow_revert=True)
-                    if new_lp_battle_anim:
-                        self.lp_battle_anim = new_lp_battle_anim
-                if self.rp_battle_anim:
-                    new_rp_battle_anim = battle_animation.get_battle_anim(self.right_partner, self.right_partner.get_weapon(), self.distance, allow_revert=True)
-                    if new_rp_battle_anim:
-                        self.rp_battle_anim = new_rp_battle_anim
-                # re-pair
-                self.pair_battle_animations(0)
-                if self.left_battle_anim.is_transform():
-                    self.left_battle_anim.initiate_transform()
-                if self.right_battle_anim.is_transform():
-                    self.right_battle_anim.initiate_transform()
-                if self.lp_battle_anim and self.lp_battle_anim.is_transform():
-                    self.lp_battle_anim.initiate_transform()
-                if self.rp_battle_anim and self.rp_battle_anim.is_transform():
-                    self.rp_battle_anim.initiate_transform()
+            self.state = 'fade_out_wait' if self._skip else 'rebuild_revert_animations'
+            return False
+
+        elif self.state == 'rebuild_revert_animations':
+            if not self.left.is_dying:
+                new_left_battle_anim = battle_animation.get_battle_anim(self.left, self.left_item, self.distance, allow_revert=True)
+                if new_left_battle_anim:
+                    self.left_battle_anim = new_left_battle_anim
+            if not self.right.is_dying:
+                new_right_battle_anim = battle_animation.get_battle_anim(self.right, self.right_item, self.distance, allow_revert=True)
+                if new_right_battle_anim:
+                    self.right_battle_anim = new_right_battle_anim
+            if self.lp_battle_anim:
+                new_lp_battle_anim = battle_animation.get_battle_anim(self.left_partner, self.left_partner.get_weapon(), self.distance, allow_revert=True)
+                if new_lp_battle_anim:
+                    self.lp_battle_anim = new_lp_battle_anim
+            if self.rp_battle_anim:
+                new_rp_battle_anim = battle_animation.get_battle_anim(self.right_partner, self.right_partner.get_weapon(), self.distance, allow_revert=True)
+                if new_rp_battle_anim:
+                    self.rp_battle_anim = new_rp_battle_anim
+            self.state = 'repair_revert_animations'
+            return False
+
+        elif self.state == 'repair_revert_animations':
+            self.pair_battle_animations(0)
+            self.state = 'initiate_revert_transforms'
+            return False
+
+        elif self.state == 'initiate_revert_transforms':
+            if self.left_battle_anim.is_transform():
+                self.left_battle_anim.initiate_transform()
+            if self.right_battle_anim.is_transform():
+                self.right_battle_anim.initiate_transform()
+            if self.lp_battle_anim and self.lp_battle_anim.is_transform():
+                self.lp_battle_anim.initiate_transform()
+            if self.rp_battle_anim and self.rp_battle_anim.is_transform():
+                self.rp_battle_anim.initiate_transform()
             self.state = 'fade_out_wait'
 
         elif self.state == 'fade_out_wait':
@@ -642,20 +677,26 @@ class AnimationCombat(BaseCombat, MockCombat):
         elif self.state == 'fade_out':
             self.build_viewbox(self.viewbox_time - current_time)
             if current_time > self.viewbox_time:
-                self.finish()
-                self.clean_up2()
-                self.end_skip()
-                return True
+                self.state = 'finish_combat'
+                return False
 
         elif self.state == 'arena_out':
             exit_time = utils.frames2ms(2.5 if self._skip else 10)
             self.bg_black_progress = 1 - current_time / exit_time
             if current_time > exit_time:
                 self.bg_black_progress = 0
-                self.finish()
-                self.clean_up2()
-                self.end_skip()
-                return True
+                self.state = 'finish_combat'
+                return False
+
+        elif self.state == 'finish_combat':
+            self.finish()
+            self.state = 'cleanup2'
+            return False
+
+        elif self.state == 'cleanup2':
+            self.clean_up2()
+            self.end_skip()
+            return True
 
         if self.state != current_state:
             logging.debug("New Animation Combat State: %s", self.state)

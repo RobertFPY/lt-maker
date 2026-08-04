@@ -367,6 +367,38 @@ class RuntimeProfilerTests(unittest.TestCase):
         state_machine.do.assert_not_called()
         self.assertEqual('solve_phase', combat.state)
 
+    def test_animation_combat_stages_remaining_heavy_operations(self):
+        source = (Path(__file__).parents[1] / 'engine' / 'combat' /
+                  'animation_combat.py').read_text(encoding='utf-8')
+
+        for state in (
+            'pair_entrance_animations', 'start_event', 'initiate_transform',
+            'setup_phase_followup', 'setup_hit_effect',
+            'resume_hit_animation', 'setup_delayed_death',
+            'end_combat_focus', 'end_combat_camera', 'cleanup1',
+            'rebuild_revert_animations', 'repair_revert_animations',
+            'initiate_revert_transforms', 'finish_combat', 'cleanup2',
+        ):
+            self.assertIn("self.state == '%s'" % state, source)
+
+    def test_animation_combat_stages_final_cleanup_after_finish(self):
+        from app.engine.combat.animation_combat import AnimationCombat
+
+        combat = AnimationCombat.__new__(AnimationCombat)
+        combat.state = 'finish_combat'
+        combat.finish = Mock()
+        combat.last_update = 0
+
+        self.assertFalse(combat.update())
+        combat.finish.assert_called_once_with()
+        self.assertEqual('cleanup2', combat.state)
+
+        combat.clean_up2 = Mock()
+        combat.end_skip = Mock()
+        self.assertTrue(combat.update())
+        combat.clean_up2.assert_called_once_with()
+        combat.end_skip.assert_called_once_with()
+
     def test_map_combat_defers_actions_until_after_playback_effects(self):
         source = (Path(__file__).parents[1] / 'engine' / 'combat' /
                   'map_combat.py').read_text(encoding='utf-8')

@@ -965,7 +965,6 @@ class TitleLoadJobState(State):
         next_action = self.context.get('next_action')
         if next_action == 'start_level':
             next_level_nid = game.game_vars['_next_level_nid']
-            game.load_states(['start_level_asset_loading'])
             self._post_load_iter = game.start_level_iter(next_level_nid)
             return False
         elif next_action == 'restart_level':
@@ -989,6 +988,13 @@ class TitleLoadJobState(State):
         return False
 
     def _complete_load(self) -> None:
+        next_action = self.context.get('next_action')
+        if next_action == 'start_level':
+            game.load_states(['start_level_asset_loading'])
+        elif next_action == 'overworld':
+            game.load_states(['overworld'])
+        else:
+            game.commit_staged_state()
         game.memory['transition_from'] = self.context.get('transition_from', 'Load Game')
         game.memory['title_menu'] = self.context.get('title_menu')
         game.state.change('title_wait')

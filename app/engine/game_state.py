@@ -1,4 +1,5 @@
 from __future__ import annotations
+from copy import deepcopy
 from functools import lru_cache
 
 import random
@@ -92,6 +93,7 @@ class GameState():
         self.memory: Dict = {}
 
         self.state: state_machine.StateMachine = state_machine.StateMachine()
+        self._staged_state_data = None
 
         self.alerts: List[banner.Banner] = []
 
@@ -102,6 +104,7 @@ class GameState():
         self.level_vars: PrimitiveCounter = None
         self.playtime: int = 0
         self.current_save_slot: int = None
+        self.chapter_start_snapshot: Optional[dict] = None
 
         # global registries
         self.unit_registry: Dict[NID, UnitObject] = {}
@@ -172,6 +175,7 @@ class GameState():
         self.memory = {}
 
         self.state = state_machine.StateMachine()
+        self._staged_state_data = None
 
         self.playtime = 0
 
@@ -182,6 +186,7 @@ class GameState():
         self.movement = None
 
         self.current_save_slot = None
+        self.chapter_start_snapshot = None
         self._current_level = None
         self.roam_info.clear()
 
@@ -268,7 +273,23 @@ class GameState():
         self.movement = None
         self.overworld_controller = None
         self.map_sprite_registry = {}
+        self._staged_state_data = None
         self.alerts.clear()
+
+    def commit_staged_state(self) -> None:
+        """Atomically install state saved by an Android staged restore.
+
+        Title loading may need to reconstruct a new chapter first.  Keeping
+        this payload separate prevents a saved MapState or PhaseChangeState
+        from running against the intentionally incomplete loading game.
+        """
+        if self._staged_state_data is None:
+            raise ValueError('No staged state data is available to commit')
+        starting_states, temp_state = self._staged_state_data
+        restored_state = state_machine.StateMachine()
+        restored_state.load_states(starting_states, temp_state)
+        self.state = restored_state
+        self._staged_state_data = None
 
     def sweep(self):
         """
@@ -375,6 +396,9 @@ class GameState():
         if DB.constants.value('initiative'):
             self.initiative = InitiativeTracker()
             self.initiative.start(self.get_all_units())
+        # Keep an in-memory restart point before LevelStart events can mutate
+        # units, inventory, skills, or other persistent game data.
+        self.chapter_start_snapshot = deepcopy(self.save()[0])
         yield 'complete'
 
     def start_level(self, level_nid, with_party=None):
@@ -738,13 +762,11 @@ class GameState():
         yield 'events'
 
         if replace_state_machine:
-            # Let the loading state render once with every registry coherent
-            # before atomically swapping in the saved stack.  The next
-            # ``next()`` performs the swap and immediately completes, so the
-            # caller remains in control for its final transition.
+            # A start/restart save must rebuild its level after restore.  Do
+            # not expose the saved MapState until TitleLoadJob has completed
+            # that work, otherwise its begin/update methods run with no level.
+            self._staged_state_data = s_dict['state']
             yield 'state_prepare'
-            self.state = state_machine.StateMachine()
-            self.state.load_states(s_dict['state'][0], s_dict['state'][1])
         else:
             yield 'state'
 

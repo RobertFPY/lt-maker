@@ -539,10 +539,48 @@ class TitleLoadJobStateTests(unittest.TestCase):
         with patch.object(title_screen, 'game', fake_game):
             self.assertFalse(state._begin_post_load())
 
-        fake_game.load_states.assert_called_once_with(
-            ['start_level_asset_loading'])
+        fake_game.load_states.assert_not_called()
         fake_game.start_level_iter.assert_called_once_with('chapter')
         self.assertIs(start_iter, state._post_load_iter)
+
+    def test_start_level_state_is_installed_only_after_rebuild_completes(self):
+        from app.engine import title_screen
+
+        state = title_screen.TitleLoadJobState.__new__(title_screen.TitleLoadJobState)
+        state.context = {
+            'next_action': 'start_level', 'transition_from': 'Load Game',
+            'title_menu': object(), 'remove_suspend': False,
+        }
+        fake_game = SimpleNamespace(
+            memory={}, load_states=Mock(), commit_staged_state=Mock(),
+            state=SimpleNamespace(change=Mock(), process_temp_state=Mock()),
+        )
+
+        with patch.object(title_screen, 'game', fake_game):
+            state._complete_load()
+
+        fake_game.load_states.assert_called_once_with(['start_level_asset_loading'])
+        fake_game.commit_staged_state.assert_not_called()
+        fake_game.state.change.assert_called_once_with('title_wait')
+
+    def test_regular_save_commits_staged_state_at_final_load_step(self):
+        from app.engine import title_screen
+
+        state = title_screen.TitleLoadJobState.__new__(title_screen.TitleLoadJobState)
+        state.context = {
+            'next_action': None, 'transition_from': 'Load Game',
+            'title_menu': object(), 'remove_suspend': False,
+        }
+        fake_game = SimpleNamespace(
+            memory={}, load_states=Mock(), commit_staged_state=Mock(),
+            state=SimpleNamespace(change=Mock(), process_temp_state=Mock()),
+        )
+
+        with patch.object(title_screen, 'game', fake_game):
+            state._complete_load()
+
+        fake_game.load_states.assert_not_called()
+        fake_game.commit_staged_state.assert_called_once_with()
 
 
 class AndroidCombatCompositionTests(unittest.TestCase):

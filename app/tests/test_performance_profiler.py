@@ -140,6 +140,15 @@ class RuntimeProfilerTests(unittest.TestCase):
         for scope in ('sound.song_object_create', 'sound.cache_insert'):
             self.assertIn("RUNTIME_PROFILER.section('%s')" % scope, source)
 
+    def test_title_save_menu_has_actionable_child_scopes(self):
+        source = (Path(__file__).parents[1] / 'engine' / 'title_screen.py').read_text(
+            encoding='utf-8')
+
+        for scope in (
+            'title_save_background', 'title_save_particles', 'title_save_menu',
+        ):
+            self.assertIn("RUNTIME_PROFILER.section('%s')" % scope, source)
+
     def test_map_combat_breaks_solver_and_visual_setup_into_child_scopes(self):
         source = (Path(__file__).parents[1] / 'engine' / 'combat' /
                   'map_combat.py').read_text(encoding='utf-8')

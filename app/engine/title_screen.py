@@ -608,13 +608,27 @@ class TitleLoadState(State):
                 return 'repeat'
 
     def draw(self, surf):
+        profile_enabled = RUNTIME_PROFILER.enabled
         if self.bg:
-            self.bg.draw(surf)
+            if profile_enabled:
+                with RUNTIME_PROFILER.section('title_save_background'):
+                    self.bg.draw(surf)
+            else:
+                self.bg.draw(surf)
         if self.particles:
-            self.particles.update()
-            self.particles.draw(surf)
+            if profile_enabled:
+                with RUNTIME_PROFILER.section('title_save_particles'):
+                    self.particles.update()
+                    self.particles.draw(surf)
+            else:
+                self.particles.update()
+                self.particles.draw(surf)
         if self.menu:
-            self.menu.draw(surf, center=(self.position_x, WINHEIGHT//2))
+            if profile_enabled:
+                with RUNTIME_PROFILER.section('title_save_menu'):
+                    self.menu.draw(surf, center=(self.position_x, WINHEIGHT//2))
+            else:
+                self.menu.draw(surf, center=(self.position_x, WINHEIGHT//2))
         return surf
 
 class TitleRestartState(TitleLoadState):

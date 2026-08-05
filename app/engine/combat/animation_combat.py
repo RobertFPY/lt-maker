@@ -15,7 +15,9 @@ from app.data.database.database import DB
 from app.engine import (action, background, battle_animation, combat_calcs,
                         engine, gui, icons, image_mods, item_funcs,
                         item_system, skill_system)
-from app.engine.android_runtime import is_android_render_optimization_enabled
+from app.engine.android_runtime import (
+    is_android_render_optimization_enabled, is_android_runtime,
+)
 from app.engine.performance import RUNTIME_PROFILER
 from app.engine.combat import playback as pb
 from app.engine.combat.playback import PlaybackBrush
@@ -45,6 +47,13 @@ class _AndroidCombatUILayer:
     """Immutable UI pixels plus lazily-built Android display variants."""
     raw: pygame.Surface
     variants: dict[int, pygame.Surface] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class _AndroidStreamedBattleMusic:
+    """Track needed to restore music after an Android streamed battle."""
+    return_nid: Optional[NID]
+    return_streamed: bool
 
 
 class AnimationCombat(BaseCombat, MockCombat):
@@ -912,7 +921,21 @@ class AnimationCombat(BaseCombat, MockCombat):
     def finish(self):
         # Fade back music if and only if it was faded in
         from_start = DB.constants.value('restart_battle_music')
-        if self.battle_music:
+        if isinstance(self.battle_music, _AndroidStreamedBattleMusic):
+            sound_thread = get_sound_thread()
+            sound_thread.stop_streamed_music()
+            if self.battle_music.return_nid:
+                if self.battle_music.return_streamed:
+                    sound_thread.play_streamed_music(
+                        self.battle_music.return_nid, fade_in=50,
+                        play_intro=False,
+                    )
+                else:
+                    sound_thread.fade_in(
+                        self.battle_music.return_nid, fade_in=50,
+                        from_start=from_start,
+                    )
+        elif self.battle_music:
             # Don't battle fade back when we don't restart battle music
             get_sound_thread().battle_fade_back(self.battle_music, from_start)
 
@@ -957,12 +980,26 @@ class AnimationCombat(BaseCombat, MockCombat):
                 defender_battle = game.level.music.get('boss_battle', None)
         battle_music = game.level.music.get('%s_battle' % self.attacker.team, None)
         from_start = DB.constants.value('restart_battle_music')
-        if attacker_battle:
-            self.battle_music = get_sound_thread().battle_fade_in(attacker_battle, from_start=from_start)
-        elif defender_battle:
-            self.battle_music = get_sound_thread().battle_fade_in(defender_battle, from_start=from_start)
-        elif battle_music:
-            self.battle_music = get_sound_thread().battle_fade_in(battle_music, from_start=from_start)
+        selected_battle_music = attacker_battle or defender_battle or battle_music
+        if not selected_battle_music:
+            return
+
+        sound_thread = get_sound_thread()
+        if is_android_runtime():
+            current_song = sound_thread.get_current_song()
+            streamed_nid = getattr(sound_thread, '_stream_preview_nid', None)
+            return_nid = current_song.nid if current_song else streamed_nid
+            if sound_thread.play_streamed_music(
+                    selected_battle_music, battle=True, fade_in=50,
+                    play_intro=False):
+                self.battle_music = _AndroidStreamedBattleMusic(
+                    return_nid, bool(streamed_nid and not current_song),
+                )
+                return
+
+        self.battle_music = sound_thread.battle_fade_in(
+            selected_battle_music, from_start=from_start,
+        )
 
     def left_team(self):
         return self.left.team

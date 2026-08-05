@@ -321,6 +321,39 @@ class RuntimeProfilerTests(unittest.TestCase):
         combat.start_battle_music.assert_called_once_with()
         self.assertEqual('check_transform', combat.state)
 
+    def test_android_streamed_battle_music_restores_cached_map_track(self):
+        from app.engine.combat import animation_combat as animation_combat_module
+        from app.engine.combat.animation_combat import (
+            AnimationCombat, _AndroidStreamedBattleMusic,
+        )
+
+        combat = AnimationCombat.__new__(AnimationCombat)
+        combat.battle_music = _AndroidStreamedBattleMusic('map_track', False)
+        sound_thread = Mock()
+
+        with patch.object(animation_combat_module.DB.constants, 'value', return_value=True), \
+                patch.object(
+                    animation_combat_module, 'get_sound_thread',
+                    return_value=sound_thread,
+                ):
+            combat.finish()
+
+        sound_thread.stop_streamed_music.assert_called_once_with()
+        sound_thread.fade_in.assert_called_once_with(
+            'map_track', fade_in=50, from_start=True,
+        )
+
+    def test_animation_combat_uses_android_stream_for_battle_track(self):
+        source = (Path(__file__).parents[1] / 'engine' / 'combat' /
+                  'animation_combat.py').read_text(encoding='utf-8')
+        start = source.index('def start_battle_music')
+        finish = source.index('def left_team', start)
+        battle_music = source[start:finish]
+
+        self.assertIn('is_android_runtime()', battle_music)
+        self.assertIn('play_streamed_music(', battle_music)
+        self.assertIn('battle=True', battle_music)
+
     def test_animation_combat_stages_transform_rebuild_before_repairing(self):
         from app.engine.combat.animation_combat import AnimationCombat
 

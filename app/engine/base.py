@@ -1733,9 +1733,12 @@ class BaseSoundRoomState(State):
             elif self.name == 'event_sound_room':
                 music = self.prev_state_music
 
-            get_sound_thread().clear()
+            sound_thread = get_sound_thread()
+            sound_thread.clear()
             if music:
-                get_sound_thread().fade_in(music, fade_in=50)
+                if not is_android_runtime() or not sound_thread.play_streamed_music(
+                        music, fade_in=50):
+                    sound_thread.fade_in(music, fade_in=50)
             action.do(action.SetGameVar('_soundroom_choice', self.last_choice))
 
         elif event and not self.unlocked_idxes:

@@ -83,13 +83,13 @@ class MapState(State):
     def update_visuals(self):
         # Android's staged save restore can expose a saved MapState for one
         # frame before its level/overworld tilemap has been rebuilt.  Camera
-        # bounds require a real tilemap; the other visual controllers remain
-        # safe to advance during that loading boundary.
+        # bounds and MapView animation updates require a real tilemap; the
+        # highlight clock remains safe to advance during that boundary.
         if game.camera and game.tilemap:
             game.camera.update()
         if game.highlight:
             game.highlight.update()
-        if game.map_view:
+        if game.map_view and game.tilemap:
             game.map_view.update_visuals()
 
     def draw(self, surf, culled_rect=None):

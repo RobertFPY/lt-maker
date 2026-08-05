@@ -84,7 +84,7 @@ class StateMachineLifecycleTests(unittest.TestCase):
 
         camera.update.assert_not_called()
         highlight.update.assert_called_once_with()
-        map_view.update_visuals.assert_called_once_with()
+        map_view.update_visuals.assert_not_called()
 
     def _machine(self, specs):
         machine = StateMachine()

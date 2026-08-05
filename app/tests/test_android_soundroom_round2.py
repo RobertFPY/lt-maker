@@ -165,6 +165,7 @@ class AndroidSoundRoomRound2SourceTests(unittest.TestCase):
             "event == 'START'", "event == 'BACK'", 'battle=True',
             'fade_in(music)', '_queue_stream_preview(music)',
             '_queue_stream_preview(music, battle=True)',
+            'play_streamed_music(\n                        music, fade_in=50)',
         ):
             self.assertIn(token, take_input_source)
         pending_preview = next(

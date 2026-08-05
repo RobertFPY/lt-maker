@@ -135,6 +135,7 @@ textarea { resize:vertical; min-height:76px; }
         <h2>Selected unit actions</h2>
         <div class="buttons">
           <button id="maxUnit">Max selected unit <span class="hotkey">(Ctrl+1)</span></button>
+          <button id="autoLevelUnit">Auto level +1</button>
         </div>
         <div class="row item-picker">
           <select id="itemSelect"></select>
@@ -162,9 +163,11 @@ textarea { resize:vertical; min-height:76px; }
         <h2>Chapter and party</h2>
         <div class="buttons">
           <button class="danger" data-op="complete_chapter">Complete current chapter <span class="hotkey">(Ctrl+0)</span></button>
+          <button id="restartChapter">Restart current chapter</button>
         </div>
         <div class="row">
           <select id="chapterSelect"></select>
+          <select id="chapterDifficulty"></select>
           <button id="goChapter">Go to chapter</button>
         </div>
         <div class="row">
@@ -344,11 +347,21 @@ function fillSelect(select, values, valueKey, labelFn) {
   if ([...select.options].some(option => option.value === previous)) select.value = previous;
 }
 function renderCatalogs() {
-  const signature = `${state.items?.length || 0}:${state.chapters?.length || 0}:${state.commands?.length || 0}:${state.weathers?.length || 0}`;
+  const signature = `${state.level || ""}:${state.items?.length || 0}:${state.chapters?.length || 0}:${state.difficulties?.length || 0}:${state.commands?.length || 0}:${state.weathers?.length || 0}`;
   if (signature === lastCatalogSignature) return;
   lastCatalogSignature = signature;
   fillSelect($("itemSelect"), state.items, "nid", item => `${item.nid}: ${item.name}`);
   fillSelect($("chapterSelect"), state.chapters, "nid", chapter => `${chapter.nid}: ${chapter.name}`);
+  for (const option of $("chapterSelect").options) option.disabled = option.value === state.level;
+  if ($("chapterSelect").selectedOptions[0]?.disabled) {
+    $("chapterSelect").value = [...$("chapterSelect").options].find(option => !option.disabled)?.value || "";
+  }
+  $("goChapter").disabled = ![...$("chapterSelect").options].some(option => !option.disabled);
+  fillSelect($("chapterDifficulty"), state.difficulties, "nid", difficulty => `${difficulty.nid}: ${difficulty.name}`);
+  if (!$("chapterDifficulty").dataset.initialized) {
+    $("chapterDifficulty").value = state.difficulty_nid || "";
+    $("chapterDifficulty").dataset.initialized = "true";
+  }
   fillSelect($("weatherSelect"), state.weathers, "nid", weather => weather.name);
   const categories = [...new Set((state.commands || []).map(command => command.category))].sort();
   $("commandCategory").replaceChildren();
@@ -592,6 +605,10 @@ $("maxUnit").onclick = async () => {
   if (!selectedNid) return message("Select a unit first.", false);
   try { await command("max_unit", {nid:selectedNid}); await inspectSelected(); } catch (e) { message(e.message, false); }
 };
+$("autoLevelUnit").onclick = async () => {
+  if (!selectedNid) return message("Select a unit first.", false);
+  try { await command("auto_level_unit", {nid:selectedNid}); await inspectSelected(); } catch (e) { message(e.message, false); }
+};
 $("giveItem").onclick = async () => {
   if (!selectedNid) return message("Select a unit first.", false);
   const usesInput = $("itemUses");
@@ -624,7 +641,10 @@ document.querySelectorAll("[data-op]").forEach(button => button.onclick = async 
   try { await command(button.dataset.op); await refresh(); if (selectedNid) await inspectSelected(); } catch (e) { message(e.message, false); }
 });
 $("goChapter").onclick = async () => {
-  try { await command("go_chapter", {level_nid:$("chapterSelect").value}); } catch (e) { message(e.message, false); }
+  try { await command("go_chapter", {level_nid:$("chapterSelect").value, difficulty_nid:$("chapterDifficulty").value}); } catch (e) { message(e.message, false); }
+};
+$("restartChapter").onclick = async () => {
+  try { await command("restart_chapter", {difficulty_nid:$("chapterDifficulty").value}); await refresh(); } catch (e) { message(e.message, false); }
 };
 $("setMoney").onclick = async () => {
   try { await command("set_money", {value:Number($("moneyInput").value)}); await refresh(); } catch (e) { message(e.message, false); }

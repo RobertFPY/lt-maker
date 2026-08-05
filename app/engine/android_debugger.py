@@ -56,6 +56,8 @@ class AndroidDebuggerState(State):
         self.command_filter = ''
         self.event_script = ''
         self.pending_item: Optional[Dict[str, Any]] = None
+        self.pending_chapter_nid: Optional[str] = None
+        self.pending_chapter_operation = 'go_chapter'
         self.teleport_x = 0
         self.teleport_y = 0
         self.turnwheel_uses = -1
@@ -224,7 +226,15 @@ class AndroidDebuggerState(State):
             ]
         if self.view == 'chapters':
             return [(f"{chapter['name']} ({chapter['nid']})", 'choose_chapter', chapter['nid'])
-                    for chapter in self.snapshot.get('chapters', [])]
+                    for chapter in self.snapshot.get('chapters', [])
+                    if chapter['nid'] != self.snapshot.get('level')]
+        if self.view == 'chapter_difficulties':
+            current_difficulty = self.snapshot.get('difficulty_nid')
+            difficulties = sorted(
+                self.snapshot.get('difficulties', []),
+                key=lambda difficulty: difficulty['nid'] != current_difficulty)
+            return [(f"{difficulty['name']} ({difficulty['nid']})", 'choose_chapter_difficulty',
+                     difficulty['nid']) for difficulty in difficulties]
         if self.view == 'weather':
             return [(weather['name'], 'choose_weather', weather['nid'])
                     for weather in self.snapshot.get('weathers', [])]
@@ -270,12 +280,14 @@ class AndroidDebuggerState(State):
                 (f'Select unit: {selected}', 'show_units', None),
                 ('Edit unit values', 'show_fields', None),
                 ('Max selected unit', 'max_selected', None),
+                ('Auto level +1', 'auto_level_selected', None),
                 ('Give item', 'show_items', None),
                 ('Teleport selected unit', 'show_teleport', None),
             ]
         if self.page == 'world':
             return [
                 ('Go to chapter', 'show_chapters', None),
+                ('Restart current chapter', 'show_restart_difficulties', None),
                 (f"Money: {self.snapshot.get('money', 0)}", 'edit_money', None),
                 (f"Turn count: {self.snapshot.get('turncount', 0)}", 'edit_turn', None),
                 ('Turnwheel', 'show_turnwheel', None),
@@ -454,6 +466,12 @@ class AndroidDebuggerState(State):
             else:
                 self._notify('Select a unit first.', False)
             return
+        elif action_name == 'auto_level_selected':
+            if self.selected_nid:
+                self._run('auto_level_unit', {'nid': self.selected_nid})
+            else:
+                self._notify('Select a unit first.', False)
+            return
         if action_name == 'show_units':
             self._set_view('unit_list')
         elif action_name == 'select_unit':
@@ -518,10 +536,29 @@ class AndroidDebuggerState(State):
             else:
                 self._notify('Select a unit first.', False)
         elif action_name == 'show_chapters':
+            self.pending_chapter_operation = 'go_chapter'
             self._set_view('chapters')
         elif action_name == 'choose_chapter':
-            self._request_confirmation('Go to selected chapter?', 'go_chapter',
-                                       {'level_nid': payload}, True)
+            self.pending_chapter_nid = payload
+            self._set_view('chapter_difficulties')
+        elif action_name == 'show_restart_difficulties':
+            level_nid = self.snapshot.get('level')
+            if not level_nid:
+                self._notify('A chapter map must be active to restart it.', False)
+                return
+            self.pending_chapter_operation = 'restart_chapter'
+            self.pending_chapter_nid = level_nid
+            self._set_view('chapter_difficulties')
+        elif action_name == 'choose_chapter_difficulty':
+            if self.pending_chapter_nid:
+                if self.pending_chapter_operation == 'restart_chapter':
+                    self._request_confirmation(
+                        f'Restart {self.pending_chapter_nid} on {payload}?', 'restart_chapter',
+                        {'difficulty_nid': payload}, True)
+                else:
+                    self._request_confirmation(
+                        f'Go to {self.pending_chapter_nid} on {payload}?', 'go_chapter',
+                        {'level_nid': self.pending_chapter_nid, 'difficulty_nid': payload}, True)
         elif action_name == 'edit_money':
             self._begin_number('Money', self.snapshot.get('money') or 0, 0, 9_999_999,
                                lambda value: self._run('set_money', {'value': value}))

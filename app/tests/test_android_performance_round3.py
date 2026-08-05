@@ -113,6 +113,32 @@ class AndroidRoundThreePerformanceContracts(unittest.TestCase):
         self.assertIn('def load_game(', save_source)
         self.assertIn("'title_load_job': title_screen.TitleLoadJobState", machine_source)
 
+    def test_in_chapter_load_uses_staged_job_only_on_android(self):
+        general_source = (ROOT / 'engine' / 'general_states.py').read_text(encoding='utf-8')
+        machine_source = (ROOT / 'engine' / 'state_machine.py').read_text(encoding='utf-8')
+        take_input = _class_method_source(general_source, 'InChapterLoadState', 'take_input')
+
+        self.assertIn('is_android_runtime()', take_input)
+        self.assertIn('_start_android_load(', take_input)
+        self.assertIn("'in_chapter_load_job': general_states.InChapterLoadJobState", machine_source)
+
+    def test_in_chapter_staged_load_replaces_state_only_after_restore(self):
+        state = general_states.InChapterLoadJobState.__new__(general_states.InChapterLoadJobState)
+        state.job = SimpleNamespace(completed=True)
+        state.save_slot = SimpleNamespace(kind='battle')
+        state.error = None
+        state.finished = False
+        state._post_load_iter = None
+        fake_game = SimpleNamespace(memory={}, commit_staged_state=Mock(), load_states=Mock())
+
+        with patch.object(general_states, 'game', fake_game), \
+             patch.object(general_states.save, 'remove_suspend'):
+            self.assertEqual('repeat', state.update())
+
+        fake_game.commit_staged_state.assert_called_once_with()
+        fake_game.load_states.assert_not_called()
+        self.assertTrue(state.finished)
+
     def test_title_and_game_over_stream_music_on_android(self):
         title_source = (ROOT / 'engine' / 'title_screen.py').read_text(encoding='utf-8')
         game_over_source = (ROOT / 'engine' / 'game_over.py').read_text(encoding='utf-8')

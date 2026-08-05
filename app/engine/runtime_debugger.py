@@ -134,6 +134,16 @@ class RuntimeDebugger:
         game.on_alter_game_state()
 
     @staticmethod
+    def auto_level_unit(unit: UnitObject) -> bool:
+        klass = DB.classes.get(unit.klass)
+        max_level = klass.max_level if klass else 999
+        if unit.level >= max_level:
+            return False
+        action.do(action.AutoLevel(unit, 1))
+        action.do(action.SetLevel(unit, unit.level + 1))
+        return True
+
+    @staticmethod
     def max_out_units(units: List[UnitObject]) -> int:
         for unit in units:
             RuntimeDebugger.max_out_unit(unit)
@@ -257,10 +267,45 @@ class RuntimeDebugger:
         RuntimeDebugger._queue_event('win_game')
 
     @staticmethod
-    def go_to_chapter(level_nid: NID) -> bool:
-        if level_nid not in DB.levels:
+    def go_to_chapter(level_nid: NID, difficulty_nid: NID) -> bool:
+        if (level_nid not in DB.levels or difficulty_nid not in DB.difficulty_modes or
+                (game.level and level_nid == game.level.nid)):
             return False
         # Set the target inside the event that ends the current level.  If the
         # event is never started, no _goto_level redirect is left behind.
-        RuntimeDebugger._queue_event(f'set_next_chapter;{level_nid}\nwin_game')
+        RuntimeDebugger._queue_event(
+            f'set_difficulty_mode;{difficulty_nid}\n'
+            f'set_next_chapter;{level_nid}\nwin_game')
+        return True
+
+    @staticmethod
+    def restart_chapter(difficulty_nid: NID) -> bool:
+        if not game.level or difficulty_nid not in DB.difficulty_modes:
+            return False
+        snapshot = getattr(game, 'chapter_start_snapshot', None)
+        level_nid = game.level.nid
+        from app.engine import save
+        restart_slot = None
+        if snapshot is None:
+            if game.current_save_slot is None:
+                return False
+            restart_slot = save.RESTART_SLOTS[game.current_save_slot]
+            if restart_slot.kind != 'start':
+                return False
+
+        # Loading a chapter-start snapshot replaces the state stack directly.
+        # The Android debugger's normal end() hook is bypassed, so release its
+        # raw-touch capture before the reset can orphan it over the new map.
+        from app.engine.android_runtime import set_android_touch_consumer
+        set_android_touch_consumer(None)
+        if snapshot is not None:
+            game.build_new()
+            game.load(snapshot)
+            save.set_next_uids(game)
+        else:
+            save.load_game(game, restart_slot)
+        from app.engine.objects.difficulty_mode import DifficultyModeObject
+        game.current_mode = DifficultyModeObject.from_prefab(
+            DB.difficulty_modes.get(difficulty_nid))
+        game.start_level(level_nid)
         return True

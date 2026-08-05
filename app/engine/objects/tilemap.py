@@ -126,6 +126,20 @@ class TileMapObject(Prefab):
 
     @classmethod
     def from_prefab(cls, prefab):
+        tilemap_iter = cls.from_prefab_iter(prefab)
+        try:
+            while True:
+                next(tilemap_iter)
+        except StopIteration as completion:
+            return completion.value
+
+    @classmethod
+    def from_prefab_iter(cls, prefab, batch_size: int = 32):
+        """Build a tilemap while allowing runtime loading screens to yield.
+
+        The synchronous compatibility wrapper above deliberately consumes this
+        iterator, so editor and desktop callers keep their existing behavior.
+        """
         self = cls()
         self.nid = prefab.nid
         self.width = prefab.width
@@ -160,7 +174,7 @@ class TileMapObject(Prefab):
                 new_layer.pixel_bounds = [left_bound, top_bound, right_bound, bottom_bound]
 
             has_autotiles = False
-            for coord, tile_sprite in layer.sprite_grid.items():
+            for idx, (coord, tile_sprite) in enumerate(layer.sprite_grid.items(), 1):
                 tileset = RESOURCES.tilesets.get(tile_sprite.tileset_nid)
                 if not tileset.image:
                     tileset.image = engine.image_load(tileset.full_path)
@@ -182,6 +196,9 @@ class TileMapObject(Prefab):
                     rect = (pos[0] * TILEWIDTH, pos[1] * TILEHEIGHT, TILEWIDTH, TILEHEIGHT)
                     sub_image = engine.subsurface(tileset.image, rect)
                     image.blit(sub_image, (coord[0] * TILEWIDTH, coord[1] * TILEHEIGHT))
+
+                if idx % batch_size == 0:
+                    yield 'sprites'
 
             new_layer.image = image
             if has_autotiles:

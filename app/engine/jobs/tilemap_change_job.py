@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from typing import Callable, Generator, Optional, TYPE_CHECKING
+from typing import Callable, Generator, Optional, TYPE_CHECKING, Union
 
 from app.engine.boundary import BoundaryInterface
 from app.engine.game_board import GameBoard
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 BoardBuilder = Callable[[TileMapObject], Generator[str, None, GameBoard]]
 BoundaryBuilder = Callable[[int, int], BoundaryInterface]
-TilemapBuilder = Callable[[object], TileMapObject]
+TilemapBuilder = Callable[[object], Union[TileMapObject, Generator[str, None, TileMapObject]]]
 Commit = Callable[
     [TileMapObject, GameBoard, BoundaryInterface],
     Optional[Generator[str, None, None]],
@@ -45,7 +45,7 @@ class TilemapChangeJob:
         game: GameState,
         tilemap_prefab: object,
         *,
-        tilemap_builder: TilemapBuilder = TileMapObject.from_prefab,
+        tilemap_builder: TilemapBuilder = TileMapObject.from_prefab_iter,
         board_builder: BoardBuilder = GameBoard.build_iter,
         boundary_builder: BoundaryBuilder = BoundaryInterface,
         commit: Commit,
@@ -63,6 +63,7 @@ class TilemapChangeJob:
         self.pending_boundary: Optional[BoundaryInterface] = None
         self.last_board_phase: Optional[str] = None
         self.last_commit_phase: Optional[str] = None
+        self._tilemap_iter: Optional[Generator[str, None, TileMapObject]] = None
         self._board_iter: Optional[Generator[str, None, GameBoard]] = None
         self._commit_iter: Optional[Generator[str, None, None]] = None
 
@@ -97,8 +98,18 @@ class TilemapChangeJob:
         if self.state == self.CAPTURE_STATE:
             self.state = self.CREATE_TILEMAP
         elif self.state == self.CREATE_TILEMAP:
-            self.pending_tilemap = self.tilemap_builder(self.tilemap_prefab)
-            self.state = self.CREATE_TEMP_BOARD
+            if self._tilemap_iter is None:
+                tilemap_or_iter = self.tilemap_builder(self.tilemap_prefab)
+                if not hasattr(tilemap_or_iter, '__next__'):
+                    self.pending_tilemap = tilemap_or_iter
+                    self.state = self.CREATE_TEMP_BOARD
+                    return
+                self._tilemap_iter = tilemap_or_iter
+            try:
+                next(self._tilemap_iter)
+            except StopIteration as result:
+                self.pending_tilemap = result.value
+                self.state = self.CREATE_TEMP_BOARD
         elif self.state == self.CREATE_TEMP_BOARD:
             assert self.pending_tilemap is not None
             self._board_iter = self.board_builder(self.pending_tilemap)

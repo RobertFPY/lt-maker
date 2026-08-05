@@ -1,7 +1,9 @@
 import unittest
 from dataclasses import dataclass, field
-from unittest.mock import patch
+from types import SimpleNamespace
+from unittest.mock import MagicMock, patch
 
+from app.engine import android_runtime
 from app.engine.objects.unit import UnitObject
 from app.engine.runtime_debugger import RuntimeDebugger
 
@@ -51,6 +53,7 @@ class RuntimeDebuggerTests(unittest.TestCase):
     def tearDown(self) -> None:
         for patcher in reversed(self.patches):
             patcher.stop()
+        android_runtime.set_android_touch_consumer(None)
 
     def test_give_weapon_autoequips_when_weapon_slot_is_empty(self) -> None:
         weapon = _FakeItem('DebugSword')
@@ -93,17 +96,124 @@ class RuntimeDebuggerTests(unittest.TestCase):
 
     def test_go_to_chapter_queues_target_and_win_as_one_event(self) -> None:
         with patch('app.engine.runtime_debugger.DB.levels', {'Next': object()}), \
+                patch('app.engine.runtime_debugger.DB.difficulty_modes', {'Hard': object()}), \
                 patch.object(RuntimeDebugger, '_queue_event') as queue_event:
-            self.assertTrue(RuntimeDebugger.go_to_chapter('Next'))
+            self.assertTrue(RuntimeDebugger.go_to_chapter('Next', 'Hard'))
 
-        queue_event.assert_called_once_with('set_next_chapter;Next\nwin_game')
+        queue_event.assert_called_once_with(
+            'set_difficulty_mode;Hard\nset_next_chapter;Next\nwin_game')
+
+    def test_go_to_current_chapter_does_not_queue_an_event(self) -> None:
+        fake_game = SimpleNamespace(level=SimpleNamespace(nid='Current'))
+        with patch('app.engine.runtime_debugger.game', fake_game), \
+                patch('app.engine.runtime_debugger.DB.levels', {'Current': object()}), \
+                patch('app.engine.runtime_debugger.DB.difficulty_modes', {'Normal': object()}), \
+                patch.object(RuntimeDebugger, '_queue_event') as queue_event:
+            self.assertFalse(RuntimeDebugger.go_to_chapter('Current', 'Normal'))
+
+        queue_event.assert_not_called()
 
     def test_go_to_unknown_chapter_does_not_queue_an_event(self) -> None:
         with patch('app.engine.runtime_debugger.DB.levels', {}), \
+                patch('app.engine.runtime_debugger.DB.difficulty_modes', {'Normal': object()}), \
                 patch.object(RuntimeDebugger, '_queue_event') as queue_event:
-            self.assertFalse(RuntimeDebugger.go_to_chapter('Missing'))
+            self.assertFalse(RuntimeDebugger.go_to_chapter('Missing', 'Normal'))
 
         queue_event.assert_not_called()
+
+    def test_go_to_chapter_with_unknown_difficulty_does_not_queue_an_event(self) -> None:
+        with patch('app.engine.runtime_debugger.DB.levels', {'Next': object()}), \
+                patch('app.engine.runtime_debugger.DB.difficulty_modes', {}), \
+                patch.object(RuntimeDebugger, '_queue_event') as queue_event:
+            self.assertFalse(RuntimeDebugger.go_to_chapter('Next', 'Missing'))
+
+        queue_event.assert_not_called()
+
+    def test_auto_level_increases_selected_unit_by_one_level(self) -> None:
+        self.unit.level = 3
+        with patch('app.engine.runtime_debugger.DB.classes.get', return_value=type('Klass', (), {'max_level': 20})()), \
+                patch('app.engine.runtime_debugger.action.AutoLevel') as auto_level, \
+                patch('app.engine.runtime_debugger.action.SetLevel') as set_level:
+            RuntimeDebugger.auto_level_unit(self.unit)
+
+        auto_level.assert_called_once_with(self.unit, 1)
+        set_level.assert_called_once_with(self.unit, 4)
+
+    def test_restart_chapter_restores_the_start_snapshot_before_loading_the_level(self) -> None:
+        snapshot = {'units': ['at-chapter-start']}
+        level = SimpleNamespace(nid='Chapter1')
+        fake_game = SimpleNamespace(
+            level=level,
+            chapter_start_snapshot=snapshot,
+            build_new=MagicMock(),
+            load=MagicMock(),
+            start_level=MagicMock(),
+        )
+        hard_mode = object()
+        with patch('app.engine.runtime_debugger.game', fake_game), \
+                patch('app.engine.runtime_debugger.DB.difficulty_modes', {'Hard': hard_mode}), \
+                patch('app.engine.save.set_next_uids') as set_next_uids, \
+                patch('app.engine.objects.difficulty_mode.DifficultyModeObject.from_prefab',
+                      return_value='hard-mode'):
+            self.assertTrue(RuntimeDebugger.restart_chapter('Hard'))
+
+        fake_game.build_new.assert_called_once_with()
+        fake_game.load.assert_called_once_with(snapshot)
+        set_next_uids.assert_called_once_with(fake_game)
+        self.assertEqual('hard-mode', fake_game.current_mode)
+        fake_game.start_level.assert_called_once_with('Chapter1')
+
+    def test_restart_chapter_releases_android_debugger_touch_capture(self) -> None:
+        snapshot = {'units': ['at-chapter-start']}
+        fake_game = SimpleNamespace(
+            level=SimpleNamespace(nid='Chapter1'),
+            chapter_start_snapshot=snapshot,
+            build_new=MagicMock(),
+            load=MagicMock(),
+            start_level=MagicMock(),
+        )
+        android_runtime.set_android_touch_consumer(
+            lambda _phase, _position, _finger: True,
+            passthrough_buttons=('UP', 'DOWN', 'LEFT', 'RIGHT'),
+        )
+
+        with patch('app.engine.runtime_debugger.game', fake_game), \
+                patch('app.engine.runtime_debugger.DB.difficulty_modes', {'Hard': object()}), \
+                patch('app.engine.save.set_next_uids'), \
+                patch('app.engine.objects.difficulty_mode.DifficultyModeObject.from_prefab',
+                      return_value='hard-mode'):
+            self.assertTrue(RuntimeDebugger.restart_chapter('Hard'))
+
+        self.assertFalse(android_runtime.is_android_touch_consumer_active())
+        self.assertEqual(
+            frozenset(), android_runtime.get_android_touch_passthrough_buttons())
+
+    def test_restart_chapter_requires_a_start_snapshot(self) -> None:
+        fake_game = SimpleNamespace(level=SimpleNamespace(nid='Chapter1'),
+                                    chapter_start_snapshot=None, current_save_slot=None)
+        with patch('app.engine.runtime_debugger.game', fake_game), \
+                patch('app.engine.runtime_debugger.DB.difficulty_modes', {'Hard': object()}):
+            self.assertFalse(RuntimeDebugger.restart_chapter('Hard'))
+
+    def test_restart_chapter_uses_saved_restart_point_after_loading_a_game(self) -> None:
+        fake_game = SimpleNamespace(
+            level=SimpleNamespace(nid='Chapter1'), chapter_start_snapshot=None,
+            current_save_slot=2, start_level=MagicMock(),
+        )
+        restart_slot = SimpleNamespace(kind='start')
+        with patch('app.engine.runtime_debugger.game', fake_game), \
+                patch('app.engine.runtime_debugger.DB.difficulty_modes', {'Hard': object()}), \
+                patch('app.engine.save.RESTART_SLOTS', [None, None, restart_slot]), \
+                patch('app.engine.save.load_game') as load_game, \
+                patch('app.engine.save.set_next_uids') as set_next_uids, \
+                patch('app.engine.objects.difficulty_mode.DifficultyModeObject.from_prefab',
+                      return_value='hard-mode'):
+            self.assertTrue(RuntimeDebugger.restart_chapter('Hard'))
+
+        load_game.assert_called_once_with(fake_game, restart_slot)
+        set_next_uids.assert_not_called()
+        self.assertEqual('hard-mode', fake_game.current_mode)
+        fake_game.start_level.assert_called_once_with('Chapter1')
 
 
 if __name__ == '__main__':

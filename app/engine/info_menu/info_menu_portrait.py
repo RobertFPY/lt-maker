@@ -10,8 +10,14 @@ class InfoMenuPortrait():
         self.portrait = portrait
         if not self.portrait.image:
             self.portrait.image = engine.image_load(self.portrait.full_path)
-        self.portrait.image = self.portrait.image.convert()
-        engine.set_colorkey(self.portrait.image, COLORKEY, rleaccel=True)
+        # ``Surface.convert`` allocates a complete new portrait surface.  The
+        # portrait prefab is shared for the lifetime of the loaded project, so
+        # doing that again on every Info-menu open causes a visible Android
+        # hitch without changing the resulting image.
+        if not getattr(self.portrait, '_info_menu_surface_ready', False):
+            self.portrait.image = self.portrait.image.convert()
+            engine.set_colorkey(self.portrait.image, COLORKEY, rleaccel=True)
+            self.portrait._info_menu_surface_ready = True
         self.main_portrait = engine.subsurface(self.portrait.image, self.portrait.get_face_frame())
         self.mouth_section = engine.subsurface(self.portrait.image, self.portrait.get_neutral_mouth())
 

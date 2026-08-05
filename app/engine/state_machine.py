@@ -90,6 +90,7 @@ class StateMachine():
              'option_menu': general_states.OptionMenuState,
              'option_child': general_states.OptionChildState,
              'in_chapter_load': general_states.InChapterLoadState,
+             'in_chapter_load_job': general_states.InChapterLoadJobState,
              'settings_menu': settings.SettingsMenuState,
              'android_controls_editor': settings.AndroidControlsEditorState,
              'objective_menu': objective_menu.ObjectiveMenuState,

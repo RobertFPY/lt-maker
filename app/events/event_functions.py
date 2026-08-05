@@ -4712,16 +4712,8 @@ def clear_map_anims(self: Event, flags=None):
         
 def set_difficulty_mode(self: Event, difficulty_mode, flags=None):
     from app.engine.objects.difficulty_mode import DifficultyModeObject
-    mode_index = 1000
-    if difficulty_mode == 'Normal':
-        mode_index = 0
-    elif difficulty_mode == 'Hard':
-        mode_index = 1
-    elif difficulty_mode == 'Lunatic':
-        mode_index = 2    
-
-    if mode_index in (0,1,2):
-        mode = DB.difficulty_modes[mode_index]
+    mode = DB.difficulty_modes.get(difficulty_mode)
+    if mode:
         self.game.current_mode = DifficultyModeObject.from_prefab(mode)
 
 def set_game_rules(self: Event, ruleset, flags=None):

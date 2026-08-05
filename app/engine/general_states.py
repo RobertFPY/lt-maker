@@ -30,6 +30,7 @@ from app.engine.fluid_scroll import FluidScroll
 from app.engine.android_runtime import is_android_runtime
 from app.engine.performance import RUNTIME_PROFILER
 import threading
+import time
 
 import logging
 
@@ -544,9 +545,22 @@ class InChapterLoadState(MapState):
             selection = self.menu.current_index
             if selection < len(self.save_slots) and self.save_slots[selection].kind:
                 get_sound_thread().play_sfx('Save')
+                if is_android_runtime():
+                    self._start_android_load(self.save_slots[selection])
+                    return 'repeat'
                 load_save_slot(self.save_slots[selection])
                 return 'repeat'
             get_sound_thread().play_sfx('Error')
+
+    @staticmethod
+    def _start_android_load(save_slot: save.SaveSlot) -> None:
+        """Replace the map with a drawable loader before staged restoration."""
+        job = save.SaveLoadJob(save_slot)
+        job.start()
+        game.memory['_in_chapter_save_load_job'] = job
+        game.memory['_in_chapter_save_load_slot'] = save_slot
+        game.state.clear()
+        game.state.change('in_chapter_load_job')
 
     def update(self):
         super().update()
@@ -555,6 +569,98 @@ class InChapterLoadState(MapState):
     def draw(self, surf):
         surf = super().draw(surf)
         self.menu.draw(surf, center=(WINWIDTH//2, WINHEIGHT//2))
+        return surf
+
+
+class InChapterLoadJobState(State):
+    """Android-only staged save loader for the in-chapter Load menu."""
+
+    name = 'in_chapter_load_job'
+    in_level = False
+    show_map = False
+    blocks_fast_forward = True
+
+    def start(self):
+        self.job = game.memory.get('_in_chapter_save_load_job')
+        self.save_slot = game.memory.get('_in_chapter_save_load_slot')
+        self.error = None
+        self.finished = False
+        self._post_load_iter = None
+        if self.job is None or self.save_slot is None:
+            self.error = save.SaveLoadError('In-chapter loader started without a save job')
+
+    def _recover_from_error(self) -> None:
+        logging.error('Staged in-chapter save load failed: %s', self.error, exc_info=self.error)
+        if self.job:
+            self.job.abort(game)
+        else:
+            game.clear()
+            game.build_new()
+        game.load_states(['title_start'])
+        self.finished = True
+
+    def _begin_post_load(self) -> bool:
+        if self.save_slot.kind == 'start':
+            self._post_load_iter = game.start_level_iter(game.game_vars['_next_level_nid'])
+            return False
+        if self.save_slot.kind == 'overworld':
+            game.load_states(['overworld'])
+            return True
+        game.commit_staged_state()
+        return True
+
+    def _advance_post_load(self, budget_ms: float = 8.0) -> bool:
+        deadline = time.perf_counter() + max(0.0, budget_ms) / 1000.0
+        while time.perf_counter() < deadline:
+            try:
+                next(self._post_load_iter)
+            except StopIteration:
+                self._post_load_iter = None
+                return True
+        return False
+
+    def _complete_load(self) -> None:
+        if self.save_slot.kind == 'start':
+            game.load_states(['start_level_asset_loading'])
+        save.remove_suspend()
+        game.memory.pop('_in_chapter_save_load_job', None)
+        game.memory.pop('_in_chapter_save_load_slot', None)
+        self.finished = True
+
+    def take_input(self, event):
+        # Do not accept commands before registries, board, and state stack agree.
+        return None
+
+    def update(self):
+        if self.finished:
+            return None
+        if self.error:
+            self._recover_from_error()
+            return 'repeat'
+        try:
+            if not self.job.completed:
+                with RUNTIME_PROFILER.section('in_chapter_load_restore_step'):
+                    if not self.job.advance(game, budget_ms=8.0):
+                        return None
+            if self.job.completed and self._post_load_iter is None:
+                if self._begin_post_load():
+                    self._complete_load()
+                    return 'repeat'
+            if self._post_load_iter is not None:
+                with RUNTIME_PROFILER.section('in_chapter_load_start_level_step'):
+                    if self._advance_post_load():
+                        self._complete_load()
+                        return 'repeat'
+        except Exception as exc:
+            self.error = save.SaveLoadError('Unable to restore staged in-chapter save')
+            self.error.__cause__ = exc
+            self._recover_from_error()
+            return 'repeat'
+
+    def draw(self, surf):
+        surf.blit(SPRITES.get('bg_black'), (0, 0))
+        label = 'Reading save...' if self.job and self.job.is_reading else 'Restoring save...'
+        FONT['text'].blit_center(label, surf, (WINWIDTH // 2, WINHEIGHT // 2))
         return surf
 
 class OptionMenuState(MapState):

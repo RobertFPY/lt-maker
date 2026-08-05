@@ -62,6 +62,38 @@ class TilemapChangeJobTests(unittest.TestCase):
         self.assertIs(game.level.tilemap, old_tilemap)
         self.assertEqual([], commits)
 
+    def test_tilemap_builder_iterator_is_advanced_before_board_creation(self):
+        from app.engine.jobs.tilemap_change_job import TilemapChangeJob
+
+        tilemap = SimpleNamespace(nid='new', width=3, height=4)
+
+        def build_tilemap(_prefab):
+            yield 'sprites'
+            return tilemap
+
+        def build_board(_tilemap):
+            if False:
+                yield 'unused'
+            return SimpleNamespace(width=3, height=4)
+
+        job = TilemapChangeJob(
+            SimpleNamespace(level=SimpleNamespace(tilemap=SimpleNamespace(nid='old'))),
+            SimpleNamespace(nid='new'),
+            tilemap_builder=build_tilemap,
+            board_builder=build_board,
+            boundary_builder=lambda width, height: (width, height),
+            commit=lambda *_args: None,
+        )
+
+        job.run_one_operation()  # CAPTURE_STATE -> CREATE_TILEMAP
+        job.run_one_operation()  # first tilemap batch
+        self.assertEqual(job.CREATE_TILEMAP, job.state)
+        self.assertIsNone(job.pending_tilemap)
+
+        job.run_one_operation()  # iterator completes
+        self.assertEqual(job.CREATE_TEMP_BOARD, job.state)
+        self.assertIs(job.pending_tilemap, tilemap)
+
     def test_commit_generator_is_advanced_in_separate_job_steps(self):
         commits = []
 

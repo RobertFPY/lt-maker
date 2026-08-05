@@ -27,7 +27,7 @@ class RuntimeDebuggerController:
 
     def __init__(self) -> None:
         self._catalog: Dict[str, Any] = {
-            'items': [], 'chapters': [], 'weathers': [], 'commands': [],
+            'items': [], 'chapters': [], 'difficulties': [], 'weathers': [], 'commands': [],
         }
         self._catalog_ready = False
         self._picked_position: Optional[Dict[str, int]] = None
@@ -59,6 +59,10 @@ class RuntimeDebuggerController:
             'chapters': [
                 {'nid': level.nid, 'name': level.name or level.nid}
                 for level in DB.levels
+            ],
+            'difficulties': [
+                {'nid': difficulty.nid, 'name': difficulty.name or difficulty.nid}
+                for difficulty in DB.difficulty_modes
             ],
             'weathers': (
                 [{'nid': '', 'name': 'None (clear weather)'}] +
@@ -122,6 +126,7 @@ class RuntimeDebuggerController:
             'picking_position': picking_position,
             'notification': self._notification,
             'level': level_nid,
+            'difficulty_nid': getattr(getattr(game, 'current_mode', None), 'nid', None),
             'turncount': game.turncount,
             'money': money,
             'turnwheel': {
@@ -360,6 +365,11 @@ class RuntimeDebuggerController:
             unit = self._get_unit(str(args.get('nid', '')))
             RuntimeDebugger.max_out_unit(unit)
             return {'ok': True, 'message': f'Maxed {unit.nid}.'}
+        if op == 'auto_level_unit':
+            unit = self._get_unit(str(args.get('nid', '')))
+            if not RuntimeDebugger.auto_level_unit(unit):
+                raise ValueError(f'{unit.nid} is already at its maximum level.')
+            return {'ok': True, 'message': f'Auto-leveled {unit.nid} to Lv {unit.level}.'}
         if op == 'give_item':
             unit = self._get_unit(str(args.get('nid', '')))
             item_nid = str(args.get('item_nid', ''))
@@ -404,9 +414,19 @@ class RuntimeDebuggerController:
             return {'ok': True, 'message': 'Completing current chapter...'}
         if op == 'go_chapter':
             level_nid = str(args.get('level_nid', ''))
-            if not RuntimeDebugger.go_to_chapter(level_nid):
-                raise ValueError(f'Unknown chapter {level_nid!r}.')
-            return {'ok': True, 'message': f'Moving to chapter {level_nid}...'}
+            difficulty_nid = str(args.get('difficulty_nid', ''))
+            if not RuntimeDebugger.go_to_chapter(level_nid, difficulty_nid):
+                raise ValueError(
+                    f'Unknown chapter or difficulty: {level_nid!r}, {difficulty_nid!r}.')
+            return {'ok': True,
+                    'message': f'Moving to chapter {level_nid} on {difficulty_nid}...'}
+        if op == 'restart_chapter':
+            difficulty_nid = str(args.get('difficulty_nid', ''))
+            if not RuntimeDebugger.restart_chapter(difficulty_nid):
+                raise ValueError(
+                    'No chapter-start snapshot is available, or the difficulty is invalid.')
+            return {'ok': True,
+                    'message': f'Restarting current chapter on {difficulty_nid}...'}
         if op == 'set_money':
             value = RuntimeDebugger.set_money(int(args.get('value', 0)))
             return {'ok': True, 'message': f'Money set to {value}.'}

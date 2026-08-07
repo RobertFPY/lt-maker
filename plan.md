@@ -7,58 +7,113 @@
 > **PC behavioral reference:** `9314f54b49f4552b5a3d023b4da0012ce7dfbc89`
 > **Recovery starting HEAD:** `0821182a717de2baaf52a699ee325241ffaddd03`
 > **Android introduction / mixed-change landmark:** `52bd040317f16b7973602dd78e769ed990501549`
-> **Model policy version:** 2026-08-08
+> **Model policy version:** 2026-08-08 / GPT-5.6
 
 ---
 
-## 0. PURPOSE OF THIS FILE
+# 0. PURPOSE AND AUTHORITY
 
-This file is the authoritative recovery plan for restoring the gameplay core to the original PC semantics while preserving later features, correctness fixes, safe performance optimizations, and Android-specific optimizations that do not alter gameplay behavior.
+This file is the authoritative execution plan for restoring the gameplay core to the original PC semantics while preserving later features, correctness fixes, safe shared optimizations, and Android-specific optimizations that do not alter gameplay behavior.
 
-Codex is an **executor**, not the project architect. Codex must not redesign this plan, widen task scope, skip gates, or decide that a behavior change is acceptable without explicit approval from the plan controller.
+Codex is an **executor**, not the project architect. Codex must not redesign this plan, widen task scope, skip gates, accept behavioral divergence for performance, or decide that a workaround is acceptable without controller approval.
 
 The controller is responsible for:
 
 - defining and revising architecture;
+- assigning the active task;
+- assigning the exact model and reasoning effort for that task;
 - approving each phase transition;
-- reviewing evidence, diffs, tests, and regressions;
+- reviewing diffs, tests, traces, benchmarks, and regressions;
 - deciding whether an optimization is behavior-preserving;
-- deciding whether Android-only divergent behavior is acceptable;
-- assigning or reassigning tasks by model tier;
+- deciding whether Android-only behavior is an acceptable platform specialization;
 - deciding whether a workaround is removed, retained, or rewritten;
-- determining whether the recovery can advance to the next gate.
+- determining when the recovery can advance.
 
 Codex is responsible for:
 
-- inspecting code and history as requested;
+- reading repository instructions and this plan before every task;
+- inspecting code and history only within the authorized task scope;
 - implementing exactly the active task packet;
-- writing tests and diagnostic tooling;
-- running specified verification commands;
+- writing tests and diagnostic tooling required by that task;
+- running the specified verification commands;
 - reporting evidence and unresolved risks;
-- stopping at required gates.
+- stopping whenever a controller gate or stop condition is reached.
 
-The user acts as the bridge between Codex and the controller when a controller review is required.
+The user is the bridge between Codex and the controller when controller review is required.
 
 ---
 
 # 1. MANDATORY CODEX SESSION PROTOCOL
 
-## 1.1 Read-before-work rule
+At the beginning of **every Codex session/task in this repository**, before editing any file, Codex must:
 
-At the beginning of **every Codex task/session in this repository**, before editing any file, Codex must:
+1. Read root `AGENTS.md` in full.
+2. Read root `AGENTS.override.md` in full if present.
+3. Read this entire `plan.md`.
+4. Identify the exact authorized task ID.
+5. State the required model and exact reasoning effort for the task.
+6. Detect and state the current model and reasoning effort.
+7. Inspect `git status`, current branch, and current HEAD.
+8. Verify all task prerequisites and controller gates.
+9. Refuse to work directly on `master` for recovery work.
+10. Refuse to begin when the model/effort gate is not satisfied.
 
-1. Read `AGENTS.md`.
-2. Read this entire `plan.md`.
-3. Identify the active phase and exact task ID requested by the user/controller.
-4. State the task ID, required model, current model, allowed scope, and stop conditions.
-5. Inspect `git status`, current branch, and current HEAD.
-6. Refuse to work directly on `master` for recovery tasks.
-7. Refuse to begin if the model gate is not satisfied.
-8. Refuse to begin if the requested task has an unmet prerequisite or controller gate.
+Before implementation Codex must print:
 
-If Codex cannot read this file, cannot determine the current model, cannot determine the branch, or cannot identify the requested task ID, **STOP** and ask the user to resolve the condition. Do not guess.
+```text
+TASK: <ID>
+MODEL REQUIRED: <model>
+EFFORT REQUIRED: <effort>
+MODEL CURRENT: <detected model>
+EFFORT CURRENT: <detected effort>
+BRANCH: <branch>
+HEAD: <sha>
+SCOPE: <files/modules>
+INVARIANTS: <INV ids>
+PREREQUISITES: <task ids / controller approvals>
+```
 
-## 1.2 Branch rule
+If Codex cannot determine its current model or current effort, it must STOP before editing and ask the user to resolve that condition.
+
+## 1.1 Exact model gate
+
+The model requirement in each task is exact.
+
+If a task says `GPT-5.6 Terra`, running it with `GPT-5.6 Sol` is still a mismatch. Codex must not silently upgrade or downgrade models because the controller is deliberately allocating model cost and capability.
+
+If the current model does not exactly match the required model:
+
+```text
+MODEL GATE FAILED
+Required: <model>
+Current: <model>
+Action: switch to the required model and rerun this task.
+```
+
+Then STOP without edits.
+
+## 1.2 Exact effort gate
+
+The reasoning effort is also part of the task assignment.
+
+This plan may use:
+
+- `low`
+- `medium`
+- `high`
+- `xhigh`
+- `max`
+- `ultra` where Codex exposes it
+
+If the current effort differs from the exact required effort, Codex must STOP and request the required effort.
+
+Do not interpret a higher effort as automatically authorized. The controller may intentionally choose a lower effort to reduce token usage and prevent unnecessary exploration on tightly specified tasks.
+
+## 1.3 Availability rule
+
+If a required model or effort is not selectable in the current Codex environment, STOP and report the unavailable requirement. Do not select a replacement model or effort yourself. The controller will revise the assignment if necessary.
+
+## 1.4 Branch rule
 
 All recovery implementation work must occur on:
 
@@ -66,118 +121,150 @@ All recovery implementation work must occur on:
 
 or a short-lived child branch explicitly authorized by the controller.
 
-Codex must never force-push, rewrite shared history, reset `master`, or perform a broad revert unless the active task explicitly instructs it.
+Never force-push, rewrite shared history, reset `master`, or perform a broad revert unless the active task explicitly authorizes it.
 
-## 1.3 No autonomous phase advancement
+## 1.5 No autonomous phase advancement
 
-Completing a task does not authorize Codex to start the next task.
+Completing a task does not authorize starting another task.
 
-At every task marked **CONTROLLER GATE**, Codex must stop after reporting results and say that controller review is required. The user will return the report to the controller and later provide the next authorized task ID.
+At every **CONTROLLER GATE**, Codex must stop after producing its report. The user will provide the report to the controller and later return with the next authorized task ID.
 
-## 1.4 No silent substitutions
+## 1.6 No silent substitutions
 
-Codex must not silently:
+Codex must never silently:
 
-- replace a required model with another model;
-- weaken a test because it fails;
-- alter acceptance criteria;
-- change expected PC behavior to match current Android behavior;
+- substitute a different model or effort;
+- weaken a failing test;
+- change acceptance criteria;
+- update golden/reference behavior to match a regression;
 - preserve an optimization merely because it improves FPS;
 - remove a feature because recovering it is difficult;
-- modify game project content/assets to make engine tests pass unless the task explicitly concerns project data.
+- modify project content/assets to make an engine test pass unless explicitly authorized;
+- expand a local task into an architectural refactor.
 
 ---
 
-# 2. MODEL GATING POLICY
+# 2. GPT-5.6 MODEL AND EFFORT POLICY
 
-The recovery deliberately uses stronger models only where architectural reasoning and cross-subsystem correctness justify the token cost.
+The recovery uses the GPT-5.6 family available in Codex.
 
-OpenAI's current Codex model family used by this plan:
+Capability/cost intent used by this plan:
 
-- `GPT-5.3-Codex`: primary long-horizon agentic coding/reasoning model.
-- `GPT-5.3-Codex-Spark`: fast model reserved for narrow, mechanical, well-specified work.
+- **GPT-5.6 Sol** — flagship. Use for architecture-critical reasoning, nonlocal debugging, semantic reconciliation, and tasks where a wrong decision can corrupt multiple gameplay subsystems.
+- **GPT-5.6 Terra** — balanced capability/cost. Use for bounded engineering, implementation from an approved design, substantial test work, compatibility work, and localized refactors with explicit contracts.
+- **GPT-5.6 Luna** — fastest and most cost-efficient. Use for narrow mechanical work, inventories, repetitive tests following an established pattern, report generation, and low-risk verification.
 
-**Do not substitute models.** If the currently selected Codex model is not exactly the required model for the active task, stop before editing and ask the user to switch models.
+Reasoning effort is treated as a **budget**, not a prestige setting. Higher effort is reserved for uncertainty, nonlocal interactions, long-horizon planning, and high blast radius.
 
-If a required model is no longer available in the product, stop and ask the user to return to the controller so this policy can be revised. Do not choose a replacement yourself.
+## 2.1 Tier S3 — frontier architecture
 
-## 2.1 Tier A — architecture-critical
+**Model:** `GPT-5.6 Sol`
+**Effort:** `ultra`
 
-**Required model:** `GPT-5.3-Codex`
-**Required reasoning level:** `xhigh` when the Codex UI/CLI exposes reasoning level; otherwise the highest available reasoning setting.
+Use only for the highest-risk implementation/reconciliation points:
 
-Use Tier A for:
+- authoritative `GameState` transaction rewrite;
+- core combat transaction restoration where several combat classes interact;
+- canonical save/load transaction implementation;
+- final release-candidate architecture reconciliation.
 
-- `GameState` lifecycle changes;
-- state machine semantics;
-- combat lifecycle restoration;
-- save/load transactional semantics;
-- restart architecture;
+These tasks justify the maximum available Codex deliberation because a subtle mistake may survive normal unit tests and corrupt long gameplay sequences.
+
+## 2.2 Tier S2 — architecture-critical analysis/refactor
+
+**Model:** `GPT-5.6 Sol`
+**Effort:** `max`
+
+Use for:
+
+- lifecycle/reference-map design;
+- state-machine semantics;
+- combat ordering analysis;
 - tilemap/board atomicity;
-- migration of staged gameplay operations;
-- cross-platform policy architecture;
-- debugging nonlocal regressions;
-- final integration/reconciliation;
-- any task touching more than one correctness-critical subsystem.
+- Android/platform boundary design;
+- architecture contamination audit;
+- Android scheduling changes touching synchronization boundaries.
 
-## 2.2 Tier B — bounded engineering
+## 2.3 Tier S1 — difficult but bounded cross-system work
 
-**Required model:** `GPT-5.3-Codex`
-**Required reasoning level:** `medium` or `high` as specified by the task.
+**Model:** `GPT-5.6 Sol`
+**Effort:** `high`
 
-Use Tier B for:
+Use when architecture has already been approved but implementation still spans multiple sensitive modules, especially Android performance retuning after correctness is stable.
 
-- regression harness implementation from an approved design;
-- feature preservation work with clear contracts;
-- Android backend/platform adapters;
-- medium-sized refactors with stable semantics;
-- save compatibility tests;
-- fast-forward/debug/restart feature verification;
-- performance benchmarking and profiling scripts.
+## 2.4 Tier T2 — substantial bounded engineering
 
-## 2.3 Tier C — narrow mechanical work
+**Model:** `GPT-5.6 Terra`
+**Effort:** `high`
 
-**Required model:** `GPT-5.3-Codex-Spark`
+Use for:
 
-Use Tier C only for tasks that are fully specified and local, such as:
+- regression harness implementation from approved design;
+- feature/fix preservation sweeps;
+- save compatibility audits;
+- Android backend/platform adapter implementation;
+- feature equivalence suites;
+- performance/cache audits with clear acceptance criteria.
 
-- documentation updates;
-- adding repetitive test cases to an already-established test pattern;
-- mechanical renames after an API is frozen;
-- collecting file/commit inventories;
-- narrow one-file cleanup where behavior must remain unchanged;
-- generating reports from existing test/profiler output.
+## 2.5 Tier T1 — routine engineering with explicit contract
 
-Spark must not perform independent architecture decisions or recovery-critical semantic refactors.
+**Model:** `GPT-5.6 Terra`
+**Effort:** `medium`
+
+Use for:
+
+- debugger parity checks;
+- localized optimization audits;
+- structured code/history classification where architecture is not being chosen;
+- medium test/refactor tasks with stable patterns.
+
+## 2.6 Tier L2 — careful mechanical work
+
+**Model:** `GPT-5.6 Luna`
+**Effort:** `medium`
+
+Use for:
+
+- baseline capture;
+- profiler observer tests;
+- repetitive test additions from a frozen pattern;
+- inventories and reports requiring some repository reasoning but no architecture decisions.
+
+## 2.7 Tier L1 — purely mechanical work
+
+**Model:** `GPT-5.6 Luna`
+**Effort:** `low`
+
+Use only for deterministic renames, documentation formatting, generated report cleanup, or equivalent low-risk mechanical changes explicitly authorized by the controller.
 
 ---
 
 # 3. NON-NEGOTIABLE SYSTEM INVARIANTS
 
-These invariants override performance goals.
+These invariants override all performance goals.
 
 ## INV-01 — One gameplay core
 
-There is one authoritative gameplay core shared by PC and Android. There must not be separate PC and Android gameplay implementations.
+PC and Android share one authoritative gameplay implementation. Do not create separate gameplay engines.
 
 ## INV-02 — PC semantics are the behavioral reference
 
-For systems that existed before Android work, `9314f54b` defines the initial PC behavioral reference unless a later independent correctness fix or explicitly preserved feature supersedes it.
+For systems that existed before Android work, `9314f54b` is the initial behavioral reference unless a later independent correctness fix or explicitly preserved feature supersedes it.
 
-The reference is behavioral, not textual. We do not blindly copy old files.
+The reference is behavioral, not textual. Do not blindly copy old files.
 
 ## INV-03 — No observable partial gameplay state
 
-Live gameplay code must not observe a half-restored or half-built state.
+Live gameplay code must never observe a half-restored or half-built state.
 
-Forbidden examples include:
+Forbidden examples:
 
-- state stack restored while level/tilemap is missing;
+- restored map state while level/tilemap is missing;
 - camera/map state active before the map is valid;
 - board swapped before aura/fog/regions are valid;
-- combat hooks split so unrelated game logic can observe an intermediate combat state.
+- combat hooks split so unrelated logic observes an intermediate combat transaction.
 
-## INV-04 — Android may optimize presentation/resource policy, not gameplay ordering
+## INV-04 — Android may optimize platform policy, not gameplay ordering
 
 Android may differ in:
 
@@ -187,7 +274,7 @@ Android may differ in:
 - resource preload;
 - memory/cache policy;
 - filesystem/build integration;
-- background preparation that does not mutate the live gameplay world.
+- background preparation that does not mutate authoritative gameplay state.
 
 Android must not differ in:
 
@@ -196,34 +283,26 @@ Android must not differ in:
 - event ordering;
 - RNG consumption/order;
 - skill/item hook ordering;
-- state-machine logical transitions;
-- final gameplay state at synchronization points.
+- logical state-machine transitions;
+- final logical state at synchronization points.
 
-## INV-05 — Optimization must be behavior-preserving
+## INV-05 — Shared optimizations must be behavior-preserving
 
 An optimization belongs in shared core only when it preserves externally observable gameplay behavior and ordering.
 
-Safe candidates include:
-
-- memoization with correct invalidation;
-- eliminating redundant work;
-- avoiding allocations;
-- equivalent algorithms;
-- culling/render caching that does not affect logic;
-- batching draw work while preserving visual ordering;
-- faster lookups/indexes.
+Safe candidates include correctly invalidated memoization, redundant-work elimination, reduced allocations, equivalent algorithms, render culling/caching, draw batching that preserves order, and faster lookups/indexes.
 
 ## INV-06 — Fast-forward changes time, not outcomes
 
-With identical seed/input, fast-forward ON and OFF must produce the same logical action trace and final game state. Fast-forward may reduce waits or presentation frames but must not skip logical hooks/updates.
+With identical seed/input, fast-forward ON and OFF must produce the same logical action trace and final game state. Only waits/presentation timing may differ.
 
-## INV-07 — Debugger/profiler are observers
+## INV-07 — Debugger and profiler are observers
 
-PC and Android debugger/profiler functionality must remain available as required, but instrumentation must not alter gameplay behavior, state ordering, or cache validity.
+Enabling debugger/profiler without issuing a mutating debug command must not alter gameplay behavior, state ordering, RNG, or cache validity.
 
 ## INV-08 — Feature preservation
 
-The recovery must preserve later intended features and their legitimate fixes, including at minimum:
+Preserve intended later features and legitimate fixes, including at minimum:
 
 - fast-forward / speed controls;
 - debugger functionality on PC and Android;
@@ -232,64 +311,45 @@ The recovery must preserve later intended features and their legitimate fixes, i
 - save/load enhancements;
 - later independent gameplay correctness fixes;
 - Android build support;
-- Android audio streaming and other accepted platform-specific features.
+- accepted Android audio/resource behavior.
 
 ## INV-09 — Project content is protected
 
-Game data, resources, animations, portraits, levels, events, classes, items, skills, project-specific content, and unrelated editor improvements are not rollback targets.
+Game data, resources, animations, portraits, levels, events, classes, items, skills, and unrelated editor improvements are not rollback targets.
 
 ## INV-10 — Evidence before optimization retention
 
-A performance change that cannot demonstrate semantic equivalence remains disabled/reverted from the shared core until proved safe.
+A performance change that cannot demonstrate semantic equivalence remains disabled/rejected from shared core until proved safe.
 
 ---
 
 # 4. RECOVERY CLASSIFICATION
 
-Every post-reference engine change must end in exactly one classification:
+Every post-reference engine change must be classified as one of:
 
-### KEEP-SHARED
-
-Behavior-preserving optimization, feature, or bugfix beneficial to both PC and Android.
-
-### KEEP-PLATFORM
-
-Useful platform-specific implementation whose observable gameplay semantics remain shared. Android audio streaming is the canonical example.
-
-### REWRITE-PLATFORM
-
-The goal is valid for Android, but the current implementation contaminates core semantics. Keep the goal; rewrite behind Android/runtime policy.
-
-### RESTORE-PC-SEMANTICS
-
-Current implementation changes gameplay/lifecycle semantics. Restore the original PC semantics in core while re-porting independent features/fixes.
-
-### REMOVE-WORKAROUND
-
-A later guard/workaround only exists because a staged/partial state was introduced. Remove only after the originating invalid state is impossible and tests prove the guard is unnecessary.
-
-### KEEP-CORRECTNESS-FIX
-
-A later fix repairs a real invariant independent of Android optimization and must survive recovery.
+- **KEEP-SHARED** — behavior-preserving optimization, feature, or bugfix useful on both platforms.
+- **KEEP-PLATFORM** — platform-specific implementation preserving shared gameplay semantics.
+- **REWRITE-PLATFORM** — Android goal is valid but current implementation contaminates core semantics; keep the goal and rewrite behind a platform boundary.
+- **RESTORE-PC-SEMANTICS** — current implementation alters gameplay/lifecycle semantics; restore core ordering and re-port independent features/fixes.
+- **REMOVE-WORKAROUND** — workaround exists only because an invalid staged/partial state was introduced; remove after proving the invalid state is impossible.
+- **KEEP-CORRECTNESS-FIX** — later fix repairs a real invariant independent of Android and must survive recovery.
 
 ---
 
 # 5. HIGH-RISK COMMIT / SUBSYSTEM MAP
 
-The following is a starting map, not a substitute for code-level review.
-
-## 5.1 Strong candidates to keep
+## Strong keep candidates
 
 - `7735ca29` — hierarchical runtime profiling.
-- `6631e736` — release debugger/render-panel performance work, subject to debugger-preservation tests.
+- `6631e736` — debugger/render-panel performance work, subject to debugger-preservation tests.
 - `97c58a63` — difficulty setup correctness fix.
 - `a566ae6d` — Windows editor workspace fix.
-- `d2bbd026` — Android profiler thread isolation; preserve.
-- `9004c67b` — Android streamed battle music; preserve as platform-specific backend behavior.
-- Android build/config/tooling that does not change gameplay semantics.
+- `d2bbd026` — Android profiler thread isolation.
+- `9004c67b` — Android streamed battle music as platform-specific behavior.
+- Android build/config/tooling that does not alter gameplay semantics.
 - Project content/resource changes.
 
-## 5.2 High-risk recovery cluster
+## High-risk recovery cluster
 
 - `cdd4be2a` — staged tilemap board rebuild.
 - `6b96e2f1` — batched tilemap transition state.
@@ -298,54 +358,39 @@ The following is a starting map, not a substitute for code-level review.
 - `6bd9da4b` — map-safety guards for staged loading.
 - `8306e1a9` — deferred saved state until level restore completes.
 
-These commits are not automatically reverted. Their changes must be decomposed into semantic changes, safe optimizations, features, and workaround fixes.
+Do not automatically revert these commits. Decompose them into semantic changes, safe optimizations, features, and workaround fixes.
 
-## 5.3 Mixed commit warning
+## Mixed commit warning
 
 `52bd0403` is a large mixed commit. Never revert it wholesale. Audit by subsystem and file intent.
 
 ---
 
-# 6. DEFINITION OF SYNCHRONIZATION POINT
+# 6. SYNCHRONIZATION POINTS
 
-A synchronization point is a point where PC and Android must expose equivalent logical game state despite platform-specific presentation timing.
+PC and Android logical state must match at synchronization points regardless of presentation timing.
 
 Examples:
 
-- immediately after level load finishes;
+- after level load fully commits;
 - immediately before player control begins;
-- after a movement action commits;
-- after combat cleanup and state-stack handling complete;
+- after movement commits;
+- after combat cleanup/state-stack handling completes;
 - after an event command transaction completes;
 - after tilemap change commits;
-- after save restore fully commits;
+- after save restore commits;
 - after chapter restart reaches playable state;
-- at phase transition completion.
+- after phase transition completes.
 
-Behavioral comparison must happen at synchronization points, not arbitrary intermediate render frames.
+Compare logical behavior at these points, not arbitrary render frames.
 
 ---
 
-# 7. REQUIRED REPORT FORMAT FOR EVERY CODEX TASK
+# 7. CODEX TASK REPORT FORMAT
 
-Before implementation, Codex must print:
+After implementation Codex must report:
 
-```
-TASK: <ID>
-MODEL REQUIRED: <model + reasoning>
-MODEL CURRENT: <detected model + reasoning>
-BRANCH: <branch>
-HEAD: <sha>
-SCOPE: <files/modules>
-INVARIANTS: <INV ids>
-PREREQUISITES: <task ids>
-```
-
-If model mismatch exists, output only the mismatch, request the required model, and STOP.
-
-After implementation, Codex must report:
-
-```
+```text
 TASK RESULT: PASS | PARTIAL | FAIL
 FILES CHANGED:
 BEHAVIORAL CHANGES:
@@ -364,53 +409,53 @@ Never claim PASS if required tests were skipped.
 
 ---
 
-# 8. PHASE 0 — BASELINE, INVENTORY, AND SAFETY RAILS
+# 8. PHASE 0 — BASELINE, INVENTORY, SAFETY RAILS
 
-## Goal
+## P0-T01 — Capture recovery baseline
 
-Create objective evidence before changing semantics.
-
-### P0-T01 — Capture recovery baseline
-
-**Model:** Tier C — `GPT-5.3-Codex-Spark`
+**Model:** `GPT-5.6 Luna`
+**Effort:** `medium`
+**Tier:** L2
 **Risk:** Low
 **Controller gate:** No
 
 Tasks:
 
-- verify recovery branch starts at `0821182a...`;
+- verify recovery branch ancestry and starting reference;
 - record Python/runtime/dependency versions;
 - record current full test-suite result;
-- inventory relevant Android/runtime flags;
-- inventory current profiling controls;
-- list engine files changed between `9314f54b` and recovery HEAD;
-- generate a concise `recovery/baseline.md` report; do not modify engine behavior.
+- inventory Android/runtime flags;
+- inventory profiling controls;
+- list engine files changed between `9314f54b` and recovery starting HEAD;
+- create `recovery/baseline.md`;
+- do not modify engine behavior.
 
 Acceptance:
 
 - baseline report committed;
 - no engine behavior changes;
-- test failures, if any, recorded verbatim and categorized rather than fixed.
+- existing test failures recorded and categorized, not fixed in this task.
 
-### P0-T02 — Build post-reference semantic change inventory
+## P0-T02 — Build post-reference semantic change inventory
 
-**Model:** Tier B — `GPT-5.3-Codex` medium
-**Risk:** Medium
+**Model:** `GPT-5.6 Terra`
+**Effort:** `medium`
+**Tier:** T1
 **Prerequisite:** P0-T01
 **Controller gate:** YES
 
 Tasks:
 
 - inspect all changed engine/runtime files after `9314f54b`;
-- map each change to KEEP-SHARED / KEEP-PLATFORM / REWRITE-PLATFORM / RESTORE-PC-SEMANTICS / REMOVE-WORKAROUND / KEEP-CORRECTNESS-FIX;
-- identify mixed changes inside individual commits;
-- identify all `is_android_runtime`, render optimization gates, staged jobs, generators/yields, worker threads, and deferred commits in engine code;
-- produce `recovery/change_inventory.md`.
+- classify changes using Section 4;
+- identify mixed changes within commits;
+- inventory `is_android_runtime`, render optimization gates, staged jobs, generators/yields, worker threads, and deferred commits;
+- create `recovery/change_inventory.md`.
 
 Acceptance:
 
 - every correctness-critical changed engine file classified;
-- uncertain cases explicitly marked `NEEDS-CONTROLLER-DECISION`;
+- uncertain cases marked `NEEDS-CONTROLLER-DECISION`;
 - no production behavior changes.
 
 **STOP FOR CONTROLLER REVIEW.**
@@ -419,53 +464,51 @@ Acceptance:
 
 # 9. PHASE 1 — BEHAVIORAL REGRESSION HARNESS
 
-## Goal
+## P1-T01 — Design deterministic trace schema
 
-Establish a repeatable oracle for logical behavior before restoring core semantics.
-
-### P1-T01 — Design deterministic trace schema
-
-**Model:** Tier A — `GPT-5.3-Codex` xhigh
+**Model:** `GPT-5.6 Sol`
+**Effort:** `max`
+**Tier:** S2
 **Prerequisite:** Controller approval of P0-T02
 **Controller gate:** YES
 
-Design, do not yet broadly instrument production code.
+Design trace schema for synchronization-point comparison. Capture:
 
-Trace must capture enough information to compare behaviors without depending on render frame count:
-
-- state stack nids at synchronization points;
-- active level/overworld identity;
-- unit nid/uid-relevant logical state;
+- state stack nids;
+- active level/overworld;
+- units and relevant logical fields;
 - positions, HP, mana, statuses, skills, inventory/durability;
-- game/level vars relevant to scenarios;
-- RNG state/checkpoints where feasible;
+- relevant game/level vars;
+- RNG checkpoints where feasible;
 - combat playback/action sequence;
-- triggered event identifiers/order;
+- triggered event IDs/order;
 - turn/phase;
-- tilemap/board identity and required invariants;
+- tilemap/board identity and invariants;
 - save/load/restart completion state.
 
-Do not log volatile surface/audio objects or frame timings as equality criteria.
+Do not compare volatile surfaces/audio objects or frame timings as gameplay equality criteria.
 
-Deliver design and proposed helper APIs/tests.
+Deliver design and proposed helper APIs/tests only.
 
 **STOP FOR CONTROLLER REVIEW.**
 
-### P1-T02 — Implement trace/test harness
+## P1-T02 — Implement trace/test harness
 
-**Model:** Tier B — `GPT-5.3-Codex` high
-**Prerequisite:** Approved P1-T01 design
+**Model:** `GPT-5.6 Terra`
+**Effort:** `high`
+**Tier:** T2
+**Prerequisite:** Approved P1-T01
 **Controller gate:** No
 
 Implement the approved harness with minimal production intrusion.
 
-### P1-T03 — Establish PC-reference golden scenarios
+## P1-T03 — Establish PC-reference golden scenarios
 
-**Model:** Tier A — `GPT-5.3-Codex` xhigh
+**Model:** `GPT-5.6 Sol`
+**Effort:** `max`
+**Tier:** S2
 **Prerequisite:** P1-T02
 **Controller gate:** YES
-
-Run/create representative deterministic scenarios against the PC reference and current branch as technically appropriate.
 
 Minimum scenario families:
 
@@ -484,100 +527,98 @@ Minimum scenario families:
 13. Fog-of-war move preview/cancel/wait.
 14. Tilemap change.
 15. Phase transition.
-16. Fast-forward ON vs OFF equivalence.
+16. Fast-forward ON vs OFF.
 17. Debugger disabled/enabled observer-equivalence.
 18. Game-over/restart path.
 
-Do not make current code pass by changing expected reference behavior.
+Do not modify expected PC behavior to make current code pass.
 
 **STOP FOR CONTROLLER REVIEW.**
 
 ---
 
-# 10. PHASE 2 — RESTORE GAMESTATE AND STATE-MACHINE ATOMICITY
+# 10. PHASE 2 — GAMESTATE AND STATE-MACHINE ATOMICITY
 
-## Goal
+## P2-T01 — Audit GameState/load/state-restore delta
 
-Eliminate partial live state as an accepted core condition.
-
-### P2-T01 — Audit GameState/load/state restore delta
-
-**Model:** Tier A — `GPT-5.3-Codex` xhigh
+**Model:** `GPT-5.6 Sol`
+**Effort:** `max`
+**Tier:** S2
 **Prerequisite:** Approved Phase 1 harness
 **Controller gate:** YES
 
-Focus:
+Focus on:
 
 - `app/engine/game_state.py`;
 - state machine files;
-- title/load job states;
+- title/load jobs;
 - chapter/overworld restore entry points;
-- staged-state fields and commit paths;
-- later restart/save feature dependencies.
+- staged-state fields/commit paths;
+- restart/save feature dependencies.
 
-Deliver a function-level restore/re-port map before edits.
+Deliver a function-level restore/re-port map before implementation.
 
 **STOP FOR CONTROLLER REVIEW.**
 
-### P2-T02 — Restore synchronous PC state semantics
+## P2-T02 — Restore authoritative PC state semantics
 
-**Model:** Tier A — `GPT-5.3-Codex` xhigh
+**Model:** `GPT-5.6 Sol`
+**Effort:** `ultra`
+**Tier:** S3
 **Prerequisite:** Approved P2-T01
 **Controller gate:** YES
 
 Requirements:
 
-- PC core must not install saved state stack before required level/overworld structures exist;
-- do not solve this by making every shared state tolerate arbitrary missing globals;
-- restore an atomic logical transaction boundary;
-- retain later save format/features independent of staging;
+- no saved state stack becomes authoritative before required level/overworld structures exist;
+- do not normalize invalid partial states by adding widespread null guards;
+- restore one atomic logical transaction boundary;
+- retain later save format/features independent of Android staging;
 - retain restart feature intent;
-- isolate any Android progressive preparation outside authoritative live state.
+- isolate Android progressive preparation outside live authoritative state.
 
-Run full targeted harness and full unit suite.
+Run targeted harness and full unit suite.
 
 **STOP FOR CONTROLLER REVIEW.**
 
-### P2-T03 — Remove obsolete staged-restore workarounds
+## P2-T03 — Remove obsolete staged-restore workarounds
 
-**Model:** Tier B — `GPT-5.3-Codex` high
-**Prerequisite:** Controller accepts P2-T02
+**Model:** `GPT-5.6 Terra`
+**Effort:** `high`
+**Tier:** T2
+**Prerequisite:** P2-T02 accepted
 **Controller gate:** YES
 
-Candidates include camera/map/tilemap guards introduced solely to tolerate invalid partial restore.
-
-Rule: remove a guard only if tests demonstrate the invalid state can no longer occur. Guards that remain valid defensive programming independent of staging may stay, but must be documented as such.
+Remove a guard only when tests prove the invalid staged condition is impossible. Keep genuinely useful defensive guards and document their independent invariant.
 
 **STOP FOR CONTROLLER REVIEW.**
 
 ---
 
-# 11. PHASE 3 — RESTORE COMBAT LIFECYCLE SEMANTICS
+# 11. PHASE 3 — COMBAT LIFECYCLE SEMANTICS
 
-## Goal
+## P3-T01 — Build combat lifecycle reference map
 
-Return shared combat logic to the PC ordering contract while retaining safe optimizations and later correctness fixes.
-
-### P3-T01 — Build combat lifecycle reference map
-
-**Model:** Tier A — `GPT-5.3-Codex` xhigh
+**Model:** `GPT-5.6 Sol`
+**Effort:** `max`
+**Tier:** S2
 **Prerequisite:** Phase 2 accepted
 **Controller gate:** YES
 
-Compare PC reference vs current for:
+Compare reference/current behavior for:
 
 - `SimpleCombat`;
 - `MapCombat`;
 - `BaseCombat`;
 - `AnimationCombat`;
 - arena paths;
-- solver initialization and advancement;
+- solver initialization/advancement;
 - pre-combat hooks;
 - action generation/application;
-- playback generation;
-- item/skill cleanup hooks;
-- broken/unusable item checks;
-- EXP and promotion transitions;
+- playback;
+- cleanup hooks;
+- broken/unusable checks;
+- EXP/promotion transitions;
 - state-stack handling;
 - `end_combat` ordering;
 - transform animation preparation;
@@ -587,45 +628,47 @@ Separate gameplay work from presentation/resource work.
 
 **STOP FOR CONTROLLER REVIEW.**
 
-### P3-T02 — Restore Simple/Map combat core ordering
+## P3-T02 — Restore Simple/Map combat transaction ordering
 
-**Model:** Tier A — `GPT-5.3-Codex` xhigh
+**Model:** `GPT-5.6 Sol`
+**Effort:** `ultra`
+**Tier:** S3
 **Prerequisite:** Approved P3-T01
 **Controller gate:** YES
 
-No yielding/staging may expose an intermediate gameplay transaction to unrelated states.
-
-Preserve safe computational optimizations only when trace-equivalent.
+No yield/staging may expose an intermediate gameplay transaction to unrelated states. Preserve computational optimizations only when trace-equivalent.
 
 **STOP FOR CONTROLLER REVIEW.**
 
-### P3-T03 — Restore Base/Animation/Arena combat core ordering
+## P3-T03 — Restore Base/Animation/Arena combat ordering
 
-**Model:** Tier A — `GPT-5.3-Codex` xhigh
+**Model:** `GPT-5.6 Sol`
+**Effort:** `ultra`
+**Tier:** S3
 **Prerequisite:** P3-T02 accepted
 **Controller gate:** YES
 
-Retain Android-only battle music streaming as a platform implementation detail.
-
-Animation/resource preparation may be progressive on Android only if it cannot mutate/advance shared gameplay semantics prematurely.
+Retain Android battle-music streaming as platform implementation detail. Android progressive animation/resource preparation is allowed only outside authoritative gameplay transaction advancement.
 
 **STOP FOR CONTROLLER REVIEW.**
 
-### P3-T04 — Combat feature/fix preservation sweep
+## P3-T04 — Combat feature/fix preservation sweep
 
-**Model:** Tier B — `GPT-5.3-Codex` high
+**Model:** `GPT-5.6 Terra`
+**Effort:** `high`
+**Tier:** T2
 **Prerequisite:** P3-T03 accepted
 **Controller gate:** YES
 
-Verify later correctness fixes and project-specific mechanics remain intact, especially:
+Verify preservation of:
 
 - cleanup ordering;
-- durability/uses costs;
+- durability/use costs;
 - promotion cancel/finalization semantics;
 - skill cache invalidation;
-- aura-related combat interactions;
+- aura interactions;
 - fast-forward behavior;
-- debug controls relevant to combat.
+- combat-related debugger behavior.
 
 **STOP FOR CONTROLLER REVIEW.**
 
@@ -633,118 +676,116 @@ Verify later correctness fixes and project-specific mechanics remain intact, esp
 
 # 12. PHASE 4 — TILEMAP / BOARD / EVENT ATOMICITY
 
-## Goal
+## P4-T01 — Decompose staged tilemap optimization
 
-Preserve performance wins without exposing partially rebuilt board state.
-
-### P4-T01 — Decompose staged tilemap optimization
-
-**Model:** Tier A — `GPT-5.3-Codex` xhigh
+**Model:** `GPT-5.6 Sol`
+**Effort:** `max`
+**Tier:** S2
 **Prerequisite:** Phase 3 accepted
 **Controller gate:** YES
 
 Audit:
 
-- `GameBoard.build_iter` and related incremental helpers;
+- `GameBoard.build_iter` and incremental helpers;
 - `TilemapChangeJob`;
 - batched tilemap transition state;
 - aura/terrain/fog/region rebuilding;
-- event rendering deferral;
+- event render deferral;
 - commit ordering.
 
-Classify each part as computational optimization vs scheduling semantic change.
+Classify computational optimization versus scheduling semantic change.
 
 **STOP FOR CONTROLLER REVIEW.**
 
-### P4-T02 — Restore desktop atomic tilemap semantics
+## P4-T02 — Restore desktop atomic tilemap semantics
 
-**Model:** Tier A — `GPT-5.3-Codex` xhigh
+**Model:** `GPT-5.6 Sol`
+**Effort:** `max`
+**Tier:** S2
 **Prerequisite:** Approved P4-T01
 **Controller gate:** YES
 
-Desktop path should preserve original synchronous logical behavior.
-
-Safe lookup/build optimizations may remain shared.
+Desktop preserves original synchronous logical behavior. Safe lookup/build optimizations may remain shared only when trace-equivalent.
 
 **STOP FOR CONTROLLER REVIEW.**
 
-### P4-T03 — Rebuild Android-only progressive board preparation
+## P4-T03 — Android-only progressive board preparation
 
-**Model:** Tier A — `GPT-5.3-Codex` xhigh
+**Model:** `GPT-5.6 Sol`
+**Effort:** `max`
+**Tier:** S2
 **Prerequisite:** P4-T02 accepted
 **Controller gate:** YES
 
-Only if profiling justifies retaining it.
+Implement/retain only if profiling justifies it.
 
-Contract:
+Required contract:
 
-```
+```text
 LIVE OLD STATE
-    -> build all pending structures off-world
-    -> validate pending world
+    -> build pending structures outside live world
+    -> validate complete pending world
     -> one atomic logical commit
 LIVE NEW STATE
 ```
 
-The live `game` object must not point piecemeal at pending structures.
+Never point live `game` piecemeal at pending structures.
 
 **STOP FOR CONTROLLER REVIEW.**
 
 ---
 
-# 13. PHASE 5 — SAVE / LOAD / RESTART FEATURE CONSOLIDATION
+# 13. PHASE 5 — SAVE / LOAD / RESTART CONSOLIDATION
 
-## Goal
+## P5-T01 — Save format and compatibility audit
 
-Keep all desired capabilities without making Android staging part of core semantics.
-
-### P5-T01 — Save format and compatibility audit
-
-**Model:** Tier B — `GPT-5.3-Codex` high
+**Model:** `GPT-5.6 Terra`
+**Effort:** `high`
+**Tier:** T2
 **Prerequisite:** Phase 4 accepted
 **Controller gate:** YES
 
-Inventory:
+Inventory/test:
 
 - fields added since reference;
-- event-state serialization behavior;
-- restart-slot behavior;
+- event-state serialization;
+- restart slots;
 - chapter-start snapshot behavior;
 - aura reconstruction requirements;
-- current save compatibility expectations;
+- save compatibility expectations;
 - Android load orchestration dependencies.
-
-Test old/reference-compatible saves and current saves where fixtures are available.
 
 **STOP FOR CONTROLLER REVIEW.**
 
-### P5-T02 — Canonical transactional load API
+## P5-T02 — Canonical transactional load API
 
-**Model:** Tier A — `GPT-5.3-Codex` xhigh
+**Model:** `GPT-5.6 Sol`
+**Effort:** `ultra`
+**Tier:** S3
 **Prerequisite:** Approved P5-T01
 **Controller gate:** YES
 
-Design and implement one authoritative core load transaction.
-
-Android may perform expensive resource preparation around it, but must not redefine when logical restore becomes visible.
+Implement one authoritative core load transaction. Android may prepare expensive resources around it but may not redefine when logical restore becomes visible.
 
 **STOP FOR CONTROLLER REVIEW.**
 
-### P5-T03 — Canonical restart contract
+## P5-T03 — Canonical restart contract
 
-**Model:** Tier A — `GPT-5.3-Codex` xhigh
+**Model:** `GPT-5.6 Sol`
+**Effort:** `max`
+**Tier:** S2
 **Prerequisite:** P5-T02 accepted
 **Controller gate:** YES
 
 Preserve:
 
 - restart current chapter;
-- difficulty selection behavior as intended;
+- intended difficulty selection behavior;
 - Test Chapter edge cases;
 - game-over restart;
 - debug-triggered restart.
 
-Define exactly what constitutes pristine chapter-start state and ensure restart cannot inherit accidental mid-chapter partial state.
+Define pristine chapter-start state explicitly and prevent accidental mid-chapter state inheritance.
 
 **STOP FOR CONTROLLER REVIEW.**
 
@@ -752,13 +793,11 @@ Define exactly what constitutes pristine chapter-start state and ensure restart 
 
 # 14. PHASE 6 — PLATFORM POLICY BOUNDARY
 
-## Goal
+## P6-T01 — Define runtime capability interfaces
 
-Move Android-specific policies out of gameplay semantics.
-
-### P6-T01 — Define runtime capability interfaces
-
-**Model:** Tier A — `GPT-5.3-Codex` xhigh
+**Model:** `GPT-5.6 Sol`
+**Effort:** `max`
+**Tier:** S2
 **Prerequisite:** Phase 5 accepted
 **Controller gate:** YES
 
@@ -767,83 +806,80 @@ Prefer narrow capabilities over a giant platform abstraction.
 Candidate boundaries:
 
 - audio/music backend;
-- resource loading/preload policy;
+- resource load/preload policy;
 - render/cache policy;
 - frame-work budget policy;
 - filesystem/build path handling.
 
-Avoid sprinkling new `if is_android_runtime()` through gameplay code.
+Do not spread new `if is_android_runtime()` branches through gameplay-critical modules.
 
 **STOP FOR CONTROLLER REVIEW.**
 
-### P6-T02 — Migrate Android audio/resource policy
+## P6-T02 — Migrate Android audio/resource policy
 
-**Model:** Tier B — `GPT-5.3-Codex` high
+**Model:** `GPT-5.6 Terra`
+**Effort:** `high`
+**Tier:** T2
 **Prerequisite:** Approved P6-T01
 **Controller gate:** No
 
-Keep current Android streamed battle music behavior where correct.
+Keep Android streamed battle music where correct; implement approved interfaces without changing gameplay ordering.
 
-### P6-T03 — Migrate accepted Android scheduling policy
+## P6-T03 — Migrate accepted Android scheduling policy
 
-**Model:** Tier A — `GPT-5.3-Codex` xhigh
+**Model:** `GPT-5.6 Sol`
+**Effort:** `max`
+**Tier:** S2
 **Prerequisite:** P6-T02
 **Controller gate:** YES
 
-Only migrate scheduling behaviors previously approved as safe. Any scheduling that requires core gameplay to tolerate partial state is rejected or redesigned.
+Only migrate scheduling behavior already approved as safe. Any scheduling requiring gameplay core to tolerate partial state must be rejected/redesigned.
 
 **STOP FOR CONTROLLER REVIEW.**
 
 ---
 
-# 15. PHASE 7 — PRESERVE AND VERIFY USER-FACING FEATURES
+# 15. PHASE 7 — USER-FACING FEATURE PRESERVATION
 
 ## P7-T01 — Fast-forward equivalence suite
 
-**Model:** Tier B — `GPT-5.3-Codex` high
+**Model:** `GPT-5.6 Terra`
+**Effort:** `high`
+**Tier:** T2
 **Prerequisite:** Phase 6 accepted
 **Controller gate:** YES
 
-Compare fast-forward ON/OFF using identical seed/input.
-
-Must match:
-
-- actions;
-- RNG-dependent outcomes;
-- combat results;
-- XP;
-- durability/costs;
-- skills/statuses;
-- events;
-- final state.
-
-Only timings/presentation may differ.
+Compare identical seed/input with fast-forward ON/OFF. Must match actions, RNG outcomes, combat, XP, durability/costs, skills/statuses, events, and final state. Only presentation timing may differ.
 
 **STOP FOR CONTROLLER REVIEW.**
 
-### P7-T02 — Debugger parity PC/Android
+## P7-T02 — Debugger parity PC/Android
 
-**Model:** Tier B — `GPT-5.3-Codex` medium
+**Model:** `GPT-5.6 Terra`
+**Effort:** `medium`
+**Tier:** T1
 **Prerequisite:** P7-T01 accepted
 **Controller gate:** YES
 
-Verify intended debug commands/features including restart, chapter navigation, unit editing, auto-level, teleport, items, world values, and platform UI integration.
-
-Debugger disabled/enabled without commands must not alter logical game behavior.
+Verify intended debug operations including restart, chapter navigation, unit editing, auto-level, teleport, items, world values, and platform UI integration. Debugger enabled but idle must be observer-equivalent.
 
 **STOP FOR CONTROLLER REVIEW.**
 
-### P7-T03 — Profiler observer-equivalence
+## P7-T03 — Profiler observer-equivalence
 
-**Model:** Tier C — `GPT-5.3-Codex-Spark`
+**Model:** `GPT-5.6 Luna`
+**Effort:** `medium`
+**Tier:** L2
 **Prerequisite:** P7-T02 accepted
 **Controller gate:** No
 
-Verify profiler ON/OFF produces equivalent game state and preserves worker-thread isolation.
+Verify profiler ON/OFF state equivalence and worker-thread scope isolation.
 
-### P7-T04 — Save/load/restart UX regression sweep
+## P7-T04 — Save/load/restart UX regression sweep
 
-**Model:** Tier B — `GPT-5.3-Codex` high
+**Model:** `GPT-5.6 Terra`
+**Effort:** `high`
+**Tier:** T2
 **Prerequisite:** P7-T03
 **Controller gate:** YES
 
@@ -853,54 +889,58 @@ Run feature-level scenarios on PC and Android pathways.
 
 ---
 
-# 16. PHASE 8 — REINTRODUCE / VALIDATE SAFE SHARED OPTIMIZATIONS
+# 16. PHASE 8 — SAFE SHARED OPTIMIZATION REINTRODUCTION
 
-## Goal
+Correctness must already be stable before optimizing.
 
-Recover performance after semantics are stable, one optimization class at a time.
+## P8-T01 — Cache/memoization audit
 
-### P8-T01 — Cache/memoization audit
-
-**Model:** Tier B — `GPT-5.3-Codex` high
+**Model:** `GPT-5.6 Terra`
+**Effort:** `high`
+**Tier:** T2
 **Controller gate:** YES
 
 Criteria:
 
 - correct invalidation;
-- no dependence on mutable state invisible to cache keys;
+- no hidden mutable-state dependence absent from cache keys;
 - identical logical traces.
 
-Remember existing LTCache invariant: invalidate after publishing mutable component state.
+Preserve the existing LTCache invariant: invalidate after publishing mutable component state.
 
 **STOP FOR CONTROLLER REVIEW.**
 
-### P8-T02 — Render/cache/batching optimization audit
+## P8-T02 — Render/cache/batching optimization audit
 
-**Model:** Tier B — `GPT-5.3-Codex` high
+**Model:** `GPT-5.6 Terra`
+**Effort:** `high`
+**Tier:** T2
 **Controller gate:** YES
 
 Keep output-equivalent optimizations shared.
 
 **STOP FOR CONTROLLER REVIEW.**
 
-### P8-T03 — Allocation/redundant-work optimization audit
+## P8-T03 — Allocation/redundant-work audit
 
-**Model:** Tier B — `GPT-5.3-Codex` medium
+**Model:** `GPT-5.6 Terra`
+**Effort:** `medium`
+**Tier:** T1
 **Controller gate:** YES
 
-Measure before/after where practical.
+Measure before/after where practical and require trace equality.
 
 **STOP FOR CONTROLLER REVIEW.**
 
-### P8-T04 — Android-only performance retuning
+## P8-T04 — Android-only performance retuning
 
-**Model:** Tier A — `GPT-5.3-Codex` xhigh
-**Prerequisite:** P8-T01..T03 accepted
+**Model:** `GPT-5.6 Sol`
+**Effort:** `high`
+**Tier:** S1
+**Prerequisite:** P8-T01 through P8-T03 accepted
 **Controller gate:** YES
 
-Use profiler evidence. Optimize only behind accepted platform boundaries.
-
-No optimization is accepted solely on FPS improvement if behavioral trace changes.
+Use profiler evidence. Optimize only behind accepted platform boundaries. No optimization is accepted solely on FPS improvement when behavioral trace changes.
 
 **STOP FOR CONTROLLER REVIEW.**
 
@@ -908,44 +948,43 @@ No optimization is accepted solely on FPS improvement if behavioral trace change
 
 # 17. PHASE 9 — FULL VALIDATION AND RELEASE CANDIDATE
 
-### P9-T01 — Full PC regression matrix
+## P9-T01 — Full PC regression matrix
 
-**Model:** Tier B — `GPT-5.3-Codex` high
+**Model:** `GPT-5.6 Terra`
+**Effort:** `high`
+**Tier:** T2
 **Controller gate:** YES
 
 Run:
 
 - full unit tests;
-- type checks where applicable;
+- applicable type checks;
 - deterministic behavioral scenarios;
 - representative project launches;
 - save/load/restart flows;
-- fast-forward and debugger checks.
+- fast-forward/debugger checks.
 
 No unexplained reference divergence.
 
 **STOP FOR CONTROLLER REVIEW.**
 
-### P9-T02 — Full Android regression/performance matrix
+## P9-T02 — Full Android regression/performance matrix
 
-**Model:** Tier B — `GPT-5.3-Codex` high
+**Model:** `GPT-5.6 Terra`
+**Effort:** `high`
+**Tier:** T2
 **Prerequisite:** P9-T01 accepted
 **Controller gate:** YES
 
-Compare Android synchronization-point logical traces against PC.
-
-Collect performance evidence:
-
-- frame-time distribution;
-- worst stalls for load/combat/phase/tilemap transitions;
-- memory-sensitive paths where measurable;
-- audio/resource behavior.
+Compare Android synchronization-point traces against PC. Collect frame-time distribution, major stalls, memory-sensitive paths where measurable, and audio/resource behavior.
 
 **STOP FOR CONTROLLER REVIEW.**
 
-### P9-T03 — Architecture contamination audit
+## P9-T03 — Architecture contamination audit
 
-**Model:** Tier A — `GPT-5.3-Codex` xhigh
+**Model:** `GPT-5.6 Sol`
+**Effort:** `max`
+**Tier:** S2
 **Prerequisite:** P9-T02 accepted
 **Controller gate:** YES
 
@@ -957,55 +996,59 @@ Search final code for:
 - worker-thread mutation of gameplay state;
 - duplicate PC/Android gameplay implementations;
 - yield/generator boundaries inside logical transactions;
-- TODO/FIXME introduced during recovery.
+- recovery TODO/FIXME markers.
 
 Every remaining case requires justification.
 
 **STOP FOR CONTROLLER REVIEW.**
 
-### P9-T04 — Final release candidate review
+## P9-T04 — Final release candidate review
 
-**Model:** Tier A — `GPT-5.3-Codex` xhigh
+**Model:** `GPT-5.6 Sol`
+**Effort:** `ultra`
+**Tier:** S3
 **Prerequisite:** P9-T03 accepted
 **Controller gate:** FINAL
 
-Codex must not merge to `master` itself unless the user explicitly instructs it after controller approval.
+Codex must not merge to `master` unless the user explicitly instructs it after controller approval.
 
 Deliver:
 
 - final commit range;
 - architecture summary;
-- preserved features list;
+- preserved feature list;
 - removed/replaced staging list;
 - known limitations;
 - PC behavior-equivalence evidence;
 - Android behavior-equivalence evidence;
 - performance comparison;
-- test results;
+- full test results;
 - recommended merge strategy.
 
 **STOP FOR FINAL CONTROLLER APPROVAL.**
 
 ---
 
-# 18. STOP CONDITIONS — APPLY TO ALL TASKS
+# 18. UNIVERSAL STOP CONDITIONS
 
-Codex must immediately stop and report rather than improvise when any of these occurs:
+Codex must immediately stop and report rather than improvise if any of the following occurs:
 
-1. Current model does not exactly satisfy the task model gate.
-2. Required prerequisite task/gate is not approved.
-3. Work is requested on `master` instead of the authorized recovery branch.
-4. A proposed fix would intentionally change PC behavioral semantics.
-5. A test indicates the PC reference itself contains a known later-fixed bug and the classification is unclear.
-6. An optimization changes RNG consumption/order or gameplay action ordering.
-7. An Android optimization requires shared core to expose/tolerate partial state.
-8. Save compatibility cannot be maintained without a format/migration decision.
-9. A task needs to edit protected project content to make an engine test pass.
-10. Scope expands into a second major subsystem not named in the task.
-11. Required tests cannot be run or their environment is unavailable.
-12. Codex discovers evidence contradicting an assumption in this plan.
-13. A destructive Git operation appears necessary.
-14. Codex cannot verify its current model/reasoning level when the task has a model gate.
+1. Current model does not exactly match the task model gate.
+2. Current effort does not exactly match the task effort gate.
+3. Required model/effort cannot be detected.
+4. Required model/effort is unavailable.
+5. A prerequisite/controller gate is not approved.
+6. Recovery work is requested directly on `master`.
+7. A proposed fix intentionally changes PC behavioral semantics without controller approval.
+8. A test shows the PC reference contains a later-fixed bug and classification is unclear.
+9. An optimization changes RNG consumption/order or gameplay action ordering.
+10. An Android optimization requires shared core to expose/tolerate partial state.
+11. Save compatibility requires a migration/format decision outside the task.
+12. A task would edit protected project content only to make an engine test pass.
+13. Scope expands into another major subsystem not named in the task.
+14. Required tests cannot be run.
+15. Evidence contradicts an assumption in this plan.
+16. A destructive Git operation appears necessary.
 
 On stop, provide evidence and request controller guidance through the user.
 
@@ -1013,11 +1056,9 @@ On stop, provide evidence and request controller guidance through the user.
 
 # 19. CHANGE DISCIPLINE
 
-## 19.1 Commit discipline
+## Commit discipline
 
-Prefer one conceptual change per commit.
-
-Commit messages should use recovery-oriented prefixes where useful:
+Prefer one conceptual change per commit. Suggested prefixes:
 
 - `test(recovery): ...`
 - `refactor(core): ...`
@@ -1027,60 +1068,57 @@ Commit messages should use recovery-oriented prefixes where useful:
 - `refactor(android): ...`
 - `docs(recovery): ...`
 
-Do not combine project content changes with engine recovery commits.
+Never combine project content changes with engine recovery commits.
 
-## 19.2 Diff discipline
+## Diff discipline
 
 Before finishing each task:
 
 - inspect the complete diff;
-- ensure no generated files were hand-edited incorrectly;
-- ensure unrelated formatting churn is absent;
-- ensure no debug prints/temp files remain;
-- ensure tests target the invariant, not the implementation detail alone.
+- ensure generated files were not hand-edited incorrectly;
+- remove unrelated formatting churn;
+- remove temporary debug output/files;
+- verify tests assert invariants rather than implementation details only.
 
-## 19.3 Test discipline
+## Test discipline
 
-A regression test should fail for the broken semantic condition and pass for the recovered one.
+A regression test should fail for the broken semantic condition and pass for the recovered one. Prefer state assertions over "does not crash" tests.
 
-Do not write only "no crash" tests when logical state can be asserted.
-
-Because tests share the global `game` singleton, each new test touching `game` must seed/reset every state element it relies on.
+Because tests share the global `game` singleton, every new test touching `game` must initialize/reset each state element it relies on.
 
 ---
 
 # 20. PERFORMANCE ACCEPTANCE RULES
 
-Performance is evaluated only after correctness for the affected task.
+Correctness is evaluated before performance for each affected task.
 
-For a proposed optimization record, where feasible:
+Where feasible record:
 
 - workload/scenario;
 - PC baseline;
 - Android baseline;
 - before/after median frame or operation time;
-- p95/p99 or worst meaningful stall when available;
+- p95/p99 or worst meaningful stall;
 - semantic trace equality result;
-- memory tradeoff if material.
+- material memory tradeoff.
 
 A performance win with semantic divergence is a FAIL.
 
-A small performance regression may be accepted temporarily during semantic recovery, but must be recorded for Phase 8.
+A temporary performance regression may be accepted during semantic recovery but must be recorded for Phase 8.
 
 ---
 
 # 21. CONTROLLER DECISION LOG
 
-The controller should append decisions here when assumptions change.
-
 | Date | Decision | Scope | Rationale |
 |---|---|---|---|
-| 2026-08-08 | Use `9314f54b` as initial PC behavioral reference | Core gameplay | Last clear pre-Android behavioral baseline before `52bd0403`; reference is behavioral, not a wholesale rollback target. |
+| 2026-08-08 | Use `9314f54b` as initial PC behavioral reference | Core gameplay | Last clear pre-Android behavioral baseline before `52bd0403`; behavioral reference only, not wholesale rollback. |
 | 2026-08-08 | Recovery starts from current HEAD `0821182a` | Entire repo | Preserve project content, later features, fixes, assets, and Android support. |
-| 2026-08-08 | One shared gameplay core | Architecture | Avoid PC/Android behavioral forks and long-term divergence. |
-| 2026-08-08 | Android may retain platform-specific streaming/scheduling only behind semantic boundaries | Android | Preserve Android performance without exposing partial gameplay state. |
+| 2026-08-08 | One shared gameplay core | Architecture | Prevent long-term PC/Android behavioral forks. |
+| 2026-08-08 | Android specialization only behind semantic boundaries | Android | Preserve Android performance without partial live gameplay state. |
 | 2026-08-08 | Preserve fast-forward, PC/Android debugger, profiler, restart, save/load enhancements | Features | Explicit product requirements. |
-| 2026-08-08 | Model-gated execution | Process | Spend strongest model tokens on architecture-critical tasks and Spark on narrow mechanical tasks. |
+| 2026-08-08 | Replace obsolete GPT-5.3-Codex/Spark assignment with GPT-5.6 Sol/Terra/Luna model+effort gates | Process | Allocate Sol to high-blast-radius reasoning, Terra to bounded engineering, Luna to low-risk mechanical work. |
+| 2026-08-08 | Exact model AND exact effort are controller gates | Process | Prevent both underpowered execution and unnecessary token expenditure. |
 
 ---
 
@@ -1090,25 +1128,25 @@ The controller should append decisions here when assumptions change.
 
 **Next authorized task:** `P0-T01` only.
 
-No later task is authorized until the controller receives and reviews the required preceding reports.
+No later task is authorized until required preceding reports are reviewed.
 
-**P0-T01 required model:** `GPT-5.3-Codex-Spark`.
+**P0-T01 required model:** `GPT-5.6 Luna`
 
-If Codex is currently running any other model, it must stop and ask the user to switch to `GPT-5.3-Codex-Spark` before executing P0-T01.
+**P0-T01 required effort:** `medium`
+
+If Codex is running any other model or effort, it must STOP and ask the user to switch to exactly `GPT-5.6 Luna` with `medium` effort.
 
 ---
 
 # 23. SHORT FORM CODEX REMINDER
 
-When working on this recovery:
-
-1. Read `AGENTS.md` and `plan.md` first.
+1. Read `AGENTS.md`, `AGENTS.override.md`, and `plan.md` first.
 2. Work only on the authorized recovery branch/task.
-3. Enforce exact model gate; mismatch means STOP.
+3. Enforce exact GPT-5.6 model and exact effort; mismatch means STOP.
 4. PC gameplay semantics are authoritative unless controller approves a later correctness fix.
-5. Preserve features and independent bugfixes.
+5. Preserve intended features and independent bugfixes.
 6. Shared optimizations must be trace-equivalent.
 7. Android-only optimization belongs behind platform policy and cannot expose partial gameplay state.
 8. Do not self-advance through controller gates.
 9. Report evidence, tests, risks, and commit SHA.
-10. When uncertain about semantics, STOP and escalate; do not invent a new architecture.
+10. If semantics are unclear, STOP and escalate instead of inventing architecture.

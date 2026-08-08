@@ -48,7 +48,11 @@ def compare_records(expected: list[dict[str, Any]], actual: list[dict[str, Any]]
     """Strict in-memory comparator; P1-T03 supplies reviewed fixture files."""
     if len(expected) != len(actual):
         raise TraceComparisonError('checkpoint count differs: %d != %d' % (len(expected), len(actual)))
+    provenance = {'runner_revision', 'platform_profile'}
     for index, (expected_record, actual_record) in enumerate(zip(expected, actual)):
+        if index == 0:
+            expected_record = {k: v for k, v in expected_record.items() if k not in provenance}
+            actual_record = {k: v for k, v in actual_record.items() if k not in provenance}
         if canonical_json(expected_record) != canonical_json(actual_record):
             raise TraceComparisonError('first trace difference at record %d' % index)
     return actual
@@ -90,14 +94,25 @@ class _ObjectGraph:
 
     def _fields(self, value: Any, kind: str, path: str) -> tuple[dict[str, Any], dict[str, Any]]:
         if kind == 'item':
-            fields = {name: getattr(value, name, None) for name in
-                      ('uses', 'c_uses', 'chapter_uses', 'data', 'droppable')}
+            fields = {'owner_nid': getattr(value, 'owner_nid', None),
+                      'droppable': getattr(value, 'droppable', None),
+                      'data': getattr(value, 'data', {})}
+            fields['components'] = [(component.nid, component.value)
+                                    for component in getattr(value, 'components', [])]
             parent = getattr(value, 'parent_item', None)
-            return normalize(fields), {'parent_item': self.reference(parent, 'item', path + '/parent')}
+            refs = {'parent_item': self.reference(parent, 'item', path + '/parent'),
+                    'subitems': [self.reference(item, 'item', path + '/subitems/%d' % idx)
+                                 for idx, item in enumerate(getattr(value, 'subitems', []) or [])],
+                    'command_item': self.reference(getattr(value, 'command_item', None), 'item', path + '/command')}
+            return normalize(fields), refs
         if kind == 'skill':
-            fields = {name: getattr(value, name, None) for name in
-                      ('source_type', 'source', 'data')}
-            return normalize(fields), {}
+            fields = {'owner_nid': getattr(value, 'owner_nid', None),
+                      'initiator_nid': getattr(value, 'initiator_nid', None),
+                      'data': getattr(value, 'data', {}),
+                      'components': [(component.nid, component.value)
+                                     for component in getattr(value, 'components', [])]}
+            return normalize(fields), {'parent_skill': self.reference(getattr(value, 'parent_skill', None), 'skill', path + '/parent'),
+                                        'subskill': self.reference(getattr(value, 'subskill', None), 'skill', path + '/subskill')}
         if kind == 'event':
             return {}, {}
         raise TraceNormalizationError('unknown graph object kind: %s' % kind)
@@ -107,17 +122,23 @@ def _unit_snapshot(unit: Any, graph: _ObjectGraph) -> dict[str, Any]:
     nid = str(getattr(unit, 'nid'))
     item_refs = [graph.reference(item, 'item', 'units/%s/items/%d' % (nid, idx))
                  for idx, item in enumerate(getattr(unit, 'items', []) or [])]
-    skill_refs = [graph.reference(skill, 'skill', 'units/%s/skills/%d' % (nid, idx))
-                  for idx, skill in enumerate(getattr(unit, 'skills', []) or [])]
+    skill_wrappers = getattr(unit, '_skills', None)
+    if skill_wrappers is not None:
+        skill_refs = [{'ref': graph.reference(wrapper.get(), 'skill', 'units/%s/skills/%d' % (nid, idx)),
+                       'source': normalize(wrapper.source), 'source_type': normalize(wrapper.source_type)}
+                      for idx, wrapper in enumerate(skill_wrappers)]
+    else:
+        skill_refs = [graph.reference(skill, 'skill', 'units/%s/skills/%d' % (nid, idx))
+                      for idx, skill in enumerate(getattr(unit, 'skills', []) or [])]
     return normalize({
         'nid': nid, 'team': _nid(getattr(unit, 'team', None)), 'party': _nid(getattr(unit, 'party', None)),
         'class': _nid(getattr(unit, 'klass', getattr(unit, 'class_nid', None))),
         'level': getattr(unit, 'level', None), 'exp': getattr(unit, 'exp', None),
-        'position': getattr(unit, 'position', None), 'hp': getattr(unit, 'hp', None),
-        'mana': getattr(unit, 'mana', None), 'fatigue': getattr(unit, 'fatigue', None),
-        'guard': getattr(unit, 'guard_gauge', getattr(unit, 'guard', None)),
-        'finished': getattr(unit, 'finished', None), 'dead': getattr(unit, 'dead', None),
-        'has_moved': getattr(unit, 'has_moved', None), 'has_attacked': getattr(unit, 'has_attacked', None),
+        'position': getattr(unit, 'position', None), 'hp': getattr(unit, 'current_hp', None),
+        'mana': getattr(unit, 'current_mana', None), 'fatigue': getattr(unit, 'current_fatigue', None),
+        'guard': getattr(unit, 'current_guard_gauge', None),
+        'finished': getattr(unit, '_finished', getattr(unit, 'finished', None)), 'dead': getattr(unit, 'dead', None),
+        'has_moved': getattr(unit, '_has_moved', getattr(unit, 'has_moved', None)), 'has_attacked': getattr(unit, '_has_attacked', getattr(unit, 'has_attacked', None)),
         'traveler': _nid(getattr(unit, 'traveler', None)), 'lead_unit': _nid(getattr(unit, 'lead_unit', None)),
         'stats': _dict(getattr(unit, 'stats', None)), 'growths': _dict(getattr(unit, 'growths', None)),
         'growth_points': _dict(getattr(unit, 'growth_points', None)), 'wexp': _dict(getattr(unit, 'wexp', None)),
@@ -145,14 +166,21 @@ def _event_frame(event: Any, graph: _ObjectGraph, role: str, ordinal: int) -> di
 
 
 def capture_logical_state(game: Any) -> dict[str, Any]:
+    from app.utilities import static_random
     graph = _ObjectGraph()
     state_machine = getattr(game, 'state', None)
     units = sorted(getattr(game, 'units', []) or [], key=lambda unit: str(getattr(unit, 'nid', '')))
     level = getattr(game, 'level', None)
     board = getattr(game, 'board', None)
     occupancy = []
-    for pos, unit in sorted(_dict(getattr(board, 'units', None)).items(), key=lambda entry: entry[0]):
-        occupancy.append([pos[0], pos[1], _nid(unit)])
+    unit_grid = getattr(board, 'unit_grid', None)
+    if unit_grid is not None:
+        for pos in ((x, y) for x in range(getattr(board, 'width', 0)) for y in range(getattr(board, 'height', 0))):
+            for unit in unit_grid.get(pos) or []:
+                occupancy.append([pos[0], pos[1], _nid(unit)])
+    else:
+        for pos, unit in sorted(_dict(getattr(board, 'units', None)).items(), key=lambda entry: entry[0]):
+            occupancy.append([pos[0], pos[1], _nid(unit)])
 
     events = getattr(game, 'events', None)
     active = getattr(game, '_trace_active_event', None)
@@ -181,12 +209,15 @@ def capture_logical_state(game: Any) -> dict[str, Any]:
                   'overworld_nid': _nid(getattr(game, 'overworld_controller', None)),
                   'current_party': _nid(getattr(game, 'current_party', None))},
         'turn': {'turncount': getattr(game, 'turncount', None),
-                 'phase': _nid(getattr(getattr(game, 'phase', None), 'current', None)),
-                 'active_team': _nid(getattr(getattr(game, 'phase', None), 'current', None))},
+                 'phase': getattr(getattr(game, 'phase', None), 'get_current', lambda: None)(),
+                 'active_team': getattr(getattr(game, 'phase', None), 'get_current', lambda: None)()},
         'object_graph': {'objects': graph.objects}, 'units': [_unit_snapshot(unit, graph) for unit in units],
         'variables': {'game': _dict(getattr(game, 'game_vars', None)), 'level': _dict(getattr(game, 'level_vars', None))},
-        'rng': _dict(getattr(game, '_trace_rng', None)),
+        'rng': {'seed': static_random.get_seed(), 'combat_state': static_random.get_combat_random_state(),
+                'growth_state': static_random.r.growth_random.state,
+                'other_state': static_random.get_other_random_state()},
         'board': {'tilemap_nid': _nid(tilemap), 'dimensions': [getattr(tilemap, 'width', None), getattr(tilemap, 'height', None)],
+                  'tile_grid_hash': canonical_hash({'nid': _nid(tilemap), 'width': getattr(tilemap, 'width', None), 'height': getattr(tilemap, 'height', None)}),
                   'occupancy': occupancy, 'aura_sources': [],
                   'fog_visible': [], 'fog_visited': list(getattr(board, 'previously_visited_tiles', []) or []),
                   'bounds': getattr(board, 'bounds', None), 'regions': []},
@@ -219,6 +250,20 @@ class HookObserver:
                          phase=phase, gameplay_result=result)
             return result
         return observed
+
+
+class SemanticRegistry:
+    def __init__(self) -> None:
+        self.adapters: dict[type, Callable[[Any], Mapping[str, Any]]] = {}
+
+    def register(self, kind: type, adapter: Callable[[Any], Mapping[str, Any]]) -> None:
+        self.adapters[kind] = adapter
+
+    def normalize(self, value: Any) -> dict[str, Any]:
+        adapter = self.adapters.get(type(value))
+        if adapter is None:
+            raise TraceNormalizationError('unmapped semantic type: %s' % type(value).__name__)
+        return normalize(dict(adapter(value)))
 
 
 class TraceRecorder:

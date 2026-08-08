@@ -10,6 +10,7 @@ from app.engine.trace import (
     TraceInvariantError,
     TraceNormalizationError,
     TraceRecorder,
+    SemanticRegistry,
     canonical_hash,
     compare_records,
     capture_logical_state,
@@ -149,6 +150,20 @@ class RecoveryTraceTests(unittest.TestCase):
         actual[0] = dict(actual[0], scenario_id='other')
         with self.assertRaises(TraceComparisonError):
             compare_records(expected, actual)
+
+    def test_comparator_ignores_only_header_provenance(self):
+        expected = [{'kind': 'trace_header', 'schema_version': 1, 'scenario_id': 's',
+                     'input_fixture_id': 'i', 'reference_revision': 'r', 'runner_revision': 'pc',
+                     'platform_profile': 'pc_reference'}]
+        actual = [dict(expected[0], runner_revision='recovered', platform_profile='android')]
+        self.assertEqual(actual, compare_records(expected, actual))
+
+    def test_semantic_registry_requires_explicit_adapter(self):
+        registry = SemanticRegistry()
+        registry.register(int, lambda value: {'amount': value})
+        self.assertEqual({'amount': 3}, registry.normalize(3))
+        with self.assertRaises(TraceNormalizationError):
+            registry.normalize(object())
 
     def test_hook_observer_records_once_and_rejects_unknown_hook(self):
         observer = HookObserver({('item', 'on_hit')})

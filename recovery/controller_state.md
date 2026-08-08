@@ -4,21 +4,21 @@
 
 ## Current authorization
 
-- Current phase: Phase 1
+- Current phase: **Phase 1**
 - Harness gate: **P1-T02 ACCEPTED**
 - Active task: **P1-T03 only**
-- Latest executor stop: **Scenario 13 — fog-of-war move preview/cancel/wait** after controller-authorized ESC-03 Sol/max diagnosis
-- Controller disposition: **ESC-03 RESOLVED — HARNESS RESOLVED**
+- Latest executor stop: **Scenario 18 — Game-over/restart** under requested ESC-01/04
+- Controller disposition: **ESC-01/04 RESOLVED — reference contract found**
 - Resume model: **GPT-5.6 Terra / high**
 - Escalation target remains: **GPT-5.6 Sol / max**
-- Escalation pre-authorized for any new issue: **NO**
-- Scenarios 14–18 are **AUTHORIZED** under the existing P1-T03 contracts
-- Controller gate after P1-T03: **YES — STOP FOR CONTROLLER REVIEW**
+- Sol/max is **not authorized for the resolved S18 ambiguity**; a new ESC requires a new stop/request
+- Scenario 18 is the only remaining execution scenario
+- Controller gate after S18 + final validation/commit: **YES — STOP FOR CONTROLLER REVIEW**
 - Phase 2 remains **UNAUTHORIZED**
-- Gameplay/state-machine/input repair remains **UNAUTHORIZED** during P1-T03
+- Gameplay/state-machine/input/save repair remains **UNAUTHORIZED** during P1-T03
 - Golden/reference behavior changes remain **UNAUTHORIZED**
 
-## P1-T03 status accepted provisionally so far
+## P1-T03 provisional scenario status
 
 Subject to final P1-T03 commit/diff/fixture review:
 
@@ -26,137 +26,138 @@ Subject to final P1-T03 commit/diff/fixture review:
 2. **S2 PASS** — existing in-memory save/load; reference/recovery match.
 3. **S3 N/A — REFERENCE-UNSUPPORTED** — no PC-reference mid-event save/load golden; no synthetic fixture.
 4. **S4 PASS** — real PC restart-slot flow; reference/recovery match.
-5. **S5 PASS** — real MapCombat through EXP and terminal cleanup under the approved deterministic virtual-frame driver; reference/recovery match.
+5. **S5 PASS** — real MapCombat through EXP and terminal cleanup; reference/recovery match.
 6. **S6 PASS** — SimpleCombat; reference/recovery match.
-7. **S7 PASS** — AnimationCombat using real default.ltproj animation assets; reference/recovery match.
-8. **S8 PASS** — BaseCombat using real Vulnerary flow; reference/recovery match.
-9. **S9 PASS** — approved DB-owned Luna / authoritative seed-0 fixture; real proc + ordered lifecycle hooks; reference/recovery match.
+7. **S7 PASS** — AnimationCombat with real reference assets; reference/recovery match.
+8. **S8 PASS** — BaseCombat; reference/recovery match.
+9. **S9 PASS** — DB-owned Luna, authoritative seed 0, real proc and ordered lifecycle hooks; reference/recovery match.
 10. **S10 PASS** — item durability/uses and broken/unusable handling; reference/recovery match.
 11. **S11 PASS** — promotion/class-change edge cases; reference/recovery match.
 12. **S12 PASS** — aura propagation/teardown/load aliasing; reference/recovery match.
-13. **S13 PASS** — fog move preview/cancel/wait through real InputManager after the approved test-owned deterministic host-time correction; terminal Trace V1 reference/recovery match.
+13. **S13 PASS** — FOW preview/cancel/wait through real InputManager with approved test-owned deterministic host-time correction; reference/recovery match.
+14. **S14 PASS** — tilemap change; strict PC-reference Trace V1 match.
+15. **S15 PASS** — phase transition; strict PC-reference Trace V1 match.
+16. **S16 PASS** — reference OFF == recovery OFF and recovery fast-forward ON == recovery OFF under INV-06.
+17. **S17 PASS** — hybrid observer contract: 17A PC disabled baseline == 17B recovery disabled; 17C debugger enabled-idle == recovery disabled; 17D profiler enabled-idle == recovery disabled. Each comparator matched 3 Trace V1 records.
+18. **S18 AUTHORIZED** — use the reference-owned game-over and title restart chain defined below.
 
 Do not treat provisional PASS entries as final acceptance of uncommitted WIP.
 
-## Scenario 13 — resolved harness clock contract
+## Scenario 18 — resolved reference contract
 
-The controller accepts the Sol/max diagnosis classification: **HARNESS RESOLVED**.
+The previous claim that the PC behavioral reference has no engine-owned game-over trigger is incorrect/incomplete. The reference owns the entire trigger chain:
 
-### First divergence and cause
+1. event command `lose_game` is a public reference event command;
+2. reference `event_functions.lose_game()` sets `game.level_vars['_lose_game'] = True`;
+3. `EventState.end_event()` consumes `_lose_game`, sets `game.memory['next_state'] = 'game_over'`, and enters the normal `transition_to` path;
+4. `GameOverState` is the reference `game_over` state; once it reaches `stasis`, any real input sets `next_state = 'title_start'` and transitions normally;
+5. `default.ltproj` contains the DB-owned global event `Global DeathEirika`, whose real event script ends with `lose_game`;
+6. the reference title main menu exposes `Restart Level` when saves exist, routes it to `title_restart`, and `TitleRestartState` uses `save.RESTART_SLOTS`;
+7. the reference restart load path handles a start/restart slot through the normal `save.load_game()` + level-start flow.
 
-At `fog.move.cancel.complete`, reference and recovery were logically equivalent:
+Therefore S18 must not use the runtime-debugger restart command and must not directly push `game_over`.
 
-- state stack: committed `free` state;
-- pending transitions: empty;
-- Eirika position, previous position, and FOW vantage: `(4, 5)`;
-- FOW visible/visited sets matched;
-- unit was unfinished and had not moved;
-- action-state flags matched;
-- movement-left state matched.
+### Authorized S18 fixture contract
 
-The action menu then opened with the same options and initial index: `Item`, `Trade`, `Wait`, index `0`.
+Use the same deterministic project/new-game/restart-slot setup style already accepted for S1/S4. Any scenario crossing `GameState.build_new()` must seed through `cf.SETTINGS['random_seed']` and restore mutated config afterward.
 
-Raw KEYDOWN/KEYUP events and `InputManager.process_input()` logical outputs also matched. The first divergence occurred on the third DOWN keydown while navigating the real menu: the PC reference advanced `FluidScroll.move_counter`/menu index, while recovery did not.
+Before the game-over trigger, establish a valid real restart slot through the already accepted PC start/restart save machinery. Do not fabricate a `SaveSlot` payload or write a test-only restart format.
 
-Source comparison establishes the relevant implementation difference:
+Trigger game over through the **DB-owned `Global DeathEirika` event** and the real event system:
 
-- PC reference `FluidScroll.reset_on_change_state()` and `FluidScroll.get_directions()` use `engine.get_time()`;
-- recovery uses `engine.get_true_time()` so directional repeat/debounce follows host/UI time rather than virtual game time.
+- use the real Eirika runtime object;
+- issue the event's real `combat_death` trigger through `game.events.trigger(...)` / normal EventManager dispatch so that `Global DeathEirika` is selected by the reference DB;
+- allow its real event commands to run, including its final `lose_game` command;
+- do **not** call `event_functions.lose_game()` directly;
+- do **not** set `_lose_game` directly;
+- do **not** call `game.state.change('game_over')` directly;
+- do **not** use the runtime debugger or a synthetic anonymous loss event.
 
-The prior headless test driver advanced only `engine.constants['current_time']`/`last_time`/`delta_t`; the host-side tick source observed by recovery therefore remained frozen. This made the recovery menu debounce fail even though the raw and logical InputManager event sequence was the same.
+This S18 fixture is testing the reference-owned game-over transaction, not re-testing lethal combat damage. S5–S10 already cover combat lifecycle semantics; therefore direct dispatch of the real `combat_death` trigger through the real EventManager is an acceptable scenario input and is preferred over inventing a brittle lethal-combat setup.
 
-This is a **test-driver clock mismatch**, not evidence that InputManager, FOW, movement, or Wait gameplay semantics diverge.
+### Required game-over path
 
-### Approved RawInputFrameDriver correction
+Drive the real state machine with the approved deterministic frame/input helpers until:
 
-The P1-T03 test-owned raw-input frame driver may deterministically advance both timing domains required by the code under test:
+1. `Global DeathEirika` completes its real event transaction;
+2. `EventState.end_event()` consumes `_lose_game` and transitions to `game_over`;
+3. `GameOverState` reaches its normal input-ready `stasis` state;
+4. send real raw input through the approved `RawInputFrameDriver`/real `InputManager`;
+5. allow the real transition to committed `title_start`.
 
-1. continue to advance `engine.constants['current_time']`, `last_time`, and `delta_t` once per outer virtual frame using the already-approved virtual-frame contract;
-2. provide a deterministic test-owned host-time value for the source observed by `engine.get_true_time()`, advancing once per outer frame on the same deterministic schedule;
-3. construct real pygame KEYDOWN/KEYUP events;
-4. pass them through the real `InputManager.process_input()`;
-5. pass only the resulting real InputManager output to the state machine;
-6. process repeat updates without advancing either clock within that outer frame;
-7. restore all test-mutated engine timing and InputManager/raw-input state in `finally`/teardown.
+Do not bypass transition states or mutate `GameOverState.state` to `stasis` manually. Presentation time may be driven by the already-approved deterministic frame clock.
 
-The host-time shim/schedule is **test-owned provenance only**. It must not be emitted into Trace V1 logical equality or golden state.
+### Required restart path
 
-Do not modify production `engine.get_true_time()`, `FluidScroll`, InputManager, menu code, FOW code, movement code, or Wait behavior for this harness issue.
+From committed `title_start`:
 
-### S13 result accepted provisionally
+1. use real raw input -> real `InputManager` to enter `title_main`;
+2. let the reference title code run `save.check_save_slots()` and construct its real menu;
+3. navigate the real menu to **Restart Level** without direct menu-index mutation;
+4. select it through real input and let title code enter `title_restart`;
+5. select the intended real `RESTART_SLOTS` entry through the normal title restart UI/state path;
+6. let the reference restart/load path call normal `save.load_game()` and level start logic;
+7. drive until the restarted chapter reaches committed playable map control with pending transitions empty.
 
-Under the bounded correction:
+The test may isolate save files to a temporary test-owned filesystem location if the existing harness already does so, but it must use the real save/restart APIs and formats and restore global save-path/slot state afterward.
 
-- both revisions navigate the real menu through `Item -> Trade -> Wait`;
-- final SELECT exits the real menu back to `free`;
-- the unit becomes finished through the normal Wait path;
-- FOW position/vantage/visible/visited semantics remain matched;
-- no direct Wait invocation, menu-index mutation, downstream SELECT injection, production change, or pending-transition exception is used;
-- Trace V1 comparator passes for `fog.move.preview`, `fog.move.cancel.complete`, and `fog.wait.complete`.
+### Trace/equality contract
 
-Scenario 13 is therefore **provisionally accepted as PASS**, subject to final P1-T03 diff/harness review.
+Use existing Trace V1 synchronization semantics; do not add a new schema meaning solely for S18.
 
-## Previously resolved P1-T03 contracts
+At minimum establish/compare:
 
-### New-game seed authority
+- the committed transition into the reference `game_over` path (existing `state.transition.commit` semantics or equivalent already-approved runner observation);
+- committed return to `title_start` through the real GameOver input path;
+- terminal **`restart.complete`** only after restarted chapter/map/control state is fully committed and `state_stack.pending == []`.
 
-For any scenario crossing `GameState.build_new()`, deterministic seed input must use `cf.SETTINGS['random_seed']` before `GameState.build_new()` and restore mutated settings afterward.
+Host time, fade progress, exact frame counts, title animation state, audio, and menu render state remain presentation/provenance and are not logical golden equality fields.
 
-### Reference generated component systems
+Reference and recovery must use the same save-slot setup, event trigger, raw-input intent, and deterministic frame schedule. If their logical traces/final restarted state differ, STOP under a new **ESC-03**; do not repair or regenerate golden output.
 
-For PC reference `9314f54b49f4552b5a3d023b4da0012ce7dfbc89`, `app/engine/skill_system.py` and `app/engine/item_system.py` are generated via the reference-owned `generate_component_system_source()` path only.
+### S18 forbidden shortcuts
 
-### Scenario 3
+Do not:
 
-Scenario 3 is `N/A — REFERENCE-UNSUPPORTED`; no synthetic mid-event save/load golden.
+- use runtime-debugger restart/game-over commands;
+- directly set `_lose_game`;
+- directly invoke `lose_game()`;
+- directly push `game_over`, `title_start`, or `title_restart` to skip the normal chain;
+- create a synthetic loss event when `Global DeathEirika` exists in the reference project;
+- directly mutate title/restart menu indices;
+- bypass real InputManager for title/restart selections;
+- fabricate restart save payloads;
+- weaken pending-transition requirements;
+- modify production/project data;
+- begin Phase 2.
 
-### Deterministic virtual-frame helper
+## Previously resolved harness contracts
 
-The approved test-owned frame driver advances deterministic engine time once per outer frame and processes repeat chains at fixed time. It restores timing globals in `finally` and may not bypass semantic/player input.
+- New-game seed authority: set `cf.SETTINGS['random_seed']` before `GameState.build_new()` and restore it afterward.
+- Reference generated `skill_system.py` / `item_system.py`: bootstrap only with the reference-owned `generate_component_system_source()` path.
+- Virtual-frame helper: advance deterministic engine time once per outer frame; process repeat chains at fixed time; restore globals.
+- RawInputFrameDriver: may also advance deterministic test-owned host time for `engine.get_true_time()`, must use real pygame KEYDOWN/KEYUP -> real `InputManager.process_input()`, and must restore clock/input state.
+- S9: `default.ltproj`, chapter 0, Eirika -> unit 102, Rapier, DB-owned Luna, authoritative seed 0, real SimpleCombat.
+- S17 hybrid observer contract remains as provisionally passed above.
 
-### Scenario 9
+## Resume contract
 
-Use the approved `default.ltproj` chapter-0 Eirika -> unit 102 Rapier + DB-owned Luna fixture with authoritative seed 0 and real SimpleCombat.
+Resume **P1-T03 only** with **GPT-5.6 Terra / high**.
 
-### Scenario 17
+1. Run only S18 under the exact resolved contract above.
+2. If S18 PASSes reference vs recovery, run the final P1-T03 validation suite.
+3. Run required recovery trace/lifecycle tests and complete P1-T03 golden harness tests.
+4. Run `compileall`.
+5. Run `git diff --check` before commit.
+6. Ensure isolated reference/capture worktrees are clean except explicitly ignored reference-generated outputs.
+7. Remove redundant diagnosis-only WIP that is not required by the final bounded harness/evidence.
+8. Commit only bounded P1-T03 test-owned harness/fixture/evidence files; no production/project-data changes.
+9. Run `git show --check` after commit.
+10. Report scenarios 1–18 individually, including S3 N/A, fixture/checkpoint/hash evidence, test commands/results, files changed, and commit SHA.
+11. **STOP FOR CONTROLLER REVIEW.**
 
-Scenario 17 remains hybrid:
-
-- 17A: PC reference absent/disabled observer baseline;
-- 17B: recovery disabled == reference baseline;
-- 17C: recovery debugger enabled-idle == recovery disabled after leaving temporary observer UI state;
-- 17D: recovery profiler enabled-idle == recovery disabled in logical state/order/RNG.
-
-No simulated PC-reference enabled-idle debugger/profiler golden.
-
-## P1-T03 resume contract
-
-Resume P1-T03 using **GPT-5.6 Terra / high**.
-
-1. Retain S13's bounded `RawInputFrameDriver` host-time correction only if it remains test-owned, deterministic, fully restored in teardown, and does not bypass real InputManager/menu behavior.
-2. Continue S14 (`Tilemap change`) and S15 (`Phase transition`) as strict PC-reference comparisons.
-3. Run S16 (`Fast-forward OFF vs ON`) under INV-06: timing/presentation may differ; logical actions/order/RNG/final state must not.
-4. Run S17 under the approved hybrid observer contract above.
-5. Run S18 (`Game-over/restart`) as the final required scenario.
-6. Never copy recovery output into reference fixtures.
-7. Never silently regenerate a golden after a recovery mismatch.
-8. Do not repair gameplay or begin Phase 2.
-9. Report scenarios 1–18 individually. S3 N/A is resolved and is not a skip; overall PASS remains forbidden if any other required scenario is skipped or unresolved.
-
-If any new reference ambiguity, deterministic non-presentation trace divergence, required player-choice ambiguity, save-format decision, competing semantic interpretation, cross-system invariant failure, repeated bounded failure, or other global ESC condition appears, STOP and request **GPT-5.6 Sol / max**. Do not self-escalate.
-
-## Final P1-T03 gate requirements
-
-When S14–S18 are complete:
-
-- run the required recovery trace/lifecycle tests and P1-T03 golden harness tests;
-- run compileall;
-- run `git diff --check` before commit and `git show --check` after commit;
-- ensure reference/capture worktrees remain clean except explicitly ignored reference-generated component-system outputs;
-- commit only bounded P1-T03 harness/fixture/evidence files; no production gameplay semantic changes;
-- report each scenario 1–18 with fixture/checkpoint/reference comparison status and fixture/hash evidence;
-- STOP FOR CONTROLLER REVIEW.
+If any new reference ambiguity, deterministic non-presentation divergence, save-format conflict, required player-input ambiguity, invariant failure, or repeated bounded failure occurs, STOP and request **GPT-5.6 Sol / max**. Do not self-escalate.
 
 ## Gate status
 
-P1-T03 is authorized to resume from Scenario 14 using **GPT-5.6 Terra / high**. Phase 2 remains blocked until P1-T03 completes and receives controller review.
+Only S18 + final P1-T03 validation/commit remain authorized. Phase 2 is blocked until controller acceptance of the completed P1-T03 evidence commit.

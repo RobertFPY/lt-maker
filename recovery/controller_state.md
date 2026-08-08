@@ -7,14 +7,119 @@
 - Current phase: Phase 1
 - Harness gate: **P1-T02 ACCEPTED**
 - Active task: **P1-T03 only**
-- Latest executor stop: **ESC-01 / ESC-04** on scenario 3 (`Save/load during event where supported`)
-- Controller disposition: **RESOLVED — scenario 3 is N/A (REFERENCE-UNSUPPORTED), not FAIL and not SKIPPED**
+- Latest executor stop: scenario 5 (`Standard map combat`) because the test runner did not advance engine frame time while EXP presentation remained on the state stack
+- Controller disposition: **RESOLVED — harness time-driver mismatch, not a gameplay divergence**
 - Resume model: **GPT-5.6 Terra / high**
 - Escalation target remains: **GPT-5.6 Sol / max**
 - Escalation pre-authorized for any new issue: **NO**
 - Controller gate after P1-T03: **YES — STOP FOR CONTROLLER REVIEW**
 - Phase 2 remains **UNAUTHORIZED**
 - Gameplay repair remains **UNAUTHORIZED** during P1-T03
+
+## Scenario 5 controller decision — deterministic virtual frame driver
+
+Scenario 5 reached a real `MapCombat` and then stopped at an active state stack equivalent to `['free', 'combat', 'exp']`, with the combat object in `post_combat`, because the test runner repeatedly called the state machine without advancing `app.engine.engine.constants['current_time']`.
+
+This is a harness mismatch, not evidence of a recovery regression.
+
+### Reference behavior
+
+The PC reference game loop performs this order once per outer frame:
+
+1. `engine.update_time()` updates `engine.constants['last_time']`, `current_time`, and `delta_t`;
+2. one `game.state.update(event, surf)` executes;
+3. any `repeat` chain is executed immediately with `game.state.update([], surf)` **without another time update**;
+4. the next outer frame updates engine time again.
+
+`engine.get_time()` returns the stored `engine.constants['current_time']`; it does not itself read wall clock time.
+
+The PC reference targets 60 FPS and defines `FRAMERATE = 1000 // FPS = 16` ms. `utils.frames2ms(1)` also truncates to 16 ms.
+
+### Why EXP must be drained before the terminal checkpoint
+
+EXP is not merely cosmetic presentation. `ExpState` uses engine time to gate gameplay mutations including, depending on the result:
+
+- `GainExp`;
+- mana changes;
+- level increments/decrements;
+- growth-point changes;
+- stat changes;
+- record updates;
+- level-up triggers;
+- WEXP and learned-skill effects.
+
+For standard `MapCombat`, `clean_up1()` schedules/handles EXP-related work and the map combat enters `post_combat`. Only after the EXP state leaves the stack can combat resume and execute `clean_up2()`, which performs final state-stack handling, `CombatEnd`, post-combat/end-combat behavior, records/messages/death handling, and other terminal effects.
+
+Therefore `combat.cleanup.complete` must remain a fully committed terminal synchronization point. There is **no pending-transition exception** and no checkpoint while `exp` or `combat` remains active.
+
+### Authorized P1-T03 virtual-frame contract
+
+P1-T03 may add a **test-owned runner helper only** that deterministically emulates the normal outer-frame timing contract on both the PC reference process and the recovery process.
+
+For each scenario using this helper:
+
+1. Before constructing any time-sensitive scenario object, save the original values of:
+   - `engine.constants['current_time']`;
+   - `engine.constants['last_time']`;
+   - `engine.constants['delta_t']`.
+2. Initialize a deterministic scenario clock, normally `current_time = 0`, `last_time = 0`, `delta_t = 0`, unless an already-approved scenario setup requires another deterministic starting value.
+3. At the start of each **outer virtual frame**:
+   - set `last_time = current_time`;
+   - increment `current_time` by `FRAMERATE` (16 ms);
+   - set `delta_t = FRAMERATE`.
+4. Run one `game.state.update(event, surf)`.
+5. While that call returns `repeat`, run `game.state.update([], surf)` repeatedly **without advancing virtual time**, matching `driver.run()`.
+6. Advance time again only for the next outer virtual frame.
+7. Use only scenario-authorized logical input. EXP draining itself receives no synthetic gameplay input.
+8. Restore the saved engine timing constants in `finally`/teardown so time state cannot leak between scenarios.
+
+The helper must be test-owned and must not modify production `engine.update_time()`, `engine.get_time()`, combat code, EXP code, or state-machine semantics.
+
+The virtual timestamp/frame count is driver provenance only and must not be added to Trace V1 logical equality or golden state.
+
+### Forbidden shortcuts
+
+For Scenario 5, do **not**:
+
+- call `MapCombat.skip()` merely to bypass timing;
+- use a no-EXP/no-growth/no-level-up flag to avoid EXP;
+- mutate `exp_instance` or combat state directly;
+- jump an `ExpState` internal state manually;
+- monkeypatch gameplay functions to force completion;
+- use a pending-transition exception;
+- checkpoint with `combat`, `exp`, `wait`, or another incomplete terminal state still active;
+- use host/wall-clock sleeps as the deterministic contract.
+
+### Scenario 5 terminal condition
+
+Drive the real state machine using the virtual-frame contract until the combat transaction has naturally completed.
+
+Golden-eligible `combat.cleanup.complete` requires at minimum:
+
+- no active `combat` state;
+- no active `exp` state;
+- no pending state-machine transition (`state_stack.pending == []`);
+- the map-control path has returned to its committed post-combat state (normally top-level `free` for the standard player map-combat fixture);
+- queued EXP for this combat has been consumed;
+- `clean_up2()`/terminal combat handling has executed naturally.
+
+Use a generous deterministic outer-frame safety cap only to fail loudly on non-termination. The cap is a test guard, not a semantic success condition. Do not encode the exact number of frames or milliseconds into golden equality.
+
+If the same deterministic frame/input schedule produces different logical traces or final gameplay state between reference and recovery, that is a new **ESC-03** and Codex must stop.
+
+If reaching committed completion requires player choice (promotion choice, feat choice, dialogue choice, etc.) not already specified by the scenario, that is a new semantic-input ambiguity and Codex must stop for controller review rather than invent an input.
+
+## Provisional P1-T03 evidence accepted so far
+
+The following executor evidence may be retained as P1-T03 work in progress, subject to final commit/diff/fixture review at the P1-T03 controller gate:
+
+- **Scenario 1 PASS:** still passes after the runner uses a real committed map-control `free` state; new-game deterministic seed is supplied through `cf.SETTINGS['random_seed']` and restored after the run.
+- **Scenario 2 PASS:** real in-memory `game.save()` -> `game.load()` reference/recovery comparison passes.
+- **Scenario 3 N/A — REFERENCE-UNSUPPORTED:** no golden fixture is expected; see the controller decision below.
+- **Scenario 4 PASS:** real PC restart-slot flow using `save.save_io(kind='start')` followed by `save.load_game` matches reference/recovery.
+- **Scenario 5:** authorized to resume under the deterministic virtual-frame contract above; no PASS is accepted until committed terminal state and Trace V1 comparison succeed.
+
+Do not treat this provisional acceptance as approval of uncommitted WIP or as authorization to weaken later final review.
 
 ## Scenario 3 controller decision — N/A at PC behavioral reference
 
@@ -29,42 +134,13 @@ Repository history establishes that an explicit mid-event/load-anytime save-stat
 - `157c09b23ac18989c1e214801d9b0b1707600f2e` is an ancestor of the behavioral reference; `9314f54b...` is 110 commits ahead of it with no ancestry break.
 - The behavioral reference therefore does not contain that user-facing load-anytime/mid-event feature.
 
-The reference core does serialize event processor state as part of ordinary `GameState.save()` / `GameState.load()`:
+The reference core does serialize event processor state as part of ordinary `GameState.save()` / `GameState.load()`, but that internal serialization capability does not authorize P1-T03 to manufacture a synthetic mid-event save/load entry point after the explicit feature that exposed that behavior was removed before the behavioral reference.
 
-- state-machine names/temp state are saved;
-- `EventManager.save()` serializes active events;
-- `Event.save()` stores event identity and processor state;
-- `EventProcessor.save()` stores command pointer/iterator state;
-- restore reconstructs those objects.
-
-That internal serialization capability is useful evidence, but it does **not** authorize P1-T03 to manufacture a synthetic mid-event save/load entry point after the explicit feature that exposed that behavior was removed before the behavioral reference.
-
-### Scenario 3 disposition
-
-Scenario 3 must be reported in the P1-T03 matrix as:
+Scenario 3 must be reported as:
 
 `N/A — REFERENCE-UNSUPPORTED`
 
-with the history evidence above.
-
-Rules:
-
-- Do **not** select `testing_proj` chapter-1 `New Event`, `Switch`, or `TurnChange` and invent a save boundary merely to create a golden.
-- Do **not** create a synthetic in-memory event fixture and call its interrupted/resumed behavior a PC-reference golden contract.
-- Do **not** add or restore `save_state.py`, F-key handling, hard-reset load behavior, or any compatibility overlay on the reference.
-- Do **not** generate a Scenario-3 golden trace/fixture.
-- Scenario 3 is **resolved**, not skipped. Its N/A status satisfies the `where supported` qualifier; it does not permit any other required scenario to be skipped.
-- Preserve later/current save-load functionality under INV-08. Its intended behavior must be audited under the later save/load recovery work (Phase 5 and the save/load/restart feature sweep), using the appropriate later-feature contract rather than inventing a PC-reference golden for a feature absent at `9314f54b`.
-
-## Provisional P1-T03 evidence accepted so far
-
-The following executor evidence may be retained as P1-T03 work in progress, subject to final commit/diff/fixture review at the P1-T03 controller gate:
-
-- **Scenario 1 PASS:** new-game deterministic seed is supplied through `cf.SETTINGS['random_seed']` before `GameState.build_new()`, and the modified setting is restored after the run; reference/recovery Trace V1 comparison passes.
-- **Scenario 2 PASS:** real in-memory `game.save()` -> `game.load()` reference/recovery comparison passes.
-- **Scenario 3 N/A — REFERENCE-UNSUPPORTED:** disposition defined above; no golden fixture is expected.
-
-Do not treat this provisional acceptance as approval of uncommitted WIP or as authorization to weaken later final review.
+Do not create a Scenario-3 golden fixture, synthetic event/save boundary, or reference overlay implementing the removed feature. Preserve later/current save-load functionality under INV-08 for later save/load recovery work.
 
 ## Resolved ESC-03 — new-game seed authority
 
@@ -110,9 +186,9 @@ There is no simulated PC-reference enabled-idle debugger/profiler golden.
 
 Resume the same P1-T03 task using **GPT-5.6 Terra / high**.
 
-- Retain the current uncommitted Scenario-1/Scenario-2 test-owned WIP if it conforms to the contracts above.
-- Record Scenario 3 as `N/A — REFERENCE-UNSUPPORTED` with history evidence and no golden fixture.
-- Continue scenarios 4–16 and 18 as ordinary PC-reference golden scenarios.
+- Retain the current uncommitted Scenario-1 through Scenario-4 WIP only if it conforms to the approved contracts above.
+- Resume Scenario 5 using the deterministic virtual-frame driver above on both reference and recovery.
+- After Scenario 5 PASS, continue scenarios 6–16 and 18 as ordinary PC-reference comparisons. The same virtual-frame helper may be reused when a scenario naturally depends on normal engine frame progression, but it may not be used to bypass required player decisions or semantic inputs.
 - Run scenario 17 under the hybrid contract above.
 - Use the accepted Trace V1 reference overlay only as instrumentation.
 - Never copy recovery output into reference fixtures.
@@ -120,8 +196,8 @@ Resume the same P1-T03 task using **GPT-5.6 Terra / high**.
 - Do not repair gameplay or begin Phase 2.
 - Report all scenarios 1–18 individually. Scenario 3 N/A is resolved and is not a skip; overall PASS remains forbidden if any other required scenario is skipped or unresolved.
 
-If a new reference ambiguity, deterministic non-presentation trace divergence, save-format decision, competing semantic interpretation, cross-system invariant failure, or other global ESC condition appears, STOP and request **GPT-5.6 Sol / max**. Do not self-escalate.
+If a new reference ambiguity, deterministic non-presentation trace divergence, required player-choice ambiguity, save-format decision, competing semantic interpretation, cross-system invariant failure, or other global ESC condition appears, STOP and request **GPT-5.6 Sol / max**. Do not self-escalate.
 
 ## Gate status
 
-P1-T03 is authorized to resume under the Scenario-3 decision above. Phase 2 remains blocked until P1-T03 completes and receives controller review.
+P1-T03 is authorized to resume under the Scenario-5 deterministic frame contract. Phase 2 remains blocked until P1-T03 completes and receives controller review.

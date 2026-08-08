@@ -7,127 +7,94 @@
 - Current phase: Phase 1
 - Harness gate: **P1-T02 ACCEPTED**
 - Active task: **P1-T03 only**
-- Latest executor stop: **Scenario 13 — fog-of-war move preview/cancel/wait**
-- Trigger: **ESC-03 — deterministic state/input-path divergence before terminal recovery capture**
-- Controller disposition: **ESC-03 CONFIRMED**
-- Authorized model/effort for the next bounded work: **GPT-5.6 Sol / max**
-- Escalation is explicitly authorized **for Scenario 13 diagnosis only**
-- No further self-escalation is authorized
-- Scenarios 14–18 remain **BLOCKED** until Scenario 13 returns to controller review
+- Latest executor stop: **Scenario 13 — fog-of-war move preview/cancel/wait** after controller-authorized ESC-03 Sol/max diagnosis
+- Controller disposition: **ESC-03 RESOLVED — HARNESS RESOLVED**
+- Resume model: **GPT-5.6 Terra / high**
+- Escalation target remains: **GPT-5.6 Sol / max**
+- Escalation pre-authorized for any new issue: **NO**
+- Scenarios 14–18 are **AUTHORIZED** under the existing P1-T03 contracts
+- Controller gate after P1-T03: **YES — STOP FOR CONTROLLER REVIEW**
 - Phase 2 remains **UNAUTHORIZED**
-- Gameplay/state-machine/input repair remains **UNAUTHORIZED** during this diagnosis
+- Gameplay/state-machine/input repair remains **UNAUTHORIZED** during P1-T03
 - Golden/reference behavior changes remain **UNAUTHORIZED**
 
 ## P1-T03 status accepted provisionally so far
 
 Subject to final P1-T03 commit/diff/fixture review:
 
-1. **S1 PASS** — new game to first playable map; deterministic seed supplied through `cf.SETTINGS['random_seed']`; reference/recovery Trace V1 match.
+1. **S1 PASS** — new game to first playable map; authoritative deterministic seed; reference/recovery Trace V1 match.
 2. **S2 PASS** — existing in-memory save/load; reference/recovery match.
 3. **S3 N/A — REFERENCE-UNSUPPORTED** — no PC-reference mid-event save/load golden; no synthetic fixture.
-4. **S4 PASS** — real PC restart-slot flow via `save.save_io(kind='start')` -> `save.load_game`; reference/recovery match.
-5. **S5 PASS** — real `MapCombat`, deterministic test-owned virtual-frame driver, EXP and terminal cleanup complete naturally; reference/recovery match.
-6. **S6 PASS** — `SimpleCombat`; reference/recovery Trace V1 match.
-7. **S7 PASS** — `AnimationCombat` using real `default.ltproj` animation assets; reference/recovery match.
-8. **S8 PASS** — `BaseCombat` using real Vulnerary flow; reference/recovery match.
-9. **S9 PASS** — approved DB-owned Luna / authoritative seed-0 fixture integrated; real proc + ordered lifecycle hooks; reference/recovery match.
+4. **S4 PASS** — real PC restart-slot flow; reference/recovery match.
+5. **S5 PASS** — real MapCombat through EXP and terminal cleanup under the approved deterministic virtual-frame driver; reference/recovery match.
+6. **S6 PASS** — SimpleCombat; reference/recovery match.
+7. **S7 PASS** — AnimationCombat using real default.ltproj animation assets; reference/recovery match.
+8. **S8 PASS** — BaseCombat using real Vulnerary flow; reference/recovery match.
+9. **S9 PASS** — approved DB-owned Luna / authoritative seed-0 fixture; real proc + ordered lifecycle hooks; reference/recovery match.
 10. **S10 PASS** — item durability/uses and broken/unusable handling; reference/recovery match.
 11. **S11 PASS** — promotion/class-change edge cases; reference/recovery match.
 12. **S12 PASS** — aura propagation/teardown/load aliasing; reference/recovery match.
-13. **S13 BLOCKED / ESC-03** — reference completes the approved fog move preview/cancel/wait input path, but recovery cannot select Wait through the same InputManager/virtual-frame schedule after `fog.move.cancel.complete`; terminal recovery trace is therefore unavailable.
+13. **S13 PASS** — fog move preview/cancel/wait through real InputManager after the approved test-owned deterministic host-time correction; terminal Trace V1 reference/recovery match.
 
 Do not treat provisional PASS entries as final acceptance of uncommitted WIP.
 
-## Scenario 13 — authorized Sol/max diagnosis
+## Scenario 13 — resolved harness clock contract
 
-### Why ESC-03 applies
+The controller accepts the Sol/max diagnosis classification: **HARNESS RESOLVED**.
 
-Scenario 13 requires deterministic proof of fog-of-war movement semantics, including preview/cancel behavior and the authoritative Wait commit behavior.
+### First divergence and cause
 
-The same scenario and deterministic runner reach `fog.move.cancel.complete` successfully on both sides. The PC reference then reaches/selects the Wait menu action through the real InputManager/frame path and completes the scenario. Recovery does not: after menu navigation reaches the intended Wait position, the same input schedule fails to select Wait, so no terminal recovery capture/comparator result exists.
+At `fog.move.cancel.complete`, reference and recovery were logically equivalent:
 
-This is not yet classified as a gameplay regression. It may be:
+- state stack: committed `free` state;
+- pending transitions: empty;
+- Eirika position, previous position, and FOW vantage: `(4, 5)`;
+- FOW visible/visited sets matched;
+- unit was unfinished and had not moved;
+- action-state flags matched;
+- movement-left state matched.
 
-- a test-owned input timing/menu-cursor assumption that is no longer equivalent;
-- a state-stack/menu-state ordering divergence;
-- InputManager edge/held/repeat semantics interacting differently with the current state path;
-- a presentation-only menu difference with an equivalent logical Wait action still reachable under the same logical input contract; or
-- an actual recovery regression that changes the authoritative move/wait transaction.
+The action menu then opened with the same options and initial index: `Item`, `Trade`, `Wait`, index `0`.
 
-The diagnosis must locate the **first divergence after `fog.move.cancel.complete`** before any repair or fixture relaxation is authorized.
+Raw KEYDOWN/KEYUP events and `InputManager.process_input()` logical outputs also matched. The first divergence occurred on the third DOWN keydown while navigating the real menu: the PC reference advanced `FluidScroll.move_counter`/menu index, while recovery did not.
 
-### Scope
+Source comparison establishes the relevant implementation difference:
 
-Use **GPT-5.6 Sol / max** exactly.
+- PC reference `FluidScroll.reset_on_change_state()` and `FluidScroll.get_directions()` use `engine.get_time()`;
+- recovery uses `engine.get_true_time()` so directional repeat/debounce follows host/UI time rather than virtual game time.
 
-Work on **Scenario 13 only**. This is diagnosis, not repair.
+The prior headless test driver advanced only `engine.constants['current_time']`/`last_time`/`delta_t`; the host-side tick source observed by recovery therefore remained frozen. This made the recovery menu debounce fail even though the raw and logical InputManager event sequence was the same.
 
-Allowed:
+This is a **test-driver clock mismatch**, not evidence that InputManager, FOW, movement, or Wait gameplay semantics diverge.
 
-- inspect and compare PC-reference vs recovery state stack, current state object/type, menu model/options/current index, cursor/unit movement state, movement-left/action state, FOW vantage/position, pending transitions, and InputManager state after `fog.move.cancel.complete`;
-- inspect exact InputManager processing and menu navigation/selection code on both revisions;
-- add/use test-owned observer-only diagnostics around the already-authorized input/frame runner;
-- record each logical/raw test input step, resulting processed input event, state stack before/after, menu selection/index before/after, pending transitions, and unit/FOW logical state;
-- compare source/history to identify the smallest responsible file/function/commit cluster;
-- determine whether the same **logical** user action sequence can be expressed with a bounded correction to test timing while still going through real InputManager and real menu selection;
-- rerun reference and recovery after a diagnosis-only bounded test-driver correction **only if the correction does not change the semantic input sequence and merely restores the normal InputManager edge/frame contract**; if that point is ambiguous, STOP for controller review instead of applying it.
+### Approved RawInputFrameDriver correction
 
-Forbidden:
+The P1-T03 test-owned raw-input frame driver may deterministically advance both timing domains required by the code under test:
 
-- directly invoking the Wait command/handler to bypass InputManager or the action menu;
-- mutating menu index/current option directly;
-- injecting a processed `SELECT`/`Wait` result downstream of InputManager;
-- bypassing movement/menu states;
-- changing FOW vantage/unit position to make the test pass;
-- changing production InputManager, menu, movement, FOW, state-machine, or action behavior;
-- accepting a different gameplay outcome because the menu is presentation;
-- adding a Trace pending-state exception;
-- weakening the required preview/cancel/wait semantics;
-- generating or altering golden expected output after a recovery mismatch;
-- continuing S14–S18;
-- beginning Phase 2.
+1. continue to advance `engine.constants['current_time']`, `last_time`, and `delta_t` once per outer virtual frame using the already-approved virtual-frame contract;
+2. provide a deterministic test-owned host-time value for the source observed by `engine.get_true_time()`, advancing once per outer frame on the same deterministic schedule;
+3. construct real pygame KEYDOWN/KEYUP events;
+4. pass them through the real `InputManager.process_input()`;
+5. pass only the resulting real InputManager output to the state machine;
+6. process repeat updates without advancing either clock within that outer frame;
+7. restore all test-mutated engine timing and InputManager/raw-input state in `finally`/teardown.
 
-### Required diagnosis evidence
+The host-time shim/schedule is **test-owned provenance only**. It must not be emitted into Trace V1 logical equality or golden state.
 
-Report, from the exact S13 fixture and schedule:
+Do not modify production `engine.get_true_time()`, `FluidScroll`, InputManager, menu code, FOW code, movement code, or Wait behavior for this harness issue.
 
-1. the complete state stack and pending transitions at `fog.move.cancel.complete` on reference and recovery;
-2. unit logical position, movement start/vantage, FOW-visible/visited state, finished/action state, and movement-left state at that boundary;
-3. action-menu option list/order and selected index when the menu first becomes input-ready;
-4. every subsequent scheduled raw/logical input used to navigate to/select Wait;
-5. for each input step, the InputManager output event and held/pressed/repeat state relevant to that event;
-6. state stack/menu index before and after each step on both revisions;
-7. the **first exact step** where reference and recovery differ;
-8. source-level cause of that difference and smallest responsible file/function/commit cluster;
-9. classification of the divergence as one of:
-   - **HARNESS INPUT-SCHEDULE MISMATCH** — same logical Wait action is reachable through real InputManager with a bounded frame/edge correction and logical gameplay before/after remains reference-equivalent;
-   - **PRESENTATION/MENU-PATH DIFFERENCE WITH EQUIVALENT LOGICAL INPUT CONTRACT** — menu presentation/path differs but a controller-reviewable equivalent real user-input sequence reaches the same authoritative Wait semantics;
-   - **TRACE/GAMEPLAY DIVERGENCE** — recovery state/input ordering or resulting movement/FOW/wait semantics differ from reference;
-   - **REFERENCE/CONTRACT AMBIGUITY** — no single valid user-input contract can be established without inventing semantics;
-10. if and only if a bounded observer/test-driver correction is clearly non-semantic and within the existing virtual-frame/InputManager contract, show reference/recovery terminal Trace V1 result after that correction; otherwise STOP without applying it.
+### S13 result accepted provisionally
 
-### Scenario 13 invariant reminder
+Under the bounded correction:
 
-The authoritative FOW invariant remains:
+- both revisions navigate the real menu through `Item -> Trade -> Wait`;
+- final SELECT exits the real menu back to `free`;
+- the unit becomes finished through the normal Wait path;
+- FOW position/vantage/visible/visited semantics remain matched;
+- no direct Wait invocation, menu-index mutation, downstream SELECT injection, production change, or pending-transition exception is used;
+- Trace V1 comparator passes for `fog.move.preview`, `fog.move.cancel.complete`, and `fog.wait.complete`.
 
-- during move preview, FOW vantage remains the movement start tile;
-- cancel restores the pre-move logical state;
-- FOW must not commit to the destination merely because preview position changes;
-- Wait is the commit point for the completed movement/action semantics;
-- `recalc_unit` or equivalent must not make preview movement authoritative before Wait.
-
-Do not relax this invariant to solve an input/menu problem.
-
-### Decision outcomes
-
-Return exactly one classification:
-
-- **HARNESS RESOLVED:** bounded real-InputManager schedule correction established; reference/recovery terminal Trace V1 match;
-- **EQUIVALENT INPUT CONTRACT FOUND:** real user-input path differs but semantics appear equivalent; STOP for controller approval before changing the S13 fixture contract;
-- **TRACE DIVERGENCE:** recovery differs logically/state-order-wise; provide first divergence and smallest responsible cluster, then STOP;
-- **REFERENCE CONTRACT AMBIGUITY:** deterministic user-input semantics cannot be fixed without inventing a contract; STOP.
-
-Regardless of outcome, do not proceed to S14. **STOP FOR CONTROLLER REVIEW.**
+Scenario 13 is therefore **provisionally accepted as PASS**, subject to final P1-T03 diff/harness review.
 
 ## Previously resolved P1-T03 contracts
 
@@ -145,7 +112,7 @@ Scenario 3 is `N/A — REFERENCE-UNSUPPORTED`; no synthetic mid-event save/load 
 
 ### Deterministic virtual-frame helper
 
-The approved test-owned frame driver emulates the PC outer-frame loop by advancing `engine.constants` by `FRAMERATE` once per outer frame and processing repeat chains at fixed virtual time. It restores timing globals in `finally` and may not bypass semantic/player input.
+The approved test-owned frame driver advances deterministic engine time once per outer frame and processes repeat chains at fixed time. It restores timing globals in `finally` and may not bypass semantic/player input.
 
 ### Scenario 9
 
@@ -153,8 +120,43 @@ Use the approved `default.ltproj` chapter-0 Eirika -> unit 102 Rapier + DB-owned
 
 ### Scenario 17
 
-Scenario 17 remains hybrid: reference disabled baseline; recovery disabled == reference; recovery debugger enabled-idle == recovery disabled; recovery profiler enabled-idle == recovery disabled. No simulated PC-reference enabled-idle observer golden.
+Scenario 17 remains hybrid:
+
+- 17A: PC reference absent/disabled observer baseline;
+- 17B: recovery disabled == reference baseline;
+- 17C: recovery debugger enabled-idle == recovery disabled after leaving temporary observer UI state;
+- 17D: recovery profiler enabled-idle == recovery disabled in logical state/order/RNG.
+
+No simulated PC-reference enabled-idle debugger/profiler golden.
+
+## P1-T03 resume contract
+
+Resume P1-T03 using **GPT-5.6 Terra / high**.
+
+1. Retain S13's bounded `RawInputFrameDriver` host-time correction only if it remains test-owned, deterministic, fully restored in teardown, and does not bypass real InputManager/menu behavior.
+2. Continue S14 (`Tilemap change`) and S15 (`Phase transition`) as strict PC-reference comparisons.
+3. Run S16 (`Fast-forward OFF vs ON`) under INV-06: timing/presentation may differ; logical actions/order/RNG/final state must not.
+4. Run S17 under the approved hybrid observer contract above.
+5. Run S18 (`Game-over/restart`) as the final required scenario.
+6. Never copy recovery output into reference fixtures.
+7. Never silently regenerate a golden after a recovery mismatch.
+8. Do not repair gameplay or begin Phase 2.
+9. Report scenarios 1–18 individually. S3 N/A is resolved and is not a skip; overall PASS remains forbidden if any other required scenario is skipped or unresolved.
+
+If any new reference ambiguity, deterministic non-presentation trace divergence, required player-choice ambiguity, save-format decision, competing semantic interpretation, cross-system invariant failure, repeated bounded failure, or other global ESC condition appears, STOP and request **GPT-5.6 Sol / max**. Do not self-escalate.
+
+## Final P1-T03 gate requirements
+
+When S14–S18 are complete:
+
+- run the required recovery trace/lifecycle tests and P1-T03 golden harness tests;
+- run compileall;
+- run `git diff --check` before commit and `git show --check` after commit;
+- ensure reference/capture worktrees remain clean except explicitly ignored reference-generated component-system outputs;
+- commit only bounded P1-T03 harness/fixture/evidence files; no production gameplay semantic changes;
+- report each scenario 1–18 with fixture/checkpoint/reference comparison status and fixture/hash evidence;
+- STOP FOR CONTROLLER REVIEW.
 
 ## Gate status
 
-Only the bounded **P1-T03 Scenario 13 Sol/max diagnosis** above is authorized now. Scenarios 14–18 and Phase 2 remain blocked until controller review of the S13 diagnosis.
+P1-T03 is authorized to resume from Scenario 14 using **GPT-5.6 Terra / high**. Phase 2 remains blocked until P1-T03 completes and receives controller review.

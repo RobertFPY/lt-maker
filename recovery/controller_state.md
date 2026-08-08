@@ -1,174 +1,102 @@
 # Recovery Controller State
 
-> This file is the live controller-gate state for the recovery program.
-> `plan.md` remains authoritative for architecture, task definitions, model assignments, escalation conditions, invariants, and acceptance criteria.
-> This file overrides only the stale/static `CURRENT EXECUTION STATE` section in `plan.md` when they disagree.
+> Live controller-gate state. `plan.md` remains authoritative for architecture, invariants, task definitions, model policy, and global escalation rules. This file resolves the current P1-T03 ambiguity and overrides stale execution-state text when needed.
 
 ## Current authorization
 
 - Current phase: Phase 1
-- Last reviewed task: `P1-T02-R2`
-- Last reviewed commit: `adc9ec753e6bf6623a31e013c762c10b01e53482`
-- Review result: **ACCEPTED**
-- `P1-T02` harness gate: **ACCEPTED after R2 escalation**
-- Escalation used: **YES — ESC-08, GPT-5.6 Sol / high, controller-authorized**
-- Next authorized task: **`P1-T03` only**
-- P1-T03 primary: `GPT-5.6 Terra / high`
-- P1-T03 escalation target: `GPT-5.6 Sol / max`
-- Escalation pre-authorized: **NO**
+- Harness gate: **P1-T02 ACCEPTED**
+- Active task: **P1-T03 only**
+- Last executor stop: P1-T03 under **ESC-01 / ESC-04** on scenario 17
+- Controller disposition: **ESC-01 / ESC-04 RESOLVED** by the decision below
+- Resume model: **GPT-5.6 Terra / high**
+- Escalation target remains: **GPT-5.6 Sol / max**
+- Escalation pre-authorized for any new issue: **NO**
 - Controller gate after P1-T03: **YES — STOP FOR CONTROLLER REVIEW**
-- Phase 2 remains **UNAUTHORIZED**.
+- Phase 2 remains **UNAUTHORIZED**
 
-## P1-T02-R2 controller review
+## Accepted blocker evidence
 
-Accepted evidence:
+At behavioral reference `9314f54b49f4552b5a3d023b4da0012ce7dfbc89`, the later runtime debugger/profiler implementation does not exist. In particular, the reference has no `app/engine/runtime_debugger.py`, no `app/engine/performance.py`, and no native Trace V1 implementation. Therefore the reference cannot provide an authoritative "debugger/profiler enabled-idle" behavior.
 
-- Commit `adc9ec753e6bf6623a31e013c762c10b01e53482` changes only `app/engine/trace.py`, `app/tests/test_recovery_trace.py`, and a tiny read-only `get_growth_random_state()` accessor in `app/utilities/static_random.py`.
-- `app/engine/state_machine.py` is unchanged by R2; the previously accepted optional recorder seam remains the only production lifecycle intrusion.
-- No baseline failure, golden fixture, P1-T03 scenario, or broad combat/event/gameplay hook was introduced.
-- Targeted recovery-trace + lifecycle validation was reported as 31/31 PASS; `compileall` and `git show --check` were reported clean.
+The executor correctly stopped before generating fixtures or inventing reference behavior. The previously demonstrated reference-side Trace V1 compatibility overlay remains acceptable only as observer-only instrumentation; it must not simulate debugger/profiler semantics.
 
-### R2-1 — ACCEPTED
+## Controller decision for scenario 17
 
-- Real `UnitObject`, `UnitSkill`, and `SkillObject` are exercised in acceptance tests.
-- Unit capture includes current HP/mana/fatigue/guard, class/level/EXP/stats/growth/growth-points/WEXP, full eight-field `get_action_state()`, traveler, lead/built-guard, strike partner, equipment, inventory, and skill source/source-type state.
-- `SourceType`/Enum values normalize to stable semantic values.
-- Skill-source allocation UIDs are mapped to stable object-graph references where the referenced skill object is known.
+**Do not create a no-op debugger/profiler implementation on the PC reference.** That would manufacture a post-reference feature and incorrectly bless test-authored behavior as the golden oracle.
 
-### R2-2 — ACCEPTED
+**Do not remove scenario 17 from P1-T03.** INV-07 still requires proof that debugger/profiler observation is semantically inert.
 
-- Real `ItemObject`/`SkillObject` component/data payloads are normalized using primitives/containers/enums without `repr`.
-- Parent/subitem/command-item and parent/subskill relationships use stable local references and preserve aliasing.
-- Unsupported semantic component payloads fail with `TraceNormalizationError`.
+Scenario 17 is redefined as a **hybrid reference-anchored + recovery metamorphic invariant**.
 
-### R2-3 — ACCEPTED
+### 17A — Reference-disabled baseline
 
-- Static-random seed, combat, growth, and other states are captured through read-only accessors.
-- Acceptance test proves capture returns exact pre-capture values and leaves all RNG generator states unchanged.
+Use the PC reference with no debugger/profiler simulation. Run the deterministic scenario with the accepted instrumentation-only Trace V1 overlay and emit the test-runner checkpoint `debugger.observer.check` at the final committed synchronization point.
 
-### R2-4 — ACCEPTED
+The checkpoint name is a test-harness marker only; it does **not** imply that the reference contains a debugger or profiler.
 
-- Phase/team capture uses `PhaseController.get_current()` logical team identity instead of the raw numeric controller index.
-- Regression test explicitly makes raw `current` differ from logical team NID.
+Generate the reference baseline fixture from this run.
 
-### R2-5 — ACCEPTED
+### 17B — Recovery disabled vs PC reference
 
-- Tile-grid hash is derived from per-coordinate logical terrain identity and stable layer NID, not surfaces or render objects.
-- `TileMapObject.get_layer()` returns the stable layer NID used by the hash.
-- Occupancy is derived from authoritative `unit_grid`.
-- Aura coverage maps runtime skill UID to stable object-graph references rather than emitting UID.
-- Fog visibility/visited state and logical regions are non-empty, deterministic trace fields in focused tests.
+Run the same seed/input/scenario on the recovery branch with debugger/profiler disabled. It must compare equal to the 17A reference baseline under normal Trace V1 comparison rules.
 
-### R2-6 — ACCEPTED
+This proves the later observer features do not alter default/disabled PC semantics.
 
-- Comparator validates required header identity, ignores only approved provenance (`runner_revision`, `platform_profile`), preserves ordered record comparison, and reports a stable first field path with expected/actual values and nearby checkpoint context.
-- Tests cover provenance-only equality plus header, checkpoint, context, logical-state, and semantic-delta divergence.
+### 17C — Recovery debugger enabled-idle metamorphic check
 
-### R2-7 — ACCEPTED
+On the recovery branch, run the same seed/input twice:
 
-- Action and combat-playback use separately injected semantic registries for raw objects.
-- Mapped raw values normalize through adapters; unmapped values fail loudly.
-- Pre-normalized records have an explicit `normalized_actions` / `normalized_combat_playback` path rather than accidental bypass.
+1. debugger disabled;
+2. debugger enabled/entered through an existing real debugger path, perform **no mutating debug command**, then return to the same committed gameplay synchronization point.
 
-### R2-8 — ACCEPTED
+Compare the complete logical traces/final `debugger.observer.check` state. They must be logically equivalent after any temporary debugger UI/presentation state has been exited. Do not whitelist a persistent gameplay-state difference merely because the debugger UI uses a state object.
 
-- `RoamInfo` has an explicit logical normalization adapter matching the current `GameState.save()` payload shape.
-- Representative nested save payload covers mappings/lists/sets/tuples and `RoamInfo` and is hashed before filesystem I/O.
-- Unknown unsupported objects still fail loudly.
+Use actual current debugger/controller/service code paths; do not replace them with a fake no-op debugger. Read-only inspection/snapshot operations are allowed. Any mutating RuntimeDebugger command is forbidden in the enabled-idle run.
 
-## P1-T03 execution contract
+### 17D — Recovery profiler enabled-idle metamorphic check
 
-Codex must execute only P1-T03 from `plan.md`: establish reviewed PC-reference golden scenarios using the accepted Trace V1 harness.
+On the recovery branch, run the same deterministic workload twice:
 
-### Reference authority
+1. profiler disabled;
+2. profiler enabled using the existing profiler implementation/configuration path, with its real section/count/frame observer code executing where applicable.
 
-- Behavioral reference commit: `9314f54b49f4552b5a3d023b4da0012ce7dfbc89`.
-- The reference is a behavioral oracle, not a textual source to copy wholesale.
-- Do not change expected/reference behavior to match the current recovery branch.
-- Do not repair reference behavior during golden capture.
-- A later correctness fix may differ from the reference only when already controller-approved or when Codex stops and reports the conflict for a controller decision.
+The two logical traces/final committed states and RNG states must be equal. Profiler timing samples, wall time, log output, thread IDs, GC counters, and profiler buffers are diagnostic provenance and are not gameplay equality fields.
 
-### Reference capture method
+A test-scoped platform/environment setup may activate the existing profiler path when the host is not Android, but it must execute the real `RuntimeProfiler` implementation rather than stub profiler methods. If activation requires changing gameplay/lifecycle code or inventing a new profiler abstraction, STOP under ESC-09.
 
-Use an isolated temporary worktree/checkout or equivalent non-destructive reference environment. Do not reset, force-checkout, or rewrite the recovery branch.
+### Scenario 17 fixture/manifest rule
 
-The same accepted Trace V1 serializer/comparator contract must be used for reference and current capture. If the harness requires a compatibility overlay on the reference checkout, it must be instrumentation-only/test-owned and must not alter gameplay ordering, RNG consumption, state transitions, save behavior, combat behavior, event behavior, or project content. Document exactly what overlay is used and why it is observer-equivalent.
+Scenario 17 should be recorded in the manifest as a hybrid comparison, for example:
 
-If the accepted harness cannot be applied to the reference without making a semantic/lifecycle choice, stop under the applicable ESC condition instead of inventing a golden.
+- reference fixture: `reference_disabled_baseline` from `9314f54b...`;
+- recovery check 1: disabled == reference baseline;
+- recovery check 2: debugger-enabled-idle == recovery-disabled;
+- recovery check 3: profiler-enabled-idle == recovery-disabled.
 
-### Minimum scenario matrix
+There is **no PC-reference enabled-idle golden fixture** and no simulated reference debugger/profiler.
 
-P1-T03 must cover the plan's minimum scenarios and may split them into deterministic sub-scenarios where necessary:
+Scenario 17 is PASS only if all required comparisons above pass. If an actual current observer path changes gameplay state/RNG/order at the committed checkpoint, report the divergence as evidence; do not weaken the trace or modify the golden.
 
-1. New game to first playable map / player-control ready.
-2. Existing save load.
-3. Save/load during event where supported by the reference lineage.
-4. Restart current chapter.
-5. Standard map combat.
-6. Simple combat.
-7. Animation combat.
-8. Arena/base combat where applicable.
-9. Skill proc plus pre/post-combat hook ordering.
-10. Item durability/uses and broken/unusable handling.
-11. Promotion/class-change edge cases including class/level/EXP/stat state.
-12. Aura propagation/teardown/load aliasing.
-13. Fog-of-war move preview/cancel/wait semantics.
-14. Tilemap change and board commit.
-15. Phase transition.
-16. Fast-forward OFF vs ON logical equivalence.
-17. Debugger/profiler disabled vs enabled-idle observer equivalence.
-18. Game-over/restart path.
+## P1-T03 resume contract
 
-Each scenario must declare deterministic input fixture identity, seed, required checkpoints, and any scenario-specific required variables/approved pending-transition exception. Do not use host frame count, wall time, audio playback state, render surfaces, profiler samples, or volatile UI state as equality criteria.
+Resume the same P1-T03 task; this is not a new phase or permission to fix gameplay.
 
-### Golden fixture rules
+- Scenarios 1–16 and 18 remain ordinary PC-reference golden scenarios exactly as defined in `plan.md` and the prior P1-T03 contract.
+- Scenario 17 follows the hybrid contract above.
+- The isolated reference worktree may be reused if still clean and still points to `9314f54b49f4552b5a3d023b4da0012ce7dfbc89`.
+- The accepted Trace V1 overlay on the reference remains instrumentation-only.
+- Do not generate current-branch output and copy it into reference fixtures.
+- Do not silently regenerate fixtures after mismatch.
+- Do not begin Phase 2 repairs.
+- Report every scenario 1–18 individually. Overall PASS is forbidden if any scenario is skipped or unresolved.
 
-- Store versioned fixtures under the approved Trace V1 fixture location (or a clearly documented equivalent if existing test layout requires it).
-- Include a manifest with schema version, behavioral reference revision, scenario/input identity, and fixture SHA-256.
-- Golden files must be generated from the PC reference environment, never copied from the current recovery branch merely because it passes.
-- Do not silently regenerate a golden after a mismatch.
-- Do not add wildcard ignores, platform-wide ignores, or broad normalization exclusions.
-- Any field-specific exception requires a named controller decision and supporting evidence.
+## Model disposition
 
-### Current-branch validation
+The original ESC-01 / ESC-04 required controller semantic judgment. That judgment is now explicitly supplied here, so the bounded execution can resume at the planned primary **GPT-5.6 Terra / high** rather than spending Sol/max on deterministic fixture generation.
 
-After reference fixtures exist, run the same deterministic scenarios on the recovery branch and compare them against the reference fixtures. A current-branch divergence is evidence, not permission to modify the golden.
-
-P1-T03 may add scenario drivers, fixture-generation/test utilities, semantic action/playback adapters required by those scenarios, and minimal test-owned observer wiring at already-approved seams. It may not begin Phase 2 recovery fixes or broadly instrument gameplay systems.
-
-### Escalation conditions
-
-Stop and request `GPT-5.6 Sol / max` if any of the following occurs:
-
-- **ESC-01:** reference behavior or fixture meaning cannot be determined unambiguously;
-- **ESC-02:** scenario failure crosses a second correctness-critical subsystem and cannot be isolated within the harness/scenario layer;
-- **ESC-03:** deterministic logical traces diverge after locally correct scenario/harness setup and the cause is not presentation-only;
-- **ESC-04:** multiple plausible golden semantics exist;
-- **ESC-05:** scenario capture exposes a deeper invariant violation rather than a harness defect;
-- **ESC-06:** save/load scenario reveals a compatibility/format decision;
-- **ESC-08:** one bounded P1-T03 repair plus one bounded correction still cannot satisfy the scenario acceptance;
-- **ESC-09:** golden capture requires a new unapproved cross-cutting lifecycle abstraction.
-
-Do not self-escalate. Stop editing, preserve safe evidence, report the exact scenario/checkpoint/trace divergence, and wait for controller authorization.
-
-### Validation and report requirements
-
-Run the targeted Trace V1 harness tests plus all P1-T03 scenario tests. Run relevant lifecycle tests touched by scenario wiring, `compileall`, and `git show --check`.
-
-The P1-T03 task report must include:
-
-- scenario-by-scenario PASS/FAIL status for all 18 minimum scenarios;
-- reference capture method and any instrumentation-only overlay;
-- fixture/manifest paths and hashes;
-- current-branch comparison result per scenario;
-- first divergent checkpoint/path for every failure;
-- tests/commands run and results;
-- files changed;
-- escalation triggers encountered;
-- commit SHA.
-
-Do not report overall PASS if any required scenario is skipped, unsupported without documented controller disposition, or has an unresolved trace divergence.
+If a **new** reference ambiguity, competing semantic interpretation, deterministic non-presentation trace conflict, save-format decision, cross-system invariant failure, or other listed ESC condition appears, STOP again and request the specified P1-T03 escalation target **GPT-5.6 Sol / max**. Do not self-escalate.
 
 ## Gate status
 
-`P1-T02` is **ACCEPTED**. `P1-T03` is the only authorized next task. Phase 2 remains blocked until P1-T03 is reviewed and accepted.
+P1-T03 is authorized to resume under this decision. Phase 2 remains blocked until P1-T03 is completed and reviewed by the controller.

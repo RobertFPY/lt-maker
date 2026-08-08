@@ -79,7 +79,18 @@ class SimpleCombat():
         self.full_playback: List[PlaybackBrush] = []
         self.playback: List[PlaybackBrush] = []
         self.actions = []
-        self.state = 'init'
+        self.state = 'combat'
+
+        with RUNTIME_PROFILER.section('combat.start_hooks'):
+            self.start_combat()
+        with RUNTIME_PROFILER.section('combat.start_event'):
+            self.start_event()
+        while self.state_machine.get_state():
+            with RUNTIME_PROFILER.section('combat.solver_do'):
+                self.actions, self.playback = self.state_machine.do()
+            self.full_playback += self.playback
+            self._apply_actions()
+            self.state_machine.setup_next_state()
 
     def get_from_playback(self, s):
         return [brush for brush in self.playback if brush.nid == s]
@@ -97,34 +108,6 @@ class SimpleCombat():
         self.state_machine.total_rounds = 0  # So that we are forced out next time
 
     def update(self) -> bool:
-        if self.state == 'init':
-            with RUNTIME_PROFILER.section('combat.start_hooks'):
-                self.start_combat()
-            self.state = 'start_event'
-            return False
-
-        if self.state == 'start_event':
-            with RUNTIME_PROFILER.section('combat.start_event'):
-                self.start_event()
-            self.state = 'combat'
-            return False
-
-        if self.state == 'combat':
-            if self.state_machine.get_state():
-                with RUNTIME_PROFILER.section('combat.solver_do'):
-                    self.actions, self.playback = self.state_machine.do()
-                self.full_playback += self.playback
-                self._apply_actions()
-                self.state_machine.setup_next_state()
-            else:
-                self.state = 'cleanup0'
-            return False
-
-        if self.state == 'cleanup0':
-            self.clean_up0()
-            self.state = 'post_combat'
-            return False
-
         if self.state == 'exp_pause':
             self.clean_up2()
             return True
@@ -134,7 +117,9 @@ class SimpleCombat():
             self.state = 'exp_pause'
             return False
 
-        raise ValueError('Unknown SimpleCombat state: %s' % self.state)
+        self.clean_up0()
+        self.state = 'post_combat'
+        return False
 
     def _apply_actions(self):
         """

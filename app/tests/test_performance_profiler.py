@@ -159,24 +159,25 @@ class RuntimeProfilerTests(unittest.TestCase):
         ):
             self.assertIn("RUNTIME_PROFILER.section('%s')" % scope, source)
 
-    def test_map_combat_defers_solver_to_its_own_update_state(self):
+    def test_map_combat_profiles_solver_inside_begin_phase(self):
         source = (Path(__file__).parents[1] / 'engine' / 'combat' /
                   'map_combat.py').read_text(encoding='utf-8')
 
-        self.assertIn("self.set_state('solve_phase')", source)
-        solve_state = source.index("elif self.state == 'solve_phase':")
+        begin_phase = source.index("elif self.state == 'begin_phase':")
         solver = source.index("RUNTIME_PROFILER.section('combat.solver_do')")
-        self.assertLess(solve_state, solver)
+        proc_visuals = source.index("elif self.state == 'proc_animations':")
+        self.assertNotIn("elif self.state == 'solve_phase':", source)
+        self.assertLess(begin_phase, solver)
+        self.assertLess(solver, proc_visuals)
 
-    def test_map_combat_defers_visual_setup_until_after_solver(self):
+    def test_map_combat_keeps_visual_setup_with_solver_update(self):
         source = (Path(__file__).parents[1] / 'engine' / 'combat' /
                   'map_combat.py').read_text(encoding='utf-8')
 
         solver = source.index("RUNTIME_PROFILER.section('combat.solver_do')")
-        visual_setup = source.index("elif self.state == 'setup_phase_visuals':")
         health_bars = source.index("RUNTIME_PROFILER.section('combat.health_bar_build')")
-        self.assertLess(solver, visual_setup)
-        self.assertLess(visual_setup, health_bars)
+        self.assertNotIn("elif self.state == 'setup_phase_visuals':", source)
+        self.assertLess(solver, health_bars)
 
     def test_animation_combat_defers_visual_setup_until_after_solver(self):
         source = (Path(__file__).parents[1] / 'engine' / 'combat' /
@@ -456,87 +457,52 @@ class RuntimeProfilerTests(unittest.TestCase):
         combat.clean_up2.assert_called_once_with()
         combat.end_skip.assert_called_once_with()
 
-    def test_map_combat_defers_actions_until_after_playback_effects(self):
+    def test_map_combat_applies_actions_with_playback_effects(self):
         source = (Path(__file__).parents[1] / 'engine' / 'combat' /
                   'map_combat.py').read_text(encoding='utf-8')
 
         anim_state = source.index("elif self.state == 'anim':")
-        action_state = source.index("elif self.state == 'apply_actions':")
+        hp_wait = source.index("elif self.state == 'hp_bar_wait':")
         playback = source.index('self._handle_playback()', anim_state)
-        apply_actions = source.index('self._apply_actions()', action_state)
-        self.assertLess(anim_state, action_state)
-        self.assertLess(playback, action_state)
-        self.assertLess(action_state, apply_actions)
+        apply_actions = source.index('self._apply_actions()', playback)
+        self.assertNotIn("elif self.state == 'apply_actions':", source)
+        self.assertLess(anim_state, playback)
+        self.assertLess(playback, apply_actions)
+        self.assertLess(apply_actions, hp_wait)
 
-    def test_map_combat_defers_cleanup0_until_after_solver_exhaustion(self):
+    def test_map_combat_groups_cleanup0_with_terminal_detection(self):
         source = (Path(__file__).parents[1] / 'engine' / 'combat' /
                   'map_combat.py').read_text(encoding='utf-8')
 
         begin_phase = source.index("elif self.state == 'begin_phase':")
-        cleanup_state = source.index("elif self.state == 'cleanup0':")
-        cleanup = source.index('self.clean_up0()', cleanup_state)
-        self.assertLess(begin_phase, cleanup_state)
-        self.assertLess(cleanup_state, cleanup)
+        proc_visuals = source.index("elif self.state == 'proc_animations':")
+        cleanup = source.index('self.clean_up0()', begin_phase)
+        self.assertNotIn("elif self.state == 'cleanup0':", source)
+        self.assertLess(begin_phase, cleanup)
+        self.assertLess(cleanup, proc_visuals)
 
-    def test_simple_combat_resolves_phases_from_update_not_constructor(self):
-        from app.engine.combat.simple_combat import SimpleCombat
-
-        source = (Path(__file__).parents[1] / 'engine' / 'combat' /
-                  'simple_combat.py').read_text(encoding='utf-8')
-
-        constructor = source.index('def __init__')
-        update = source.index('def update')
-        constructor_end = source.index('def start_combat', constructor)
-        constructor_body = source[constructor:constructor_end]
-        self.assertNotIn('while self.state_machine.get_state()', constructor_body)
-        self.assertIn("if self.state == 'combat':", source[update:])
-
-        state_machine = Mock()
-        state_machine.get_state.side_effect = [True, False]
-        state_machine.do.return_value = (['action'], ['playback'])
-        combat = SimpleCombat.__new__(SimpleCombat)
-        combat.state = 'combat'
-        combat.state_machine = state_machine
-        combat.full_playback = []
-        combat._apply_actions = Mock()
-        combat.clean_up0 = Mock()
-        combat.clean_up1 = Mock()
-        combat.clean_up2 = Mock()
-
-        self.assertFalse(combat.update())
-        self.assertEqual(['playback'], combat.full_playback)
-        combat._apply_actions.assert_called_once_with()
-        state_machine.setup_next_state.assert_called_once_with()
-
-        self.assertFalse(combat.update())
-        self.assertEqual('cleanup0', combat.state)
-        self.assertFalse(combat.update())
-        combat.clean_up0.assert_called_once_with()
-
-    def test_simple_combat_stages_start_hooks_before_solver(self):
+    def test_simple_combat_resolves_phases_in_constructor(self):
         source = (Path(__file__).parents[1] / 'engine' / 'combat' /
                   'simple_combat.py').read_text(encoding='utf-8')
 
         constructor = source.index('def __init__')
         update = source.index('def update')
         constructor_body = source[constructor:update]
-        self.assertNotIn('self.start_combat()', constructor_body)
-        self.assertNotIn('self.start_event()', constructor_body)
-        self.assertIn("if self.state == 'init':", source[update:])
-        self.assertIn("if self.state == 'start_event':", source[update:])
+        self.assertIn('while self.state_machine.get_state()', constructor_body)
+        self.assertNotIn("if self.state == 'combat':", source[update:])
 
-        from app.engine.combat.simple_combat import SimpleCombat
-        combat = SimpleCombat.__new__(SimpleCombat)
-        combat.state = 'init'
-        combat.start_combat = Mock()
-        combat.start_event = Mock()
+    def test_simple_combat_runs_start_hooks_before_solver(self):
+        source = (Path(__file__).parents[1] / 'engine' / 'combat' /
+                  'simple_combat.py').read_text(encoding='utf-8')
 
-        self.assertFalse(combat.update())
-        combat.start_combat.assert_called_once_with()
-        self.assertEqual('start_event', combat.state)
-        self.assertFalse(combat.update())
-        combat.start_event.assert_called_once_with()
-        self.assertEqual('combat', combat.state)
+        constructor = source.index('def __init__')
+        update = source.index('def update')
+        constructor_body = source[constructor:update]
+        hooks = constructor_body.index('self.start_combat()')
+        event = constructor_body.index('self.start_event()')
+        solver = constructor_body.index('while self.state_machine.get_state()')
+        self.assertLess(hooks, event)
+        self.assertLess(event, solver)
 
     def test_base_combat_resolves_one_phase_per_update(self):
         from app.engine.combat.base_combat import BaseCombat

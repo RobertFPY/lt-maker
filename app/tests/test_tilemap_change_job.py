@@ -94,6 +94,30 @@ class TilemapChangeJobTests(unittest.TestCase):
         self.assertEqual(job.CREATE_TEMP_BOARD, job.state)
         self.assertIs(job.pending_tilemap, tilemap)
 
+    def test_multiple_pending_build_operations_leave_live_world_unchanged(self):
+        def build_board(tilemap):
+            yield 'terrain'
+            yield 'collections'
+            return SimpleNamespace(width=tilemap.width, height=tilemap.height)
+
+        job, game, old_tilemap = self._job(
+            board_builder=build_board, commit=lambda *_args: None)
+        old_board = object()
+        old_unit_position = (1, 1)
+        old_region_position = (2, 2)
+        game.board = old_board
+        game.units = [SimpleNamespace(position=old_unit_position)]
+        game.level.regions = [SimpleNamespace(position=old_region_position)]
+
+        for _ in range(5):
+            job.run_one_operation()
+            self.assertIs(old_tilemap, game.level.tilemap)
+            self.assertIs(old_board, game.board)
+            self.assertEqual(old_unit_position, game.units[0].position)
+            self.assertEqual(old_region_position, game.level.regions[0].position)
+
+        self.assertEqual(job.BUILD_BOARD, job.state)
+
     def test_commit_callback_must_not_be_a_generator(self):
 
         def build_board(tilemap):
@@ -177,10 +201,137 @@ class TilemapChangeJobTests(unittest.TestCase):
 
         self.assertEqual('blocked', event.state)
         self.assertTrue(event._defer_render)
+        self.assertTrue(event._android_tilemap_pending)
         self.assertTrue(event.should_remain_blocked[0]())
         self.assertTrue(event.should_update['tilemap_change'](False))
         self.assertFalse(event._defer_render)
+        self.assertFalse(event._android_tilemap_pending)
         self.assertFalse(event.should_remain_blocked[0]())
+
+    def test_android_failed_tilemap_job_releases_barrier_after_rollback(self):
+        from app.events import event_functions
+
+        class FakeJob:
+            is_finished = False
+            failed = True
+            error = RuntimeError('pending build failed')
+
+            def update(self, _should_skip):
+                self.is_finished = True
+                return True
+
+        errors = []
+        job = FakeJob()
+        game = SimpleNamespace(
+            level=SimpleNamespace(tilemap=SimpleNamespace(nid='old'), regions=[]),
+            units=[], level_vars={}, skill_registry={}, terrain_status_registry={},
+            action_log=SimpleNamespace(actions=[], action_index=-1, _first_free_action=-1),
+            board=SimpleNamespace(bounds=(0, 0, 1, 1), previously_visited_tiles=set()),
+            cursor=object(), movement=object(), map_view=object(),
+        )
+        event = SimpleNamespace(
+            game=game, should_update={}, should_remain_blocked=[], state='processing',
+            logger=SimpleNamespace(error=lambda *_args: errors.append(_args)),
+        )
+
+        with patch('app.engine.android_runtime.is_android_runtime', return_value=True), \
+                patch.object(event_functions.RESOURCES.tilemaps, 'get', return_value=object()), \
+                patch('app.engine.jobs.tilemap_change_job.TilemapChangeJob', return_value=job):
+            event_functions.change_tilemap(event, 'new')
+
+        self.assertTrue(event._android_tilemap_pending)
+        self.assertTrue(event.should_update['tilemap_change'](False))
+        self.assertFalse(event._android_tilemap_pending)
+        self.assertFalse(event._defer_render)
+        self.assertEqual(1, len(errors))
+
+    def test_android_pending_barrier_runs_only_tilemap_work_and_suspends_movement(self):
+        from app.events.event import Event
+
+        updates = []
+        unit = SimpleNamespace(position=(1, 1))
+
+        def advance_movement():
+            updates.append('movement')
+            unit.position = (2, 1)
+
+        movement = SimpleNamespace(update=advance_movement)
+        event = SimpleNamespace(
+            should_update={
+                'tilemap_change': lambda _skip: updates.append('tilemap') or False,
+                'other': lambda _skip: updates.append('other') or False,
+            },
+            do_skip=False,
+            game=SimpleNamespace(movement=movement, units=[unit]),
+            _android_tilemap_pending=True,
+            _update_state=lambda: updates.append('state'),
+            _update_text_boxes=lambda: updates.append('text'),
+        )
+
+        Event.update(event)
+
+        self.assertEqual(['tilemap', 'state', 'text'], updates)
+        self.assertEqual((1, 1), unit.position)
+        self.assertIn('tilemap_change', event.should_update)
+        self.assertIn('other', event.should_update)
+
+    def test_android_pending_barrier_ignores_gameplay_input_listeners(self):
+        from app.events.event import Event
+
+        received = []
+        event = SimpleNamespace(
+            _android_tilemap_pending=True,
+            state='processing',
+            functions_listening_for_input={'mutating_listener': received.append},
+        )
+
+        Event.take_input(event, 'SELECT')
+
+        self.assertEqual([], received)
+
+    def test_android_pending_barrier_resumes_lifecycle_once_on_next_outer_update(self):
+        from app.events.event import Event
+
+        updates = []
+        event = SimpleNamespace(
+            should_update={
+                'tilemap_change': lambda _skip: setattr(
+                    event, '_android_tilemap_pending', False) or updates.append('tilemap') or True,
+                'other': lambda _skip: updates.append('other') or True,
+            },
+            do_skip=False,
+            game=SimpleNamespace(movement=SimpleNamespace(
+                update=lambda: updates.append('movement'))),
+            _android_tilemap_pending=True,
+            _update_state=lambda: updates.append('state'),
+            _update_text_boxes=lambda: updates.append('text'),
+        )
+
+        Event.update(event)
+        self.assertEqual(['tilemap', 'state', 'text'], updates)
+        self.assertNotIn('tilemap_change', event.should_update)
+        self.assertIn('other', event.should_update)
+
+        Event.update(event)
+        self.assertEqual(
+            ['tilemap', 'state', 'text', 'other', 'movement', 'state', 'text'], updates)
+        self.assertEqual({}, event.should_update)
+
+    def test_android_pending_blocker_prevents_processor_progress(self):
+        from app.events.event import Event
+
+        calls = []
+        event = SimpleNamespace(
+            state='blocked', prev_state=None,
+            should_remain_blocked=[lambda: True],
+            logger=SimpleNamespace(debug=lambda *_args: None),
+            process=lambda: calls.append('process'),
+        )
+
+        Event._update_state(event)
+
+        self.assertEqual([], calls)
+        self.assertEqual('blocked', event.state)
 
     def test_desktop_change_tilemap_commits_atomically_without_a_job(self):
         from app.events import event_functions

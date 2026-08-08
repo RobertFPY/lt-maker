@@ -1268,11 +1268,13 @@ def change_tilemap(self: Event, tilemap, position_offset=None, load_tilemap=None
     job = TilemapChangeJob(
         self.game, tilemap_prefab, board_builder=build_board, commit=commit)
     self._tilemap_change_job = job
+    self._android_tilemap_pending = True
     self._defer_render = True
 
     def update_tilemap_change(should_skip: bool) -> bool:
         complete = job.update(should_skip)
         if complete:
+            self._android_tilemap_pending = False
             self._defer_render = False
             if job.failed:
                 self.logger.error('change_tilemap: %s', job.error)

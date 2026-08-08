@@ -184,11 +184,23 @@ class Event():
         return self.processor.finished() and not self.command_queue
 
     def update(self):
-        # update all internal updates, remove the ones that are finished
-        self.should_update = {name: to_update for name, to_update in self.should_update.items() if not to_update(self.do_skip)}
+        # An Android tilemap change may prepare pending structures over several
+        # frames.  Keep the old live world authoritative until its single
+        # synchronous commit; no other event update or movement may advance in
+        # that interval.
+        android_tilemap_pending = getattr(self, '_android_tilemap_pending', False)
+        if android_tilemap_pending:
+            tilemap_update = self.should_update.get('tilemap_change')
+            if tilemap_update and tilemap_update(self.do_skip):
+                del self.should_update['tilemap_change']
+        else:
+            # update all internal updates, remove the ones that are finished
+            self.should_update = {
+                name: to_update for name, to_update in self.should_update.items()
+                if not to_update(self.do_skip)}
 
         # Update movement so that no_block works correctly
-        if self.game.movement:
+        if self.game.movement and not android_tilemap_pending:
             self.game.movement.update()
 
         # A presentation fence ends a fast-forward host frame. Resume the
@@ -332,6 +344,8 @@ class Event():
                 self.transition_state = None
 
     def take_input(self, event):
+        if getattr(self, '_android_tilemap_pending', False):
+            return
         if event == 'START' or event == 'BACK':
             get_sound_thread().play_sfx('Select 4')
             self.skip(event == 'START')

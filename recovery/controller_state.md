@@ -7,167 +7,168 @@
 - Current phase: **Phase 2**
 - Phase 1 harness: **ACCEPTED**
 - P1-T02 trace harness: **ACCEPTED**
-- P1-T03 scenario evidence: **ACCEPTED**
-- P1-T03 persistence correction R1: **ACCEPTED** at `6f1da4bcc53f26237b0b2150a128420ecd9aa7cb`
-- Active task: **P2-T01 only — Audit GameState/load/state-restore delta**
+- P1-T03 scenario evidence and persisted Trace V1 goldens: **ACCEPTED**
+- P2-T01 executor commit reviewed: `a32a8d7a8d070fec2fe8320115ac69f93fc0e562`
+- P2-T01 controller result: **PARTIAL — R1 REQUIRED**
+- Active task: **P2-T01-R1 only — correct exact Android destination-stack audit**
 - Primary model: **GPT-5.6 Terra / high**
 - Escalation target: **GPT-5.6 Sol / max**
 - Escalation pre-authorized: **NO**
 - P2-T02 implementation: **UNAUTHORIZED**
-- Production gameplay/state-machine/save behavior changes during P2-T01: **UNAUTHORIZED**
-- Golden/reference fixture changes: **UNAUTHORIZED**
-- Controller gate after P2-T01: **YES — STOP FOR CONTROLLER REVIEW**
+- Production gameplay/state-machine/save behavior changes during P2-T01-R1: **UNAUTHORIZED**
+- Tests/goldens/project-data changes: **UNAUTHORIZED**
+- Controller gate after P2-T01-R1: **YES — STOP FOR CONTROLLER REVIEW**
 
 ## Phase 1 acceptance record
 
-The controller accepts `6f1da4bcc53f26237b0b2150a128420ecd9aa7cb` (`test(recovery): lock P1-T03 PC goldens`) as closing the P1-T03 fixture-persistence gap.
-
-Accepted evidence:
-
-- the commit is descended directly from the controller R1 authorization commit `72cc9da59a80276ce48bb2573e7b2b8672537158`;
-- R1 changes are limited to the 17 PC-reference JSONL fixtures, `manifest.json`, bounded fixture-integrity tests, and `recovery/p1_t03_evidence.md`;
-- no production engine or project-data file was changed by R1;
-- all 17 persisted goldens are the exact preserved PC-reference bytes previously reviewed in `869d03692be1c56d6c074b18b93a1f781f1f38cb`;
-- no golden was re-materialized and no recovery output was used as expected data;
-- `manifest.json` locks Trace V1 schema version 1, reference revision, scenario/input identity, ordered checkpoints, fixture paths, and exact SHA-256 values;
-- S3 remains `N/A — REFERENCE-UNSUPPORTED` and has no fixture;
-- S16 persists only the PC-reference OFF golden; recovery ON == recovery OFF remains the INV-06 metamorphic assertion;
-- S17 persists only the PC-reference disabled baseline; debugger/profiler enabled-idle equality remains the recovery-side INV-07 metamorphic assertion;
-- the integrity tests recompute fixture hashes and validate Trace V1 headers/checkpoint order rather than regenerating or updating expected data.
-
-The executor reports final Phase 1 validation as:
-
-- trace/lifecycle/golden suite: **50 passed**;
-- `python -m compileall -q app`: PASS;
-- `git diff --check`: PASS;
-- PC reference worktree clean at `9314f54b49f4552b5a3d023b4da0012ce7dfbc89`;
-- `git show --check`: PASS.
-
-All P1-T03 scenario results are accepted as the Phase 1 behavioral oracle: S1-S2 and S4-S18 PASS under their reviewed contracts; S3 is the resolved reference-unsupported N/A case.
-
-The committed oracle lives under:
+Phase 1 remains accepted at the immutable Trace V1 fixture set under:
 
 `app/tests/fixtures/recovery_traces/v1/`
 
-These fixtures are immutable expected PC behavior for later recovery work. A later recovery mismatch is evidence to diagnose, not permission to rewrite a golden.
-
-## P2-T01 — authorized audit scope
-
-P2-T01 is an **audit and function-level restore/re-port map only**. It does not authorize implementation.
-
-Primary task definition from `plan.md`:
-
-- inspect `app/engine/game_state.py`;
-- inspect state-machine files;
-- inspect title/load jobs;
-- inspect chapter and overworld restore entry points;
-- inspect staged-state fields and commit paths;
-- inspect restart/save dependencies;
-- deliver a function-level restore/re-port map before implementation.
-
-### Required behavioral comparison
-
-Compare the PC behavioral reference:
+The PC reference remains:
 
 `9314f54b49f4552b5a3d023b4da0012ce7dfbc89`
 
-against the current recovery branch. The reference is a behavioral oracle, not a textual revert target.
+No Phase 1 golden may be regenerated, changed, weakened, or replaced by recovery output.
 
-At minimum audit the complete restore transaction through all paths that can make saved/current world state authoritative:
+## Controller review of P2-T01 commit `a32a8d7a...`
 
-1. `GameState.clear`, `build_new`, `save`, `load`, `load_iter`, level/overworld setup and board/controller setup paths;
-2. `StateMachine` state installation, queued transitions, `load_states`, `process_temp_state`, and any staged/deferred interaction relevant to restore;
-3. desktop title load and restart paths;
-4. Android title/load job paths and in-chapter loading paths;
-5. `save.load_game`, save-slot/restart-slot dependencies, and any later save-format or restart feature that must be preserved under INV-08;
-6. chapter start/restart paths, including start-save semantics;
-7. overworld restore paths;
-8. staged fields/paths including `_staged_state_data`, `chapter_start_snapshot`, `commit_staged_state`, `load_iter(... replace_state_machine=...)`, and every caller/consumer found in the current tree;
-9. map-safety/camera/null guards added because staged restore can expose an incomplete world;
-10. Android progressive preparation that may be retained only if it can remain outside authoritative live gameplay state and finish with one main-thread atomic commit.
+### Accepted portions
 
-### Atomicity questions the report must answer
-
-For every restore entry point, state explicitly:
-
-- what the authoritative live state is before restore begins;
-- what structures are built or mutated and in what order;
-- exactly when the saved state stack becomes authoritative;
-- when level/overworld, tilemap, board, units, aura/fog/regions, events, controllers, and RNG are valid;
-- whether any normal state `begin`/`update` can observe a partially restored world;
-- whether the PC reference performs the operation as one synchronous logical transaction;
-- which later feature/fix must survive even if its current staging implementation is removed;
-- whether an Android optimization can be re-ported as off-world/pending preparation plus one atomic commit.
-
-INV-03 remains the governing rule: no observable partial gameplay state.
-
-### Required function-level classification
-
-For every changed function/field in the P2-T01 surface, produce a row with at least:
-
-- file and symbol;
-- PC-reference behavior;
-- current recovery behavior;
-- relevant introducing/follow-up commit(s) where identifiable;
-- semantic risk/invariant affected;
-- classification using the existing recovery labels (`KEEP-SHARED`, `KEEP-PLATFORM`, `REWRITE-PLATFORM`, `RESTORE-PC-SEMANTICS`, `REMOVE-WORKAROUND`, `KEEP-CORRECTNESS-FIX`);
-- proposed Phase 2 treatment: retain / restore / re-port / remove-after-proof / controller decision;
-- dependencies and tests/goldens that would prove the treatment.
-
-Do not classify a whole mixed commit as one unit. In particular, never revert `52bd0403` or `0821182a` wholesale.
-
-### Protected behavior
-
-The audit must preserve/separate rather than accidentally roll back:
-
-- current save-format/features that are independent of staged scheduling;
-- restart game/chapter intent and current restart-slot behavior;
-- aura load/teardown correctness already protected by the Phase 1 oracle;
-- later independent correctness fixes;
-- fast-forward, debugger, profiler, and Android platform policy unrelated to restore semantics;
-- project data/assets/resources.
-
-### Deliverable
-
-Create/update only the bounded audit report:
+The commit is correctly bounded to a single audit document:
 
 `recovery/p2_t01_state_restore_map.md`
 
-The report must contain:
+It is a direct child of the controller authorization commit `d49abcf7e73a3e1f6fd99e70ba3b7709e54aa51e`; no production, test, golden, or project-data file is changed.
 
-1. reference-vs-recovery transaction diagrams or ordered step maps for desktop load, Android title load, in-chapter load if present, restart, and overworld restore;
-2. the function/field classification table described above;
-3. one proposed authoritative atomic restore boundary for P2-T02, stated as a design recommendation only;
-4. an explicit list of workarounds that become candidates for P2-T03 removal only after P2-T02 proves the invalid partial state impossible;
-5. exact P2-T02 implementation slices/dependencies in a safe order, without implementing them;
-6. unresolved controller decisions or escalation evidence.
+The following high-level findings are accepted:
 
-No production code, tests that mutate expected semantics, project data, Trace V1 schema, comparator, manifest, or golden fixture may be changed during P2-T01.
+- desktop `GameState.load` / `start_level` wrappers remain synchronous logical transactions because their iterators are exhausted in one call;
+- Android `SaveLoadJob` performs background save-file reading only, then advances live `GameState` restore work over multiple main-thread frames;
+- `prepare_for_load` tears down authoritative live fields before restore completion;
+- `_staged_state_data` / `commit_staged_state` defer only the saved state stack, not the world mutation itself;
+- Android title and in-chapter loaders hide normal input/map lifecycle while the singleton is nevertheless incrementally mutated;
+- this is containment, not INV-03 atomicity;
+- `chapter_start_snapshot`, restart slots, save format, aura re-derivation, debugger/profiler, fast-forward, and Android resource/audio policy are protected later behavior;
+- `MapState`/transparent-map null guards and staged-state fields remain P2-T03 candidates only after P2-T02 proves the invalid partial state impossible.
 
-### Validation
+The reported classification totals are internally consistent across 28 mapped surfaces:
 
-Because P2-T01 is documentation/audit only:
+- `KEEP-SHARED`: 10
+- `KEEP-PLATFORM`: 1
+- `REWRITE-PLATFORM`: 5
+- `RESTORE-PC-SEMANTICS`: 6
+- `REMOVE-WORKAROUND`: 2
+- `KEEP-CORRECTNESS-FIX`: 4
 
-- verify the recovery branch and HEAD before work;
-- verify the Phase 1 manifest/integrity tests still pass without modification;
-- run `git diff --check` before commit;
-- commit only `recovery/p2_t01_state_restore_map.md`;
-- run `git show --check` after commit;
-- report exact source/ref comparisons used and any uncertainty.
+### Blocking audit gap
 
-## Escalation and stop rules
+The Android title-overworld transaction map is not exact.
 
-P2-T01 escalation target is **GPT-5.6 Sol / max**, but it is not pre-authorized.
+Current `TitleLoadJobState._begin_post_load()` does this for `next_action == 'overworld'`:
 
-STOP and request escalation on the plan-defined P2-T01 triggers:
+`game.load_states(['overworld'])`
 
-- **ESC-01** reference ambiguity;
-- **ESC-02** nonlocal root cause crossing another correctness-critical subsystem;
-- **ESC-04** competing plausible gameplay semantics;
-- **ESC-09** an unplanned cross-cutting architecture decision is required.
+and returns `True`. The same update then calls `_complete_load()`, whose `next_action == 'overworld'` branch calls:
 
-Do not self-escalate. Do not begin P2-T02 after completing the map.
+`game.load_states(['overworld'])`
+
+again.
+
+`StateMachine.load_states()` appends each requested state directly to `self.state`; it is not idempotent and is not a replacement operation.
+
+Therefore the current Android title-overworld path appends **two** `overworld` state objects before queuing `title_wait`. The P2-T01 report currently describes only one installation and does not include this concrete current-state-stack divergence in its unresolved destination policy.
+
+By contrast, current `InChapterLoadJobState` appends `overworld` once, and the PC-reference desktop title load/restart path restores the saved stack synchronously and then appends `overworld` once.
+
+This matters directly to P2-T02 because its first design obligation is to define the exact destination stack before implementation. P2-T01 cannot be accepted while the audit omits a concrete duplicate append in that path.
+
+This is a bounded audit/documentation defect, not a production repair request and not a reason to escalate model tier.
+
+## P2-T01-R1 — authorized correction
+
+Resume P2-T01 only using **GPT-5.6 Terra / high**.
+
+May change only:
+
+`recovery/p2_t01_state_restore_map.md`
+
+Do not modify production code, tests, Trace V1, manifest/goldens, save data, or project data.
+
+### Required corrections
+
+1. Correct the Android title save-load transaction map to show the exact current overworld behavior:
+   - `_begin_post_load()` appends `overworld` once;
+   - `_complete_load()` appends `overworld` a second time;
+   - then `title_wait` is queued/processed.
+
+2. Correct the function/classification rows for `TitleLoadJobState` and any destination-policy row so the duplicate append is explicit and classified. Treat provenance as evidence only; do not repair it in P2-T01-R1.
+
+3. Add an explicit destination-stack matrix covering at minimum:
+   - PC-reference desktop normal save load;
+   - current desktop normal save load;
+   - PC-reference/current desktop `kind == 'start'` load/restart;
+   - PC-reference/current desktop `kind == 'overworld'` load/restart;
+   - current Android title normal save;
+   - current Android title `start`/`restart_level`;
+   - current Android title `overworld`;
+   - current Android in-chapter normal save;
+   - current Android in-chapter `start`;
+   - current Android in-chapter `overworld`.
+
+For each row record:
+   - saved stack payload from `s_dict['state']`;
+   - whether/when it is installed;
+   - whether `_staged_state_data` is consumed or left stale;
+   - every explicit destination state append/replacement in order;
+   - final committed stack shape before the next normal lifecycle update.
+
+4. Compare the title-overworld path against PC reference `9314f54b...` and state whether the double append is:
+   - a demonstrated current Android divergence/workaround defect, or
+   - required by some later intended feature.
+
+Do not infer intent from comments. Use exact source/history and existing tests/evidence.
+
+5. Update the unresolved-controller-decision section so it no longer treats saved-stack policy as a vague retain/discard question. State the exact reference-shaped target for each save kind as far as the source establishes it, and isolate any truly unresolved case.
+
+6. Correct the wording that calls P2-T02 “already-authorized”. P2-T02 is plan-defined as `GPT-5.6 Sol / max` but remains controller-blocked until P2-T01 is accepted.
+
+### Controller direction for the later P2-T02 design
+
+Do **not** invent a cross-cutting pending `GameState` abstraction during R1.
+
+The controller's default P2-T02 direction, subject to final R1 review, is:
+
+- keep Android worker-side immutable save-file read/unpickle and unrelated resource preparation;
+- stop time-slicing authoritative `GameState` hydration across frames;
+- perform authoritative world restore on the main thread as one synchronous logical transaction while an opaque loader owns input/presentation;
+- hold the saved destination stack non-authoritatively until required world structures are complete, then install the final state machine/destination at the transaction boundary;
+- do not preserve `_staged_state_data` as a long-lived singleton field if a bounded local transaction payload can replace it;
+- defer any future progressive board/world hydration to later phases unless it can be proven to build outside authoritative live state and publish atomically.
+
+This direction intentionally favors semantic recovery over retaining a frame-budget optimization whose current implementation mutates live gameplay state.
+
+R1 must not implement this direction.
+
+## Validation for R1
+
+Run without modifying tests:
+
+- `python -m unittest app.tests.test_recovery_trace app.tests.test_state_machine_lifecycle app.tests.test_recovery_golden`
+- `git diff --check`
+- commit only `recovery/p2_t01_state_restore_map.md`
+- `git show --check`
+
+Report the corrected destination-stack matrix, the exact title-overworld conclusion, validation results, and commit SHA.
+
+Then **STOP FOR CONTROLLER REVIEW**.
+
+## Escalation
+
+P2-T01-R1 escalation target remains **GPT-5.6 Sol / max**, not pre-authorized.
+
+STOP on ESC-01, ESC-02, ESC-04, or ESC-09. Do not self-escalate.
 
 ## Gate status
 
-**Phase 1 is ACCEPTED. P2-T01 is the only authorized task. P2-T02 remains blocked until P2-T01 receives controller review.**
+**Phase 1 remains ACCEPTED. P2-T01 is PARTIAL pending R1. P2-T02 remains UNAUTHORIZED.**

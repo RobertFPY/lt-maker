@@ -15,10 +15,7 @@ if TYPE_CHECKING:
 BoardBuilder = Callable[[TileMapObject], Generator[str, None, GameBoard]]
 BoundaryBuilder = Callable[[int, int], BoundaryInterface]
 TilemapBuilder = Callable[[object], Union[TileMapObject, Generator[str, None, TileMapObject]]]
-Commit = Callable[
-    [TileMapObject, GameBoard, BoundaryInterface],
-    Optional[Generator[str, None, None]],
-]
+Commit = Callable[[TileMapObject, GameBoard, BoundaryInterface], None]
 
 
 class TilemapChangeJob:
@@ -62,10 +59,8 @@ class TilemapChangeJob:
         self.pending_board: Optional[GameBoard] = None
         self.pending_boundary: Optional[BoundaryInterface] = None
         self.last_board_phase: Optional[str] = None
-        self.last_commit_phase: Optional[str] = None
         self._tilemap_iter: Optional[Generator[str, None, TileMapObject]] = None
         self._board_iter: Optional[Generator[str, None, GameBoard]] = None
-        self._commit_iter: Optional[Generator[str, None, None]] = None
 
     @property
     def is_finished(self) -> bool:
@@ -133,16 +128,11 @@ class TilemapChangeJob:
             assert self.pending_tilemap is not None
             assert self.pending_board is not None
             assert self.pending_boundary is not None
-            if self._commit_iter is None:
-                self._commit_iter = self.commit(
-                    self.pending_tilemap, self.pending_board, self.pending_boundary)
-                if self._commit_iter is None:
-                    self.state = self.COMPLETE
-                    return
-            try:
-                self.last_commit_phase = next(self._commit_iter)
-            except StopIteration:
-                self.state = self.COMPLETE
+            result = self.commit(
+                self.pending_tilemap, self.pending_board, self.pending_boundary)
+            if result is not None:
+                raise TypeError('Tilemap change commit must be synchronous and return None')
+            self.state = self.COMPLETE
 
     def _validate(self) -> None:
         if not self.pending_tilemap or not self.pending_board or not self.pending_boundary:

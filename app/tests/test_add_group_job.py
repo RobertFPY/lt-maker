@@ -5,59 +5,35 @@ import unittest
 from unittest.mock import patch
 
 
-class AddGroupJobTests(unittest.TestCase):
-    def test_advances_group_members_one_step_at_a_time(self):
-        from app.engine.jobs.add_group_job import AddGroupJob
-
-        placed = []
-        job = AddGroupJob(['A', 'B'], placed.append)
-
-        job.run_one_operation()
-        self.assertEqual(['A'], placed)
-        self.assertFalse(job.is_finished)
-
-        job.run_one_operation()
-        self.assertEqual(['A', 'B'], placed)
-        self.assertTrue(job.is_finished)
-
-    def test_failure_stops_remaining_members(self):
-        from app.engine.jobs.add_group_job import AddGroupJob
-
-        def place(unit_nid):
-            if unit_nid == 'B':
-                raise RuntimeError('placement failed')
-
-        job = AddGroupJob(['A', 'B', 'C'], place)
-        job.step(2**63 - 1)
-
-        self.assertTrue(job.failed)
-        self.assertIsInstance(job.error, RuntimeError)
-        self.assertEqual(2, job.index)
-
-    def test_event_blocks_until_add_group_job_finishes(self):
+class AddGroupTests(unittest.TestCase):
+    def test_event_places_all_eligible_members_before_returning(self):
         from app.events import event_functions
 
-        class FakeJob:
-            is_finished = False
-            failed = False
-            error = None
-
-            def update(self, _should_skip):
-                self.is_finished = True
-                return True
-
-        job = FakeJob()
-        group = SimpleNamespace(units=['unit'])
+        group = SimpleNamespace(units=['unit_a', 'unit_b'])
+        units = {
+            'unit_a': SimpleNamespace(nid='unit_a', position=None, dead=False),
+            'unit_b': SimpleNamespace(nid='unit_b', position=None, dead=False),
+        }
+        placed = []
         event = SimpleNamespace(
-            game=SimpleNamespace(level=SimpleNamespace(unit_groups={'group': group})),
+            game=SimpleNamespace(
+                level=SimpleNamespace(unit_groups={'group': group}),
+                get_unit=lambda nid: units[nid]),
             should_update={}, should_remain_blocked=[], state='processing',
             logger=SimpleNamespace(error=lambda *_args: None),
+            _get_position=lambda *_args: (1, 1),
+            _check_placement=lambda _unit, position, _placement: position,
+            _place_unit=lambda unit, position, entry_type: placed.append(
+                (unit.nid, position, entry_type)),
         )
 
-        with patch('app.engine.jobs.add_group_job.AddGroupJob', return_value=job):
+        with patch.object(event_functions.DB.constants, 'value', return_value=False):
             event_functions.add_group(event, 'group')
 
-        self.assertEqual('blocked', event.state)
-        self.assertTrue(event.should_remain_blocked[0]())
-        self.assertTrue(event.should_update['add_group'](False))
-        self.assertFalse(event.should_remain_blocked[0]())
+        self.assertEqual([
+            ('unit_a', (1, 1), 'fade'),
+            ('unit_b', (1, 1), 'fade'),
+        ], placed)
+        self.assertEqual('processing', event.state)
+        self.assertNotIn('add_group', event.should_update)
+        self.assertEqual([], event.should_remain_blocked)

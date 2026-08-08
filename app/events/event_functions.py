@@ -1199,30 +1199,19 @@ def change_tilemap(self: Event, tilemap, position_offset=None, load_tilemap=None
     def commit(pending_tilemap, pending_board, pending_boundary):
         try:
             self.game.cursor.set_pos((0, 0))
-            detached_units = 0
             for unit in self.game.units:
                 if unit.position:
                     action.LeaveMap(unit).execute()
-                    detached_units += 1
-                    if detached_units % 8 == 0:
-                        yield 'DETACH_UNITS'
-            yield 'DETACH_UNITS'
             self.game.level_vars['_prev_pos_%s' % current_tilemap_nid] = previous_unit_pos
 
-            detached_regions = 0
             for region in list(self.game.level.regions):
                 if region.position:
                     action.RemoveRegion(region).execute()
-                    detached_regions += 1
-                    if detached_regions % 16 == 0:
-                        yield 'DETACH_REGIONS'
-            yield 'DETACH_REGIONS'
             self.game.level_vars['_prev_region_%s' % current_tilemap_nid] = previous_region_pos
 
             self.game.level.tilemap = pending_tilemap
             self.game.board = pending_board
             self.game.boundary = pending_boundary
-            yield 'COMMIT'
             if self.game.is_displaying_overworld():
                 from app.engine import level_cursor, map_view
                 from app.engine.movement import movement_system
@@ -1230,29 +1219,19 @@ def change_tilemap(self: Event, tilemap, position_offset=None, load_tilemap=None
                 self.game.movement = movement_system.MovementSystem(self.game.cursor, self.game.camera)
                 self.game.map_view = map_view.MapView()
 
-            restored_units = 0
             if reload_map and self.game.level_vars.get('_prev_pos_%s' % reload_map_nid):
                 for unit_nid, pos in self.game.level_vars['_prev_pos_%s' % reload_map_nid].items():
                     final_pos = pos[0] + position_offset[0], pos[1] + position_offset[1]
                     if self.game.tilemap.check_bounds(final_pos):
                         unit = self.game.get_unit(unit_nid)
                         action.ArriveOnMap(unit, final_pos).execute()
-                        restored_units += 1
-                        if restored_units % 4 == 0:
-                            yield 'RESTORE_UNITS'
-            yield 'RESTORE_UNITS'
 
-            restored_regions = 0
             if reload_map and self.game.level_vars.get('_prev_region_%s' % reload_map_nid):
                 for region_nid, pos in self.game.level_vars['_prev_region_%s' % reload_map_nid].items():
                     region = self.game.get_region(region_nid)
                     if region:
                         region.position = pos[0] + position_offset[0], pos[1] + position_offset[1]
                         action.AddRegion(region).execute()
-                        restored_regions += 1
-                        if restored_regions % 16 == 0:
-                            yield 'RESTORE_REGIONS'
-            yield 'RESTORE_REGIONS'
 
             self.game.action_log.set_first_free_action()
             self.game.on_alter_game_state()
@@ -1266,6 +1245,24 @@ def change_tilemap(self: Event, tilemap, position_offset=None, load_tilemap=None
             pending_tilemap,
             terrain_nid_resolver=lambda tilemap, pos: tilemap.get_terrain(pos),
         )
+
+    from app.engine.android_runtime import is_android_runtime
+    if not is_android_runtime():
+        from app.engine.boundary import BoundaryInterface
+
+        pending_tilemap = TileMapObject.from_prefab(tilemap_prefab)
+        pending_board_iter = build_board(pending_tilemap)
+        try:
+            while True:
+                next(pending_board_iter)
+        except StopIteration as result:
+            pending_board = result.value
+        pending_boundary = BoundaryInterface(pending_tilemap.width, pending_tilemap.height)
+        if (pending_board.width, pending_board.height) != (
+                pending_tilemap.width, pending_tilemap.height):
+            raise ValueError('Pending board dimensions do not match tilemap')
+        commit(pending_tilemap, pending_board, pending_boundary)
+        return
 
     from app.engine.jobs.tilemap_change_job import TilemapChangeJob
     job = TilemapChangeJob(
@@ -1902,19 +1899,8 @@ def add_group(self: Event, group, starting_group=None, entry_type=None, placemen
             action.do(action.InsertInitiative(unit))
         self._place_unit(unit, position, entry_type)
 
-    from app.engine.jobs.add_group_job import AddGroupJob
-    job = AddGroupJob(group.units, place_unit)
-    self._add_group_job = job
-
-    def update_add_group(should_skip: bool) -> bool:
-        complete = job.update(should_skip)
-        if complete and job.failed:
-            self.logger.error('add_group: %s', job.error)
-        return complete
-
-    self.should_update['add_group'] = update_add_group
-    self.should_remain_blocked.append(lambda: not job.is_finished)
-    self.state = 'blocked'
+    for unit_nid in group.units:
+        place_unit(unit_nid)
 
 def spawn_group(self: Event, group, cardinal_direction, starting_group, movement_type=None, placement=None, flags=None):
     flags = flags or set()

@@ -1,163 +1,167 @@
 # Recovery Controller State
 
-> Live controller-gate state. `plan.md` remains authoritative for architecture, invariants, task definitions, model policy, and global escalation rules. This file records the current P1-T03 authorization and resolved blockers.
+> Live controller-gate state. `plan.md` remains authoritative for architecture, invariants, task definitions, model policy, and global escalation rules.
 
 ## Current authorization
 
 - Current phase: **Phase 1**
 - Harness gate: **P1-T02 ACCEPTED**
-- Active task: **P1-T03 only**
-- Latest executor stop: **Scenario 18 — Game-over/restart** under requested ESC-01/04
-- Controller disposition: **ESC-01/04 RESOLVED — reference contract found**
-- Resume model: **GPT-5.6 Terra / high**
-- Escalation target remains: **GPT-5.6 Sol / max**
-- Sol/max is **not authorized for the resolved S18 ambiguity**; a new ESC requires a new stop/request
-- Scenario 18 is the only remaining execution scenario
-- Controller gate after S18 + final validation/commit: **YES — STOP FOR CONTROLLER REVIEW**
-- Phase 2 remains **UNAUTHORIZED**
-- Gameplay/state-machine/input/save repair remains **UNAUTHORIZED** during P1-T03
-- Golden/reference behavior changes remain **UNAUTHORIZED**
+- Executor evidence commit reviewed: `869d03692be1c56d6c074b18b93a1f781f1f38cb`
+- P1-T03 scenario execution: **COMPLETE**
+- P1-T03 controller result: **PARTIAL — FIXTURE PERSISTENCE GAP**
+- Active task: **P1-T03-R1 only**
+- Primary model: **GPT-5.6 Terra / high**
+- Escalation target: **GPT-5.6 Sol / max**
+- Escalation pre-authorized: **NO**
+- Phase 2: **UNAUTHORIZED**
+- Production gameplay/state-machine/save/project-data changes: **UNAUTHORIZED**
+- Golden semantic changes: **UNAUTHORIZED**
 
-## P1-T03 provisional scenario status
+## Controller review of `869d03692`
 
-Subject to final P1-T03 commit/diff/fixture review:
+### Accepted
 
-1. **S1 PASS** — new game to first playable map; authoritative deterministic seed; reference/recovery Trace V1 match.
-2. **S2 PASS** — existing in-memory save/load; reference/recovery match.
-3. **S3 N/A — REFERENCE-UNSUPPORTED** — no PC-reference mid-event save/load golden; no synthetic fixture.
-4. **S4 PASS** — real PC restart-slot flow; reference/recovery match.
-5. **S5 PASS** — real MapCombat through EXP and terminal cleanup; reference/recovery match.
-6. **S6 PASS** — SimpleCombat; reference/recovery match.
-7. **S7 PASS** — AnimationCombat with real reference assets; reference/recovery match.
-8. **S8 PASS** — BaseCombat; reference/recovery match.
-9. **S9 PASS** — DB-owned Luna, authoritative seed 0, real proc and ordered lifecycle hooks; reference/recovery match.
-10. **S10 PASS** — item durability/uses and broken/unusable handling; reference/recovery match.
-11. **S11 PASS** — promotion/class-change edge cases; reference/recovery match.
-12. **S12 PASS** — aura propagation/teardown/load aliasing; reference/recovery match.
-13. **S13 PASS** — FOW preview/cancel/wait through real InputManager with approved test-owned deterministic host-time correction; reference/recovery match.
-14. **S14 PASS** — tilemap change; strict PC-reference Trace V1 match.
-15. **S15 PASS** — phase transition; strict PC-reference Trace V1 match.
-16. **S16 PASS** — reference OFF == recovery OFF and recovery fast-forward ON == recovery OFF under INV-06.
-17. **S17 PASS** — hybrid observer contract: 17A PC disabled baseline == 17B recovery disabled; 17C debugger enabled-idle == recovery disabled; 17D profiler enabled-idle == recovery disabled. Each comparator matched 3 Trace V1 records.
-18. **S18 AUTHORIZED** — use the reference-owned game-over and title restart chain defined below.
+The commit is correctly bounded to test/evidence scope only:
 
-Do not treat provisional PASS entries as final acceptance of uncommitted WIP.
+- `app/tests/recovery_trace_runner.py`
+- `app/tests/test_recovery_golden.py`
+- `recovery/p1_t03_evidence.md`
 
-## Scenario 18 — resolved reference contract
+No production engine or project-data files were changed.
 
-The previous claim that the PC behavioral reference has no engine-owned game-over trigger is incorrect/incomplete. The reference owns the entire trigger chain:
+Scenario status is accepted provisionally as reported:
 
-1. event command `lose_game` is a public reference event command;
-2. reference `event_functions.lose_game()` sets `game.level_vars['_lose_game'] = True`;
-3. `EventState.end_event()` consumes `_lose_game`, sets `game.memory['next_state'] = 'game_over'`, and enters the normal `transition_to` path;
-4. `GameOverState` is the reference `game_over` state; once it reaches `stasis`, any real input sets `next_state = 'title_start'` and transitions normally;
-5. `default.ltproj` contains the DB-owned global event `Global DeathEirika`, whose real event script ends with `lose_game`;
-6. the reference title main menu exposes `Restart Level` when saves exist, routes it to `title_restart`, and `TitleRestartState` uses `save.RESTART_SLOTS`;
-7. the reference restart load path handles a start/restart slot through the normal `save.load_game()` + level-start flow.
+1. **S1 PASS** — `player.control.ready`.
+2. **S2 PASS** — `save.restore.complete`.
+3. **S3 N/A — REFERENCE-UNSUPPORTED** — no golden.
+4. **S4 PASS** — `restart.complete`.
+5. **S5 PASS** — MapCombat cleanup.
+6. **S6 PASS** — SimpleCombat cleanup.
+7. **S7 PASS** — AnimationCombat cleanup.
+8. **S8 PASS** — BaseCombat cleanup.
+9. **S9 PASS** — DB-owned Luna proc + ordered combat hooks.
+10. **S10 PASS** — durability/broken/unusable cleanup.
+11. **S11 PASS** — promotion/class state fixture.
+12. **S12 PASS** — aura propagation/load/teardown.
+13. **S13 PASS** — FOW preview/cancel/wait using the approved deterministic host-time test shim and real InputManager.
+14. **S14 PASS** — tilemap terminal commit.
+15. **S15 PASS** — phase terminal commit.
+16. **S16 PASS** — PC reference OFF == recovery OFF; recovery ON == recovery OFF under INV-06. The PC reference has no fast-forward driver helper, so no PC enabled-mode golden is required.
+17. **S17 PASS** — approved hybrid observer contract.
+18. **S18 PASS** — DB-owned `Global DeathEirika` -> real GameOver -> title -> real Restart Level / `RESTART_SLOTS` flow.
 
-Therefore S18 must not use the runtime-debugger restart command and must not directly push `game_over`.
+The reported validation set is also accepted provisionally:
 
-### Authorized S18 fixture contract
+- recovery trace/lifecycle + P1-T03 harness tests: 48 passed;
+- `compileall` passed;
+- `git diff --check` passed before commit;
+- `git show --check` passed after commit;
+- reference worktree reported clean at `9314f54b49f4552b5a3d023b4da0012ce7dfbc89`.
 
-Use the same deterministic project/new-game/restart-slot setup style already accepted for S1/S4. Any scenario crossing `GameState.build_new()` must seed through `cf.SETTINGS['random_seed']` and restore mutated config afterward.
+### Blocking deficiency
 
-Before the game-over trigger, establish a valid real restart slot through the already accepted PC start/restart save machinery. Do not fabricate a `SaveSlot` payload or write a test-only restart format.
+P1-T03 cannot be accepted yet because the reviewed Trace V1 design requires the PC-reference goldens to exist in a **versioned repository test-fixture directory** with a **manifest** recording reference revision, schema/input identity, and SHA-256.
 
-Trigger game over through the **DB-owned `Global DeathEirika` event** and the real event system:
+`recovery/p1_t03_evidence.md` currently says the JSONL captures remain only in the executor temp directory and records their filenames/hashes. The commit contains no JSONL golden fixtures and no manifest.
 
-- use the real Eirika runtime object;
-- issue the event's real `combat_death` trigger through `game.events.trigger(...)` / normal EventManager dispatch so that `Global DeathEirika` is selected by the reference DB;
-- allow its real event commands to run, including its final `lose_game` command;
-- do **not** call `event_functions.lose_game()` directly;
-- do **not** set `_lose_game` directly;
-- do **not** call `game.state.change('game_over')` directly;
-- do **not** use the runtime debugger or a synthetic anonymous loss event.
+This is not a gameplay or trace-semantic failure. It is an evidence persistence/reproducibility failure: later phases need an immutable, reviewable oracle rather than only hashes of temporary files.
 
-This S18 fixture is testing the reference-owned game-over transaction, not re-testing lethal combat damage. S5–S10 already cover combat lifecycle semantics; therefore direct dispatch of the real `combat_death` trigger through the real EventManager is an acceptable scenario input and is preferred over inventing a brittle lethal-combat setup.
+## P1-T03-R1 — Persist and lock reviewed goldens
 
-### Required game-over path
+Resume **P1-T03 only** using **GPT-5.6 Terra / high**.
 
-Drive the real state machine with the approved deterministic frame/input helpers until:
+### Authorized scope
 
-1. `Global DeathEirika` completes its real event transaction;
-2. `EventState.end_event()` consumes `_lose_game` and transitions to `game_over`;
-3. `GameOverState` reaches its normal input-ready `stasis` state;
-4. send real raw input through the approved `RawInputFrameDriver`/real `InputManager`;
-5. allow the real transition to committed `title_start`.
+May add/update only:
 
-Do not bypass transition states or mutate `GameOverState.state` to `stasis` manually. Presentation time may be driven by the already-approved deterministic frame clock.
+- `app/tests/fixtures/recovery_traces/v1/*.jsonl`
+- `app/tests/fixtures/recovery_traces/v1/manifest.json`
+- `recovery/p1_t03_evidence.md`
+- `app/tests/test_recovery_golden.py` only for bounded fixture/manifest integrity tests
+- `app/tests/recovery_trace_runner.py` only if a minimal test-owned helper is strictly necessary to verify persisted fixtures; do not alter scenario semantics, inputs, checkpoints, allowlists, normalization, or comparator meaning
 
-### Required restart path
+No production code, project data, Trace V1 schema semantics, or scenario contract changes are authorized.
 
-From committed `title_start`:
+### Golden materialization rule
 
-1. use real raw input -> real `InputManager` to enter `title_main`;
-2. let the reference title code run `save.check_save_slots()` and construct its real menu;
-3. navigate the real menu to **Restart Level** without direct menu-index mutation;
-4. select it through real input and let title code enter `title_restart`;
-5. select the intended real `RESTART_SLOTS` entry through the normal title restart UI/state path;
-6. let the reference restart/load path call normal `save.load_game()` and level start logic;
-7. drive until the restarted chapter reaches committed playable map control with pending transitions empty.
+For S1, S2, S4-S18, persist the **PC-reference JSONL bytes** corresponding to the SHA-256 values already recorded in `recovery/p1_t03_evidence.md` from commit `869d03692`.
 
-The test may isolate save files to a temporary test-owned filesystem location if the existing harness already does so, but it must use the real save/restart APIs and formats and restore global save-path/slot state afterward.
+Preferred path:
 
-### Trace/equality contract
+1. If the original executor temp files still exist, copy those exact bytes into the versioned fixture directory.
+2. Compute SHA-256 after copying and require exact equality with the already-recorded hash.
 
-Use existing Trace V1 synchronization semantics; do not add a new schema meaning solely for S18.
+If an original temp file no longer exists, regeneration is explicitly authorized only under all of these conditions:
 
-At minimum establish/compare:
+1. generate from isolated PC reference `9314f54b49f4552b5a3d023b4da0012ce7dfbc89` using the already-accepted Trace V1 overlay and the scenario runner semantics from `869d03692`;
+2. run the same reference scenario twice and require byte-identical JSONL output;
+3. require the regenerated file SHA-256 to exactly equal the hash already recorded in `recovery/p1_t03_evidence.md`;
+4. if the bytes/hash differ, **STOP** — do not update the recorded expected hash and do not regenerate until something passes.
 
-- the committed transition into the reference `game_over` path (existing `state.transition.commit` semantics or equivalent already-approved runner observation);
-- committed return to `title_start` through the real GameOver input path;
-- terminal **`restart.complete`** only after restarted chapter/map/control state is fully committed and `state_stack.pending == []`.
+S3 remains N/A and must not receive a fixture.
 
-Host time, fade progress, exact frame counts, title animation state, audio, and menu render state remain presentation/provenance and are not logical golden equality fields.
+Do not copy recovery output into the golden directory.
 
-Reference and recovery must use the same save-slot setup, event trigger, raw-input intent, and deterministic frame schedule. If their logical traces/final restarted state differ, STOP under a new **ESC-03**; do not repair or regenerate golden output.
+### Manifest contract
 
-### S18 forbidden shortcuts
+Create `app/tests/fixtures/recovery_traces/v1/manifest.json`.
 
-Do not:
+For every persisted golden, record at minimum:
 
-- use runtime-debugger restart/game-over commands;
-- directly set `_lose_game`;
-- directly invoke `lose_game()`;
-- directly push `game_over`, `title_start`, or `title_restart` to skip the normal chain;
-- create a synthetic loss event when `Global DeathEirika` exists in the reference project;
-- directly mutate title/restart menu indices;
-- bypass real InputManager for title/restart selections;
-- fabricate restart save payloads;
-- weaken pending-transition requirements;
-- modify production/project data;
-- begin Phase 2.
+- `schema_version: 1`;
+- PC reference revision `9314f54b49f4552b5a3d023b4da0012ce7dfbc89`;
+- scenario ID;
+- input fixture ID from the trace header;
+- golden filename/path;
+- SHA-256 of the exact JSONL bytes;
+- ordered checkpoint IDs.
 
-## Previously resolved harness contracts
+Represent S3 separately as `N/A — REFERENCE-UNSUPPORTED`, not as a fake/empty golden.
 
-- New-game seed authority: set `cf.SETTINGS['random_seed']` before `GameState.build_new()` and restore it afterward.
-- Reference generated `skill_system.py` / `item_system.py`: bootstrap only with the reference-owned `generate_component_system_source()` path.
-- Virtual-frame helper: advance deterministic engine time once per outer frame; process repeat chains at fixed time; restore globals.
-- RawInputFrameDriver: may also advance deterministic test-owned host time for `engine.get_true_time()`, must use real pygame KEYDOWN/KEYUP -> real `InputManager.process_input()`, and must restore clock/input state.
-- S9: `default.ltproj`, chapter 0, Eirika -> unit 102, Rapier, DB-owned Luna, authoritative seed 0, real SimpleCombat.
-- S17 hybrid observer contract remains as provisionally passed above.
+For S16 record that the persisted PC golden is the reference OFF run; recovery ON/OFF equality remains a metamorphic INV-06 assertion, not a second PC golden.
 
-## Resume contract
+For S17 record that the persisted PC golden is the disabled observer baseline only; debugger/profiler enabled-idle equality remains recovery-side metamorphic evidence under the approved hybrid contract.
 
-Resume **P1-T03 only** with **GPT-5.6 Terra / high**.
+### Evidence update
 
-1. Run only S18 under the exact resolved contract above.
-2. If S18 PASSes reference vs recovery, run the final P1-T03 validation suite.
-3. Run required recovery trace/lifecycle tests and complete P1-T03 golden harness tests.
-4. Run `compileall`.
-5. Run `git diff --check` before commit.
-6. Ensure isolated reference/capture worktrees are clean except explicitly ignored reference-generated outputs.
-7. Remove redundant diagnosis-only WIP that is not required by the final bounded harness/evidence.
-8. Commit only bounded P1-T03 test-owned harness/fixture/evidence files; no production/project-data changes.
-9. Run `git show --check` after commit.
-10. Report scenarios 1–18 individually, including S3 N/A, fixture/checkpoint/hash evidence, test commands/results, files changed, and commit SHA.
-11. **STOP FOR CONTROLLER REVIEW.**
+Update `recovery/p1_t03_evidence.md` so fixture paths point to the committed versioned fixture files, not executor temp paths. Preserve the existing accepted SHA-256 values. Document any file that had to be re-materialized because its temp copy was unavailable and state that the regenerated bytes matched the pre-existing hash.
 
-If any new reference ambiguity, deterministic non-presentation divergence, save-format conflict, required player-input ambiguity, invariant failure, or repeated bounded failure occurs, STOP and request **GPT-5.6 Sol / max**. Do not self-escalate.
+### Required tests
+
+Add bounded tests that at minimum:
+
+- load `manifest.json`;
+- verify every non-N/A manifest fixture exists;
+- verify every fixture byte SHA-256 matches the manifest and the evidence file values;
+- verify each JSONL contains one Trace V1 header with the expected reference revision/schema/scenario/input fixture identity;
+- verify ordered checkpoint IDs match the manifest;
+- verify S3 has no golden fixture;
+- keep the existing harness helper tests passing.
+
+Do not make tests regenerate/update expected fixtures automatically.
+
+### Final validation
+
+Run:
+
+- `python -m unittest app.tests.test_recovery_trace app.tests.test_state_machine_lifecycle app.tests.test_recovery_golden`
+- `python -m compileall -q app`
+- `git diff --check` before commit
+- verify the isolated PC reference worktree is clean except explicitly ignored generated component-system outputs
+- commit only the authorized P1-T03-R1 fixture/evidence/test changes
+- `git show --check` after commit
+
+Report:
+
+- whether each golden came from the preserved temp file or explicitly authorized re-materialization;
+- exact fixture paths and SHA-256 values;
+- manifest validation results;
+- test results;
+- files changed;
+- commit SHA.
+
+Then **STOP FOR CONTROLLER REVIEW**.
 
 ## Gate status
 
-Only S18 + final P1-T03 validation/commit remain authorized. Phase 2 is blocked until controller acceptance of the completed P1-T03 evidence commit.
+P1-T03 scenario semantics are provisionally accepted, but **P1-T03 as a task is not yet accepted** until R1 persists and locks the reviewed goldens. Phase 2 remains blocked.

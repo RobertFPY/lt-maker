@@ -8,181 +8,248 @@
 - Phase 1 harness / persisted Trace V1 PC-reference goldens: **ACCEPTED**
 - Phase 2 state-restore semantics: **ACCEPTED**
 - P3-T01 combat lifecycle reference map: **ACCEPTED** at `ab16e7a149deaeb17d4398f298b3aebc234bc22e`
-- Active task: **P3-T02 only — Restore Simple/Map combat transaction ordering**
+- P3-T02 Simple/Map transaction restore: **ACCEPTED** at `c20b9e02f853b0e527cf074e8168a442f353136f`
+- Active task: **P3-T03 only — Restore Base/Animation/Arena combat ordering**
 - Primary model: **GPT-5.6 Sol / max**
 - Escalation target: **GPT-5.6 Sol / ultra**
 - Escalation pre-authorized: **NO**
-- P3-T03/P3-T04 and Phase 4+: **UNAUTHORIZED**
+- P3-T04 and Phase 4+: **UNAUTHORIZED**
 - Golden/reference fixture changes: **UNAUTHORIZED**
 - Project-data changes: **UNAUTHORIZED**
-- Controller gate after P3-T02: **YES — STOP FOR CONTROLLER REVIEW**
+- Controller gate after P3-T03: **YES — STOP FOR CONTROLLER REVIEW**
 
-## P3-T01 acceptance record
+## P3-T02 acceptance record
 
-The controller accepts `recovery/p3_t01_combat_lifecycle_map.md` from `ab16e7a149deaeb17d4398f298b3aebc234bc22e` as the authoritative Phase-3 combat lifecycle map.
+The controller accepts `c20b9e02f853b0e527cf074e8168a442f353136f` (`fix(combat): restore transaction ordering`).
 
-Accepted findings:
+Accepted evidence:
 
-- `CombatPhaseSolver` core logic/RNG/action generation remains the shared semantic engine; the primary regressions are caller/controller scheduling boundaries, not solver math.
-- `SimpleCombat` PC reference resolves start hooks, CombatStart, all solver phases, playback accumulation and per-phase action application synchronously before the constructed combat object can be observed by normal controller updates. Current recovery spreads those authoritative phases across outer updates.
-- `MapCombat` reference keeps its visual timing states, but does not publish a solver result across an outer-frame boundary before its required semantic follow-up; current recovery adds authoritative staging around terminal `clean_up0`, solver execution, and especially playback/action application.
-- `BaseCombat` has the same solver-staging problem but remains assigned to P3-T03 because its no-turn semantics and explicit cleanup override must be preserved independently.
-- `AnimationCombat`/arena mix authoritative hook/solver/cleanup work with legitimately progressive animation/resource/presentation work and remain P3-T03 scope.
-- arena is an `AnimationCombat(arena_combat=True)` path, not a separate rules engine; its round-stop and forced-death semantics are protected.
-- skill/item hook ordering, combat RNG snapshots/rolls, action generation/application, cleanup, EXP/promotion, state-stack handling, `CombatEnd`, end/post hooks and final RNG recording are mapped and protected.
-- `clean_up1` ordering is protected: combat cleanup hooks precede unusable/broken handling, then WEXP/mana/EXP and `BeforeCombatEnd`.
-- `clean_up2` ordering is protected: state-stack handling precedes `CombatEnd`/end hooks/final death handling.
-- Android streamed battle music remains `KEEP-PLATFORM`; profiler scopes remain observer-only.
-- immutable S5-S12, S16 and S17 evidence remains the semantic oracle and may not be rewritten.
+- the commit is a single direct descendant of P3-T02 authorization commit `08b3389ea62dcd0f3fa8ffff763ba05424f9e421`;
+- changed production surfaces are limited to `app/engine/combat/simple_combat.py` and `app/engine/combat/map_combat.py`; remaining changes are bounded combat/profiler tests;
+- no BaseCombat, AnimationCombat, arena, solver, action-system, Trace V1, comparator, manifest, golden JSONL, or project-data file changed;
+- current `SimpleCombat.__init__` and `update` now reproduce the PC-reference transaction shape: start hooks -> CombatStart -> all solver phases -> ordered playback -> per-phase action application -> solver advancement before normal outer observation, followed by `clean_up0 -> clean_up1 -> clean_up2` lifecycle progression; retained differences are observer-only profiler scopes;
+- current `MapCombat.update` now reproduces the PC-reference authoritative grouping: terminal detection and `clean_up0` share `begin_phase`; solver and reference visual setup share `begin_phase`; `_handle_playback()` and `_apply_actions()` share `anim`; the staged states `solve_phase`, `setup_phase_visuals`, `apply_actions`, and `cleanup0` are removed while legitimate visual waits remain;
+- `BaseCombat` and `AnimationCombat` both own their own constructors/update scheduling, so P3-T02 does not implicitly restore or alter their P3-T03 semantics;
+- profiler contract tests continue to assert AnimationCombat's still-staged behavior, so P3-T03 was not bypassed by weakening tests;
+- reported immutable comparisons S5, S6, S9, S10, S11, S12, S16, and S17 PASS against unchanged Phase-1 oracle data;
+- reported targeted suites pass except the documented pre-existing `test_counter_logic` fixture issue (`MockUnit.skills` missing); broader-suite native termination remains the pre-existing `0xC0000409` baseline and no P3-T02-specific regression was demonstrated;
+- `python -m compileall -q app`, `git diff --check`, and `git show --check` PASS.
 
-## P3-T02 — authorized implementation contract
+The accepted Phase-3 contract now includes:
 
-Execute **P3-T02 only** using **GPT-5.6 Sol / max**.
+1. Simple combat's complete mechanical solver transaction is synchronous/reference-shaped before outer observation;
+2. Map combat retains presentation timing but does not publish the P3-T01-added solver/action/cleanup staging boundaries;
+3. solver formulas/RNG/action contents remain unchanged;
+4. Base/Animation/Arena remain the only combat-ordering implementation scope for P3-T03.
+
+## P3-T03 — authorized implementation contract
+
+Execute **P3-T03 only** using **GPT-5.6 Sol / max**.
 
 PC behavioral reference:
 
 `9314f54b49f4552b5a3d023b4da0012ce7dfbc89`
 
+Use `recovery/p3_t01_combat_lifecycle_map.md` as the accepted function/order map. Immutable Phase-1 goldens remain the oracle and may not be regenerated or weakened.
+
 ### Goal
 
-Restore reference-shaped authoritative transaction ordering for **SimpleCombat and MapCombat only** while retaining behavior-preserving profiling/presentation work.
+Restore reference-shaped **authoritative** ordering for BaseCombat, AnimationCombat, and arena while retaining genuinely presentation/resource-only progressive work and Android audio policy.
 
-### SimpleCombat required contract
+Do not textual-revert the staging cluster. Separate authoritative gameplay work from presentation/resource work and change only the scheduling that violates the reference lifecycle contract.
 
-Restore the mechanical transaction so that before a resolved `SimpleCombat` can be observed by a normal outer controller update, the following authoritative sequence has completed in reference order:
+### BaseCombat required contract
 
-1. setup/initial combat RNG snapshot;
-2. pre/start skill and item combat hooks;
-3. CombatStart event trigger;
-4. every solver phase;
-5. ordered playback accumulation;
-6. immediate application of that phase's generated actions;
-7. solver `setup_next_state`/advancement until terminal.
+Restore the PC-reference Base transaction exactly at the logical boundaries that matter:
 
-Do not alter solver formulas, proc/hit/crit RNG, generated action contents, playback ordering, or hook bodies merely to restore scheduling.
+1. constructor/setup creates solver and combat fields;
+2. constructor synchronously runs `start_combat()` and `start_event()` before the BaseCombat object can be normally observed;
+3. first BaseCombat update drains **all** remaining solver phases synchronously in reference order:
+   `solver.do -> playback accumulation -> _apply_actions -> setup_next_state`, repeated until terminal;
+4. subsequent cleanup progression remains:
+   `clean_up0 -> clean_up1 -> clean_up2`;
+5. preserve `BaseCombat.handle_state_stack()` as no-op and `finalizes_turn=False`;
+6. preserve BaseCombat's explicit `cleanup_combat()` override, including attacker and distinct-defender **skill and item** cleanup hooks.
 
-The later cleanup transaction may retain normal state-machine/EXP presentation progression only if local semantic order remains exactly:
+Do not inherit SimpleCombat's on-map turn-finalization policy into BaseCombat.
 
-`clean_up0 -> clean_up1 -> EXP/promotion state handling as applicable -> clean_up2`
+### AnimationCombat / Arena governing boundary
 
-with the protected internals from P3-T01.
+AnimationCombat is not SimpleCombat with all visual waits removed. The PC reference already contains legitimate multi-frame animation states.
 
-### MapCombat required contract
+The rule is:
 
-MapCombat may retain visual waits, map sprites, HUD timing, proc icons/effects, camera movement and animation timing, but an authoritative result may not be left externally observable in a reference-impossible partial state.
+> Progressive work may remain only when it is presentation/resource/audio work and does not introduce an extra outer-frame boundary *inside a PC-reference same-update authoritative group* or expose newly advanced gameplay/RNG/actions/cleanup before the reference's required same-update follow-up.
 
-At minimum restore these logical groupings:
+#### Progressive work that may be retained after proof
 
-1. terminal detection and required `clean_up0` must not be separated by a normal outer-frame publication boundary;
-2. a solver phase's authoritative computation/RNG result must receive its required immediate semantic follow-up before an unrelated lifecycle observer can act on an intermediate transaction;
-3. `_handle_playback()` presentation work may remain separated only where safe, but the gameplay actions represented by that phase must not remain unapplied across an outer frame if the PC reference commits them in the same logical update;
-4. solver next-state advancement must remain ordered after the action commit;
-5. preserve existing natural EXP/promotion and terminal `clean_up1`/`clean_up2` ordering.
+Current Android-oriented staging may remain when its operations are demonstrably limited to:
 
-Prefer collapsing only authoritative staging states. Do **not** remove visual waits merely because they are adjacent to combat logic.
+- battle-animation/resource loading;
+- paint/UI surface construction;
+- health/stat display preparation that does not mutate gameplay;
+- transform/revert resource lookup and pairing where no hook/RNG/action/state-stack ordering changes;
+- proc icon/effect construction after the reference-authoritative inputs are already fixed;
+- camera/focus/fade/pan presentation;
+- streamed battle-music implementation and audio restore policy;
+- profiler scopes.
 
-### Protected semantics
+A comment naming a state “visual” is not proof. Inspect calls and tests.
+
+#### Authoritative same-update groups to restore/preserve
+
+At minimum restore reference-equivalent grouping for these operations:
+
+1. **Normal animation init:** when authoritative combat init begins, `start_combat()` must remain ordered with the reference init-side sprite/cursor/camera setup and `_set_stats(self.playback)` before the next normal lifecycle boundary. Resource preparation may occur before this only if it has not advanced gameplay.
+2. **Arena init:** `start_combat()`, stats, battle-animation pairing, and arena offsets must retain the reference order before entering the arena fade progression.
+3. **CombatStart:** once `init_pause` completes, `start_event(True)` and transition into battle-music handling must not gain an extra authoritative staging frame.
+4. **Battle music / transform decision:** keep battle music selection/start plus transform decision/initiation in reference order. Android streamed music is implementation policy only and must not affect solver/hook/RNG/state ordering.
+5. **Phase begin:** terminal check or `solver.do`, ordered `full_playback` accumulation, and the reference's immediate combat-effect/proc/combat-animation setup must not be split by extra outer-frame authoritative staging such as `solve_phase` before the reference visual destination is established. The later battle-animation progression before hit/action commit may remain because the reference itself is multi-frame there.
+6. **Action commit points:** preserve reference `start_hit` / `spell_hit` ordering. Generated actions must be applied exactly where the reference applies them relative to playback, hit effects, and solver `setup_next_state`. Do not move action application earlier merely to make the path look atomic.
+7. **Combat hit:** `clean_up0()` and the reference on-hit-effect setup belong to the same logical update when `combat_hit` is reached.
+8. **HP-ready branch:** animation resume and dying-animation/wait setup must retain the reference same-update grouping once the readiness predicate becomes true.
+9. **End combat before EXP:** reference `focus_exp()` and `move_camera()` happen together before entering `exp_pause`; retain that grouping.
+10. **Cleanup1:** when the EXP pause condition completes, `clean_up1()` and transition to `exp_wait` keep reference order. Preserve item cleanup -> unusable/broken -> WEXP/mana/EXP -> BeforeCombatEnd internals.
+11. **Terminal finish:** normal `fade_out` and arena `arena_out` complete with `finish() -> clean_up2() -> end_skip() -> return True` in one reference terminal update. Do not leave `finish()` and `clean_up2()` separated across an outer frame.
+
+If a currently split transform/revert/resource state can remain progressive without altering any authoritative operation, it may stay. If keeping it progressive would change hook/RNG/action/cleanup/state publication relative to the reference, collapse/re-port only that unsafe boundary.
+
+### Arena-specific protected behavior
+
+Arena remains `AnimationCombat(arena_combat=True)`, not a new rules class.
+
+Preserve:
+
+- arena-specific init/fade/background path;
+- real BACK behavior: `stop_arena()` only sets solver `total_rounds = 0` so termination occurs at the next solver boundary;
+- arena round cap and solver behavior;
+- arena-specific terminal forced-death semantics;
+- `finalizes_turn=True` for AnimationCombat while BaseCombat remains `False`;
+- no synthetic arena result injection.
+
+### Protected behavior across P3-T03
 
 Preserve exactly:
 
-- `CombatPhaseSolver` behavior and RNG primitives;
+- CombatPhaseSolver formulas and RNG primitives;
 - initial/final combat RNG snapshots;
-- skill/item hook order and count;
-- action generation contents and application order;
+- skill/item pre/start/sub/cleanup/end/post hook order/count;
+- action generation and application order;
 - ordered playback brushes;
 - durability/use costs;
 - item cleanup hooks;
 - unusable/broken handling;
-- WEXP/mana/EXP/reward ordering;
-- promotion/class-change behavior and player decision points;
-- Canto/state-stack/finalizes-turn behavior;
-- `CombatEnd`, end/post hooks and death handling;
-- aura/FOW-adjacent effects;
+- WEXP/mana/EXP/rewards;
+- promotion/class-change decision behavior;
+- state-stack/Canto/finalizes-turn behavior;
+- CombatEnd/end hooks/post hooks/death ordering;
+- transform/revert compatibility;
+- aura/FOW side effects;
+- P3-T02 Simple/Map semantics;
 - fast-forward INV-06;
 - debugger/profiler INV-07;
-- Android audio/resource policy;
+- Android streamed battle music (`9004c67b`) and unrelated Android resource/render policy;
 - project data/assets;
-- all immutable golden bytes.
+- immutable golden bytes.
 
 ### Authorized production surfaces
 
 Primary:
 
-- `app/engine/combat/simple_combat.py`
-- `app/engine/combat/map_combat.py`
+- `app/engine/combat/base_combat.py`
+- `app/engine/combat/animation_combat.py`
 
-Narrow adjacent test-only/helper changes are allowed when directly necessary to prove the transaction.
+Narrow test-only changes are authorized.
 
-`combat/solver.py`, shared skill/item systems, action semantics, BaseCombat, AnimationCombat and arena are **not** authorized for behavior changes in P3-T02 unless a minimal compile/interface adaptation is unavoidable. If a semantic change there appears necessary, STOP under the applicable ESC rule.
+Do not semantically change `simple_combat.py`, `map_combat.py`, `solver.py`, action/skill/item systems, or shared state-machine architecture. If a semantic production change outside Base/Animation becomes necessary, STOP under ESC-02/ESC-09 and request controller review.
 
-### Required tests and semantic proof
+### Required proof
 
-Add/update bounded tests proving at minimum:
+Add/update focused tests proving at minimum:
 
-1. SimpleCombat start hooks/event/solver/actions complete in reference order before normal outer-frame observation;
-2. SimpleCombat each generated phase action is applied before solver advancement and before the transaction becomes externally observable;
-3. MapCombat terminal `clean_up0` grouping is reference-shaped;
-4. MapCombat solver/playback/action application no longer publishes a reference-impossible solver-result/action-not-applied state;
-5. MapCombat visual waits remain functional and do not change semantic ordering;
-6. cleanup1/cleanup2 bodies/order remain unchanged;
-7. durability/broken/EXP/promotion paths remain intact;
-8. fast-forward produces the same logical outcome/order/RNG;
-9. debugger/profiler remain observer-only.
+1. Base constructor completes start hooks and CombatStart before normal outer observation;
+2. Base first update drains all solver phases/actions synchronously and applies each action before solver advancement;
+3. Base cleanup override still invokes required item cleanup hooks and remains no-turn;
+4. Animation resource-only pre-init staging, if retained, performs no hook/RNG/action/state-stack advancement;
+5. normal Animation init authoritative same-update grouping matches reference;
+6. arena init authoritative grouping matches reference;
+7. CombatStart/battle-music/transform decision ordering matches reference while Android streamed music stays behaviorally isolated;
+8. Animation `begin_phase` no longer adds an unsafe authoritative solver-staging boundary before reference visual setup;
+9. `start_hit`/`spell_hit` action/playback/solver advancement ordering remains reference-shaped;
+10. `combat_hit` keeps `clean_up0` with on-hit-effect setup;
+11. end-combat focus/camera and `clean_up1` ordering match reference;
+12. normal fade and arena-out terminal paths execute `finish -> clean_up2 -> end_skip` without a new outer-frame split;
+13. arena BACK/round-stop/forced-death behavior remains intact;
+14. P3-T02 Simple/Map transaction tests remain green;
+15. fast-forward and debugger/profiler observer contracts remain green;
+16. Android streamed battle-music tests remain green.
 
-Run immutable semantic comparisons at minimum:
+### Immutable semantic comparisons
 
-- S5 MapCombat
-- S6 SimpleCombat
+Run at minimum:
+
+- S5 MapCombat regression guard
+- S6 SimpleCombat regression guard
+- S7 AnimationCombat
+- S8 BaseCombat
 - S9 skill proc/hooks
 - S10 durability/broken
-- S11 promotion/class change if cleanup/EXP timing is touched
-- S12 aura interaction
+- S11 promotion/class change
+- S12 aura lifecycle
 - S16 fast-forward
 - S17 observer equivalence
 
-Do not modify expected goldens after a mismatch.
+Use the existing fixtures exactly. Do not regenerate a golden after mismatch.
 
-Also run the focused combat/solver/action/lifecycle tests relevant to touched code and the recovery trace/lifecycle/golden suites.
+Arena has no dedicated persisted Phase-1 golden, so add/use bounded source/behavioral arena tests for init, BACK/round stop, cleanup, forced-death, and terminal ordering rather than inventing a new golden during P3-T03.
 
-Then run the broader unit suite required by `plan.md`; report known baseline termination/failures rather than repairing unrelated issues.
+### Validation
+
+Run focused Base/Animation/Arena transaction tests first, then combat/solver/action/lifecycle tests and the recovery trace/lifecycle/golden suites.
+
+Run Android battle-music/audio tests and profiler/debugger/fast-forward tests relevant to touched code.
+
+Run the broader unit suite required by `plan.md`; report the known baseline native termination/failures instead of repairing unrelated baseline issues.
 
 Finally run:
 
 - `python -m compileall -q app`
 - `git diff --check`
-- commit bounded P3-T02 implementation/tests
+- commit only bounded P3-T03 implementation/tests
 - `git show --check`
 
 ### Explicitly out of scope
 
 Do not:
 
-- begin P3-T03 or P3-T04;
-- change BaseCombat ordering;
-- change AnimationCombat/arena ordering;
-- redesign battle-animation/resource preparation;
+- begin P3-T04 or Phase 4;
+- change Simple/Map semantics accepted in P3-T02;
+- change solver formulas/RNG to force traces;
+- introduce a new combat transaction architecture;
+- rewrite battle-animation/resource systems broadly;
 - remove Android streamed battle music;
-- alter combat formulas/RNG to make traces pass;
+- change save/state-restore semantics;
 - modify Trace V1/comparator/manifest/goldens;
 - modify project content;
-- revert staged combat commits wholesale;
+- revert the staging cluster wholesale;
 - merge master.
 
 ## Escalation and stop rules
 
-P3-T02 escalation target is **GPT-5.6 Sol / ultra**, but is **not pre-authorized**.
+P3-T03 escalation target is **GPT-5.6 Sol / ultra**, but is **not pre-authorized**.
 
 STOP and request controller authorization on:
 
-- **ESC-02** nonlocal correctness root cause crossing Base/Animation/solver/shared action systems;
+- **ESC-02** nonlocal correctness root cause crossing solver/action/skill/item/shared lifecycle systems;
 - **ESC-03** deterministic Trace V1 divergence after one bounded scheduling correction;
-- **ESC-04** competing plausible combat semantics;
-- **ESC-05** hook/RNG/action/cleanup invariant conflict;
+- **ESC-04** competing plausible Animation/Arena semantics;
+- **ESC-05** hook/RNG/action/cleanup/inheritance invariant conflict;
+- **ESC-07** Android boundary conflict where preserving platform performance requires gameplay-order divergence;
 - **ESC-08** repeated local failure;
-- **ESC-09** need for new cross-cutting combat transaction architecture.
+- **ESC-09** need for new cross-cutting combat/resource architecture.
 
 Do not self-escalate.
 
 ## Gate status
 
-**P3-T01 is ACCEPTED. P3-T02 is the only authorized task. P3-T03/P3-T04 and later phases remain blocked pending P3-T02 controller review.**
+**P3-T02 is ACCEPTED. P3-T03 is the only authorized task. P3-T04 and Phase 4+ remain blocked pending P3-T03 controller review.**

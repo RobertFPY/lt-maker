@@ -1,6 +1,6 @@
 # Recovery Controller State
 
-> Live controller-gate state. `plan.md` remains authoritative for architecture, invariants, task definitions, model policy, and global escalation rules. This file records the active P1-T03 escalation and prior controller decisions.
+> Live controller-gate state. `plan.md` remains authoritative for architecture, invariants, task definitions, model policy, and global escalation rules. This file records the current P1-T03 authorization and resolved blockers.
 
 ## Current authorization
 
@@ -8,85 +8,67 @@
 - Harness gate: **P1-T02 ACCEPTED**
 - Active task: **P1-T03 only**
 - Latest executor stop: **ESC-03** during scenario 1 (`New game -> first playable map`)
-- Divergent checkpoint: `player.control.ready`
-- First divergent path: `/logical_state/rng/combat_state`
-- Reference value: `992`
-- Recovery value: `598`
-- Controller disposition: **ESC-03 CONFIRMED**
-- Authorized model for bounded diagnosis: **GPT-5.6 Sol / max**
-- Escalation authorization: **YES, for this P1-T03 ESC-03 diagnosis only**
+- Controller disposition: **ESC-03 RESOLVED — harness/scenario mismatch, not a recovery regression**
+- Resume model: **GPT-5.6 Terra / high**
+- Escalation target remains: **GPT-5.6 Sol / max**
+- Escalation pre-authorized for any new issue: **NO**
+- Controller gate after P1-T03: **YES — STOP FOR CONTROLLER REVIEW**
 - Phase 2 remains **UNAUTHORIZED**
-- Gameplay repair remains **UNAUTHORIZED**
-- Golden/manifest blessing remains **UNAUTHORIZED** until the divergence is classified by controller review
+- Gameplay repair remains **UNAUTHORIZED** during P1-T03
 
-## ESC-03 evidence accepted
+## Resolved ESC-03 — new-game seed authority
 
-The reference and recovery traces reach the same scenario checkpoint with matching semantic-delta hash and empty pending state, but combat RNG state differs (`992` vs `598`). This is a logical-state divergence, not presentation/provenance noise.
+The scenario-1 RNG divergence was caused by the harness seeding the wrong layer.
 
-The Trace V1 RNG observer is not the source of the mismatch:
+Both the PC reference and recovery branch use the same `GameState.build_new()` seed logic:
 
-- reference and recovery use the same `LCG` implementation and the same `get_combat_random_state()` observer;
-- the only Trace-harness-related change in `app/utilities/static_random.py` is a read-only growth-RNG state getter;
-- reading combat RNG state does not advance it.
+```python
+if cf.SETTINGS['random_seed'] >= 0:
+    random_seed = int(cf.SETTINGS['random_seed'])
+else:
+    random_seed = random.randint(0, 1023)
+static_random.set_seed(random_seed)
+```
 
-Therefore the next authorized work is to locate and classify the **first divergent combat-RNG consumption/order** between reference and recovery.
+Therefore calling `static_random.set_seed(1701)` before `build_new()` is not authoritative. When `cf.SETTINGS['random_seed'] == -1`, `build_new()` immediately replaces that state with a value drawn from Python's stdlib `random` generator. Separate processes may therefore diverge even when the direct static RNG setup matched.
 
-## P1-T03 ESC-03 diagnosis contract
+The Sol/max diagnosis established:
 
-Use **GPT-5.6 Sol / max**. This is an explicit controller-authorized escalation under ESC-03.
+- module-initial static RNG state matched;
+- scenario-requested direct `static_random.set_seed(1701)` matched;
+- no combat-RNG consumption occurred before divergence;
+- the first divergent mutation was the `static_random.set_seed(random_seed)` call inside `GameState.build_new()`;
+- the reference and recovery call-site logic is semantically identical and predates the behavioral reference;
+- project content, generated component-system artifacts, persistent records, and static RNG starting state matched;
+- the non-equivalent input was Python stdlib `random` process state;
+- using the engine-authoritative input `cf.SETTINGS['random_seed'] = 1701` before `game.build_new()` produced matching reference/recovery Trace V1 state and RNG states.
 
-The diagnosis is evidence-only. Do not repair gameplay, alter RNG behavior, weaken Trace V1, bless an exception, regenerate a golden after mismatch, or begin Phase 2.
+Classification: **Harness/scenario mismatch.** There is no post-reference recovery regression identified by this ESC-03.
 
-### Required diagnosis
+### Mandatory seed rule for P1-T03
 
-For scenario 1 only, determine the earliest point at which the reference and recovery combat RNG streams diverge.
+For every scenario that crosses `GameState.build_new()` / new-game initialization, deterministic seed setup must use the engine-authoritative input:
 
-Prefer observer-only/test-owned instrumentation that records, for each combat-RNG mutation:
+```python
+cf.SETTINGS['random_seed'] = <scenario seed>
+game.build_new()
+```
 
-- pre-state;
-- post-state;
-- operation (`get_combat`, `get_randint`, `shuffle`, direct state set/restore, or equivalent);
-- arguments/result when applicable;
-- stable call-site/function identity;
-- nearest semantic context/checkpoint/event/action when available.
+Do not treat an earlier direct `static_random.set_seed(...)` call as authoritative across `build_new()`.
 
-Instrumentation must not consume additional RNG or change call ordering. Do not insert gameplay-side calls solely to make traces align.
+The scenario runner must restore any test-mutated configuration after each run so global settings do not leak between scenarios or reference/recovery processes.
 
-### Root-cause classification
+For scenarios that do not cross `build_new()`, use the actual authoritative seed/load mechanism for that path rather than mechanically applying this rule.
 
-Once the first divergence is found, identify the smallest post-reference commit/file/function cluster responsible and classify it as one of:
+Scenario 1 may remain a **strict PC-reference golden comparison** under this corrected deterministic input contract.
 
-1. **Likely recovery regression** — changed RNG consumption/order with no independently approved semantic reason;
-2. **Known independent correctness fix** — divergence is caused by a later correctness fix that intentionally changes semantics;
-3. **Harness/scenario mismatch** — the two runs are not actually receiving equivalent seed/input/content/bootstrap conditions;
-4. **Reference ambiguity / competing semantics** — evidence is insufficient to choose behavior safely;
-5. **Other** — explain precisely.
-
-Do not choose category 2 merely because a post-reference commit is labeled a fix; prove the specific RNG divergence is a necessary consequence of that correctness fix.
-
-### Required evidence report
-
-Report at minimum:
-
-- initial seed and all RNG states at scenario start for both runs;
-- first matching RNG mutation sequence before divergence;
-- first divergent RNG mutation with pre/post state, operation, call site, and semantic context;
-- relevant reference-vs-recovery source diff or commit(s);
-- whether project content/input/bootstrap is identical for the compared path;
-- classification from the list above with evidence;
-- whether scenario 1 can remain a strict PC-reference golden comparison or requires a controller semantic decision.
-
-If the diagnosis discovers a second correctness-critical subsystem or a new semantic ambiguity, preserve evidence and STOP; do not broaden into a repair.
-
-After the bounded ESC-03 diagnosis, STOP FOR CONTROLLER REVIEW. Do not continue scenarios 2-18 until the controller disposes of scenario 1.
-
-## Prior controller decision — reference component-system bootstrap
+## Reference component-system bootstrap
 
 Behavioral reference: `9314f54b49f4552b5a3d023b4da0012ce7dfbc89`.
 
 `app/engine/skill_system.py` and `app/engine/item_system.py` are reference-owned generated artifacts. The reference `.gitignore` ignores them, and the reference-owned component generator deterministically creates them from source inputs at the same revision.
 
-Authorized reference bootstrap remains:
+Authorized bootstrap remains:
 
 1. verify reference HEAD exactly;
 2. run only `generate_component_system_source()`;
@@ -98,7 +80,7 @@ Authorized reference bootstrap remains:
 
 A different missing artifact may be generated without escalation only if the exact reference contains its generator and authoritative inputs, the output is clearly generated, and no recovery implementation is copied in.
 
-## Prior controller decision — scenario 17
+## Scenario 17 contract
 
 Scenario 17 remains a hybrid reference-anchored + recovery metamorphic invariant:
 
@@ -109,6 +91,21 @@ Scenario 17 remains a hybrid reference-anchored + recovery metamorphic invariant
 
 There is no simulated PC-reference enabled-idle debugger/profiler golden.
 
+## P1-T03 resume contract
+
+Resume the same P1-T03 task using **GPT-5.6 Terra / high**.
+
+- Re-run scenario 1 using the corrected engine-authoritative seed input and establish its reference/recovery result.
+- Continue scenarios 2–16 and 18 as ordinary PC-reference golden scenarios.
+- Run scenario 17 under the hybrid contract above.
+- Use the accepted Trace V1 reference overlay only as instrumentation.
+- Never copy recovery output into reference fixtures.
+- Never silently regenerate a golden after a recovery mismatch.
+- Do not repair gameplay or begin Phase 2.
+- Report scenarios 1–18 individually; overall PASS is forbidden if any required scenario is skipped or unresolved.
+
+If a new reference ambiguity, deterministic non-presentation trace divergence, save-format decision, competing semantic interpretation, cross-system invariant failure, or other global ESC condition appears, STOP and request **GPT-5.6 Sol / max**. Do not self-escalate.
+
 ## Gate status
 
-Only the bounded P1-T03 ESC-03 diagnosis above is authorized now. Phase 2 and all gameplay repairs remain blocked.
+P1-T03 is authorized to resume. Phase 2 remains blocked until P1-T03 completes and receives controller review.

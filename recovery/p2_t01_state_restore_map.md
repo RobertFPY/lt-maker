@@ -1,9 +1,10 @@
 # P2-T01 GameState / state-restore delta map
 
 Date: 2026-08-08 (Asia/Bangkok)
-Task: P2-T01 — audit only; no production, test, golden, save-format, or project-data change.
+Task: P2-T01-R1 — destination-stack audit correction only; no production,
+test, golden, save-format, or project-data change.
 Reference: `9314f54b49f4552b5a3d023b4da0012ce7dfbc89`
-Audit HEAD: `d49abcf7e73a3e1f6fd99e70ba3b7709e54aa51e`
+Audit HEAD: `cf9188f013af74e4c58b1f566a6ef5951edff626`
 
 ## Scope, sources, and conclusion
 
@@ -39,8 +40,8 @@ commit.
 
 No reference ambiguity, competing semantic result, or new architecture choice
 was required to produce this map. The exact pending-world representation is an
-implementation question for the already-authorized P2-T02 Sol/max task, not an
-implementation decision made here.
+implementation question for plan-defined P2-T02 (`GPT-5.6 Sol / max`), which
+remains controller-blocked; it is not an implementation decision made here.
 
 ## Restore-call and field/consumer index
 
@@ -52,7 +53,7 @@ implementation decision made here.
 | `GameState.start_level_iter` | `GameState.start_level` drains it; `TitleLoadJobState`; `InChapterLoadJobState` | New yieldable tilemap/level/setup sequence. The latter two are Android-only staged consumers. |
 | `GameState.level_setup` / `_iter` | `start_level[_iter]`; `build_level_from_scratch`; module entry points | Current wrapper remains synchronous; iterator exposes board/region/fog/unit-arrival/aura phases. |
 | `GameState.set_up_game_board` / `_iter` | `level_setup_iter`; `load_iter`; `OverworldFreeState.set_up_overworld_game_state` | Current wrapper remains synchronous. Iterator assigns live `board` after `GameBoard.build_iter`; board construction is a Phase 4 dependency. |
-| `_staged_state_data` | initialized/cleared by `GameState.__init__`, `clear`, `prepare_for_load`; written by `load_iter(replace_state_machine=True)`; consumed by `commit_staged_state` | Added by `8306e1a9`; prevents saved map stack exposure but leaves a live world incrementally rebuilt. Start/overworld branches intentionally do not consume it, so it can remain stale until the next preparation. |
+| `_staged_state_data` | initialized/cleared by `GameState.__init__`, `clear`, `prepare_for_load`; written by `load_iter(replace_state_machine=True)`; consumed by `commit_staged_state` | Added by `8306e1a9`; prevents saved map stack exposure but leaves a live world incrementally rebuilt. Android start/restart/overworld branches do not consume it, so it remains stale until the next preparation. The title-overworld branch also appends destination state twice. |
 | `chapter_start_snapshot` | written after `level_setup_iter`; cleared by `clear`; consumed by `RuntimeDebugger.restart_chapter` | Added in `0821182a`; protected restart feature. Captures state before `LevelStart` events mutate chapter data. |
 | `commit_staged_state` | title job normal-save completion; in-chapter job normal-save completion | Replaces `game.state` only after `load_iter` reaches events/aura completion. It is the current state-stack commit, not a complete-world commit. |
 | `load_iter(..., replace_state_machine=True)` | only `SaveLoadJob.advance` | Defer saved state stack; the false/default path preserves desktop stack-install timing. |
@@ -106,16 +107,21 @@ title Load/Restart menu (old authoritative title state)
        auras/events mutate the live singleton incrementally
        saved stack held in _staged_state_data
   -> normal save: commit_staged_state installs saved stack, then title_wait
-  -> start/restart save: advance start_level_iter, then install loading state
-  -> overworld save: install overworld state after restore
+  -> start/restart save: advance start_level_iter, then append loading state
+  -> overworld save: _begin_post_load appends overworld once; _complete_load
+     appends overworld a second time; then title_wait is queued and committed
   -> destination state begins on a later engine update
 ```
 
 The loader blocks normal state lifecycle access during the yielded steps, but
 the live world is still partial. The `start` and `overworld` branches do not
 consume `_staged_state_data`; the payload is discarded only by a later
-`prepare_for_load`/`clear`. P2-T02 must make destination selection explicitly
-consume or discard the saved stack during the atomic commit.
+`prepare_for_load`/`clear`. The two title-overworld appends are source-proven:
+`_begin_post_load()` at `title_screen.py:974-976` appends the first, then
+`_complete_load()` at `:994-995` appends the second before it queues and
+commits `title_wait`. This is not an idempotent API: `StateMachine.load_states`
+appends directly to `self.state`. P2-T02 must make destination selection
+explicit and install it once at the atomic transaction boundary.
 
 ### 3. In-chapter load
 
@@ -179,6 +185,71 @@ begin. Android must defer `OverworldFreeState` installation until the complete
 restore commit; its state start itself synchronously builds overworld map
 controllers and board.
 
+## Destination-stack matrix — exact current and reference shapes
+
+Notation: `S` is the ordered saved-state payload `s_dict['state'][0]`; `Q`
+is its ordered pending-transition payload `s_dict['state'][1]`; `W` is
+`title_wait`; `L` is `start_level_asset_loading`; `O` is `overworld`; and `J`
+is the opaque load-job state. `T_L`, `T_R`, and `T_M` mean the pre-existing
+Title Load, Title Restart, and in-map stacks respectively. `P(X; Q + D)`
+means the exact `StateMachine.process_temp_state()` result after appending
+`X`, then processing the saved transitions `Q` followed by destination queue
+`D`; it is the only exact source-level representation possible when a save
+itself serializes arbitrary pending transitions.
+
+| Entry path / revision | Saved payload and installation | Explicit operations in exact order | `_staged_state_data` | Final stack immediately before the next normal lifecycle update |
+| --- | --- | --- | --- | --- |
+| PC reference desktop, normal save (`TitleLoadState`) | `S`, `Q`; `GameState.load` calls `load_states(S, Q)` synchronously after title stack clear | `clear; process; build_new; load_states(S,Q); change(W); process` | absent | `P(S; Q + [W])` |
+| Current desktop, normal save (`TitleLoadState`) | `S`, `Q`; `GameState.load` drains `load_iter` and calls `load_states(S, Q)` synchronously | `clear; process; build_new; load_iter` (drained) `→ load_states(S,Q); change(W); process` | not used | `P(S; Q + [W])` — reference-shaped |
+| PC reference desktop, `kind == 'start'`, Load Game | `S`, `Q`; installed synchronously | `clear; process; build_new; load_states(S,Q); load_states([L]); start_level; change(W); process` | absent | `P(S + [L]; Q + [W])` |
+| Current desktop, `kind == 'start'`, Load Game | `S`, `Q`; installed synchronously while `load_iter` is drained | `clear; process; build_new; load_iter → load_states(S,Q); load_states([L]); start_level; change(W); process` | not used | `P(S + [L]; Q + [W])` — reference-shaped |
+| PC reference desktop, `kind == 'start'`, Restart Level | `S`, `Q`; appended to existing Title Restart machine because this path has no pre-load `clear` | `build_new; load_states(S,Q); start_level; change(W); process` | absent | `P(T_R + S; Q + [W])` |
+| Current desktop, `kind == 'start'`, Restart Level | same `S`, `Q`; current wrapper is synchronous and also has no pre-load `clear` | `build_new; load_iter → load_states(S,Q); start_level; change(W); process` | not used | `P(T_R + S; Q + [W])` — reference-shaped |
+| PC reference desktop, `kind == 'overworld'`, Load Game | `S`, `Q`; installed synchronously after clear | `clear; process; build_new; load_states(S,Q); load_states([O]); change(W); process` | absent | `P(S + [O]; Q + [W])` |
+| Current desktop, `kind == 'overworld'`, Load Game | `S`, `Q`; installed synchronously after current iterator drains | `clear; process; build_new; load_iter → load_states(S,Q); load_states([O]); change(W); process` | not used | `P(S + [O]; Q + [W])` — reference-shaped |
+| PC reference desktop, `kind == 'overworld'`, Restart Level | `S`, `Q`; appended to existing Title Restart machine | `build_new; load_states(S,Q); load_states([O]); change(W); process` | absent | `P(T_R + S + [O]; Q + [W])` |
+| Current desktop, `kind == 'overworld'`, Restart Level | same `S`, `Q`; no pre-load clear | `build_new; load_iter → load_states(S,Q); load_states([O]); change(W); process` | not used | `P(T_R + S + [O]; Q + [W])` — reference-shaped |
+| Current Android title, normal save | `S`, `Q` held by `load_iter(..., replace_state_machine=True)` until `commit_staged_state()` creates a new machine with `load_states(S,Q)` | `T_L; change(J); process → T_L+[J]; prepare/load slices; commit_staged_state; change(W); process` | consumed by `commit_staged_state` | `P(S; Q + [W])`; old title/job machine is replaced |
+| Current Android title, `kind == 'start'` Load Game | `S`, `Q` never installed; level is rebuilt after restore | `T_L; change(J); process; stage(S,Q); start_level_iter; load_states([L]); change(W); process` | remains stale | `T_L + [J,L,W]` |
+| Current Android title, `restart_level` | `S`, `Q` never installed; same post-load level rebuild | `T_R; change(J); process; stage(S,Q); start_level_iter; load_states([L]); change(W); process` | remains stale | `T_R + [J,L,W]` |
+| Current Android title, `overworld` (Load Game or Restart Level's overworld slot) | `S`, `Q` never installed | `T; change(J); process; stage(S,Q); _begin_post_load: load_states([O]); _complete_load: load_states([O]); change(W); process`, where `T` is `T_L` or `T_R` | remains stale | `T + [J,O,O,W]` — two distinct `OverworldFreeState` instances |
+| Current Android in-chapter, normal save | `S`, `Q` held until replacement | `T_M; clear; change(J); process → [J]; stage(S,Q); commit_staged_state` | consumed by `commit_staged_state` | `S` with pending `Q`; no post-commit `process_temp_state` occurs before the next lifecycle update |
+| Current Android in-chapter, `kind == 'start'` | `S`, `Q` never installed; level rebuilt | `T_M; clear; change(J); process → [J]; stage(S,Q); start_level_iter; load_states([L])` | remains stale | `[J,L]` |
+| Current Android in-chapter, `kind == 'overworld'` | `S`, `Q` never installed | `T_M; clear; change(J); process → [J]; stage(S,Q); _begin_post_load: load_states([O])` | remains stale | `[J,O]` — exactly one `OverworldFreeState` |
+
+Reference-shaped destination target, established by the desktop source, is
+therefore exact rather than a generic retain/discard policy: normal saves
+publish `S` and its pending `Q`, then `W`; Load Game start saves publish `S`,
+`Q`, `L`, then `W`; restart-level start saves preserve their documented title
+stack behavior and add no duplicate destination; overworld saves append one
+and only one `O` before `W`. Android must not retain the saved stack as a
+long-lived singleton payload, and it must not append either destination twice.
+
+## R1 title-overworld reference comparison
+
+The double append is a demonstrated current Android divergence/workaround
+defect, not an established later feature requirement.
+
+- PC reference `9314f54b` has no `TitleLoadJobState`. Its synchronous desktop
+  Load Game and Restart Level overworld paths each call
+  `game.load_states(['overworld'])` once, then queue/process `title_wait`.
+- Current `52bd0403` introduced `TitleLoadJobState._begin_post_load()` and its
+  first `overworld` append. `git blame` assigns that call to `52bd0403`.
+- Current `8306e1a9` added the second append in `_complete_load()` while
+  changing the start-save sequencing to defer saved state until level rebuild.
+  Its title-job test additions cover normal-save commit and start-level
+  installation; they contain no title-overworld assertion and the diff does
+  not remove the pre-existing first append.
+- `StateMachine.load_states()` is append-only in both reference and current
+  code. No source, history, or existing test establishes a requirement for two
+  `OverworldFreeState` instances. Current `InChapterLoadJobState` independently
+  demonstrates the intended single-append shape for its overworld path.
+
+Accordingly, P2-T02's reference-shaped requirement is one explicit final
+overworld installation, after authoritative world restore, followed by the
+same title handoff where that handoff applies. This R1 records the defect only;
+it does not alter production behavior.
+
 ## Function and field classification map
 
 `S#` references the immutable Phase 1 fixtures under
@@ -205,9 +276,9 @@ commit.
 | `save.py::SaveLoadJob` | absent | worker reads bytes; main thread mutates live state in timed slices | `52bd0403`, `7f717b6b9` | safe I/O, unsafe live restore granularity | `REWRITE-PLATFORM` | retain worker read; re-port hydrate/build to pending world | S2/S4/S18; Android round-3 tests |
 | `save.py::load_game` | read → build_new → load → slot/UIDs synchronously | same API with profiled byte read | `52bd0403` | save API/format compatibility | `KEEP-SHARED` | retain synchronous semantic API | S2/S4/S18 |
 | `save.py::save_io` / restart slots | reference slots; restart flow exists | serial I/O, user-data paths, restart carry-forward and Test Chapter fallback | `52bd0403`/later save fixes | protected save/restart feature | `KEEP-CORRECTNESS-FIX` | retain independently of scheduling | S4/S18; title save tests |
-| `title_screen.py::TitleLoadState` / `TitleRestartState` desktop branches | direct synchronous load/restart | retains direct branches; Android dispatch added | `52bd0403` | title stack/destination order | `KEEP-SHARED` | retain, use transaction API in P2 | S2/S4/S18 |
+| `title_screen.py::TitleLoadState` / `TitleRestartState` desktop branches | direct synchronous load/restart | retains direct branches; Android dispatch added | `52bd0403` | title stack/destination order | `KEEP-SHARED` | retain exact desktop destination behavior | S2/S4/S18 |
 | `TitleLoadState::_start_android_load` | absent | queues opaque title job and starts reader | `52bd0403` | title remains live under loader | `REWRITE-PLATFORM` | retain UI handoff only; pending transaction beneath | S2/S4/S18; title job tests |
-| `TitleLoadJobState` | absent | drives restore/start iterators; commits state only for ordinary save | `52bd0403`, `8306e1a9` | live partial world; unconsumed staged state for start/overworld | `RESTORE-PC-SEMANTICS` | re-port to one final destination commit | S2/S4/S18; title job tests |
+| `TitleLoadJobState` | absent | drives restore/start iterators; commits state only for ordinary save. For title-overworld, `_begin_post_load` appends `overworld`, then `_complete_load` appends it again before `title_wait`. | first append `52bd0403`; second append `8306e1a9` | live partial world; stale staged payload for start/overworld; demonstrated double destination stack | `RESTORE-PC-SEMANTICS` | replace with one final destination installation; do not repair in R1 | S2/S4/S18; current tests cover normal/start only, not title-overworld |
 | `title_screen.py::TitleSaveState` | synchronous next level/overworld after save | same logical save/restart flow | `52bd0403` mixed | preserve save kind/destination | `KEEP-SHARED` | retain | S4/S18 |
 | `general_states.py::load_save_slot` | absent in reference | desktop in-map load wrapper, synchronous | `52bd0403` | in-chapter saved-state replacement | `KEEP-SHARED` | retain through transaction API | S2/S4/S18 |
 | `InChapterLoadState` / `InChapterLoadJobState` | absent | Android loader clears map stack, drives SaveLoadJob | `0821182a` | opaque state contains but does not eliminate partial live world | `RESTORE-PC-SEMANTICS` | re-port UI only; final atomic commit | S2/S4/S18; Android round-3 |
@@ -289,12 +360,13 @@ resource/audio work. It does **not** require changing any Phase 1 fixture.
 ## Unresolved controller decisions
 
 - The P2-T02 implementation must choose the concrete pending-world container
-  after examining constructor/link requirements. This audit recommends the
-  boundary above but does not authorize a new cross-cutting abstraction.
-- Decide whether a `start` or `overworld` load should explicitly discard the
-  saved stack before the final commit or retain a defined subset. Current
-  Android branches leave `_staged_state_data` unconsumed; desktop has no such
-  retained payload.
+  only if it can stay bounded; controller direction expressly does not
+  authorize inventing a cross-cutting pending `GameState` abstraction.
+- There is no open retain/discard semantic question for the destination stack:
+  the matrix records the established desktop/reference shapes for normal,
+  start, restart, and overworld saves. The remaining implementation question
+  is mechanical: how to hold `S`/`Q` transaction-locally until the single
+  restore commit, rather than in `_staged_state_data`.
 - Keep every save-format/restart compatibility field until a later save-format
   audit proves it independent. In particular, do not solve atomicity by
   recreating saves, changing slot kinds, or dropping restart metadata.
@@ -304,4 +376,5 @@ resource/audio work. It does **not** require changing any Phase 1 fixture.
 - No production behavior was modified.
 - Immutable Trace V1 fixtures/manifest were not opened for write or changed.
 - No escalation trigger was reached during the source/reference comparison.
-- P2-T02 remains blocked pending controller review of this map.
+- P2-T02 is plan-defined as `GPT-5.6 Sol / max` and remains controller-blocked
+  pending acceptance of this R1 map.

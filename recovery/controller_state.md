@@ -4,164 +4,170 @@
 
 ## Current authorization
 
-- Current phase: **Phase 1**
-- Harness gate: **P1-T02 ACCEPTED**
-- Executor evidence commit reviewed: `869d03692be1c56d6c074b18b93a1f781f1f38cb`
-- P1-T03 scenario execution: **COMPLETE**
-- P1-T03 controller result: **PARTIAL — FIXTURE PERSISTENCE GAP**
-- Active task: **P1-T03-R1 only**
+- Current phase: **Phase 2**
+- Phase 1 harness: **ACCEPTED**
+- P1-T02 trace harness: **ACCEPTED**
+- P1-T03 scenario evidence: **ACCEPTED**
+- P1-T03 persistence correction R1: **ACCEPTED** at `6f1da4bcc53f26237b0b2150a128420ecd9aa7cb`
+- Active task: **P2-T01 only — Audit GameState/load/state-restore delta**
 - Primary model: **GPT-5.6 Terra / high**
 - Escalation target: **GPT-5.6 Sol / max**
 - Escalation pre-authorized: **NO**
-- Phase 2: **UNAUTHORIZED**
-- Production gameplay/state-machine/save/project-data changes: **UNAUTHORIZED**
-- Golden semantic changes: **UNAUTHORIZED**
+- P2-T02 implementation: **UNAUTHORIZED**
+- Production gameplay/state-machine/save behavior changes during P2-T01: **UNAUTHORIZED**
+- Golden/reference fixture changes: **UNAUTHORIZED**
+- Controller gate after P2-T01: **YES — STOP FOR CONTROLLER REVIEW**
 
-## Controller review of `869d03692`
+## Phase 1 acceptance record
 
-### Accepted
+The controller accepts `6f1da4bcc53f26237b0b2150a128420ecd9aa7cb` (`test(recovery): lock P1-T03 PC goldens`) as closing the P1-T03 fixture-persistence gap.
 
-The commit is correctly bounded to test/evidence scope only:
+Accepted evidence:
 
-- `app/tests/recovery_trace_runner.py`
-- `app/tests/test_recovery_golden.py`
-- `recovery/p1_t03_evidence.md`
+- the commit is descended directly from the controller R1 authorization commit `72cc9da59a80276ce48bb2573e7b2b8672537158`;
+- R1 changes are limited to the 17 PC-reference JSONL fixtures, `manifest.json`, bounded fixture-integrity tests, and `recovery/p1_t03_evidence.md`;
+- no production engine or project-data file was changed by R1;
+- all 17 persisted goldens are the exact preserved PC-reference bytes previously reviewed in `869d03692be1c56d6c074b18b93a1f781f1f38cb`;
+- no golden was re-materialized and no recovery output was used as expected data;
+- `manifest.json` locks Trace V1 schema version 1, reference revision, scenario/input identity, ordered checkpoints, fixture paths, and exact SHA-256 values;
+- S3 remains `N/A — REFERENCE-UNSUPPORTED` and has no fixture;
+- S16 persists only the PC-reference OFF golden; recovery ON == recovery OFF remains the INV-06 metamorphic assertion;
+- S17 persists only the PC-reference disabled baseline; debugger/profiler enabled-idle equality remains the recovery-side INV-07 metamorphic assertion;
+- the integrity tests recompute fixture hashes and validate Trace V1 headers/checkpoint order rather than regenerating or updating expected data.
 
-No production engine or project-data files were changed.
+The executor reports final Phase 1 validation as:
 
-Scenario status is accepted provisionally as reported:
+- trace/lifecycle/golden suite: **50 passed**;
+- `python -m compileall -q app`: PASS;
+- `git diff --check`: PASS;
+- PC reference worktree clean at `9314f54b49f4552b5a3d023b4da0012ce7dfbc89`;
+- `git show --check`: PASS.
 
-1. **S1 PASS** — `player.control.ready`.
-2. **S2 PASS** — `save.restore.complete`.
-3. **S3 N/A — REFERENCE-UNSUPPORTED** — no golden.
-4. **S4 PASS** — `restart.complete`.
-5. **S5 PASS** — MapCombat cleanup.
-6. **S6 PASS** — SimpleCombat cleanup.
-7. **S7 PASS** — AnimationCombat cleanup.
-8. **S8 PASS** — BaseCombat cleanup.
-9. **S9 PASS** — DB-owned Luna proc + ordered combat hooks.
-10. **S10 PASS** — durability/broken/unusable cleanup.
-11. **S11 PASS** — promotion/class state fixture.
-12. **S12 PASS** — aura propagation/load/teardown.
-13. **S13 PASS** — FOW preview/cancel/wait using the approved deterministic host-time test shim and real InputManager.
-14. **S14 PASS** — tilemap terminal commit.
-15. **S15 PASS** — phase terminal commit.
-16. **S16 PASS** — PC reference OFF == recovery OFF; recovery ON == recovery OFF under INV-06. The PC reference has no fast-forward driver helper, so no PC enabled-mode golden is required.
-17. **S17 PASS** — approved hybrid observer contract.
-18. **S18 PASS** — DB-owned `Global DeathEirika` -> real GameOver -> title -> real Restart Level / `RESTART_SLOTS` flow.
+All P1-T03 scenario results are accepted as the Phase 1 behavioral oracle: S1-S2 and S4-S18 PASS under their reviewed contracts; S3 is the resolved reference-unsupported N/A case.
 
-The reported validation set is also accepted provisionally:
+The committed oracle lives under:
 
-- recovery trace/lifecycle + P1-T03 harness tests: 48 passed;
-- `compileall` passed;
-- `git diff --check` passed before commit;
-- `git show --check` passed after commit;
-- reference worktree reported clean at `9314f54b49f4552b5a3d023b4da0012ce7dfbc89`.
+`app/tests/fixtures/recovery_traces/v1/`
 
-### Blocking deficiency
+These fixtures are immutable expected PC behavior for later recovery work. A later recovery mismatch is evidence to diagnose, not permission to rewrite a golden.
 
-P1-T03 cannot be accepted yet because the reviewed Trace V1 design requires the PC-reference goldens to exist in a **versioned repository test-fixture directory** with a **manifest** recording reference revision, schema/input identity, and SHA-256.
+## P2-T01 — authorized audit scope
 
-`recovery/p1_t03_evidence.md` currently says the JSONL captures remain only in the executor temp directory and records their filenames/hashes. The commit contains no JSONL golden fixtures and no manifest.
+P2-T01 is an **audit and function-level restore/re-port map only**. It does not authorize implementation.
 
-This is not a gameplay or trace-semantic failure. It is an evidence persistence/reproducibility failure: later phases need an immutable, reviewable oracle rather than only hashes of temporary files.
+Primary task definition from `plan.md`:
 
-## P1-T03-R1 — Persist and lock reviewed goldens
+- inspect `app/engine/game_state.py`;
+- inspect state-machine files;
+- inspect title/load jobs;
+- inspect chapter and overworld restore entry points;
+- inspect staged-state fields and commit paths;
+- inspect restart/save dependencies;
+- deliver a function-level restore/re-port map before implementation.
 
-Resume **P1-T03 only** using **GPT-5.6 Terra / high**.
+### Required behavioral comparison
 
-### Authorized scope
+Compare the PC behavioral reference:
 
-May add/update only:
+`9314f54b49f4552b5a3d023b4da0012ce7dfbc89`
 
-- `app/tests/fixtures/recovery_traces/v1/*.jsonl`
-- `app/tests/fixtures/recovery_traces/v1/manifest.json`
-- `recovery/p1_t03_evidence.md`
-- `app/tests/test_recovery_golden.py` only for bounded fixture/manifest integrity tests
-- `app/tests/recovery_trace_runner.py` only if a minimal test-owned helper is strictly necessary to verify persisted fixtures; do not alter scenario semantics, inputs, checkpoints, allowlists, normalization, or comparator meaning
+against the current recovery branch. The reference is a behavioral oracle, not a textual revert target.
 
-No production code, project data, Trace V1 schema semantics, or scenario contract changes are authorized.
+At minimum audit the complete restore transaction through all paths that can make saved/current world state authoritative:
 
-### Golden materialization rule
+1. `GameState.clear`, `build_new`, `save`, `load`, `load_iter`, level/overworld setup and board/controller setup paths;
+2. `StateMachine` state installation, queued transitions, `load_states`, `process_temp_state`, and any staged/deferred interaction relevant to restore;
+3. desktop title load and restart paths;
+4. Android title/load job paths and in-chapter loading paths;
+5. `save.load_game`, save-slot/restart-slot dependencies, and any later save-format or restart feature that must be preserved under INV-08;
+6. chapter start/restart paths, including start-save semantics;
+7. overworld restore paths;
+8. staged fields/paths including `_staged_state_data`, `chapter_start_snapshot`, `commit_staged_state`, `load_iter(... replace_state_machine=...)`, and every caller/consumer found in the current tree;
+9. map-safety/camera/null guards added because staged restore can expose an incomplete world;
+10. Android progressive preparation that may be retained only if it can remain outside authoritative live gameplay state and finish with one main-thread atomic commit.
 
-For S1, S2, S4-S18, persist the **PC-reference JSONL bytes** corresponding to the SHA-256 values already recorded in `recovery/p1_t03_evidence.md` from commit `869d03692`.
+### Atomicity questions the report must answer
 
-Preferred path:
+For every restore entry point, state explicitly:
 
-1. If the original executor temp files still exist, copy those exact bytes into the versioned fixture directory.
-2. Compute SHA-256 after copying and require exact equality with the already-recorded hash.
+- what the authoritative live state is before restore begins;
+- what structures are built or mutated and in what order;
+- exactly when the saved state stack becomes authoritative;
+- when level/overworld, tilemap, board, units, aura/fog/regions, events, controllers, and RNG are valid;
+- whether any normal state `begin`/`update` can observe a partially restored world;
+- whether the PC reference performs the operation as one synchronous logical transaction;
+- which later feature/fix must survive even if its current staging implementation is removed;
+- whether an Android optimization can be re-ported as off-world/pending preparation plus one atomic commit.
 
-If an original temp file no longer exists, regeneration is explicitly authorized only under all of these conditions:
+INV-03 remains the governing rule: no observable partial gameplay state.
 
-1. generate from isolated PC reference `9314f54b49f4552b5a3d023b4da0012ce7dfbc89` using the already-accepted Trace V1 overlay and the scenario runner semantics from `869d03692`;
-2. run the same reference scenario twice and require byte-identical JSONL output;
-3. require the regenerated file SHA-256 to exactly equal the hash already recorded in `recovery/p1_t03_evidence.md`;
-4. if the bytes/hash differ, **STOP** — do not update the recorded expected hash and do not regenerate until something passes.
+### Required function-level classification
 
-S3 remains N/A and must not receive a fixture.
+For every changed function/field in the P2-T01 surface, produce a row with at least:
 
-Do not copy recovery output into the golden directory.
+- file and symbol;
+- PC-reference behavior;
+- current recovery behavior;
+- relevant introducing/follow-up commit(s) where identifiable;
+- semantic risk/invariant affected;
+- classification using the existing recovery labels (`KEEP-SHARED`, `KEEP-PLATFORM`, `REWRITE-PLATFORM`, `RESTORE-PC-SEMANTICS`, `REMOVE-WORKAROUND`, `KEEP-CORRECTNESS-FIX`);
+- proposed Phase 2 treatment: retain / restore / re-port / remove-after-proof / controller decision;
+- dependencies and tests/goldens that would prove the treatment.
 
-### Manifest contract
+Do not classify a whole mixed commit as one unit. In particular, never revert `52bd0403` or `0821182a` wholesale.
 
-Create `app/tests/fixtures/recovery_traces/v1/manifest.json`.
+### Protected behavior
 
-For every persisted golden, record at minimum:
+The audit must preserve/separate rather than accidentally roll back:
 
-- `schema_version: 1`;
-- PC reference revision `9314f54b49f4552b5a3d023b4da0012ce7dfbc89`;
-- scenario ID;
-- input fixture ID from the trace header;
-- golden filename/path;
-- SHA-256 of the exact JSONL bytes;
-- ordered checkpoint IDs.
+- current save-format/features that are independent of staged scheduling;
+- restart game/chapter intent and current restart-slot behavior;
+- aura load/teardown correctness already protected by the Phase 1 oracle;
+- later independent correctness fixes;
+- fast-forward, debugger, profiler, and Android platform policy unrelated to restore semantics;
+- project data/assets/resources.
 
-Represent S3 separately as `N/A — REFERENCE-UNSUPPORTED`, not as a fake/empty golden.
+### Deliverable
 
-For S16 record that the persisted PC golden is the reference OFF run; recovery ON/OFF equality remains a metamorphic INV-06 assertion, not a second PC golden.
+Create/update only the bounded audit report:
 
-For S17 record that the persisted PC golden is the disabled observer baseline only; debugger/profiler enabled-idle equality remains recovery-side metamorphic evidence under the approved hybrid contract.
+`recovery/p2_t01_state_restore_map.md`
 
-### Evidence update
+The report must contain:
 
-Update `recovery/p1_t03_evidence.md` so fixture paths point to the committed versioned fixture files, not executor temp paths. Preserve the existing accepted SHA-256 values. Document any file that had to be re-materialized because its temp copy was unavailable and state that the regenerated bytes matched the pre-existing hash.
+1. reference-vs-recovery transaction diagrams or ordered step maps for desktop load, Android title load, in-chapter load if present, restart, and overworld restore;
+2. the function/field classification table described above;
+3. one proposed authoritative atomic restore boundary for P2-T02, stated as a design recommendation only;
+4. an explicit list of workarounds that become candidates for P2-T03 removal only after P2-T02 proves the invalid partial state impossible;
+5. exact P2-T02 implementation slices/dependencies in a safe order, without implementing them;
+6. unresolved controller decisions or escalation evidence.
 
-### Required tests
+No production code, tests that mutate expected semantics, project data, Trace V1 schema, comparator, manifest, or golden fixture may be changed during P2-T01.
 
-Add bounded tests that at minimum:
+### Validation
 
-- load `manifest.json`;
-- verify every non-N/A manifest fixture exists;
-- verify every fixture byte SHA-256 matches the manifest and the evidence file values;
-- verify each JSONL contains one Trace V1 header with the expected reference revision/schema/scenario/input fixture identity;
-- verify ordered checkpoint IDs match the manifest;
-- verify S3 has no golden fixture;
-- keep the existing harness helper tests passing.
+Because P2-T01 is documentation/audit only:
 
-Do not make tests regenerate/update expected fixtures automatically.
+- verify the recovery branch and HEAD before work;
+- verify the Phase 1 manifest/integrity tests still pass without modification;
+- run `git diff --check` before commit;
+- commit only `recovery/p2_t01_state_restore_map.md`;
+- run `git show --check` after commit;
+- report exact source/ref comparisons used and any uncertainty.
 
-### Final validation
+## Escalation and stop rules
 
-Run:
+P2-T01 escalation target is **GPT-5.6 Sol / max**, but it is not pre-authorized.
 
-- `python -m unittest app.tests.test_recovery_trace app.tests.test_state_machine_lifecycle app.tests.test_recovery_golden`
-- `python -m compileall -q app`
-- `git diff --check` before commit
-- verify the isolated PC reference worktree is clean except explicitly ignored generated component-system outputs
-- commit only the authorized P1-T03-R1 fixture/evidence/test changes
-- `git show --check` after commit
+STOP and request escalation on the plan-defined P2-T01 triggers:
 
-Report:
+- **ESC-01** reference ambiguity;
+- **ESC-02** nonlocal root cause crossing another correctness-critical subsystem;
+- **ESC-04** competing plausible gameplay semantics;
+- **ESC-09** an unplanned cross-cutting architecture decision is required.
 
-- whether each golden came from the preserved temp file or explicitly authorized re-materialization;
-- exact fixture paths and SHA-256 values;
-- manifest validation results;
-- test results;
-- files changed;
-- commit SHA.
-
-Then **STOP FOR CONTROLLER REVIEW**.
+Do not self-escalate. Do not begin P2-T02 after completing the map.
 
 ## Gate status
 
-P1-T03 scenario semantics are provisionally accepted, but **P1-T03 as a task is not yet accepted** until R1 persists and locks the reviewed goldens. Phase 2 remains blocked.
+**Phase 1 is ACCEPTED. P2-T01 is the only authorized task. P2-T02 remains blocked until P2-T01 receives controller review.**

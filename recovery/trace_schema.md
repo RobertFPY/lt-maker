@@ -1,9 +1,10 @@
 # P1-T01 — Deterministic Logical Trace Schema
 
-Status: proposed design only.  No recorder, hook, gameplay code, or fixture is
-implemented by this task.
+Status: proposed design revision.  No recorder, hook, gameplay code, or
+fixture is implemented by this task.
 
-Authority: P1-T01 in `plan.md`; controller state dated 2026-08-08.
+Authority: P1-T01-R1 in `recovery/controller_state.md`; controller review of
+P1-T01 requested R1-R5 before P1-T02 can be considered.
 Primary configuration: GPT-5.6 Terra / high.
 
 ## 1. Purpose and boundary
@@ -33,6 +34,11 @@ Each trace is UTF-8 JSON Lines.  It contains one `trace_header`, followed by
 zero or more ordered `checkpoint` records.  Canonical JSON is compact,
 `ensure_ascii=True`, mapping keys sorted recursively, and encoded as UTF-8.
 Hashes are SHA-256 over that canonical encoding.
+
+This R1 amendment remains Schema V1 because no V1 fixture has been accepted or
+generated. Once fixtures exist, any meaningful format or normalization change
+must increment `schema_version`; fixtures are never rewritten to conceal a
+regression.
 
 ```json
 {"kind":"trace_header","schema_version":1,"scenario_id":"chapter_start","reference_revision":"9314f54b49f4552b5a3d023b4da0012ce7dfbc89","runner_revision":"<commit>","platform_profile":"pc_reference","input_fixture_id":"chapter_start_v1","seed":12345,"serializer":"logical-trace-v1"}
@@ -65,7 +71,7 @@ set-like are sorted by their canonical element encoding.
 logical_state
   state_stack
     active: [state NID, ...]              # bottom to top
-    pending: [state NID, ...]             # queued temp-state transitions
+    pending: [transition descriptor, ...] # normally required empty; see section 6.1
   world
     mode: state-mode NID or null
     level_nid: active level NID or null
@@ -75,6 +81,7 @@ logical_state
     turncount: integer or null
     phase: phase/team NID or null
     active_team: team NID or null
+  object_graph: {objects: [object record, ...]}
   units: [unit snapshot, ...]             # sorted by unit NID
   variables
     game: normalized game vars
@@ -96,13 +103,53 @@ logical_state
     regions: normalized region identities and logical positions
   events
     already_triggered: [event NID, ...]
-    active: {event_nid, command_index, command_nid} or null
+    execution_stack: [event frame, ...]   # active, then next-pop order
   completion
     save_restore: completion state or null
     restart: completion state or null
 ```
 
-### 3.1 Unit, skill, and inventory snapshot
+### 3.1 Stable object graph, aliases, and local references
+
+The snapshot has an `object_graph` registry. Units, inventory slots, skills,
+statuses, board aura sources, action records, hook observations, and event
+frames refer to objects by `local_id`; they do not copy an object merely
+because it appears at another logical path.
+
+During one capture only, the serializer may use Python object identity to
+deduplicate its graph. It must never emit that identity, an address, a hash,
+or a raw UID into equality/hash output. It traverses roots in one documented
+canonical order: normalized game roots; units by NID; each unit's inventory
+and nested item slots; each unit's skill/status slots; board entries by
+coordinate; then the active event frame and pending event frames in pop order.
+For an object first reached at a path, it assigns:
+
+```text
+local_id = <kind>@<first canonical path>@<NID or stable kind discriminator>
+```
+
+The first canonical path is the identity choice. Later appearances of the
+same runtime object emit the original `local_id`; a distinct object with the
+same NID receives its own path-derived `local_id`. The registry is emitted as
+canonical records such as:
+
+```text
+object_graph.objects
+  - local_id: skill@units/amy/skills/0/aura_speed
+    kind: skill
+    nid: aura_speed
+    logical_fields: {...}
+    references: {source: skill@units/amy/skills/0/aura_parent}
+```
+
+This makes a shared Aura child observable as one `SkillObject` with multiple
+references, while remaining independent of creation/allocation order. Cycles
+must be represented by local references, never recursive object dumps. Any
+UID is excluded unless a future controller-reviewed adapter names that UID as
+a gameplay-semantic field and explains why a stable local reference cannot
+represent it.
+
+### 3.2 Unit, skill, and inventory snapshot
 
 Each unit snapshot contains at least:
 
@@ -111,23 +158,13 @@ nid, team, party, position, hp, mana, finished, dead,
 statuses, skills, inventory
 ```
 
-`position` is `null` or `[x, y]`.  `statuses` and `skills` contain their NID
-and logical payload required to reconstruct their game effect.  `inventory`
-preserves its semantic slot order and contains the item NID, durability/uses,
-chapter uses, logical data, and nested subitems where applicable.
+`position` is `null` or `[x, y]`. `statuses`, `skills`, and `inventory`
+retain semantic slot order but contain `local_id` references into
+`object_graph`. Their registry records carry NID and logical payload required
+to reconstruct the game effect, including item durability/uses, chapter uses,
+logical data, and nested subitems.
 
-Raw item and skill UIDs are not comparison identities: allocation order can
-differ without semantic divergence.  The serializer derives a stable local
-reference from deterministic traversal:
-
-```text
-(owner unit NID or global owner, category, slot/path, item-or-skill NID)
-```
-
-Relations use this reference.  A raw UID may be retained only in an
-uncompared diagnostic attachment; it must never affect hashes or equality.
-
-### 3.2 Variables and RNG
+### 3.3 Variables and RNG
 
 Game and level variables are recursively normalized and included by default.
 The only permitted exclusions are an explicit, reviewed list of known
@@ -142,14 +179,37 @@ P1-T02 may add a read-only capture seam for growth state if needed.  During a
 combat terminal checkpoint, the normalized delta also records the combat's
 initial and final random states where available.
 
-### 3.3 Board and tilemap identity
+### 3.4 Board and tilemap identity
 
 `tile_grid_hash` derives solely from canonical logical tile identities and
 dimensions, never from a tilemap surface or cache.  Aura, occupancy, fog,
-bounds, and regions use coordinate-sorted logical records.  A source reference
-uses NIDs/local references, never Python identities.  This makes tilemap,
+bounds, and regions use coordinate-sorted logical records. Aura sources use
+`object_graph` local references, never Python identities. This makes tilemap,
 board, aura, and fog mutations observable while allowing different rendering
 or job scheduling implementations.
+
+### 3.5 Event execution stack
+
+The engine does not expose one nested-call stack: `EventState.event` owns the
+active event, `EventManager.event_stack` is a LIFO queue of pending events,
+and `all_events` retains all live events. Therefore `events.execution_stack`
+normalizes executable order as: active `EventState.event` when present; then
+pending `EventManager.event_stack` frames in next-`pop()` order; then any
+still-live `all_events` frame not represented above, in canonical
+insertion/provenance order and marked `role: "retained"`.
+
+Every frame has `event_ref`, `event_nid`, normalized trigger identity,
+`processor.command_ordinal`, `processor.command_nid`, and `role`. The
+`event_ref` is an `object_graph` local reference, so repeated views of the
+same runtime event remain aliases. If an event was enqueued while another
+frame was active, it also has `caller_event_ref` and caller command ordinal.
+That provenance is captured at enqueue time and survives normalization; when
+the runtime provides no caller, including a legacy restored event, both fields
+are explicitly `null`, never inferred.
+
+Dialogue boxes, portrait state, render waits, and input waits stay excluded.
+The ordered active/pending frames plus processor command identity/ordinal are
+required so a save/load that resumes the wrong event or command differs.
 
 ## 4. Semantic deltas
 
@@ -159,6 +219,7 @@ or job scheduling implementations.
 actions:          [normalized action, ...]
 combat_playback:  [normalized playback effect, ...]
 triggered_events: [event NID, ...]
+hook_calls:       [ordered hook observation, ...]
 ```
 
 Action and playback adapters must be an explicit registry by engine action or
@@ -172,6 +233,36 @@ Event order is represented by `triggered_events` and the ordered completion of
 event-command checkpoints.  Dialogue text, waiting-for-input state, and
 visual transitions are excluded unless a command's logical effect changes one
 of the required snapshot fields.
+
+### 4.1 Ordered gameplay-hook observations
+
+`hook_calls` preserves every observed correctness-critical hook invocation in
+the exact original order between checkpoints. Its list length is the call
+count; entries are never sorted or coalesced. Each observation has:
+
+```text
+sequence: integer local to this delta
+dispatcher: item | skill | combat | lifecycle
+hook_name: stable dispatched hook name
+subjects: {unit_ref, item_ref, skill_ref, source_ref, target_ref}
+context: {combat_ordinal, action_ordinal, event_ref, command_ordinal, position}
+lifecycle_phase: stable phase/checkpoint context
+result: normalized gameplay-relevant result, or null
+```
+
+Absent subjects are `null`; references use `object_graph` local IDs. The
+observer records the invocation in the dispatcher/lifecycle path that actually
+makes it. It must not call a hook again, replay a component, or evaluate a
+lazy value merely to produce trace data. P1-T02 may introduce only a
+test-owned observer seam around specifically approved dispatch points; it may
+not broadly instrument production gameplay paths.
+
+The hook adapter registry names every observed dispatcher/hook pair and its
+subject/result normalization. An unknown or unmapped correctness-critical
+observation raises `TraceNormalizationError`; it cannot be silently omitted.
+A result is included only when gameplay-relevant, but the call itself is
+always recorded so equal final state cannot hide a skipped, duplicated, or
+reordered hook.
 
 ## 5. Normalization rules
 
@@ -190,6 +281,11 @@ unordered container, or an implicit Python object identity.  Hashing is
 performed only after normalization.  The schema version increments for any
 meaningful format or normalization change; existing golden fixtures are never
 rewritten to hide a regression.
+
+Identity is permitted only as an internal, capture-lifetime deduplication key
+while constructing `object_graph`; it is discarded before normalization and
+hashing. Object traversal and first-path selection must be deterministic so
+the same alias graph produces identical local IDs in independent runs.
 
 ## 6. Synchronization-point catalog
 
@@ -211,7 +307,7 @@ movement steps.
 | `add_group.complete` | Group placement/removal command is final | `AddGroupJob` terminal completion only |
 | `phase.transition.complete` | Phase/turn state is committed | phase state completion |
 | `save.restore.complete` | Restore plus state-stack/level readiness is complete | public load completion, never an iterator yield |
-| `save.write.complete` | State selected for serialization is complete | immediately before/after logical save capture |
+| `save.payload.captured` | Complete logical save payload captured before filesystem I/O | save serialization boundary |
 | `restart.complete` | Restarted chapter is logically ready | public restart completion |
 | `fast_forward.comparison.end` | Scripted scenario reaches its end state | test runner only |
 | `debugger.observer.check` | Observer is enabled but has not made a logical mutation | test runner only |
@@ -222,12 +318,42 @@ stages are deliberately not checkpoints.  A failed terminal job may be
 recorded for diagnosis only when a scenario expects it; it is not an implicit
 PC-semantic golden result.
 
+### 6.1 Pending state-transition invariant
+
+Every terminal synchronization checkpoint represents a committed logical
+transaction. Its `state_stack.pending` is therefore required to be `[]`.
+Before writing such a checkpoint, the recorder validates this invariant; a
+non-empty queue raises `TraceInvariantError` and writes no golden-eligible
+checkpoint. It must not normalize a partial transition as expected behavior.
+
+An exception is possible only when the scenario contract names the exact
+`checkpoint_id`, allowed ordered transition descriptors, and their
+gameplay-semantic reason. The checkpoint record then includes
+`pending_exception_id`; a comparator rejects any pending queue without that
+same approved exception. Render/defer flags, presentation fences, Android
+budget yields, and any other platform-only scheduling artifact are neither
+transition descriptors nor eligible exceptions. If they reach `pending`,
+capture fails rather than turning Android scheduling into golden state.
+
+### 6.2 Save payload boundary
+
+`save.payload.captured` is the sole save-write trace boundary. It occurs
+immediately after the engine has assembled the complete in-memory logical
+save payload and before it passes that payload to filesystem I/O. Its state
+assertion describes the source game state and includes a canonical hash of the
+normalized logical save payload in `context.save_payload_hash`. There is no
+post-write checkpoint: write completion, paths, files, timestamps, buffering,
+and callbacks are deliberately outside semantic equality. This replaces the
+ambiguous `save.write.complete` name; no fixture may use that retired ID.
+
 ## 7. Proposed helper interfaces (not implemented)
 
 ```python
 class TraceRecorder:
     def begin(self, scenario_id, metadata): ...
     def checkpoint(self, checkpoint_id, game, *, context=None, delta=None): ...
+    def observe_hook(self, dispatcher, hook_name, *, subjects, context, phase,
+                     gameplay_result=None): ...
     def finish(self, output_path): ...
 
 def capture_logical_state(game) -> dict: ...
@@ -296,7 +422,17 @@ Before reference capture, P1-T02/P1-T03 tests must prove:
 
 - normalization produces identical bytes/hash for equivalent mappings and
   set-like collections constructed in different orders;
-- local UID remapping is stable and semantic slot ordering is preserved;
+- local-reference assignment is stable, semantic slot ordering is preserved,
+  and one shared Aura child serializes as one object-graph record referenced by
+  multiple unit skill slots rather than independent copies;
+- event capture preserves an active frame, LIFO next-event order, processor
+  command ordinal, and available caller provenance across normalization;
+- terminal checkpoints reject unapproved pending state transitions, while a
+  scenario-specific approved exception compares its exact queue;
+- hook observations preserve invocation order and count, never invoke a hook
+  twice, and fail on an unmapped correctness-critical hook; and
+- `save.payload.captured` hashes the in-memory logical payload without any
+  filesystem completion/timestamp dependency;
 - volatile/render objects are excluded only through explicit adapters, while
   unsupported types fail loudly;
 - comparator rejects header, checkpoint-order, context, state, and delta
@@ -308,7 +444,8 @@ No baseline suite failure is in scope for this design task.
 ## 11. Risks requiring review before P1-T02
 
 - Combat action/playback types are heterogeneous; each semantic type needs a
-  deliberate adapter rather than a generic object dump.
+  deliberate adapter rather than a generic object dump. The same registry
+  discipline is required for correctness-critical hook observations.
 - Some state fields may be cache-derived.  An adapter must prove whether a
   field is a logical invariant or exclude it by named rationale.
 - Event commands and asynchronous jobs need terminal-boundary placement that
@@ -318,10 +455,10 @@ No baseline suite failure is in scope for this design task.
 - Global singletons and random generators need strict fixture setup/reset so
   trace tests remain deterministic.
 
-## 12. P1-T01 completion state
+## 12. P1-T01-R1 completion state
 
-This document supplies the proposed Trace V1 contract, synchronization-point
-catalog, normalization/hash policy, fixture strategy, comparison policy, and
-test strategy.  It intentionally does not implement P1-T02 or modify gameplay
-code.  Controller review is required before any recorder or production hook is
-added.
+This revision adds the R1 ordered hook stream, R2 alias-preserving object
+graph, R3 event execution stack, R4 pending-transition invariant, and R5
+unambiguous pre-I/O save payload boundary. It intentionally does not implement
+P1-T02 or modify gameplay code. Controller review is required before any
+recorder or production hook is added.

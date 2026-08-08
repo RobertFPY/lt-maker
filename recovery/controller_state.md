@@ -6,39 +6,65 @@
 
 ## Current authorization
 
-- Current phase: Phase 0
-- Last reviewed task: `P0-T01`
-- Last reviewed commit: `2f43d80ece1e3a3db9d9de18ac85c458a5b25012`
+- Current phase: Phase 1
+- Last reviewed task: `P0-T02`
+- Last reviewed commit: `d57a2fbd913a67c4a08472a0737a2ddae8a2fa8c`
 - Review result: **ACCEPTED**
-- Next authorized task: **`P0-T02` only**
-- P0-T02 primary: `GPT-5.6 Terra / medium`
-- P0-T02 escalation target: `GPT-5.6 Sol / high`
+- Next authorized task: **`P1-T01` only**
+- P1-T01 primary: `GPT-5.6 Terra / high`
+- P1-T01 escalation target: `GPT-5.6 Sol / max`
 - Escalation pre-authorized: **NO**
-- Controller gate after P0-T02: **YES — STOP FOR CONTROLLER REVIEW**
+- Controller gate after P1-T01: **YES — STOP FOR CONTROLLER REVIEW**
 
-## P0-T01 controller review
+## P0-T02 controller review
 
 Accepted evidence:
 
-- Commit `2f43d80ece1e3a3db9d9de18ac85c458a5b25012` adds only `recovery/baseline.md`.
-- No engine, test, project-content, or gameplay behavior changes were made.
-- Baseline records the local runtime/dependency environment.
-- Full-suite observation was recorded as 311 `ok`, 8 `FAIL`, 1 `ERROR`, followed by abnormal process exit `-1073740791` (`0xC0000409`).
-- Existing failures were categorized and not repaired during P0-T01.
-- Android/runtime flags and profiling controls were inventoried.
-- The baseline lists 81 `app/engine` files changed between the PC reference and recovery starting HEAD.
+- Commit `d57a2fbd913a67c4a08472a0737a2ddae8a2fa8c` adds only `recovery/change_inventory.md`.
+- No engine, test, project-content, or baseline-failure changes were made.
+- Inventory explicitly covers all 81 `app/engine` paths changed between `9314f54b` and recovery starting HEAD.
+- High-risk staged restore, tilemap/board jobs, staged combat, fast-forward/state-machine, save/load/restart, profiler/debugger, and Android audio/runtime surfaces are separated rather than treated as one mixed rollback.
+- `52bd0403` and `0821182a` are correctly treated as mixed commits that must not be reverted wholesale.
+- Confirmed staged gameplay clusters are classified as `RESTORE-PC-SEMANTICS`, `REWRITE-PLATFORM`, or `REMOVE-WORKAROUND` as appropriate.
+- Independent profiler/debugger/audio/correctness work is protected with `KEEP-SHARED`, `KEEP-PLATFORM`, or `KEEP-CORRECTNESS-FIX` classifications.
+- Unresolved semantic cases are marked `NEEDS-CONTROLLER-DECISION` rather than guessed.
+- Adjacent `app/events` transaction partners are identified for later trace/lifecycle work without incorrectly counting them in the 81-engine-file acceptance set.
 - No model escalation was used.
 
 Non-blocking note:
 
-- The report labels the timezone as `Asia/Bangkok`; the project/controller timezone is `Asia/Ho_Chi_Minh`. Both are UTC+7 for this date, so this does not invalidate baseline evidence. Use `Asia/Ho_Chi_Minh` in future recovery reports.
+- The P0-T02 report says `P0-T03` remains unauthorized; there is no P0-T03 in the plan. This is a wording error only and does not affect the inventory or gate result.
 
-## P0-T02 execution constraints
+## Controller disposition of P0-T02 open questions
 
-Codex must execute only the P0-T02 task definition in `plan.md`.
+The four architecture questions at the end of `recovery/change_inventory.md` are intentionally **deferred**, not answered during Phase 0:
 
-Do not fix the baseline test failures during P0-T02. They are evidence, not the task scope.
+1. Pending-world GameState/board/tilemap preparation vs full removal will be decided only after deterministic trace evidence and the Phase 2/4 audits.
+2. State-machine deferred-render/presentation-barrier behavior will be separated from staged loading only after trace design and fast-forward evidence.
+3. Mixed `52bd0403` gameplay/data-facing edits will be classified by behavioral evidence, not provenance.
+4. Android streamed battle music remains a protected platform feature; its separation from authoritative animation-combat advancement is resolved during combat/platform phases.
 
-The P0-T02 deliverable is `recovery/change_inventory.md` and must classify correctness-critical post-reference engine/runtime changes using the plan classification system. Uncertain semantic cases must be marked `NEEDS-CONTROLLER-DECISION` rather than guessed.
+Codex must not treat these deferred questions as permission to choose an implementation during P1-T01.
 
-Escalate only under the P0-T02 conditions defined in `plan.md` (ESC-01, ESC-02, ESC-04, ESC-09). Do not self-escalate.
+## P1-T01 execution constraints
+
+Codex must execute only `P1-T01 — Design deterministic trace schema` from `plan.md`.
+
+This task is **design only**. Do not broadly instrument or modify production gameplay code yet.
+
+The trace design must compare logical state at synchronization points, not render-frame timing. It must be sufficient to distinguish:
+
+- canonical PC state-machine ordering from staged/deferred restore behavior;
+- combat solver/action/hook/cleanup ordering;
+- event ordering and transaction boundaries;
+- RNG consumption/checkpoints where feasible;
+- tilemap/board/aura/fog consistency;
+- save/load/restart transaction completion;
+- fast-forward ON/OFF logical equivalence;
+- debugger/profiler observer-equivalence.
+
+Prefer a minimal, deterministic, serialization-friendly schema with explicit normalization rules for volatile/non-gameplay fields. Include proposed helper APIs, synchronization-point hooks, state-hash strategy, golden-fixture strategy, and how reference-vs-recovered traces will be compared.
+
+Do not encode current Android staging behavior as expected behavior. `9314f54b` remains the behavioral reference unless a later correctness fix is explicitly allowlisted.
+
+Escalate only under the P1-T01 conditions in `plan.md`, especially if reference semantics are genuinely ambiguous or the tracing design itself requires a new core lifecycle semantic. Do not self-escalate.

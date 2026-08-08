@@ -1,6 +1,6 @@
 # Recovery Controller State
 
-> Live controller-gate state. `plan.md` remains authoritative for architecture, invariants, task definitions, model policy, and global escalation rules.
+> Live controller-gate state. `plan.md` remains authoritative for architecture, invariants, task definitions, model policy, and global escalation rules. Historical evidence remains in the committed recovery reports and prior controller commits.
 
 ## Current authorization
 
@@ -8,240 +8,256 @@
 - Phase 1 harness / persisted Trace V1 PC-reference goldens: **ACCEPTED**
 - Phase 2 state-restore semantics: **ACCEPTED**
 - Phase 3 combat lifecycle semantics: **ACCEPTED**
-- P3-T01 combat lifecycle reference map: **ACCEPTED** at `ab16e7a149deaeb17d4398f298b3aebc234bc22e`
-- P3-T02 Simple/Map transaction restore: **ACCEPTED** at `c20b9e02f853b0e527cf074e8168a442f353136f`
-- P3-T03 Base/Animation/Arena ordering restore: **ACCEPTED** at `3ab40895ef7170e01e55dc4f1bf2b63889383832`
-- P3-T04 combat preservation sweep: **ACCEPTED** at `090a72d984f8912864e6607f037285f97a01ce69`
-- Active task: **P4-T01 only — Decompose staged tilemap optimization**
+- P4-T01 tilemap/board/event atomicity audit: **ACCEPTED** at `5c94701d936a5ebbb3ebc0147e9e16e5e1d0ef25`
+- Active task: **P4-T02 only — Restore desktop atomic tilemap semantics**
 - Primary model: **GPT-5.6 Terra / high**
 - Escalation target: **GPT-5.6 Sol / max**
 - Escalation pre-authorized: **NO**
-- P4-T02/P4-T03 and Phase 5+: **UNAUTHORIZED**
+- P4-T03 and Phase 5+: **UNAUTHORIZED**
 - Golden/reference fixture changes: **UNAUTHORIZED**
 - Project-data changes: **UNAUTHORIZED**
-- Controller gate after P4-T01: **YES — STOP FOR CONTROLLER REVIEW**
+- Controller gate after P4-T02: **YES — STOP FOR CONTROLLER REVIEW**
 
-## Phase 3 acceptance record
+## P4-T01 acceptance record
 
-The controller accepts `090a72d984f8912864e6607f037285f97a01ce69` (`docs(recovery): audit P3-T04 preservation`) and closes Phase 3.
+The controller accepts `recovery/p4_t01_tilemap_atomicity_map.md` from `5c94701d936a5ebbb3ebc0147e9e16e5e1d0ef25` as the authoritative Phase-4 decomposition map.
 
-Accepted evidence:
+Accepted findings:
 
-- the commit is a single direct descendant of P3-T04 authorization commit `2d6f4e7cd3daf8674a3ad3a3170be9c9ffe8beb2`;
-- the only changed file is `recovery/p3_t04_combat_preservation.md`; no production, test, Trace V1, comparator, manifest, golden JSONL, save schema, or project-data file changed;
-- the preservation sweep found no demonstrated bounded production regression after accepted P3-T02/P3-T03 ordering repairs;
-- cleanup ordering remains protected: combat skill/item cleanup hooks precede unusable/broken handling, then WEXP/mana/EXP and `BeforeCombatEnd`; `clean_up2` preserves state-stack handling, `CombatEnd`, rewards/supports, end/post hooks, final RNG recording, and death handling;
-- durability/use-cost handling remains the later correctness behavior: one loss per combat is committed in cleanup before broken/unusable handling;
-- promotion/class-change behavior remains preserved, including cancellable map promotion and `BaseCombat.finalizes_turn=False` for prep/base use;
-- targeted `CombatCondition` cache invalidation after publishing mutable condition state is retained; no broad speculative cache clear was introduced;
-- aura child skills remain derived/nonserialized and authoritative source-owned teardown remains intact;
-- fast-forward INV-06 and debugger/profiler INV-07 remain satisfied;
-- Android streamed battle music, map-track restoration, render/UI caches, and resource staging remain platform/presentation policy and do not own authoritative combat mutation;
-- immutable comparisons S5, S6, S7, S8, S9, S10, S11, S12, S16, and S17 PASS against unchanged Phase-1 oracle contracts;
-- focused combat/component/observer tests and Android policy tests were reported PASS; broader-suite Windows native termination and known baseline/test-isolation issues remain unrelated and were not modified;
-- `python -m compileall -q app`, `git diff --check`, and `git show --check` PASS.
+- the commit is a single direct descendant of P4-T01 authorization commit `6ad10d13c201d33adcef5bfb4b1ed8558d0d9581` and changes only the audit report;
+- the PC reference executes `change_tilemap` as one synchronous event-command transaction: unit detach -> region detach -> tilemap/board/boundary setup -> optional overworld controller replacement -> unit restore -> region restore -> turnwheel/action-log fence, with no normal lifecycle yield inside that sequence;
+- current pending `TileMapObject`, `GameBoard`, and `BoundaryInterface` construction/validation can remain isolated from live gameplay when the pending builders use only the pending tilemap/static DB data;
+- current `TilemapChangeJob` commit scheduling from `6b96e2f1` is unsafe: the callback is a generator and yields after authoritative `LeaveMap`, `RemoveRegion`, live tilemap/board/boundary publication, unit restore prefixes, and region restore prefixes;
+- `_defer_render` is only a presentation policy. It can hide a visual half-map but cannot make a logically partial `game` state unobservable to movement/state updates, debugger/direct readers, aura/FOW/region queries, or board consumers;
+- current rollback is useful exception recovery but cannot justify yielded partial publication. It must execute synchronously before control returns to normal lifecycle code if a live commit fails;
+- `cd8607b6` `AddGroupJob` is also an authoritative scheduling regression: it places live units one at a time across Event updates, so board occupancy, initiative, aura/FOW, and other placement effects can be observed as a prefix group;
+- complete-state immutable comparisons S12, S13, S14, S15, and S17 remain PASS, but terminal equality does not prove current intermediate generator frames are safe;
+- the accepted transaction contract is:
 
-Phase 3 therefore establishes the accepted combat contract for later phases:
+```text
+LIVE OLD STATE
+    -> optional pending/off-world build and validation
+    -> one synchronous main-thread authoritative commit
+LIVE NEW STATE
+```
 
-1. Simple, Map, Base, Animation, and Arena authoritative ordering is reference-shaped at PC-reference logical boundaries;
-2. solver formulas, RNG primitives, generated actions, and playback semantics remain shared and unchanged;
-3. cleanup/durability/promotion/cache/aura correctness fixes are preserved;
-4. presentation/resource work may remain progressive only when it cannot mutate or reorder authoritative gameplay;
-5. Android streamed battle music remains platform policy;
-6. later phases must not reopen combat lifecycle architecture without a demonstrated regression and controller authorization.
+No yield or normal lifecycle/observer execution is allowed between the first live mutation and the completed action-log fence.
 
-## P4-T01 — authorized audit scope
+## P4-T02 — authorized implementation contract
 
-Execute **P4-T01 only** using **GPT-5.6 Terra / high**.
-
-This is an **audit/decomposition task only**. It does not authorize P4-T02 or P4-T03 implementation.
+Execute **P4-T02 only** using **GPT-5.6 Terra / high**.
 
 PC behavioral reference:
 
 `9314f54b49f4552b5a3d023b4da0012ce7dfbc89`
 
-Immutable Phase-1 goldens remain the behavioral oracle, especially S12 aura lifecycle, S13 FOW movement semantics, S14 tilemap change commit, S15 phase transition where board/event state can interact, and S17 observer equivalence. Do not regenerate or weaken them.
+Use `recovery/p4_t01_tilemap_atomicity_map.md` as the accepted function/order map. Immutable Phase-1 goldens remain the oracle and may not be regenerated, replaced, or weakened.
 
-### Core invariant
+### Goal
 
-P4 is governed by INV-03/INV-04/INV-05 and this transaction contract:
+Restore reference-shaped atomic tilemap/event gameplay semantics on desktop and remove the shared live `add_group` batching regression, while keeping only behavior-preserving construction helpers and bounded exception safety.
 
-```text
-LIVE OLD STATE
-    -> build pending structures outside live authoritative gameplay state
-    -> validate pending structures completely
-    -> one atomic logical commit on the main thread
-LIVE NEW STATE
-```
+P4-T02 is **not** authorization to design the final Android progressive-board policy. P4-T03 remains the gate that decides whether Android pending board preparation is worth retaining after profiling.
 
-No normal State/event/input/debugger observer may see a partially detached or partially published world.
+### Governing invariants
 
-### High-risk history to decompose
+- **INV-03:** no observable partial gameplay state;
+- **INV-04:** Android may specialize platform scheduling, not gameplay ordering;
+- **INV-05:** shared optimizations are retained only when behavior/ordering are equivalent;
+- **INV-09:** project content/data remains protected;
+- **INV-10:** evidence precedes optimization retention.
 
-Audit individual operations, not whole commits:
+### Desktop `change_tilemap` contract
 
-- `cdd4be2a7ebc78131469d31da551f0f63bacd78d` — staged tilemap board rebuild;
-- `6b96e2f10bbae2c039e4b2dc5e145fd30e2fdf2c` — batched tilemap transition state;
-- `cd8607b6` — incremental event `add_group` work where relevant to event atomicity;
-- any follow-up commit that changes board/tilemap/event scheduling, rollback, render deferral, aura/fog/region rebuilding, or commit visibility.
+On non-Android runtime, `change_tilemap` must complete as one synchronous logical event-command transaction before returning to normal Event/State lifecycle code.
 
-Important accepted starting observation for the audit:
+Desktop must not enter a frame-spread `TilemapChangeJob`/blocked-state path merely to construct or publish the replacement world.
 
-- `cdd4be2a` introduced pending `TileMapObject`, `GameBoard`, and `BoundaryInterface` construction and validation before a final callback; this pending-build concept may be reusable if truly off-world;
-- `6b96e2f1` then made the **commit callback itself a generator** and yielded between authoritative operations such as unit detachment, region removal, live tilemap/board/boundary publication, and unit/region restoration. That commit-phase yielding is presumptively unsafe and must be mapped precisely against the PC reference and S14 rather than retained for performance by default.
+A behavior-preserving implementation may build the replacement tilemap/board/boundary into local pending objects **synchronously within the same command call** before the first live mutation, because P4-T01 established that this construction is off-world/static when using the pending tilemap resolver.
 
-### Required surfaces
+After pending objects are complete and validated, desktop must execute without yield:
 
-Audit at minimum:
+1. reset cursor position as required by the reference path;
+2. `LeaveMap` every positioned unit in reference order;
+3. persist `_prev_pos_<tilemap>`;
+4. `RemoveRegion` every positioned region in reference order;
+5. persist `_prev_region_<tilemap>`;
+6. publish `level.tilemap`, `board`, and `boundary` as one matched logical publication group;
+7. perform the reference overworld cursor/movement/map_view replacement where applicable;
+8. restore eligible units with position offset through `ArriveOnMap` in reference order;
+9. restore eligible regions through `AddRegion` in reference order, including FOG/VISION effects;
+10. call `action_log.set_first_free_action()` only after the complete live transaction;
+11. call the existing cache/state invalidation hook (`on_alter_game_state`) where required by the accepted later correctness behavior;
+12. return only after the world is coherent.
 
-- `app/engine/game_board.py`
-  - `GameBoard.__init__`
-  - `GameBoard.build_iter`
-  - `_initialize_iter` and incremental helpers;
-- `app/engine/jobs/tilemap_change_job.py`
-  - state machine;
-  - board iterator;
-  - commit iterator;
-  - frame budget;
-  - validation/failure behavior;
+No normal Event update, movement update, State begin/update/update_visuals, input handling, debugger observer, or direct gameplay reader may run inside steps 1-11.
+
+### Shared/Android commit safety
+
+The existing generator **commit** is not allowed to survive P4-T02 as an authoritative mechanism.
+
+`TilemapChangeJob` may continue to exist because P4-T03 may evaluate Android-only pending preparation, but its commit callback must be a synchronous/non-generator operation. The job may yield only while constructing/validating objects that are not referenced by live `game`.
+
+Therefore:
+
+- remove `_commit_iter` / commit-phase batching semantics;
+- a `COMMIT` job operation calls the synchronous commit exactly once;
+- after that call returns successfully, job state becomes COMPLETE in the same operation;
+- there is no `DETACH_UNITS`, `DETACH_REGIONS`, `COMMIT`, `RESTORE_UNITS`, or `RESTORE_REGIONS` outer-frame yield boundary after live mutation begins.
+
+Do not expand Android pending-build behavior or claim it as retained performance policy in P4-T02. Existing pending-build code may remain only as provisional infrastructure for the still-blocked P4-T03 decision.
+
+### Failure / rollback contract
+
+The controller resolves the P4-T01 failure/reset question as follows.
+
+**Pending-build/validation failure before any live mutation:**
+
+- live old world remains authoritative and unchanged;
+- no rollback is needed;
+- the job may become FAILED and the Event may unblock/log the error using the existing bounded failure path;
+- `_defer_render` must be released when the job terminates.
+
+**Failure after the synchronous live commit has begun:**
+
+- the commit-local `try/except` must run rollback synchronously in the **same call**;
+- rollback must finish before the exception is re-raised or before `TilemapChangeJob.step/update` returns control to EventState;
+- after successful rollback, the old tilemap/board/boundary, unit/region placement, aura/FOW/boundary derived state, registries, action-log fields, and cursor/movement/map_view must be coherent enough to satisfy the accepted rollback tests/invariants;
+- after rollback, re-raise the original commit failure so the caller/job records failure; do not silently convert a failed change into success;
+- rollback is a failure safeguard only. It must never be used to permit an outer-frame partial world.
+
+If rollback itself cannot restore the required old-world invariants in a demonstrated test case, STOP under ESC-05/ESC-09 rather than inventing a cross-cutting snapshot architecture.
+
+### `add_group` contract
+
+Restore `event_functions.add_group` to one synchronous reference-shaped event transaction.
+
+For the selected `group.units`, preserve the existing/reference per-member order and checks:
+
+- resolve/copy unit according to flags;
+- skip already-positioned/dead/invalid units as before;
+- resolve target position and placement policy;
+- insert initiative when enabled;
+- call `_place_unit` with the same entry behavior;
+- continue to the next member inside the same command call.
+
+Do not publish one member per outer Event update.
+
+`AddGroupJob` must have no runtime caller after P4-T02. It may be deleted together with tests that assert the obsolete incremental behavior, or left unused only if a concrete bounded reason is documented. Do not create a new pending-group architecture.
+
+A placement exception does not require inventing a new group rollback protocol in P4-T02; restore the PC-reference synchronous command semantics and allow the existing exception path to propagate. The critical requirement is that normal outer lifecycle code cannot observe deliberate per-frame prefix placement.
+
+### Protected ordering and correctness
+
+Preserve exactly:
+
+- `LeaveMap` and `ArriveOnMap` action bodies/order;
+- source-owned aura teardown/repopulation behavior accepted in Phase 3;
+- terrain/status skill registration semantics;
+- FOW and `previously_visited_tiles` behavior;
+- region registry/cache behavior, including FOG/VISION actions;
+- boundary aura/range registration;
+- unit `position` / `previous_position` semantics;
+- turnwheel/action-log fence semantics;
+- overworld cursor/movement/map_view behavior;
+- P2 atomic save/load/restart semantics;
+- P3 combat semantics;
+- debugger/profiler observer behavior;
+- project data/assets;
+- all immutable golden bytes.
+
+Do not rewrite `LeaveMap`, `ArriveOnMap`, aura functions, FOW algorithms, region actions, or action-log semantics merely to make the transaction atomic.
+
+### Authorized production surfaces
+
+Primary:
+
 - `app/events/event_functions.py`
-  - `change_tilemap`;
-  - its commit/rollback logic;
-  - unit/region detach and restore;
-  - `action_log.set_first_free_action`;
-  - `game.on_alter_game_state`;
-  - relevant `add_group`/incremental event helpers;
-- `app/events/event.py` and `app/events/event_state.py`
-  - `should_update`/blocked callbacks;
-  - `_defer_render`;
-  - Android/event yield scheduling;
-  - whether blocked/event states can expose live partial gameplay state;
-- board/tilemap consumers and reconstruction paths affecting:
-  - aura propagation/teardown;
-  - terrain skills/statuses;
-  - FOW/visited tiles;
-  - regions including FOG/VISION;
-  - boundary registration;
-  - cursor/movement/map_view replacement;
-  - unit position/previous_position;
-  - skill and terrain-status registries;
-  - action-log/turnwheel boundary;
-- tests added around tilemap jobs/rollback/batching and any later fixes.
+- `app/engine/jobs/tilemap_change_job.py`
+- `app/engine/jobs/add_group_job.py` only for removal/retirement required by the synchronous `add_group` restoration
 
-### Required semantic analysis
+Narrow adjacent changes are allowed only if strictly necessary for runtime platform gating or cleanup of now-dead job wiring. `app/engine/game_board.py` construction semantics should not change unless a minimal behavior-preserving synchronous helper adaptation is required.
 
-For the PC reference and current recovery, produce exact ordered transaction maps for:
+Do not modify `event_state.py` / global StateMachine lifecycle merely to hide an intermediate state. Fix the transaction instead.
 
-1. normal `change_tilemap` to a different map;
-2. reload-map path with unit position restoration + offset;
-3. region restoration including FOG/VISION effects;
-4. overworld-to-level or any path that replaces cursor/movement/map_view;
-5. failure during pending board construction;
-6. failure during current commit/restore stages;
-7. event blocking/render-deferral lifecycle while the job runs;
-8. incremental `add_group` or other event work that can publish gameplay changes across frames.
+### Required tests
 
-For every yield/batch boundary answer:
+Add/update bounded tests proving at minimum:
 
-- what authoritative objects have already mutated;
-- what objects remain old versus new;
-- what normal State/event/debugger code can execute before the next step;
-- whether RNG, hook/event ordering, aura/FOW/region state, board occupancy, or action-log history can be observed in a reference-impossible intermediate state;
-- whether the work is pure pending computation, presentation-only deferral, or authoritative mutation;
-- whether Android-specific scheduling can be retained without a gameplay fork.
+1. desktop `change_tilemap` returns only after the complete coherent new world exists;
+2. desktop `change_tilemap` does not register a frame-spread tilemap job/blocked lifecycle for normal map replacement;
+3. live tilemap/board/boundary are published as a coherent matched set before restored-world consumers can run;
+4. unit detach -> publication -> unit restore -> region restore -> action-log fence ordering remains reference-shaped;
+5. FOG/VISION region restore remains after unit restore and produces the accepted final state;
+6. pending tilemap/board/boundary build/validation failure leaves live old world untouched;
+7. a commit failure rolls back synchronously before the job/update call returns and the job then reports FAILED;
+8. no commit iterator/live mutation phase can be advanced one outer step at a time;
+9. Android/provisional pending job, if exercised by tests, mutates no live gameplay state during CREATE_TILEMAP/BUILD_BOARD/VALIDATE phases;
+10. synchronous `add_group` places all eligible members before the command returns and does not register `should_update`/blocked job callbacks;
+11. initiative/placement order for `add_group` remains unchanged;
+12. accepted aura/FOW/region/action-log behavior is unchanged at terminal checkpoints;
+13. debugger/profiler idle observation does not change results.
 
-### Classification
+### Immutable comparisons
 
-Classify every relevant function/state/change as one of:
+Run at minimum:
 
-- KEEP-SHARED
-- KEEP-PLATFORM
-- REWRITE-PLATFORM
-- RESTORE-PC-SEMANTICS
-- REMOVE-WORKAROUND
-- KEEP-CORRECTNESS-FIX
+- S12 aura lifecycle;
+- S13 FOW move/cancel/wait;
+- S14 tilemap change;
+- S15 phase transition;
+- S17 debugger/profiler observer equivalence.
 
-Also classify each operation by semantic category:
+Use existing fixture bytes exactly. Do not regenerate a golden after mismatch.
 
-- pending/off-world computation;
-- authoritative gameplay mutation;
-- atomic publication;
-- rollback/error recovery;
-- presentation/render deferral;
-- profiler/observer only.
+Also run focused:
 
-### Deliverable
+- tilemap change/job tests;
+- add_group/event processor tests;
+- aura add/remove tests;
+- FOW/region tests;
+- action-log/turnwheel tests relevant to the touched transaction;
+- runtime debugger/profiler tests if observer boundaries are touched by test harnesses.
 
-Create only:
+Run the broader unit suite required by `plan.md`; report known baseline Windows native termination, command-schema failures, or test-isolation pollution instead of repairing unrelated issues.
 
-`recovery/p4_t01_tilemap_atomicity_map.md`
+Finally run:
 
-The report must contain:
-
-1. function/caller graph for GameBoard build, TilemapChangeJob, `change_tilemap`, Event/EventState scheduling, and affected board/aura/FOW/region helpers;
-2. PC-reference vs current ordered transaction maps for all required paths;
-3. a yield/batch boundary table showing exactly what is live at every boundary;
-4. function-level classification with provenance, invariant/risk, proposed later treatment, dependencies, and exact Phase-1 proof;
-5. rollback analysis distinguishing correctness recovery from permission to publish partial state;
-6. event render-deferral analysis: what it hides visually versus what remains logically observable;
-7. explicit P4-T02 candidate list for restoring desktop/reference atomic semantics;
-8. explicit P4-T03 candidate list for Android-only pending/off-world preparation that could remain or be re-ported after P4-T02;
-9. one proposed atomic commit boundary for later implementation, as design only;
-10. unresolved controller decisions/escalation evidence.
-
-### Design constraint for proposed P4-T02/P4-T03 boundary
-
-The audit should prefer this shape unless source evidence proves it impossible:
-
-- expensive tilemap/terrain/board/boundary construction may occur against pending objects only;
-- live unit/region/aura/FOW/action-log state remains untouched during pending construction;
-- once pending structures validate, perform the PC-reference detach/publish/restore/action-log sequence as one synchronous main-thread logical transaction;
-- no yield inside that authoritative commit;
-- rollback may be retained as a correctness safeguard, but rollback does not make intermediate publication safe;
-- Android frame-spreading is allowed only before the atomic commit and only on non-authoritative pending data.
-
-Do not implement this during P4-T01.
-
-### Validation
-
-Because P4-T01 is audit-only:
-
-- run existing S12, S13, S14, S15, and S17 immutable comparisons without modifying fixtures;
-- run existing tilemap-change/job/event/FOW/aura/region tests needed to support claims;
-- run `git diff --check`;
-- commit only `recovery/p4_t01_tilemap_atomicity_map.md`;
-- run `git show --check`;
-- report exact source/history/test evidence used.
+- `python -m compileall -q app`
+- `git diff --check`
+- commit only bounded P4-T02 implementation/tests
+- `git show --check`
 
 ### Explicitly out of scope
 
 Do not:
 
-- modify production code;
-- modify tests to change semantics;
-- begin P4-T02/P4-T03;
-- change GameBoard/tilemap/event behavior;
-- change Trace V1/comparator/manifest/goldens;
-- change project data;
-- reopen accepted Phase-2 restore or Phase-3 combat semantics;
-- revert `cdd4be2a`, `6b96e2f1`, `52bd0403`, or other mixed commits wholesale;
+- begin P4-T03 or Phase 5;
+- decide final Android progressive-board retention without the P4-T03 profiling gate;
+- add a persistent pending-world architecture;
+- add per-frame authoritative commit batching under another name;
+- modify Trace V1/comparator/manifest/golden JSONL;
+- modify project data;
+- reopen Phase-2 restore or Phase-3 combat semantics;
+- broadly rewrite GameBoard/aura/FOW/region/action systems;
 - merge master.
 
 ## Escalation and stop rules
 
-P4-T01 escalation target is **GPT-5.6 Sol / max**, not pre-authorized.
+P4-T02 escalation target is **GPT-5.6 Sol / max**, but is **not pre-authorized**.
 
 STOP and request controller authorization on:
 
-- **ESC-01** PC-reference tilemap/event semantics are ambiguous;
-- **ESC-02** root cause crosses into an unplanned correctness-critical subsystem;
-- **ESC-04** multiple plausible atomic transaction boundaries remain after source/history review;
-- **ESC-05** aura/FOW/region/action-log invariants conflict;
-- **ESC-07** Android performance requirement conflicts with one shared gameplay semantic contract;
-- **ESC-09** safe pending construction requires a new cross-cutting lifecycle architecture.
+- **ESC-02** atomic repair requires nonlocal changes outside the bounded event/tilemap-job surfaces;
+- **ESC-03** deterministic immutable trace divergence after one bounded transaction correction;
+- **ESC-04** source/tests expose competing plausible reference-shaped tilemap semantics;
+- **ESC-05** aura/FOW/region/action-log or rollback invariant cannot be preserved;
+- **ESC-07** Android platform scheduling requires gameplay-order divergence;
+- **ESC-08** repeated local implementation failure;
+- **ESC-09** repair requires a new cross-cutting snapshot/pending-world/lifecycle architecture.
 
 Do not self-escalate.
 
 ## Gate status
 
-**Phase 3 is ACCEPTED. P4-T01 is the only authorized task. P4-T02/P4-T03 and later phases remain blocked pending P4-T01 controller review.**
+**P4-T01 is ACCEPTED. P4-T02 is the only authorized task. P4-T03 and Phase 5+ remain blocked pending P4-T02 controller review.**

@@ -7,64 +7,98 @@
 ## Current authorization
 
 - Current phase: Phase 1
-- Last reviewed task: `P0-T02`
-- Last reviewed commit: `d57a2fbd913a67c4a08472a0737a2ddae8a2fa8c`
-- Review result: **ACCEPTED**
-- Next authorized task: **`P1-T01` only**
-- P1-T01 primary: `GPT-5.6 Terra / high`
-- P1-T01 escalation target: `GPT-5.6 Sol / max`
+- Last reviewed task: `P1-T01`
+- Last reviewed commit: `37a8be4de0613691b70bb6bf5dcd48034b5532ea`
+- Review result: **CHANGES REQUESTED**
+- Next authorized work: **`P1-T01-R1` trace-schema revision only**
+- Primary: `GPT-5.6 Terra / high`
+- Escalation target: `GPT-5.6 Sol / max`
 - Escalation pre-authorized: **NO**
-- Controller gate after P1-T01: **YES — STOP FOR CONTROLLER REVIEW**
+- `P1-T02` remains **UNAUTHORIZED**
+- Controller gate after P1-T01-R1: **YES — STOP FOR CONTROLLER REVIEW**
 
-## P0-T02 controller review
+## P1-T01 controller review
 
-Accepted evidence:
+Accepted parts of `recovery/trace_schema.md`:
 
-- Commit `d57a2fbd913a67c4a08472a0737a2ddae8a2fa8c` adds only `recovery/change_inventory.md`.
-- No engine, test, project-content, or baseline-failure changes were made.
-- Inventory explicitly covers all 81 `app/engine` paths changed between `9314f54b` and recovery starting HEAD.
-- High-risk staged restore, tilemap/board jobs, staged combat, fast-forward/state-machine, save/load/restart, profiler/debugger, and Android audio/runtime surfaces are separated rather than treated as one mixed rollback.
-- `52bd0403` and `0821182a` are correctly treated as mixed commits that must not be reverted wholesale.
-- Confirmed staged gameplay clusters are classified as `RESTORE-PC-SEMANTICS`, `REWRITE-PLATFORM`, or `REMOVE-WORKAROUND` as appropriate.
-- Independent profiler/debugger/audio/correctness work is protected with `KEEP-SHARED`, `KEEP-PLATFORM`, or `KEEP-CORRECTNESS-FIX` classifications.
-- Unresolved semantic cases are marked `NEEDS-CONTROLLER-DECISION` rather than guessed.
-- Adjacent `app/events` transaction partners are identified for later trace/lifecycle work without incorrectly counting them in the 81-engine-file acceptance set.
-- No model escalation was used.
+- Design is documentation-only; no gameplay, test, fixture, recorder, or production hook implementation was introduced.
+- JSONL + canonical normalization + SHA-256 state/delta hashes are suitable for deterministic comparison.
+- Volatile render/audio/profiler/thread/object-address state is explicitly excluded from equality.
+- State, world, turn, units, variables, RNG, board/tilemap/aura/fog, event, and save/restart completion surfaces are represented.
+- Synchronization points are terminal logical boundaries rather than render frames or iterator yields.
+- Action/playback/event deltas are ordered and unknown semantic types fail loudly instead of falling back to `repr`.
+- Golden fixtures are tied to the PC reference and cannot be silently regenerated to hide a regression.
+- Fast-forward and debugger/profiler observer-equivalence are compared by logical traces, not host-frame count.
+- No escalation was used and none is currently required.
 
-Non-blocking note:
+The design is close to approval, but the following semantic gaps must be fixed before P1-T02.
 
-- The P0-T02 report says `P0-T03` remains unauthorized; there is no P0-T03 in the plan. This is a wording error only and does not affect the inventory or gate result.
+## Required P1-T01-R1 revisions
 
-## Controller disposition of P0-T02 open questions
+### R1 — Explicit ordered gameplay-hook trace
 
-The four architecture questions at the end of `recovery/change_inventory.md` are intentionally **deferred**, not answered during Phase 0:
+The current `semantic_delta` contains actions, combat playback, and triggered events, but does not explicitly preserve **hook invocation order/count**. That is insufficient for later combat recovery because two executions can reach the same final state while calling an item/skill/combat hook twice, skipping it, or reordering hooks.
 
-1. Pending-world GameState/board/tilemap preparation vs full removal will be decided only after deterministic trace evidence and the Phase 2/4 audits.
-2. State-machine deferred-render/presentation-barrier behavior will be separated from staged loading only after trace design and fast-forward evidence.
-3. Mixed `52bd0403` gameplay/data-facing edits will be classified by behavioral evidence, not provenance.
-4. Android streamed battle music remains a protected platform feature; its separation from authoritative animation-combat advancement is resolved during combat/platform phases.
+Revise the Trace V1 contract to include an ordered hook stream, e.g. `hook_calls`, with enough stable logical identity to compare:
 
-Codex must not treat these deferred questions as permission to choose an implementation during P1-T01.
+- dispatcher/system (`item`, `skill`, combat/lifecycle owner as applicable);
+- hook name;
+- logical subject/source references (unit/item/skill using stable local references);
+- target/context identity needed to distinguish invocations;
+- lifecycle phase/checkpoint context;
+- optional normalized semantic result only when the return value is gameplay-relevant.
 
-## P1-T01 execution constraints
+Tracing must observe the **original invocation**. It must never call a hook a second time merely to record it. P1-T02 may use a test-only observer seam around approved dispatch points; broad invasive instrumentation is not authorized by this revision.
 
-Codex must execute only `P1-T01 — Design deterministic trace schema` from `plan.md`.
+Unknown/unmapped correctness-critical hook observations must fail loudly rather than be dropped.
 
-This task is **design only**. Do not broadly instrument or modify production gameplay code yet.
+### R2 — Preserve shared-object aliasing in stable local references
 
-The trace design must compare logical state at synchronization points, not render-frame timing. It must be sufficient to distinguish:
+The current owner/category/slot/path tuple is not sufficient by itself for shared runtime objects. Aura children are the key example: one `SkillObject` instance can legitimately appear in multiple units' skill lists.
 
-- canonical PC state-machine ordering from staged/deferred restore behavior;
-- combat solver/action/hook/cleanup ordering;
-- event ordering and transaction boundaries;
-- RNG consumption/checkpoints where feasible;
-- tilemap/board/aura/fog consistency;
-- save/load/restart transaction completion;
-- fast-forward ON/OFF logical equivalence;
-- debugger/profiler observer-equivalence.
+Revise the identity contract so the serializer preserves aliasing without hashing raw UID/address values:
 
-Prefer a minimal, deterministic, serialization-friendly schema with explicit normalization rules for volatile/non-gameplay fields. Include proposed helper APIs, synchronization-point hooks, state-hash strategy, golden-fixture strategy, and how reference-vs-recovered traces will be compared.
+- build a capture-time object graph using identity only internally for deduplication;
+- assign each logical object a deterministic local ID from the first canonical traversal/reference path;
+- subsequent references to the same runtime object must reuse that same local ID;
+- raw Python identity/UID/address must never enter equality/hash output unless the UID is itself an explicitly approved gameplay-semantic field;
+- include a harness test requirement proving a shared aura child serializes as one shared logical object/reference rather than independent copies.
 
-Do not encode current Android staging behavior as expected behavior. `9314f54b` remains the behavioral reference unless a later correctness fix is explicitly allowlisted.
+This is required to detect aura/source corruption across load/restart while remaining allocation-order independent.
 
-Escalate only under the P1-T01 conditions in `plan.md`, especially if reference semantics are genuinely ambiguous or the tracing design itself requires a new core lifecycle semantic. Do not self-escalate.
+### R3 — Represent nested/stacked event execution state
+
+The schema currently shows one `events.active` frame. Recovery explicitly needs save/load during events and the engine has event-stack behavior.
+
+Revise the contract to represent the ordered active event execution stack (or an equivalent structure justified against the actual event runtime), including at least stable event identity and command position/ordinal per frame. Parent/caller relationship must survive normalization where applicable.
+
+Do not include dialogue/render wait state unless it changes logical execution semantics, but do preserve enough execution-stack state to detect resuming the wrong event/command after save/load.
+
+### R4 — Define pending state-transition semantics at synchronization points
+
+`state_stack.pending` is currently hash-compared without a rule distinguishing logical queued transitions from staging/presentation artifacts.
+
+Define a precise rule:
+
+- terminal synchronization checkpoints should normally represent a fully committed logical transaction;
+- if a pending transition means the transaction is not actually complete, trace generation should fail that checkpoint/invariant rather than normalize an invalid partial state as expected behavior;
+- if a specific checkpoint legitimately permits a pending logical transition, that exception must be explicit and scenario/checkpoint-specific;
+- Android-only render/defer scheduling must not become golden gameplay state merely because it exists in `pending`.
+
+### R5 — Remove ambiguity around save-write checkpoint timing
+
+`save.write.complete` is described as immediately before/after logical save capture. Choose one canonical semantic boundary or define separate checkpoint IDs. The trace must make it unambiguous which logical state is being asserted and must not depend on filesystem timing.
+
+## P1-T01-R1 constraints
+
+- Modify only `recovery/trace_schema.md` unless a tiny recovery-document cross-reference is strictly necessary.
+- Do not implement recorder code, production hooks, fixtures, or P1-T02.
+- Do not fix baseline failures.
+- Do not change `plan.md` architecture or model policy.
+- Use the same primary `GPT-5.6 Terra / high`.
+- No escalation is required for these revisions. If a genuine ESC condition appears, STOP and report instead of using Sol.
+- Prefer a new documentation commit rather than rewriting the reviewed commit, so controller history remains auditable.
+
+## Gate status
+
+`P1-T01` is **not yet accepted**. `P1-T02` remains blocked until a revision commit satisfies R1–R5 and is reviewed by the controller.

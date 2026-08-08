@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from enum import Enum
 from typing import Any, Callable, Iterable, Mapping, Optional
 
 
@@ -25,14 +26,27 @@ class TraceComparisonError(AssertionError):
 def normalize(value: Any) -> Any:
     if value is None or isinstance(value, (bool, int, float, str)):
         return value
+    if isinstance(value, Enum):
+        return getattr(value, 'nid', value.value if isinstance(value.value, (str, int, float, bool)) else value.name)
+    from app.engine.roam.roam_info import RoamInfo
+    if isinstance(value, RoamInfo):
+        return {'roam': value.roam, 'roam_unit_nid': value.roam_unit_nid}
     if isinstance(value, Mapping):
-        return {str(key): normalize(value[key]) for key in sorted(value, key=str)}
+        return {_mapping_key(key): normalize(entry)
+                for key, entry in sorted(value.items(), key=lambda pair: _mapping_key(pair[0]))}
     if isinstance(value, (list, tuple)):
         return [normalize(entry) for entry in value]
     if isinstance(value, (set, frozenset)):
         normalized = [normalize(entry) for entry in value]
         return sorted(normalized, key=canonical_json)
     raise TraceNormalizationError('unsupported trace value: %s' % type(value).__name__)
+
+
+def _mapping_key(value: Any) -> str:
+    normalized = normalize(value)
+    if isinstance(normalized, str):
+        return normalized
+    return json.dumps(normalized, ensure_ascii=True, sort_keys=True, separators=(',', ':'))
 
 
 def canonical_json(value: Any) -> str:
@@ -44,17 +58,55 @@ def canonical_hash(value: Any) -> str:
     return hashlib.sha256(canonical_json(value).encode('utf-8')).hexdigest()
 
 
+def _first_difference(expected: Any, actual: Any, path: str = '') -> Optional[tuple[str, Any, Any]]:
+    if type(expected) is not type(actual):
+        return path or '/', expected, actual
+    if isinstance(expected, dict):
+        for key in sorted(set(expected) | set(actual)):
+            pointer = (path + '/' + str(key).replace('~', '~0').replace('/', '~1'))
+            if key not in expected or key not in actual:
+                return pointer, expected.get(key, '<missing>'), actual.get(key, '<missing>')
+            difference = _first_difference(expected[key], actual[key], pointer)
+            if difference:
+                return difference
+        return None
+    if isinstance(expected, list):
+        if len(expected) != len(actual):
+            return path + '/length', len(expected), len(actual)
+        for index, (left, right) in enumerate(zip(expected, actual)):
+            difference = _first_difference(left, right, path + '/' + str(index))
+            if difference:
+                return difference
+        return None
+    if expected != actual:
+        return path or '/', expected, actual
+    return None
+
+
 def compare_records(expected: list[dict[str, Any]], actual: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Strict in-memory comparator; P1-T03 supplies reviewed fixture files."""
+    """Compare logical trace identity while ignoring only approved provenance."""
     if len(expected) != len(actual):
         raise TraceComparisonError('checkpoint count differs: %d != %d' % (len(expected), len(actual)))
     provenance = {'runner_revision', 'platform_profile'}
+    required_header = ('kind', 'schema_version', 'scenario_id', 'input_fixture_id',
+                       'reference_revision', 'serializer')
+    if not expected or not actual:
+        raise TraceComparisonError('trace header missing')
+    for field in required_header:
+        if field not in expected[0] or field not in actual[0]:
+            raise TraceComparisonError('required header field missing: /%s' % field)
     for index, (expected_record, actual_record) in enumerate(zip(expected, actual)):
         if index == 0:
             expected_record = {k: v for k, v in expected_record.items() if k not in provenance}
             actual_record = {k: v for k, v in actual_record.items() if k not in provenance}
-        if canonical_json(expected_record) != canonical_json(actual_record):
-            raise TraceComparisonError('first trace difference at record %d' % index)
+        difference = _first_difference(normalize(expected_record), normalize(actual_record))
+        if difference:
+            path, left, right = difference
+            context = ({'checkpoint_id': expected_record.get('checkpoint_id'),
+                        'context': expected_record.get('context')} if index else
+                       {'scenario_id': expected[0].get('scenario_id')})
+            raise TraceComparisonError('record %d %s expected=%r actual=%r near=%r' %
+                                       (index, path, left, right, context))
     return actual
 
 
@@ -75,6 +127,8 @@ def _dict(value: Any) -> dict[str, Any]:
 class _ObjectGraph:
     def __init__(self) -> None:
         self._refs: dict[int, str] = {}
+        self._uid_refs: dict[int, str] = {}
+        self._uid_objects: dict[int, Any] = {}
         self.objects: list[dict[str, Any]] = []
 
     def reference(self, value: Any, kind: str, path: str) -> Optional[str]:
@@ -86,6 +140,9 @@ class _ObjectGraph:
         discriminator = str(_nid(value) or kind)
         local_id = '%s@%s@%s' % (kind, path, discriminator)
         self._refs[key] = local_id
+        uid = getattr(value, 'uid', None)
+        if isinstance(uid, int):
+            self._uid_refs[uid] = local_id
         record = {'local_id': local_id, 'kind': kind, 'nid': _nid(value),
                   'logical_fields': {}, 'references': {}}
         self.objects.append(record)
@@ -117,6 +174,14 @@ class _ObjectGraph:
             return {}, {}
         raise TraceNormalizationError('unknown graph object kind: %s' % kind)
 
+    def source(self, value: Any) -> Any:
+        if isinstance(value, int) and value not in self._uid_refs and value in self._uid_objects:
+            source_obj = self._uid_objects[value]
+            self.reference(source_obj, 'skill', 'skill_sources/%s' % (_nid(source_obj) or 'skill'))
+        if isinstance(value, int) and value in self._uid_refs:
+            return {'ref': self._uid_refs[value]}
+        return normalize(value)
+
 
 def _unit_snapshot(unit: Any, graph: _ObjectGraph) -> dict[str, Any]:
     nid = str(getattr(unit, 'nid'))
@@ -124,12 +189,16 @@ def _unit_snapshot(unit: Any, graph: _ObjectGraph) -> dict[str, Any]:
                  for idx, item in enumerate(getattr(unit, 'items', []) or [])]
     skill_wrappers = getattr(unit, '_skills', None)
     if skill_wrappers is not None:
-        skill_refs = [{'ref': graph.reference(wrapper.get(), 'skill', 'units/%s/skills/%d' % (nid, idx)),
-                       'source': normalize(wrapper.source), 'source_type': normalize(wrapper.source_type)}
-                      for idx, wrapper in enumerate(skill_wrappers)]
+        skill_refs = []
+        for idx, wrapper in enumerate(skill_wrappers):
+            ref = graph.reference(wrapper.get(), 'skill', 'units/%s/skills/%d' % (nid, idx))
+            skill_refs.append({'ref': ref, 'source': graph.source(wrapper.source),
+                               'source_type': normalize(wrapper.source_type)})
     else:
         skill_refs = [graph.reference(skill, 'skill', 'units/%s/skills/%d' % (nid, idx))
                       for idx, skill in enumerate(getattr(unit, 'skills', []) or [])]
+    action_names = ('finished', 'attacked', 'traded', 'moved', 'rescued', 'dropped', 'taken', 'given')
+    action_state = dict(zip(action_names, getattr(unit, 'get_action_state', lambda: (None,) * 8)()))
     return normalize({
         'nid': nid, 'team': _nid(getattr(unit, 'team', None)), 'party': _nid(getattr(unit, 'party', None)),
         'class': _nid(getattr(unit, 'klass', getattr(unit, 'class_nid', None))),
@@ -137,9 +206,11 @@ def _unit_snapshot(unit: Any, graph: _ObjectGraph) -> dict[str, Any]:
         'position': getattr(unit, 'position', None), 'hp': getattr(unit, 'current_hp', None),
         'mana': getattr(unit, 'current_mana', None), 'fatigue': getattr(unit, 'current_fatigue', None),
         'guard': getattr(unit, 'current_guard_gauge', None),
-        'finished': getattr(unit, '_finished', getattr(unit, 'finished', None)), 'dead': getattr(unit, 'dead', None),
-        'has_moved': getattr(unit, '_has_moved', getattr(unit, 'has_moved', None)), 'has_attacked': getattr(unit, '_has_attacked', getattr(unit, 'has_attacked', None)),
-        'traveler': _nid(getattr(unit, 'traveler', None)), 'lead_unit': _nid(getattr(unit, 'lead_unit', None)),
+        'action_state': action_state, 'dead': getattr(unit, 'dead', None),
+        'traveler': _nid(getattr(unit, 'traveler', None)),
+        'lead_unit': bool(getattr(unit, 'lead_unit', False)),
+        'built_guard': bool(getattr(unit, 'built_guard', False)),
+        'strike_partner': _nid(getattr(unit, 'strike_partner', None)),
         'stats': _dict(getattr(unit, 'stats', None)), 'growths': _dict(getattr(unit, 'growths', None)),
         'growth_points': _dict(getattr(unit, 'growth_points', None)), 'wexp': _dict(getattr(unit, 'wexp', None)),
         'inventory': item_refs, 'skills': skill_refs,
@@ -165,23 +236,65 @@ def _event_frame(event: Any, graph: _ObjectGraph, role: str, ordinal: int) -> di
             'caller_command_ordinal': getattr(event, '_trace_caller_command_ordinal', None)}
 
 
+def _board_snapshot(game: Any, board: Any, tilemap: Any, graph: _ObjectGraph,
+                    active_team: Any) -> dict[str, Any]:
+    width = getattr(tilemap, 'width', getattr(board, 'width', 0)) or 0
+    height = getattr(tilemap, 'height', getattr(board, 'height', 0)) or 0
+    positions = [(x, y) for x in range(width) for y in range(height)]
+    tile_grid = [[x, y, tilemap.get_terrain((x, y)), tilemap.get_layer((x, y))]
+                 for x, y in positions] if tilemap and hasattr(tilemap, 'get_terrain') else []
+    occupancy = []
+    unit_grid = getattr(board, 'unit_grid', None)
+    if unit_grid is not None:
+        for x, y in positions:
+            occupancy.extend([[x, y, _nid(unit)] for unit in unit_grid.get((x, y)) or []])
+
+    aura_sources = []
+    aura_grid = getattr(board, 'aura_grid', None)
+    if aura_grid is not None:
+        for x, y in positions:
+            for uid, target in sorted(aura_grid.get((x, y)) or [], key=lambda entry: (entry[0], entry[1])):
+                source = graph.source(uid)
+                if not isinstance(source, dict) or 'ref' not in source:
+                    raise TraceNormalizationError('unmapped aura skill uid')
+                aura_sources.append([x, y, source['ref']])
+
+    fog_visible = []
+    in_vision = getattr(board, 'in_vision', None)
+    if callable(in_vision):
+        fog_visible = [[x, y] for x, y in positions if in_vision((x, y), active_team)]
+
+    regions = []
+    region_values = getattr(getattr(game, 'level', None), 'regions', None)
+    if region_values is None:
+        region_values = (getattr(game, 'region_registry', {}) or {}).values()
+    for region in sorted(region_values or [],
+                         key=lambda value: (tuple(value.position or (-1, -1)), str(value.nid))):
+        regions.append(normalize({'nid': region.nid, 'type': region.region_type,
+                                  'position': region.position, 'size': region.size,
+                                  'sub_nid': region.sub_nid, 'time_left': region.time_left,
+                                  'condition': region.condition, 'only_once': region.only_once,
+                                  'interrupt_move': region.interrupt_move, 'data': getattr(region, 'data', {})}))
+    return {'tilemap_nid': _nid(tilemap), 'dimensions': [width, height],
+            'tile_grid_hash': canonical_hash({'dimensions': [width, height], 'tiles': tile_grid}),
+            'occupancy': occupancy,
+            'aura_sources': aura_sources, 'fog_visible': fog_visible,
+            'fog_visited': sorted([list(pos) for pos in getattr(board, 'previously_visited_tiles', set())]),
+            'bounds': getattr(board, 'bounds', None), 'regions': regions}
+
+
 def capture_logical_state(game: Any) -> dict[str, Any]:
     from app.utilities import static_random
     graph = _ObjectGraph()
+    skill_registry = getattr(game, 'skill_registry', {}) or {}
+    for skill in skill_registry.values():
+        uid = getattr(skill, 'uid', None)
+        if isinstance(uid, int):
+            graph._uid_objects[uid] = skill
     state_machine = getattr(game, 'state', None)
     units = sorted(getattr(game, 'units', []) or [], key=lambda unit: str(getattr(unit, 'nid', '')))
     level = getattr(game, 'level', None)
     board = getattr(game, 'board', None)
-    occupancy = []
-    unit_grid = getattr(board, 'unit_grid', None)
-    if unit_grid is not None:
-        for pos in ((x, y) for x in range(getattr(board, 'width', 0)) for y in range(getattr(board, 'height', 0))):
-            for unit in unit_grid.get(pos) or []:
-                occupancy.append([pos[0], pos[1], _nid(unit)])
-    else:
-        for pos, unit in sorted(_dict(getattr(board, 'units', None)).items(), key=lambda entry: entry[0]):
-            occupancy.append([pos[0], pos[1], _nid(unit)])
-
     events = getattr(game, 'events', None)
     active = getattr(game, '_trace_active_event', None)
     if active is None and state_machine and hasattr(state_machine, 'current_state'):
@@ -201,6 +314,7 @@ def capture_logical_state(game: Any) -> dict[str, Any]:
             seen.add(id(event))
 
     tilemap = getattr(level, 'tilemap', None)
+    active_team = getattr(getattr(game, 'phase', None), 'get_current', lambda: None)()
     return normalize({
         'state_stack': {'active': [getattr(state, 'name', None) for state in getattr(state_machine, 'state', []) or []],
                         'pending': list(getattr(state_machine, 'temp_state', []) or [])},
@@ -209,18 +323,13 @@ def capture_logical_state(game: Any) -> dict[str, Any]:
                   'overworld_nid': _nid(getattr(game, 'overworld_controller', None)),
                   'current_party': _nid(getattr(game, 'current_party', None))},
         'turn': {'turncount': getattr(game, 'turncount', None),
-                 'phase': getattr(getattr(game, 'phase', None), 'get_current', lambda: None)(),
-                 'active_team': getattr(getattr(game, 'phase', None), 'get_current', lambda: None)()},
+                 'phase': active_team, 'active_team': active_team},
         'object_graph': {'objects': graph.objects}, 'units': [_unit_snapshot(unit, graph) for unit in units],
         'variables': {'game': _dict(getattr(game, 'game_vars', None)), 'level': _dict(getattr(game, 'level_vars', None))},
         'rng': {'seed': static_random.get_seed(), 'combat_state': static_random.get_combat_random_state(),
-                'growth_state': static_random.r.growth_random.state,
+                'growth_state': static_random.get_growth_random_state(),
                 'other_state': static_random.get_other_random_state()},
-        'board': {'tilemap_nid': _nid(tilemap), 'dimensions': [getattr(tilemap, 'width', None), getattr(tilemap, 'height', None)],
-                  'tile_grid_hash': canonical_hash({'nid': _nid(tilemap), 'width': getattr(tilemap, 'width', None), 'height': getattr(tilemap, 'height', None)}),
-                  'occupancy': occupancy, 'aura_sources': [],
-                  'fog_visible': [], 'fog_visited': list(getattr(board, 'previously_visited_tiles', []) or []),
-                  'bounds': getattr(board, 'bounds', None), 'regions': []},
+        'board': _board_snapshot(game, board, tilemap, graph, active_team),
         'events': {'already_triggered': sorted(getattr(game, 'already_triggered_events', []) or []),
                    'execution_stack': frames},
         'completion': {'save_restore': getattr(game, '_trace_save_restore', None),
@@ -267,10 +376,14 @@ class SemanticRegistry:
 
 
 class TraceRecorder:
-    def __init__(self, scenario_id: str, game: Any = None, hook_observer: HookObserver = None) -> None:
+    def __init__(self, scenario_id: str, game: Any = None, hook_observer: HookObserver = None,
+                 action_registry: SemanticRegistry = None,
+                 playback_registry: SemanticRegistry = None) -> None:
         self.scenario_id = scenario_id
         self.game = game
         self.hook_observer = hook_observer
+        self.action_registry = action_registry or SemanticRegistry()
+        self.playback_registry = playback_registry or SemanticRegistry()
         self.records: list[dict[str, Any]] = []
         self.transition_commits: list[dict[str, Any]] = []
         self.header: Optional[dict[str, Any]] = None
@@ -289,13 +402,32 @@ class TraceRecorder:
     def checkpoint(self, checkpoint_id: str, game: Any, *, context: Mapping[str, Any] = None,
                    delta: Mapping[str, Any] = None, pending_exception_id: str = None,
                    allowed_pending: Iterable[Any] = None) -> dict[str, Any]:
+        """Capture a checkpoint.
+
+        Raw action/playback objects use their injected registries. Callers with
+        reviewed primitive records must use ``normalized_actions`` or
+        ``normalized_combat_playback`` explicitly.
+        """
         state = capture_logical_state(game)
         pending = state['state_stack']['pending']
         if pending and (pending_exception_id is None or list(allowed_pending or []) != pending):
             raise TraceInvariantError('terminal checkpoint has pending state transitions')
-        semantic_delta = {'actions': [], 'combat_playback': [], 'triggered_events': [], 'hook_calls': []}
+        delta = dict(delta or {})
+        semantic_delta = {
+            'actions': [self.action_registry.normalize(value) for value in delta.pop('actions', [])],
+            'combat_playback': [self.playback_registry.normalize(value)
+                                for value in delta.pop('combat_playback', [])],
+            'triggered_events': normalize(delta.pop('triggered_events', [])),
+            'hook_calls': normalize(delta.pop('hook_calls', [])),
+        }
+        for explicit_key, target_key in (('normalized_actions', 'actions'),
+                                         ('normalized_combat_playback', 'combat_playback')):
+            for record in delta.pop(explicit_key, []):
+                if not isinstance(record, Mapping):
+                    raise TraceNormalizationError('%s requires mapping records' % explicit_key)
+                semantic_delta[target_key].append(normalize(record))
         if delta:
-            semantic_delta.update(delta)
+            raise TraceNormalizationError('unknown semantic delta fields: %s' % sorted(delta))
         if self.hook_observer:
             semantic_delta['hook_calls'] = self.hook_observer.calls[:]
             self.hook_observer.calls.clear()

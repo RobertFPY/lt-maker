@@ -7,153 +7,168 @@
 ## Current authorization
 
 - Current phase: Phase 1
-- Last reviewed task: `P1-T02-R1`
-- Last reviewed commit: `d64fbdb3441b573823c6bdfc7b46b98c6e17b2be`
-- Review result: **CHANGES REQUESTED**
-- Escalation trigger encountered: **ESC-08 — Repeated local failure**
-- Next authorized work: **`P1-T02-R2` only**
-- Authorized model/effort: **`GPT-5.6 Sol / high`**
-- This is the P1-T02 escalation target and is **explicitly authorized** for R2.
-- No further self-escalation is authorized.
-- `P1-T03` remains **UNAUTHORIZED**.
-- Controller gate after P1-T02-R2: **YES — STOP FOR CONTROLLER REVIEW**.
+- Last reviewed task: `P1-T02-R2`
+- Last reviewed commit: `adc9ec753e6bf6623a31e013c762c10b01e53482`
+- Review result: **ACCEPTED**
+- `P1-T02` harness gate: **ACCEPTED after R2 escalation**
+- Escalation used: **YES — ESC-08, GPT-5.6 Sol / high, controller-authorized**
+- Next authorized task: **`P1-T03` only**
+- P1-T03 primary: `GPT-5.6 Terra / high`
+- P1-T03 escalation target: `GPT-5.6 Sol / max`
+- Escalation pre-authorized: **NO**
+- Controller gate after P1-T03: **YES — STOP FOR CONTROLLER REVIEW**
+- Phase 2 remains **UNAUTHORIZED**.
 
-## P1-T02-R1 controller review
+## P1-T02-R2 controller review
 
-Accepted progress in `d64fbdb3441b573823c6bdfc7b46b98c6e17b2be`:
+Accepted evidence:
 
-- Scope remained bounded to `app/engine/trace.py` and `app/tests/test_recovery_trace.py`; the previously approved `StateMachine` seam was not changed.
-- Unit capture now reads the real `UnitObject.current_hp/current_mana/current_fatigue/current_guard_gauge` fields.
-- `_skills` / `UnitSkill` wrappers are consulted for source metadata instead of relying only on visible skills.
-- Item/skill object graph records now include owner/data/component payload and nested parent/subitem/subskill/command relationships.
-- RNG capture reads static-random seed/combat/growth/other state without intentionally drawing random values.
-- Phase capture uses `get_current()` rather than the raw controller index.
-- Occupancy now supports `GameBoard.unit_grid`.
-- Header comparison ignores the two approved provenance fields: `runner_revision` and `platform_profile`.
-- A bounded semantic adapter registry was introduced.
-- No golden fixtures, P1-T03 work, baseline fixes, or broad production hooks were introduced.
+- Commit `adc9ec753e6bf6623a31e013c762c10b01e53482` changes only `app/engine/trace.py`, `app/tests/test_recovery_trace.py`, and a tiny read-only `get_growth_random_state()` accessor in `app/utilities/static_random.py`.
+- `app/engine/state_machine.py` is unchanged by R2; the previously accepted optional recorder seam remains the only production lifecycle intrusion.
+- No baseline failure, golden fixture, P1-T03 scenario, or broad combat/event/gameplay hook was introduced.
+- Targeted recovery-trace + lifecycle validation was reported as 31/31 PASS; `compileall` and `git show --check` were reported clean.
 
-P1-T02-R1 is **not accepted** because the harness still cannot safely serve as the P1-T03 behavioral oracle.
+### R2-1 — ACCEPTED
 
-## Why ESC-08 applies
+- Real `UnitObject`, `UnitSkill`, and `SkillObject` are exercised in acceptance tests.
+- Unit capture includes current HP/mana/fatigue/guard, class/level/EXP/stats/growth/growth-points/WEXP, full eight-field `get_action_state()`, traveler, lead/built-guard, strike partner, equipment, inventory, and skill source/source-type state.
+- `SourceType`/Enum values normalize to stable semantic values.
+- Skill-source allocation UIDs are mapped to stable object-graph references where the referenced skill object is known.
 
-P1-T02 had one bounded implementation (`a036be233...`) followed by one bounded correction (`d64fbdb34...`), and the acceptance contract is still not satisfied. This matches `plan.md` ESC-08. The next correction therefore uses the task's authorized escalation target `GPT-5.6 Sol / high` rather than another Terra loop.
+### R2-2 — ACCEPTED
 
-## Required P1-T02-R2 corrections
+- Real `ItemObject`/`SkillObject` component/data payloads are normalized using primitives/containers/enums without `repr`.
+- Parent/subitem/command-item and parent/subskill relationships use stable local references and preserve aliasing.
+- Unsupported semantic component payloads fail with `TraceNormalizationError`.
 
-### R2-1 — Finish real UnitObject / UnitSkill serialization
+### R2-3 — ACCEPTED
 
-The current revision still does not implement the full controller-required action/pair-up state and is not covered by a real-engine-shaped unit regression test.
+- Static-random seed, combat, growth, and other states are captured through read-only accessors.
+- Acceptance test proves capture returns exact pre-capture values and leaves all RNG generator states unchanged.
 
-Required:
+### R2-4 — ACCEPTED
 
-- serialize the complete logical action state represented by `UnitObject.get_action_state()` (`finished`, attacked, traded, moved, rescued, dropped, taken, given), not only moved/attacked;
-- include remaining gameplay-relevant pair-up/rescue state needed by the accepted contract (`traveler`, lead/built-guard state, and stable partner/source identity where present);
-- normalize `SourceType` and other approved enums to stable semantic names/NIDs; `SourceType` is an `Enum` and must not fail generic normalization;
-- when a skill source is an allocation UID that semantically references another runtime object (notably aura/source relationships), convert it to a stable object-graph reference where possible rather than hashing the raw UID;
-- add tests using actual `UnitObject`/`UnitSkill`/`SkillObject` classes or fixtures that instantiate those exact runtime fields, including a non-default action state and a `SourceType` value.
+- Phase/team capture uses `PhaseController.get_current()` logical team identity instead of the raw numeric controller index.
+- Regression test explicitly makes raw `current` differ from logical team NID.
 
-### R2-2 — Finish item/skill component normalization with representative real objects
+### R2-5 — ACCEPTED
 
-The object graph must serialize gameplay-relevant component values deterministically without `repr` and without silently dropping unsupported values.
+- Tile-grid hash is derived from per-coordinate logical terrain identity and stable layer NID, not surfaces or render objects.
+- `TileMapObject.get_layer()` returns the stable layer NID used by the hash.
+- Occupancy is derived from authoritative `unit_grid`.
+- Aura coverage maps runtime skill UID to stable object-graph references rather than emitting UID.
+- Fog visibility/visited state and logical regions are non-empty, deterministic trace fields in focused tests.
 
-Required:
+### R2-6 — ACCEPTED
 
-- define the explicit normalization path for item/skill component values, including stable enum handling and nested logical containers;
-- preserve parent/subitem/command-item and parent/subskill alias relationships by local reference;
-- unsupported semantic component payloads must still fail loudly;
-- add representative `ItemObject` and `SkillObject` tests that exercise component/data state, nested/shared relationships, durability/uses-like component state, and alias preservation.
+- Comparator validates required header identity, ignores only approved provenance (`runner_revision`, `platform_profile`), preserves ordered record comparison, and reports a stable first field path with expected/actual values and nearby checkpoint context.
+- Tests cover provenance-only equality plus header, checkpoint, context, logical-state, and semantic-delta divergence.
 
-Do not map every component type in the engine; implement the generic approved logical primitives/containers/enums plus explicit object adapters needed by the harness contract.
+### R2-7 — ACCEPTED
 
-### R2-3 — Prove RNG capture is read-only
+- Action and combat-playback use separately injected semantic registries for raw objects.
+- Mapped raw values normalize through adapters; unmapped values fail loudly.
+- Pre-normalized records have an explicit `normalized_actions` / `normalized_combat_playback` path rather than accidental bypass.
 
-The implementation now reads static-random state, but no acceptance test proves it is non-consuming.
+### R2-8 — ACCEPTED
 
-Add a regression test that:
+- `RoamInfo` has an explicit logical normalization adapter matching the current `GameState.save()` payload shape.
+- Representative nested save payload covers mappings/lists/sets/tuples and `RoamInfo` and is hashed before filesystem I/O.
+- Unknown unsupported objects still fail loudly.
 
-- seeds static random;
-- records seed/combat/growth/other internal states;
-- captures a logical trace state;
-- asserts the captured values exactly match the pre-capture values; and
-- asserts all generators remain unchanged after capture.
+## P1-T03 execution contract
 
-A tiny read-only `get_growth_random_state()` seam in `app/utilities/static_random.py` is authorized if it improves correctness/encapsulation. It must not alter RNG behavior.
+Codex must execute only P1-T03 from `plan.md`: establish reviewed PC-reference golden scenarios using the accepted Trace V1 harness.
 
-### R2-4 — Prove phase/team API semantics
+### Reference authority
 
-Add a regression test where the phase controller's raw `current` value differs from its logical `get_current()` team NID. The trace must contain the logical team NID.
+- Behavioral reference commit: `9314f54b49f4552b5a3d023b4da0012ce7dfbc89`.
+- The reference is a behavioral oracle, not a textual source to copy wholesale.
+- Do not change expected/reference behavior to match the current recovery branch.
+- Do not repair reference behavior during golden capture.
+- A later correctness fix may differ from the reference only when already controller-approved or when Codex stops and reports the conflict for a controller decision.
 
-### R2-5 — Complete board/tilemap/aura/fog/region capture
+### Reference capture method
 
-The current `tile_grid_hash` hashes only tilemap NID + dimensions, while `aura_sources`, `fog_visible`, and `regions` are still hard-coded empty. This fails Trace V1.
+Use an isolated temporary worktree/checkout or equivalent non-destructive reference environment. Do not reset, force-checkout, or rewrite the recovery branch.
 
-Required:
+The same accepted Trace V1 serializer/comparator contract must be used for reference and current capture. If the harness requires a compatibility overlay on the reference checkout, it must be instrumentation-only/test-owned and must not alter gameplay ordering, RNG consumption, state transitions, save behavior, combat behavior, event behavior, or project content. Document exactly what overlay is used and why it is observer-equivalent.
 
-- derive `tile_grid_hash` from deterministic logical tile/terrain identity for every coordinate, not only NID/dimensions;
-- keep occupancy from authoritative `unit_grid`;
-- serialize aura coverage/source identity from `aura_grid` / `known_auras` (mapping runtime skill UIDs back to stable skill/object-graph identity, never exposing the UID itself);
-- serialize logical fog visibility plus `previously_visited_tiles` using existing board/fog semantics without mutating state;
-- serialize logical region identity/type/position/size or equivalent gameplay-relevant region geometry from the game/level region structures;
-- add focused tests with non-empty aura, fog, regions, and terrain/tile identities; the tests must fail if those fields regress to placeholders.
+If the accepted harness cannot be applied to the reference without making a semantic/lifecycle choice, stop under the applicable ESC condition instead of inventing a golden.
 
-Do not serialize surfaces, render caches, opacity textures, or presentation-only data.
+### Minimum scenario matrix
 
-### R2-6 — Finish comparator policy and diagnostics
+P1-T03 must cover the plan's minimum scenarios and may split them into deterministic sub-scenarios where necessary:
 
-Ignoring provenance is only part of the accepted comparator contract.
+1. New game to first playable map / player-control ready.
+2. Existing save load.
+3. Save/load during event where supported by the reference lineage.
+4. Restart current chapter.
+5. Standard map combat.
+6. Simple combat.
+7. Animation combat.
+8. Arena/base combat where applicable.
+9. Skill proc plus pre/post-combat hook ordering.
+10. Item durability/uses and broken/unusable handling.
+11. Promotion/class-change edge cases including class/level/EXP/stat state.
+12. Aura propagation/teardown/load aliasing.
+13. Fog-of-war move preview/cancel/wait semantics.
+14. Tilemap change and board commit.
+15. Phase transition.
+16. Fast-forward OFF vs ON logical equivalence.
+17. Debugger/profiler disabled vs enabled-idle observer equivalence.
+18. Game-over/restart path.
 
-Required:
+Each scenario must declare deterministic input fixture identity, seed, required checkpoints, and any scenario-specific required variables/approved pending-transition exception. Do not use host frame count, wall time, audio playback state, render surfaces, profiler samples, or volatile UI state as equality criteria.
 
-- explicitly validate required header identity (`schema_version`, `scenario_id`, `input_fixture_id`, `reference_revision`, serializer as applicable);
-- ignore only the approved provenance fields;
-- require ordered checkpoint ID/context compatibility;
-- compare state and delta hashes/content;
-- on mismatch, report a stable first field-level path (JSON Pointer or equivalent) with expected/actual values and nearby checkpoint identity/context;
-- add tests for provenance-only equality, header identity mismatch, checkpoint-order/context mismatch, and nested logical-state/delta mismatch diagnostics.
+### Golden fixture rules
 
-### R2-7 — Integrate semantic registries into action/playback delta normalization
+- Store versioned fixtures under the approved Trace V1 fixture location (or a clearly documented equivalent if existing test layout requires it).
+- Include a manifest with schema version, behavioral reference revision, scenario/input identity, and fixture SHA-256.
+- Golden files must be generated from the PC reference environment, never copied from the current recovery branch merely because it passes.
+- Do not silently regenerate a golden after a mismatch.
+- Do not add wildcard ignores, platform-wide ignores, or broad normalization exclusions.
+- Any field-specific exception requires a named controller decision and supporting evidence.
 
-A standalone generic `SemanticRegistry` is not sufficient if `TraceRecorder` still accepts arbitrary already-normalized action/playback lists.
+### Current-branch validation
 
-Required:
+After reference fixtures exist, run the same deterministic scenarios on the recovery branch and compare them against the reference fixtures. A current-branch divergence is evidence, not permission to modify the golden.
 
-- provide distinct or clearly typed action/playback registry paths owned/injected by the test harness;
-- when raw semantic action/playback objects are supplied, normalize them only through the registered adapter;
-- unmapped raw action/playback types fail loudly;
-- already normalized primitive trace records, if supported, must follow one explicit documented path rather than bypassing adapter validation accidentally;
-- tests must show one mapped action, one mapped playback, and unmapped failures.
+P1-T03 may add scenario drivers, fixture-generation/test utilities, semantic action/playback adapters required by those scenarios, and minimal test-owned observer wiring at already-approved seams. It may not begin Phase 2 recovery fixes or broadly instrument gameplay systems.
 
-Do not broadly instrument production combat in R2.
+### Escalation conditions
 
-### R2-8 — Validate representative GameState.save payload normalization
+Stop and request `GPT-5.6 Sol / max` if any of the following occurs:
 
-`GameState.save()` includes logical structures that are not plain JSON primitives, including `RoamInfo` in the save payload. The current `canonical_hash()` path cannot normalize arbitrary dataclass engine objects.
+- **ESC-01:** reference behavior or fixture meaning cannot be determined unambiguously;
+- **ESC-02:** scenario failure crosses a second correctness-critical subsystem and cannot be isolated within the harness/scenario layer;
+- **ESC-03:** deterministic logical traces diverge after locally correct scenario/harness setup and the cause is not presentation-only;
+- **ESC-04:** multiple plausible golden semantics exist;
+- **ESC-05:** scenario capture exposes a deeper invariant violation rather than a harness defect;
+- **ESC-06:** save/load scenario reveals a compatibility/format decision;
+- **ESC-08:** one bounded P1-T03 repair plus one bounded correction still cannot satisfy the scenario acceptance;
+- **ESC-09:** golden capture requires a new unapproved cross-cutting lifecycle abstraction.
 
-Required:
+Do not self-escalate. Stop editing, preserve safe evidence, report the exact scenario/checkpoint/trace divergence, and wait for controller authorization.
 
-- add an explicit logical adapter for the known save-payload object(s) required by the current `GameState.save()` shape, including `RoamInfo` (`roam`, `roam_unit_nid`);
-- add a representative save-payload regression test shaped from the actual `GameState.save()` contract, including nested mappings/lists/sets/tuples and `RoamInfo`;
-- prove `save.payload.captured` hashes that logical payload before I/O and does not include file paths, timestamps, or filesystem completion state;
-- unsupported unknown engine objects must continue to fail loudly.
+### Validation and report requirements
 
-A full golden/save scenario is still P1-T03 and is not authorized here.
+Run the targeted Trace V1 harness tests plus all P1-T03 scenario tests. Run relevant lifecycle tests touched by scenario wiring, `compileall`, and `git show --check`.
 
-## P1-T02-R2 scope and constraints
+The P1-T03 task report must include:
 
-- Primary work remains `app/engine/trace.py` and `app/tests/test_recovery_trace.py`.
-- `app/utilities/static_random.py` may receive only a tiny read-only RNG-state getter if needed.
-- Do not change `app/engine/state_machine.py` unless a new issue is first reported to the controller; its existing optional seam is already accepted.
-- Do not add broad event/combat/gameplay hooks.
-- Do not generate or bless PC-reference golden fixtures.
-- Do not start P1-T03.
-- Do not fix baseline failures.
-- Preserve default no-recorder runtime behavior exactly.
-- Use real engine classes/APIs in acceptance tests where practical; do not let invented aliases in `SimpleNamespace` stand in for an engine API under test.
-- Run targeted recovery-trace tests, relevant state-machine lifecycle tests, `compileall`, and `git show --check`.
-- Report each R2-1 through R2-8 as PASS/FAIL with the test/evidence that supports it.
-- If Sol/high discovers an unresolved semantic choice, invasive new lifecycle seam, or another global ESC condition, STOP and report it; do not self-escalate further.
+- scenario-by-scenario PASS/FAIL status for all 18 minimum scenarios;
+- reference capture method and any instrumentation-only overlay;
+- fixture/manifest paths and hashes;
+- current-branch comparison result per scenario;
+- first divergent checkpoint/path for every failure;
+- tests/commands run and results;
+- files changed;
+- escalation triggers encountered;
+- commit SHA.
+
+Do not report overall PASS if any required scenario is skipped, unsupported without documented controller disposition, or has an unresolved trace divergence.
 
 ## Gate status
 
-`P1-T02` is **not accepted**. `P1-T03` remains blocked until P1-T02-R2 is reviewed and accepted.
+`P1-T02` is **ACCEPTED**. `P1-T03` is the only authorized next task. Phase 2 remains blocked until P1-T03 is reviewed and accepted.

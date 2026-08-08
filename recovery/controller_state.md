@@ -43,6 +43,7 @@ Required implementation principles:
 - Unknown semantic action/playback/hook types must fail loudly rather than fall back to `repr` or disappear.
 - Stable local references must preserve aliasing while remaining independent of runtime allocation IDs.
 - Unit/object serializers must capture the authoritative logical fields required by scenarios; use existing save/runtime semantics as evidence and add deterministic serializer tests rather than speculative broad dumps.
+- For unit snapshots specifically, include gameplay-relevant mutable state needed to detect recovery regressions: class, level, EXP, base stats, growth/growth-point state where relevant, WEXP, HP/mana/fatigue/guard state, action-state flags, traveler/pair-up relations, equipped item references, inventory order/content, and skill source metadata. Exclude sprite/sound/animation/render caches and other presentation-only objects.
 - Do not generate or bless PC-reference golden fixtures in P1-T02; that belongs to P1-T03.
 - Do not fix baseline suite failures unless a new P1-T02 harness test itself exposes a defect in the harness implementation.
 - Escalate only under the P1-T02 conditions in `plan.md`; do not self-escalate.

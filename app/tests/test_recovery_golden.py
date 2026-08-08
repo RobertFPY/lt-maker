@@ -1,8 +1,90 @@
+import hashlib
+import json
+from pathlib import Path
 import unittest
 from unittest.mock import Mock
 
 from app.engine import config as cf
 from app.engine import engine
+
+
+PC_REFERENCE_REVISION = '9314f54b49f4552b5a3d023b4da0012ce7dfbc89'
+FIXTURE_ROOT = (Path(__file__).resolve().parent / 'fixtures' /
+                'recovery_traces' / 'v1')
+MANIFEST_PATH = FIXTURE_ROOT / 'manifest.json'
+EVIDENCE_PATH = Path(__file__).resolve().parents[2] / 'recovery' / 'p1_t03_evidence.md'
+
+EXPECTED_GOLDENS = {
+    '01_new_game_first_playable_map': 'testing_proj_chapter_0_seed_1701_v1',
+    '02_existing_save_load': 'testing_proj_chapter_0_seed_1701_in_memory_save_v1',
+    '04_restart_current_chapter': 'testing_proj_chapter_0_restart_slot_seed_1701_v1',
+    '05_standard_map_combat': 'testing_proj_chapter_0_eirika_map_combat_seed_1701_v1',
+    '06_simple_combat': 'testing_proj_chapter_0_eirika_simple_combat_seed_1701_v1',
+    '07_animation_combat': 'default_proj_chapter_0_eirika_animation_combat_seed_1701_v1',
+    '08_base_combat': 'default_proj_chapter_0_eirika_vulnerary_base_combat_seed_1701_v1',
+    '09_skill_proc_hooks': 'default_proj_chapter_0_eirika_luna_seed_0_v1',
+    '10_item_durability_and_broken': 'default_proj_chapter_0_eirika_angelic_robe_one_use_seed_1701_v1',
+    '11_promotion_class_change': 'default_proj_chapter_0_eirika_lunar_brace_single_route_seed_1701_v1',
+    '12_aura_lifecycle': 'default_proj_chapter_0_eirika_inspiration_aura_save_load_seed_1701_v1',
+    '13_fog_move_cancel_wait': 'default_proj_chapter_0_eirika_fog_move_cancel_wait_seed_1701_v1',
+    '14_tilemap_change': 'testing_proj_chapter_0_prologue_to_magvel_tilemap_v1',
+    '15_phase_transition': 'testing_proj_chapter_0_player_to_enemy_phase_seed_1701_v1',
+    '16_fast_forward_equivalence': 'testing_proj_chapter_0_simple_combat_fast_forward_v1',
+    '17_observer_idle_hybrid': 'testing_proj_chapter_0_observer_idle_seed_1701_v1',
+    '18_game_over_restart': 'default_proj_chapter_0_death_eirika_restart_slot_seed_1701_v1',
+}
+
+
+class RecoveryGoldenFixtureTests(unittest.TestCase):
+    def _manifest(self):
+        with MANIFEST_PATH.open(encoding='utf-8') as manifest_file:
+            return json.load(manifest_file)
+
+    def test_manifest_locks_the_complete_trace_v1_fixture_set(self):
+        manifest = self._manifest()
+        self.assertEqual(1, manifest['schema_version'])
+        self.assertEqual(PC_REFERENCE_REVISION, manifest['reference_revision'])
+
+        scenarios = {record['scenario_id']: record for record in manifest['scenarios']}
+        self.assertEqual(set(EXPECTED_GOLDENS) | {'03_event_save_load'}, set(scenarios))
+        s3 = scenarios['03_event_save_load']
+        self.assertEqual('N/A — REFERENCE-UNSUPPORTED', s3['status'])
+        self.assertNotIn('fixture_path', s3)
+        self.assertFalse(list(FIXTURE_ROOT.glob('03_*.jsonl')))
+
+    def test_each_golden_has_a_locked_trace_v1_header_and_hash(self):
+        manifest = self._manifest()
+        evidence = EVIDENCE_PATH.read_text(encoding='utf-8')
+        for record in manifest['scenarios']:
+            if record['scenario_id'] == '03_event_save_load':
+                continue
+            with self.subTest(scenario_id=record['scenario_id']):
+                self.assertEqual(1, record['schema_version'])
+                self.assertEqual(PC_REFERENCE_REVISION, record['reference_revision'])
+                self.assertEqual(EXPECTED_GOLDENS[record['scenario_id']],
+                                 record['input_fixture_id'])
+                fixture_path = Path(record['fixture_path'])
+                self.assertEqual(FIXTURE_ROOT.resolve(), fixture_path.resolve().parent)
+                self.assertTrue(fixture_path.is_file())
+                digest = hashlib.sha256(fixture_path.read_bytes()).hexdigest().upper()
+                self.assertEqual(record['sha256'], digest)
+                self.assertIn('`%s`' % digest, evidence)
+                self.assertIn(record['fixture_path'], evidence)
+
+                records = [json.loads(line) for line in
+                           fixture_path.read_text(encoding='utf-8').splitlines()]
+                headers = [entry for entry in records if entry['kind'] == 'trace_header']
+                self.assertEqual(1, len(headers))
+                header = headers[0]
+                self.assertEqual(1, header['schema_version'])
+                self.assertEqual('logical-trace-v1', header['serializer'])
+                self.assertEqual(PC_REFERENCE_REVISION, header['reference_revision'])
+                self.assertEqual(record['scenario_id'], header['scenario_id'])
+                self.assertEqual(record['input_fixture_id'], header['input_fixture_id'])
+                self.assertEqual(record['checkpoint_ids'], [
+                    entry['checkpoint_id'] for entry in records
+                    if entry['kind'] == 'checkpoint'
+                ])
 
 
 class RecoveryGoldenScenarioTests(unittest.TestCase):

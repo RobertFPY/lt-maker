@@ -1,95 +1,114 @@
 # Recovery Controller State
 
-> Live controller-gate state. `plan.md` remains authoritative for architecture, invariants, task definitions, model policy, and global escalation rules. This file resolves the current P1-T03 blockers and overrides stale execution-state text when needed.
+> Live controller-gate state. `plan.md` remains authoritative for architecture, invariants, task definitions, model policy, and global escalation rules. This file records the active P1-T03 escalation and prior controller decisions.
 
 ## Current authorization
 
 - Current phase: Phase 1
 - Harness gate: **P1-T02 ACCEPTED**
 - Active task: **P1-T03 only**
-- Latest executor stop: **ESC-01** during scenario 1 reference bootstrap
-- Latest controller disposition: **ESC-01 RESOLVED — missing component-system modules are reference-generated artifacts, not a semantic overlay**
-- Resume model: **GPT-5.6 Terra / high**
-- Escalation target remains: **GPT-5.6 Sol / max**
-- Escalation pre-authorized for any new issue: **NO**
-- Controller gate after P1-T03: **YES — STOP FOR CONTROLLER REVIEW**
+- Latest executor stop: **ESC-03** during scenario 1 (`New game -> first playable map`)
+- Divergent checkpoint: `player.control.ready`
+- First divergent path: `/logical_state/rng/combat_state`
+- Reference value: `992`
+- Recovery value: `598`
+- Controller disposition: **ESC-03 CONFIRMED**
+- Authorized model for bounded diagnosis: **GPT-5.6 Sol / max**
+- Escalation authorization: **YES, for this P1-T03 ESC-03 diagnosis only**
 - Phase 2 remains **UNAUTHORIZED**
+- Gameplay repair remains **UNAUTHORIZED**
+- Golden/manifest blessing remains **UNAUTHORIZED** until the divergence is classified by controller review
 
-## Controller decision — reference component-system bootstrap
+## ESC-03 evidence accepted
+
+The reference and recovery traces reach the same scenario checkpoint with matching semantic-delta hash and empty pending state, but combat RNG state differs (`992` vs `598`). This is a logical-state divergence, not presentation/provenance noise.
+
+The Trace V1 RNG observer is not the source of the mismatch:
+
+- reference and recovery use the same `LCG` implementation and the same `get_combat_random_state()` observer;
+- the only Trace-harness-related change in `app/utilities/static_random.py` is a read-only growth-RNG state getter;
+- reading combat RNG state does not advance it.
+
+Therefore the next authorized work is to locate and classify the **first divergent combat-RNG consumption/order** between reference and recovery.
+
+## P1-T03 ESC-03 diagnosis contract
+
+Use **GPT-5.6 Sol / max**. This is an explicit controller-authorized escalation under ESC-03.
+
+The diagnosis is evidence-only. Do not repair gameplay, alter RNG behavior, weaken Trace V1, bless an exception, regenerate a golden after mismatch, or begin Phase 2.
+
+### Required diagnosis
+
+For scenario 1 only, determine the earliest point at which the reference and recovery combat RNG streams diverge.
+
+Prefer observer-only/test-owned instrumentation that records, for each combat-RNG mutation:
+
+- pre-state;
+- post-state;
+- operation (`get_combat`, `get_randint`, `shuffle`, direct state set/restore, or equivalent);
+- arguments/result when applicable;
+- stable call-site/function identity;
+- nearest semantic context/checkpoint/event/action when available.
+
+Instrumentation must not consume additional RNG or change call ordering. Do not insert gameplay-side calls solely to make traces align.
+
+### Root-cause classification
+
+Once the first divergence is found, identify the smallest post-reference commit/file/function cluster responsible and classify it as one of:
+
+1. **Likely recovery regression** — changed RNG consumption/order with no independently approved semantic reason;
+2. **Known independent correctness fix** — divergence is caused by a later correctness fix that intentionally changes semantics;
+3. **Harness/scenario mismatch** — the two runs are not actually receiving equivalent seed/input/content/bootstrap conditions;
+4. **Reference ambiguity / competing semantics** — evidence is insufficient to choose behavior safely;
+5. **Other** — explain precisely.
+
+Do not choose category 2 merely because a post-reference commit is labeled a fix; prove the specific RNG divergence is a necessary consequence of that correctness fix.
+
+### Required evidence report
+
+Report at minimum:
+
+- initial seed and all RNG states at scenario start for both runs;
+- first matching RNG mutation sequence before divergence;
+- first divergent RNG mutation with pre/post state, operation, call site, and semantic context;
+- relevant reference-vs-recovery source diff or commit(s);
+- whether project content/input/bootstrap is identical for the compared path;
+- classification from the list above with evidence;
+- whether scenario 1 can remain a strict PC-reference golden comparison or requires a controller semantic decision.
+
+If the diagnosis discovers a second correctness-critical subsystem or a new semantic ambiguity, preserve evidence and STOP; do not broaden into a repair.
+
+After the bounded ESC-03 diagnosis, STOP FOR CONTROLLER REVIEW. Do not continue scenarios 2-18 until the controller disposes of scenario 1.
+
+## Prior controller decision — reference component-system bootstrap
 
 Behavioral reference: `9314f54b49f4552b5a3d023b4da0012ce7dfbc89`.
 
-The reference checkout intentionally does not track `app/engine/skill_system.py` or `app/engine/item_system.py`:
+`app/engine/skill_system.py` and `app/engine/item_system.py` are reference-owned generated artifacts. The reference `.gitignore` ignores them, and the reference-owned component generator deterministically creates them from source inputs at the same revision.
 
-- `app/engine/.gitignore` explicitly ignores both files;
-- `app/engine/codegen/source_generator.py` defines `generate_component_system_source()` and calls `compile_skill_system()` plus `compile_item_system()`;
-- the reference-owned compiler inputs and bases are present at the same revision;
-- both compilers write the generated modules into `app/engine/` and prepend the repository's generated-code warning.
+Authorized reference bootstrap remains:
 
-Therefore creating these two files by running the **reference revision's own component-system generator** is an authorized reference bootstrap step. It is not a compatibility overlay and does not constitute a new gameplay implementation authored by the recovery task; the generated behavior is defined by source inputs already present in the behavioral reference.
+1. verify reference HEAD exactly;
+2. run only `generate_component_system_source()`;
+3. do not hand-edit generated files;
+4. do not copy generated files from recovery;
+5. record generated SHA-256 hashes;
+6. ensure normal git status remains clean;
+7. use the generated outputs only to make that exact reference revision runnable.
 
-### Authorized bootstrap procedure
+A different missing artifact may be generated without escalation only if the exact reference contains its generator and authoritative inputs, the output is clearly generated, and no recovery implementation is copied in.
 
-In the isolated detached reference worktree only:
+## Prior controller decision — scenario 17
 
-1. verify HEAD is exactly `9314f54b49f4552b5a3d023b4da0012ce7dfbc89`;
-2. run only the reference-owned component-system generation path, preferably:
-   `python -c "from app.engine.codegen.source_generator import generate_component_system_source; generate_component_system_source()"`;
-3. do **not** hand-edit either generated file;
-4. do **not** copy `skill_system.py` or `item_system.py` from the recovery branch;
-5. record SHA-256 hashes of the generated files in P1-T03 evidence;
-6. verify normal `git status` remains clean because the outputs are intentionally ignored;
-7. retry the reference `DB.load(...)` / scenario bootstrap.
+Scenario 17 remains a hybrid reference-anchored + recovery metamorphic invariant:
 
-Do not run `generate_all()` merely to solve this blocker; avoid generating unrelated event-wrapper outputs unless a later reference-owned generated-artifact dependency is independently demonstrated and reviewed under the rule below.
+- **17A:** PC reference with debugger/profiler absent/disabled establishes the baseline;
+- **17B:** recovery disabled must equal the reference baseline;
+- **17C:** recovery debugger enabled-idle must equal recovery disabled after exiting temporary UI state and without mutating debug commands;
+- **17D:** recovery profiler enabled-idle must equal recovery disabled in logical state/order/RNG; profiler diagnostics are provenance only.
 
-### General generated-artifact rule for P1-T03
-
-A missing file in the PC reference may be generated without a new escalation only when **all** of the following are true:
-
-- the exact reference commit contains the generator and all authoritative source inputs;
-- the output is explicitly generated/ignored or otherwise clearly treated as generated by that revision;
-- generation is deterministic source generation, not runtime migration or compatibility behavior;
-- no recovery-branch implementation is copied into the reference;
-- generated outputs are used only to make the reference revision runnable and are documented with hashes.
-
-If any one of these conditions is not satisfied, STOP under ESC-01/ESC-04 and request controller review; do not invent an overlay.
-
-If the authorized component generation itself fails, produces unstable output across clean repeated generation, or `DB.load(...)` still requires a missing non-generated gameplay implementation, STOP again. That would be a **new** ESC condition; do not self-escalate.
-
-## Controller decision for scenario 17
-
-The prior ESC-01 / ESC-04 for debugger/profiler remains resolved as follows.
-
-Do **not** simulate debugger/profiler on the PC reference and do **not** remove scenario 17. Scenario 17 is a hybrid reference-anchored + recovery metamorphic invariant:
-
-- **17A — Reference-disabled baseline:** run the PC reference with no debugger/profiler simulation; Trace V1 may emit the test-owned `debugger.observer.check` marker at the final committed synchronization point.
-- **17B — Recovery disabled vs reference:** same seed/input with debugger/profiler disabled must equal 17A.
-- **17C — Recovery debugger enabled-idle:** use the real current debugger path, issue no mutating debug command, exit temporary debugger UI/presentation state, and require logical trace/final state equivalence to recovery-disabled.
-- **17D — Recovery profiler enabled-idle:** use the real `RuntimeProfiler` path; logical trace/final state/RNG must equal recovery-disabled. Timing samples, logs, thread IDs, GC counters and profiler buffers are provenance only.
-
-There is no PC-reference enabled-idle debugger/profiler golden fixture.
-
-## P1-T03 resume contract
-
-Resume the same P1-T03 task; this is not permission to fix gameplay.
-
-- Scenarios 1–16 and 18 remain ordinary PC-reference golden scenarios.
-- Scenario 17 follows the hybrid contract above.
-- Reuse the isolated reference worktree only if it still points to the exact behavioral reference.
-- The accepted Trace V1 reference overlay remains instrumentation-only.
-- Reference-owned generated component-system artifacts are now explicitly allowed under the bootstrap rule above.
-- Never copy current-branch output into reference fixtures.
-- Never silently regenerate a golden after a current-branch mismatch.
-- Do not begin Phase 2 repairs.
-- Report scenarios 1–18 individually; overall PASS is forbidden if any required scenario is skipped or unresolved.
-
-## Model disposition
-
-The current scenario-1 blocker does **not** justify Sol/max because the ambiguity is resolved by direct reference evidence. Continue with the planned primary **GPT-5.6 Terra / high**.
-
-If a genuinely new reference ambiguity, competing semantic interpretation, deterministic non-presentation trace conflict, save-format decision, cross-system invariant failure, unapproved lifecycle abstraction, or other global ESC condition appears, STOP and request the P1-T03 escalation target **GPT-5.6 Sol / max**. Do not self-escalate.
+There is no simulated PC-reference enabled-idle debugger/profiler golden.
 
 ## Gate status
 
-P1-T03 is authorized to resume under these decisions. Phase 2 remains blocked until P1-T03 is completed and reviewed by the controller.
+Only the bounded P1-T03 ESC-03 diagnosis above is authorized now. Phase 2 and all gameplay repairs remain blocked.

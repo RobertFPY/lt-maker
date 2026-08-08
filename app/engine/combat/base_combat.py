@@ -23,6 +23,7 @@ class BaseCombat(SimpleCombat):
 
     def __init__(self, attacker: UnitObject, main_item: ItemObject,
                  main_target: UnitObject, script: list, total_rounds: int = 1):
+        self._counter: int = 0
         self.state = 'init'
         self.attacker = attacker
         self.defender = main_target
@@ -45,6 +46,10 @@ class BaseCombat(SimpleCombat):
         self.playback = []
         self.actions = []
 
+        with RUNTIME_PROFILER.section('combat.start_hooks'):
+            self.start_combat()
+        with RUNTIME_PROFILER.section('combat.start_event'):
+            self.start_event()
 
     def start_combat(self):
         self.initial_random_state = static_random.get_combat_random_state()
@@ -127,44 +132,27 @@ class BaseCombat(SimpleCombat):
         return all_units
 
     def update(self):
-        if self.state == 'init':
-            with RUNTIME_PROFILER.section('combat.start_hooks'):
-                self.start_combat()
-            self.state = 'start_event'
-            return False
-
-        if self.state == 'start_event':
-            with RUNTIME_PROFILER.section('combat.start_event'):
-                self.start_event()
-            self.state = 'combat'
-            return False
-
-        if self.state == 'combat':
-            if self.state_machine.get_state():
+        if self._counter == 0:
+            while self.state_machine.get_state():
                 with RUNTIME_PROFILER.section('combat.solver_do'):
                     self.actions, self.playback = self.state_machine.do()
                 self.full_playback += self.playback
                 self._apply_actions()
                 self.state_machine.setup_next_state()
-            else:
-                self.state = 'cleanup0'
+            self._counter += 1
             return False
-
-        if self.state == 'cleanup0':
-            self.clean_up0()
-            self.state = 'cleanup1'
-            return False
-
-        if self.state == 'cleanup1':
-            self.clean_up1()
-            self.state = 'cleanup2'
-            return False
-
-        if self.state == 'cleanup2':
-            self.clean_up2()
-            return True
-
-        raise ValueError('Unknown BaseCombat state: %s' % self.state)
+        else:
+            if self.state == 'init':
+                self.clean_up0()
+                self.state = 'cleanup1'
+                return False
+            elif self.state == 'cleanup1':
+                self.clean_up1()
+                self.state = 'cleanup2'
+                return False
+            elif self.state == 'cleanup2':
+                self.clean_up2()
+        return True
 
     def handle_state_stack(self):
         pass

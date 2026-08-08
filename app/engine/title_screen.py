@@ -941,60 +941,53 @@ class TitleLoadJobState(State):
         self.particles = game.memory.get('title_particles')
         self.error = None
         self.finished = False
-        self._restore_complete = False
-        self._post_load_iter = None
         if self.job is None:
             self.error = save.SaveLoadError('Title loader started without a save job')
 
     def _recover_from_error(self) -> None:
         logging.error(
-            'Staged save load failed: %s', self.error,
+            'Save load transaction failed: %s', self.error,
             exc_info=(type(self.error), self.error, self.error.__traceback__) if self.error else None,
         )
         if self.job:
             self.job.abort(game)
         else:
-            game.clear()
-            game.build_new()
+            save.reset_failed_load(game)
         game.load_states(['title_start'])
         game.memory['_return_directly_to_title_menu'] = True
         self.finished = True
 
-    def _begin_post_load(self) -> bool:
-        """Start any level reconstruction that must follow save restoration."""
+    def _complete_load(self, state_data) -> None:
         next_action = self.context.get('next_action')
-        if next_action == 'start_level':
-            next_level_nid = game.game_vars['_next_level_nid']
-            self._post_load_iter = game.start_level_iter(next_level_nid)
-            return False
-        elif next_action == 'restart_level':
-            next_level_nid = game.game_vars['_next_level_nid']
-            self._post_load_iter = game.start_level_iter(next_level_nid)
-            return False
-        elif next_action == 'overworld':
-            game.load_states(['overworld'])
-        return True
+        preserve_title_stack = (
+            self.context.get('transition_from') == 'Restart Level'
+        )
+        title_prefix = game.state.state[:-1] if preserve_title_stack else []
 
-    def _advance_post_load(self, budget_ms: float = 8.0) -> bool:
-        if self._post_load_iter is None:
-            return True
-        deadline = time.perf_counter() + max(0.0, budget_ms) / 1000.0
-        while time.perf_counter() < deadline:
-            try:
-                next(self._post_load_iter)
-            except StopIteration:
-                self._post_load_iter = None
-                return True
-        return False
+        if next_action in ('start_level', 'restart_level'):
+            if next_action == 'restart_level':
+                snapshot_states = (
+                    [state.name for state in title_prefix] + list(state_data[0]))
+            else:
+                snapshot_states = (
+                    list(state_data[0]) + ['start_level_asset_loading'])
+            chapter_start_state = (snapshot_states, list(state_data[1]))
+            game.start_level(
+                game.game_vars['_next_level_nid'],
+                chapter_start_state=chapter_start_state)
 
-    def _complete_load(self) -> None:
-        next_action = self.context.get('next_action')
+        if preserve_title_stack:
+            if game.state.current_state() is not self:
+                raise save.SaveLoadError('Title loader is not the active state')
+            game.state.exit_state(self)
+            game.install_state_machine(state_data, prefix_states=title_prefix)
+        else:
+            game.install_state_machine(state_data)
+
         if next_action == 'start_level':
             game.load_states(['start_level_asset_loading'])
         elif next_action == 'overworld':
             game.load_states(['overworld'])
-        else:
-            game.commit_staged_state()
         game.memory['transition_from'] = self.context.get('transition_from', 'Load Game')
         game.memory['title_menu'] = self.context.get('title_menu')
         game.state.change('title_wait')
@@ -1016,19 +1009,16 @@ class TitleLoadJobState(State):
             self._recover_from_error()
             return 'repeat'
         try:
-            if not self._restore_complete:
-                with RUNTIME_PROFILER.section('save_load_restore_step'):
-                    self._restore_complete = self.job.advance(game, budget_ms=8.0)
-                if self._restore_complete and self._begin_post_load():
-                    self._complete_load()
-                    return 'repeat'
-            elif self._post_load_iter is not None:
-                with RUNTIME_PROFILER.section('save_load_start_level_step'):
-                    if self._advance_post_load(budget_ms=8.0):
-                        self._complete_load()
-                        return 'repeat'
+            with RUNTIME_PROFILER.section('save_load_restore_transaction'):
+                if not self.job.advance(game, budget_ms=8.0):
+                    return None
+                state_data = self.job.take_state_data()
+                if state_data is None:
+                    raise save.SaveLoadError('Save job completed without state data')
+                self._complete_load(state_data)
+            return 'repeat'
         except Exception as exc:
-            self.error = save.SaveLoadError('Unable to restore staged save')
+            self.error = save.SaveLoadError('Unable to restore save transaction')
             self.error.__cause__ = exc
             self._recover_from_error()
             return 'repeat'

@@ -113,7 +113,7 @@ class AndroidRoundThreePerformanceContracts(unittest.TestCase):
         self.assertIn('def load_game(', save_source)
         self.assertIn("'title_load_job': title_screen.TitleLoadJobState", machine_source)
 
-    def test_in_chapter_load_uses_staged_job_only_on_android(self):
+    def test_in_chapter_load_uses_worker_job_only_on_android(self):
         general_source = (ROOT / 'engine' / 'general_states.py').read_text(encoding='utf-8')
         machine_source = (ROOT / 'engine' / 'state_machine.py').read_text(encoding='utf-8')
         take_input = _class_method_source(general_source, 'InChapterLoadState', 'take_input')
@@ -122,20 +122,27 @@ class AndroidRoundThreePerformanceContracts(unittest.TestCase):
         self.assertIn('_start_android_load(', take_input)
         self.assertIn("'in_chapter_load_job': general_states.InChapterLoadJobState", machine_source)
 
-    def test_in_chapter_staged_load_replaces_state_only_after_restore(self):
+    def test_in_chapter_atomic_load_installs_state_only_after_restore(self):
         state = general_states.InChapterLoadJobState.__new__(general_states.InChapterLoadJobState)
-        state.job = SimpleNamespace(completed=True)
+        state.job = SimpleNamespace(
+            completed=True,
+            advance=Mock(return_value=True),
+            take_state_data=Mock(return_value=(['free'], [])),
+            abort=Mock(),
+        )
         state.save_slot = SimpleNamespace(kind='battle')
         state.error = None
         state.finished = False
-        state._post_load_iter = None
-        fake_game = SimpleNamespace(memory={}, commit_staged_state=Mock(), load_states=Mock())
+        fake_game = SimpleNamespace(
+            memory={}, install_state_machine=Mock(), load_states=Mock())
 
         with patch.object(general_states, 'game', fake_game), \
              patch.object(general_states.save, 'remove_suspend'):
             self.assertEqual('repeat', state.update())
 
-        fake_game.commit_staged_state.assert_called_once_with()
+        state.job.advance.assert_called_once_with(fake_game, budget_ms=8.0)
+        state.job.take_state_data.assert_called_once_with()
+        fake_game.install_state_machine.assert_called_once_with((['free'], []))
         fake_game.load_states.assert_not_called()
         self.assertTrue(state.finished)
 
@@ -477,7 +484,7 @@ class SaveLoadJobTests(unittest.TestCase):
             self.assertIs(payload, _payload)
             self.assertTrue(replace_state_machine)
             yield 'registries'
-            yield 'state_prepare'
+            yield 'state_deferred'
 
         game_state = SimpleNamespace(
             build_new=Mock(),
@@ -494,7 +501,7 @@ class SaveLoadJobTests(unittest.TestCase):
         self.assertEqual(7, game_state.current_save_slot)
         self.assertEqual('complete', job.phase)
 
-    def test_staged_load_uses_lightweight_prepare_instead_of_building_new_game(self):
+    def test_atomic_load_rebuilds_clean_game_before_hydration(self):
         slot = SimpleNamespace(save_loc='slot.p', idx=8)
         job = save_module.SaveLoadJob(slot)
         job._thread = Mock()
@@ -510,10 +517,10 @@ class SaveLoadJobTests(unittest.TestCase):
         with patch.object(save_module, 'set_next_uids'):
             self.assertTrue(job.advance(game_state, budget_ms=100.0))
 
-        game_state.prepare_for_load.assert_called_once_with()
-        game_state.build_new.assert_not_called()
+        game_state.prepare_for_load.assert_not_called()
+        game_state.build_new.assert_called_once_with()
 
-    def test_failed_staged_load_can_be_aborted_back_to_a_clean_game(self):
+    def test_failed_atomic_load_can_be_aborted_back_to_a_clean_game(self):
         job = save_module.SaveLoadJob(SimpleNamespace(save_loc='slot.p', idx=1))
         game_state = SimpleNamespace(clear=Mock(), build_new=Mock())
         job._save_data = {'partially': 'restored'}
@@ -550,26 +557,7 @@ class TitleLoadJobStateTests(unittest.TestCase):
         self.assertIs(fake_game.memory['_save_load_job'], job)
         self.assertEqual('start_level', fake_game.memory['_save_load_context']['next_action'])
 
-    def test_start_level_after_restore_is_advanced_incrementally(self):
-        from app.engine import title_screen
-
-        state = title_screen.TitleLoadJobState.__new__(title_screen.TitleLoadJobState)
-        state.context = {'next_action': 'start_level'}
-        state._post_load_iter = None
-        start_iter = iter(('setup', 'board'))
-        fake_game = SimpleNamespace(
-            game_vars={'_next_level_nid': 'chapter'},
-            load_states=Mock(), start_level_iter=Mock(return_value=start_iter),
-        )
-
-        with patch.object(title_screen, 'game', fake_game):
-            self.assertFalse(state._begin_post_load())
-
-        fake_game.load_states.assert_not_called()
-        fake_game.start_level_iter.assert_called_once_with('chapter')
-        self.assertIs(start_iter, state._post_load_iter)
-
-    def test_start_level_state_is_installed_only_after_rebuild_completes(self):
+    def test_start_level_after_restore_is_built_synchronously(self):
         from app.engine import title_screen
 
         state = title_screen.TitleLoadJobState.__new__(title_screen.TitleLoadJobState)
@@ -578,18 +566,53 @@ class TitleLoadJobStateTests(unittest.TestCase):
             'title_menu': object(), 'remove_suspend': False,
         }
         fake_game = SimpleNamespace(
-            memory={}, load_states=Mock(), commit_staged_state=Mock(),
+            memory={},
+            game_vars={'_next_level_nid': 'chapter'},
+            install_state_machine=Mock(), load_states=Mock(), start_level=Mock(),
             state=SimpleNamespace(change=Mock(), process_temp_state=Mock()),
         )
 
         with patch.object(title_screen, 'game', fake_game):
-            state._complete_load()
+            state._complete_load((['free'], []))
 
+        fake_game.start_level.assert_called_once_with(
+            'chapter', chapter_start_state=(
+                ['free', 'start_level_asset_loading'], []))
+        fake_game.install_state_machine.assert_called_once_with((['free'], []))
         fake_game.load_states.assert_called_once_with(['start_level_asset_loading'])
-        fake_game.commit_staged_state.assert_not_called()
+
+    def test_start_level_destination_is_installed_after_world_rebuild(self):
+        from app.engine import title_screen
+
+        state = title_screen.TitleLoadJobState.__new__(title_screen.TitleLoadJobState)
+        state.context = {
+            'next_action': 'start_level', 'transition_from': 'Load Game',
+            'title_menu': object(), 'remove_suspend': False,
+        }
+        fake_game = SimpleNamespace(
+            memory={}, game_vars={'_next_level_nid': 'chapter'},
+            load_states=Mock(), install_state_machine=Mock(), start_level=Mock(),
+            state=SimpleNamespace(change=Mock(), process_temp_state=Mock()),
+        )
+        calls = Mock()
+        calls.attach_mock(fake_game.start_level, 'start_level')
+        calls.attach_mock(fake_game.install_state_machine, 'install_state_machine')
+        calls.attach_mock(fake_game.load_states, 'load_states')
+
+        with patch.object(title_screen, 'game', fake_game):
+            state._complete_load((['free'], []))
+
+        self.assertEqual([
+            unittest.mock.call.start_level(
+                'chapter', chapter_start_state=(
+                    ['free', 'start_level_asset_loading'], [])),
+            unittest.mock.call.install_state_machine((['free'], [])),
+            unittest.mock.call.load_states(['start_level_asset_loading']),
+        ], calls.mock_calls)
+        fake_game.load_states.assert_called_once_with(['start_level_asset_loading'])
         fake_game.state.change.assert_called_once_with('title_wait')
 
-    def test_regular_save_commits_staged_state_at_final_load_step(self):
+    def test_regular_save_installs_transaction_local_state_at_final_load_step(self):
         from app.engine import title_screen
 
         state = title_screen.TitleLoadJobState.__new__(title_screen.TitleLoadJobState)
@@ -598,15 +621,16 @@ class TitleLoadJobStateTests(unittest.TestCase):
             'title_menu': object(), 'remove_suspend': False,
         }
         fake_game = SimpleNamespace(
-            memory={}, load_states=Mock(), commit_staged_state=Mock(),
+            memory={}, load_states=Mock(), install_state_machine=Mock(),
             state=SimpleNamespace(change=Mock(), process_temp_state=Mock()),
         )
 
         with patch.object(title_screen, 'game', fake_game):
-            state._complete_load()
+            state._complete_load((['free'], ['alert']))
 
         fake_game.load_states.assert_not_called()
-        fake_game.commit_staged_state.assert_called_once_with()
+        fake_game.install_state_machine.assert_called_once_with(
+            (['free'], ['alert']))
 
 
 class AndroidCombatCompositionTests(unittest.TestCase):

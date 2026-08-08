@@ -49,14 +49,22 @@ class SaveLoadError(RuntimeError):
     """A save job failed before it could atomically install the saved state."""
 
 
+def reset_failed_load(game_state) -> None:
+    """Discard every partial world field and establish a clean title session."""
+    game_state.clear()
+    prepare_for_load = getattr(game_state, 'prepare_for_load', None)
+    if prepare_for_load:
+        prepare_for_load()
+    game_state.build_new()
+
+
 class SaveLoadJob:
-    """Read a save off-thread, then restore it in bounded main-thread slices.
+    """Read a save off-thread, then restore it in one main-thread transaction.
 
     Pickle deserialization does not touch pygame or the game singleton, so it
-    is safe to run in a worker.  Object restoration intentionally remains on
-    the main thread; ``GameState.load_iter`` exposes only dependency-safe
-    phase boundaries and installs the saved state stack only once restoration
-    has completed successfully.
+    remains worker-owned. Once those immutable bytes are ready, authoritative
+    ``GameState`` hydration is drained synchronously; iterator phase names are
+    retained for profiling only and never become frame boundaries.
     """
 
     def __init__(self, save_slot: 'SaveSlot') -> None:
@@ -67,6 +75,7 @@ class SaveLoadJob:
         self._thread: Optional[threading.Thread] = None
         self._read_finished = threading.Event()
         self._restore_iter = None
+        self._state_data = None
         self._restore_phase_totals: Dict[str, float] = {}
         self.completed = False
 
@@ -99,7 +108,7 @@ class SaveLoadJob:
         self._restore_phase_totals.clear()
 
     def advance(self, game_state, budget_ms: float = 8.0) -> bool:
-        """Advance one or more restore phases without exceeding the budget."""
+        """Wait for worker I/O, then complete hydration without yielding a frame."""
         if self.completed:
             return True
         if self._thread is None:
@@ -111,17 +120,11 @@ class SaveLoadJob:
         if self._save_data is None:
             raise SaveLoadError('Save reader completed without returning data')
 
-        deadline = time.perf_counter() + max(0.0, budget_ms) / 1000.0
         if self._restore_iter is None:
             self.phase = 'prepare'
+            self._state_data = self._save_data['state']
             started = time.perf_counter()
-            prepare_for_load = getattr(game_state, 'prepare_for_load', None)
-            if prepare_for_load:
-                prepare_for_load()
-            else:
-                # Compatibility for embedders that provide a GameState-like
-                # object without the optimized staged-load preparation hook.
-                game_state.build_new()
+            game_state.build_new()
             self._restore_phase_totals['prepare'] = (
                 self._restore_phase_totals.get('prepare', 0.0)
                 + (time.perf_counter() - started) * 1000.0
@@ -129,10 +132,8 @@ class SaveLoadJob:
             self._restore_iter = game_state.load_iter(
                 self._save_data, replace_state_machine=True,
             )
-            if time.perf_counter() >= deadline:
-                return False
 
-        while time.perf_counter() < deadline:
+        while True:
             started = time.perf_counter()
             try:
                 phase = next(self._restore_iter)
@@ -145,6 +146,7 @@ class SaveLoadJob:
                 game_state.current_save_slot = self.save_slot.idx
                 self.completed = True
                 self.phase = 'complete'
+                self._restore_iter = None
                 self._record_restore_profiles()
                 return True
             elapsed_ms = (time.perf_counter() - started) * 1000.0
@@ -152,15 +154,24 @@ class SaveLoadJob:
                 self._restore_phase_totals.get(phase, 0.0) + elapsed_ms
             )
             self.phase = phase
-        return False
+
+    def take_state_data(self):
+        """Consume the job-local saved state stack after world hydration."""
+        if self._state_data is not None and not self.completed:
+            raise SaveLoadError('Saved state data requested before hydration completed')
+        state_data = self._state_data
+        self._state_data = None
+        self._save_data = None
+        return state_data
 
     def abort(self, game_state) -> None:
         """Return the singleton to a clean game, never a half-restored save."""
         self._restore_iter = None
         self._save_data = None
+        self._state_data = None
+        self._restore_phase_totals.clear()
         self.completed = False
-        game_state.clear()
-        game_state.build_new()
+        reset_failed_load(game_state)
 
 def GAME_NID():
     return str(DB.constants.value('game_nid'))

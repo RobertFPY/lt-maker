@@ -164,6 +164,9 @@ class _TransitionObserver:
 
 
 class AtomicDestinationStateTests(unittest.TestCase):
+    def test_game_state_has_no_legacy_singleton_staged_payload(self):
+        self.assertFalse(hasattr(GameState(), '_staged_state_data'))
+
     def _title_fixture(self, next_action, *, transition_from='Load Game',
                        state_data=(['free'], [])):
         game = GameState()
@@ -187,7 +190,6 @@ class AtomicDestinationStateTests(unittest.TestCase):
         state.finished = False
         game.game_vars['_next_level_nid'] = 'chapter'
         game.start_level = Mock()
-        game._staged_state_data = state_data
         return game, state, job
 
     def _run_title(self, game, state):
@@ -203,7 +205,7 @@ class AtomicDestinationStateTests(unittest.TestCase):
 
         self.assertEqual(['free', 'alert', 'title_wait'], game.state.state_names())
         self.assertEqual([], game.state.temp_state)
-        self.assertIsNone(game._staged_state_data)
+        self.assertFalse(hasattr(game, '_staged_state_data'))
         self.assertIsNone(job.remaining_state_data)
 
     def test_title_start_uses_reference_stack_without_loader_or_stale_payload(self):
@@ -217,7 +219,7 @@ class AtomicDestinationStateTests(unittest.TestCase):
         game.start_level.assert_called_once_with(
             'chapter', chapter_start_state=(
                 ['free', 'start_level_asset_loading'], []))
-        self.assertIsNone(game._staged_state_data)
+        self.assertFalse(hasattr(game, '_staged_state_data'))
         self.assertIsNone(job.remaining_state_data)
 
     def test_title_restart_preserves_title_prefix_without_loader_or_stale_payload(self):
@@ -232,7 +234,7 @@ class AtomicDestinationStateTests(unittest.TestCase):
         game.start_level.assert_called_once_with(
             'chapter', chapter_start_state=(
                 ['title_start', 'title_main', 'title_restart', 'free'], []))
-        self.assertIsNone(game._staged_state_data)
+        self.assertFalse(hasattr(game, '_staged_state_data'))
         self.assertIsNone(job.remaining_state_data)
 
     def test_title_restart_observer_sees_only_the_final_destination(self):
@@ -255,7 +257,7 @@ class AtomicDestinationStateTests(unittest.TestCase):
         self.assertEqual(['free', 'overworld', 'title_wait'],
                          game.state.state_names())
         self.assertEqual(1, game.state.state_names().count('overworld'))
-        self.assertIsNone(game._staged_state_data)
+        self.assertFalse(hasattr(game, '_staged_state_data'))
         self.assertIsNone(job.remaining_state_data)
 
     def _in_chapter_fixture(self, kind, *, state_data=(['free'], ['alert'])):
@@ -271,7 +273,6 @@ class AtomicDestinationStateTests(unittest.TestCase):
         state.finished = False
         game.game_vars['_next_level_nid'] = 'chapter'
         game.start_level = Mock()
-        game._staged_state_data = state_data
         return game, state, job
 
     def _run_in_chapter(self, game, state):
@@ -286,7 +287,7 @@ class AtomicDestinationStateTests(unittest.TestCase):
 
         self.assertEqual(['free'], game.state.state_names())
         self.assertEqual(['alert'], game.state.temp_state)
-        self.assertIsNone(game._staged_state_data)
+        self.assertFalse(hasattr(game, '_staged_state_data'))
         self.assertIsNone(job.remaining_state_data)
 
     def test_in_chapter_start_has_saved_stack_and_one_loading_destination(self):
@@ -300,7 +301,7 @@ class AtomicDestinationStateTests(unittest.TestCase):
         game.start_level.assert_called_once_with(
             'chapter', chapter_start_state=(
                 ['free', 'start_level_asset_loading'], ['alert']))
-        self.assertIsNone(game._staged_state_data)
+        self.assertFalse(hasattr(game, '_staged_state_data'))
         self.assertIsNone(job.remaining_state_data)
 
     def test_in_chapter_overworld_has_saved_stack_and_one_destination(self):
@@ -311,7 +312,7 @@ class AtomicDestinationStateTests(unittest.TestCase):
         self.assertEqual(['free', 'overworld'], game.state.state_names())
         self.assertEqual(['alert'], game.state.temp_state)
         self.assertEqual(1, game.state.state_names().count('overworld'))
-        self.assertIsNone(game._staged_state_data)
+        self.assertFalse(hasattr(game, '_staged_state_data'))
         self.assertIsNone(job.remaining_state_data)
 
 
@@ -362,7 +363,7 @@ class AtomicRestoreFailureTests(unittest.TestCase):
         self.assertIsNone(game.board)
         self.assertIsNone(game.overworld_controller)
         self.assertIsNone(game._current_level)
-        self.assertIsNone(game._staged_state_data)
+        self.assertFalse(hasattr(game, '_staged_state_data'))
         self.assertIsNone(job.take_state_data())
         self.assertEqual(2, game.build_new.call_count)
         self.assertTrue(state.finished)

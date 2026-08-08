@@ -222,10 +222,13 @@ def _load_testing_project() -> None:
     _load_project('testing_proj.ltproj')
 
 
-def _prepare_playable_game(game) -> None:
-    """Install the real map-control state before a scenario enters a chapter."""
+def _prepare_playable_game(game, *, initial_states: Optional[list[str]] = None) -> None:
+    """Reset the scenario game and install its locked initial state contract."""
     game.clear()
-    game.load_states(['free'])
+    if initial_states is None:
+        initial_states = ['free']
+    if initial_states:
+        game.load_states(initial_states)
 
 
 @contextmanager
@@ -385,7 +388,7 @@ def capture_scenario_2(trace_path: Path, platform_profile: str) -> list[dict[str
 
     _load_testing_project()
     game = game_state.game
-    _prepare_playable_game(game)
+    _prepare_playable_game(game, initial_states=[])
     recorder = trace.TraceRecorder(SCENARIO_2_ID, game=game)
     recorder.begin({
         'reference_revision': PC_REFERENCE_REVISION,
@@ -416,7 +419,7 @@ def capture_scenario_4(trace_path: Path, platform_profile: str) -> list[dict[str
 
     _load_testing_project()
     game = game_state.game
-    _prepare_playable_game(game)
+    _prepare_playable_game(game, initial_states=[])
     recorder = trace.TraceRecorder(SCENARIO_4_ID, game=game)
     recorder.begin({
         'reference_revision': PC_REFERENCE_REVISION,

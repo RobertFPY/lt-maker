@@ -88,6 +88,16 @@ class RecoveryGoldenFixtureTests(unittest.TestCase):
 
 
 class RecoveryGoldenScenarioTests(unittest.TestCase):
+    def test_prepare_playable_game_can_preserve_the_s2_s4_empty_stack_contract(self):
+        from app.tests.recovery_trace_runner import _prepare_playable_game
+
+        game = Mock()
+
+        _prepare_playable_game(game, initial_states=[])
+
+        game.clear.assert_called_once_with()
+        game.load_states.assert_not_called()
+
     def test_virtual_frame_driver_advances_only_outer_frames_and_restores_clock(self):
         from app.tests.recovery_trace_runner import VirtualFrameDriver
 

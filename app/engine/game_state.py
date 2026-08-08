@@ -93,8 +93,6 @@ class GameState():
         self.memory: Dict = {}
 
         self.state: state_machine.StateMachine = state_machine.StateMachine()
-        self._staged_state_data = None
-
         self.alerts: List[banner.Banner] = []
 
         self.current_mode: DifficultyModeObject = None
@@ -175,8 +173,6 @@ class GameState():
         self.memory = {}
 
         self.state = state_machine.StateMachine()
-        self._staged_state_data = None
-
         self.playtime = 0
 
         self.alerts = []
@@ -273,19 +269,7 @@ class GameState():
         self.movement = None
         self.overworld_controller = None
         self.map_sprite_registry = {}
-        self._staged_state_data = None
         self.alerts.clear()
-
-    def commit_staged_state(self) -> None:
-        """Install a legacy singleton-staged state payload.
-
-        P2-T02 loaders keep new payloads job-local instead. This compatibility
-        entry point remains for the separately controlled cleanup task.
-        """
-        if self._staged_state_data is None:
-            raise ValueError('No staged state data is available to commit')
-        state_data = self._staged_state_data
-        self.install_state_machine(state_data)
 
     def install_state_machine(self, state_data, *, prefix_states=None) -> None:
         """Install transaction-local saved state after the world is complete."""
@@ -299,7 +283,6 @@ class GameState():
             restored_state.state = list(prefix_states) + restored_state.state
         restored_state.set_trace_recorder(trace_recorder)
         self.state = restored_state
-        self._staged_state_data = None
 
     def sweep(self):
         """

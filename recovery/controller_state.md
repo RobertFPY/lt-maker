@@ -7,8 +7,8 @@
 - Current phase: Phase 1
 - Harness gate: **P1-T02 ACCEPTED**
 - Active task: **P1-T03 only**
-- Latest executor stop: scenario 5 (`Standard map combat`) because the test runner did not advance engine frame time while EXP presentation remained on the state stack
-- Controller disposition: **RESOLVED — harness time-driver mismatch, not a gameplay divergence**
+- Latest executor result: **Scenario 5 PASS** under the approved deterministic virtual-frame contract
+- Controller disposition: **Scenario 5 provisionally accepted; resume scenarios 6–18**
 - Resume model: **GPT-5.6 Terra / high**
 - Escalation target remains: **GPT-5.6 Sol / max**
 - Escalation pre-authorized for any new issue: **NO**
@@ -18,9 +18,9 @@
 
 ## Scenario 5 controller decision — deterministic virtual frame driver
 
-Scenario 5 reached a real `MapCombat` and then stopped at an active state stack equivalent to `['free', 'combat', 'exp']`, with the combat object in `post_combat`, because the test runner repeatedly called the state machine without advancing `app.engine.engine.constants['current_time']`.
+Scenario 5 originally reached a real `MapCombat` and then stopped at an active state stack equivalent to `['free', 'combat', 'exp']`, with the combat object in `post_combat`, because the test runner repeatedly called the state machine without advancing `app.engine.engine.constants['current_time']`.
 
-This is a harness mismatch, not evidence of a recovery regression.
+This was a harness mismatch, not evidence of a recovery regression.
 
 ### Reference behavior
 
@@ -50,11 +50,11 @@ EXP is not merely cosmetic presentation. `ExpState` uses engine time to gate gam
 
 For standard `MapCombat`, `clean_up1()` schedules/handles EXP-related work and the map combat enters `post_combat`. Only after the EXP state leaves the stack can combat resume and execute `clean_up2()`, which performs final state-stack handling, `CombatEnd`, post-combat/end-combat behavior, records/messages/death handling, and other terminal effects.
 
-Therefore `combat.cleanup.complete` must remain a fully committed terminal synchronization point. There is **no pending-transition exception** and no checkpoint while `exp` or `combat` remains active.
+Therefore `combat.cleanup.complete` remains a fully committed terminal synchronization point. There is **no pending-transition exception** and no checkpoint while `exp` or `combat` remains active.
 
 ### Authorized P1-T03 virtual-frame contract
 
-P1-T03 may add a **test-owned runner helper only** that deterministically emulates the normal outer-frame timing contract on both the PC reference process and the recovery process.
+P1-T03 may use a **test-owned runner helper only** that deterministically emulates the normal outer-frame timing contract on both the PC reference process and the recovery process.
 
 For each scenario using this helper:
 
@@ -73,15 +73,15 @@ For each scenario using this helper:
 7. Use only scenario-authorized logical input. EXP draining itself receives no synthetic gameplay input.
 8. Restore the saved engine timing constants in `finally`/teardown so time state cannot leak between scenarios.
 
-The helper must be test-owned and must not modify production `engine.update_time()`, `engine.get_time()`, combat code, EXP code, or state-machine semantics.
+The helper must remain test-owned and must not modify production `engine.update_time()`, `engine.get_time()`, combat code, EXP code, or state-machine semantics.
 
 The virtual timestamp/frame count is driver provenance only and must not be added to Trace V1 logical equality or golden state.
 
 ### Forbidden shortcuts
 
-For Scenario 5, do **not**:
+For Scenario 5 and any later scenario reusing this helper, do **not**:
 
-- call `MapCombat.skip()` merely to bypass timing;
+- call combat `skip()` merely to bypass timing unless that scenario explicitly tests fast-forward/skip behavior;
 - use a no-EXP/no-growth/no-level-up flag to avoid EXP;
 - mutate `exp_instance` or combat state directly;
 - jump an `ExpState` internal state manually;
@@ -90,24 +90,18 @@ For Scenario 5, do **not**:
 - checkpoint with `combat`, `exp`, `wait`, or another incomplete terminal state still active;
 - use host/wall-clock sleeps as the deterministic contract.
 
-### Scenario 5 terminal condition
+### Scenario 5 result
 
-Drive the real state machine using the virtual-frame contract until the combat transaction has naturally completed.
+Scenario 5 now satisfies the approved terminal contract:
 
-Golden-eligible `combat.cleanup.complete` requires at minimum:
+- the test-owned virtual-frame helper uses `FRAMERATE = 16`;
+- time advances only on outer frames and repeat chains run at fixed virtual time;
+- original `current_time`, `last_time`, and `delta_t` are restored in `finally`;
+- real `MapCombat` completes naturally through EXP and terminal cleanup;
+- no skip/no-EXP/state mutation/pending exception is used;
+- the PC reference and recovery Trace V1 comparison passes.
 
-- no active `combat` state;
-- no active `exp` state;
-- no pending state-machine transition (`state_stack.pending == []`);
-- the map-control path has returned to its committed post-combat state (normally top-level `free` for the standard player map-combat fixture);
-- queued EXP for this combat has been consumed;
-- `clean_up2()`/terminal combat handling has executed naturally.
-
-Use a generous deterministic outer-frame safety cap only to fail loudly on non-termination. The cap is a test guard, not a semantic success condition. Do not encode the exact number of frames or milliseconds into golden equality.
-
-If the same deterministic frame/input schedule produces different logical traces or final gameplay state between reference and recovery, that is a new **ESC-03** and Codex must stop.
-
-If reaching committed completion requires player choice (promotion choice, feat choice, dialogue choice, etc.) not already specified by the scenario, that is a new semantic-input ambiguity and Codex must stop for controller review rather than invent an input.
+Scenario 5 is therefore **provisionally accepted as PASS**, subject to final P1-T03 commit/diff/fixture review.
 
 ## Provisional P1-T03 evidence accepted so far
 
@@ -117,7 +111,7 @@ The following executor evidence may be retained as P1-T03 work in progress, subj
 - **Scenario 2 PASS:** real in-memory `game.save()` -> `game.load()` reference/recovery comparison passes.
 - **Scenario 3 N/A — REFERENCE-UNSUPPORTED:** no golden fixture is expected; see the controller decision below.
 - **Scenario 4 PASS:** real PC restart-slot flow using `save.save_io(kind='start')` followed by `save.load_game` matches reference/recovery.
-- **Scenario 5:** authorized to resume under the deterministic virtual-frame contract above; no PASS is accepted until committed terminal state and Trace V1 comparison succeed.
+- **Scenario 5 PASS:** real `MapCombat` completes under the approved deterministic virtual-frame driver through EXP and `clean_up2()`/terminal cleanup, and reference/recovery Trace V1 comparison passes.
 
 Do not treat this provisional acceptance as approval of uncommitted WIP or as authorization to weaken later final review.
 
@@ -186,9 +180,9 @@ There is no simulated PC-reference enabled-idle debugger/profiler golden.
 
 Resume the same P1-T03 task using **GPT-5.6 Terra / high**.
 
-- Retain the current uncommitted Scenario-1 through Scenario-4 WIP only if it conforms to the approved contracts above.
-- Resume Scenario 5 using the deterministic virtual-frame driver above on both reference and recovery.
-- After Scenario 5 PASS, continue scenarios 6–16 and 18 as ordinary PC-reference comparisons. The same virtual-frame helper may be reused when a scenario naturally depends on normal engine frame progression, but it may not be used to bypass required player decisions or semantic inputs.
+- Retain the current uncommitted Scenario-1 through Scenario-5 WIP only if it conforms to the approved contracts above.
+- Continue scenarios 6–16 and 18 as ordinary PC-reference comparisons.
+- The approved virtual-frame helper may be reused where a scenario naturally depends on normal engine frame progression, but it may not be used to bypass required player decisions or semantic inputs.
 - Run scenario 17 under the hybrid contract above.
 - Use the accepted Trace V1 reference overlay only as instrumentation.
 - Never copy recovery output into reference fixtures.
@@ -200,4 +194,4 @@ If a new reference ambiguity, deterministic non-presentation trace divergence, r
 
 ## Gate status
 
-P1-T03 is authorized to resume under the Scenario-5 deterministic frame contract. Phase 2 remains blocked until P1-T03 completes and receives controller review.
+P1-T03 is authorized to continue from Scenario 6. Phase 2 remains blocked until P1-T03 completes and receives controller review.

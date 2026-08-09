@@ -6,288 +6,217 @@
 
 - Current phase: **Phase 9 — Full validation and release candidate**
 - Phases 1–8: **ACCEPTED**
-- P8-T01 cache/memoization audit: **ACCEPTED** at `1d40f89cf33008e0592c35ef9ab094c4cc9d0b5d`
-- P8-T02 render/cache/batching audit: **ACCEPTED** at `3d8624136ce58e8dfb7c576515d8e4585ca79ae0`
-- P8-T03 allocation/redundant-work audit: **ACCEPTED** at `869e30d66f8005ef088f85083dce05cea661876a`
-- P8-T04 Android-only performance retuning: **ACCEPTED** at `849bf75443e0c31121c9f080da2c0afa2e879b3e`
-- Active task: **P9-T01 only — Full PC regression matrix**
-- Primary model: **GPT-5.6 Luna / medium**
-- Escalation target: **GPT-5.6 Terra / high**
-- Escalation pre-authorized: **NO**
+- P9-T01 full PC regression matrix: **PARTIAL / NOT ACCEPTED** at `dcf9c937a3276109aa9f3ded9f1f7155e6b5377c`
+- Active task: **P9-T01-R1 only — PC validation blocker resolution**
+- Original P9-T01 primary: **GPT-5.6 Luna / medium**
+- Authorized R1 model: **GPT-5.6 Terra / high**
+- Escalation authorization: **YES — Terra/high for P9-T01-R1 only**
 - P9-T02/P9-T03/P9-T04: **UNAUTHORIZED**
-- Expected default production changes: **NONE — validation/evidence only**
-- Controller gate after P9-T01: **YES — STOP FOR CONTROLLER REVIEW**
+- Expected production behavior changes: **NONE**
+- Test-only cleanup is allowed only if a deterministic recovery-added test-isolation leak is proven and the correction is narrow, semantic-neutral, and does not hide an assertion.
+- Environment-only launch configuration through an existing supported repository/runtime seam is allowed.
+- Product logger/runtime behavior must not be patched merely to bypass the current sandbox/AppData permission restriction.
 - Trace V1/comparator/manifest/golden changes: **UNAUTHORIZED**
 - Project-data / asset changes: **UNAUTHORIZED**
 - Merge to `master`: **UNAUTHORIZED**
+- Controller gate after P9-T01-R1: **YES — STOP FOR CONTROLLER REVIEW**
 
-## P8-T04 acceptance record / Phase-8 closure
+## P9-T01 partial review record
 
-The controller accepts `849bf75443e0c31121c9f080da2c0afa2e879b3e` (`docs(recovery): audit android retuning`).
+The controller reviews `dcf9c937a3276109aa9f3ded9f1f7155e6b5377c` (`docs(recovery): record P9 PC matrix`) as **PARTIAL, not accepted**.
 
-Accepted evidence:
+Accepted evidence already established by that run:
 
-- it is exactly one descendant of P8-T04 authorization commit `a65dbceebec8b43ecb13f300ca8bf453d1462ebe`;
-- scope is audit-only: `recovery/p8_t04_android_performance_retuning.md`;
-- no production source, tests, Trace V1 artifact, project data, assets, Android policy values, cache capacities, work-budget constants, scheduler, combat, load/restart, fast-forward, debugger or profiler behavior changed;
-- the execution environment had host Python/pygame only; `adb` existed but no bounded Android device response was available, so the task made no Android FPS/frame-time/heap claim;
-- the existing Android off-world tilemap budget remains exactly `4_000_000 ns`; without real Android evidence it was correctly classified `KEEP-AS-IS`;
-- Event-local `_android_tilemap_pending` remains a correctness barrier, not a throughput knob; off-world construction and one synchronous live commit/rollback remain protected;
-- owner-local render-cache capacities remain unchanged, including unit-menu cap 4 and accepted combat UI bounds; capacity changes were correctly deferred without Android hit/miss/memory evidence;
-- streamed audio/preload/flush behavior and fallback ownership remain unchanged;
-- title smoke remains the already-accepted P8-T03 presentation optimization and was not reopened;
-- MockCombat/BattleAnimation timing-sensitive presentation paths, source-frame caching and `GC-REGION` remain rejected as retuning targets;
-- styled-text remains deferred because its isolated font-registry baseline is not a valid performance-proof environment;
-- required immutable S5/S7/S8/S12/S13/S14/S15/S16/S17-disabled/S17-debugger-idle/S17-profiler-idle/S18 were reported exact;
-- focused P8/Phase-3-through-7/recovery suites were reported green in isolated processes;
-- known shared-registry/import-isolation/native Windows termination remains baseline debt, not repaired in P8-T04.
+- the commit is exactly one descendant of P9-T01 authorization commit `b13b85b1cdb67b7e1167ece0e6b03616bb6760b7`;
+- scope is evidence-only: `recovery/p9_t01_pc_regression_matrix.md`;
+- no production source, tests, project data/assets, Trace V1 schema/comparator/manifest/goldens, Android policy, or master branch changed;
+- the authoritative baseline interpreter/command reproduced the historical native Windows exit `-1073740791` (`0xC0000409`) at the same workspace-test location;
+- historical named event-command, Python-event, combat-calculation and Dragon Medal failures reproduced;
+- isolated accepted Phase-3-through-8/recovery suites are green except the recorded historical `test_combat_calcs` baseline error;
+- every frozen supported Trace V1 scenario S1/S2/S4-S16/S17-disabled/S17-debugger-idle/S17-profiler-idle/S18 matched exactly; S3 remains reference-unsupported/N-A;
+- runtime importability without PyQt5, compileall and git validation checks passed;
+- `mypy` is unavailable in the current environment and remains an `ENVIRONMENT/TOOLING` limitation rather than a reason to modify dependencies in this task.
 
-Phase 8 is therefore closed. Safe optimizations are retained only where dependency, output/presentation ownership, measurement and logical equivalence were proven. No extra Android retune was invented without device evidence.
+P9-T01 is not accepted because two required release-validation gates remain unresolved:
 
-## Locked findings entering Phase 9
+1. **Aggregate full-suite delta.** The full discovery produced additional aggregate-only FAIL/ERROR markers beyond the recorded P0 baseline before reaching the same native termination. Fresh owner processes did not reproduce those results, but that alone does not prove they are harmless. P9-T01-R1 must deterministically identify the earliest polluter/root cause and classify whether it is a recovery-added test leak, a pre-existing framework/test-order interaction, or a production semantic regression.
+2. **Representative real project launch.** `run_engine.py` selected the real `default.ltproj`, initialized pygame, then stopped in `lt_log.create_logger()` because the Windows AppData known-folder is not writable in the current execution environment. The process therefore did not reach project DB/resource validation or normal engine startup. P9-T01 cannot PASS until a real project launch reaches that checkpoint through an existing supported route, or remains PARTIAL if the environment provides no such route.
 
-1. **One gameplay core.** Android policy remains presentation/resource/off-world-preparation only.
-2. **No partial live gameplay state.** Load, tilemap, combat and other authoritative transactions retain their accepted atomic boundaries.
-3. **Combat ordering is locked.** Solver/action/RNG/hooks/cleanup/state-stack/end-combat order may not change.
-4. **Save/load/restart is locked.** One canonical transaction; SAVE != pristine RESTART; snapshot-first restart precedence remains accepted.
-5. **Fast-forward is locked.** Host/presentation timing may differ, logical outcome/order/input-edge semantics may not.
-6. **Debugger/profiler are locked observers** except explicit debugger commands through the shared controller.
-7. **P6 platform boundaries are locked.** Event wall-clock command scheduling must not return.
-8. **P8 cache decisions are locked.** `GC-REGION` remains NOT CERTIFIED SAFE; battle source-frame caching remains REJECTED; styled-text optimization remains DEFERRED; title smoke remains KEEP-PLATFORM.
-9. **Immutable recovery traces/goldens are read-only release oracles.**
-10. **Project data/assets remain protected.** Validation failure in project content must be reported rather than modified merely to make the engine matrix pass.
+## Locked contracts during P9-T01-R1
+
+All Phase-1-through-8 contracts remain immutable for this diagnostic task:
+
+1. One shared gameplay core; no PC/Android gameplay fork.
+2. No partial live gameplay state or new yielded authoritative transaction.
+3. Combat solver/action/RNG/hook/cleanup/state-stack/end-combat ordering remains unchanged.
+4. Canonical save/load/restart and pristine restart source precedence remain unchanged.
+5. Fast-forward changes presentation/host time only, not logical outcomes/input-edge semantics.
+6. Debugger/profiler observer contracts remain unchanged.
+7. P6 platform boundaries remain unchanged; no Event wall-clock command scheduler.
+8. P8 cache decisions remain locked: `GC-REGION` is NOT CERTIFIED SAFE; battle source-frame caching is REJECTED; title smoke is accepted KEEP-PLATFORM; styled-text optimization remains deferred.
+9. Immutable Trace V1 fixtures/goldens are read-only release oracles.
+10. Project data/assets are protected.
 
 ---
 
-# P9-T01 — Full PC regression matrix
+# P9-T01-R1 — PC validation blocker resolution
 
-Execute **P9-T01 only** using **GPT-5.6 Luna / medium**.
+Execute **P9-T01-R1 only** using **GPT-5.6 Terra / high**.
 
-Escalation target: **GPT-5.6 Terra / high**, not pre-authorized.
+This is an explicitly authorized escalation from the original P9-T01 Luna/medium validation task because the remaining blockers require bounded diagnosis. The authorization applies only to this R1. Do not begin P9-T02.
 
-This is a validation task, not a repair task. Luna should run the prescribed PC matrix mechanically, classify results against the recorded recovery baseline and accepted invariants, and stop for controller review.
+## Goal A — full-suite aggregate pollution
 
-## Required environment / baseline comparison
+Re-run the exact authoritative baseline command with the recorded interpreter and capture the complete observable failure ordering before the native termination.
 
-Read `recovery/baseline.md` before execution.
+For every additional result not present in `recovery/baseline.md`:
 
-The recorded baseline interpreter is:
+- identify exact test/module and exception/assertion;
+- prove whether it passes in a fresh process;
+- perform a bounded order/process bisect to identify the earliest preceding test/module whose execution causes the later failure;
+- inspect only relevant leaked global state, especially component subclass/catalog registries, dynamically created component classes such as `_Uses`, DB/RESOURCES singleton state, global `game`, LTCache/global component caches, and codegen/component-access registries where evidence points there;
+- distinguish cause from downstream cascade; do not count every later error as an independent regression.
 
-`utilities\enemy_event_generator\.python\python.exe`
+Classify the root cause as exactly one:
 
-The recorded full-suite command is:
-
-`utilities\enemy_event_generator\.python\python.exe -m unittest discover -s app/tests -p 'test*.py' -v`
-
-The historical baseline ended abnormally with native Windows exit `-1073740791` (`0xC0000409`) after 311 observed `ok`, 8 `FAIL`, 1 `ERROR` and before a normal unittest summary.
-
-Do not silently replace the baseline interpreter for the authoritative full-suite comparison. Additional commands may use the same interpreter unless an existing repository command requires otherwise.
-
-Classify every observed failure as one of:
-
-- `KNOWN-BASELINE-SAME`
-- `KNOWN-BASELINE-CHANGED`
-- `NEW-REGRESSION`
+- `RECOVERY-ADDED-TEST-LEAK`
+- `PRE-EXISTING-FRAMEWORK/TEST-ORDER-DEBT`
+- `PRODUCTION-SEMANTIC-REGRESSION`
 - `ENVIRONMENT/TOOLING`
-- `NOT-REPRODUCED`
+- `UNRESOLVED`
 
-A known baseline failure becoming different/worse is not automatically safe; record exact delta.
+If a deterministic **RECOVERY-ADDED-TEST-LEAK** is proven, a narrow test-only teardown/reset correction is authorized only when it restores process isolation without weakening assertions, changing test expectations, or altering production semantics. Rerun the authoritative full suite after that correction.
 
-## Required PC matrix
+If the root cause is production behavior, requires broad registry/framework architecture changes, or is not local/unambiguous: **STOP for controller review**. Do not repair production code under P9-T01-R1.
 
-### 1. Full unit-test discovery
+An isolated PASS is evidence, not a waiver for a new aggregate-order regression.
 
-Run the exact baseline full-suite command above.
+## Goal B — representative real project launch
 
-Capture:
+Inspect the actual current:
 
-- exit code;
-- last completed test;
-- all FAIL/ERROR names;
-- observed pass count if the process dies before summary;
-- whether native termination reproduces;
-- exact differences from `recovery/baseline.md`.
+- `run_engine.py` startup path;
+- `lt_log.create_logger()` implementation;
+- user/log-data path resolver used before project loading;
+- existing repository/runtime environment variables, CLI options or official smoke/launch helpers.
 
-Do not repair failures in P9-T01.
+Find whether the repository already exposes a supported way to redirect logger/user-data output to a writable temporary location without changing product code.
 
-### 2. Focused accepted-regression matrix
+Allowed:
 
-Run accepted focused suites in fresh/isolated processes where shared global state is known to contaminate aggregate runs.
+- environment-only setup through an existing supported variable/config seam;
+- existing repository CLI option;
+- existing official bounded engine smoke/launch helper;
+- controlled termination of the real engine process after evidence proves that real project DB/resources were loaded, project validation ran, and normal engine startup was reached.
 
-At minimum cover:
+Not allowed:
 
-- recovery trace/golden/lifecycle integrity;
-- Phase-3 combat lifecycle/transaction ordering;
-- Phase-4 tilemap pending build/barrier/commit/rollback;
-- Phase-5 canonical load, atomic restore, restart and compatibility;
-- Phase-6 platform policy/audio/work-budget boundaries on desktop/default path;
-- P7 fast-forward equivalence;
-- P7 debugger parity/shared controller;
-- P7 profiler observer equivalence;
-- P7 save/load/restart UX routing;
-- P8 cache/memoization tests;
-- P8 render/cache owner regressions that are runnable;
-- P8 title smoke contract;
-- current project/base integrity tests.
+- monkeypatching `lt_log.create_logger`;
+- editing logger/platform-directory production code merely for this sandbox;
+- fake `GameState`, fake project, or import-only smoke presented as a project launch;
+- modifying `.ltproj` data/assets;
+- bypassing project validation.
 
-Do not treat an isolated pass as erasing a real full-suite ordering failure; report both.
+Record exact launch evidence:
 
-### 3. Immutable deterministic scenario matrix
+```text
+PROJECT:
+COMMAND:
+LOGGER/USER-DATA ROUTE:
+PROJECT LOAD CHECKPOINT:
+VALIDATION CHECKPOINT:
+ENGINE STARTUP CHECKPOINT:
+EXIT/TERMINATION METHOD:
+RESULT:
+```
 
-Run all available immutable recovery scenarios, not only a subset, unless the manifest marks a scenario reference-unsupported.
+If there is no supported writable-path route in the current environment, classify `ENVIRONMENT/TOOLING` and keep P9-T01 `PARTIAL`; do not patch production to manufacture a PASS.
 
-At minimum this must include the accepted S1-S18 set with S3 remaining reference-unsupported/N-A according to the frozen recovery contract, and S17 in disabled/debugger-idle/profiler-idle modes where the harness defines those variants.
+## Type check
 
-Use the locked Trace V1 comparator.
+`mypy` being unavailable may remain `ENVIRONMENT/TOOLING`.
 
-Allowed provenance differences remain only those already approved by the comparator/manifest.
+Do not install or modify dependencies merely to satisfy P9-T01-R1.
+
+## Required revalidation
+
+After any permitted test-only isolation correction, or after completing diagnosis if no code changes are allowed, run as applicable:
+
+- exact authoritative full-suite baseline command;
+- all frozen supported Trace V1 scenarios S1/S2/S4-S16/S17 three modes/S18;
+- focused accepted Phase-3-through-8/recovery regression suites;
+- canonical save/load/restart regressions;
+- fast-forward equivalence;
+- debugger parity/controller regressions;
+- profiler observer regressions;
+- project/base integrity;
+- runtime importability without PyQt5;
+- `utilities\enemy_event_generator\.python\python.exe -m compileall -q app`;
+- `git diff --check`;
+- `git show --check` after commit;
+- clean final `git status --short`.
 
 No golden regeneration.
 
-Any unexplained logical checkpoint delta => STOP and report `ESC-03`.
+## Change policy
 
-### 4. PC save/load/restart feature flows
+Allowed files by default:
 
-Exercise representative desktop pathways for:
+- update `recovery/p9_t01_pc_regression_matrix.md`;
+- optional `recovery/p9_t01_r1_blocker_resolution.md`.
 
-- new game / chapter start;
-- current SAVE load;
-- tactical restart from pristine source;
-- overworld special restart/save behavior;
-- game-over -> title restart route;
-- debugger restart route;
-- invalid/legacy load atomic failure where the focused harness supports it.
+A test file may change only for a proven `RECOVERY-ADDED-TEST-LEAK` and only with a minimal reset/teardown fix.
 
-Reuse existing automated feature-level tests/harnesses when they exercise the real route. Do not create a second validation-only implementation.
+Production files remain unauthorized.
 
-### 5. Fast-forward/debugger/profiler feature checks
+Do not modify Trace V1/comparator/manifest/goldens, project data/assets, Android policy, or master.
 
-Verify on PC/default runtime:
+## PASS / PARTIAL rules
 
-- fast-forward OFF vs ON logical equivalence;
-- representative speed multipliers already accepted by P7;
-- debugger hotkeys/controller routing remains shared and single-dispatch;
-- profiler disabled mode remains inert;
-- profiler observer-on test paths remain logically equivalent where supported.
+P9-T01-R1 may report `PASS` only if all P9-T01 acceptance requirements are now satisfied, including:
 
-### 6. Representative project launch
+- no unexplained immutable Trace divergence;
+- accepted focused matrix remains green aside from explicitly recorded historical baseline failures;
+- the additional aggregate pollution is deterministically resolved/restored to baseline-safe behavior, or proven not to be a recovery regression with evidence sufficient for controller acceptance;
+- a representative **real** PC project launch reaches project load/validation/normal engine startup;
+- no production/project/Trace changes occurred.
 
-A P9-T01 PASS requires a representative PC engine launch, not only unit tests.
+If either aggregate pollution or real project launch remains unresolved, report `PARTIAL`.
 
-Follow `AGENTS.md` and current repo/project layout.
+Do not self-advance to P9-T02 even if R1 reports PASS.
 
-At minimum:
+## Escalation / stop rules
 
-- identify the `.ltproj` project that `run_engine.py` would launch in this checkout;
-- run the engine through an existing bounded smoke/launch route if available;
-- verify project validation reaches normal engine startup without a new exception caused by recovery code;
-- if a fully interactive GUI loop would block, use an existing test/smoke seam or a bounded process launch that captures startup output and exits intentionally without modifying project data.
+Terra/high is already authorized for this R1 only.
 
-Do not invent a fake project launch by importing one module and calling that a launch.
+STOP without further escalation if diagnosis shows:
 
-If no bounded representative launch can be executed in the environment, P9-T01 must be `PARTIAL`, not `PASS`, and report the exact blocker.
+- immutable Trace divergence (`ESC-03`);
+- partial/live invalid state (`ESC-05`);
+- save compatibility conflict (`ESC-06`);
+- PC/Android gameplay-boundary conflict (`ESC-07`);
+- repeated local remediation failure (`ESC-08`);
+- cross-cutting production/registry/lifecycle architecture would be required (`ESC-09`).
 
-### 7. Type/static checks
-
-Run the repository-prescribed applicable check:
-
-`mypy app/`
-
-using the environment/tooling available in the checkout.
-
-If `mypy` is unavailable or current baseline has pre-existing failures, record exact tool/version/output and classify; do not install/change dependencies unless already authorized by repository setup.
-
-Do not repair unrelated typing debt in P9-T01.
-
-### 8. Importability / compile checks
-
-Run at minimum:
-
-- `python -m compileall -q app` with the baseline interpreter;
-- a bounded engine import smoke proving engine-side modules do not require PyQt5 merely to import;
-- `git diff --check`;
-- final `git status --short`.
-
-## PC logical acceptance criteria
-
-P9-T01 can PASS only if all are true:
-
-1. no new unexplained deterministic Trace V1 divergence;
-2. no new focused regression in accepted Phase-3-through-8 contracts;
-3. full-suite differences from baseline are completely classified;
-4. representative PC project launch requirement is actually exercised;
-5. save/load/restart and fast-forward/debugger representative feature paths remain valid;
-6. no project data/assets were modified;
-7. no production fix was made;
-8. required commands were not silently skipped.
-
-A reproduced historical native Windows crash may coexist with PASS only if:
-
-- it matches the recorded baseline class/location closely enough to classify `KNOWN-BASELINE-SAME`;
-- the focused accepted matrix and deterministic oracles remain green;
-- no new tests fail before the native termination;
-- the representative PC launch succeeds.
-
-If the crash/failure signature has materially changed, report `KNOWN-BASELINE-CHANGED` or `NEW-REGRESSION` and do not PASS without controller review.
-
-## Production / test change policy
-
-Expected code changes: **NONE**.
-
-P9-T01 may create only a validation evidence report, preferably:
-
-`recovery/p9_t01_pc_regression_matrix.md`
-
-Do not add or modify production behavior merely because validation found a defect.
-
-Do not modify tests to hide a failure.
-
-If a new deterministic regression is found, STOP and report the first failing semantic boundary. Diagnosis beyond a mechanical local classification requires escalation authorization.
-
-## Escalation
-
-Primary: **GPT-5.6 Luna / medium**.
-Escalation target: **GPT-5.6 Terra / high**.
-Pre-authorized: **NO**.
-
-Escalate only to diagnose failures, not to run known tests.
-
-STOP/report on:
-
-- `ESC-03` immutable trace divergence;
-- `ESC-05` invariant failure / partial state;
-- `ESC-06` save compatibility conflict;
-- `ESC-07` platform-boundary conflict exposed by desktop validation;
-- `ESC-08` repeated local validation failure requiring diagnosis;
-- `ESC-09` apparent architecture-level contamination;
-- any new regression whose root cause is not mechanically obvious.
-
-Do not self-escalate.
-
-## Explicitly forbidden
-
-Do not:
-
-- begin P9-T02/P9-T03/P9-T04;
-- fix production code;
-- regenerate traces/goldens;
-- modify comparator/manifest/normalization;
-- modify project data/assets;
-- change Android policy;
-- change test expectations to absorb a regression;
-- merge to `master`.
+Do not self-escalate to Sol.
 
 ## Report
 
 TASK RESULT: PASS | PARTIAL | FAIL
-FILES CHANGED
 MODEL/EFFORT
-BRANCH / START HEAD
+BRANCH
+START HEAD
+FILES CHANGED
 FULL SUITE RESULT
 FULL SUITE BASELINE DELTA
-FOCUSED REGRESSION MATRIX
+AGGREGATE POLLUTION ROOT CAUSE
+POLLUTER BISECT EVIDENCE
+TEST-ISOLATION FIX
+REAL PROJECT LAUNCH RESULT
+LOGGER/USER-DATA ROUTE
+PROJECT LOAD/VALIDATION CHECKPOINT
 IMMUTABLE TRACE MATRIX
-PC PROJECT LAUNCH RESULT
+FOCUSED REGRESSION MATRIX
 SAVE/LOAD/RESTART RESULT
 FAST-FORWARD RESULT
 DEBUGGER RESULT

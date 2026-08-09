@@ -271,7 +271,8 @@ class GameState():
         self.map_sprite_registry = {}
         self.alerts.clear()
 
-    def install_state_machine(self, state_data, *, prefix_states=None) -> None:
+    def install_state_machine(self, state_data, *, prefix_states=None,
+                              suffix_states=None) -> None:
         """Install transaction-local saved state after the world is complete."""
         if state_data is None:
             raise ValueError('No saved state data is available to install')
@@ -281,6 +282,8 @@ class GameState():
         restored_state.load_states(list(starting_states), list(temp_state))
         if prefix_states:
             restored_state.state = list(prefix_states) + restored_state.state
+        if suffix_states:
+            restored_state.load_states(list(suffix_states))
         restored_state.set_trace_recorder(trace_recorder)
         self.state = restored_state
 
@@ -538,25 +541,20 @@ class GameState():
 
         return s_dict, meta_dict
 
-    def load(self, s_dict):
-        """Restore a save synchronously for desktop callers and tests.
-
-        ``load_iter`` is the single source of restore ordering. Keeping this
-        public method synchronous preserves the long-standing API; Android
-        jobs also drain the same iterator before returning to the frame loop.
-        """
-        for _phase in self.load_iter(s_dict):
-            pass
+    def load(self, s_dict, *, load_context=None):
+        """Synchronously restore through the canonical save transaction."""
+        from app.engine import save
+        context = load_context or save.LoadTransactionContext()
+        save.load_game_data(self, s_dict, context=context)
 
     def load_iter(self, s_dict, *, replace_state_machine: bool = False) -> Iterator[str]:
         """Restore a save in dependency-safe, yieldable phases.
 
         The iterator never changes the save schema. Each yield names a completed
         internal phase; it is not permission to resume normal lifecycle work.
-        ``replace_state_machine`` is
-        used by an Android load job only to defer the saved stack to its local
-        destination transaction. The job still drains every phase in one
-        main-thread call; these yields are profiling boundaries, not frames.
+        ``replace_state_machine`` defers S/Q to the canonical transaction.
+        The transaction drains every phase in one main-thread call; these
+        yields are profiling boundaries, not frames.
         """
         from app.engine import action, aura_funcs, records, save, supports, turnwheel, dialog_log
         from app.engine.objects.difficulty_mode import DifficultyModeObject
@@ -583,9 +581,10 @@ class GameState():
         self.current_party = s_dict['current_party']
         self.turncount = int(s_dict['turncount'])
 
-        # Desktop's synchronous path preserves the historical point at which
-        # saved states are restored. An Android job keeps them transaction-local
-        # until the complete world and destination can be installed together.
+        # The canonical desktop/Android transaction passes
+        # ``replace_state_machine=True`` so saved S/Q remains local until the
+        # complete world and destination can be installed together.  Keep the
+        # direct iterator behavior for compatibility with narrow internal use.
         if not replace_state_machine:
             self.state.load_states(s_dict['state'][0], s_dict['state'][1])
         yield 'registries'
@@ -1875,18 +1874,20 @@ def start_level(level_nid):
 def load_level(level_nid, save_loc):
     global game
     logging.info("Load Level %s" % level_nid)
-    if not game:
-        game = GameState()
-    else:
-        game.clear()
     import pickle
 
     from app.engine import save
     with open(save_loc, 'rb') as fp:
         s_dict = pickle.load(fp)
+    if not game:
+        game = GameState()
+    else:
+        game.clear()
     game.load_states(['start_level_asset_loading'])
-    game.build_new()
-    game.load(s_dict)
-    save.set_next_uids(game)
-    game.start_level(level_nid)
+    context = save.LoadTransactionContext(
+        save_kind='start',
+        destination=save.LoadDestination.RESTART_LEVEL,
+        level_nid=str(level_nid),
+    )
+    game.load(s_dict, load_context=context)
     return game

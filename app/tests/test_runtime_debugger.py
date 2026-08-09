@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
-from app.engine import android_runtime
+from app.engine import android_runtime, save
 from app.engine.objects.unit import UnitObject
 from app.engine.runtime_debugger import RuntimeDebugger
 
@@ -152,16 +152,18 @@ class RuntimeDebuggerTests(unittest.TestCase):
         hard_mode = object()
         with patch('app.engine.runtime_debugger.game', fake_game), \
                 patch('app.engine.runtime_debugger.DB.difficulty_modes', {'Hard': hard_mode}), \
-                patch('app.engine.save.set_next_uids') as set_next_uids, \
-                patch('app.engine.objects.difficulty_mode.DifficultyModeObject.from_prefab',
-                      return_value='hard-mode'):
+                patch('app.engine.save.set_next_uids') as set_next_uids:
             self.assertTrue(RuntimeDebugger.restart_chapter('Hard'))
 
-        fake_game.build_new.assert_called_once_with()
-        fake_game.load.assert_called_once_with(snapshot)
-        set_next_uids.assert_called_once_with(fake_game)
-        self.assertEqual('hard-mode', fake_game.current_mode)
-        fake_game.start_level.assert_called_once_with('Chapter1')
+        fake_game.build_new.assert_not_called()
+        context = fake_game.load.call_args.kwargs['load_context']
+        self.assertEqual(save.LoadDestination.RESTART_LEVEL,
+                         context.destination)
+        self.assertEqual('Chapter1', context.level_nid)
+        self.assertEqual('Hard', context.difficulty_mode_nid)
+        fake_game.load.assert_called_once_with(snapshot, load_context=context)
+        set_next_uids.assert_not_called()
+        fake_game.start_level.assert_not_called()
 
     def test_restart_chapter_releases_android_debugger_touch_capture(self) -> None:
         snapshot = {'units': ['at-chapter-start']}
@@ -210,10 +212,15 @@ class RuntimeDebuggerTests(unittest.TestCase):
                       return_value='hard-mode'):
             self.assertTrue(RuntimeDebugger.restart_chapter('Hard'))
 
-        load_game.assert_called_once_with(fake_game, restart_slot)
+        context = load_game.call_args.kwargs['context']
+        self.assertEqual(save.LoadDestination.RESTART_LEVEL,
+                         context.destination)
+        self.assertEqual('Chapter1', context.level_nid)
+        self.assertEqual('Hard', context.difficulty_mode_nid)
+        load_game.assert_called_once_with(
+            fake_game, restart_slot, context=context)
         set_next_uids.assert_not_called()
-        self.assertEqual('hard-mode', fake_game.current_mode)
-        fake_game.start_level.assert_called_once_with('Chapter1')
+        fake_game.start_level.assert_not_called()
 
 
 if __name__ == '__main__':

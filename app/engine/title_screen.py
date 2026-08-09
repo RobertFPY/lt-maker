@@ -517,7 +517,20 @@ class TitleLoadState(State):
         while the worker starts reading immediately and the next frame can
         draw a loading screen instead of blocking ``take_input``.
         """
-        job = save.SaveLoadJob(save_slot)
+        destination = {
+            'start_level': save.LoadDestination.START_LEVEL,
+            'restart_level': save.LoadDestination.RESTART_LEVEL,
+            'overworld': save.LoadDestination.OVERWORLD,
+        }.get(next_action, save.LoadDestination.SAVED)
+        state_prefix = tuple(game.state.state) \
+            if transition_from == 'Restart Level' else ()
+        load_context = save.LoadTransactionContext.for_slot(
+            save_slot,
+            destination=destination,
+            preserve_existing_states=False,
+            state_prefix=state_prefix,
+        )
+        job = save.SaveLoadJob(save_slot, context=load_context)
         game.memory['_save_load_job'] = job
         game.memory['_save_load_context'] = {
             'transition_from': transition_from,
@@ -567,17 +580,20 @@ class TitleLoadState(State):
                         next_action=next_action,
                         remove_suspend=True,
                     )
-                game.state.clear()
-                game.state.process_temp_state()
-                game.build_new()
-                save.load_game(game, save_slot)
-                if save_slot.kind == 'start':  # Restart
-                    # Restart level
-                    next_level_nid = game.game_vars['_next_level_nid']
-                    game.load_states(['start_level_asset_loading'])
-                    game.start_level(next_level_nid)
-                elif save_slot.kind == 'overworld': # load overworld
-                    game.load_states(['overworld'])
+                destination = (
+                    save.LoadDestination.START_LEVEL
+                    if save_slot.kind == 'start'
+                    else save.LoadDestination.OVERWORLD
+                    if save_slot.kind == 'overworld'
+                    else save.LoadDestination.SAVED
+                )
+                context = save.LoadTransactionContext.for_slot(
+                    save_slot,
+                    destination=destination,
+                    clear_existing_states=True,
+                    preserve_existing_states=False,
+                )
+                save.load_game(game, save_slot, context=context)
                 game.memory['transition_from'] = 'Load Game'
                 game.memory['title_menu'] = self.menu
                 game.state.change('title_wait')
@@ -676,15 +692,18 @@ class TitleRestartState(TitleLoadState):
                         next_action=next_action,
                         remove_suspend=True,
                     )
-                game.build_new()
-                # Restart level
                 if save_slot_main.kind == 'overworld':
-                    save.load_game(game, save_slot_main)
-                    game.load_states(['overworld'])
+                    context = save.LoadTransactionContext.for_slot(
+                        save_slot_main,
+                        destination=save.LoadDestination.OVERWORLD,
+                    )
+                    save.load_game(game, save_slot_main, context=context)
                 else:
-                    save.load_game(game, save_slot)
-                    next_level_nid = game.game_vars['_next_level_nid']
-                    game.start_level(next_level_nid)
+                    context = save.LoadTransactionContext.for_slot(
+                        save_slot,
+                        destination=save.LoadDestination.RESTART_LEVEL,
+                    )
+                    save.load_game(game, save_slot, context=context)
                 game.memory['transition_from'] = 'Restart Level'
                 game.memory['title_menu'] = self.menu
                 game.state.change('title_wait')
@@ -953,41 +972,15 @@ class TitleLoadJobState(State):
             self.job.abort(game)
         else:
             save.reset_failed_load(game)
-        game.load_states(['title_start'])
+        game.memory.pop('_save_load_job', None)
+        game.memory.pop('_save_load_context', None)
         game.memory['_return_directly_to_title_menu'] = True
         self.finished = True
 
-    def _complete_load(self, state_data) -> None:
-        next_action = self.context.get('next_action')
-        preserve_title_stack = (
-            self.context.get('transition_from') == 'Restart Level'
-        )
-        title_prefix = game.state.state[:-1] if preserve_title_stack else []
-
-        if next_action in ('start_level', 'restart_level'):
-            if next_action == 'restart_level':
-                snapshot_states = (
-                    [state.name for state in title_prefix] + list(state_data[0]))
-            else:
-                snapshot_states = (
-                    list(state_data[0]) + ['start_level_asset_loading'])
-            chapter_start_state = (snapshot_states, list(state_data[1]))
-            game.start_level(
-                game.game_vars['_next_level_nid'],
-                chapter_start_state=chapter_start_state)
-
-        if preserve_title_stack:
-            if game.state.current_state() is not self:
-                raise save.SaveLoadError('Title loader is not the active state')
-            game.state.exit_state(self)
-            game.install_state_machine(state_data, prefix_states=title_prefix)
-        else:
-            game.install_state_machine(state_data)
-
-        if next_action == 'start_level':
-            game.load_states(['start_level_asset_loading'])
-        elif next_action == 'overworld':
-            game.load_states(['overworld'])
+    def _complete_load(self) -> None:
+        # The canonical transaction has already installed S/Q and its one
+        # gameplay destination.  This state owns only the title presentation
+        # handoff that occurs after the authoritative publication boundary.
         game.memory['transition_from'] = self.context.get('transition_from', 'Load Game')
         game.memory['title_menu'] = self.context.get('title_menu')
         game.state.change('title_wait')
@@ -1012,10 +1005,7 @@ class TitleLoadJobState(State):
             with RUNTIME_PROFILER.section('save_load_restore_transaction'):
                 if not self.job.advance(game, budget_ms=8.0):
                     return None
-                state_data = self.job.take_state_data()
-                if state_data is None:
-                    raise save.SaveLoadError('Save job completed without state data')
-                self._complete_load(state_data)
+                self._complete_load()
             return 'repeat'
         except Exception as exc:
             self.error = save.SaveLoadError('Unable to restore save transaction')

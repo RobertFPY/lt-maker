@@ -298,14 +298,17 @@ class RuntimeDebugger:
         # raw-touch capture before the reset can orphan it over the new map.
         from app.engine.android_runtime import set_android_touch_consumer
         set_android_touch_consumer(None)
+        context_kwargs = {
+            'destination': save.LoadDestination.RESTART_LEVEL,
+            'level_nid': level_nid,
+            'difficulty_mode_nid': difficulty_nid,
+        }
         if snapshot is not None:
-            game.build_new()
-            game.load(snapshot)
-            save.set_next_uids(game)
+            context = save.LoadTransactionContext(
+                save_kind='start', **context_kwargs)
+            game.load(snapshot, load_context=context)
         else:
-            save.load_game(game, restart_slot)
-        from app.engine.objects.difficulty_mode import DifficultyModeObject
-        game.current_mode = DifficultyModeObject.from_prefab(
-            DB.difficulty_modes.get(difficulty_nid))
-        game.start_level(level_nid)
+            context = save.LoadTransactionContext.for_slot(
+                restart_slot, **context_kwargs)
+            save.load_game(game, restart_slot, context=context)
         return True

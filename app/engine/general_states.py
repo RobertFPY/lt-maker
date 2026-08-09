@@ -494,15 +494,20 @@ def battle_save():
 def load_save_slot(save_slot: save.SaveSlot):
     """Replace the current session with a regular save-slot state."""
     logging.info("Loading save of kind %s from the map menu...", save_slot.kind)
-    game.state.clear()
-    game.state.process_temp_state()
-    save.load_game(game, save_slot)
-    if save_slot.kind == 'start':
-        next_level_nid = game.game_vars['_next_level_nid']
-        game.load_states(['start_level_asset_loading'])
-        game.start_level(next_level_nid)
-    elif save_slot.kind == 'overworld':
-        game.load_states(['overworld'])
+    destination = (
+        save.LoadDestination.START_LEVEL
+        if save_slot.kind == 'start'
+        else save.LoadDestination.OVERWORLD
+        if save_slot.kind == 'overworld'
+        else save.LoadDestination.SAVED
+    )
+    context = save.LoadTransactionContext.for_slot(
+        save_slot,
+        destination=destination,
+        clear_existing_states=True,
+        preserve_existing_states=False,
+    )
+    save.load_game(game, save_slot, context=context)
     save.remove_suspend()
 
 class InChapterLoadState(MapState):
@@ -555,7 +560,19 @@ class InChapterLoadState(MapState):
     @staticmethod
     def _start_android_load(save_slot: save.SaveSlot) -> None:
         """Replace the map with an opaque loader before atomic restoration."""
-        job = save.SaveLoadJob(save_slot)
+        destination = (
+            save.LoadDestination.START_LEVEL
+            if save_slot.kind == 'start'
+            else save.LoadDestination.OVERWORLD
+            if save_slot.kind == 'overworld'
+            else save.LoadDestination.SAVED
+        )
+        context = save.LoadTransactionContext.for_slot(
+            save_slot,
+            destination=destination,
+            preserve_existing_states=False,
+        )
+        job = save.SaveLoadJob(save_slot, context=context)
         job.start()
         game.memory['_in_chapter_save_load_job'] = job
         game.memory['_in_chapter_save_load_slot'] = save_slot
@@ -594,24 +611,12 @@ class InChapterLoadJobState(State):
             self.job.abort(game)
         else:
             save.reset_failed_load(game)
-        game.load_states(['title_start'])
+        game.memory.pop('_in_chapter_save_load_job', None)
+        game.memory.pop('_in_chapter_save_load_slot', None)
         self.finished = True
 
-    def _complete_load(self, state_data) -> None:
-        if self.save_slot.kind == 'start':
-            chapter_start_state = (
-                list(state_data[0]) + ['start_level_asset_loading'],
-                list(state_data[1]),
-            )
-            game.start_level(
-                game.game_vars['_next_level_nid'],
-                chapter_start_state=chapter_start_state)
-
-        game.install_state_machine(state_data)
-        if self.save_slot.kind == 'start':
-            game.load_states(['start_level_asset_loading'])
-        elif self.save_slot.kind == 'overworld':
-            game.load_states(['overworld'])
+    def _complete_load(self) -> None:
+        # S/Q and the route destination were published by the canonical core.
         save.remove_suspend()
         game.memory.pop('_in_chapter_save_load_job', None)
         game.memory.pop('_in_chapter_save_load_slot', None)
@@ -631,10 +636,7 @@ class InChapterLoadJobState(State):
             with RUNTIME_PROFILER.section('in_chapter_load_restore_transaction'):
                 if not self.job.advance(game, budget_ms=8.0):
                     return None
-                state_data = self.job.take_state_data()
-                if state_data is None:
-                    raise save.SaveLoadError('Save job completed without state data')
-                self._complete_load(state_data)
+                self._complete_load()
             return 'repeat'
         except Exception as exc:
             self.error = save.SaveLoadError('Unable to restore in-chapter save transaction')

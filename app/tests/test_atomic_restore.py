@@ -29,6 +29,12 @@ class _AtomicRestoreGame:
         self.fail = fail
         self.restore_phases = []
         self.state_installed = False
+        self.installed_state_data = None
+        self.installed_suffix = None
+        self.events = object()
+        self.phase = object()
+        self.level = None
+        self.state_names = []
 
     def build_new(self):
         self.world = 'new-default'
@@ -52,6 +58,15 @@ class _AtomicRestoreGame:
     def clear(self):
         self.world = 'cleared'
         self.current_save_slot = None
+
+    def install_state_machine(self, state_data, *, prefix_states, suffix_states):
+        self.assert_complete_at_install = self.world
+        self.state_installed = True
+        self.installed_state_data = state_data
+        self.installed_suffix = tuple(suffix_states)
+
+    def load_states(self, states):
+        self.state_names.extend(states)
 
 
 class AtomicSaveLoadJobTests(unittest.TestCase):
@@ -81,10 +96,11 @@ class AtomicSaveLoadJobTests(unittest.TestCase):
 
         self.assertEqual(['registries', 'board', 'complete'], game.restore_phases)
         self.assertEqual('complete', game.world)
-        self.assertFalse(game.state_installed)
+        self.assertTrue(game.state_installed)
+        self.assertEqual('complete', game.assert_complete_at_install)
+        self.assertEqual((['free'], ['alert']), game.installed_state_data)
         self.assertEqual(7, game.current_save_slot)
-        self.assertEqual((['free'], ['alert']), job.take_state_data())
-        self.assertIsNone(job.take_state_data())
+        self.assertIsNone(job._save_data)
 
     def test_failed_restore_aborts_to_a_clean_deterministic_game(self):
         payload = {'state': (['free'], [])}
@@ -92,27 +108,22 @@ class AtomicSaveLoadJobTests(unittest.TestCase):
         game = _AtomicRestoreGame(fail=True)
 
         with patch.object(save_module, 'set_next_uids'):
-            with self.assertRaisesRegex(RuntimeError, 'restore failed'):
+            with self.assertRaisesRegex(
+                    save_module.SaveLoadError, 'Unable to restore') as raised:
                 job.advance(game, budget_ms=0.0)
-        self.assertEqual('partial-failure', game.world)
-
-        job.abort(game)
 
         self.assertEqual('new-default', game.world)
+        self.assertIsInstance(raised.exception.__cause__, RuntimeError)
         self.assertIsNone(game.current_save_slot)
-        self.assertIsNone(job.take_state_data())
+        self.assertEqual(['title_start'], game.state_names)
+        self.assertIsNone(job._save_data)
         self.assertFalse(job.completed)
 
-    def test_state_payload_cannot_be_taken_before_hydration_completes(self):
+    def test_job_has_no_separate_state_payload_publication_api(self):
         job = save_module.SaveLoadJob(
             SimpleNamespace(save_loc='slot.p', idx=1))
-        job._state_data = (['free'], [])
 
-        with self.assertRaisesRegex(
-                save_module.SaveLoadError, 'before hydration completed'):
-            job.take_state_data()
-
-        self.assertEqual((['free'], []), job._state_data)
+        self.assertFalse(hasattr(job, 'take_state_data'))
 
     def test_chapter_snapshot_records_destination_without_publishing_it(self):
         game = GameState()
@@ -134,21 +145,22 @@ class AtomicSaveLoadJobTests(unittest.TestCase):
 
 
 class _CompletedRestoreJob:
-    def __init__(self, state_data):
+    """Lifecycle stub that publishes exactly what the canonical core returns."""
+
+    def __init__(self, publish):
         self.completed = True
         self.phase = 'complete'
         self.is_reading = False
-        self.remaining_state_data = state_data
+        self.publish = publish
+        self.published = False
         self.advance_calls = 0
 
     def advance(self, game, budget_ms=8.0):
         self.advance_calls += 1
+        if not self.published:
+            self.publish(game)
+            self.published = True
         return True
-
-    def take_state_data(self):
-        state_data = self.remaining_state_data
-        self.remaining_state_data = None
-        return state_data
 
     def abort(self, game):
         game.clear()
@@ -178,7 +190,23 @@ class AtomicDestinationStateTests(unittest.TestCase):
         state.started = True
         state.processed = True
         game.state.state.append(state)
-        job = _CompletedRestoreJob(state_data)
+        def publish(target_game):
+            prefix = target_game.state.state[:-1] \
+                if transition_from == 'Restart Level' else ()
+            suffix = ('start_level_asset_loading',) \
+                if next_action == 'start_level' else \
+                ('overworld',) if next_action == 'overworld' else ()
+            if next_action in ('start_level', 'restart_level'):
+                target_game.start_level(
+                    'chapter', chapter_start_state=(
+                        [saved_state.name for saved_state in prefix] +
+                        list(state_data[0]) + list(suffix),
+                        list(state_data[1]),
+                    ))
+            target_game.install_state_machine(
+                state_data, prefix_states=prefix, suffix_states=suffix)
+
+        job = _CompletedRestoreJob(publish)
         state.job = job
         state.context = {
             'next_action': next_action,
@@ -206,7 +234,7 @@ class AtomicDestinationStateTests(unittest.TestCase):
         self.assertEqual(['free', 'alert', 'title_wait'], game.state.state_names())
         self.assertEqual([], game.state.temp_state)
         self.assertFalse(hasattr(game, '_staged_state_data'))
-        self.assertIsNone(job.remaining_state_data)
+        self.assertTrue(job.published)
 
     def test_title_start_uses_reference_stack_without_loader_or_stale_payload(self):
         game, state, job = self._title_fixture('start_level')
@@ -220,7 +248,7 @@ class AtomicDestinationStateTests(unittest.TestCase):
             'chapter', chapter_start_state=(
                 ['free', 'start_level_asset_loading'], []))
         self.assertFalse(hasattr(game, '_staged_state_data'))
-        self.assertIsNone(job.remaining_state_data)
+        self.assertTrue(job.published)
 
     def test_title_restart_preserves_title_prefix_without_loader_or_stale_payload(self):
         game, state, job = self._title_fixture(
@@ -235,7 +263,7 @@ class AtomicDestinationStateTests(unittest.TestCase):
             'chapter', chapter_start_state=(
                 ['title_start', 'title_main', 'title_restart', 'free'], []))
         self.assertFalse(hasattr(game, '_staged_state_data'))
-        self.assertIsNone(job.remaining_state_data)
+        self.assertTrue(job.published)
 
     def test_title_restart_observer_sees_only_the_final_destination(self):
         game, state, _job = self._title_fixture(
@@ -258,7 +286,7 @@ class AtomicDestinationStateTests(unittest.TestCase):
                          game.state.state_names())
         self.assertEqual(1, game.state.state_names().count('overworld'))
         self.assertFalse(hasattr(game, '_staged_state_data'))
-        self.assertIsNone(job.remaining_state_data)
+        self.assertTrue(job.published)
 
     def _in_chapter_fixture(self, kind, *, state_data=(['free'], ['alert'])):
         game = GameState()
@@ -266,7 +294,19 @@ class AtomicDestinationStateTests(unittest.TestCase):
         state = game.state.state[-1]
         state.started = True
         state.processed = True
-        job = _CompletedRestoreJob(state_data)
+        def publish(target_game):
+            suffix = ('start_level_asset_loading',) if kind == 'start' else \
+                ('overworld',) if kind == 'overworld' else ()
+            if kind == 'start':
+                target_game.start_level(
+                    'chapter', chapter_start_state=(
+                        list(state_data[0]) + list(suffix),
+                        list(state_data[1]),
+                    ))
+            target_game.install_state_machine(
+                state_data, prefix_states=(), suffix_states=suffix)
+
+        job = _CompletedRestoreJob(publish)
         state.job = job
         state.save_slot = SimpleNamespace(kind=kind)
         state.error = None
@@ -288,7 +328,7 @@ class AtomicDestinationStateTests(unittest.TestCase):
         self.assertEqual(['free'], game.state.state_names())
         self.assertEqual(['alert'], game.state.temp_state)
         self.assertFalse(hasattr(game, '_staged_state_data'))
-        self.assertIsNone(job.remaining_state_data)
+        self.assertTrue(job.published)
 
     def test_in_chapter_start_has_saved_stack_and_one_loading_destination(self):
         game, state, job = self._in_chapter_fixture('start')
@@ -302,7 +342,7 @@ class AtomicDestinationStateTests(unittest.TestCase):
             'chapter', chapter_start_state=(
                 ['free', 'start_level_asset_loading'], ['alert']))
         self.assertFalse(hasattr(game, '_staged_state_data'))
-        self.assertIsNone(job.remaining_state_data)
+        self.assertTrue(job.published)
 
     def test_in_chapter_overworld_has_saved_stack_and_one_destination(self):
         game, state, job = self._in_chapter_fixture('overworld')
@@ -313,7 +353,7 @@ class AtomicDestinationStateTests(unittest.TestCase):
         self.assertEqual(['alert'], game.state.temp_state)
         self.assertEqual(1, game.state.state_names().count('overworld'))
         self.assertFalse(hasattr(game, '_staged_state_data'))
-        self.assertIsNone(job.remaining_state_data)
+        self.assertTrue(job.published)
 
 
 class AtomicRestoreFailureTests(unittest.TestCase):
@@ -364,7 +404,7 @@ class AtomicRestoreFailureTests(unittest.TestCase):
         self.assertIsNone(game.overworld_controller)
         self.assertIsNone(game._current_level)
         self.assertFalse(hasattr(game, '_staged_state_data'))
-        self.assertIsNone(job.take_state_data())
+        self.assertIsNone(job._save_data)
         self.assertEqual(2, game.build_new.call_count)
         self.assertTrue(state.finished)
 

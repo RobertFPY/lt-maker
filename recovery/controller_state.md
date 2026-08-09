@@ -6,237 +6,155 @@
 
 - Current phase: **Phase 7**
 - Phases 1–6: **ACCEPTED**
-- P7-T01 fast-forward equivalence suite: **ACCEPTED** at `874c7adcf83f14e6fcf961180a01f4ddfe1201fe`
-- Active task: **P7-T02 only — Debugger parity PC/Android**
-- Primary model: **GPT-5.6 Luna / medium**
-- Escalation target: **GPT-5.6 Terra / high**
+- P7-T01 fast-forward equivalence: **ACCEPTED** at `874c7adcf83f14e6fcf961180a01f4ddfe1201fe`
+- P7-T02 debugger parity PC/Android: **ACCEPTED** at `11f2a42cd055d089917834ef80d74d369aad5ed8`
+- Active task: **P7-T03 only — Profiler observer-equivalence**
+- Primary model: **GPT-5.6 Luna / low**
+- Escalation target: **GPT-5.6 Terra / medium**
 - Escalation pre-authorized: **NO**
-- P7-T03/P7-T04 and Phase 8+: **UNAUTHORIZED**
-- Production behavior changes: **test/evidence first; only a bounded debugger-specific correctness fix is allowed when parity evidence proves one unambiguous defect**
+- P7-T04 and Phase 8+: **UNAUTHORIZED**
+- Production behavior changes: **test/evidence first; only a bounded profiler-specific observer-correctness fix is allowed if deterministic evidence proves one unambiguous defect**
 - Gameplay-core semantic changes: **UNAUTHORIZED**
 - Trace V1/comparator/manifest/golden changes: **UNAUTHORIZED**
 - Project-data / asset changes: **UNAUTHORIZED**
-- Controller gate after P7-T02: **YES — STOP FOR CONTROLLER REVIEW**
+- P7-T03 static plan gate is `No`, but live recovery governance still forbids self-advancing to P7-T04; stop and report after the bounded P7-T03 commit so the controller can verify the evidence and authorize P7-T04 explicitly.
 
-## P7-T01 acceptance record
+## P7-T02 acceptance record
 
-The controller accepts `874c7adcf83f14e6fcf961180a01f4ddfe1201fe` (`test(recovery): prove fast-forward equivalence`).
+The controller accepts `11f2a42cd055d089917834ef80d74d369aad5ed8` (`test(debugger): prove desktop android parity`).
 
 Accepted evidence:
 
-- it is exactly one descendant of P7-T01 authorization commit `fc3f1812fc4548702f9ab549ce7ce203b169e5c4`;
-- scope is test/evidence only: `app/tests/recovery_trace_runner.py`, `app/tests/test_fast_forward_equivalence.py`, and `recovery/p7_t01_fast_forward_equivalence.md`;
-- no production source, Trace V1 implementation, comparator, manifest, golden fixture, schema, project data, or asset changed;
-- the new `FastForwardScenarioFrameDriver` is test-owned and routes fast-forward ON runs through production `driver.update_game_state_for_frame()` rather than reimplementing fast-forward semantics;
-- existing scenario scripts retain their state/readiness-driven input conditions; ON/OFF input is not aligned by host-frame number;
-- ON/OFF pairs compare complete existing Trace V1 records with `trace.compare_records()` for S5/S6/S7/S8/S13/S15/S18;
-- speed invariance OFF vs 200%/300%/800% is covered using the same simple-combat trace;
-- transient SELECT/BACK/START/directional/TEXTINPUT/mouse-click evidence proves only the first fast-forward substep sees the host transient input while later substeps see an empty transient snapshot;
-- existing repeat-chain, blocking-state and explicit presentation-barrier tests remain part of the proof;
-- immutable S5/S7/S8/S13/S16/S17-disabled/S17-debugger-idle/S17-profiler-idle/S18 were reported exact PASS;
-- S17 does not run an outer-frame driver at all: it starts a level, exercises an idle observer, and captures checkpoints. Therefore the existing S17 harness has no fast-forward frame seam to combine without inventing additional infrastructure; its disabled/debugger-idle/profiler-idle equality remains the appropriate observer proof for P7-T01;
-- no fast-forward divergence or production fix was required;
-- broad-suite `_Uses.tag` registry pollution/native Windows termination remains unrelated baseline evidence.
+- it is exactly one descendant of P7-T02 authorization commit `6a28b268724dfd2a0f3ff1265cd352cbeea06576`;
+- scope is test/evidence only: `app/tests/test_runtime_debugger_parity.py` and `recovery/p7_t02_debugger_parity.md`;
+- no production source, Trace V1 implementation, comparator, manifest, golden fixture, save/restart code, project data, or assets changed;
+- the desktop HTTP proof uses a real local request and proves the HTTP thread only queues/waits: `RuntimeDebuggerController.dispatch()` is not called until `RuntimeDebuggerService.update()` drains the command on the game thread;
+- one queued command dispatches exactly once, including dispatch-error and HTTP-timeout cases; a timeout may leave one queued command for later execution but does not duplicate that mutation;
+- Android representative Unit/World/Event actions and the desktop service queue converge on the same `RuntimeDebuggerController.dispatch(op, args)` call shape;
+- shared-controller ownership means the two frontends do not contain separate gameplay mutation implementations requiring duplicated semantic algorithms;
+- desktop Ctrl+1/2/3/4/5/0 hotkeys retain their intended shared operations;
+- Android debugger remains `blocks_fast_forward`, owns/releases the raw-touch consumer through its lifecycle, and native editor result consumption is protected against duplicate submission;
+- existing controller/runtime debugger, P5 canonical restart, P7 fast-forward, platform-policy and immutable S2/S4/S5/S16/S17/S18 contracts were reported green;
+- no debugger parity defect required a production fix;
+- lack of Android-device/JNI hardware validation remains an external validation limit, not a deterministic semantic blocker.
 
-## Locked fast-forward contract
+## Locked debugger contract
 
-Later phases must preserve:
+Later tasks must preserve:
 
-1. Fast-forward OFF is the accepted recovery gameplay semantic baseline.
-2. Fast-forward ON may change host-frame/presentation timing only, never logical outcomes/order.
-3. Input equivalence is aligned to logical readiness/user intent, not host-frame number.
-4. Only the first fast-forward substep may consume a host transient input edge; later substeps/repeat chains do not replay it.
-5. `blocks_fast_forward` and explicit presentation fences may stop additional substeps without changing gameplay outcomes.
-6. Fast-forward may not reintroduce generic Android Event command scheduling or alter accepted combat/load/restart/tilemap semantics.
+1. `RuntimeDebuggerController.dispatch(op, args)` is the shared gameplay-semantic debugger boundary.
+2. Desktop HTTP/server threads may queue/read presentation data but may not mutate gameplay directly.
+3. Android UI may differ in presentation/input mechanics but may not fork debugger gameplay mutations.
+4. Debugger restart remains bound to the accepted P5 pristine chapter restart contract and canonical load transaction.
+5. Debugger enabled but idle remains observer-equivalent.
 
 ---
 
-# P7-T02 — Debugger parity PC/Android
+# P7-T03 — Profiler observer-equivalence
 
-Execute **P7-T02 only** using **GPT-5.6 Luna / medium**.
+Execute **P7-T03 only** using **GPT-5.6 Luna / low**.
 
-Escalation target: **GPT-5.6 Terra / high**, not pre-authorized.
+Escalation target: **GPT-5.6 Terra / medium**, not pre-authorized.
 
-PC behavioral reference remains `9314f54b49f4552b5a3d023b4da0012ce7dfbc89` for core gameplay semantics, but the runtime debugger itself is a later intended feature. The parity oracle is the shared accepted recovery debugger semantics, not absence from the PC reference.
+Plan objective: verify profiler ON/OFF logical state equivalence and worker-thread scope isolation.
 
-## Semantic authority
+## Semantic contract
 
-`app/engine/runtime_debugger_controller.py` is the shared semantic command boundary.
+`RUNTIME_PROFILER` is an observer only.
 
-Current architecture:
+Profiler ON may change:
 
-```text
-desktop web UI / HTTP thread
-    -> RuntimeDebuggerService command queue
-    -> RuntimeDebuggerService.update() on game thread
-    -> RuntimeDebuggerController.dispatch(op, args)
-    -> RuntimeDebugger gameplay operation
+- timing samples;
+- profiler-owned counters/deques/scope records;
+- warning/log output;
+- GC diagnostic counters;
+- profiler memory overhead.
 
-Android in-game debugger UI
-    -> RuntimeDebuggerController.dispatch(op, args) directly on game thread
-    -> RuntimeDebugger gameplay operation
-```
+Profiler ON must NOT change:
 
-The two frontends do **not** need identical visual widgets or input mechanics. They must expose equivalent intended operations and produce the same logical mutation/result for the same controller operation and valid arguments.
+- gameplay actions or action order;
+- RNG state/consumption;
+- combat solver/playback/cleanup outcomes;
+- Event command ordering/lifecycle;
+- state-machine transitions;
+- phase/initiative;
+- units/items/skills/statuses;
+- board/aura/FOW/regions;
+- save/load/restart semantics;
+- fast-forward logical outcomes;
+- debugger gameplay semantics;
+- Android tilemap barrier/atomic commit behavior.
 
-Do not create separate Android cheat semantics or duplicate controller operations in either frontend.
+Profiler instrumentation must never become a semantic branch condition.
 
-## Goal
+## Current profiler architecture to prove
 
-Verify intended debugger operations and frontend integration on desktop and Android, including:
+`app/engine/performance.py` currently:
 
-- selected-unit inspection/focus;
-- editable unit fields: level, EXP, HP, mana, fatigue, guard, movement, position, stats, growths, cap modifiers and WEXP where available;
-- max selected unit;
-- auto-level +1;
-- give item including bounded uses/charges;
-- teleport and tile-pick flow;
-- max all player units;
-- max all enemy units;
-- set enemy HP to 1;
-- disable enemy AI;
-- complete current chapter;
-- go to chapter with explicit difficulty;
-- restart current chapter with explicit difficulty and accepted P5 pristine restart semantics;
-- set money;
-- set turn count;
-- set turnwheel uses/enabled state;
-- set/clear weather;
-- event command execution and command suggestions/catalog where frontend-supported;
-- desktop hotkeys Ctrl+1..5 / Ctrl+0;
-- Android native text editor fallback/Save/Cancel/error routing where testable without JNI device code;
-- Android touch-consumer registration/release, especially around debugger exit and restart.
+- enables runtime profiling only under the Android/profile environment policy;
+- stores frame timing/scope/counter history inside `RuntimeProfiler`;
+- registers `_on_gc` with `gc.callbacks` when enabled at construction;
+- sets `_frame_thread_id` in `begin_frame()`;
+- `section()` records scopes only when enabled **and** the current thread equals `_frame_thread_id`;
+- worker-thread sections therefore yield without touching the shared main-thread scope stack;
+- `finish_frame()` aggregates/logs profiler-owned data.
 
-## Required parity model
+These are implementation details to verify, not authority to change gameplay behavior.
 
-Prefer controller-level paired tests for semantic operations:
-
-```text
-same initial logical game state
-same op + args
-route A: desktop service queue -> game-thread update -> controller
-route B: Android frontend/direct controller route
-compare:
-    result/validation class
-    logical game mutation
-    state/temp-state transitions
-    action-log relevant state
-    save/restart destination where applicable
-```
-
-Do not compare browser HTML, pixel layout, touch coordinates, native Android typography, or HTTP timing as gameplay parity fields.
-
-Where directly invoking the Android UI action handler is practical, prove it maps to the same controller op/args. Do not reimplement every full UI gesture just to reach the controller.
-
-## Desktop service / thread contract
-
-Prove:
-
-- HTTP/server thread only enqueues commands and waits for completion;
-- `RuntimeDebuggerService.update()` drains commands on the game thread and calls the shared controller;
-- snapshot publication remains observer-only;
-- timeouts/errors do not execute the same command twice;
-- stopping/starting the debugger service does not mutate gameplay state by itself;
-- debugger disabled/idle remains observer-equivalent to disabled gameplay.
-
-Do not move game mutation onto the HTTP thread.
-
-## Android frontend contract
-
-Prove:
-
-- Android debugger remains a transparent `blocks_fast_forward` state;
-- actions call the shared controller rather than duplicating RuntimeDebugger mutations;
-- commands that need to close the drawer insert/pop the debugger state in the correct order before queued Event/state transitions;
-- raw-touch consumer is registered while the debugger owns touch and released on end;
-- native text editor success/cancel/error handling cannot submit a command twice;
-- pygame text-input fallback remains available when native editor is unavailable;
-- debugger restart releases Android touch ownership before canonical restart can replace the state stack.
-
-Platform UI integration may differ; gameplay mutation semantics may not.
-
-## Restart / chapter navigation
-
-Preserve accepted Phase-5 contracts.
-
-`restart_chapter` must:
-
-- use a matching current-session `chapter_start_snapshot` first;
-- otherwise use only a source-proven matching RESTART_SLOT;
-- preserve explicit requested difficulty through P5 canonical load context;
-- never fall back to current mid-chapter SAVE_SLOT as pristine restart truth;
-- rebuild chapter-start initiative semantics;
-- release Android raw-touch capture before state replacement.
-
-`go_chapter` / `complete_chapter` must continue to queue the shared Event path rather than directly mutating chapter state in a frontend-specific way.
-
-If parity failure points into P5 canonical load/restart architecture, STOP rather than reopening it in P7-T02.
-
-## Observer equivalence
-
-Run S17 disabled/debugger-idle/profiler-idle and preserve exact equality.
-
-Additionally prove debugger snapshot/catalog polling while idle does not mutate gameplay state, action log, RNG, phase, units, board/FOW/aura, save state, or state-stack transitions except UI-only debugger state when the Android drawer itself is intentionally opened.
-
-Do not instrument gameplay hooks merely to observe them.
-
-## Production-change boundary
-
-Expected default scope is tests/evidence only.
-
-A bounded production fix is allowed only when:
-
-- parity test demonstrates a debugger-specific defect;
-- the shared controller semantics or other frontend give one unambiguous correct behavior;
-- fix remains inside debugger frontend/controller/service integration;
-- no accepted gameplay-core contract changes.
-
-Allowed bounded surfaces if evidence requires a fix:
-
-- `app/engine/runtime_debugger.py`
-- `app/engine/runtime_debugger_controller.py`
-- `app/engine/runtime_debugger_service.py`
-- `app/engine/android_debugger.py`
-- narrow `app/engine/android_runtime.py` debugger/touch bridge only if the defect is proven there
-- focused tests/report
-
-If another gameplay-critical module is required, STOP under ESC-02/ESC-05/ESC-09.
-
-## Required tests
+## Required proof
 
 At minimum prove:
 
-1. Shared controller command catalog/snapshot is available to both frontends without gameplay mutation.
-2. Desktop queued command executes exactly once on service update/game thread.
-3. Android frontend action maps to the same controller operation and arguments for representative Unit, World and Event operations.
-4. Unit field edit parity.
-5. Max/auto-level parity.
-6. Give-item parity including explicit uses where supported.
-7. Teleport parity and occupied/out-of-bounds rejection.
-8. Batch player/enemy max parity.
-9. Enemy HP/AI parity.
-10. Complete-chapter shared Event routing.
-11. Go-chapter + difficulty shared Event routing.
-12. Restart + difficulty uses accepted P5 snapshot/restart source and canonical load path.
-13. Money/turn-count/turnwheel/weather parity.
-14. Event-command validation/execution parity and no duplicate dispatch.
-15. Desktop hotkey mapping calls the same controller ops.
-16. Android drawer close-before-event transition ordering remains correct.
-17. Android raw-touch consumer is installed/released correctly.
-18. Native text editor Save/Cancel/error/fallback logic does not double-submit.
-19. Debugger enabled but idle is observer-equivalent.
-20. Existing fast-forward equivalence remains green; Android debugger remains `blocks_fast_forward`.
-21. P5 canonical load/restart tests remain green.
-22. P6 platform-policy tests remain green.
+1. Profiler disabled: `begin_frame`, `section`, `count`, `finish_frame` do not alter gameplay state and do not emit profiler warnings.
+2. Profiler enabled around a representative deterministic gameplay update produces the same logical state/result as profiler disabled.
+3. Enabled profiler does not change RNG state before/after representative deterministic gameplay.
+4. Enabled profiler does not change action/action-log order in representative combat/Event/state-machine paths.
+5. S17 disabled == S17 profiler-idle exactly under immutable Trace V1.
+6. S17 debugger-idle remains unchanged as a neighboring observer baseline.
+7. A worker thread entering `RUNTIME_PROFILER.section()` during an active main-thread frame does not append/pop/corrupt the main-thread `_scope_stack` or `_frame_scopes`.
+8. Main-thread nested scope parentage remains correct even when a worker attempts a scope concurrently.
+9. Worker scope execution still executes the wrapped worker body exactly once; profiling cannot suppress worker work.
+10. A worker thread cannot change `_frame_thread_id` merely by entering `section()`.
+11. `count()`/logging/profiler metadata do not become gameplay inputs.
+12. GC callback only mutates profiler-owned GC counters; registering/removing the test callback does not mutate gameplay state.
+13. Profiler exceptions/log formatting are not used to alter gameplay lifecycle.
+14. P7-T01 fast-forward equivalence remains green with existing profiler-idle observer proof.
+15. P7-T02 debugger parity remains green.
+16. P6 Event/tilemap platform-policy tests remain green.
+17. P5 canonical load/restart and Phase-3 combat lifecycle focused tests remain green.
 
-Use deterministic state assertions; prefer mutation/result equality over checking only that calls did not crash.
+## Thread-isolation emphasis
+
+The accepted Android preload/resource workers may execute code enclosed by profiler sections.
+
+Worker-thread profiler calls must be observational no-ops with respect to the active main-thread frame scope tree.
+
+Do not solve thread safety by:
+
+- serializing gameplay on the profiler lock;
+- moving gameplay to another thread;
+- creating thread-local gameplay state;
+- allowing worker scopes into the main frame tree.
+
+If correct observer behavior would require such architecture, STOP under ESC-02/ESC-09.
+
+## Test/evidence scope
+
+Expected default changes:
+
+- focused tests, preferably extending `app/tests/test_performance_profiler.py` or adding one bounded profiler-equivalence test file;
+- optionally `recovery/p7_t03_profiler_observer_equivalence.md`.
+
+Expected production changes: **NONE**.
+
+A production change to `app/engine/performance.py` is allowed only if deterministic evidence proves a profiler-specific observer defect and the fix changes profiler-owned state only.
+
+If a fix requires changing gameplay/state/combat/Event/save/load/tilemap code, STOP and escalate/review.
 
 ## Immutable proof
 
 Run at minimum:
 
-- S2 load
-- S4 restart
 - S5 representative gameplay
 - S16 fast-forward
 - S17 disabled
@@ -244,21 +162,21 @@ Run at minimum:
 - S17 profiler-idle
 - S18 game-over/restart
 
-Add S12/S13/S14 if a production debugger fix touches board/aura/FOW/tilemap integration.
-
-No golden regeneration.
+If any production profiler fix touches instrumentation in combat/Event/state-machine call sites, also run the relevant immutable scenarios exercised by those surfaces; do not regenerate goldens.
 
 Run focused:
 
-- existing `test_runtime_debugger*` suites;
-- Android debugger/frontend tests;
-- runtime debugger service/controller tests;
-- canonical load/restart;
-- fast-forward/input state tests;
-- observer/profiler tests;
-- recovery trace/lifecycle/golden integrity.
+- `app.tests.test_performance_profiler`
+- Android performance/profiler instrumentation tests
+- recovery observer/S17 tests
+- P7 fast-forward equivalence
+- P7 debugger parity
+- Phase-3 combat lifecycle
+- P5 canonical load/restart
+- P6 platform-policy/Event/tilemap tests
+- recovery trace/lifecycle/golden integrity
 
-Run broader unittest discovery and report known baseline/native/test-isolation failures without repairing unrelated issues.
+Run broader unittest discovery and report known baseline/native/test-isolation failures without fixing unrelated issues.
 
 Finally run:
 
@@ -272,38 +190,34 @@ Finally run:
 
 Do not:
 
-- begin P7-T03/P7-T04 or Phase 8;
-- redesign the debugger UI;
-- require desktop and Android visual/UI identity;
-- fork debugger gameplay semantics by platform;
-- move desktop mutations onto the HTTP thread;
-- change P5 load/restart contracts;
+- begin P7-T04 or Phase 8;
+- modify gameplay to accommodate profiler instrumentation;
+- change profiler into a scheduler;
 - change fast-forward semantics;
-- change Phase-3 combat or Phase-4 tilemap semantics;
-- change P6 platform capability contracts;
+- change debugger semantics;
+- change combat/Event/tilemap/load/restart contracts;
 - change Trace V1/comparator/manifest/goldens;
 - modify project data/assets;
 - merge master.
 
 ## Escalation / stop rules
 
-Primary: **GPT-5.6 Luna / medium**.
-Escalation target: **GPT-5.6 Terra / high**.
+Primary: **GPT-5.6 Luna / low**.
+Escalation target: **GPT-5.6 Terra / medium**.
 Pre-authorized: **NO**.
 
 STOP on:
 
-- **ESC-02** parity defect root cause is nonlocal;
+- **ESC-02** observer defect root cause is nonlocal;
 - **ESC-03** immutable trace divergence;
-- **ESC-04** desktop/Android expose genuinely competing intended debugger semantics with no shared-controller answer;
-- **ESC-05** debugger operation exposes partial/invalid gameplay state;
-- **ESC-06** restart/save compatibility conflict appears;
-- **ESC-07** fix would require a platform gameplay fork;
-- **ESC-08** repeated bounded fix failure;
-- **ESC-09** new cross-cutting debugger/gameplay architecture appears necessary.
+- **ESC-04** competing profiler semantics affect gameplay;
+- **ESC-05** instrumentation changes logical state/lifecycle;
+- **ESC-07** platform-specific instrumentation would require gameplay fork;
+- **ESC-08** repeated bounded failure;
+- **ESC-09** cross-cutting thread/scheduler architecture appears necessary.
 
 Do not self-escalate.
 
 ## Gate status
 
-**P7-T01 is ACCEPTED. P7-T02 is the only authorized task. P7-T03/P7-T04 and Phase 8+ remain blocked pending controller review.**
+**P7-T02 is ACCEPTED. P7-T03 is the only authorized task. P7-T04 and Phase 8+ remain blocked pending controller review.**

@@ -7,213 +7,224 @@
 - Current phase: **Phase 8 — Safe shared optimization reintroduction**
 - Phases 1–7: **ACCEPTED**
 - P8-T01 cache/memoization audit: **ACCEPTED** at `1d40f89cf33008e0592c35ef9ab094c4cc9d0b5d`
-- P8-T02 render/cache/batching optimization audit: **ACCEPTED** at `3d8624136ce58e8dfb7c576515d8e4585ca79ae0`
-- Active task: **P8-T03 only — Allocation/redundant-work audit**
-- Primary model: **GPT-5.6 Terra / medium**
-- Escalation target: **GPT-5.6 Sol / high**
+- P8-T02 render/cache/batching audit: **ACCEPTED** at `3d8624136ce58e8dfb7c576515d8e4585ca79ae0`
+- P8-T03 allocation/redundant-work audit: **ACCEPTED** at `869e30d66f8005ef088f85083dce05cea661876a`
+- Active task: **P8-T04 only — Android-only performance retuning**
+- Primary model: **GPT-5.6 Terra / high**
+- Escalation target: **GPT-5.6 Sol / max**
 - Escalation pre-authorized: **NO**
-- P8-T04 and Phase 9+: **UNAUTHORIZED**
-- Expected default production changes: **NONE — measure/audit/test first**
-- New optimization is allowed only when a bounded owner-local redundant-work defect/opportunity has deterministic equivalence evidence and measurable benefit; speculative lifecycle/scheduler/cache changes are unauthorized.
+- Phase 9+: **UNAUTHORIZED**
+- Controller gate after P8-T04: **YES — STOP FOR CONTROLLER REVIEW**
+- Android performance work must remain behind accepted platform-policy boundaries and preserve exact logical traces.
+- FPS/frame-time improvement alone is never sufficient evidence.
 - Trace V1/comparator/manifest/golden changes: **UNAUTHORIZED**
 - Project-data / asset changes: **UNAUTHORIZED**
-- Controller gate after P8-T03: **YES — STOP FOR CONTROLLER REVIEW**
 
-## P8-T02 acceptance record
+## P8-T03 acceptance record
 
-The controller accepts `3d8624136ce58e8dfb7c576515d8e4585ca79ae0` (`docs(recovery): audit render batching`).
+The controller accepts `869e30d66f8005ef088f85083dce05cea661876a` (`test(android): certify title smoke seeding`).
 
 Accepted evidence:
 
-- it is exactly one descendant of P8-T02 authorization commit `ec0c98cbb0441194522a751c27f3295b669ce2cd`;
-- scope is audit-only: `recovery/p8_t02_render_cache_batching_audit.md`;
-- no production source, tests, Trace V1 artifact, project data, assets, cache lifetime/capacity, scheduler, Event, combat, load/restart, fast-forward, debugger, or profiler behavior changed;
-- retained caches are owner-local presentation/resource caches with uncached fallbacks and no gameplay selection ownership;
-- fast-forward composition deferral remains shared presentation work only; logical substeps/input semantics remain protected by P7-T01;
-- `request_present` / `waiting_for_present` remain explicit one-cue presentation fences, not generic work budgets;
-- P4 Android tilemap preparation remains the sole approved progressive off-world preparation and still commits live state synchronously behind the Event-local barrier;
-- no Android Event command deadline/budget or combat/action/load batching exists or is authorized;
-- `GC-REGION` was not touched and remains explicitly NOT CERTIFIED SAFE;
-- title smoke seeding was correctly deferred to P8-T03 because it removes startup allocation/redundant work but lacks a stable pixel-equivalence proof;
-- battle-animation source-frame caching remains only a proposal and was not implemented because post-fetch transforms can mutate/derive draw-specific surfaces;
+- it is exactly one descendant of P8-T03 authorization commit `88a4ac57d11502302b10160bdd3ddea654685c03`;
+- scope is test/evidence only: `app/tests/test_title_smoke_seed.py` and `recovery/p8_t03_allocation_redundant_work_audit.md`;
+- no production source, Trace V1 artifact, project data, asset, scheduler, gameplay cache, combat, load/restart, tilemap, fast-forward, debugger, or profiler behavior changed;
+- title smoke seeding now has a stable presentation-only contract: same `Smoke` family, exact `system.abundance` population, valid lifetime envelope, ordinary later update/draw ownership, and no requirement for pixel-identical startup coordinates;
+- deterministic tests prove the helper does not consume/change engine `static_random` seed/combat/growth/other RNG state;
+- source inspection confirms `seed_title_smoke()` touches the supplied particle system and Python presentation RNG only; it does not call `Smoke.update()` or dispatch Event/gameplay/state/input/save/action work;
+- deterministic work-count proof shows desktop-style `prefill()` performs exactly 300 particle-system updates while `seed_title_smoke()` performs zero such updates;
+- the audit reports 31-run host measurements showing substantial startup-work reduction while both paths retain 11 title Smoke particles; timing remains supporting evidence rather than a logical oracle;
+- title smoke is therefore certified **KEEP-PLATFORM — PRESENTATION/RESOURCE POLICY**;
+- battle-animation source-frame caching is explicitly **REJECTED** because draw output depends on entrance scaling, flash/screen-dodge, opacity, grayscale, time-dependent skill tint, blend/partial blend, palette/effect state and child/effect ownership; no speculative frame cache was added;
+- existing combat UI/highlight/menu caches expose no new proven allocation opportunity;
+- styled-text allocation remains deferred because the isolated `FONT['convo']` baseline is not a valid optimization proof environment;
+- `GC-REGION` remains untouched and **NOT CERTIFIED SAFE**;
 - required immutable S5/S7/S8/S12/S13/S14/S15/S16/S17-disabled/S17-debugger-idle/S17-profiler-idle/S18 were reported exact;
-- focused render/lifecycle/fast-forward/debugger/profiler/load/restart/recovery suites were reported green except the unchanged isolated `test_styled_text_parser` font-registry `KeyError: 'convo'` baseline; because P8-T02 changed only documentation, this failure is not a task regression and cannot be used as performance proof until its fixture/environment dependency is isolated;
-- broad component-registry/import-isolation/native Windows failures remain known baseline issues;
-- no new performance claim was made because no optimization changed.
+- focused cache/render/combat/tilemap/load/fast-forward/debugger/profiler/recovery suites were reported green; known shared-registry/native Windows failures remain baseline constraints.
 
-## Locked findings entering P8-T03
+## Locked findings entering P8-T04
 
-1. **GC-REGION remains NOT CERTIFIED SAFE.** P8-T03 may not modify, reuse, extend, or benchmark it as an optimization primitive.
-2. **Title smoke seed is CURRENT but NOT YET CERTIFIED as an accepted optimization.** P8-T03 must define a stable presentation-only contract and measure the redundant-work benefit before classifying it KEEP-PLATFORM. Exact pixel identity is not required if the contract intentionally permits presentation distribution differences, but gameplay RNG/state/input/Event semantics must remain untouched.
-3. **Battle source-frame caching is NOT IMPLEMENTED and NOT AUTHORIZED by default.** `BattleAnimation.draw()` applies entrance scaling, flash, screen dodge, opacity, grayscale, skill tint, background/partial blend and other draw-specific transforms after retrieving the frame. Any reuse must prove mutable-surface independence and exact deterministic output for all covered transform combinations. If that proof is not cheap and complete, classify REJECT/DEFER rather than implement.
-4. Settings/Sound Room `blocks_fast_forward` guards remain narrow interactive-state semantics, not a generic platform performance policy.
-5. Styled-text/font isolated failure remains a fixture/baseline limitation; do not treat failing font setup as evidence for or against an allocation optimization.
-6. All Phase-3 through Phase-7 correctness contracts remain protected.
+1. **One gameplay core.** Android retuning may alter platform presentation/resource policy only, never gameplay semantics/order.
+2. **GC-REGION remains NOT CERTIFIED SAFE.** Do not touch, benchmark as a new target, extend, or add readers into its mutation gap.
+3. **Title smoke seed is ACCEPTED.** Do not reopen its presentation contract or add work merely for pixel identity.
+4. **Battle source-frame caching remains REJECTED.** Do not add a frame cache or reuse transformed mutable surfaces without a new controller decision.
+5. **Styled-text allocation remains DEFERRED.** The existing font-registry fixture failure cannot be used as performance evidence.
+6. **Settings/Sound Room `blocks_fast_forward` remains a narrow interactive-state semantic guard**, not a generic performance knob.
+7. **Event command scheduling is shared and synchronous.** The removed Android wall-clock Event deadline must not return.
+8. **P4 tilemap progressive work is off-world only.** `_android_tilemap_pending`/Event-local barrier and one synchronous live commit are protected.
+9. **P5 canonical load/restart is protected.** Worker read/unpickle only; authoritative hydrate/install remains one logical main-thread transaction.
+10. **P7 fast-forward/debugger/profiler contracts are protected.** No retune may alter input edges, outcomes, command execution, or observer state.
 
 ---
 
-# P8-T03 — Allocation/redundant-work audit
+# P8-T04 — Android-only performance retuning
 
-Execute **P8-T03 only** using **GPT-5.6 Terra / medium**.
+Execute **P8-T04 only** using **GPT-5.6 Terra / high**.
 
-Escalation target: **GPT-5.6 Sol / high**, not pre-authorized.
+Escalation target: **GPT-5.6 Sol / max**, not pre-authorized.
 
-Plan objective: measure before/after where practical, remove or retain only redundant/allocation work whose semantic and presentation contract remains equivalent, and require logical trace equality.
+Prerequisite satisfied: P8-T01 through P8-T03 are accepted.
 
-## Core rule
+This is the final Phase-8 gate. Use profiler/measurement evidence and optimize only behind the accepted P6 platform boundaries. A valid result may be audit/evidence-only if no additional Android retune is justified.
 
-This task is not a license to micro-optimize arbitrary code. First identify repeated work and prove ownership. Then measure where practical. Only after correctness proof may one bounded owner-local optimization be implemented.
+## Goal
 
-Optimization must not change:
+Retune existing Android-only performance policy where measurable evidence shows a bounded opportunity and exact logical equivalence can be preserved.
 
-- gameplay action/RNG/hook/Event order;
-- state-machine lifecycle or input opportunities;
-- fast-forward logical semantics;
-- canonical load/restart or tilemap publication;
-- combat solver/cleanup;
-- debugger/profiler observer behavior;
-- P6 platform capability boundaries;
-- project data or immutable recovery oracles.
+Do not search for performance by changing gameplay lifecycle.
 
-## Mandatory inventory
+The permitted policy families are the already-accepted P6 seams:
 
-Fresh-search current runtime for repeated allocation/redundant work, including:
+- **CAP-AUDIO** — physical cached/streamed backend, preload/flush/release only;
+- **CAP-RESOURCE** — immutable/background presentation-resource preparation only;
+- **CAP-RENDER-CACHE** — owner-local presentation cache enablement/capacity only;
+- **CAP-WORK-BUDGET** — numeric budget only for the already-approved off-world tilemap preparation;
+- narrow Android UI/input presentation mechanics where they do not inject gameplay actions.
 
-- repeated `copy`, `copy_surface`, `convert`, `convert_alpha`, scale, color/tint/translucency operations;
-- per-frame list/set/dict construction in hot draw/update paths;
-- repeated sorting/filtering/layout calculations;
-- repeated surface/text construction where ownership/lifetime is clear;
-- repeated resource lookup/preparation already covered by P6 policy;
-- title-screen particle prefill/seed paths;
-- battle-animation draw transforms;
-- combat UI/damage-number/highlight/menu/info/unit-menu composition;
-- existing profiler scopes/counters that identify repeated work;
-- post-reference optimizations that replaced repeated work with staged/cached work.
+No new generic platform abstraction or service locator is authorized.
 
-Do not count small allocations as optimization targets merely because they exist. Record frequency/hot-path evidence.
+## Evidence-first inventory
 
-Classify candidates as:
+Before changing production code, inventory current Android-only performance knobs and profiler evidence, including at minimum:
 
-- KEEP — MEASURED SAFE REDUCTION
-- KEEP-PLATFORM — PRESENTATION/RESOURCE POLICY
-- NO-OPPORTUNITY — COST/TRIVIALITY DOES NOT JUSTIFY CHANGE
-- DEFER — INSUFFICIENT STABLE OUTPUT CONTRACT
-- REJECT — MUTABLE/ORDERING/LIFECYCLE RISK
-- DEAD/UNUSED
-- ESCALATE
+- `OffWorldWorkBudget` and the current Android tilemap preparation deadline;
+- owner-local Android render-cache capacities/hit-miss behavior for highlight, title/menu/settings/Sound Room, info/unit menu and combat UI;
+- title smoke seed as an accepted baseline, not a new target;
+- audio/resource preload/flush/streamed fallback behavior;
+- render/update profiler counters that identify real Android-specific cost;
+- any existing Android-specific branch that suppresses, moves, or reduces presentation work.
 
-Create `recovery/p8_t03_allocation_redundant_work_audit.md`.
+For every candidate record:
 
-## Measurement rule
+- owner and accepted capability family;
+- current knob/value;
+- baseline profiler/call-count/memory evidence;
+- expected benefit;
+- semantic risk;
+- presentation/resource risk;
+- exact before/after measurement method;
+- trace coverage;
+- decision: `KEEP-AS-IS`, `RETUNE-LOCAL`, `DEFER-NO-DEVICE-EVIDENCE`, `REJECT-SEMANTIC-RISK`, or `ESCALATE`.
 
-For each candidate that may be changed or newly certified:
+Create `recovery/p8_t04_android_performance_retuning.md`.
 
-- establish a baseline operation/allocation/count/timing metric using a deterministic owner-level benchmark or profiler counter where practical;
-- run enough repeated iterations to avoid one-off startup noise;
-- report both baseline and candidate/optimized result;
-- do not use FPS alone;
-- do not make wall-clock timing part of logical correctness;
-- if timing is too noisy, use deterministic operation/call/allocation counts plus a bounded timing sanity check.
+## Measurement requirements
 
-A claimed optimization without before/after evidence is not accepted.
+A production retune is allowed only with before/after evidence.
 
-## Title smoke seed decision
+Preferred evidence:
 
-Audit the existing Android title-start path:
+- Android-device profiler/frame-time distributions when available;
+- deterministic operation/hit-miss/allocation counts;
+- host-side microbenchmarks only for pure local code-path cost, clearly labeled as host evidence;
+- memory/cache occupancy bounds where relevant.
 
-Desktop currently creates `MapParticleSystem(... Smoke ...)` then performs `prefill()`.
-Android render optimization calls `seed_title_smoke(...)` instead.
+If no Android device/JNI runtime is available, do not claim device FPS/frame-time gains. A host-proven reduction may justify a purely local presentation/resource retune only when the benefit is structural and semantics/output ownership are already proven; otherwise classify `DEFER-NO-DEVICE-EVIDENCE`.
 
-P8-T03 must:
+Do not use a single timing sample. Report repeated samples/median or a stable aggregate.
 
-1. inspect `particles.MapParticleSystem.prefill` and `seed_title_smoke`;
-2. define the stable title-presentation contract before comparison;
-3. prove both paths preserve at minimum:
-   - particles enabled/disabled semantics;
-   - same particle type/family;
-   - valid bounds;
-   - stable count/density envelope appropriate to title startup;
-   - ongoing update/draw lifecycle;
-   - no gameplay RNG consumption/change;
-   - no game-state/Event/input/state-stack mutation;
-4. measure the startup work reduced by seed vs 300-style prefill updates;
-5. classify KEEP-PLATFORM only if the presentation difference is intentional, bounded, and independent of gameplay semantics;
-6. otherwise DEFER or REJECT; do not force pixel identity by adding expensive work.
+## CAP-WORK-BUDGET lock
 
-Do not alter title gameplay routing/music/Event semantics.
+The current work budget applies only to pending/off-world tilemap construction.
 
-## Battle-animation source-frame candidate
+A numeric budget change is allowed only if all of the following are proven:
 
-Do NOT implement a frame cache merely because repeated copying is measurable.
+1. pending build remains completely outside live gameplay state;
+2. Event-local `_android_tilemap_pending` still blocks next command/input/movement as accepted;
+3. final live tilemap/board/boundary/unit/region/aura/FOW publication remains one synchronous transaction;
+4. rollback remains atomic;
+5. no Event command wall-clock budget is introduced;
+6. logical Trace V1 is identical;
+7. before/after Android frame-time or equivalent platform evidence justifies the numeric change.
 
-First prove the complete transform chain around `BattleAnimation.get_image/draw`, including:
+Without real Android evidence, keep the current budget unchanged.
 
-- entrance scale;
-- flash/flash-image state;
-- screen dodge;
-- blend/partial blend;
-- opacity/alpha conversion;
-- pair-up grayscale;
-- skill flicker tint/time dependence;
-- palette/effect ownership;
-- background blend;
-- child/effect drawing;
-- any Android render-state advancement.
+## CAP-RENDER-CACHE lock
 
-A retained source surface must never be mutated by a draw-specific transform or reused with transformed pixels from a prior draw.
+Capacity/enablement retuning is allowed only for owner-local presentation caches already certified in P8-T02.
 
-If complete deterministic independence cannot be proven with a narrow test matrix, classify **REJECT/DEFER** and make no production change.
+For any capacity change prove:
 
-No new global frame cache.
+- cache key/invalidation contract is unchanged and complete for presentation output;
+- hit/miss cannot alter menu selection, command availability, state transitions, input, combat, FOW/aura, save/restart or observer semantics;
+- memory remains bounded;
+- before/after hit/miss or allocation evidence shows benefit;
+- uncached fallback remains correct.
 
-## Other candidates
+Do not centralize caches or extend gameplay-derived cache lifetime.
 
-For any other candidate:
+`GC-REGION` is forbidden.
 
-- owner-local only;
-- no new service locator;
-- no global mutable cache;
-- no extending `GC-REGION` or gameplay-derived cache lifetime;
-- no Event/combat/load/state-machine scheduling changes;
-- no worker-thread gameplay mutation;
-- no change from authoritative update to draw or draw to authoritative update unless the state is proven presentation-only and P8-T02 already classified that ownership safe.
+## CAP-AUDIO / CAP-RESOURCE lock
+
+Retuning may change preload/cache/flush/backend thresholds only if physical playback/resource behavior remains presentation policy.
+
+Do not change:
+
+- semantic music NID selection;
+- battle/event/state ordering;
+- whether combat or a transition completes;
+- save/load resource authority;
+- worker access to `game`, Event, solver, state machine or mutable registries.
+
+Stream/backend failure must keep the accepted fallback path.
+
+## Explicitly forbidden performance techniques
+
+Do not:
+
+- reintroduce Android Event command deadlines;
+- yield between authoritative Actions/Event commands/combat cleanup steps;
+- time-slice GameState hydration;
+- move authoritative gameplay mutation to workers;
+- defer live tilemap publication;
+- add Android-only gameplay branches;
+- change fast-forward substep count/edge semantics;
+- change debugger/profiler observer semantics;
+- use SAVE as pristine restart truth;
+- add battle source-frame caching;
+- modify `GC-REGION`;
+- fix styled-text/font baseline in this task;
+- add speculative caches or global cache architecture.
+
+If a performance target requires any of these, classify `REJECT-SEMANTIC-RISK` or STOP under escalation rules.
 
 ## Production change policy
 
-Expected default: **audit/tests/report only**.
+Production changes are optional, not required.
 
-At most bounded production optimization(s) are allowed when all are true:
+Each production retune must be:
 
-1. deterministic before/after measurement shows meaningful redundant work/allocation reduction;
-2. owner and lifetime are local and explicit;
-3. identical logical state/Trace V1 is proven;
-4. deterministic output/presentation contract is satisfied;
-5. uncached/fallback behavior remains correct where relevant;
-6. no accepted lifecycle/platform boundary is reopened.
+- Android/platform-policy only;
+- owner-local;
+- supported by before/after measurement;
+- protected by deterministic regression tests;
+- exact under logical Trace V1;
+- bounded in memory/resource lifetime;
+- individually explainable/revertible.
 
-If correctness requires a new cross-cutting cache, scheduler, lifecycle phase, worker authority, or gameplay publication boundary, STOP under ESC-02/ESC-09.
+Prefer one small retune over a bundle of unrelated tweaks.
 
-## Tests and regressions
+Do not change shared gameplay code merely to improve Android profiling numbers.
 
-Use focused suites selected from actual candidates. At minimum retain green:
+## Required regressions
 
-- P8 cache/memoization tests;
-- P8 render/cache owner tests;
+Always retain green:
+
+- P8-T01 cache/memoization evidence;
+- P8-T02 render/cache/batching evidence;
+- P8-T03 title-smoke/allocation evidence;
 - Phase-3 combat lifecycle;
-- P4 tilemap atomicity/barrier;
-- P5 canonical load/restart;
-- P6 platform policy;
+- P4 tilemap atomicity/barrier/rollback;
+- P5 canonical load/restart/compatibility;
+- P6 platform-policy/audio/work-budget tests;
 - P7 fast-forward equivalence;
 - P7 debugger parity;
-- P7 profiler observer equivalence;
+- P7 profiler observer-equivalence;
 - P7 save/load/restart UX;
 - recovery trace/lifecycle/golden integrity.
 
-If touching title smoke, add deterministic owner-level tests for the stable presentation contract and RNG/game-state non-interference.
-
-If touching battle-animation draw/allocation, add deterministic surface/state tests for every transform class affected; do not add host-dependent screenshot goldens.
-
-`test_styled_text_parser` may be reported with its unchanged `FONT['convo']` fixture failure, but do not use that failing suite as an optimization proof until the test setup dependency is isolated without changing product semantics.
+Run focused owner tests for every knob actually changed.
 
 ## Immutable trace gate
 
@@ -232,11 +243,32 @@ Run at minimum:
 - S17 profiler-idle
 - S18
 
-Run S2/S4 if any changed candidate participates in title/load/restart transition surfaces or restored world presentation.
+Run S2/S4 if any changed policy participates in title/load/restart resource or transition behavior.
 
 No Trace V1 schema/comparator/normalizer/manifest/golden changes.
 
 Any unexplained logical divergence => STOP under ESC-03.
+
+## Performance result format
+
+For each changed candidate report:
+
+```text
+CANDIDATE:
+CAPABILITY:
+BASELINE:
+RETUNED:
+MEASUREMENT ENVIRONMENT:
+SAMPLE COUNT:
+BENEFIT:
+MEMORY IMPACT:
+LOGICAL TRACE:
+OWNER TESTS:
+ROLLBACK/FALLBACK:
+DECISION:
+```
+
+If no production retune is justified, explicitly say so and preserve all current values.
 
 ## Broad validation
 
@@ -249,64 +281,33 @@ Then run:
 - `git status --short`
 - `git diff --name-only`
 
-Commit only bounded P8-T03 audit/tests and explicitly justified production optimization(s), if any.
+Commit only:
 
-Then:
+- `recovery/p8_t04_android_performance_retuning.md`;
+- focused tests/measurement harnesses;
+- explicitly justified bounded Android-policy retune(s), if any.
+
+Then run:
 
 - `git show --check`
 - `git status --short`
 
-## Explicitly forbidden
-
-Do not:
-
-- begin P8-T04 or Phase 9;
-- modify or extend GC-REGION;
-- add speculative gameplay memoization;
-- create global render/frame cache architecture;
-- reintroduce Event command budgeting;
-- change action/combat/load/tilemap/state-machine scheduling;
-- alter fast-forward/debugger/profiler semantics;
-- change Trace V1/goldens;
-- modify project data/assets;
-- merge master.
-
 ## Escalation
 
-Primary: **GPT-5.6 Terra / medium**.
-Escalation target: **GPT-5.6 Sol / high**.
+Primary: **GPT-5.6 Terra / high**.
+Escalation target: **GPT-5.6 Sol / max**.
 Pre-authorized: **NO**.
 
 STOP on ESC-02, ESC-03, ESC-04, ESC-05, ESC-07, ESC-08, ESC-09.
+
+In particular:
+
+- ESC-07 if Android performance requires gameplay semantic divergence;
+- ESC-02/ESC-09 if a local retune requires cross-cutting lifecycle/cache/scheduler architecture;
+- ESC-03 on any immutable trace divergence.
+
 Do not self-escalate.
 
-## Report
+## Gate status
 
-TASK RESULT
-FILES CHANGED
-ALLOCATION/REDUNDANT-WORK INVENTORY
-MEASUREMENT RESULT
-TITLE SMOKE RESULT
-BATTLE FRAME RESULT
-OTHER CANDIDATES RESULT
-LOGICAL EQUIVALENCE RESULT
-PRESENTATION CONTRACT RESULT
-TRACE RESULT
-COMBAT RESULT
-TILEMAP RESULT
-LOAD/RESTART RESULT
-FAST-FORWARD RESULT
-DEBUGGER/PROFILER RESULT
-PRODUCTION CHANGES
-TESTS ADDED/UPDATED
-COMMANDS RUN
-TEST RESULTS
-REFERENCE/GOLDEN COMPARISON
-KNOWN RISKS
-UNRESOLVED QUESTIONS
-ESCALATION TRIGGERS
-COMMIT SHA
-WORKING TREE STATUS
-NEXT ACTION: CONTROLLER REVIEW
-
-STOP FOR CONTROLLER REVIEW.
+**P8-T01/P8-T02/P8-T03 are ACCEPTED. P8-T04 is the only authorized task. Phase 9+ remains blocked pending controller review.**

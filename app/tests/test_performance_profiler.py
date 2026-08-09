@@ -1,4 +1,6 @@
+import gc
 import logging
+import threading
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
@@ -6,9 +8,13 @@ from unittest.mock import Mock, patch
 
 from app.engine import driver
 from app.engine.performance import RuntimeProfiler
+from app.utilities import static_random
 
 
 class RuntimeProfilerTests(unittest.TestCase):
+    def tearDown(self) -> None:
+        static_random.set_seed(0)
+
     def test_disabled_profiler_does_not_emit_records(self):
         profiler = RuntimeProfiler()
         profiler.enabled = False
@@ -69,6 +75,116 @@ class RuntimeProfilerTests(unittest.TestCase):
         profiler.finish_frame()
         self.assertEqual(('main',), tuple(
             scope['name'] for scope in profiler.latest_frame_scopes()))
+
+    def test_enabled_profiler_real_worker_scope_cannot_corrupt_main_scope_tree(self):
+        profiler = RuntimeProfiler()
+        profiler.enabled = True
+        profiler.slow_frame_ms = 100000
+        profiler.begin_frame()
+        main_thread_id = threading.get_ident()
+        worker_calls = []
+
+        def worker() -> None:
+            with profiler.section('worker'):
+                worker_calls.append(threading.get_ident())
+
+        with profiler.section('outer'):
+            thread = threading.Thread(target=worker)
+            thread.start()
+            thread.join()
+            with profiler.section('inner'):
+                pass
+
+        profiler.finish_frame()
+        scopes = profiler.latest_frame_scopes()
+        self.assertEqual(1, len(worker_calls))
+        self.assertNotEqual(main_thread_id, worker_calls[0])
+        self.assertEqual(('outer', 'inner'), tuple(scope['name'] for scope in scopes))
+        self.assertEqual((None, 0), tuple(scope['parent_scope_id'] for scope in scopes))
+        self.assertEqual(main_thread_id, profiler._frame_thread_id)
+        self.assertEqual([], profiler._scope_stack)
+
+    def test_profiler_on_off_preserves_rng_and_ordered_gameplay_effects(self):
+        def run(profiler_enabled):
+            profiler = RuntimeProfiler()
+            profiler.enabled = profiler_enabled
+            profiler.interval_seconds = 100000
+            logical_state = {'hp': 100, 'actions': []}
+            static_random.set_seed(1701)
+
+            def gameplay_update() -> None:
+                damage = static_random.get_combat()
+                logical_state['actions'].append('damage')
+                logical_state['hp'] -= damage
+                logical_state['actions'].append('cleanup')
+
+            profiler.begin_frame()
+            if profiler.enabled:
+                with profiler.section('combat.update'):
+                    gameplay_update()
+            else:
+                gameplay_update()
+            profiler.finish_frame()
+            return logical_state, static_random.get_combat_random_state()
+
+        profiler_off = run(False)
+        profiler_on = run(True)
+        self.assertEqual(profiler_off, profiler_on)
+
+    def test_disabled_profiler_executes_wrapped_body_and_count_without_gameplay_effect(self):
+        profiler = RuntimeProfiler()
+        profiler.enabled = False
+        logical_state = {'actions': [], 'rng': static_random.get_combat_random_state()}
+        with patch.object(logging, 'warning') as warning:
+            profiler.begin_frame()
+            with profiler.section('event.command'):
+                logical_state['actions'].append('command')
+            profiler.count('command')
+            profiler.finish_frame()
+
+        self.assertEqual(['command'], logical_state['actions'])
+        self.assertEqual(static_random.get_combat_random_state(), logical_state['rng'])
+        self.assertEqual((), profiler.latest_frame_scopes())
+        warning.assert_not_called()
+
+    def test_gc_callback_changes_only_profiler_owned_counters(self):
+        profiler = RuntimeProfiler()
+        profiler.enabled = True
+        logical_state = {'actions': ['attack'], 'rng': static_random.get_combat_random_state()}
+        callback_was_registered = profiler._on_gc in gc.callbacks
+        if not callback_was_registered:
+            gc.callbacks.append(profiler._on_gc)
+        try:
+            started = profiler._gc_started
+            finished = profiler._gc_finished
+            profiler._on_gc('start', {})
+            profiler._on_gc('stop', {})
+            self.assertEqual(started + 1, profiler._gc_started)
+            self.assertEqual(finished + 1, profiler._gc_finished)
+            self.assertEqual({'actions': ['attack'], 'rng': logical_state['rng']}, logical_state)
+        finally:
+            if not callback_was_registered:
+                gc.callbacks.remove(profiler._on_gc)
+        self.assertEqual(callback_was_registered, profiler._on_gc in gc.callbacks)
+
+    def test_profiler_branches_call_same_gameplay_operations(self):
+        root = Path(__file__).parents[1]
+        state_machine = (root / 'engine' / 'state_machine.py').read_text(encoding='utf-8')
+        update_body = state_machine[state_machine.index('def update'):]
+        for statement in (
+                'start_output = state.start()',
+                'begin_output = state.begin()',
+                'input_output = state.take_input(event)',
+                'update_output = state.update()',
+                'state.end()',
+                'self.process_temp_state()'):
+            self.assertEqual(2, update_body.count(statement))
+
+        event = (root / 'events' / 'event.py').read_text(encoding='utf-8')
+        self.assertEqual(1, event.count('self.run_command(command)'))
+        driver_source = (root / 'engine' / 'driver.py').read_text(encoding='utf-8')
+        self.assertEqual(1, driver_source.count(
+            'surf, updates_run = update_game_state_for_frame('))
 
     def test_slow_frame_output_includes_scope_path_and_metadata(self):
         profiler = RuntimeProfiler()

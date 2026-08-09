@@ -156,7 +156,7 @@ class FastForwardFrameDriver(RawInputFrameDriver):
         self._engine.get_true_time = lambda: self._host_time
         return self
 
-    def run_outer_frame(self, game, surf, updates: int) -> None:
+    def run_outer_frame(self, game, surf, updates: int, event=None) -> None:
         from app.engine import driver
 
         constants = self._engine.constants
@@ -170,7 +170,39 @@ class FastForwardFrameDriver(RawInputFrameDriver):
                 _surf, repeat = game.state.update([], surf)
             return
         driver.update_game_state_for_frame(
-            game, [], surf, updates, FRAMERATE, input_manager=self.input_manager)
+            game, event or [], surf, updates, FRAMERATE, input_manager=self.input_manager)
+
+
+class FastForwardScenarioFrameDriver(FastForwardFrameDriver):
+    """Test-only outer-frame adapter for readiness-driven ON/OFF comparisons.
+
+    Existing scenarios keep issuing their raw input at their established state
+    readiness conditions.  This adapter only holds the real FAST_FORWARD key
+    and routes each outer frame through the production driver.
+    """
+    def __init__(self, input_manager=None):
+        if input_manager is None:
+            from app.engine.input_manager import get_input_manager
+            input_manager = get_input_manager()
+        super().__init__(input_manager)
+
+    def __enter__(self):
+        super().__enter__()
+        self.input_manager.process_input([self._raw_event('FAST_FORWARD', True)])
+        return self
+
+    def step(self, game, surf) -> None:
+        from app.engine import driver
+
+        self.run_outer_frame(game, surf, driver.get_fast_forward_steps(self.input_manager))
+
+    def step_edges(self, game, surf, edges=()) -> None:
+        from app.engine import driver
+
+        raw_events = [self._raw_event(button, pressed) for button, pressed in edges]
+        logical_event = self.input_manager.process_input(raw_events)
+        self.run_outer_frame(game, surf, driver.get_fast_forward_steps(self.input_manager),
+                             logical_event)
 
 
 def _load_trace_overlay(trace_path: Path):

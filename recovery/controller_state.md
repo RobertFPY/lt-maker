@@ -5,256 +5,258 @@
 ## Current authorization
 
 - Current phase: **Phase 7**
-- Phase 1 deterministic Trace V1 harness/goldens: **ACCEPTED**
-- Phase 2 GameState/state-machine atomicity: **ACCEPTED**
-- Phase 3 combat lifecycle semantics: **ACCEPTED**
-- Phase 4 tilemap/board/event atomicity: **ACCEPTED**
-- Phase 5 save/load/restart consolidation: **ACCEPTED**
-- Phase 6 platform-policy boundary: **ACCEPTED**
-- P6-T01 runtime capability audit/design: **ACCEPTED** at `017e73c3164a56712a823016a7cfe642c75bbd17`
-- P6-T02 Android audio/resource policy migration: **ACCEPTED** at `cb217eb4b10d993c14594ce30b98e22cec05b405`
-- P6-T03 accepted scheduling migration / Event semantic restore: **ACCEPTED** at `3c8c5479d292ce43fd3347a12dffa9d7c32fa7db`
-- Active task: **P7-T01 only — Fast-forward equivalence suite**
-- Primary model: **GPT-5.6 Terra / medium**
-- Escalation target: **GPT-5.6 Sol / high**
+- Phases 1–6: **ACCEPTED**
+- P7-T01 fast-forward equivalence suite: **ACCEPTED** at `874c7adcf83f14e6fcf961180a01f4ddfe1201fe`
+- Active task: **P7-T02 only — Debugger parity PC/Android**
+- Primary model: **GPT-5.6 Luna / medium**
+- Escalation target: **GPT-5.6 Terra / high**
 - Escalation pre-authorized: **NO**
-- P7-T02/P7-T03/P7-T04 and Phase 8+: **UNAUTHORIZED**
-- Golden/reference fixture changes: **UNAUTHORIZED**
+- P7-T03/P7-T04 and Phase 8+: **UNAUTHORIZED**
+- Production behavior changes: **test/evidence first; only a bounded debugger-specific correctness fix is allowed when parity evidence proves one unambiguous defect**
+- Gameplay-core semantic changes: **UNAUTHORIZED**
+- Trace V1/comparator/manifest/golden changes: **UNAUTHORIZED**
 - Project-data / asset changes: **UNAUTHORIZED**
-- Controller gate after P7-T01: **YES — STOP FOR CONTROLLER REVIEW**
+- Controller gate after P7-T02: **YES — STOP FOR CONTROLLER REVIEW**
 
-## Phase 6 acceptance record
+## P7-T01 acceptance record
 
-The controller accepts `3c8c5479d292ce43fd3347a12dffa9d7c32fa7db` (`fix(android): restore semantic event scheduling`) and closes Phase 6.
+The controller accepts `874c7adcf83f14e6fcf961180a01f4ddfe1201fe` (`test(recovery): prove fast-forward equivalence`).
 
 Accepted evidence:
 
-- the commit is exactly one descendant of P6-T03 authorization commit `887877114d1f4d9aa1b94fac6d7e3afe6bd19479`;
-- scope is bounded to Event scheduling cleanup, the Phase-4 tilemap scheduling caller/job, a narrow runtime work-budget capability, and focused tests;
-- `Event.process()` no longer contains the Android 2 ms wall-clock command deadline, `android_process_budget_seconds`, or `_android_process_yielded` lifecycle behavior;
-- consecutive EventProcessor commands now continue under shared semantics until the event/command itself creates a semantic boundary;
-- `waiting_for_present` remains an explicit presentation fence; SAVE-command queue ordering remains intact;
-- `EventState.should_defer_render()` now retains a previous frame only for the explicit `_defer_render` tilemap barrier rather than a generic command-budget yield;
-- `OffWorldWorkBudget` is immutable and the work-budget module depends only on `android_runtime` platform detection;
-- desktop `change_tilemap` remains synchronous and registers no pending job/barrier;
-- Android retains exactly the accepted `4_000_000 ns` budget only for pending/off-world tilemap preparation;
-- `TilemapChangeJob` consumes the injected immutable budget while its final commit remains synchronous;
-- the Phase-4 `_android_tilemap_pending` Event barrier, movement/input/listener suppression, synchronous commit, synchronous rollback-before-release, aura/FOW/region/action-log ordering remain owned by the existing Event/tilemap transaction;
-- P6-T02 sound policy is unchanged;
-- immutable S5/S12/S13/S14/S16/S17/S18 and focused Event/fast-forward/tilemap/audio/load/restart/combat/debugger/profiler tests were reported PASS with unchanged Trace V1/goldens/project data;
-- the known broad-suite shared-test pollution involving `_Uses.tag` remains unrelated baseline evidence and was not repaired in Phase 6.
+- it is exactly one descendant of P7-T01 authorization commit `fc3f1812fc4548702f9ab549ce7ce203b169e5c4`;
+- scope is test/evidence only: `app/tests/recovery_trace_runner.py`, `app/tests/test_fast_forward_equivalence.py`, and `recovery/p7_t01_fast_forward_equivalence.md`;
+- no production source, Trace V1 implementation, comparator, manifest, golden fixture, schema, project data, or asset changed;
+- the new `FastForwardScenarioFrameDriver` is test-owned and routes fast-forward ON runs through production `driver.update_game_state_for_frame()` rather than reimplementing fast-forward semantics;
+- existing scenario scripts retain their state/readiness-driven input conditions; ON/OFF input is not aligned by host-frame number;
+- ON/OFF pairs compare complete existing Trace V1 records with `trace.compare_records()` for S5/S6/S7/S8/S13/S15/S18;
+- speed invariance OFF vs 200%/300%/800% is covered using the same simple-combat trace;
+- transient SELECT/BACK/START/directional/TEXTINPUT/mouse-click evidence proves only the first fast-forward substep sees the host transient input while later substeps see an empty transient snapshot;
+- existing repeat-chain, blocking-state and explicit presentation-barrier tests remain part of the proof;
+- immutable S5/S7/S8/S13/S16/S17-disabled/S17-debugger-idle/S17-profiler-idle/S18 were reported exact PASS;
+- S17 does not run an outer-frame driver at all: it starts a level, exercises an idle observer, and captures checkpoints. Therefore the existing S17 harness has no fast-forward frame seam to combine without inventing additional infrastructure; its disabled/debugger-idle/profiler-idle equality remains the appropriate observer proof for P7-T01;
+- no fast-forward divergence or production fix was required;
+- broad-suite `_Uses.tag` registry pollution/native Windows termination remains unrelated baseline evidence.
 
-### Non-blocking source note
+## Locked fast-forward contract
 
-`StateMachine.update()` still contains historical wording / profiler counter naming referring to an `event_budget_deferred_draw`. No generic Event command scheduler remains attached to that name; current render deferral is driven by the explicit state-owned `should_defer_render()` path, which for EventState is the accepted tilemap `_defer_render` barrier. Do not treat the stale observer label/comment as authorization to reintroduce command budgeting. Rename only if a later bounded task already touches that observer surface and tests prove no semantic impact.
+Later phases must preserve:
 
-## Locked Phase-6 platform boundary
-
-Later tasks must preserve:
-
-1. **Audio/resource policy:** `SoundController` owns physical streamed/cached selection and preload policy only. Semantic music selection and lifecycle timing remain caller-owned.
-2. **Event commands:** no Android-specific generic wall-clock/command-count scheduling. Event commands share one semantic execution model.
-3. **Tilemap scheduling:** Android may progressively prepare pending TileMap/GameBoard/Boundary off-world under the 4 ms work budget; the live commit/rollback remains atomic and Event-local barrier semantics remain mandatory.
-4. **No giant platform service:** runtime capabilities stay narrow and cannot own gameplay, save/load, combat, input, or state-machine semantics.
-5. **Protected prior phases:** canonical GameState load, restart, combat lifecycle, aura/FOW and state publication contracts remain stronger than any platform policy.
+1. Fast-forward OFF is the accepted recovery gameplay semantic baseline.
+2. Fast-forward ON may change host-frame/presentation timing only, never logical outcomes/order.
+3. Input equivalence is aligned to logical readiness/user intent, not host-frame number.
+4. Only the first fast-forward substep may consume a host transient input edge; later substeps/repeat chains do not replay it.
+5. `blocks_fast_forward` and explicit presentation fences may stop additional substeps without changing gameplay outcomes.
+6. Fast-forward may not reintroduce generic Android Event command scheduling or alter accepted combat/load/restart/tilemap semantics.
 
 ---
 
-# P7-T01 — Fast-forward equivalence suite
+# P7-T02 — Debugger parity PC/Android
 
-Execute **P7-T01 only** using **GPT-5.6 Terra / medium**.
+Execute **P7-T02 only** using **GPT-5.6 Luna / medium**.
 
-Escalation target: **GPT-5.6 Sol / high**, not pre-authorized.
+Escalation target: **GPT-5.6 Terra / high**, not pre-authorized.
 
-PC behavioral reference:
+PC behavioral reference remains `9314f54b49f4552b5a3d023b4da0012ce7dfbc89` for core gameplay semantics, but the runtime debugger itself is a later intended feature. The parity oracle is the shared accepted recovery debugger semantics, not absence from the PC reference.
 
-`9314f54b49f4552b5a3d023b4da0012ce7dfbc89`
+## Semantic authority
 
-Fast-forward is a later intended feature absent from the PC reference. Its accepted hybrid contract is:
+`app/engine/runtime_debugger_controller.py` is the shared semantic command boundary.
+
+Current architecture:
 
 ```text
-fast-forward OFF on recovery == accepted recovery gameplay semantics
-fast-forward ON              == fast-forward OFF logical outcomes
+desktop web UI / HTTP thread
+    -> RuntimeDebuggerService command queue
+    -> RuntimeDebuggerService.update() on game thread
+    -> RuntimeDebuggerController.dispatch(op, args)
+    -> RuntimeDebugger gameplay operation
+
+Android in-game debugger UI
+    -> RuntimeDebuggerController.dispatch(op, args) directly on game thread
+    -> RuntimeDebugger gameplay operation
 ```
 
-Only presentation/host timing may differ.
+The two frontends do **not** need identical visual widgets or input mechanics. They must expose equivalent intended operations and produce the same logical mutation/result for the same controller operation and valid arguments.
+
+Do not create separate Android cheat semantics or duplicate controller operations in either frontend.
 
 ## Goal
 
-Build and run a deterministic ON/OFF equivalence suite proving INV-06 across representative gameplay lifecycles.
+Verify intended debugger operations and frontend integration on desktop and Android, including:
 
-This is **test/evidence first**. Do not change production code merely to make a harness convenient.
+- selected-unit inspection/focus;
+- editable unit fields: level, EXP, HP, mana, fatigue, guard, movement, position, stats, growths, cap modifiers and WEXP where available;
+- max selected unit;
+- auto-level +1;
+- give item including bounded uses/charges;
+- teleport and tile-pick flow;
+- max all player units;
+- max all enemy units;
+- set enemy HP to 1;
+- disable enemy AI;
+- complete current chapter;
+- go to chapter with explicit difficulty;
+- restart current chapter with explicit difficulty and accepted P5 pristine restart semantics;
+- set money;
+- set turn count;
+- set turnwheel uses/enabled state;
+- set/clear weather;
+- event command execution and command suggestions/catalog where frontend-supported;
+- desktop hotkeys Ctrl+1..5 / Ctrl+0;
+- Android native text editor fallback/Save/Cancel/error routing where testable without JNI device code;
+- Android touch-consumer registration/release, especially around debugger exit and restart.
 
-A bounded production fix is allowed only if a failing equivalence test identifies a local fast-forward-specific defect whose correct behavior is unambiguous from the OFF path and whose fix does not reopen Phase-2/3/4/5/6 architecture. Otherwise STOP for controller review or named escalation.
+## Required parity model
 
-## Current implementation contract to test
+Prefer controller-level paired tests for semantic operations:
 
-Current driver behavior includes:
+```text
+same initial logical game state
+same op + args
+route A: desktop service queue -> game-thread update -> controller
+route B: Android frontend/direct controller route
+compare:
+    result/validation class
+    logical game mutation
+    state/temp-state transitions
+    action-log relevant state
+    save/restart destination where applicable
+```
 
-- `FAST_FORWARD` held -> `get_fast_forward_steps()` uses normalized speed;
-- supported speeds are 200..800 percent in 100-percent steps; default is 300 percent;
-- one host input snapshot may drive multiple logical game updates;
-- only the first logical substep receives the host input event; later substeps receive `[]`;
-- transient input is consumed before repeat chains/additional logical substeps so key/click/text edges cannot replay;
-- additional fast-forward substeps advance virtual engine time using the bounded fast-forward step;
-- states with `blocks_fast_forward` may stop the extra substeps;
-- a `request_present` / presentation barrier may force one draw and stop remaining fast-forward substeps;
-- rendering intermediate substeps may be deferred, but logical `update_visuals()` still advances according to the established state-machine lifecycle.
+Do not compare browser HTML, pixel layout, touch coordinates, native Android typography, or HTTP timing as gameplay parity fields.
 
-These mechanisms are implementation details. P7-T01 proves their *outcomes*, not their exact current structure.
+Where directly invoking the Android UI action handler is practical, prove it maps to the same controller op/args. Do not reimplement every full UI gesture just to reach the controller.
 
-## Critical equivalence-runner rule
+## Desktop service / thread contract
 
-Do **not** pair ON/OFF runs by host-frame number.
+Prove:
 
-Fast-forward intentionally changes how many logical substeps fit in one host frame, so `frame N` does not identify the same logical input opportunity.
+- HTTP/server thread only enqueues commands and waits for completion;
+- `RuntimeDebuggerService.update()` drains commands on the game thread and calls the shared controller;
+- snapshot publication remains observer-only;
+- timeouts/errors do not execute the same command twice;
+- stopping/starting the debugger service does not mutate gameplay state by itself;
+- debugger disabled/idle remains observer-equivalent to disabled gameplay.
 
-Pair runs using the same:
+Do not move game mutation onto the HTTP thread.
 
-- initial save/snapshot/world setup;
-- RNG seed/state;
-- configuration except fast-forward state/speed;
-- ordered user-intent/input script;
-- logical readiness condition/checkpoint for each input;
-- terminal logical checkpoint.
+## Android frontend contract
 
-Inputs must be injected when the same logical state is ready for that action, not after the same number of rendered frames.
+Prove:
 
-Host frame count, number of draws, wall-clock time, profiler counters and audio/render state are not equality fields.
+- Android debugger remains a transparent `blocks_fast_forward` state;
+- actions call the shared controller rather than duplicating RuntimeDebugger mutations;
+- commands that need to close the drawer insert/pop the debugger state in the correct order before queued Event/state transitions;
+- raw-touch consumer is registered while the debugger owns touch and released on end;
+- native text editor success/cancel/error handling cannot submit a command twice;
+- pygame text-input fallback remains available when native editor is unavailable;
+- debugger restart releases Android touch ownership before canonical restart can replace the state stack.
 
-## Required equality dimensions
+Platform UI integration may differ; gameplay mutation semantics may not.
 
-For each ON/OFF pair compare, where applicable:
+## Restart / chapter navigation
 
-- ordered state transitions at logical checkpoints;
-- normalized action sequence/action log effects;
-- RNG state and RNG-dependent outcomes;
-- combat solver outcome and ordered gameplay playback effects;
-- HP/mana and death state;
-- EXP/level/promotion outcome;
-- item durability/uses/costs/consumption;
-- skills/statuses and proc outcomes;
-- unit positions, finished/dead flags and team/phase state;
-- FOW/visited/bounds/regions/aura logical state when exercised;
-- triggered Event order and Event command completion;
-- game/level variables touched by the scenario;
-- save-relevant logical state when a scenario crosses a save-capable boundary;
-- final active/pending state stack;
-- final Trace V1 logical state / semantic delta hashes where the existing recorder supports the boundary.
+Preserve accepted Phase-5 contracts.
 
-Equal terminal state alone is insufficient if actions/hooks/events/RNG were duplicated, skipped or reordered.
+`restart_chapter` must:
 
-## Required scenario matrix
+- use a matching current-session `chapter_start_snapshot` first;
+- otherwise use only a source-proven matching RESTART_SLOT;
+- preserve explicit requested difficulty through P5 canonical load context;
+- never fall back to current mid-chapter SAVE_SLOT as pristine restart truth;
+- rebuild chapter-start initiative semantics;
+- release Android raw-touch capture before state replacement.
 
-Use existing recovery scenarios/harnesses whenever they provide sufficient semantic coverage rather than inventing duplicate infrastructure.
+`go_chapter` / `complete_chapter` must continue to queue the shared Event path rather than directly mutating chapter state in a frontend-specific way.
 
-At minimum include deterministic ON/OFF pairs covering:
+If parity failure points into P5 canonical load/restart architecture, STOP rather than reopening it in P7-T02.
 
-1. **Event command chain** — multiple consecutive semantic Event commands, waits/explicit presentation fence where applicable, and final Event completion. This must prove the removed P6 generic Event budget is not replaced by fast-forward scheduling divergence.
-2. **Movement + Wait / FOW** — movement commits, FOW vantage/visited behavior and Wait finalization; no duplicate input edge on extra substeps.
-3. **Combat** — at least one representative combat that exercises RNG, ordered actions/playback, durability/cost, HP/death and EXP/skill/status hooks as available in existing fixtures.
-4. **Combat presentation lifecycle** — animated/map/simple path coverage sufficient to prove presentation acceleration does not change solver/actions/cleanup order. Reuse Phase-3 lifecycle tests rather than reopening combat architecture.
-5. **Phase/upkeep transition** — turn/phase or initiative progression with statuses/upkeep if existing deterministic fixtures support it.
-6. **Interactive blocking state** — a choice/menu/text/input-owned state with `blocks_fast_forward` or equivalent protection; holding FAST_FORWARD must not auto-consume/replay a selection edge.
-7. **Explicit presentation fence** — `request_present` causes the required cue boundary without changing logical effects or replaying input.
-8. **Speed invariance** — compare OFF against at least the default 300% and boundary speeds 200% and 800% for a deterministic representative scenario. All supported speeds must use the same semantic model; if exhaustive 200..800 is cheap, run all.
-9. **Observer coexistence** — fast-forward with debugger/profiler idle where existing S17 harness supports it; observer enablement must not change the ON/OFF logical result.
-10. **Game-over/restart boundary** if exercised by existing S18 without creating a new save-format test; fast-forward must not alter the resulting restart/game-over semantics.
+## Observer equivalence
 
-S16 remains the existing hybrid fast-forward golden/oracle and must pass unchanged, but P7-T01 must add broader direct ON/OFF equivalence proof rather than treating one immutable S16 fixture as sufficient.
+Run S17 disabled/debugger-idle/profiler-idle and preserve exact equality.
 
-## Input-edge invariants
+Additionally prove debugger snapshot/catalog polling while idle does not mutate gameplay state, action log, RNG, phase, units, board/FOW/aura, save state, or state-stack transitions except UI-only debugger state when the Android drawer itself is intentionally opened.
 
-Explicitly prove:
-
-- SELECT/BACK/START/directional/text/click edge used on the first logical substep is not replayed on additional substeps;
-- held FAST_FORWARD itself may remain held and request extra updates;
-- entering a fast-forward-blocking state during a host frame stops extra updates before a second logical input opportunity can be consumed;
-- repeat chains receive no replayed transient input;
-- explicit presentation fences do not cause the original input edge to be delivered again when processing resumes.
-
-## Time/presentation handling
-
-Do not assert equal:
-
-- host-frame count;
-- draw count;
-- wall-clock duration;
-- audio playback position;
-- animation surface/cache state;
-- profiler timing samples.
-
-Do assert that virtual-time acceleration cannot change gameplay outcomes. If a timer/wait affects gameplay rather than presentation, compare its resulting logical effect/order, not the numeric host time used to reach it.
-
-## Trace/golden rules
-
-- Reuse immutable Trace V1 fixtures/comparator.
-- Do not modify Trace V1 schema, normalizers, manifest or goldens.
-- Do not regenerate S16 or any other fixture.
-- If an existing immutable scenario diverges, determine the first logical checkpoint/delta difference.
-- A golden mismatch is evidence; never normalize it away.
-- If the harness cannot express ON/OFF equivalence without changing Trace V1 schema, STOP under ESC-03/ESC-09 rather than editing the oracle in this task.
+Do not instrument gameplay hooks merely to observe them.
 
 ## Production-change boundary
 
-Default expected changes:
+Expected default scope is tests/evidence only.
 
-- focused tests;
-- optionally `recovery/p7_t01_fast_forward_equivalence.md` for the final matrix/evidence.
+A bounded production fix is allowed only when:
 
-Production files should remain unchanged if all equivalence tests pass.
+- parity test demonstrates a debugger-specific defect;
+- the shared controller semantics or other frontend give one unambiguous correct behavior;
+- fix remains inside debugger frontend/controller/service integration;
+- no accepted gameplay-core contract changes.
 
-If a local production defect is found, before changing code record:
+Allowed bounded surfaces if evidence requires a fix:
 
-```text
-FAST-FORWARD DIVERGENCE
-scenario:
-OFF first differing checkpoint/effect:
-ON first differing checkpoint/effect:
-input readiness condition:
-RNG before/after:
-state stack before/after:
-local suspected owner:
-prior-phase contract touched: YES/NO
-```
+- `app/engine/runtime_debugger.py`
+- `app/engine/runtime_debugger_controller.py`
+- `app/engine/runtime_debugger_service.py`
+- `app/engine/android_debugger.py`
+- narrow `app/engine/android_runtime.py` debugger/touch bridge only if the defect is proven there
+- focused tests/report
 
-A local fix may touch only the demonstrated fast-forward/input/presentation owner. If the proposed fix changes combat solver/action ordering, Event semantics, canonical load/restart, Phase-4 live tilemap atomicity, or platform-policy boundaries, STOP and escalate/review.
+If another gameplay-critical module is required, STOP under ESC-02/ESC-05/ESC-09.
 
-## Required focused tests
+## Required tests
 
-Run/add focused coverage for at least:
+At minimum prove:
 
-- `driver.get_fast_forward_steps` and all supported speed normalization;
-- `update_game_state` transient-input consumption;
-- `update_game_state_for_frame` first-substep input / later-empty-input behavior;
-- `blocks_fast_forward` entry and already-current behavior;
-- presentation-barrier termination of remaining substeps;
-- state-machine repeat chain input behavior;
-- Event processing/presentation-fence tests from P6-T03;
-- Phase-3 combat lifecycle tests;
-- movement/FOW regression tests;
-- phase/initiative/upkeep tests relevant to chosen scenario;
-- debugger/profiler idle observer tests.
+1. Shared controller command catalog/snapshot is available to both frontends without gameplay mutation.
+2. Desktop queued command executes exactly once on service update/game thread.
+3. Android frontend action maps to the same controller operation and arguments for representative Unit, World and Event operations.
+4. Unit field edit parity.
+5. Max/auto-level parity.
+6. Give-item parity including explicit uses where supported.
+7. Teleport parity and occupied/out-of-bounds rejection.
+8. Batch player/enemy max parity.
+9. Enemy HP/AI parity.
+10. Complete-chapter shared Event routing.
+11. Go-chapter + difficulty shared Event routing.
+12. Restart + difficulty uses accepted P5 snapshot/restart source and canonical load path.
+13. Money/turn-count/turnwheel/weather parity.
+14. Event-command validation/execution parity and no duplicate dispatch.
+15. Desktop hotkey mapping calls the same controller ops.
+16. Android drawer close-before-event transition ordering remains correct.
+17. Android raw-touch consumer is installed/released correctly.
+18. Native text editor Save/Cancel/error/fallback logic does not double-submit.
+19. Debugger enabled but idle is observer-equivalent.
+20. Existing fast-forward equivalence remains green; Android debugger remains `blocks_fast_forward`.
+21. P5 canonical load/restart tests remain green.
+22. P6 platform-policy tests remain green.
+
+Use deterministic state assertions; prefer mutation/result equality over checking only that calls did not crash.
 
 ## Immutable proof
 
 Run at minimum:
 
-- S5
-- S7
-- S8
-- S13
-- S16
+- S2 load
+- S4 restart
+- S5 representative gameplay
+- S16 fast-forward
 - S17 disabled
 - S17 debugger-idle
 - S17 profiler-idle
-- S18
+- S18 game-over/restart
 
-Add S12/S14 if touched by the chosen ON/OFF scenario or any production fix.
+Add S12/S13/S14 if a production debugger fix touches board/aura/FOW/tilemap integration.
 
-All invoked immutable scenarios must match existing fixtures exactly.
+No golden regeneration.
 
-Run recovery trace/lifecycle/golden integrity suites.
+Run focused:
+
+- existing `test_runtime_debugger*` suites;
+- Android debugger/frontend tests;
+- runtime debugger service/controller tests;
+- canonical load/restart;
+- fast-forward/input state tests;
+- observer/profiler tests;
+- recovery trace/lifecycle/golden integrity.
 
 Run broader unittest discovery and report known baseline/native/test-isolation failures without repairing unrelated issues.
 
@@ -262,7 +264,7 @@ Finally run:
 
 - `python -m compileall -q app`
 - `git diff --check`
-- commit bounded P7-T01 tests/report and only any explicitly justified local production fix
+- bounded commit
 - `git show --check`
 - `git status --short`
 
@@ -270,35 +272,38 @@ Finally run:
 
 Do not:
 
-- begin P7-T02/P7-T03/P7-T04 or Phase 8;
-- redesign fast-forward into a new scheduler;
-- reintroduce Android Event command budgeting;
-- alter combat solver/actions/hooks/cleanup semantics;
-- alter P4 tilemap atomicity/barrier semantics;
-- alter P5 load/restart/save schema semantics;
-- alter P6 sound/work-budget policy semantics;
+- begin P7-T03/P7-T04 or Phase 8;
+- redesign the debugger UI;
+- require desktop and Android visual/UI identity;
+- fork debugger gameplay semantics by platform;
+- move desktop mutations onto the HTTP thread;
+- change P5 load/restart contracts;
+- change fast-forward semantics;
+- change Phase-3 combat or Phase-4 tilemap semantics;
+- change P6 platform capability contracts;
 - change Trace V1/comparator/manifest/goldens;
 - modify project data/assets;
 - merge master.
 
 ## Escalation / stop rules
 
-Primary: **GPT-5.6 Terra / medium**.
-Escalation target: **GPT-5.6 Sol / high**.
+Primary: **GPT-5.6 Luna / medium**.
+Escalation target: **GPT-5.6 Terra / high**.
 Pre-authorized: **NO**.
 
 STOP on:
 
-- **ESC-02** divergence root cause is nonlocal;
-- **ESC-03** immutable trace divergence cannot be resolved by a bounded local correctness fix;
-- **ESC-04** multiple plausible fast-forward semantics exist instead of the OFF path being an unambiguous oracle;
-- **ESC-05** invariant failure/partial gameplay state becomes observable;
-- **ESC-07** fixing equivalence would require a new platform gameplay fork;
-- **ESC-08** repeated local fix failure;
-- **ESC-09** a new cross-cutting scheduler/harness architecture appears necessary.
+- **ESC-02** parity defect root cause is nonlocal;
+- **ESC-03** immutable trace divergence;
+- **ESC-04** desktop/Android expose genuinely competing intended debugger semantics with no shared-controller answer;
+- **ESC-05** debugger operation exposes partial/invalid gameplay state;
+- **ESC-06** restart/save compatibility conflict appears;
+- **ESC-07** fix would require a platform gameplay fork;
+- **ESC-08** repeated bounded fix failure;
+- **ESC-09** new cross-cutting debugger/gameplay architecture appears necessary.
 
 Do not self-escalate.
 
 ## Gate status
 
-**Phase 6 is ACCEPTED. P7-T01 is the only authorized task. P7-T02 and later remain blocked pending controller review.**
+**P7-T01 is ACCEPTED. P7-T02 is the only authorized task. P7-T03/P7-T04 and Phase 8+ remain blocked pending controller review.**

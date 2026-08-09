@@ -6,245 +6,261 @@
 
 - Current phase: **Phase 8 — Safe shared optimization reintroduction**
 - Phases 1–7: **ACCEPTED**
-- P7-T01 fast-forward equivalence: **ACCEPTED** at `874c7adcf83f14e6fcf961180a01f4ddfe1201fe`
-- P7-T02 debugger parity PC/Android: **ACCEPTED** at `11f2a42cd055d089917834ef80d74d369aad5ed8`
-- P7-T03 profiler observer-equivalence: **ACCEPTED** at `9fcefdf8f2d6d03724d86523ae46b320bcd8802b`
-- P7-T04 save/load/restart UX regression sweep: **ACCEPTED** at `6613d2b07c480f2c5e73349f9b29ca7e9f144340`
-- Active task: **P8-T01 only — Cache/memoization audit**
-- Primary model: **GPT-5.6 Terra / high**
+- P8-T01 cache/memoization audit: **ACCEPTED** at `1d40f89cf33008e0592c35ef9ab094c4cc9d0b5d`
+- Active task: **P8-T02 only — Render/cache/batching optimization audit**
+- Primary model: **GPT-5.6 Terra / medium**
 - Escalation target: **GPT-5.6 Sol / high**
 - Escalation pre-authorized: **NO**
-- P8-T02/P8-T03/P8-T04 and Phase 9+: **UNAUTHORIZED**
-- Expected default production changes: **NONE — inventory/test/evidence first**
-- New optimization insertion or broader cache redesign: **UNAUTHORIZED in P8-T01**
+- P8-T03/P8-T04 and Phase 9+: **UNAUTHORIZED**
+- Expected default production changes: **NONE — audit/test/evidence first**
 - Trace V1/comparator/manifest/golden changes: **UNAUTHORIZED**
 - Project-data / asset changes: **UNAUTHORIZED**
-- Controller gate after P8-T01: **YES — STOP FOR CONTROLLER REVIEW**
+- Controller gate after P8-T02: **YES — STOP FOR CONTROLLER REVIEW**
 
-## P7-T04 acceptance record / Phase-7 closure
+## P8-T01 acceptance record
 
-The controller accepts `6613d2b07c480f2c5e73349f9b29ca7e9f144340` (`test(save): verify UX routing parity`).
+The controller accepts `1d40f89cf33008e0592c35ef9ab094c4cc9d0b5d` (`docs(recovery): audit runtime caches`).
 
 Accepted evidence:
 
-- it is exactly one descendant of P7-T04 authorization commit `802023ce277bd0d43fda162c8c37022df6db8c54`;
-- scope is test/evidence only: `app/tests/test_restart_contract.py` and `recovery/p7_t04_save_load_restart_ux.md`;
-- no production, canonical load/restart, Trace V1, comparator, manifest, golden, save schema, project-data, or asset file changed;
-- Title Load input-boundary evidence proves desktop and Android select the same current-progress SAVE slot; desktop forwards `LoadDestination.SAVED`, while Android forwards that exact slot into the already-accepted SaveLoadJob/context seam;
-- tactical restart remains distinct from current SAVE and uses the accepted RESTART source contract; matching `chapter_start_snapshot` precedence, matching persistent RESTART fallback, stale/wrong-chapter rejection and explicit difficulty remain covered by accepted P5/P7 tests;
-- the accepted overworld exception intentionally resolves to the matching main SAVE slot with `LoadDestination.OVERWORLD` rather than a tactical RESTART slot;
-- Game Over only hands off to `title_start` and therefore cannot directly reinterpret a mid-chapter SAVE as pristine restart truth;
-- canonical/atomic restore, initiative/phase, aura/FOW/tilemap, fast-forward, debugger and profiler regressions were reported green;
-- isolated immutable S2/S4/S5/S12/S13/S14/S16/S17-disabled/S17-debugger-idle/S17-profiler-idle/S18 all matched exactly;
-- shared aura singleton contamination when multiple captures share one process remains a known test-isolation constraint, not a logical divergence;
-- no UX routing defect required a production fix.
+- it is exactly one descendant of P8-T01 authorization commit `da7c3895002ddd1cdae192690fa182c8de62282a`;
+- scope is test/evidence only: `app/tests/test_cache_memoization.py` and `recovery/p8_t01_cache_memoization_audit.md`;
+- no production cache owner, key, lifetime, capacity, invalidation behavior, gameplay code, Trace V1 artifact, project data, or asset changed;
+- gameplay-derived LTCache owners `compute_advantage` and skill `condition` are retained only with the global generation/invalidation contract; object identity alone is not treated as a complete key;
+- the existing `CombatCondition` re-entrant path keeps the required post-publication invalidation and remains covered by deterministic regression evidence;
+- `UnitObject` visible-skill caching is cleared after supported skill-list publication and is covered by add/remove-after-hit evidence;
+- immutable Manhattan-range and eval-range memoization have value-complete keys and hit/forced-miss equivalence tests;
+- presentation/render/resource/observer caches were inventoried but not tuned or centralized; their optimization decisions remain deferred to P8-T02 or their accepted platform/observer owner;
+- required isolated immutable comparisons S2/S4/S5/S7/S8/S12/S13/S14/S15/S16/S17-disabled/S17-debugger-idle/S17-profiler-idle/S18 were reported exact;
+- focused cache/component/target/combat/load/restart/fast-forward/debugger/profiler/recovery suites were reported green; broad shared-registry/native Windows failures remain known baseline isolation issues.
 
-Phase 7 is therefore closed: fast-forward, debugger, profiler and save/load/restart UX are accepted user-facing features and become protected regression contracts for later optimization work.
+### Locked GC-REGION finding — NOT CERTIFIED SAFE
 
-## Locked contracts entering Phase 8
+`GameState.get_region_under_pos` is a gameplay-derived bounded LRU whose current `AddRegion`/`RemoveRegion` mutation paths clear the cache immediately **before** mutating `level.regions` membership.
 
-Every Phase-8 optimization must preserve all accepted invariants, especially:
+The audit did not reproduce a stale observation because the current synchronous action-body gap contains no callback, yield, or known re-entrant reader. Therefore P8-T01 does not invent a production change merely to cosmetically satisfy the general publish-first/invalidate-after rule.
 
-1. One shared gameplay core; Android specialization remains platform policy only.
-2. No partial live gameplay state or new yielded authoritative transaction.
-3. Fast-forward changes host/presentation timing only, never logical outcomes/order.
-4. Debugger/profiler remain observers when idle; debugger commands retain one shared semantic controller.
-5. Canonical load/restart, pristine source precedence and atomic publication remain unchanged.
-6. Combat action/RNG/hook/cleanup ordering and tilemap atomic commit remain unchanged.
-7. Cache/memoization may only be retained or changed when dependency/invalidation correctness and logical equivalence are proven.
-8. Project content and immutable recovery oracles remain protected.
+However this cache is explicitly **NOT CERTIFIED SAFE** for expansion or optimization:
+
+1. P8-T02/P8-T03/P8-T04 may not increase its lifetime, reuse it as a new optimization primitive, add readers in the mutation gap, or cite P8-T01 as proof that its ordering is safe.
+2. Any task that touches region-query caching must first create deterministic re-entrant/ordering proof.
+3. If a supported stale reader is reproduced and the fix is local, controller review may authorize a bounded correction.
+4. If correctness requires changing region-publication/action/tilemap transaction architecture, STOP under ESC-02/ESC-09.
+5. P4 tilemap atomicity and Event-local barrier remain protected.
+
+## Locked contracts entering P8-T02
+
+Every render/cache/batching optimization must preserve:
+
+1. one shared gameplay core and accepted PC logical semantics;
+2. no new host-time/command-count scheduling of gameplay work;
+3. no partial live gameplay state or yielded authoritative transaction;
+4. combat solver/action/RNG/hook/cleanup order;
+5. Event/state-machine semantic boundaries, including presentation fences;
+6. P4 tilemap atomic commit/barrier;
+7. P5 canonical load/restart and pristine-source precedence;
+8. P7 fast-forward logical equivalence;
+9. debugger/profiler observer semantics;
+10. P6 platform capabilities: platform policy may select presentation/resource backend behavior, not gameplay ordering;
+11. cache keys/invalidation remain owner-local unless an already-accepted architecture explicitly says otherwise;
+12. `GC-REGION` remains out of optimization scope as described above.
 
 ---
 
-# P8-T01 — Cache/memoization audit
+# P8-T02 — Render/cache/batching optimization audit
 
-Execute **P8-T01 only** using **GPT-5.6 Terra / high**.
+Execute **P8-T02 only** using **GPT-5.6 Terra / medium**.
 
 Escalation target: **GPT-5.6 Sol / high**, not pre-authorized.
 
-Plan criteria:
+Plan objective: keep output-equivalent shared render/cache/batching optimizations, reject or bound any optimization that changes logical update scheduling or state visibility.
 
-- correct invalidation;
-- no hidden mutable-state dependency absent from cache keys;
-- identical logical traces;
-- preserve the LTCache invariant: **publish mutable component state first, invalidate dependent caches after publication**.
+## Scope
 
-This task is correctness-first. It does not authorize speculative cache additions, capacity tuning, batching, or render-cache redesign.
+This task is an audit of existing presentation/render/cache/batching optimizations. It is not authorization to broadly add new optimizations.
 
-## Goal
+Start from the P8-T01 presentation inventory and perform a fresh local repository search for current implementations and post-reference optimization remnants.
 
-Produce a repository-level audit of existing runtime cache/memoization mechanisms that can influence shared semantics or derive from mutable gameplay state.
+At minimum inventory/search:
 
-For every relevant cache/memoized value, identify:
+- `is_android_render_optimization_enabled` and related Android render policy checks;
+- render/surface/text/menu/highlight/info/unit-menu/title caches;
+- combat animation/mock-combat render caches and draw suppression/staging;
+- dialog/tagged-text/font/layout culling caches;
+- explicit batch/batching/batched draw/update helpers;
+- surface composition/prefill/precompute paths;
+- render revision/key/generation fields;
+- countdown/defer-render/request-present interactions;
+- any optimization that skips, combines, delays, or reorders update/draw work.
 
-- owner/module/symbol;
-- purpose and value type;
-- cache key / memoization key;
-- all mutable or versioned inputs that influence the result;
-- publication/mutation points for those inputs;
-- invalidation/clear/eviction points;
-- whether invalidation happens before or after authoritative state publication;
-- fallback behavior on miss;
-- whether stale data could affect gameplay logic, ordering, targeting, stats, availability, hooks, UI decisions, or save-relevant state;
-- existing tests/evidence;
-- classification and decision.
+Classify each relevant optimization as exactly one of:
 
-## Required classification
+- **KEEP-SHARED — OUTPUT EQUIVALENT**
+- **KEEP-PLATFORM — PRESENTATION POLICY ONLY**
+- **FIX-LOCAL — PRESENTATION CORRECTNESS**
+- **REJECT — CHANGES LOGICAL SCHEDULING/STATE VISIBILITY**
+- **DEFER-P8-T03 — ALLOCATION/REDUNDANT-WORK ONLY**
+- **DEAD/UNUSED**
+- **ESCALATE**
 
-Classify each discovered mechanism as one of:
+## Required proof dimensions
 
-1. **GAMEPLAY-DERIVED CACHE** — mutable gameplay/data dependency; requires complete key/invalidation proof and logical-equivalence tests.
-2. **IMMUTABLE-DATA MEMOIZATION** — only immutable/value inputs; prove key completeness and no hidden mutable/global dependency.
-3. **PRESENTATION/RENDER CACHE** — surfaces/text/layout/highlight/menu presentation only; inventory it but defer optimization/tuning decision to P8-T02 unless it affects a gameplay decision.
-4. **PLATFORM/RESOURCE CACHE** — audio/resource/backend policy; preserve accepted P6 boundaries and defer performance tuning unless semantic cache correctness is implicated.
-5. **OBSERVER CACHE** — debugger/profiler diagnostic data only; must remain observer-only.
-6. **DEAD/UNUSED/TEST-ONLY** — record evidence; do not revive it.
+For every retained optimization prove, as applicable:
 
-Do not collapse all Android-named caches into one subsystem.
+- same gameplay logical state before/after rendering;
+- same state-stack transition semantics;
+- same input consumption semantics;
+- same Event command/order and presentation-fence semantics;
+- same combat solver/actions/hooks/cleanup/RNG;
+- same menu logical selection/command availability;
+- same FOW/aura/highlight logical ownership (pixels may differ only where presentation policy intentionally allows it);
+- cache hit/miss cannot decide a gameplay action;
+- missed/invalidated cache falls back to a correct uncached render path;
+- render deferral cannot expose a partially committed gameplay world;
+- batching cannot combine authoritative gameplay mutations across semantic boundaries.
 
-## Mandatory inventory methods
+Host frame count, draw-call count, surface allocation count and profiler timing are not logical equality criteria.
 
-Use local repository search, not memory alone. At minimum search for and inspect relevant uses of:
+## P8-T01 carry-forward presentation owners
 
-- `LTCache`;
-- `lru_cache`, `cache`, `cached_property` or equivalent decorators;
-- explicit `*_cache`, `cache_*`, memo dictionaries/sets and bounded LRU structures;
-- `clear`, `invalidate`, revision/version fields used for cache validity;
-- component/item/skill/stat/target/range/path/query caches whose results may depend on mutable state;
-- Android-specific caches only to classify whether they are P8-T01 semantic caches or P8-T02 presentation caches.
+Audit current implementations for at least:
 
-Create `recovery/p8_t01_cache_memoization_audit.md` unless a better bounded report name is clearly justified.
+- `bmpfont.py::{Glyph,BmpFont}`;
+- `health_bar.py` HP-bar surface caches;
+- `dialog.py::Dialog.tagged_text_cache`;
+- `graphics/text/tagged_text.py`;
+- `graphics/ui_framework/ui_framework_layout.py::should_cull`;
+- `highlight.py::HighlightController` Android surface cache/revision;
+- `menus.py::Table`;
+- title/menu/settings/sound-room cached surfaces;
+- info-menu/help/multi-description render caches;
+- unit-menu bounded render cache;
+- `combat/animation_combat.py` render/UI/tint/surface caches;
+- `combat/mock_combat.py` render caches;
+- resource/presentation caches controlled by accepted P6 boundaries;
+- Android debugger panel cache only as observer/presentation regression evidence, not as gameplay optimization work.
 
-## LTCache invariant
+Do not change `GC-REGION` in this task.
 
-The authoritative ordering is:
+## Batching / scheduling boundary
 
-```text
-mutate/publish authoritative component or owner state
--> dependent readers can now observe the new state
--> invalidate LTCache/dependent memoized results
--> future query recomputes from the published new state
-```
+Any optimization that batches or defers work must be classified by what is being batched.
 
-Do not move invalidation before publication merely to make a test deterministic.
+Allowed candidates:
 
-Audit every discovered LTCache mutation/invalidation call site for this order.
+- pure surface blits/composition;
+- text/glyph/layout work;
+- immutable resource preparation;
+- owner-local presentation cache rebuilds;
+- rendering-only list construction/culling;
+- already-accepted off-world preparation behind an existing protected transaction boundary.
 
-If current code violates the invariant and a fix requires reasoning across multiple gameplay lifecycle owners, STOP under ESC-02/ESC-09 rather than editing broadly.
+Not allowed:
 
-## Hidden dependency proof
+- batching Actions across semantic fences;
+- batching Event commands based on wall-clock/frame budget;
+- splitting or combining combat solver/action/cleanup lifecycle;
+- delaying authoritative state publication until a later render frame;
+- exposing pending tilemap/load/combat state;
+- replaying/skipping input due to render optimization;
+- using `request_present`/`waiting_for_present` as a generic performance scheduler.
 
-For gameplay-derived caches, a key is correct only if every input capable of changing the result is either:
+If an existing optimization does any of the above, mark **REJECT** and STOP before architectural remediation unless a bounded local presentation-only fix is unambiguous.
 
-- explicitly represented in the key/version; or
-- guaranteed immutable for the cache lifetime; or
-- paired with an authoritative invalidation event that covers every mutation path.
+## Shared versus Android policy
 
-Examples of dangerous omitted dependencies include, where relevant:
+Shared optimization is acceptable only when output/behavior is equivalent on both platforms.
 
-- unit position/team/finished state;
-- HP/mana/status/skill/item/component state;
-- item uses/durability;
-- game/level variables;
-- phase/initiative;
-- aura/FOW/regions/tilemap identity;
-- DB/resource mutation in editor/runtime contexts;
-- difficulty/mode/constants;
-- component ordering or hook availability.
+Android may specialize presentation/resource policy only at accepted seams:
 
-Do not assume an object identity key is sufficient when fields inside that object are mutable.
+- whether a local presentation cache is enabled;
+- bounded cache capacity where it affects only presentation memory/performance;
+- physical resource preparation/backend behavior;
+- draw/culling behavior proven not to affect logical state.
 
-## Equivalence tests
+Android must not specialize gameplay ordering, Event command scheduling, input/action semantics, combat mechanics, save/load/restart, or live transaction boundaries.
 
-For each retained gameplay-derived cache family, create or identify deterministic tests proving at least:
+Do not introduce a global render-cache service locator.
 
-1. first query computes the expected result;
-2. repeated query may hit cache without changing logical result;
-3. every representative authoritative mutation that should affect the result causes recomputation or a new complete key;
-4. unrelated mutation does not incorrectly alter the result;
-5. cache enabled/hit path and forced-miss/cleared path produce the same logical result;
-6. ordering-sensitive actions/RNG/events/hooks are not changed by cache hits.
-
-Prefer existing public behavior/API tests over asserting private dictionary internals only.
-
-If the cache is purely presentation/render, do not expand this task into pixel/performance work; record it for P8-T02.
-
-## Trace proof
-
-Run representative immutable Trace V1 scenarios covering any gameplay-derived cache surfaces found by the audit.
-
-Minimum immutable gate even when no production code changes:
-
-- S5 representative gameplay
-- S7/S8 combat paths
-- S12 aura
-- S13 FOW/movement
-- S14 tilemap
-- S15 phase transition
-- S16 fast-forward
-- S17 disabled/debugger-idle/profiler-idle
-- S18 game-over/restart
-
-Add S2/S4 if any audited cache touches load/restart-derived state.
-
-No golden regeneration.
-
-## Existing optimization boundaries
-
-The P6 runtime-capability audit already established that render caches remain locally owned and platform policy may decide only enablement/capacity; keys and invalidation remain with the owning highlight/menu/info/title/combat-render class.
-
-P8-T01 may inventory those caches but must not centralize them into a global cache or move local invalidation ownership.
-
-Render/cache/batching optimization decisions belong to P8-T02.
-
-Audio/resource cache/backend behavior remains under accepted P6 policy and must not be reopened unless this audit proves a cache-correctness defect.
-
-## Production-change policy
+## Production change policy
 
 Expected production changes: **NONE**.
 
-A bounded production fix is allowed only if all are true:
+A production fix is allowed only when deterministic evidence proves a local presentation/output defect or an existing render optimization is crossing a logical boundary, and the correct fix is bounded to the presentation owner.
 
-- audit/test proves one concrete cache-specific correctness defect;
-- correct behavior is unambiguous from accepted semantics;
-- fix is local to the cache owner/invalidation call site;
-- no gameplay lifecycle/order/API redesign is required;
-- immutable traces remain identical after the fix.
+Do not add a new speculative optimization simply because an uncached path is measurable.
 
-Do not add a new cache or broaden cache lifetime in P8-T01.
+Do not tune performance without evidence.
 
-Do not change cache capacity/performance policy merely because profiling suggests it might be faster; that belongs to later Phase-8 tasks.
+Do not touch gameplay-derived cache families from P8-T01, especially `GC-REGION`.
 
-STOP rather than fix if correctness requires changing:
+If a correction requires changes to gameplay scheduling/lifecycle or accepted transactions, STOP under ESC-02/ESC-05/ESC-07/ESC-09.
 
-- combat solver/action/hook lifecycle;
-- Event/state-machine scheduling;
-- canonical load/restart;
-- tilemap atomicity;
-- fast-forward semantics;
-- debugger/profiler semantics;
-- Android platform capability boundaries;
-- cross-cutting component publication architecture.
+## Tests / evidence
 
-## Required regression gates
+Create `recovery/p8_t02_render_cache_batching_audit.md`.
 
-Keep green:
+Add focused tests only where current evidence is missing.
 
-- Phase-3 combat transaction/lifecycle tests;
-- Phase-4 tilemap atomic/barrier tests;
-- Phase-5 canonical load/restart tests;
-- Phase-6 platform-policy tests;
+Use current owner-specific suites, including where applicable:
+
+- Android performance/render-cache tests;
+- title-option cache tests;
+- info-menu render optimization tests;
+- styled-text/parser/dialog tests;
+- menu/settings/unit-menu rendering cache tests;
+- highlight invalidation/camera/region-signature tests;
+- health-bar/render surface tests;
+- animation-combat/mock-combat render tests;
+- runtime debugger Android panel observer tests;
+- state-machine presentation barrier tests;
 - P7 fast-forward equivalence;
-- P7 debugger parity;
-- P7 profiler observer equivalence;
-- P7 save/load/restart UX tests;
+- Phase-3 combat lifecycle;
+- P4 tilemap barrier/atomicity;
+- P6 platform policy;
+- P7 debugger/profiler observer suites;
 - recovery trace/lifecycle/golden integrity.
 
-Run focused cache/component/item/skill/stat/target/path/query tests selected from the actual inventory.
+For any cache/optimization enabled only under Android policy, test both enabled and disabled paths where practical and prove identical logical state/selection results.
 
-Run broader unittest discovery and report known baseline/native/test-isolation failures without repairing unrelated issues.
+For render caches, visual pixel equality may be proven with deterministic surface signatures/checksums or equivalent owner-specific assertions where stable; do not add volatile host-dependent image goldens.
 
-Finally run:
+## Immutable trace gate
+
+Run at minimum:
+
+- S5
+- S7
+- S8
+- S12
+- S13
+- S14
+- S15
+- S16
+- S17 disabled
+- S17 debugger-idle
+- S17 profiler-idle
+- S18
+
+Also run S2/S4 if any touched render/load surface participates in a load/restart transition.
+
+All invoked Trace V1 fixtures must match exactly.
+
+No golden regeneration or normalizer/comparator/schema changes.
+
+## Performance evidence
+
+This task may measure render/cache hit/miss or composition cost where practical, but performance is secondary to correctness.
+
+Do not accept an optimization solely because FPS/timing improves.
+
+If no production optimization is changed, measurement is optional and the task may remain an audit/evidence-only commit.
+
+## Broad validation
+
+Run broader unittest discovery and report known baseline shared-registry/import-order/native Windows failures unchanged.
+
+Then run:
 
 - `python -m compileall -q app`
 - `git diff --check`
@@ -252,37 +268,48 @@ Finally run:
 - `git show --check`
 - `git status --short`
 
+Expected default commit scope:
+
+- `recovery/p8_t02_render_cache_batching_audit.md`
+- focused render/cache/batching tests if evidence is missing
+
+Production files only if a deterministic bounded presentation correctness defect was proven.
+
 ## Explicitly out of scope
 
 Do not:
 
-- begin P8-T02/P8-T03/P8-T04 or Phase 9;
-- add speculative caches or memoization;
-- tune cache sizes/capacities for FPS;
-- centralize owner-local render caches;
-- alter authoritative gameplay semantics to accommodate a cache;
+- begin P8-T03/P8-T04 or Phase 9;
+- change `GC-REGION` or other gameplay-derived cache semantics;
+- add speculative caches;
+- centralize render caches;
+- reintroduce Android Event command budgeting;
+- change fast-forward semantics;
+- change combat lifecycle;
+- change tilemap/load/restart transaction architecture;
+- change debugger/profiler semantic behavior;
 - change Trace V1/comparator/manifest/goldens;
 - modify project data/assets;
 - merge master.
 
 ## Escalation / stop rules
 
-Primary: **GPT-5.6 Terra / high**.
+Primary: **GPT-5.6 Terra / medium**.
 Escalation target: **GPT-5.6 Sol / high**.
 Pre-authorized: **NO**.
 
 STOP on:
 
-- **ESC-02** cache correctness depends on nonlocal lifecycle semantics;
+- **ESC-02** render/cache issue root cause is nonlocal to presentation ownership;
 - **ESC-03** immutable trace divergence;
-- **ESC-04** competing intended cache semantics affect gameplay result;
-- **ESC-05** cache exposes/depends on partial authoritative state;
-- **ESC-07** correctness would require platform gameplay fork;
-- **ESC-08** repeated bounded fix failure;
-- **ESC-09** new cross-cutting cache/publication architecture appears necessary.
+- **ESC-04** competing PC/Android semantics appear;
+- **ESC-05** optimization changes logical state visibility/lifecycle;
+- **ESC-07** platform performance requires gameplay fork;
+- **ESC-08** repeated bounded correction failure;
+- **ESC-09** new global cache/batching/scheduler architecture appears necessary.
 
 Do not self-escalate.
 
 ## Gate status
 
-**Phases 1–7 are ACCEPTED. P8-T01 is the only authorized task. P8-T02/P8-T03/P8-T04 and Phase 9+ remain blocked pending controller review.**
+**P8-T01 is ACCEPTED. P8-T02 is the only authorized task. P8-T03/P8-T04 and Phase 9+ remain blocked pending controller review.**

@@ -4,6 +4,8 @@ from app.utilities.typing import NID
 from enum import Enum
 from typing import Set, List, Optional
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
+import threading
 import pygame
 
 from app.utilities import utils
@@ -68,6 +70,13 @@ class SoundDict(dict):
         return self[val]
 
 DEFAULT_FADE_TIME_MS = 400
+
+
+@dataclass(frozen=True)
+class StreamedBattleMusic:
+    """Physical playback data needed after an Android streamed battle."""
+    return_nid: Optional[NID]
+    return_streamed: bool
 
 class Channel():
     fade_in_time = DEFAULT_FADE_TIME_MS
@@ -442,8 +451,35 @@ class SoundController(ABC):
         return False
 
     @abstractmethod
+    def play_music(
+            self, next_song: NID, *, fade_in=DEFAULT_FADE_TIME_MS,
+            from_start=False, num_plays=-1) -> bool:
+        """Use the platform backend, then the existing legacy fallback."""
+        return False
+
+    @abstractmethod
+    def start_battle_music(self, next_song: NID, *, from_start=True):
+        """Start caller-selected battle music through the platform backend."""
+        return None
+
+    @abstractmethod
+    def finish_battle_music(self, playback, *, from_start=True) -> None:
+        """Restore the physical music backend after a battle."""
+        pass
+
+    @abstractmethod
     def play_streamed_preview(self, next_song: NID, battle=False) -> bool:
         """Play a Sound Room preview through the single streaming music channel."""
+        return False
+
+    @abstractmethod
+    def should_defer_preview(self) -> bool:
+        """Whether a synchronous stream load needs a present-first UI path."""
+        return False
+
+    @abstractmethod
+    def play_preview(self, next_song: NID, battle=False) -> bool:
+        """Play a caller-selected Sound Room preview with the established fallback."""
         return False
 
     @abstractmethod
@@ -489,6 +525,11 @@ class SoundController(ABC):
     @abstractmethod
     def flush(self, should_interrupt_current_song=True):
         pass
+
+    @abstractmethod
+    def prepare_level_songs(self, nids: Set[NID]) -> Optional[threading.Thread]:
+        """Flush/preload level audio without accessing gameplay state."""
+        return None
 
     @abstractmethod
     def reset(self):
@@ -559,7 +600,24 @@ class NullSoundController(ABC):
             play_intro=True) -> bool:
         return False
 
+    def play_music(
+            self, next_song: NID, *, fade_in=DEFAULT_FADE_TIME_MS,
+            from_start=False, num_plays=-1) -> bool:
+        return False
+
+    def start_battle_music(self, next_song: NID, *, from_start=True):
+        return None
+
+    def finish_battle_music(self, playback, *, from_start=True) -> None:
+        return None
+
     def play_streamed_preview(self, next_song: NID, battle=False) -> bool:
+        return False
+
+    def should_defer_preview(self) -> bool:
+        return False
+
+    def play_preview(self, next_song: NID, battle=False) -> bool:
         return False
 
     def play_legacy_preview(self, next_song: NID, battle=False) -> bool:
@@ -591,6 +649,9 @@ class NullSoundController(ABC):
         pass
 
     def flush(self, should_interrupt_current_song=True):
+        return None
+
+    def prepare_level_songs(self, nids: Set[NID]) -> Optional[threading.Thread]:
         return None
 
     def reset(self):
@@ -886,6 +947,52 @@ class DefaultSoundController(SoundController):
         self._stream_preview_nid = next_song_nid
         return True
 
+    def play_music(
+            self, next_song_nid: NID, *, fade_in=DEFAULT_FADE_TIME_MS,
+            from_start=False, num_plays=-1) -> bool:
+        """Select only the physical music backend for a caller-chosen track."""
+        if is_android_runtime() and self.play_streamed_music(
+                next_song_nid, fade_in=fade_in):
+            return True
+        if num_plays == -1 and not from_start:
+            self.fade_in(next_song_nid, fade_in=fade_in)
+        else:
+            self.fade_in(
+                next_song_nid, num_plays=num_plays, fade_in=fade_in,
+                from_start=from_start,
+            )
+        return False
+
+    def start_battle_music(self, next_song_nid: NID, *, from_start=True):
+        """Own Android stream selection without owning the battle lifecycle."""
+        if is_android_runtime():
+            current_song = self.get_current_song()
+            streamed_nid = getattr(self, '_stream_preview_nid', None)
+            return_nid = current_song.nid if current_song else streamed_nid
+            if self.play_streamed_music(
+                    next_song_nid, battle=True, fade_in=50,
+                    play_intro=False):
+                return StreamedBattleMusic(
+                    return_nid, bool(streamed_nid and not current_song),
+                )
+        return self.battle_fade_in(next_song_nid, from_start=from_start)
+
+    def finish_battle_music(self, playback, *, from_start=True) -> None:
+        if isinstance(playback, StreamedBattleMusic):
+            self.stop_streamed_music()
+            if playback.return_nid:
+                if playback.return_streamed:
+                    self.play_streamed_music(
+                        playback.return_nid, fade_in=50, play_intro=False,
+                    )
+                else:
+                    self.fade_in(
+                        playback.return_nid, fade_in=50,
+                        from_start=from_start,
+                    )
+        elif playback:
+            self.battle_fade_back(playback, from_start)
+
     def play_streamed_preview(self, next_song_nid: NID, battle=False) -> bool:
         """Stream one Android Sound Room preview without an intro track."""
         if not is_android_runtime():
@@ -905,6 +1012,19 @@ class DefaultSoundController(SoundController):
         if battle:
             song = self.battle_fade_in(next_song_nid, fade=100, from_start=True)
         return bool(song)
+
+    def should_defer_preview(self) -> bool:
+        return is_android_runtime()
+
+    def play_preview(self, next_song_nid: NID, battle=False) -> bool:
+        """Use streaming only on Android, with the established legacy fallback."""
+        if self.should_defer_preview():
+            if self.play_streamed_preview(next_song_nid, battle=battle):
+                return True
+            return self.play_legacy_preview(next_song_nid, battle=battle)
+        if battle:
+            return bool(self.battle_fade_in(next_song_nid))
+        return bool(self.fade_in(next_song_nid))
 
     def _stop_legacy_music_for_stream(self):
         """Detach channel playback before the single music stream takes over."""
@@ -1032,6 +1152,28 @@ class DefaultSoundController(SoundController):
                 current_song_nid = current_song.nid
         MUSIC.clear(current_song_nid)
         SFX.clear()
+
+    @staticmethod
+    def _flush_and_load_songs(sound_controller: 'DefaultSoundController',
+                              nids: Set[NID]) -> None:
+        sound_controller.flush()
+        if nids:
+            sound_controller.load_songs(nids)
+
+    def prepare_level_songs(self, nids: Set[NID]) -> Optional[threading.Thread]:
+        """Run the established platform-specific audio cache work only."""
+        if is_android_runtime():
+            worker = threading.Thread(
+                target=self._flush_and_load_songs, args=(self, nids),
+            )
+            worker.start()
+            return worker
+        self.flush()
+        if not nids:
+            return None
+        worker = threading.Thread(target=self.load_songs, args=(nids,))
+        worker.start()
+        return worker
 
     def reset(self):
         """

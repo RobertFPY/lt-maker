@@ -144,16 +144,16 @@ class AndroidRoundThreePerformanceContracts(unittest.TestCase):
         fake_game.load_states.assert_not_called()
         self.assertTrue(state.finished)
 
-    def test_title_and_game_over_stream_music_on_android(self):
+    def test_title_and_game_over_delegate_physical_music_backend_to_sound(self):
         title_source = (ROOT / 'engine' / 'title_screen.py').read_text(encoding='utf-8')
         game_over_source = (ROOT / 'engine' / 'game_over.py').read_text(encoding='utf-8')
         title_music = _class_method_source(title_source, 'TitleStartState', '_start_title_music')
         game_over_start = _class_method_source(game_over_source, 'GameOverState', 'start')
 
-        self.assertIn('is_android_runtime()', title_music)
-        self.assertIn('play_streamed_music(', title_music)
-        self.assertIn('is_android_runtime', game_over_source)
-        self.assertIn('play_streamed_music(', game_over_start)
+        self.assertIn('play_music(', title_music)
+        self.assertNotIn('is_android_runtime()', title_music)
+        self.assertIn('play_music(', game_over_start)
+        self.assertNotIn('is_android_runtime', game_over_source)
 
 
 class AndroidHighlightCacheTests(unittest.TestCase):

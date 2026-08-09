@@ -41,12 +41,6 @@ class LoadingState(State):
     # For A E S T H E T I C S
     duration = 1000  # How long to wait after we load in everything to actually move to the turn_change state
 
-    @staticmethod
-    def _flush_and_load_songs(sound_controller, level_songs) -> None:
-        sound_controller.flush()
-        if level_songs:
-            sound_controller.load_songs(level_songs)
-
     def start(self):
         logging.debug("Loading state...")
         self.completed_time = None
@@ -75,22 +69,9 @@ class LoadingState(State):
                 level_songs.add(music_command.parameters.get('Music'))
             for music_command in inspector.find_all_calls_of_command(event_commands.ChangeMusic(), self.level_nid).values():
                 level_songs.add(music_command.parameters.get('Music'))
-        if is_android_runtime():
-            # Releasing cached pygame Sound objects can take over 100 ms on
-            # Android. Do it in the same worker that preloads the next songs.
-            loading_music_thread = threading.Thread(
-                target=self._flush_and_load_songs,
-                args=(sound_controller, level_songs),
-            )
-            loading_music_thread.start()
+        loading_music_thread = sound_controller.prepare_level_songs(level_songs)
+        if loading_music_thread:
             self.loading_threads.append(loading_music_thread)
-        else:
-            sound_controller.flush()
-            if level_songs:
-                loading_music_thread = threading.Thread(
-                    target=sound_controller.load_songs, args=[level_songs])
-                loading_music_thread.start()
-                self.loading_threads.append(loading_music_thread)
 
     def update(self):
         if not self.completed_time and not any([thread.is_alive() for thread in self.loading_threads]):

@@ -108,9 +108,7 @@ class TitleStartState(State):
         sound_thread.clear()
         music = RECORDS.get('_music_title_screen') or DB.constants.value('music_main')
         if music:
-            if is_android_runtime() and sound_thread.play_streamed_music(music, fade_in=50):
-                return
-            sound_thread.fade_in(music, fade_in=50)
+            sound_thread.play_music(music, fade_in=50)
 
     def begin(self):
         if game.state.from_transition() and not self._return_directly_to_title_menu:

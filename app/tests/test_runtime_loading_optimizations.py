@@ -76,35 +76,21 @@ class OverworldRestoreOptimizationTests(unittest.TestCase):
 
 
 class LevelAssetLoadingTests(unittest.TestCase):
-    def test_sound_cache_flush_is_deferred_to_loading_worker(self):
+    def test_loading_delegates_audio_preload_without_exposing_game_to_worker(self):
         controller = MagicMock()
-        threads = []
-
-        class FakeThread:
-            def __init__(self, target, args=()):
-                self.target = target
-                self.args = args
-                self.started = False
-                threads.append(self)
-
-            def start(self):
-                self.started = True
+        worker = MagicMock()
+        controller.prepare_level_songs.return_value = worker
 
         state = general_states.LoadingState()
         fake_game = SimpleNamespace(level=None, level_nid='chapter')
         with patch.object(general_states, 'game', fake_game), \
                 patch.object(general_states, 'get_sound_thread',
-                             return_value=controller), \
-                patch.object(general_states, 'is_android_runtime', return_value=True), \
-                patch.object(general_states.threading, 'Thread', FakeThread):
+                             return_value=controller):
             state.start()
 
         controller.clear.assert_called_once_with()
-        controller.flush.assert_not_called()
-        self.assertEqual(1, len(threads))
-        self.assertTrue(threads[0].started)
-        threads[0].target(*threads[0].args)
-        controller.flush.assert_called_once_with()
+        controller.prepare_level_songs.assert_called_once_with(set())
+        self.assertEqual([worker], state.loading_threads)
 
 
 class FontLoadingOptimizationTests(unittest.TestCase):

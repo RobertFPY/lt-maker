@@ -16,7 +16,7 @@ from app.engine.achievements import ACHIEVEMENTS
 from app.engine.sprites import SPRITES
 from app.engine.sound import get_sound_thread
 from app.engine.android_runtime import (
-    is_android_render_optimization_enabled, is_android_runtime,
+    is_android_render_optimization_enabled,
 )
 from app.engine.performance import RUNTIME_PROFILER
 from app.engine.fonts import FONT
@@ -1688,9 +1688,7 @@ class BaseSoundRoomState(State):
         self._pending_stream_preview = None
         music, battle = pending
         sound_thread = get_sound_thread()
-        started = sound_thread.play_streamed_preview(music, battle=battle)
-        if not started:
-            started = sound_thread.play_legacy_preview(music, battle=battle)
+        started = sound_thread.play_preview(music, battle=battle)
         if started:
             self.playing = True
             self.last_choice = music
@@ -1736,9 +1734,7 @@ class BaseSoundRoomState(State):
             sound_thread = get_sound_thread()
             sound_thread.clear()
             if music:
-                if not is_android_runtime() or not sound_thread.play_streamed_music(
-                        music, fade_in=50):
-                    sound_thread.fade_in(music, fade_in=50)
+                sound_thread.play_music(music, fade_in=50)
             action.do(action.SetGameVar('_soundroom_choice', self.last_choice))
 
         elif event and not self.unlocked_idxes:
@@ -1747,10 +1743,10 @@ class BaseSoundRoomState(State):
         elif event == 'SELECT':
             current_music_index = int(self.menu.get_current()) - 1
             music = self.music_names[current_music_index]
-            if is_android_runtime():
+            if get_sound_thread().should_defer_preview():
                 return self._queue_stream_preview(music)
             else:
-                get_sound_thread().fade_in(music)
+                get_sound_thread().play_music(music)
             self.playing = True
             self.last_choice = music
 
@@ -1764,12 +1760,12 @@ class BaseSoundRoomState(State):
             rand_idx = random.choice(self.unlocked_idxes)
             self.menu.move_to(rand_idx)
             music = self.music_names[rand_idx]
-            if is_android_runtime():
+            if get_sound_thread().should_defer_preview():
                 return self._queue_stream_preview(music)
             else:
-                get_sound_thread().fade_in(music)
+                get_sound_thread().play_music(music)
             self.playing = True
-            if is_android_runtime():
+            if get_sound_thread().should_defer_preview():
                 self.last_choice = music
 
         elif event == 'AUX':
@@ -1778,14 +1774,14 @@ class BaseSoundRoomState(State):
             song_prefab = RESOURCES.music.get(music)
 
             if self.playing and song_prefab.battle_full_path:
-                if is_android_runtime():
+                if get_sound_thread().should_defer_preview():
                     if self.last_choice == music:
                         return self._queue_stream_preview(music, battle=True)
                     else:
                         get_sound_thread().play_sfx('Error')
                 elif get_sound_thread().get_current_song() \
                         and get_sound_thread().get_current_song().nid == music:
-                    get_sound_thread().battle_fade_in(music)
+                    get_sound_thread().play_preview(music, battle=True)
                 else:
                     get_sound_thread().play_sfx('Error')
             else:

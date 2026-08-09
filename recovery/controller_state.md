@@ -4,310 +4,306 @@
 
 ## Current authorization
 
-- Current phase: **Phase 8 — Safe shared optimization reintroduction**
-- Phases 1–7: **ACCEPTED**
+- Current phase: **Phase 9 — Full validation and release candidate**
+- Phases 1–8: **ACCEPTED**
 - P8-T01 cache/memoization audit: **ACCEPTED** at `1d40f89cf33008e0592c35ef9ab094c4cc9d0b5d`
 - P8-T02 render/cache/batching audit: **ACCEPTED** at `3d8624136ce58e8dfb7c576515d8e4585ca79ae0`
 - P8-T03 allocation/redundant-work audit: **ACCEPTED** at `869e30d66f8005ef088f85083dce05cea661876a`
-- Active task: **P8-T04 only — Android-only performance retuning**
-- Primary model: **GPT-5.6 Terra / high**
-- Escalation target: **GPT-5.6 Sol / max**
+- P8-T04 Android-only performance retuning: **ACCEPTED** at `849bf75443e0c31121c9f080da2c0afa2e879b3e`
+- Active task: **P9-T01 only — Full PC regression matrix**
+- Primary model: **GPT-5.6 Luna / medium**
+- Escalation target: **GPT-5.6 Terra / high**
 - Escalation pre-authorized: **NO**
-- Phase 9+: **UNAUTHORIZED**
-- Controller gate after P8-T04: **YES — STOP FOR CONTROLLER REVIEW**
-- Android performance work must remain behind accepted platform-policy boundaries and preserve exact logical traces.
-- FPS/frame-time improvement alone is never sufficient evidence.
+- P9-T02/P9-T03/P9-T04: **UNAUTHORIZED**
+- Expected default production changes: **NONE — validation/evidence only**
+- Controller gate after P9-T01: **YES — STOP FOR CONTROLLER REVIEW**
 - Trace V1/comparator/manifest/golden changes: **UNAUTHORIZED**
 - Project-data / asset changes: **UNAUTHORIZED**
+- Merge to `master`: **UNAUTHORIZED**
 
-## P8-T03 acceptance record
+## P8-T04 acceptance record / Phase-8 closure
 
-The controller accepts `869e30d66f8005ef088f85083dce05cea661876a` (`test(android): certify title smoke seeding`).
+The controller accepts `849bf75443e0c31121c9f080da2c0afa2e879b3e` (`docs(recovery): audit android retuning`).
 
 Accepted evidence:
 
-- it is exactly one descendant of P8-T03 authorization commit `88a4ac57d11502302b10160bdd3ddea654685c03`;
-- scope is test/evidence only: `app/tests/test_title_smoke_seed.py` and `recovery/p8_t03_allocation_redundant_work_audit.md`;
-- no production source, Trace V1 artifact, project data, asset, scheduler, gameplay cache, combat, load/restart, tilemap, fast-forward, debugger, or profiler behavior changed;
-- title smoke seeding now has a stable presentation-only contract: same `Smoke` family, exact `system.abundance` population, valid lifetime envelope, ordinary later update/draw ownership, and no requirement for pixel-identical startup coordinates;
-- deterministic tests prove the helper does not consume/change engine `static_random` seed/combat/growth/other RNG state;
-- source inspection confirms `seed_title_smoke()` touches the supplied particle system and Python presentation RNG only; it does not call `Smoke.update()` or dispatch Event/gameplay/state/input/save/action work;
-- deterministic work-count proof shows desktop-style `prefill()` performs exactly 300 particle-system updates while `seed_title_smoke()` performs zero such updates;
-- the audit reports 31-run host measurements showing substantial startup-work reduction while both paths retain 11 title Smoke particles; timing remains supporting evidence rather than a logical oracle;
-- title smoke is therefore certified **KEEP-PLATFORM — PRESENTATION/RESOURCE POLICY**;
-- battle-animation source-frame caching is explicitly **REJECTED** because draw output depends on entrance scaling, flash/screen-dodge, opacity, grayscale, time-dependent skill tint, blend/partial blend, palette/effect state and child/effect ownership; no speculative frame cache was added;
-- existing combat UI/highlight/menu caches expose no new proven allocation opportunity;
-- styled-text allocation remains deferred because the isolated `FONT['convo']` baseline is not a valid optimization proof environment;
-- `GC-REGION` remains untouched and **NOT CERTIFIED SAFE**;
+- it is exactly one descendant of P8-T04 authorization commit `a65dbceebec8b43ecb13f300ca8bf453d1462ebe`;
+- scope is audit-only: `recovery/p8_t04_android_performance_retuning.md`;
+- no production source, tests, Trace V1 artifact, project data, assets, Android policy values, cache capacities, work-budget constants, scheduler, combat, load/restart, fast-forward, debugger or profiler behavior changed;
+- the execution environment had host Python/pygame only; `adb` existed but no bounded Android device response was available, so the task made no Android FPS/frame-time/heap claim;
+- the existing Android off-world tilemap budget remains exactly `4_000_000 ns`; without real Android evidence it was correctly classified `KEEP-AS-IS`;
+- Event-local `_android_tilemap_pending` remains a correctness barrier, not a throughput knob; off-world construction and one synchronous live commit/rollback remain protected;
+- owner-local render-cache capacities remain unchanged, including unit-menu cap 4 and accepted combat UI bounds; capacity changes were correctly deferred without Android hit/miss/memory evidence;
+- streamed audio/preload/flush behavior and fallback ownership remain unchanged;
+- title smoke remains the already-accepted P8-T03 presentation optimization and was not reopened;
+- MockCombat/BattleAnimation timing-sensitive presentation paths, source-frame caching and `GC-REGION` remain rejected as retuning targets;
+- styled-text remains deferred because its isolated font-registry baseline is not a valid performance-proof environment;
 - required immutable S5/S7/S8/S12/S13/S14/S15/S16/S17-disabled/S17-debugger-idle/S17-profiler-idle/S18 were reported exact;
-- focused cache/render/combat/tilemap/load/fast-forward/debugger/profiler/recovery suites were reported green; known shared-registry/native Windows failures remain baseline constraints.
+- focused P8/Phase-3-through-7/recovery suites were reported green in isolated processes;
+- known shared-registry/import-isolation/native Windows termination remains baseline debt, not repaired in P8-T04.
 
-## Locked findings entering P8-T04
+Phase 8 is therefore closed. Safe optimizations are retained only where dependency, output/presentation ownership, measurement and logical equivalence were proven. No extra Android retune was invented without device evidence.
 
-1. **One gameplay core.** Android retuning may alter platform presentation/resource policy only, never gameplay semantics/order.
-2. **GC-REGION remains NOT CERTIFIED SAFE.** Do not touch, benchmark as a new target, extend, or add readers into its mutation gap.
-3. **Title smoke seed is ACCEPTED.** Do not reopen its presentation contract or add work merely for pixel identity.
-4. **Battle source-frame caching remains REJECTED.** Do not add a frame cache or reuse transformed mutable surfaces without a new controller decision.
-5. **Styled-text allocation remains DEFERRED.** The existing font-registry fixture failure cannot be used as performance evidence.
-6. **Settings/Sound Room `blocks_fast_forward` remains a narrow interactive-state semantic guard**, not a generic performance knob.
-7. **Event command scheduling is shared and synchronous.** The removed Android wall-clock Event deadline must not return.
-8. **P4 tilemap progressive work is off-world only.** `_android_tilemap_pending`/Event-local barrier and one synchronous live commit are protected.
-9. **P5 canonical load/restart is protected.** Worker read/unpickle only; authoritative hydrate/install remains one logical main-thread transaction.
-10. **P7 fast-forward/debugger/profiler contracts are protected.** No retune may alter input edges, outcomes, command execution, or observer state.
+## Locked findings entering Phase 9
+
+1. **One gameplay core.** Android policy remains presentation/resource/off-world-preparation only.
+2. **No partial live gameplay state.** Load, tilemap, combat and other authoritative transactions retain their accepted atomic boundaries.
+3. **Combat ordering is locked.** Solver/action/RNG/hooks/cleanup/state-stack/end-combat order may not change.
+4. **Save/load/restart is locked.** One canonical transaction; SAVE != pristine RESTART; snapshot-first restart precedence remains accepted.
+5. **Fast-forward is locked.** Host/presentation timing may differ, logical outcome/order/input-edge semantics may not.
+6. **Debugger/profiler are locked observers** except explicit debugger commands through the shared controller.
+7. **P6 platform boundaries are locked.** Event wall-clock command scheduling must not return.
+8. **P8 cache decisions are locked.** `GC-REGION` remains NOT CERTIFIED SAFE; battle source-frame caching remains REJECTED; styled-text optimization remains DEFERRED; title smoke remains KEEP-PLATFORM.
+9. **Immutable recovery traces/goldens are read-only release oracles.**
+10. **Project data/assets remain protected.** Validation failure in project content must be reported rather than modified merely to make the engine matrix pass.
 
 ---
 
-# P8-T04 — Android-only performance retuning
+# P9-T01 — Full PC regression matrix
 
-Execute **P8-T04 only** using **GPT-5.6 Terra / high**.
+Execute **P9-T01 only** using **GPT-5.6 Luna / medium**.
 
-Escalation target: **GPT-5.6 Sol / max**, not pre-authorized.
+Escalation target: **GPT-5.6 Terra / high**, not pre-authorized.
 
-Prerequisite satisfied: P8-T01 through P8-T03 are accepted.
+This is a validation task, not a repair task. Luna should run the prescribed PC matrix mechanically, classify results against the recorded recovery baseline and accepted invariants, and stop for controller review.
 
-This is the final Phase-8 gate. Use profiler/measurement evidence and optimize only behind the accepted P6 platform boundaries. A valid result may be audit/evidence-only if no additional Android retune is justified.
+## Required environment / baseline comparison
 
-## Goal
+Read `recovery/baseline.md` before execution.
 
-Retune existing Android-only performance policy where measurable evidence shows a bounded opportunity and exact logical equivalence can be preserved.
+The recorded baseline interpreter is:
 
-Do not search for performance by changing gameplay lifecycle.
+`utilities\enemy_event_generator\.python\python.exe`
 
-The permitted policy families are the already-accepted P6 seams:
+The recorded full-suite command is:
 
-- **CAP-AUDIO** — physical cached/streamed backend, preload/flush/release only;
-- **CAP-RESOURCE** — immutable/background presentation-resource preparation only;
-- **CAP-RENDER-CACHE** — owner-local presentation cache enablement/capacity only;
-- **CAP-WORK-BUDGET** — numeric budget only for the already-approved off-world tilemap preparation;
-- narrow Android UI/input presentation mechanics where they do not inject gameplay actions.
+`utilities\enemy_event_generator\.python\python.exe -m unittest discover -s app/tests -p 'test*.py' -v`
 
-No new generic platform abstraction or service locator is authorized.
+The historical baseline ended abnormally with native Windows exit `-1073740791` (`0xC0000409`) after 311 observed `ok`, 8 `FAIL`, 1 `ERROR` and before a normal unittest summary.
 
-## Evidence-first inventory
+Do not silently replace the baseline interpreter for the authoritative full-suite comparison. Additional commands may use the same interpreter unless an existing repository command requires otherwise.
 
-Before changing production code, inventory current Android-only performance knobs and profiler evidence, including at minimum:
+Classify every observed failure as one of:
 
-- `OffWorldWorkBudget` and the current Android tilemap preparation deadline;
-- owner-local Android render-cache capacities/hit-miss behavior for highlight, title/menu/settings/Sound Room, info/unit menu and combat UI;
-- title smoke seed as an accepted baseline, not a new target;
-- audio/resource preload/flush/streamed fallback behavior;
-- render/update profiler counters that identify real Android-specific cost;
-- any existing Android-specific branch that suppresses, moves, or reduces presentation work.
+- `KNOWN-BASELINE-SAME`
+- `KNOWN-BASELINE-CHANGED`
+- `NEW-REGRESSION`
+- `ENVIRONMENT/TOOLING`
+- `NOT-REPRODUCED`
 
-For every candidate record:
+A known baseline failure becoming different/worse is not automatically safe; record exact delta.
 
-- owner and accepted capability family;
-- current knob/value;
-- baseline profiler/call-count/memory evidence;
-- expected benefit;
-- semantic risk;
-- presentation/resource risk;
-- exact before/after measurement method;
-- trace coverage;
-- decision: `KEEP-AS-IS`, `RETUNE-LOCAL`, `DEFER-NO-DEVICE-EVIDENCE`, `REJECT-SEMANTIC-RISK`, or `ESCALATE`.
+## Required PC matrix
 
-Create `recovery/p8_t04_android_performance_retuning.md`.
+### 1. Full unit-test discovery
 
-## Measurement requirements
+Run the exact baseline full-suite command above.
 
-A production retune is allowed only with before/after evidence.
+Capture:
 
-Preferred evidence:
+- exit code;
+- last completed test;
+- all FAIL/ERROR names;
+- observed pass count if the process dies before summary;
+- whether native termination reproduces;
+- exact differences from `recovery/baseline.md`.
 
-- Android-device profiler/frame-time distributions when available;
-- deterministic operation/hit-miss/allocation counts;
-- host-side microbenchmarks only for pure local code-path cost, clearly labeled as host evidence;
-- memory/cache occupancy bounds where relevant.
+Do not repair failures in P9-T01.
 
-If no Android device/JNI runtime is available, do not claim device FPS/frame-time gains. A host-proven reduction may justify a purely local presentation/resource retune only when the benefit is structural and semantics/output ownership are already proven; otherwise classify `DEFER-NO-DEVICE-EVIDENCE`.
+### 2. Focused accepted-regression matrix
 
-Do not use a single timing sample. Report repeated samples/median or a stable aggregate.
+Run accepted focused suites in fresh/isolated processes where shared global state is known to contaminate aggregate runs.
 
-## CAP-WORK-BUDGET lock
+At minimum cover:
 
-The current work budget applies only to pending/off-world tilemap construction.
-
-A numeric budget change is allowed only if all of the following are proven:
-
-1. pending build remains completely outside live gameplay state;
-2. Event-local `_android_tilemap_pending` still blocks next command/input/movement as accepted;
-3. final live tilemap/board/boundary/unit/region/aura/FOW publication remains one synchronous transaction;
-4. rollback remains atomic;
-5. no Event command wall-clock budget is introduced;
-6. logical Trace V1 is identical;
-7. before/after Android frame-time or equivalent platform evidence justifies the numeric change.
-
-Without real Android evidence, keep the current budget unchanged.
-
-## CAP-RENDER-CACHE lock
-
-Capacity/enablement retuning is allowed only for owner-local presentation caches already certified in P8-T02.
-
-For any capacity change prove:
-
-- cache key/invalidation contract is unchanged and complete for presentation output;
-- hit/miss cannot alter menu selection, command availability, state transitions, input, combat, FOW/aura, save/restart or observer semantics;
-- memory remains bounded;
-- before/after hit/miss or allocation evidence shows benefit;
-- uncached fallback remains correct.
-
-Do not centralize caches or extend gameplay-derived cache lifetime.
-
-`GC-REGION` is forbidden.
-
-## CAP-AUDIO / CAP-RESOURCE lock
-
-Retuning may change preload/cache/flush/backend thresholds only if physical playback/resource behavior remains presentation policy.
-
-Do not change:
-
-- semantic music NID selection;
-- battle/event/state ordering;
-- whether combat or a transition completes;
-- save/load resource authority;
-- worker access to `game`, Event, solver, state machine or mutable registries.
-
-Stream/backend failure must keep the accepted fallback path.
-
-## Explicitly forbidden performance techniques
-
-Do not:
-
-- reintroduce Android Event command deadlines;
-- yield between authoritative Actions/Event commands/combat cleanup steps;
-- time-slice GameState hydration;
-- move authoritative gameplay mutation to workers;
-- defer live tilemap publication;
-- add Android-only gameplay branches;
-- change fast-forward substep count/edge semantics;
-- change debugger/profiler observer semantics;
-- use SAVE as pristine restart truth;
-- add battle source-frame caching;
-- modify `GC-REGION`;
-- fix styled-text/font baseline in this task;
-- add speculative caches or global cache architecture.
-
-If a performance target requires any of these, classify `REJECT-SEMANTIC-RISK` or STOP under escalation rules.
-
-## Production change policy
-
-Production changes are optional, not required.
-
-Each production retune must be:
-
-- Android/platform-policy only;
-- owner-local;
-- supported by before/after measurement;
-- protected by deterministic regression tests;
-- exact under logical Trace V1;
-- bounded in memory/resource lifetime;
-- individually explainable/revertible.
-
-Prefer one small retune over a bundle of unrelated tweaks.
-
-Do not change shared gameplay code merely to improve Android profiling numbers.
-
-## Required regressions
-
-Always retain green:
-
-- P8-T01 cache/memoization evidence;
-- P8-T02 render/cache/batching evidence;
-- P8-T03 title-smoke/allocation evidence;
-- Phase-3 combat lifecycle;
-- P4 tilemap atomicity/barrier/rollback;
-- P5 canonical load/restart/compatibility;
-- P6 platform-policy/audio/work-budget tests;
+- recovery trace/golden/lifecycle integrity;
+- Phase-3 combat lifecycle/transaction ordering;
+- Phase-4 tilemap pending build/barrier/commit/rollback;
+- Phase-5 canonical load, atomic restore, restart and compatibility;
+- Phase-6 platform policy/audio/work-budget boundaries on desktop/default path;
 - P7 fast-forward equivalence;
-- P7 debugger parity;
-- P7 profiler observer-equivalence;
-- P7 save/load/restart UX;
-- recovery trace/lifecycle/golden integrity.
+- P7 debugger parity/shared controller;
+- P7 profiler observer equivalence;
+- P7 save/load/restart UX routing;
+- P8 cache/memoization tests;
+- P8 render/cache owner regressions that are runnable;
+- P8 title smoke contract;
+- current project/base integrity tests.
 
-Run focused owner tests for every knob actually changed.
+Do not treat an isolated pass as erasing a real full-suite ordering failure; report both.
 
-## Immutable trace gate
+### 3. Immutable deterministic scenario matrix
+
+Run all available immutable recovery scenarios, not only a subset, unless the manifest marks a scenario reference-unsupported.
+
+At minimum this must include the accepted S1-S18 set with S3 remaining reference-unsupported/N-A according to the frozen recovery contract, and S17 in disabled/debugger-idle/profiler-idle modes where the harness defines those variants.
+
+Use the locked Trace V1 comparator.
+
+Allowed provenance differences remain only those already approved by the comparator/manifest.
+
+No golden regeneration.
+
+Any unexplained logical checkpoint delta => STOP and report `ESC-03`.
+
+### 4. PC save/load/restart feature flows
+
+Exercise representative desktop pathways for:
+
+- new game / chapter start;
+- current SAVE load;
+- tactical restart from pristine source;
+- overworld special restart/save behavior;
+- game-over -> title restart route;
+- debugger restart route;
+- invalid/legacy load atomic failure where the focused harness supports it.
+
+Reuse existing automated feature-level tests/harnesses when they exercise the real route. Do not create a second validation-only implementation.
+
+### 5. Fast-forward/debugger/profiler feature checks
+
+Verify on PC/default runtime:
+
+- fast-forward OFF vs ON logical equivalence;
+- representative speed multipliers already accepted by P7;
+- debugger hotkeys/controller routing remains shared and single-dispatch;
+- profiler disabled mode remains inert;
+- profiler observer-on test paths remain logically equivalent where supported.
+
+### 6. Representative project launch
+
+A P9-T01 PASS requires a representative PC engine launch, not only unit tests.
+
+Follow `AGENTS.md` and current repo/project layout.
+
+At minimum:
+
+- identify the `.ltproj` project that `run_engine.py` would launch in this checkout;
+- run the engine through an existing bounded smoke/launch route if available;
+- verify project validation reaches normal engine startup without a new exception caused by recovery code;
+- if a fully interactive GUI loop would block, use an existing test/smoke seam or a bounded process launch that captures startup output and exits intentionally without modifying project data.
+
+Do not invent a fake project launch by importing one module and calling that a launch.
+
+If no bounded representative launch can be executed in the environment, P9-T01 must be `PARTIAL`, not `PASS`, and report the exact blocker.
+
+### 7. Type/static checks
+
+Run the repository-prescribed applicable check:
+
+`mypy app/`
+
+using the environment/tooling available in the checkout.
+
+If `mypy` is unavailable or current baseline has pre-existing failures, record exact tool/version/output and classify; do not install/change dependencies unless already authorized by repository setup.
+
+Do not repair unrelated typing debt in P9-T01.
+
+### 8. Importability / compile checks
 
 Run at minimum:
 
-- S5
-- S7
-- S8
-- S12
-- S13
-- S14
-- S15
-- S16
-- S17 disabled
-- S17 debugger-idle
-- S17 profiler-idle
-- S18
+- `python -m compileall -q app` with the baseline interpreter;
+- a bounded engine import smoke proving engine-side modules do not require PyQt5 merely to import;
+- `git diff --check`;
+- final `git status --short`.
 
-Run S2/S4 if any changed policy participates in title/load/restart resource or transition behavior.
+## PC logical acceptance criteria
 
-No Trace V1 schema/comparator/normalizer/manifest/golden changes.
+P9-T01 can PASS only if all are true:
 
-Any unexplained logical divergence => STOP under ESC-03.
+1. no new unexplained deterministic Trace V1 divergence;
+2. no new focused regression in accepted Phase-3-through-8 contracts;
+3. full-suite differences from baseline are completely classified;
+4. representative PC project launch requirement is actually exercised;
+5. save/load/restart and fast-forward/debugger representative feature paths remain valid;
+6. no project data/assets were modified;
+7. no production fix was made;
+8. required commands were not silently skipped.
 
-## Performance result format
+A reproduced historical native Windows crash may coexist with PASS only if:
 
-For each changed candidate report:
+- it matches the recorded baseline class/location closely enough to classify `KNOWN-BASELINE-SAME`;
+- the focused accepted matrix and deterministic oracles remain green;
+- no new tests fail before the native termination;
+- the representative PC launch succeeds.
 
-```text
-CANDIDATE:
-CAPABILITY:
-BASELINE:
-RETUNED:
-MEASUREMENT ENVIRONMENT:
-SAMPLE COUNT:
-BENEFIT:
-MEMORY IMPACT:
-LOGICAL TRACE:
-OWNER TESTS:
-ROLLBACK/FALLBACK:
-DECISION:
-```
+If the crash/failure signature has materially changed, report `KNOWN-BASELINE-CHANGED` or `NEW-REGRESSION` and do not PASS without controller review.
 
-If no production retune is justified, explicitly say so and preserve all current values.
+## Production / test change policy
 
-## Broad validation
+Expected code changes: **NONE**.
 
-Run broader unittest discovery and report existing component-registry/import-isolation/native Windows failures unchanged.
+P9-T01 may create only a validation evidence report, preferably:
 
-Then run:
+`recovery/p9_t01_pc_regression_matrix.md`
 
-- `python -m compileall -q app`
-- `git diff --check`
-- `git status --short`
-- `git diff --name-only`
+Do not add or modify production behavior merely because validation found a defect.
 
-Commit only:
+Do not modify tests to hide a failure.
 
-- `recovery/p8_t04_android_performance_retuning.md`;
-- focused tests/measurement harnesses;
-- explicitly justified bounded Android-policy retune(s), if any.
-
-Then run:
-
-- `git show --check`
-- `git status --short`
+If a new deterministic regression is found, STOP and report the first failing semantic boundary. Diagnosis beyond a mechanical local classification requires escalation authorization.
 
 ## Escalation
 
-Primary: **GPT-5.6 Terra / high**.
-Escalation target: **GPT-5.6 Sol / max**.
+Primary: **GPT-5.6 Luna / medium**.
+Escalation target: **GPT-5.6 Terra / high**.
 Pre-authorized: **NO**.
 
-STOP on ESC-02, ESC-03, ESC-04, ESC-05, ESC-07, ESC-08, ESC-09.
+Escalate only to diagnose failures, not to run known tests.
 
-In particular:
+STOP/report on:
 
-- ESC-07 if Android performance requires gameplay semantic divergence;
-- ESC-02/ESC-09 if a local retune requires cross-cutting lifecycle/cache/scheduler architecture;
-- ESC-03 on any immutable trace divergence.
+- `ESC-03` immutable trace divergence;
+- `ESC-05` invariant failure / partial state;
+- `ESC-06` save compatibility conflict;
+- `ESC-07` platform-boundary conflict exposed by desktop validation;
+- `ESC-08` repeated local validation failure requiring diagnosis;
+- `ESC-09` apparent architecture-level contamination;
+- any new regression whose root cause is not mechanically obvious.
 
 Do not self-escalate.
 
-## Gate status
+## Explicitly forbidden
 
-**P8-T01/P8-T02/P8-T03 are ACCEPTED. P8-T04 is the only authorized task. Phase 9+ remains blocked pending controller review.**
+Do not:
+
+- begin P9-T02/P9-T03/P9-T04;
+- fix production code;
+- regenerate traces/goldens;
+- modify comparator/manifest/normalization;
+- modify project data/assets;
+- change Android policy;
+- change test expectations to absorb a regression;
+- merge to `master`.
+
+## Report
+
+TASK RESULT: PASS | PARTIAL | FAIL
+FILES CHANGED
+MODEL/EFFORT
+BRANCH / START HEAD
+FULL SUITE RESULT
+FULL SUITE BASELINE DELTA
+FOCUSED REGRESSION MATRIX
+IMMUTABLE TRACE MATRIX
+PC PROJECT LAUNCH RESULT
+SAVE/LOAD/RESTART RESULT
+FAST-FORWARD RESULT
+DEBUGGER RESULT
+PROFILER RESULT
+TYPE CHECK RESULT
+IMPORT/COMPILE RESULT
+PROJECT-DATA INTEGRITY
+PRODUCTION CHANGES
+COMMANDS RUN
+KNOWN-BASELINE-SAME
+KNOWN-BASELINE-CHANGED
+NEW REGRESSIONS
+ENVIRONMENT/TOOLING LIMITS
+ESCALATION TRIGGERS
+COMMIT SHA
+WORKING TREE STATUS
+NEXT ACTION: CONTROLLER REVIEW
+
+STOP FOR CONTROLLER REVIEW.

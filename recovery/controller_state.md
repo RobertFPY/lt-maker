@@ -17,163 +17,98 @@
 - P5-T02/P5-T03 and Phase 6+: **UNAUTHORIZED**
 - Golden/reference fixture changes: **UNAUTHORIZED**
 - Production behavior/schema changes: **UNAUTHORIZED**
-- Project-data changes: **UNAUTHORIZED**
+- Project-data changes: **UNAUTHORIZED except the exact cleanup authorization below**
 - Controller gate after P5-T01-R1: **YES — STOP FOR CONTROLLER REVIEW**
 
-## P5-T01 initial review
+## P5-T01-R1 required finding
 
-The controller does **not** yet accept P5-T01 as complete. The initial audit is otherwise well-scoped and useful:
+R1 remains audit/test-only. It must close the save compatibility ownership of `game.phase` and `game.initiative` before P5-T02 can be authorized.
 
-- `280b5fec9e0e6b7dae620d2a6d3f9af5ac47ba92` is a single direct descendant of P5-T01 authorization commit `58f06f6cb75f673ec7355132d931d565ced65f4c`;
-- it changes only `recovery/p5_t01_save_compatibility_audit.md`;
-- current and PC-reference `GameState.save()` have the same top-level key set and no payload schema discriminator;
-- reader defaults/fallbacks, internal Event/EventProcessor serialization, SAVE_SLOTS vs RESTART_SLOTS separation, chapter-start snapshot timing, aura child nonserialization/reconstruction, Android worker-only read/unpickle, and transaction-local S/Q ownership are mapped correctly at a useful level;
-- immutable S1/S2/S4/S12/S18 and targeted restore/restart suites were reported PASS without fixture changes;
-- absence of an archived PC-reference binary `.p` fixture is correctly stated as a limitation, so the report does not overclaim arbitrary pickle-byte compatibility.
+Accepted facts:
 
-However P5-T01 explicitly required inventory of **turn/phase/current-mode/difficulty** and **initiative** data where applicable. The report maps turncount/current_mode but does not close the serialization/restore contract for `game.phase` or `game.initiative`.
+1. Neither PC-reference nor current `GameState.save()` serializes top-level `phase` or `initiative` state.
+2. Current `GameState.generic()` creates a fresh `PhaseController`; `load_iter()` does not deserialize one.
+3. Under initiative mode, `PhaseController` depends on `game.initiative`.
+4. `level_setup_iter()` creates/starts `InitiativeTracker` before `chapter_start_snapshot` capture.
+5. `load_iter()` does not restore `InitiativeTracker`, whose mutable state includes `unit_line`, `initiative_line`, and `current_idx`.
+6. The same top-level omission exists in the PC reference, so a supported-path mismatch must not be silently labeled a post-reference regression.
+7. `bounds` and `fog_state` are serialized reconstruction inputs; derived board/boundary/occupancy/visible-FOW/aura structures are not serialized authoritative objects.
 
-Accepted source facts that R1 must incorporate:
+R1 must determine supported save-kind reachability for exact phase/initiative state. If a supported current-progress save demonstrably loses semantics and resolving it requires choosing between preserving reference behavior and adding a compatibility fix/schema behavior, report **ESC-04 / ESC-06** and stop. Do not repair production during R1.
 
-1. Neither PC-reference nor current `GameState.save()` contains a top-level `phase` or `initiative` field.
-2. Current `GameState.generic()` constructs a fresh `PhaseController`; `GameState.load_iter()` does not deserialize a phase controller.
-3. `PhaseController.__init__` derives its initial non-initiative state from `game.turncount`; under initiative mode its getters depend on `game.initiative`.
-4. `GameState.level_setup_iter()` creates and starts an `InitiativeTracker` for a new chapter before `chapter_start_snapshot` is captured.
-5. `GameState.load_iter()` currently does not create/restore `InitiativeTracker`, and `InitiativeTracker` has no save/restore API.
-6. The same absence exists in the PC-reference top-level save writer, so this must not be silently labeled a post-reference regression without supported-path evidence.
-7. `bounds` and `fog_state` themselves are serialized reconstruction inputs; the board/boundary/occupancy/visible-FOW/aura structures derived from them are the nonserialized state. The audit wording should distinguish those two categories explicitly.
+## Explicit cleanup authorization — unintended initiative probe side effects
 
-P5-T02 cannot be authorized until the controller knows whether supported normal/start/suspend/restart/overworld save routes require exact phase/initiative restoration or whether those controllers are intentionally reconstructed/irrelevant at every supported save boundary.
+The controller explicitly authorizes cleanup of the accidental tracked project-resource modifications created by the temporary P5-T01-R1 initiative probe, subject to all constraints below.
 
-## P5-T01-R1 — authorized audit/test correction
+### Authorized paths only
 
-Execute **P5-T01-R1 only** using **GPT-5.6 Terra / medium**.
+Restore tracked modifications under exactly these two path prefixes to the current branch `HEAD` version:
 
-PC behavioral reference:
+- `default.ltproj/resources/portraits/`
+- `default.ltproj/resources/old_portraits/`
 
-`9314f54b49f4552b5a3d023b4da0012ce7dfbc89`
+This authorization exists solely to remove unintended probe side effects. It is **not** authorization to restore all of `default.ltproj`, delete project data, modify assets, or change any intended project content.
 
-P5-T01-R1 remains **audit/test only**. Do not modify production behavior or save bytes/schema.
+### Required pre-cleanup verification
 
-### Required phase ownership audit
+Before restoring anything, record:
 
-Map the exact writer/reader/runtime ownership of phase state for PC reference and current recovery:
+- `git status --short`
+- `git diff --name-only`
+- `git diff --name-only -- default.ltproj/resources/portraits default.ltproj/resources/old_portraits`
 
-- `GameState.save` / `load` or `load_iter`;
-- `GameState.generic`;
-- `PhaseController.__init__`, `get_current`, `next`;
-- state-machine S/Q states that may encode a phase transition indirectly;
-- every supported save kind/entry point that can persist a map while a non-player phase is authoritative;
-- normal save, suspend, battle/turn-change saves where applicable, start save, restart save, overworld save.
+The executor must verify that the dirty project-resource files it intends to restore are tracked modifications under only those two prefixes and are the unintended probe output described in the task report.
 
-Determine whether exact current phase is:
+Do **not** restore or discard:
 
-- serialized directly;
-- derived safely from other saved data at every supported save boundary;
-- intentionally restricted by save routing so only a deterministic phase can be loaded;
-- or not preserved for a supported path.
+- `recovery/p5_t01_save_compatibility_audit.md` R1 evidence;
+- any test file intentionally created/modified for R1;
+- any production file;
+- any file outside the two authorized project-resource prefixes.
 
-Do not assume `turncount` alone is sufficient. Prove it from callers/save-point constraints.
+If additional dirty project-data paths exist outside the two prefixes, STOP and report them instead of broadening cleanup.
 
-### Required initiative ownership audit
+### Authorized cleanup operation
 
-Map PC-reference and current initiative behavior:
+A path-scoped restore from the current branch `HEAD` is explicitly authorized for the two prefixes above. Equivalent safe commands include:
 
-- when `game.initiative` is constructed;
-- mutable fields: `unit_line`, `initiative_line`, `current_idx`, and any runtime behavior depending on them;
-- whether any of those fields are serialized directly or indirectly;
-- whether load/restart/start-level reconstructs them and at what boundary;
-- whether supported saves can occur after initiative has advanced from its chapter-start value;
-- whether loading such a save is supported by current UI/runtime routing;
-- whether current behavior equals the PC reference or differs because of later orchestration.
+```text
+git restore --source=HEAD -- default.ltproj/resources/portraits default.ltproj/resources/old_portraits
+```
 
-Run a bounded programmatic probe/test with initiative enabled if feasible without project-data changes. The probe must distinguish:
+or a more granular restore of the exact tracked files returned by the pre-cleanup diff.
 
-1. new chapter/start-save reconstruction;
-2. normal/suspend save after initiative advancement;
-3. restart/chapter-start reconstruction.
+Do not use:
 
-If a supported save/load path demonstrably loses initiative/current-phase semantics, **do not fix it in P5-T01-R1**. Record the exact evidence and STOP for controller review. If resolving whether to preserve reference behavior or introduce a compatibility fix requires a semantic choice or schema change, report **ESC-04/ESC-06** and request escalation/authorization.
+- `git reset --hard`;
+- `git clean`;
+- `git checkout -- default.ltproj`;
+- `git restore --source=HEAD -- default.ltproj`;
+- any command that discards unrelated working-tree changes.
 
-### Required report corrections
+### Required post-cleanup verification
 
-Update only:
+Immediately after cleanup, verify:
 
-`recovery/p5_t01_save_compatibility_audit.md`
+- no tracked diff remains under either authorized prefix;
+- `git diff --name-only` contains only intended P5-T01-R1 report/test changes;
+- no production/schema/golden/project-data changes remain.
 
-plus narrow test-only coverage if necessary.
+The cleanup itself must not be committed because it restores tracked files back to `HEAD`; only the bounded R1 audit/test changes are eligible for commit.
 
-The report must add explicit rows/sections for:
+## R1 continuation and stop rules
 
-- `phase` serialization/reconstruction classification;
-- `initiative` serialization/reconstruction classification;
-- supported save-kind reachability for each;
-- PC-reference vs current comparison;
-- P5-T02 constraint resulting from the finding;
-- P5-T03 restart constraint resulting from the finding;
-- `bounds` / `fog_state` as **serialized reconstruction inputs**, distinct from derived nonserialized board/boundary/FOW/aura state.
+After the authorized cleanup:
 
-Use only the existing classification vocabulary. If the semantics cannot be classified without a controller choice, use `NEEDS-CONTROLLER-DECISION`.
+- finish only the P5-T01-R1 audit/test work already authorized;
+- do not rerun any probe that writes into project resources unless redesigned to operate in a temporary/copy-only location;
+- preserve the existing R1 evidence already collected if valid;
+- run the required focused phase/initiative/save/load/restart validation and immutable S1/S2/S4/S12/S18 comparisons;
+- run `python -m compileall -q app`, `git diff --check`, commit bounded R1 audit/tests, then `git show --check`;
+- STOP for controller review.
 
-### Preserve the already accepted P5-T01 findings
-
-Do not weaken or reopen without contrary source evidence:
-
-- identical reference/current top-level save-key set;
-- no payload schema discriminator;
-- internal Event/EventProcessor serialization remains payload support while S3 stays `REFERENCE-UNSUPPORTED`;
-- SAVE_SLOTS and RESTART_SLOTS remain distinct;
-- chapter_start_snapshot is captured after chapter setup and before LevelStart mutation;
-- aura children are nonserialized/derived;
-- Android worker owns immutable read/unpickle only and main thread owns authoritative hydration/S/Q publication;
-- Phase-4 pending tilemap structures are not save truth.
-
-### Validation
-
-Run focused phase/initiative/save/load/restart tests or probes needed to support the new findings.
-
-Re-run at minimum:
-
-- `app.tests.test_atomic_restore`
-- relevant save/restart/runtime-debugger tests
-- recovery trace/lifecycle/golden integrity
-- S1, S2, S4, S12, S18 immutable comparisons
-- `python -m compileall -q app`
-- `git diff --check`
-- commit bounded R1 audit/tests
-- `git show --check`
-
-Do not claim PASS if required supported-path phase/initiative behavior remains unknown.
-
-### Explicitly out of scope
-
-Do not:
-
-- modify `GameState.save/load/load_iter` production behavior;
-- add phase/initiative save fields;
-- change save schema/versioning;
-- implement P5-T02;
-- implement P5-T03;
-- change restart precedence;
-- change Phase-4 policy;
-- modify Trace V1/comparator/manifest/goldens;
-- modify project data;
-- merge master.
-
-## Escalation and stop rules
-
-Primary remains **GPT-5.6 Terra / medium**. Escalation target is **GPT-5.6 Sol / high**, not pre-authorized.
-
-STOP on:
-
-- **ESC-01** supported reference save semantics remain ambiguous;
-- **ESC-02** root cause crosses into an unplanned subsystem;
-- **ESC-04** preserving reference behavior versus fixing supported phase/initiative persistence requires a semantic choice;
-- **ESC-06** old/current or supported-save compatibility conflict requires schema/reader behavior changes;
-- **ESC-09** safe compatibility requires new cross-cutting serialization architecture.
-
-Do not self-escalate.
+P5-T02/P5-T03 remain blocked. Do not self-escalate. Production/save-schema changes remain unauthorized.
 
 ## Gate status
 
-**P5-T01 is PARTIAL. P5-T01-R1 is the only authorized task. P5-T02/P5-T03 and later phases remain blocked pending controller review.**
+**P5-T01 is PARTIAL. Cleanup of only the two accidental portrait-resource prefixes is explicitly authorized. P5-T01-R1 remains the only active task. P5-T02/P5-T03 and later phases remain blocked.**

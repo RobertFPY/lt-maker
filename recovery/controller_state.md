@@ -4,74 +4,66 @@
 
 ## Current authorization
 
-- Current phase: **Phase 5**
+- Current phase: **Phase 6**
 - Phase 1 harness / immutable Trace V1 PC-reference goldens: **ACCEPTED**
 - Phase 2 state-restore semantics: **ACCEPTED**
 - Phase 3 combat lifecycle semantics: **ACCEPTED**
 - Phase 4 tilemap/board/event atomicity: **ACCEPTED**
+- Phase 5 save/load/restart consolidation: **ACCEPTED**
 - P5-T01 save-format / compatibility audit: **ACCEPTED** at `f0abf0cb4f4aa05df9f6bff86a959f203d25553f`
 - P5-T02 canonical transactional load API: **ACCEPTED** at `788d47c4dad8b9c2b4201fa50f58414bc5e98837`
-- Active task: **P5-T03 only — Canonical restart contract**
+- P5-T03 canonical restart contract: **ACCEPTED** at `4059a2af59e3dc97a7bb557fffac649fc2ee6a19`
+- Active task: **P6-T01 only — Define runtime capability interfaces**
 - Primary model: **GPT-5.6 Terra / high**
 - Escalation target: **GPT-5.6 Sol / max**
 - Escalation pre-authorized: **NO**
-- Phase 6+: **UNAUTHORIZED**
+- P6-T02/P6-T03 and Phase 7+: **UNAUTHORIZED**
+- Production migration/behavior changes in P6-T01: **UNAUTHORIZED unless strictly required for a no-op interface proof explicitly listed below; default is report/design only**
 - Golden/reference fixture changes: **UNAUTHORIZED**
 - Project-data / asset changes: **UNAUTHORIZED**
-- Controller gate after P5-T03: **YES — STOP FOR CONTROLLER REVIEW**
+- Controller gate after P6-T01: **YES — STOP FOR CONTROLLER REVIEW**
 
-## P5-T02 acceptance record
+## Phase 5 acceptance record
 
-The controller accepts `788d47c4dad8b9c2b4201fa50f58414bc5e98837` (`fix(save): canonicalize load transaction`).
+The controller accepts `4059a2af59e3dc97a7bb557fffac649fc2ee6a19` (`fix(save): preserve pristine restart slots`) and closes Phase 5.
 
 Accepted evidence:
 
-- it is one direct descendant of the P5-T02 controller authorization commit `d9ed0367413e872de72873ac706e7bba648c68ec`;
-- production changes stay within the authorized save/load/title/in-chapter/debugger surfaces; tests are bounded and no project data, Trace V1, comparator, manifest, or golden fixture changed;
-- `save.load_game_data()` is the one authoritative main-thread load transaction used by desktop `load_game`/`GameState.load` and Android `SaveLoadJob` after worker-owned immutable read/unpickle;
-- the transaction validates state-stack shape, controller compatibility, and explicit restart difficulty context before destructive hydration;
-- saved S/Q stays local while `build_new` + `load_iter(..., replace_state_machine=True)` reconstruct registries/world/board/FOW/aura/events/controllers;
-- phase/initiative compatibility is restored and the completed world validated before `install_state_machine()` publishes the final stack/destination exactly once;
-- Android worker code never hydrates the singleton and no `load_iter` yield became a host-frame boundary;
-- main-thread failure resets to a coherent title session; late restore/publication failure also restores Item/Skill UID globals and clears initiative progress rather than exposing a partial world;
-- new initiative current-progress saves conditionally persist only bounded primitive compatibility state: phase current/previous team NIDs plus `unit_line`, `initiative_line`, and `current_idx`;
-- non-initiative player-control, `start`, and overworld payloads do not receive the optional `controller_state` merely for symmetry, preserving default immutable save-payload traces;
-- controller state validation rejects malformed/unknown/duplicate initiative units, mismatched lines, nonnumeric values, and invalid index bounds before final publication;
-- legacy current-progress initiative payloads without exact tracker state fail explicitly rather than guessing or later dereferencing `None`;
-- start/restart destinations rebuild chapter-start initiative state inside the same canonical transaction before publication;
-- legacy `enemy_turn_change` context has a bounded compatibility restoration path using explicit `save_kind`, while new non-player saves persist exact phase current/previous state;
-- Event/EventProcessor serialization remains intact; S3 stays `N/A — REFERENCE-UNSUPPORTED`;
-- aura children remain derived/nonserialized; board/boundary/FOW/aura structures are rebuilt before publication; Phase-4 pending tilemap state is not save truth;
-- SAVE_SLOTS and RESTART_SLOTS remain distinct contracts and route destination is explicit in `LoadTransactionContext`, not inferred from save kind inside the core API;
-- immutable S1, S2, S4, S12, S17 disabled/debugger-idle/profiler-idle, and S18 were reported exact PASS; focused canonical/restore/Android/debugger/Event/save tests and compile/diff/show checks were reported PASS.
+- the commit is one direct descendant of P5-T03 authorization commit `4422419e0e30855e9bd79666c20fc284da0fbee8`;
+- production scope is limited to `app/engine/save.py`, `app/engine/title_screen.py`, and `app/engine/runtime_debugger.py`, with bounded restart/debugger tests; no project data, Trace V1, comparator, manifest, or golden fixture changed;
+- normal tactical saves keep current progress in SAVE_SLOT while a frozen deep copy of the matching `chapter_start_snapshot` becomes the RESTART_SLOT source;
+- `snapshot_matches_chapter` and persistent restart validation use payload/metadata level identity rather than current-progress heuristics;
+- the Test Chapter first-save path no longer seeds restart from mid-chapter progress when a valid pristine snapshot exists;
+- save A -> B uses the current chapter's frozen snapshot when available and otherwise carries only source-proven same-chapter persistent restart material;
+- stale/wrong-chapter restart material is removed/rejected instead of silently becoming the current slot's Restart Level source;
+- restart payloads remain ordinary engine save payloads with `kind='start'` and level identity; gameplay-authoritative restart state is not moved into metadata-only storage;
+- snapshot/restart data handed to the save thread is frozen before worker start, preventing later live gameplay mutations from changing restart bytes;
+- restart persistence writes a temporary payload+metadata pair and removes incomplete/selectable restart material on failure while leaving the current-progress main save independent;
+- desktop and Android Title Restart validate the same restart source and route through the accepted P5-T02 `LoadDestination.RESTART_LEVEL` transaction; Android differs only in immutable read/presentation orchestration;
+- the canonical load transaction additionally rejects a restart payload whose level identity does not match the explicit requested chapter;
+- Runtime Debugger restart prefers a matching in-memory snapshot, otherwise requires a matching persistent restart slot, and applies requested difficulty only through explicit canonical load context;
+- overworld Restart Level remains the established special case using the matching main overworld SAVE_SLOT rather than tactical restart material;
+- restart reconstructs chapter-start initiative state via `start_level` and does not restore current-progress initiative state;
+- immutable S1/S2/S4/S12/S18 were reported exact PASS; focused canonical/restart/debugger/title/Android/Event suites and compile/diff/show checks were reported PASS;
+- full discovery remains affected by the known shared-test pollution/native baseline and was not broadened into unrelated repair.
 
-### Correction to prior P5-T01 reachability wording
+### Locked Phase-5 contracts
 
-Current `save.get_all_saves()` glob selects `*-turn_change-*` files and does **not** directly enumerate `*-enemy_turn_change-*` files. Therefore the earlier statement that Title Extras -> All Saves currently exposes enemy-turn-change files was too broad.
+Later phases must preserve:
 
-This does not invalidate P5-T02: the engine does create `enemy_turn_change` saves, and the explicit `save_kind == 'enemy_turn_change'` legacy restoration branch is bounded and safe if such a slot/context is supplied. Do not use the prior UI-reachability claim as evidence in later tasks unless source behavior changes.
+1. **Canonical load:** one shared main-thread authoritative transaction for desktop and Android; Android worker may read/unpickle immutable bytes only.
+2. **S/Q publication:** saved state stack/queue remains transaction-local until complete world/controller reconstruction and publishes once.
+3. **Compatibility state:** optional bounded `controller_state` only where exact phase/initiative progress requires it; default player/non-initiative/start/overworld payload shapes remain unchanged.
+4. **Legacy initiative:** current-progress legacy initiative payload without exact tracker state fails explicitly rather than guessing.
+5. **Restart:** SAVE_SLOT is current progress; RESTART_SLOT is source-proven pristine current-chapter material; current progress is never silently promoted to pristine restart truth.
+6. **Restart source:** current-session `chapter_start_snapshot` is preferred when matching; persistent restart is fallback only when matching the intended chapter.
+7. **Aura/board/FOW:** derived structures remain nonserialized and are rebuilt after authoritative data exists.
+8. **Event serialization:** internal Event/EventProcessor support remains; user-facing arbitrary mid-event S3 remains unsupported.
+9. **SAVE_SLOTS / RESTART_SLOTS:** remain distinct storage/menu contracts.
 
-## Accepted canonical load contract
+## P6-T01 — authorized scope
 
-Later tasks must preserve:
-
-```text
-immutable read/context
-    -> compatibility validation
-    -> one synchronous authoritative hydration transaction
-    -> derived board/FOW/aura/controller reconstruction
-    -> complete-world validation
-    -> one S/Q + destination publication
-    -> coherent loaded world
-```
-
-Desktop is synchronous. Android may move immutable file I/O and presentation off the gameplay path, but authoritative hydration and publication use the same core transaction.
-
-P5-T03 may call/refine this API but must not fork or weaken it. If canonical restart semantics require a non-bounded change to `load_game_data()` architecture, STOP under ESC-02 / ESC-09.
-
-## P5-T03 — authorized scope
-
-Execute **P5-T03 only** using **GPT-5.6 Terra / high**.
+Execute **P6-T01 only** using **GPT-5.6 Terra / high**.
 
 Escalation target: **GPT-5.6 Sol / max**, not pre-authorized.
 
@@ -79,152 +71,273 @@ PC behavioral reference:
 
 `9314f54b49f4552b5a3d023b4da0012ce7dfbc89`
 
-Required later correctness semantics may supersede a proven reference limitation, but do not change unrelated save/load behavior.
+P6-T01 is an **architecture inventory / interface-design task**. P6-T02 owns migration of Android audio/resource policy. P6-T03 owns migration of accepted Android scheduling policy. Do not start either migration during P6-T01.
 
 ### Goal
 
-Define and implement one canonical **restart-current-chapter** contract shared by title Restart Level, game-over restart routing, debugger-triggered restart, and save-slot restart material.
+Define narrow runtime capability boundaries that isolate platform policy from authoritative gameplay semantics without introducing a giant platform abstraction or spreading new `if is_android_runtime()` branches through gameplay-critical modules.
 
-The restart source must represent a **pristine current-chapter start**, never an accidental mid-chapter progress save and never a stale prior-chapter restart point.
+The desired direction is:
 
-The canonical concept is the existing `GameState.chapter_start_snapshot`: complete in-memory save payload captured after chapter setup (party/board/regions/FOW/unit arrival/initiative setup) and before LevelStart or later chapter mutation.
+```text
+gameplay/core code
+    -> narrow capability/policy interface
+        -> desktop/default implementation
+        -> Android implementation
+```
 
-Do not turn ordinary SAVE_SLOT current progress into restart truth.
+Capabilities may answer **how** platform work is performed. They must not answer or redefine **what gameplay happens, in what semantic order, or when authoritative state becomes visible**.
 
-### Required restart invariants
+### Required whole-repo Android/platform branch inventory
 
-1. **SAVE_SLOTS and RESTART_SLOTS remain separate.**
-   - SAVE_SLOT = current progress.
-   - RESTART_SLOT = pristine restart material for that slot's current chapter.
+Audit the current recovery HEAD, not only post-reference commit names.
 
-2. `chapter_start_snapshot` remains the in-memory pristine source for a chapter entered in the current process.
+Locate every runtime platform branch/capability use relevant to engine execution, including at minimum:
 
-3. A normal save made while a valid current-chapter snapshot exists must seed/update the destination slot's restart material from that pristine snapshot, not from the mid-chapter save being written.
+- `is_android_runtime()`;
+- `is_android_render_optimization_enabled()`;
+- any Android-specific cache/preload/resource toggles;
+- Android streamed music/sound paths;
+- Android touch/raw-input ownership;
+- Android debugger routing;
+- Android title/save/load presentation paths;
+- Android tilemap pending-build/event barrier;
+- frame-work budgets / incremental jobs;
+- filesystem/build/runtime-environment checks that affect engine behavior;
+- profiler/debugger observer routing;
+- any direct platform checks in gameplay-critical combat/state/event/save modules.
 
-4. Saving from slot A into slot B must associate B with the current chapter's pristine restart point. Do not blindly carry a stale prior-chapter restart file merely because `old_slot == A`.
+For each occurrence record:
 
-5. If no in-memory snapshot exists (for example after loading older current-progress material), an existing restart slot may be carried only when source evidence establishes it is valid restart material for the same current chapter. Do not fabricate pristine state from current progress.
+- file/function;
+- caller;
+- platform condition;
+- data read/written;
+- whether it can mutate authoritative gameplay state;
+- whether it can advance a gameplay lifecycle/state machine;
+- whether it changes ordering/timing only or changes outcomes;
+- current accepted phase/task provenance;
+- proposed capability boundary or reason to leave direct/local.
 
-6. If exact pristine restart material cannot be established for a legacy/current-progress path, fail/disable that restart route explicitly rather than silently restart from the wrong chapter or a mid-chapter save. If choosing the legacy fallback requires new semantics beyond this rule, STOP under ESC-04 / ESC-06.
+Do not assume every Android check must be abstracted. A direct check may remain when it is genuinely platform-local and does not leak through gameplay-critical code.
 
-7. The Test Chapter first-save path must no longer seed RESTART_SLOT from the first mid-chapter save when `chapter_start_snapshot` is available. Use the pristine in-memory snapshot.
+### Required capability families
 
-8. Restart after game over in the same process must target the current chapter start even if no mid-chapter save has occurred since chapter entry. Prefer a valid in-memory snapshot where the route can identify the current session/slot safely; persistent restart material remains the fallback for fresh-process/title loads.
+Design narrow interfaces for the candidate families below only when source evidence supports them.
 
-9. Debugger restart continues to prefer the in-memory pristine snapshot and may override difficulty only through explicit restart context. It must not rebuild from current progress.
+#### 1. Audio / music backend capability
 
-10. Normal title Restart Level uses persistent RESTART_SLOT semantics and the P5-T02 `RESTART_LEVEL` transaction; overworld restart continues to use the matching main overworld SAVE_SLOT as already established.
+Cover current platform differences such as streamed Android battle/title/game-over music versus desktop cached/mixer playback.
 
-11. New-game/start behavior remains valid and must not produce duplicate or conflicting restart sources.
+The interface may choose:
 
-12. Restart must reconstruct chapter-start initiative state deterministically under the P5-T02 compatibility contract; it must not restore current-progress initiative tracker state.
+- streamed vs cached playback;
+- preload/flush policy;
+- resource release policy;
+- backend-specific fade/play calls.
 
-13. LevelStart mutations must occur after the pristine boundary exactly as intended by restart. Snapshot capture must not move later merely to simplify persistence.
+It must not choose:
 
-### Restart identity / validation
+- when combat starts/ends;
+- when a battle-music semantic transition occurs;
+- whether a combat/event hook fires;
+- state-stack ordering.
 
-Before using an in-memory or persistent restart source, prove it belongs to the intended current chapter.
+P6-T02 will implement/migrate this interface later.
 
-Use source-proven identity such as saved level NID / target level context and slot/session ownership. Do not compare opaque pickle bytes or infer chapter identity from current unit positions.
+#### 2. Resource load / preload capability
 
-A persistent RESTART_SLOT written from `chapter_start_snapshot` should have metadata sufficient for menus/debugger routing to recognize it as restart/start material. Preserve mode/level/title data; do not store gameplay-authoritative restart state only in metadata.
+Cover platform differences around expensive resource/audio loading, battle-animation/resource setup, title assets, and safe background immutable work.
 
-If a stale restart file is detected for another chapter, do not silently carry or load it as current-chapter restart material.
+Separate:
 
-### Persistence design constraints
+- immutable/background preparation;
+- main-thread pygame/resource publication requirements;
+- authoritative gameplay state.
 
-Prefer bounded changes to existing save/restart helpers.
+Do not design an interface that lets a worker mutate `game`, DB runtime state, Event state, combat solver state, or authoritative registries.
 
-The authoritative restart payload should remain a normal engine save payload readable by the P5-T02 canonical load transaction. Do not create a second bespoke restart serialization format.
+#### 3. Render / cache capability
 
-Do not serialize `chapter_start_snapshot` recursively inside ordinary main-save payloads merely to retain it across process restarts. Persistent RESTART_SLOT already exists for that purpose.
+Cover accepted Android render/cache optimizations and title/UI cache policy.
 
-If the implementation passes an in-memory snapshot to the save I/O thread, copy/freeze it before the thread begins so later gameplay mutation cannot alter restart bytes.
+The interface may decide:
 
-Keep main-save and restart-file writes deterministic and slot-keyed. Do not merge their file names or menu concepts.
+- whether a presentation cache is enabled;
+- cache size/lifetime/prefill policy;
+- rendering-only fast paths.
 
-### Save I/O failure behavior
+It must preserve invalidation correctness and INV-07 observer behavior. Do not hide gameplay data mutation behind a render interface.
 
-Do not make a successful current-progress SAVE_SLOT silently point at corrupt/partial restart material.
+#### 4. Frame-work budget / scheduling capability
 
-Use the narrowest existing transaction/copy semantics possible. If making main-save and restart-save persistence fully atomic would require a new cross-cutting filesystem transaction architecture, STOP under ESC-09 rather than inventing it in P5-T03.
+This is design-only in P6-T01. P6-T03 owns migration.
 
-At minimum, restart write/copy failure must be surfaced/logged and must not be disguised as a valid pristine restart point.
+Map accepted uses such as Phase-4 Android pending tilemap preparation and any other time-budgeted platform work.
 
-### Required caller audit / implementation surfaces
+The capability may provide:
 
-Audit and reconcile at minimum:
+- a numeric work budget;
+- whether progressive **off-world/non-authoritative** preparation is enabled;
+- platform-specific budget selection.
 
-- `GameState._capture_chapter_start_snapshot` / `level_setup_iter`;
-- `save.suspend_game`, `save_io`, `_save_io`;
-- SAVE_SLOTS / RESTART_SLOTS refresh and metadata;
-- `TitleRestartState` desktop + Android paths;
-- game-over -> title -> Restart Level behavior;
-- `RuntimeDebugger.restart_chapter`;
-- Test Chapter path where `current_save_slot is None`;
-- save-to-different-slot carry-forward behavior;
-- overworld restart special case;
-- P5-T02 `LoadTransactionContext` / `LoadDestination.RESTART_LEVEL` use.
+It must never authorize:
 
-Expected primary production surfaces are `app/engine/save.py`, `app/engine/game_state.py`, `app/engine/title_screen.py`, and `app/engine/runtime_debugger.py`, with narrow adjacent changes only if required.
+- yielding between authoritative gameplay mutations;
+- staged combat solver/action/cleanup semantics;
+- staged live GameState hydration;
+- one-unit-at-a-time live event mutations;
+- partial board/unit/region/aura/FOW publication.
 
-Do not change Phase-3 combat or Phase-4 tilemap/event semantics.
+The accepted transaction contracts from Phases 2–5 remain stronger than any scheduling policy.
 
-### Required tests
+#### 5. Filesystem / runtime-environment capability
 
-Add/retain focused tests proving at minimum:
+Audit whether engine runtime currently has platform-specific filesystem/path/build assumptions worth encapsulating.
 
-1. snapshot is captured after chapter setup/initiative creation and before LevelStart mutation;
-2. normal save writes current progress to SAVE_SLOT and pristine snapshot to RESTART_SLOT;
-3. first Test Chapter save uses pristine snapshot, not current mid-chapter progress;
-4. save A -> save B gives B the current chapter pristine restart point;
-5. stale prior-chapter restart material is not blindly carried into a new chapter;
-6. when no snapshot exists, valid same-chapter persistent restart material can still be carried where source-proven;
-7. invalid/missing pristine legacy restart material is not silently replaced by current progress;
-8. Title Restart Level desktop uses current-chapter RESTART_SLOT through canonical `RESTART_LEVEL` load;
-9. Android title restart uses the same restart source/transaction semantics with worker-only immutable read;
-10. overworld Restart Level continues using the main overworld SAVE_SLOT;
-11. game-over restart returns to the current chapter start and does not inherit death/mid-chapter mutations;
-12. debugger restart prefers snapshot, applies requested difficulty explicitly, and does not use current progress;
-13. initiative restart rebuilds chapter-start tracker (`current_idx`/lines) rather than current-progress tracker;
-14. restart slot metadata remains slot-keyed and recognized as restart/start material;
-15. SAVE_SLOTS and RESTART_SLOTS remain distinct after save/delete/check refresh;
-16. P5-T02 canonical load tests remain green and no second restart-specific hydration algorithm is introduced.
+Keep editor/build-only concerns separate from runtime capability design when possible.
 
-### Immutable proof
+Do not create a broad service locator just to wrap `os.path`.
 
-Run at minimum:
+#### 6. Input / touch capability
 
-- S1 new game first playable;
-- S2 normal save/load;
-- S4 restart;
-- S12 aura lifecycle;
+Audit current Android raw-touch consumer/input handling.
+
+Define a capability only if doing so reduces platform leakage without changing the existing InputManager/gameplay action semantics.
+
+Fast-forward remains timing-only under INV-06; input edges may not be replayed across additional logical updates.
+
+### Explicitly protected direct policies
+
+P6-T01 must identify, but not migrate or redesign, these accepted behaviors:
+
+- Android streamed battle music from `9004c67b...` and current recovery equivalents;
+- Phase-4 Event-local pending tilemap preparation barrier;
+- P5 Android save worker immutable read/unpickle + opaque loader presentation;
+- Android debugger/touch release behavior around restart;
+- profiler/debugger observer isolation;
+- desktop synchronous gameplay semantics.
+
+### Capability design rules
+
+Every proposed interface must satisfy all of the following:
+
+1. **Narrow responsibility.** Prefer small functions/protocols over one `PlatformServices` god object.
+2. **Default semantics.** Desktop/default implementation must remain straightforward and reference-compatible.
+3. **No gameplay fork.** No capability may branch combat actions, RNG, hooks, events, turn/phase logic, save semantics, restart semantics, unit mutation, aura/FOW rules, or state-machine ordering.
+4. **No hidden scheduling.** A call that looks synchronous to gameplay code must not secretly resume gameplay across host frames unless its work is explicitly off-world and caller lifecycle is already protected by an accepted barrier.
+5. **Observable output equivalence.** Shared optimizations remain only when behavior/order/output is equivalent under existing traces/tests.
+6. **No editor dependency.** Engine remains importable without PyQt5.
+7. **No circular platform ownership.** Capability modules may depend on low-level runtime/config/audio/render helpers, but gameplay modules must not be required by the capability implementation merely to decide platform policy.
+8. **Testability.** Each capability should support deterministic unit tests or injection/patching without mutating project data.
+9. **Incremental migration.** P6-T02/P6-T03 must be able to migrate one family at a time without a flag day.
+10. **Deletion path.** Identify which direct Android checks should disappear after migration and which should intentionally remain local.
+
+### Required architecture map
+
+For each proposed capability provide:
+
+- proposed module/name;
+- minimal API signatures;
+- default/desktop behavior;
+- Android behavior;
+- current callers to migrate;
+- current direct platform checks eliminated;
+- authoritative-state contract;
+- threading contract;
+- failure contract;
+- test strategy;
+- migration owner: P6-T02, P6-T03, later phase, or LEAVE-DIRECT.
+
+Do not write large speculative interfaces. If an API has no current caller/proven use, do not add it merely for future cleanliness.
+
+### Classification vocabulary
+
+Classify every audited platform branch as one of:
+
+- `CAP-AUDIO`
+- `CAP-RESOURCE`
+- `CAP-RENDER-CACHE`
+- `CAP-WORK-BUDGET`
+- `CAP-FILESYSTEM`
+- `CAP-INPUT-TOUCH`
+- `OBSERVER-ONLY`
+- `GAMEPLAY-SEMANTIC — MUST NOT PLATFORM-FORK`
+- `LEAVE-DIRECT — PLATFORM-LOCAL`
+- `REMOVE-WORKAROUND`
+- `NEEDS-CONTROLLER-DECISION`
+
+Also carry forward recovery disposition where useful:
+
+- KEEP-SHARED
+- KEEP-PLATFORM
+- REWRITE-PLATFORM
+- RESTORE-PC-SEMANTICS
+- REMOVE-WORKAROUND
+- KEEP-CORRECTNESS-FIX
+
+### Deliverable
+
+Create only:
+
+`recovery/p6_t01_runtime_capability_map.md`
+
+No production migration is expected in P6-T01.
+
+Required sections:
+
+1. whole-repo platform-branch inventory;
+2. authoritative gameplay vs platform-policy boundary;
+3. audio/music capability proposal;
+4. resource/preload capability proposal;
+5. render/cache capability proposal;
+6. frame-work budget capability proposal;
+7. filesystem/runtime-environment findings;
+8. input/touch findings;
+9. observer/debugger/profiler findings;
+10. direct checks intentionally left local;
+11. P6-T02 migration plan;
+12. P6-T03 migration plan;
+13. proposed modules/APIs/signatures;
+14. dependency/circular-import analysis;
+15. tests required for later migration;
+16. unresolved controller decisions / escalation evidence.
+
+If an extremely small no-op protocol/type definition is necessary to prove import layering, STOP and request controller authorization before production creation. Report-only is the default authorized output.
+
+### Validation / proof
+
+P6-T01 is design/audit, so do not invent behavior tests merely to make a report look active. Use existing tests and focused source inspection to prove classification.
+
+Run at minimum immutable comparisons covering platform-sensitive protected semantics:
+
+- S5 combat;
+- S12 aura;
+- S13 FOW;
+- S14 tilemap;
+- S16 fast-forward;
+- S17 debugger/profiler observer;
 - S18 game-over/restart.
-
-S3 remains N/A.
 
 Do not regenerate any golden.
 
-If correcting the proven Test Chapter/pristine restart bug necessarily changes one of the immutable reference scenarios, STOP under ESC-03/ESC-06 before changing fixtures. S4/S18 should remain reference-compatible unless the scenario specifically exercises a later intended correctness fix already accepted by the controller.
+Run relevant current tests for:
 
-Also run:
+- Android runtime helpers;
+- streamed music/audio policy;
+- Android title/render caches;
+- Phase-4 tilemap pending barrier;
+- P5 canonical Android load/restart routing;
+- debugger/touch/input behavior;
+- profiler observer behavior.
 
-- `app.tests.test_canonical_load`;
-- `app.tests.test_atomic_restore`;
-- restart/save/title tests;
-- runtime debugger tests;
-- game-over tests;
-- initiative/phase restart tests;
-- recovery trace/lifecycle/golden integrity;
-- Android load tests relevant to restart routing.
+Run broader unittest discovery and report existing baseline/native Windows termination without fixing unrelated issues.
 
-Run broader unittest discovery and report existing baseline failures/native Windows termination without fixing unrelated failures.
-
-Finally run:
+Then:
 
 - `python -m compileall -q app`
 - `git diff --check`
-- commit bounded P5-T03 implementation/tests
+- commit only `recovery/p6_t01_runtime_capability_map.md`
 - `git show --check`
 - `git status --short`
 
@@ -232,16 +345,16 @@ Finally run:
 
 Do not:
 
-- begin Phase 6;
-- redesign the P5-T02 canonical hydration/publication architecture;
-- merge SAVE_SLOTS and RESTART_SLOTS;
-- use current mid-chapter save bytes as a pristine restart fallback when a snapshot is available;
-- invent pristine legacy state from current progress;
-- serialize `chapter_start_snapshot` recursively inside ordinary saves;
-- add a generic save schema migration framework;
-- re-enable arbitrary S3 mid-event save/load;
+- implement P6-T02;
+- implement P6-T03;
+- migrate audio/resource/render/tilemap/input callers yet;
+- add a giant platform service/container;
+- alter gameplay/state/combat/save/restart semantics;
+- change P4 tilemap barrier behavior;
+- change P5 canonical load/restart behavior;
 - modify Trace V1/comparator/manifest/goldens;
 - modify project data/assets;
+- fix unrelated baseline tests;
 - merge master.
 
 ## Escalation / stop rules
@@ -252,16 +365,14 @@ Pre-authorized: **NO**.
 
 STOP on:
 
-- **ESC-02** restart root cause crosses into unrelated architecture;
-- **ESC-03** immutable trace divergence not removable by bounded implementation;
-- **ESC-04** multiple plausible legacy restart semantics require a controller choice;
-- **ESC-05** restart invariant cannot be satisfied atomically/coherently;
-- **ESC-06** old/current save compatibility conflict requires inventing migration or pristine state;
-- **ESC-08** repeated bounded failure;
-- **ESC-09** safe restart requires new cross-cutting filesystem/load architecture.
+- **ESC-02** platform branch semantics cross subsystems nonlocally and cannot be classified safely;
+- **ESC-04** multiple incompatible capability boundaries change gameplay-visible semantics;
+- **ESC-05** an existing accepted platform policy appears to violate a locked invariant;
+- **ESC-07** a proposed platform boundary requires gameplay-semantic divergence;
+- **ESC-09** safe isolation would require a new cross-cutting runtime/service architecture.
 
 Do not self-escalate.
 
 ## Gate status
 
-**P5-T02 is ACCEPTED. P5-T03 is the only authorized task. Phase 6 and later remain blocked pending P5-T03 controller review.**
+**Phase 5 is ACCEPTED. P6-T01 is the only authorized task. P6-T02/P6-T03 and Phase 7+ remain blocked pending P6-T01 controller review.**

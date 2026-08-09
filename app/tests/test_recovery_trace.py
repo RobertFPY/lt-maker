@@ -219,14 +219,6 @@ class RecoveryTraceTests(unittest.TestCase):
         self.assertEqual(['source'], events)
 
 
-class _Uses(ItemComponent):
-    nid = 'uses'
-
-
-class _Marker(SkillComponent):
-    nid = 'marker'
-
-
 class _Action:
     def __init__(self, amount):
         self.amount = amount
@@ -277,6 +269,16 @@ class RecoveryTraceR2AcceptanceTests(unittest.TestCase):
         self.assertIn('ref', result['skills'][1]['source'])
 
     def test_r2_2_real_item_skill_components_and_alias_relationships(self):
+        # Keep synthetic Component subclasses inside the one test that needs
+        # them. The production component catalog discovers subclasses globally;
+        # module-level fixtures would therefore leak into unrelated discovery
+        # tests before this test ever runs.
+        class _Uses(ItemComponent):
+            nid = 'uses'
+
+        class _Marker(SkillComponent):
+            nid = 'marker'
+
         child_item = ItemObject('gem', 'Gem', '')
         parent_item = ItemObject(
             'sword', 'Sword', '',

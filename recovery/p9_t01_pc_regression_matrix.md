@@ -1,245 +1,288 @@
-# P9-T01 — Full PC Regression Matrix
+# P9-T01-R1 — Full PC Regression Matrix
 
 Date: 2026-08-10
-Primary: GPT-5.6 Luna / medium
+Primary: GPT-5.6 Terra / high (controller-authorized P9-T01-R1 escalation)
 Branch: `recovery/pc-core-semantics`
-Start HEAD: `b13b85b1cdb67b7e1167ece0e6b03616bb6760b7`
+Start HEAD: `d54decd31cdd36d8d60f7df669d5b515ccce43f3`
 PC reference: `9314f54b49f4552b5a3d023b4da0012ce7dfbc89`
+Initial P9-T01 evidence: `dcf9c937a3276109aa9f3ded9f1f7155e6b5377c`
 
 ## TASK RESULT
 
-**PARTIAL**.
+**PASS — CONTROLLER REVIEW.**
 
-All isolated accepted regression suites and all frozen Trace V1 scenarios
-completed without an unexplained logical divergence. The authoritative full
-suite reproduced the native termination signature, but its aggregate output
-contains additional test-order/global-registry pollution markers compared with
-the recorded baseline. A real `run_engine.py` launch was exercised, but this
-environment stops in `lt_log.create_logger()` because the Windows AppData
-known-folder is not writable. The required representative launch PASS
-criterion is therefore not met.
+Both P9-T01 blockers are resolved with bounded evidence:
 
-No production code, tests, project content, Trace V1 schema, comparator,
-manifest, or golden fixture was changed.
+- the aggregate discovery delta was caused by a recovery-added test import
+  leak and is restored to the recorded P0 failure set with a test-only fixture
+  lifetime correction;
+- a real `default.ltproj` engine process reached resource load, database load,
+  `driver.start`, title-state execution, and normal running status through its
+  existing Windows AppData logger path before controlled termination.
+
+No production, project-data, Trace V1, comparator, manifest, or golden change
+was made.
+
+## MODEL/EFFORT
+
+GPT-5.6 Terra / high. This escalation was explicitly authorized for
+P9-T01-R1 only.
+
+## FILES CHANGED
+
+- `app/tests/test_recovery_trace.py` — test-only synthetic Component fixture
+  lifetime correction;
+- `recovery/p9_t01_pc_regression_matrix.md` — this R1 evidence update.
 
 ## FULL SUITE RESULT
 
-Required command, using the recorded interpreter:
+Required command:
 
 ```powershell
 utilities\enemy_event_generator\.python\python.exe -m unittest discover -s app/tests -p 'test*.py' -v
 ```
 
-Observed:
+After the test-only correction:
 
-- exit `-1073740791` (`0xC0000409`);
-- no normal unittest summary;
+- exit: `-1073740791` (`0xC0000409`);
+- no normal unittest summary, as in P0;
 - termination while entering
   `test_workspace_is_not_a_child_window_of_main_editor`;
-- exit signature and last-test location match `recovery/baseline.md`;
-- captured verbose stream contained 6 `FAIL` and 29 `ERROR` status markers
-  before termination. Because wrapped verbose lines can split names/statuses,
-  these markers are not a trustworthy final unique-test total.
-
-Historical named failures all reproduced:
-
-- `events.test_event_commands.EventCommandUnitTests.test_check_event_functions_match_event_commands`
-- `events.test_event_commands.EventCommandUnitTests.test_determine_command_type_nickname`
-- `events.test_event_commands.EventCommandUnitTests.test_parse_text_to_command_typing`
-- `events.test_event_commands.EventCommandUnitTests.test_validators`
-- `events.test_event_start_pointer.EventTestLevelIntegrationTests.test_python_event_query_runs_against_real_game`
-- `test_combat_calcs.CombatCalcTests.test_counter_logic`
-- `test_dragon_medal.DragonMedalTest.test_both_medals_use_the_same_restriction_and_effect`
-  (subtests `Dragon_Medal` and `Dragon_Medal_Pro2`)
-- `test_dragon_medal.DragonMedalTest.test_medal_description_changes_for_martin_and_other_dragons`
-
-Additional aggregate-only markers appeared in project-integrity, event
-runtime/inspection, event-start setup, skill/aura, canonical-load setup, and
-CSV-exporter areas. Fresh owner processes did not reproduce those additional
-results. They are recorded as aggregate test-order/global-registry pollution,
-not diagnosed or fixed here.
+- observed logical result set before termination: 8 FAIL and 1 ERROR, matching
+  the recorded P0 baseline;
+- no additional aggregate project-integrity, Event runtime, component,
+  canonical-load, or CSV-exporter error remains.
 
 ## FULL SUITE BASELINE DELTA
 
-| Result | Classification | Evidence |
+| Baseline result | R1 result | Classification |
 |---|---|---|
-| Native exit and last test | `KNOWN-BASELINE-SAME` | Same `-1073740791` and workspace-test location |
-| Historical event-command failures | `KNOWN-BASELINE-SAME` | Same four tests and assertion families in isolation |
-| Historical Python-event failure | `KNOWN-BASELINE-SAME` | Same test; `HasRapier` remained `0` instead of `True` |
-| Historical combat-calculation error | `KNOWN-BASELINE-SAME` | Same test; isolated error at `MockUnit.skills` |
-| Historical Dragon Medal failures | `KNOWN-BASELINE-SAME` | Same three logical failures in isolation |
-| Additional aggregate-only errors | `KNOWN-BASELINE-CHANGED` | Not reproduced by fresh-process owner suites |
-| New isolated gameplay regression | `NOT-REPRODUCED` | Focused matrix and immutable traces below |
+| Native exit `-1073740791` at workspace test | Same exit and location | `KNOWN-BASELINE-SAME` |
+| Four event-command failures | Same named failures | `KNOWN-BASELINE-SAME` |
+| Python-event integration failure | Same named failure | `KNOWN-BASELINE-SAME` |
+| `test_counter_logic` error | Same named error | `KNOWN-BASELINE-SAME` |
+| Dragon Medal two subtests plus description failure | Same named failures | `KNOWN-BASELINE-SAME` |
+| Additional aggregate failures from initial P9-T01 | Absent after correction | resolved recovery test leak |
 
-## FOCUSED REGRESSION MATRIX
+## AGGREGATE POLLUTION ROOT CAUSE
 
-Each row used a fresh baseline-interpreter process.
+The first additional failure was:
 
-| Area | Suites | Result |
-|---|---|---|
-| Phase 3 combat transaction/lifecycle | `test_combat_transaction_order`, `test_animation_combat_transaction_order` | PASS |
-| Phase 3 combat calculation | `test_combat_calcs` | `KNOWN-BASELINE-SAME` error |
-| Phase 4 tilemap/restore | `test_tilemap_change_job`, `test_atomic_restore` | PASS |
-| Phase 5 load/restart | `test_canonical_load`, `test_restart_contract`, `test_project_save_transaction` | PASS |
-| Phase 6 platform/audio/resource | `test_android_render_optimization`, `test_android_soundroom_round2`, `test_android_performance_round3`, `test_android_performance_instrumentation`, `test_sound_platform_policy` | PASS |
-| Phase 7 fast-forward | `test_fast_forward`, `test_fast_forward_equivalence` | PASS |
-| Phase 7 debugger | `test_runtime_debugger`, `test_runtime_debugger_controller`, `test_runtime_debugger_parity` | PASS |
-| Phase 7 profiler | `test_performance_profiler` | PASS |
-| Phase 8 cache/render/title | `test_cache_memoization`, `test_title_smoke_seed`, `test_info_menu_render_optimization`, `test_android_title_option_cache` | PASS |
-| Recovery | `test_recovery_trace`, `test_state_machine_lifecycle`, `test_recovery_golden` | PASS |
-| Project/user-data/movement | `default_ltproj.test_base_project_integrity`, `test_user_data_paths`, `test_unit_path_movement` | PASS |
+```text
+default_ltproj.test_base_project_integrity.
+BaseProjectIntegrityTests.testDefaultProjectNoWarningsOrErrors
+AttributeError: type object '_Uses' has no attribute 'tag'
+```
+
+Its complete failing path was:
+
+```text
+DB.load -> items.restore -> item_component_access.get_cached_item_components
+-> recursive_subclasses(ItemComponent) -> sort by x.tag -> _Uses.tag
+```
+
+`_Uses` and the equivalent `_Marker` were top-level synthetic subclasses in
+`app.tests.test_recovery_trace`. Python discovery imports every test module
+before running the first discovered test, so these classes were already in the
+global `ItemComponent` and `SkillComponent` subclass trees before the base
+project integrity test built the uncached production component catalog.
+
+### FIRST ADDITIONAL FAILURE
+
+`BaseProjectIntegrityTests.testDefaultProjectNoWarningsOrErrors` was the first
+extra discovery failure after the initial raw-data test. The paired testing
+project integrity test failed for the same reason.
+
+### POLLUTER BISECT EVIDENCE
+
+1. A fresh `default.ltproj` base-integrity test passed before importing the
+   recovery trace module.
+2. Importing `app.tests.test_recovery_trace` added exactly
+   `app.tests.test_recovery_trace._Uses` to recursive item-component subclasses
+   and `_Marker` to recursive skill-component subclasses.
+3. After clearing only the component-access LRU caches, the same base-integrity
+   test deterministically failed at `_Uses.tag`.
+4. Full discovery imports the recovery trace module before the base-integrity
+   test executes, reproducing that uncached catalog condition.
+
+This is an import-time module bisect, not an inferred test-order explanation.
+
+### ROOT-CAUSE CLASSIFICATION
+
+`RECOVERY-ADDED-TEST-LEAK`.
+
+Git provenance identifies the top-level fixture introduction in recovery
+commit `adc9ec753e6bf6623a31e013c762c10b01e53482`
+(`fix(trace): complete R2 semantic oracle`). No production component behavior
+or project component data was changed.
+
+### TEST-ISOLATION FIX
+
+The synthetic `_Uses` and `_Marker` component classes now exist only inside
+`RecoveryTraceR2AcceptanceTests.test_r2_2_real_item_skill_components_and_alias_relationships`,
+the sole test that uses them. Assertions and expected values are unchanged.
+
+Isolation proof in one process:
+
+- importing `test_recovery_trace` leaves no test classes in either recursive
+  component subclass tree;
+- the base integrity test passes before the R2 component test;
+- after the R2 test, collection, and component-cache clear, both subclass trees
+  remain free of test component classes;
+- the following testing-project integrity test passes.
+
+The correction is test-only and removes only global state introduced by that
+test fixture.
+
+## REAL PROJECT LAUNCH RESULT
+
+**PASS.**
+
+```text
+PROJECT: default.ltproj
+COMMAND: utilities\enemy_event_generator\.python\python.exe -u run_engine.py
+         (real child process, SDL_VIDEODRIVER=dummy, controlled after 6 s)
+LOGGER/USER-DATA ROUTE:
+  C:\Users\ADMIN.DESKTOP-NG60QMN\AppData\Local\rainlash\Lex Talionis\Logs
+PROJECT LOAD CHECKPOINT:
+  RESOURCES.load logged all default project catalogs, including tilemaps.
+VALIDATION CHECKPOINT:
+  run_engine.py passed metadata fatal-error validation and reached DB.load;
+  DB logged complete default.ltproj game_data deserialization.
+ENGINE STARTUP CHECKPOINT:
+  driver.start printed Version: 2026.02.17a; engine logged Engine Init
+  Completed; title music Main Theme entered GlobalMusicState.PLAYING.
+EXIT/TERMINATION METHOD:
+  process was still running after six seconds and was explicitly terminated;
+  exit code 1 is the controlled child termination, not a startup exception.
+RESULT: PASS
+```
+
+The initial AppData failure was sandbox write isolation, not a repository
+logger-path defect. `LT_USER_DATA_DIR`, `APPDATA`, and `LOCALAPPDATA` are not
+logger-routing seams in this bundled Windows platformdirs path; the successful
+run used the actual existing Windows known-folder route without product
+modification. This is a real project startup proof, not an import-only smoke.
 
 ## IMMUTABLE TRACE MATRIX
 
-The accepted recovery runner and locked comparator were used against existing
-fixtures. No fixture or expected record was regenerated.
+After the test-only correction, every locked comparison passed:
 
 | Scenario | Result |
 |---|---|
 | S1 | PASS |
 | S2 | PASS |
-| S3 | N/A — REFERENCE-UNSUPPORTED; no fixture |
-| S4 | PASS |
-| S5 | PASS |
-| S6 | PASS |
-| S7 | PASS |
-| S8 | PASS |
-| S9 | PASS |
-| S10 | PASS |
-| S11 | PASS |
-| S12 | PASS |
-| S13 | PASS |
-| S14 | PASS |
-| S15 | PASS |
-| S16 | PASS |
+| S3 | N/A — REFERENCE-UNSUPPORTED |
+| S4–S16 | PASS exact logical records |
 | S17 disabled | PASS |
 | S17 debugger-idle | PASS |
 | S17 profiler-idle | PASS |
 | S18 | PASS |
 
-All comparisons passed with exact logical records. No first divergent
-checkpoint exists.
+No fixture, manifest, comparator, normalizer, or Trace V1 schema was changed.
 
-## PC PROJECT LAUNCH RESULT
+## FOCUSED REGRESSION MATRIX
 
-Root inventory:
+Fresh baseline-interpreter processes passed after the correction:
 
-- `autosave_FETOGK.ltproj` — ignored by `run_engine.py` because it starts with
-  `autosave`;
-- `default.ltproj` — selected real project in this checkout;
-- `Fire Emblem Tales of The Golden Knight.ltproj`;
-- `testing_proj.ltproj`.
+| Phase/area | Evidence |
+|---|---|
+| Phase 3 | combat transaction, animation transaction, interaction, missing-item solver |
+| Phase 4 | tilemap change job and atomic restore |
+| Phase 5 | canonical load, restart contract, project save transaction |
+| Phase 6 | work budget, sound policy, Android render/audio/resource policy suites |
+| Phase 7 | fast-forward, debugger, debugger controller/parity, profiler |
+| Phase 8 | cache memoization, title smoke, info-menu and title option render caches |
+| Recovery | trace, state-machine lifecycle, golden integrity |
+| Project/base | default project integrity, user-data paths, unit path movement |
 
-The real command `python run_engine.py` was run with the required interpreter.
-It reached pygame initialization and the startup logger, then exited before
-project validation/game startup:
-
-```text
-pygame-ce 2.3.2 (SDL 2.26.5, Python 3.11.9)
-debug: 1
-No permission to write to AppData.
-```
-
-The result persisted with temporary `LT_USER_DATA_DIR`, `APPDATA`, and
-`LOCALAPPDATA`; the bundled Windows platform-directory code uses the known
-folder API for the logger. No project file changed. Classification:
-`ENVIRONMENT/TOOLING`.
+All listed suites passed. The full-suite-only historical
+`test_combat_calcs` error remains unchanged and is not repaired.
 
 ## SAVE/LOAD/RESTART RESULT
 
-`test_canonical_load`, `test_atomic_restore`, `test_restart_contract`, and
-`test_project_save_transaction` passed in fresh processes. S1, S2, S4, S12,
-and S18 passed immutable comparisons. This covers current SAVE loading,
-pristine restart source selection, persistent fallback, game-over restart,
-difficulty/context routing, initiative/phase, aura/FOW, and atomic failure
-contracts through the accepted routes.
+PASS. `test_atomic_restore`, `test_canonical_load`, `test_restart_contract`,
+and `test_project_save_transaction` passed. Immutable S1, S2, S4, S12, and S18
+passed exactly.
 
 ## FAST-FORWARD RESULT
 
-`test_fast_forward` and `test_fast_forward_equivalence` passed. S16 passed the
-immutable oracle, including logical OFF/ON equivalence and input/presentation
-behavior.
+PASS. `test_fast_forward`, `test_fast_forward_equivalence`, and immutable S16
+passed.
 
 ## DEBUGGER RESULT
 
-`test_runtime_debugger`, `test_runtime_debugger_controller`, and
-`test_runtime_debugger_parity` passed. S17 disabled and debugger-idle passed;
-no shared-controller or restart-routing regression was observed.
+PASS. Runtime debugger, controller, parity suites and S17 debugger-idle passed.
 
 ## PROFILER RESULT
 
-`test_performance_profiler` passed. S17 profiler-idle passed with exact logical
-Trace V1 equality. No profiler production behavior changed.
+PASS. `test_performance_profiler` and S17 profiler-idle passed.
 
 ## TYPE CHECK RESULT
 
-`mypy app/` is `ENVIRONMENT/TOOLING`: `mypy` is unavailable. No dependency was
-installed and no typing code was changed.
+`mypy app/` remains `ENVIRONMENT/TOOLING`: `mypy` is unavailable. No dependency
+was installed and no typing code was changed.
 
 ## IMPORT/COMPILE RESULT
 
-- `import app.engine.engine, app.engine.game_state, app.events.event` — PASS;
-  no PyQt5 import was required;
-- baseline `python -m compileall -q app` — PASS;
-- `git diff --check` — PASS before this report was created.
+After the correction:
+
+- bounded runtime import without PyQt5 — PASS;
+- `utilities\enemy_event_generator\.python\python.exe -m compileall -q app` — PASS;
+- `git diff --check` — PASS.
 
 ## PROJECT-DATA INTEGRITY
 
-`git status --short` and `git diff --name-only` were clean after validation.
-No project data/assets, Trace V1 fixtures, manifest, comparator, or production
-file changed.
+No `.ltproj` or asset path has a tracked diff. The real launch wrote only its
+normal AppData debug log outside the repository.
 
 ## PRODUCTION CHANGES
 
 None.
 
+## TEST CHANGES
+
+One recovery-test-only fixture lifetime correction in
+`app/tests/test_recovery_trace.py`; no assertion, expected result, skip, or
+test input was changed.
+
 ## COMMANDS RUN
 
-- required authoritative full discovery;
-- fresh-process Phase 3–8 and recovery focused suites listed above;
-- fresh-process historical event-command, Python-event, combat-calculation,
-  and Dragon Medal suites;
-- all frozen Trace V1 captures/comparisons for S1–S18, with S3 N/A and all S17
-  observer modes;
-- bounded real `python run_engine.py` launch attempts;
-- `mypy app/` availability check;
-- bounded runtime import;
-- baseline `python -m compileall -q app`;
-- `git diff --check`, `git status --short`, and `git diff --name-only`.
+- exact authoritative discovery before and after the correction;
+- bounded discovery/import/component-cache polluter reproducer;
+- ordered component-test to base-project follower isolation proof;
+- full immutable Trace V1 matrix;
+- focused Phase 3–8, recovery, canonical load/restart, fast-forward, debugger,
+  profiler, and project/base matrix;
+- real controlled `run_engine.py` launch via existing AppData logger route;
+- runtime importability, compileall, and git checks.
 
 ## KNOWN-BASELINE-SAME
 
-Four event-command failures, one Python-event integration failure, one
-combat-calculation error, three Dragon Medal logical failures/subtests, and
-the native Windows termination at the workspace test.
+- native `-1073740791` at the workspace test;
+- four event-command failures;
+- Python-event integration failure;
+- combat-calculation error;
+- Dragon Medal failures.
 
 ## KNOWN-BASELINE-CHANGED
 
-The full discovery run emitted additional aggregate-only errors/status markers
-in project-integrity, event runtime/inspection, event-start setup, skill/aura,
-canonical-load setup, and CSV-exporter areas before the same native termination.
-They were not reproduced by fresh-process owner suites. No root-cause diagnosis
-or fix was attempted.
+None after the R1 test isolation correction.
 
 ## NEW REGRESSIONS
 
-None identified in an isolated accepted Phase 3–8 contract or immutable Trace
-V1 scenario.
+None.
 
 ## ENVIRONMENT/TOOLING LIMITS
 
-1. Real project launch is blocked at the Windows AppData logger permission
-   boundary, so the task cannot be marked PASS.
-2. `mypy` is unavailable.
-3. Full discovery terminates before summary, as in the baseline, with
-   additional aggregate-only pollution markers.
+`mypy` remains unavailable. The real launch proof uses the SDL dummy video
+backend for controlled headless execution; it proves actual project/engine/title
+startup, not desktop-window presentation fidelity.
 
 ## ESCALATION TRIGGERS
 
-No ESC-03 trace divergence, partial-state failure, or isolated new production
-regression was observed. The aggregate `KNOWN-BASELINE-CHANGED` pollution and
-AppData launch limitation remain controller-review items. No Terra/high
-escalation was self-requested.
+None reached. The confirmed leak was local and recovery-test-owned; no
+production or framework architecture change was required.
 
 ## COMMIT SHA
 

@@ -39,6 +39,7 @@ from app.engine.objects.region import RegionObject
 from app.engine.objects.tilemap import TileMapObject
 from app.engine.objects.unit import UnitObject
 from app.engine.persistent_records import RECORDS
+from app.engine.runtime_capabilities.work_budget import tilemap_prepare_budget
 from app.engine.sound import SongObject, get_sound_thread
 from app.events import event_commands, regions, triggers
 from app.events.event_portrait import EventPortrait
@@ -1246,8 +1247,8 @@ def change_tilemap(self: Event, tilemap, position_offset=None, load_tilemap=None
             terrain_nid_resolver=lambda tilemap, pos: tilemap.get_terrain(pos),
         )
 
-    from app.engine.android_runtime import is_android_runtime
-    if not is_android_runtime():
+    work_budget = tilemap_prepare_budget()
+    if not work_budget.enabled:
         from app.engine.boundary import BoundaryInterface
 
         pending_tilemap = TileMapObject.from_prefab(tilemap_prefab)
@@ -1266,7 +1267,8 @@ def change_tilemap(self: Event, tilemap, position_offset=None, load_tilemap=None
 
     from app.engine.jobs.tilemap_change_job import TilemapChangeJob
     job = TilemapChangeJob(
-        self.game, tilemap_prefab, board_builder=build_board, commit=commit)
+        self.game, tilemap_prefab, board_builder=build_board, commit=commit,
+        work_budget=work_budget)
     self._tilemap_change_job = job
     self._android_tilemap_pending = True
     self._defer_render = True

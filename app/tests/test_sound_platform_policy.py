@@ -141,7 +141,7 @@ class SoundPlatformPolicyTests(unittest.TestCase):
                 'runtime_debugger_controller'):
             self.assertNotIn(forbidden, source)
 
-    def test_event_and_tilemap_scheduling_sources_remain_outside_audio_policy(self):
+    def test_event_deadline_is_removed_and_tilemap_budget_stays_outside_audio_policy(self):
         from pathlib import Path
 
         root = Path(__file__).parents[1]
@@ -151,10 +151,14 @@ class SoundPlatformPolicyTests(unittest.TestCase):
         job_source = (root / 'engine' / 'jobs' / 'tilemap_change_job.py').read_text(
             encoding='utf-8')
 
-        self.assertIn('android_process_budget_seconds = 0.002', event_source)
-        self.assertIn('_android_process_yielded', event_source)
+        self.assertNotIn('android_process_budget_seconds', event_source)
+        self.assertNotIn('_android_process_yielded', event_source)
+        self.assertNotIn('perf_counter', event_source)
         self.assertIn('_android_tilemap_pending', event_functions_source)
-        self.assertIn('FRAME_BUDGET_NS = 4_000_000', job_source)
+        self.assertIn('tilemap_prepare_budget()', event_functions_source)
+        self.assertNotIn('is_android_runtime', event_functions_source)
+        self.assertIn('work_budget.deadline_ns', job_source)
+        self.assertNotIn('FRAME_BUDGET_NS', job_source)
 
 
 if __name__ == '__main__':

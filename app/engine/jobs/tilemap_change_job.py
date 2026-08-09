@@ -7,6 +7,7 @@ from app.engine.boundary import BoundaryInterface
 from app.engine.game_board import GameBoard
 from app.engine.objects.tilemap import TileMapObject
 from app.engine.performance import RUNTIME_PROFILER
+from app.engine.runtime_capabilities.work_budget import OffWorldWorkBudget
 
 if TYPE_CHECKING:
     from app.engine.game_state import GameState
@@ -26,7 +27,6 @@ class TilemapChangeJob:
     job only owns pending objects and a failure leaves the live map alone.
     """
 
-    FRAME_BUDGET_NS = 4_000_000
     CAPTURE_STATE = 'CAPTURE_STATE'
     CREATE_TILEMAP = 'CREATE_TILEMAP'
     CREATE_TEMP_BOARD = 'CREATE_TEMP_BOARD'
@@ -46,6 +46,7 @@ class TilemapChangeJob:
         board_builder: BoardBuilder = GameBoard.build_iter,
         boundary_builder: BoundaryBuilder = BoundaryInterface,
         commit: Commit,
+        work_budget: OffWorldWorkBudget,
     ) -> None:
         self.game = game
         self.tilemap_prefab = tilemap_prefab
@@ -53,6 +54,7 @@ class TilemapChangeJob:
         self.board_builder = board_builder
         self.boundary_builder = boundary_builder
         self.commit = commit
+        self.work_budget = work_budget
         self.state = self.CAPTURE_STATE
         self.error: Optional[Exception] = None
         self.pending_tilemap: Optional[TileMapObject] = None
@@ -76,7 +78,7 @@ class TilemapChangeJob:
 
     def update(self, should_skip: bool) -> bool:
         deadline_ns = (2**63 - 1 if should_skip
-                       else time.perf_counter_ns() + self.FRAME_BUDGET_NS)
+                       else time.perf_counter_ns() + self.work_budget.deadline_ns)
         return self.step(deadline_ns)
 
     def step(self, deadline_ns: int) -> bool:

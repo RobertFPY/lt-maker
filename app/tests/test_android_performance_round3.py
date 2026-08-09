@@ -6,6 +6,7 @@ import ast
 from collections import OrderedDict
 import os
 from pathlib import Path
+import time
 from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
@@ -882,7 +883,7 @@ class AndroidCombatUnderlayTests(unittest.TestCase):
         combat.draw.assert_called_once_with(target)
 
 
-class AndroidEventBudgetTests(unittest.TestCase):
+class AndroidEventSchedulingTests(unittest.TestCase):
     @staticmethod
     def _make_budgeted_event():
         event = event_module.Event.__new__(event_module.Event)
@@ -890,37 +891,66 @@ class AndroidEventBudgetTests(unittest.TestCase):
         second = SimpleNamespace(nid='give_skill')
         event.state = 'processing'
         event.command_queue = [first, second]
-        event.processor = SimpleNamespace(fetch_next_command=Mock())
+        event.processor = SimpleNamespace(fetch_next_command=Mock(return_value=None))
         event.logger = SimpleNamespace(debug=Mock())
         event.do_skip = False
         event.skippable = set()
         event.run_command = Mock()
         return event, first, second
 
-    def test_android_event_processor_yields_between_commands_at_the_frame_budget(self):
+    def test_android_event_processor_runs_consecutive_commands_despite_host_time(self):
         event, first, second = self._make_budgeted_event()
 
-        with patch.object(event_module, 'is_android_render_optimization_enabled', return_value=True), \
-             patch.object(event_module.time, 'perf_counter', side_effect=(0.0, 0.003)), \
-             patch.object(event_module.RUNTIME_PROFILER, 'count') as count:
+        def run_command(_command):
+            # The former Android deadline yielded after this delay.  A host
+            # clock delay is not an Event semantic boundary.
+            time.sleep(0.003)
+
+        event.run_command.side_effect = run_command
+
+        with patch.object(event_module, 'is_android_render_optimization_enabled', return_value=True):
             event.process()
 
-        event.run_command.assert_called_once_with(first)
-        self.assertEqual([second], event.command_queue)
-        count.assert_called_once_with('event_budget_yield')
+        self.assertEqual([first, second], [call.args[0] for call in event.run_command.call_args_list])
+        self.assertEqual([], event.command_queue)
 
-    def test_event_state_machine_does_not_reenter_a_budgeted_processor(self):
+    def test_event_state_machine_does_not_depend_on_a_budget_yield(self):
         event, first, second = self._make_budgeted_event()
         event.prev_state = None
         event.finished = Mock(return_value=False)
+        event.processor.fetch_next_command.return_value = None
 
-        with patch.object(event_module, 'is_android_render_optimization_enabled', return_value=True), \
-             patch.object(event_module.time, 'perf_counter', side_effect=(0.0, 0.003)), \
-             patch.object(event_module.RUNTIME_PROFILER, 'count'):
+        with patch.object(event_module, 'is_android_render_optimization_enabled', return_value=True):
             event._update_state()
+
+        self.assertEqual([first, second], [call.args[0] for call in event.run_command.call_args_list])
+        self.assertEqual([], event.command_queue)
+
+    def test_waiting_for_present_remains_an_explicit_processing_boundary(self):
+        event, first, second = self._make_budgeted_event()
+
+        def request_present(command):
+            self.assertIs(first, command)
+            event.state = 'waiting_for_present'
+
+        event.run_command.side_effect = request_present
+
+        event.process()
 
         event.run_command.assert_called_once_with(first)
         self.assertEqual([second], event.command_queue)
+
+    def test_save_commands_still_run_after_queued_non_save_commands(self):
+        from app.events.python_eventing.utils import SAVE_COMMAND_NIDS
+
+        event, _first, _second = self._make_budgeted_event()
+        save = SimpleNamespace(nid=next(nid for nid in SAVE_COMMAND_NIDS if nid))
+        normal = SimpleNamespace(nid='give_item')
+        event.command_queue = [save, normal]
+
+        event.process()
+
+        self.assertEqual([normal, save], [call.args[0] for call in event.run_command.call_args_list])
 
 
 if __name__ == '__main__':

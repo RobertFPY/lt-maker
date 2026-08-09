@@ -218,7 +218,7 @@ class StateMachineLifecycleTests(unittest.TestCase):
         self.assertTrue(machine.consume_presentation_barrier())
         self.assertFalse(machine.consume_presentation_barrier())
 
-    def test_event_budget_yield_retains_last_presented_scene(self):
+    def test_event_tilemap_barrier_retains_last_presented_scene(self):
         machine, trace = self._machine({
             'map': {},
             'event': {'transparent': True, 'defer_render': True},
@@ -252,18 +252,18 @@ class StateMachineLifecycleTests(unittest.TestCase):
         self.assertIn(('event', 'draw'), trace)
         self.assertTrue(machine.consume_presentation_barrier())
 
-    def test_event_state_defers_only_a_processing_budget_yield(self):
+    def test_event_state_defers_only_an_explicit_render_barrier(self):
         state = EventState('event')
         state.event = SimpleNamespace(
-            state='processing', _android_process_yielded=True,
+            state='processing', _defer_render=True,
         )
         self.assertTrue(state.should_defer_render())
 
         state.event.state = 'waiting_for_present'
-        self.assertFalse(state.should_defer_render())
+        self.assertTrue(state.should_defer_render())
 
         state.event.state = 'processing'
-        state.event._android_process_yielded = False
+        state.event._defer_render = False
         self.assertFalse(state.should_defer_render())
 
     def test_disabled_profiler_does_not_construct_stage_contexts(self):

@@ -8,6 +8,7 @@ from unittest.mock import patch
 class TilemapChangeJobTests(unittest.TestCase):
     def _job(self, *, board_builder, commit):
         from app.engine.jobs.tilemap_change_job import TilemapChangeJob
+        from app.engine.runtime_capabilities.work_budget import OffWorldWorkBudget
 
         old_tilemap = SimpleNamespace(nid='old', width=2, height=2)
         game = SimpleNamespace(level=SimpleNamespace(tilemap=old_tilemap))
@@ -19,6 +20,7 @@ class TilemapChangeJobTests(unittest.TestCase):
             board_builder=board_builder,
             boundary_builder=lambda width, height: (width, height),
             commit=commit,
+            work_budget=OffWorldWorkBudget(True, 4_000_000),
         ), game, old_tilemap
 
     def test_builds_offscreen_and_commits_only_after_validation(self):
@@ -64,6 +66,7 @@ class TilemapChangeJobTests(unittest.TestCase):
 
     def test_tilemap_builder_iterator_is_advanced_before_board_creation(self):
         from app.engine.jobs.tilemap_change_job import TilemapChangeJob
+        from app.engine.runtime_capabilities.work_budget import OffWorldWorkBudget
 
         tilemap = SimpleNamespace(nid='new', width=3, height=4)
 
@@ -83,6 +86,7 @@ class TilemapChangeJobTests(unittest.TestCase):
             board_builder=build_board,
             boundary_builder=lambda width, height: (width, height),
             commit=lambda *_args: None,
+            work_budget=OffWorldWorkBudget(True, 4_000_000),
         )
 
         job.run_one_operation()  # CAPTURE_STATE -> CREATE_TILEMAP
@@ -117,6 +121,23 @@ class TilemapChangeJobTests(unittest.TestCase):
             self.assertEqual(old_region_position, game.level.regions[0].position)
 
         self.assertEqual(job.BUILD_BOARD, job.state)
+
+    def test_skip_drains_only_pending_off_world_preparation(self):
+        def build_board(tilemap):
+            yield 'terrain'
+            yield 'collections'
+            return SimpleNamespace(width=tilemap.width, height=tilemap.height)
+
+        commits = []
+        job, game, old_tilemap = self._job(
+            board_builder=build_board,
+            commit=lambda tilemap, board, boundary: commits.append((tilemap, board, boundary)),
+        )
+
+        self.assertTrue(job.update(should_skip=True))
+        self.assertTrue(job.succeeded)
+        self.assertIs(old_tilemap, game.level.tilemap)
+        self.assertEqual(1, len(commits))
 
     def test_commit_callback_must_not_be_a_generator(self):
 
@@ -160,7 +181,7 @@ class TilemapChangeJobTests(unittest.TestCase):
 
         state = EventState('event')
         state.event = SimpleNamespace(
-            state='blocked', _android_process_yielded=False,
+            state='blocked',
             _defer_render=True,
         )
 
@@ -194,14 +215,17 @@ class TilemapChangeJobTests(unittest.TestCase):
         )
         prefab = SimpleNamespace(nid='new')
 
-        with patch('app.engine.android_runtime.is_android_runtime', return_value=True), \
+        with patch.object(event_functions, 'tilemap_prepare_budget',
+                           return_value=SimpleNamespace(enabled=True, deadline_ns=4_000_000)), \
                 patch.object(event_functions.RESOURCES.tilemaps, 'get', return_value=prefab), \
-                patch('app.engine.jobs.tilemap_change_job.TilemapChangeJob', return_value=job):
+                patch('app.engine.jobs.tilemap_change_job.TilemapChangeJob',
+                      return_value=job) as job_type:
             event_functions.change_tilemap(event, 'new')
 
         self.assertEqual('blocked', event.state)
         self.assertTrue(event._defer_render)
         self.assertTrue(event._android_tilemap_pending)
+        self.assertEqual(4_000_000, job_type.call_args.kwargs['work_budget'].deadline_ns)
         self.assertTrue(event.should_remain_blocked[0]())
         self.assertTrue(event.should_update['tilemap_change'](False))
         self.assertFalse(event._defer_render)
@@ -234,7 +258,8 @@ class TilemapChangeJobTests(unittest.TestCase):
             logger=SimpleNamespace(error=lambda *_args: errors.append(_args)),
         )
 
-        with patch('app.engine.android_runtime.is_android_runtime', return_value=True), \
+        with patch.object(event_functions, 'tilemap_prepare_budget',
+                           return_value=SimpleNamespace(enabled=True, deadline_ns=4_000_000)), \
                 patch.object(event_functions.RESOURCES.tilemaps, 'get', return_value=object()), \
                 patch('app.engine.jobs.tilemap_change_job.TilemapChangeJob', return_value=job):
             event_functions.change_tilemap(event, 'new')
@@ -453,7 +478,8 @@ class TilemapChangeJobTests(unittest.TestCase):
             def execute(self):
                 order.append('add_region')
 
-        with patch('app.engine.android_runtime.is_android_runtime', return_value=False), \
+        with patch.object(event_functions, 'tilemap_prepare_budget',
+                           return_value=SimpleNamespace(enabled=False, deadline_ns=0)), \
                 patch.object(event_functions.RESOURCES.tilemaps, 'get', return_value=object()), \
                 patch.object(event_functions.TileMapObject, 'from_prefab', return_value=pending_tilemap), \
                 patch('app.engine.game_board.GameBoard.build_iter', side_effect=build_board), \
@@ -494,7 +520,8 @@ class TilemapChangeJobTests(unittest.TestCase):
         )
         event.game.is_displaying_overworld = lambda: False
 
-        with patch('app.engine.android_runtime.is_android_runtime', return_value=False), \
+        with patch.object(event_functions, 'tilemap_prepare_budget',
+                           return_value=SimpleNamespace(enabled=False, deadline_ns=0)), \
                 patch.object(event_functions.RESOURCES.tilemaps, 'get', return_value=object()), \
                 patch.object(event_functions.TileMapObject, 'from_prefab',
                              side_effect=RuntimeError('pending build failed')):
@@ -609,7 +636,8 @@ class TilemapChangeJobTests(unittest.TestCase):
             def execute(self):
                 pass
 
-        with patch('app.engine.android_runtime.is_android_runtime', return_value=False), \
+        with patch.object(event_functions, 'tilemap_prepare_budget',
+                           return_value=SimpleNamespace(enabled=False, deadline_ns=0)), \
                 patch.object(event_functions.RESOURCES.tilemaps, 'get', return_value=object()), \
                 patch.object(event_functions.TileMapObject, 'from_prefab', return_value=pending_tilemap), \
                 patch('app.engine.game_board.GameBoard', return_value=restored_board) as board_type, \

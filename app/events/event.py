@@ -8,7 +8,6 @@ from app.engine.objects.skill import SkillObject
 from app.engine.text_evaluator import TextEvaluator
 
 import logging
-import time
 from typing import Any, Callable, Dict, List, Tuple, Optional
 
 import app.engine.config as cf
@@ -45,9 +44,6 @@ class EvaluateException(EventError):
 class Event():
     skippable = {"wait", "bop_portrait", "sound",
                  "location_card", "credits", "ending"}
-    # Event command batches must leave time for drawing and input on Android.
-    # A single command can still request its own incremental implementation.
-    android_process_budget_seconds = 0.002
 
     def __init__(self, event_prefab: EventPrefab, trigger: triggers.EventTrigger, game: GameState = None):
         self._transition_speed: int = 250
@@ -285,10 +281,6 @@ class Event():
                     self.end()
                 else:
                     self.process()
-                if getattr(self, '_android_process_yielded', False):
-                    # ``_update_state`` may otherwise call process up to five
-                    # times in this host frame, silently defeating the budget.
-                    break
                 if self.state == 'paused':
                     break  # Necessary so we don't go right back to processing
 
@@ -430,16 +422,7 @@ class Event():
         self.state = 'almost_complete'
 
     def process(self):
-        self._android_process_yielded = False
-        deadline = None
-        if is_android_render_optimization_enabled():
-            deadline = time.perf_counter() + self.android_process_budget_seconds
-        commands_run = 0
         while self.state == 'processing':
-            if commands_run and deadline is not None and time.perf_counter() >= deadline:
-                self._android_process_yielded = True
-                RUNTIME_PROFILER.count('event_budget_yield')
-                break
             if not self.command_queue:
                 next_command = self.processor.fetch_next_command()
                 if not next_command:
@@ -465,7 +448,6 @@ class Event():
                 else:
                     with RUNTIME_PROFILER.section('event_command:%s' % command.nid):
                         self.run_command(command)
-                commands_run += 1
             except EventError as e:
                 raise e
             except Exception as e:

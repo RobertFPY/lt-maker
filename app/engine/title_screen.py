@@ -509,7 +509,7 @@ class TitleLoadState(State):
         self.fluid.reset_on_change_state()
 
     def _start_android_load(self, save_slot, *, transition_from, next_action,
-                            remove_suspend: bool) -> str:
+                            remove_suspend: bool, level_nid=None) -> str:
         """Move save I/O out of the input callback on Android only.
 
         The old title state stays beneath the opaque loading state for one
@@ -529,6 +529,7 @@ class TitleLoadState(State):
             destination=destination,
             preserve_existing_states=False,
             state_prefix=state_prefix,
+            level_nid=level_nid,
         )
         job = save.SaveLoadJob(save_slot, context=load_context)
         game.memory['_save_load_job'] = job
@@ -677,13 +678,17 @@ class TitleRestartState(TitleLoadState):
             selection = self.menu.current_index
             save_slot = save.RESTART_SLOTS[selection]
             save_slot_main = save.SAVE_SLOTS[selection]
-            if save_slot.kind:
+            is_overworld_restart = save_slot_main.kind == 'overworld'
+            has_valid_restart = is_overworld_restart or \
+                save.restart_slot_matches_chapter(
+                    save_slot, getattr(save_slot_main, 'level_nid', None))
+            if has_valid_restart:
                 get_sound_thread().play_sfx('Save')
                 logging.info("Loading game...")
                 if is_android_runtime():
-                    target_slot = save_slot_main if save_slot_main.kind == 'overworld' else save_slot
+                    target_slot = save_slot_main if is_overworld_restart else save_slot
                     next_action = (
-                        'overworld' if save_slot_main.kind == 'overworld'
+                        'overworld' if is_overworld_restart
                         else 'restart_level'
                     )
                     return self._start_android_load(
@@ -691,8 +696,9 @@ class TitleRestartState(TitleLoadState):
                         transition_from='Restart Level',
                         next_action=next_action,
                         remove_suspend=True,
+                        level_nid=getattr(save_slot_main, 'level_nid', None),
                     )
-                if save_slot_main.kind == 'overworld':
+                if is_overworld_restart:
                     context = save.LoadTransactionContext.for_slot(
                         save_slot_main,
                         destination=save.LoadDestination.OVERWORLD,
@@ -702,6 +708,7 @@ class TitleRestartState(TitleLoadState):
                     context = save.LoadTransactionContext.for_slot(
                         save_slot,
                         destination=save.LoadDestination.RESTART_LEVEL,
+                        level_nid=getattr(save_slot_main, 'level_nid', None),
                     )
                     save.load_game(game, save_slot, context=context)
                 game.memory['transition_from'] = 'Restart Level'

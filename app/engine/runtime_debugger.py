@@ -282,15 +282,17 @@ class RuntimeDebugger:
     def restart_chapter(difficulty_nid: NID) -> bool:
         if not game.level or difficulty_nid not in DB.difficulty_modes:
             return False
-        snapshot = getattr(game, 'chapter_start_snapshot', None)
         level_nid = game.level.nid
         from app.engine import save
+        snapshot = getattr(game, 'chapter_start_snapshot', None)
+        if not save.snapshot_matches_chapter(snapshot, level_nid):
+            snapshot = None
         restart_slot = None
         if snapshot is None:
             if game.current_save_slot is None:
                 return False
             restart_slot = save.RESTART_SLOTS[game.current_save_slot]
-            if restart_slot.kind != 'start':
+            if not save.restart_slot_matches_chapter(restart_slot, level_nid):
                 return False
 
         # Loading a chapter-start snapshot replaces the state stack directly.

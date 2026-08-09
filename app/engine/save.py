@@ -1,4 +1,5 @@
 import os, shutil, glob, re
+from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
@@ -361,6 +362,11 @@ def load_game_data(game_state, s_dict: dict, *,
             if level_nid is None or DB.levels.get(str(level_nid)) is None:
                 raise SaveCompatibilityError(
                     'Start/restart save has no valid destination level')
+            if context.destination == LoadDestination.RESTART_LEVEL and \
+                    context.level_nid is not None and \
+                    _payload_level_nid(s_dict) != str(context.level_nid):
+                raise SaveCompatibilityError(
+                    'Restart payload does not match the requested chapter')
             chapter_start_state = (
                 [state.name for state in state_prefix] + starting_states +
                 list(destination_states),
@@ -507,6 +513,7 @@ class SaveSlot():
         self.playtime = 0
         self.realtime = 0
         self.kind = None  # Prep, Base, Suspend, Battle, Start
+        self.level_nid = None
         self.mode = None
         self.idx = idx
         self.display_name = None
@@ -528,6 +535,7 @@ class SaveSlot():
             # malformed legacy metadata sortable instead of crashing.
             self.realtime = realtime if isinstance(realtime, (int, float)) else 0
             self.kind = save_metadata['kind']
+            self.level_nid = save_metadata.get('level_nid')
             self.mode = save_metadata.get('mode')
             self.display_name = save_metadata.get('disp')
 
@@ -554,7 +562,99 @@ def dict_print(d):
             print(s)
             logging.error(s)
 
-def _save_io(s_dict, meta_dict, old_slot, slot, force_loc=None, name=None):
+def _payload_level_nid(s_dict: dict) -> Optional[str]:
+    level_data = s_dict.get('level') if isinstance(s_dict, dict) else None
+    if not isinstance(level_data, dict):
+        return None
+    level_nid = level_data.get('nid')
+    return str(level_nid) if level_nid is not None else None
+
+
+def snapshot_matches_chapter(snapshot: dict, level_nid: Optional[str]) -> bool:
+    """Whether a snapshot is a source-proven pristine payload for this level."""
+    return bool(level_nid) and _payload_level_nid(snapshot) == str(level_nid)
+
+
+def _restart_payload_from_snapshot(game_state, s_dict: dict, meta_dict: dict):
+    """Freeze a matching pristine chapter snapshot for a slot restart point."""
+    snapshot = getattr(game_state, 'chapter_start_snapshot', None)
+    current_level_nid = _payload_level_nid(s_dict)
+    snapshot_level_nid = _payload_level_nid(snapshot)
+    if not snapshot_matches_chapter(snapshot, current_level_nid) or \
+            snapshot_level_nid != current_level_nid:
+        return None
+
+    restart_metadata = deepcopy(meta_dict)
+    restart_metadata['kind'] = 'start'
+    restart_metadata['level_nid'] = snapshot_level_nid
+    return deepcopy(snapshot), restart_metadata
+
+
+def _valid_persistent_restart_payload(restart_loc: str,
+                                      expected_level_nid: Optional[str]):
+    """Return only source-proven pristine restart material for this chapter."""
+    if not expected_level_nid or not os.path.exists(restart_loc) or \
+            not os.path.exists(restart_loc + 'meta'):
+        return None
+    try:
+        with open(restart_loc, 'rb') as fp:
+            restart_data = pickle.load(fp)
+        with open(restart_loc + 'meta', 'rb') as fp:
+            restart_metadata = pickle.load(fp)
+    except (OSError, EOFError, pickle.UnpicklingError):
+        logging.warning('Unable to inspect persistent restart material at %s', restart_loc,
+                        exc_info=True)
+        return None
+    if not isinstance(restart_metadata, dict) or \
+            restart_metadata.get('kind') != 'start' or \
+            str(restart_metadata.get('level_nid')) != expected_level_nid or \
+            _payload_level_nid(restart_data) != expected_level_nid:
+        return None
+    return restart_data, restart_metadata
+
+
+def restart_slot_matches_chapter(restart_slot: 'SaveSlot',
+                                 level_nid: Optional[str]) -> bool:
+    """Use slot metadata for menu routing; payload is validated in the load core."""
+    if restart_slot is None or getattr(restart_slot, 'kind', None) != 'start':
+        return False
+    return bool(level_nid) and os.path.isfile(restart_slot.save_loc) and \
+        str(getattr(restart_slot, 'level_nid', None)) == str(level_nid)
+
+
+def _remove_restart_material(restart_loc: str) -> None:
+    for filename in (restart_loc, restart_loc + 'meta',
+                     restart_loc + '.tmp', restart_loc + 'meta.tmp'):
+        try:
+            if os.path.exists(filename):
+                os.remove(filename)
+        except OSError:
+            logging.exception('Unable to remove invalid restart material at %s', filename)
+
+
+def _write_restart_payload(restart_loc: str, restart_payload) -> bool:
+    """Publish a complete restart pair or leave no valid partial pair behind."""
+    restart_data, restart_metadata = restart_payload
+    restart_meta_loc = restart_loc + 'meta'
+    restart_tmp = restart_loc + '.tmp'
+    restart_meta_tmp = restart_meta_loc + '.tmp'
+    try:
+        with open(restart_tmp, 'wb') as fp:
+            pickle.dump(restart_data, fp, protocol=pickle.HIGHEST_PROTOCOL)
+        with open(restart_meta_tmp, 'wb') as fp:
+            pickle.dump(restart_metadata, fp, protocol=pickle.HIGHEST_PROTOCOL)
+        os.replace(restart_tmp, restart_loc)
+        os.replace(restart_meta_tmp, restart_meta_loc)
+        return True
+    except (OSError, TypeError, pickle.PickleError):
+        logging.exception('Restart persistence failed for %s; restart is unavailable',
+                          restart_loc)
+        _remove_restart_material(restart_loc)
+        return False
+
+
+def _save_io(s_dict, meta_dict, old_slot, slot, force_loc=None, name=None,
+             restart_payload=None):
     io_started = time.perf_counter()
     # Pickling is CPU/GIL heavy.  Serializing save jobs prevents two phase
     # changes from competing with the render loop at the same time.
@@ -591,39 +691,40 @@ def _save_io(s_dict, meta_dict, old_slot, slot, force_loc=None, name=None):
         with open(meta_loc, 'wb') as fp:
             pickle.dump(meta_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
-    # For restart
-    if not force_loc:
+    # For restart. A tactical restart must always be a source-proven pristine
+    # chapter-start payload, never the current-progress save just written.
+    if not force_loc and slot is not None:
         r_save = _save_location(GAME_NID() + '-restart' + str(slot) + '.p')
-        r_save_meta = r_save + 'meta'
-        # The restart save lets "Restart Level" replay this slot's chapter from
-        # the start. Pick which save becomes that restart point, then copy it once.
-        old_restart = old_restart_meta = None
-        if old_slot is not None:
-            old_restart = _save_location(GAME_NID() + '-restart' + str(old_slot) + '.p')
-            old_restart_meta = old_restart + 'meta'
-
-        if meta_dict['kind'] == 'start':
-            # Start of a map is itself the restart point.
-            restart_src, restart_src_meta = save_loc, meta_loc
-        elif old_restart and os.path.exists(old_restart):
-            # Carry the restart point forward from the slot we loaded from.
-            restart_src, restart_src_meta = old_restart, old_restart_meta
-        elif not os.path.exists(r_save):
-            # Nothing to carry forward (e.g. started via Test Chapter, so
-            # current_save_slot was None and no 'start' save was ever made).
-            # Fall back to the current save so Restart Level still works.
-            # NOTE: this seeds the restart point from this first save, not a
-            # pristine chapter start, so Restart Level replays from here rather
-            # than the true beginning. Only matters for the dev Test Chapter
-            # path; normal play always seeds restart from the new-game 'start'.
-            restart_src, restart_src_meta = save_loc, meta_loc
+        if meta_dict['kind'] == 'overworld':
+            # Title restart routes overworld slots through the matching main
+            # save. Keep a slot-keyed marker without treating it as a chapter
+            # restart source.
+            restart_payload = (deepcopy(s_dict), deepcopy(meta_dict))
+        elif meta_dict['kind'] == 'start' and restart_payload is None and \
+                _payload_level_nid(s_dict) == str(meta_dict.get('level_nid')):
+            # Direct start-save producers (including legacy-compatible tools)
+            # already provide declared chapter-start material. Runtime saves
+            # reach this function with the stricter frozen snapshot above.
+            restart_payload = (deepcopy(s_dict), deepcopy(meta_dict))
+        if restart_payload is None:
+            expected_level_nid = _payload_level_nid(s_dict)
+            candidates = [r_save]
+            if old_slot is not None and old_slot != slot:
+                candidates.append(_save_location(
+                    GAME_NID() + '-restart' + str(old_slot) + '.p'))
+            for candidate in candidates:
+                restart_payload = _valid_persistent_restart_payload(
+                    candidate, expected_level_nid)
+                if restart_payload is not None:
+                    break
+        if restart_payload is None:
+            # Never leave a previous chapter (or a partial failed write)
+            # selectable as this slot's Restart Level source.
+            _remove_restart_material(r_save)
+            logging.warning('No pristine restart source for slot %s; restart is unavailable',
+                            slot)
         else:
-            # Keep this slot's existing restart point untouched.
-            restart_src = restart_src_meta = None
-
-        if restart_src and restart_src != r_save:
-            shutil.copy(restart_src, r_save)
-            shutil.copy(restart_src_meta, r_save_meta)
+            _write_restart_payload(r_save, restart_payload)
 
     # For preload
     if meta_dict['kind'] == 'start':
@@ -643,10 +744,12 @@ def _save_io(s_dict, meta_dict, old_slot, slot, force_loc=None, name=None):
         pass
 
 
-def save_io(s_dict, meta_dict, old_slot, slot, force_loc=None, name=None):
+def save_io(s_dict, meta_dict, old_slot, slot, force_loc=None, name=None,
+            restart_payload=None):
     """Serialize complete save jobs so Android never pickles two saves at once."""
     with SAVE_IO_LOCK:
-        return _save_io(s_dict, meta_dict, old_slot, slot, force_loc, name)
+        return _save_io(s_dict, meta_dict, old_slot, slot, force_loc, name,
+                        restart_payload)
 
 def suspend_game(game_state, kind, slot: int = None, name=None, display_name=None):
     """
@@ -675,8 +778,20 @@ def suspend_game(game_state, kind, slot: int = None, name=None, display_name=Non
     else:
         force_loc = None
 
+    restart_payload = None
+    if force_loc is None and slot is not None:
+        if kind == 'overworld':
+            restart_payload = (deepcopy(s_dict), deepcopy(meta_dict))
+        else:
+            restart_payload = _restart_payload_from_snapshot(
+                game_state, s_dict, meta_dict)
+
     global SAVE_THREAD
-    SAVE_THREAD = threading.Thread(target=save_io, args=(s_dict, meta_dict, old_save_slot, slot, force_loc, name))
+    SAVE_THREAD = threading.Thread(
+        target=save_io,
+        args=(s_dict, meta_dict, old_save_slot, slot, force_loc, name,
+              restart_payload),
+    )
     SAVE_THREAD.start()
 
 def load_game(game_state, save_slot: SaveSlot, *,

@@ -21,7 +21,7 @@ payload schema discriminator; metadata `version` is not read by
 | `action_log`, `supports`, `records`, `speak_styles`, `dialog_log` | History/controllers; support/record/style readers have source-proven default objects. **REFERENCE-COMPATIBLE / LEGACY-OPTIONAL**. |
 | `events` | Internal EventManager execution records; section 3. **REFERENCE-COMPATIBLE, INTERNAL-ONLY**. |
 | `market_items`, `unlocked_lore`, `already_triggered_events`, `talk_options`, `talk_hidden`, `base_convos`, `roam_info`, `teams`, `parties` | Campaign/base/roam/team data; optional readers use `.get` or DB reconstruction where source shows it. **REFERENCE-COMPATIBLE / LEGACY-OPTIONAL**. |
-| `bounds`, `fog_state` | Inputs to board reconstruction only. Board/boundary/occupancy/visible fog/aura grids are rebuilt. **DERIVED/RECONSTRUCTED -- NOT SERIALIZED**. |
+| `bounds`, `fog_state` | Serialized reconstruction inputs consumed by `set_up_game_board_iter`. GameBoard/BoundaryInterface, occupancy, visible fog grids and aura grids are rebuilt. **REFERENCE-COMPATIBLE**. |
 
 Metadata fields are `playtime`, `realtime`, `version`, `title`, `mode`,
 `level_nid`, `level_title`, then `kind`, `time`, and optional `disp`.
@@ -32,7 +32,55 @@ stats/state/equipment. Nested current fields such as `persistent`, `roam_ai`,
 **LATER-FEATURE-REQUIRED** or **LATER-CORRECTNESS-FIX**, not a new top-level
 protocol.
 
-## 2. Reference versus current field / provenance table
+## 2. Phase and initiative serialization / reconstruction
+
+Neither reference nor current `GameState.save()` writes `phase` or
+`initiative`. `GameState.generic()` constructs a new `PhaseController` after
+`turncount` is restored; non-initiative construction chooses `current = 0`
+(player) when `turncount != 0`, otherwise the final DB team. It does not read
+the saved `S/Q` state-machine payload. `S/Q` can contain `phase_change`,
+`ai`, or `turn_change`, but it has no `PhaseController.current` value; a
+restored `phase_change` therefore observes the reconstructed controller.
+
+With initiative enabled, `PhaseController.get_current`, `get_previous` and
+`get_next` dereference `game.initiative`. `level_setup_iter` creates an
+`InitiativeTracker`, sorts `unit_line`/`initiative_line`, sets
+`current_idx=-1`, and captures `chapter_start_snapshot` before LevelStart.
+`InitiativeTracker.next`, unit insertion/removal/replacement and turn actions
+then mutate the lines/index. Neither revision serializes it, and
+`load`/`load_iter` neither creates nor restores one.
+
+Bounded current probe, with the DB initiative constant temporarily set in
+memory (no project-data write), started chapter 0, advanced `current_idx` from
+`-1` to `0`, saved, then cleared `game.initiative` before `build_new/load` to
+model a clean load. Output was:
+
+```text
+advanced_save 0 phase_field False initiative_field False
+fresh_load_initiative None
+fresh_load_phase_error AttributeError 'NoneType' object has no attribute 'get_current_unit'
+```
+
+The PC-reference source has the same omitted writer fields, the same generic
+phase construction, and the same `InitiativeTracker` without save/restore.
+This is **REFERENCE-COMPATIBLE** as provenance, but it is not a proof that a
+supported current-progress initiative save is semantically preserved.
+
+| Controller / route | Non-initiative phase result | Initiative result | Classification |
+| --- | --- | --- | --- |
+| normal/battle/suspend menu save | Menus are reachable from player map control; for a nonzero turncount fresh `PhaseController` reconstructs player. | A supported player-control save can occur after `current_idx` advanced; raw load has no tracker. | phase: REFERENCE-COMPATIBLE; initiative: NEEDS-CONTROLLER-DECISION |
+| player `turn_change` autosave | Saved after phase advances to player and turncount increments; reconstructed player is deterministic. | If initiative is on, the route instead uses `InitiativeUpkeep`; no serialized index. | phase: REFERENCE-COMPATIBLE; initiative: NEEDS-CONTROLLER-DECISION |
+| enemy `enemy_turn_change` autosave | `PhaseChangeState.save_state` saves after phase is enemy. Title All Saves exposes it when debug or `all_saves` is enabled; load reconstructs player, not enemy. | Same absence; index/line not restored. | NEEDS-CONTROLLER-DECISION |
+| start save / RESTART_SLOT | Loading follows `start_level` and rebuilds a chapter-start controller instead of raw progress. | `level_setup_iter.start()` deterministically rebuilds tracker at chapter start. | REFERENCE-COMPATIBLE |
+| overworld | No tactical phase/controller is authoritative. | Irrelevant. | REFERENCE-COMPATIBLE |
+| game-over/restart and debugger snapshot | Rebuild chapter with `start_level`; do not restore current-progress phase. | Rebuild chapter-start tracker. | REFERENCE-COMPATIBLE |
+
+This demonstrates a supported-path compatibility decision, not a
+post-reference regression: preserve the reference limitation, add a
+compatibility serialization/reconstruction fix, or explicitly restrict the
+affected save routes. P5-T01-R1 cannot choose among them.
+
+## 3. Reference versus current field / provenance table
 
 Reference `GameState.save()` and current writer have the same top-level key
 set above. Current changes transaction timing, not save bytes.
@@ -50,7 +98,7 @@ set above. Current changes transaction timing, not save bytes.
 replaced frame-visible hydration with an atomic transaction. `a961ee878` is an
 independent aura correctness fix. None justify a save-schema change.
 
-## 3. Event serialization support decision
+## 4. Event serialization support decision
 
 `GameState.save()` writes `EventManager.save()`. It serializes active events;
 `Event.save()` stores event NID, unit/position, serializable local args and
@@ -63,7 +111,7 @@ the removed arbitrary user-facing mid-event save/load feature: S3 remains
 **N/A -- REFERENCE-UNSUPPORTED**. P5-T02 must preserve reader/writer support
 or seek controller direction, never create a new F-key/mid-event route.
 
-## 4. SAVE_SLOTS versus RESTART_SLOTS caller / semantic map
+## 5. SAVE_SLOTS versus RESTART_SLOTS caller / semantic map
 
 | Contract | Storage / producer | Consumers | Constraint |
 | --- | --- | --- | --- |
@@ -75,7 +123,7 @@ the matching main slot. Debugger uses in-memory snapshot first, then only a
 `kind == 'start'` restart slot. These concepts may share pickle helpers but
 must not be merged.
 
-## 5. Normal / start / overworld save-load matrix
+## 6. Normal / start / overworld save-load matrix
 
 | Kind / entry | Required current semantics |
 | --- | --- |
@@ -85,7 +133,7 @@ must not be merged.
 | Restart Level | Read restart slot and rebuild chapter; preserve title prefix when applicable. |
 | `overworld` | Full restore then exactly one `overworld` destination. |
 
-## 6. chapter_start_snapshot / pristine restart lifecycle
+## 7. chapter_start_snapshot / pristine restart lifecycle
 
 `level_setup_iter` creates party/board/regions/fog, registers and arrives
 units, starts initiative, then deep-copies `self.save()[0]` in
@@ -98,7 +146,7 @@ new-game/current-slot setup, so its first save can seed a non-pristine restart;
 that documented dev fallback remains distinct from normal gameplay. Game-over,
 title and debugger must preserve this precedence.
 
-## 7. Aura / derived-state serialization and reconstruction map
+## 8. Aura / derived-state serialization and reconstruction map
 
 `UnitObject.save()` excludes `SourceType.AURA`; `restore()` also discards aura
 children from legacy payloads. After level + board + boundary + fog regions +
@@ -109,7 +157,7 @@ derived; only bounds/visited fog inputs persist. P4 pending tilemap/board
 objects are neither written nor read as save truth. S12 and trace/aura tests
 are the proof surface.
 
-## 8. Old / current compatibility matrix
+## 9. Old / current compatibility matrix
 
 | Case | Result/evidence |
 | --- | --- |
@@ -124,7 +172,7 @@ No archived PC-reference binary `.p` fixture is committed. This is therefore
 field/schema compatibility evidence, not a claim of byte-for-byte pickle
 compatibility for arbitrary external saves.
 
-## 9. Android load orchestration dependency map
+## 10. Android load orchestration dependency map
 
 `SaveLoadJob._read_worker` owns file read/unpickle. `advance()` does
 `build_new` and drains hydration on the main thread in one logical update;
@@ -136,7 +184,7 @@ profiler work remains presentation/diagnostic policy.
 P4 `TilemapChangeJob` and its Event-local barrier are not serialized, loader
 state, pending GameState, or a second authoritative saved world.
 
-## 10. P5-T02 canonical-load constraints
+## 11. P5-T02 canonical-load constraints
 
 - Preserve desktop synchronous API and Android worker-only immutable I/O.
 - Keep S/Q transaction-local until world/RNG/board/aura/event restoration is
@@ -144,23 +192,31 @@ state, pending GameState, or a second authoritative saved world.
 - Preserve mandatory fields and explicit legacy defaults; no unapproved schema
   migration or serializing P4 pending boards.
 - Preserve internal Event serialization without re-enabling S3.
+- Controller must decide the supported current-progress phase/initiative
+  contract before consolidating load: do not silently serialize fields, infer
+  index from turncount, or retain stale controller state.
 
-## 11. P5-T03 restart constraints
+## 12. P5-T03 restart constraints
 
 - Keep numbered SAVE and RESTART files separate and slot-keyed.
 - Preserve `kind='start'` seed/carry-forward and Test Chapter fallback.
 - Preserve capture after chapter setup and before LevelStart; ordinary
   mid-chapter saves are not normal pristine restart material.
 - Preserve game-over/title/debugger precedence.
+- Keep restart as chapter-start reconstruction unless the controller explicitly
+  chooses a different current-progress initiative contract.
 
-## 12. Unresolved compatibility questions / escalation evidence
+## 13. Unresolved compatibility questions / escalation evidence
 
-No ESC-01/02/04/06/09 condition occurred. The only limitation is no archived
-reference binary save file; if P5-T02 needs a field without writer, reader
-default, or concrete legacy fixture, it must stop for controller direction
-rather than inventing migration semantics.
+**ESC-04 / ESC-06: controller decision required.** A supported non-player
+enemy turn-change save is exposed by Title All Saves under debug/all-saves and
+loads with player phase; initiative-mode player-control saves also lose the
+mutable tracker on a clean load. Both match PC-reference omission, but choosing
+reference preservation, compatibility repair, or route restriction changes the
+save contract. The only other limitation remains no archived reference binary
+save file; do not invent a migration.
 
-## Validation evidence
+## 14. Validation evidence
 
 Existing proof targets are `test_atomic_restore` (Android destinations, S/Q,
 snapshot), `test_runtime_debugger` (snapshot/restart fallback),

@@ -8,175 +8,311 @@
 - Phases 1–6: **ACCEPTED**
 - P7-T01 fast-forward equivalence: **ACCEPTED** at `874c7adcf83f14e6fcf961180a01f4ddfe1201fe`
 - P7-T02 debugger parity PC/Android: **ACCEPTED** at `11f2a42cd055d089917834ef80d74d369aad5ed8`
-- Active task: **P7-T03 only — Profiler observer-equivalence**
-- Primary model: **GPT-5.6 Luna / low**
-- Escalation target: **GPT-5.6 Terra / medium**
+- P7-T03 profiler observer-equivalence: **ACCEPTED** at `9fcefdf8f2d6d03724d86523ae46b320bcd8802b`
+- Active task: **P7-T04 only — Save/load/restart UX regression sweep**
+- Primary model: **GPT-5.6 Terra / medium**
+- Escalation target: **GPT-5.6 Sol / high**
 - Escalation pre-authorized: **NO**
-- P7-T04 and Phase 8+: **UNAUTHORIZED**
-- Production behavior changes: **test/evidence first; only a bounded profiler-specific observer-correctness fix is allowed if deterministic evidence proves one unambiguous defect**
+- Phase 8+: **UNAUTHORIZED**
+- Production behavior changes: **test/evidence first; only a bounded UX-routing correctness fix is allowed when one unambiguous frontend integration defect is proven**
+- Canonical save/load/restart architecture changes: **UNAUTHORIZED in P7-T04**
 - Gameplay-core semantic changes: **UNAUTHORIZED**
 - Trace V1/comparator/manifest/golden changes: **UNAUTHORIZED**
 - Project-data / asset changes: **UNAUTHORIZED**
-- P7-T03 static plan gate is `No`, but live recovery governance still forbids self-advancing to P7-T04; stop and report after the bounded P7-T03 commit so the controller can verify the evidence and authorize P7-T04 explicitly.
+- Controller gate after P7-T04: **YES — STOP FOR CONTROLLER REVIEW**
 
-## P7-T02 acceptance record
+## P7-T03 acceptance record
 
-The controller accepts `11f2a42cd055d089917834ef80d74d369aad5ed8` (`test(debugger): prove desktop android parity`).
+The controller accepts `9fcefdf8f2d6d03724d86523ae46b320bcd8802b` (`test(profiler): prove observer equivalence`).
 
 Accepted evidence:
 
-- it is exactly one descendant of P7-T02 authorization commit `6a28b268724dfd2a0f3ff1265cd352cbeea06576`;
-- scope is test/evidence only: `app/tests/test_runtime_debugger_parity.py` and `recovery/p7_t02_debugger_parity.md`;
-- no production source, Trace V1 implementation, comparator, manifest, golden fixture, save/restart code, project data, or assets changed;
-- the desktop HTTP proof uses a real local request and proves the HTTP thread only queues/waits: `RuntimeDebuggerController.dispatch()` is not called until `RuntimeDebuggerService.update()` drains the command on the game thread;
-- one queued command dispatches exactly once, including dispatch-error and HTTP-timeout cases; a timeout may leave one queued command for later execution but does not duplicate that mutation;
-- Android representative Unit/World/Event actions and the desktop service queue converge on the same `RuntimeDebuggerController.dispatch(op, args)` call shape;
-- shared-controller ownership means the two frontends do not contain separate gameplay mutation implementations requiring duplicated semantic algorithms;
-- desktop Ctrl+1/2/3/4/5/0 hotkeys retain their intended shared operations;
-- Android debugger remains `blocks_fast_forward`, owns/releases the raw-touch consumer through its lifecycle, and native editor result consumption is protected against duplicate submission;
-- existing controller/runtime debugger, P5 canonical restart, P7 fast-forward, platform-policy and immutable S2/S4/S5/S16/S17/S18 contracts were reported green;
-- no debugger parity defect required a production fix;
-- lack of Android-device/JNI hardware validation remains an external validation limit, not a deterministic semantic blocker.
+- it is exactly one descendant of P7-T03 authorization commit `487af528aec5dcf967f6cface487f70ae5488e51`;
+- scope is test/evidence only: `app/tests/test_performance_profiler.py` and `recovery/p7_t03_profiler_observer_equivalence.md`;
+- no production, Trace V1, comparator, manifest, golden, save/load/restart, gameplay, project-data, or asset file changed;
+- deterministic profiler OFF/ON evidence uses the same RNG seed and proves identical ordered gameplay effects, HP result, and post-run combat RNG state;
+- disabled profiling executes wrapped work once and emits no profiler warning merely because instrumentation exists;
+- a real secondary Python thread enters a profiler section while a main-thread scope is active; the worker body executes exactly once but does not enter `_frame_scopes`, alter `_scope_stack`, change parentage, or replace `_frame_thread_id`;
+- main-thread `outer -> inner` scope nesting remains coherent through `finish_frame()`;
+- GC callback evidence changes only profiler-owned counters and restores callback membership after the test;
+- representative StateMachine/Event/driver source checks confirm profiling wraps the same gameplay operations rather than selecting different operations;
+- P7-T01 fast-forward, P7-T02 debugger, P5 load/restart, combat lifecycle, P6 platform policy and immutable S17 observer contracts were reported green;
+- no profiler observer defect required a production fix;
+- device/JNI timing and visual behavior remain external validation limits and are not part of logical observer equality.
 
-## Locked debugger contract
+## Locked observer contract
 
 Later tasks must preserve:
 
-1. `RuntimeDebuggerController.dispatch(op, args)` is the shared gameplay-semantic debugger boundary.
-2. Desktop HTTP/server threads may queue/read presentation data but may not mutate gameplay directly.
-3. Android UI may differ in presentation/input mechanics but may not fork debugger gameplay mutations.
-4. Debugger restart remains bound to the accepted P5 pristine chapter restart contract and canonical load transaction.
-5. Debugger enabled but idle remains observer-equivalent.
+1. Profiler/debugger idle modes are observers and may not alter logical gameplay outcomes/order.
+2. Worker-thread profiler sections may execute wrapped work but may not enter/corrupt the active main-thread frame scope tree.
+3. Profiler timing/counters/log output are diagnostic state only and may not become gameplay inputs or scheduling policy.
+4. Historical profiler labels must not be used to reintroduce rejected Android Event command scheduling.
 
 ---
 
-# P7-T03 — Profiler observer-equivalence
+# P7-T04 — Save/load/restart UX regression sweep
 
-Execute **P7-T03 only** using **GPT-5.6 Luna / low**.
+Execute **P7-T04 only** using **GPT-5.6 Terra / medium**.
 
-Escalation target: **GPT-5.6 Terra / medium**, not pre-authorized.
+Escalation target: **GPT-5.6 Sol / high**, not pre-authorized.
 
-Plan objective: verify profiler ON/OFF logical state equivalence and worker-thread scope isolation.
+This is the final Phase-7 user-facing feature-preservation gate.
 
-## Semantic contract
+The authoritative core save/load/restart contracts were already accepted in Phase 5. P7-T04 verifies that user-facing desktop and Android entry paths route into those contracts correctly. It does **not** redesign or reopen canonical load/restart architecture.
 
-`RUNTIME_PROFILER` is an observer only.
+## Core semantic authority
 
-Profiler ON may change:
+Preserve accepted Phase-5 contracts exactly.
 
-- timing samples;
-- profiler-owned counters/deques/scope records;
-- warning/log output;
-- GC diagnostic counters;
-- profiler memory overhead.
+### SAVE
 
-Profiler ON must NOT change:
+- SAVE means current progress.
+- Mid-chapter SAVE is not pristine restart truth.
+- Existing save compatibility rules remain unchanged.
 
-- gameplay actions or action order;
-- RNG state/consumption;
-- combat solver/playback/cleanup outcomes;
-- Event command ordering/lifecycle;
-- state-machine transitions;
-- phase/initiative;
-- units/items/skills/statuses;
-- board/aura/FOW/regions;
-- save/load/restart semantics;
-- fast-forward logical outcomes;
-- debugger gameplay semantics;
-- Android tilemap barrier/atomic commit behavior.
+### RESTART
 
-Profiler instrumentation must never become a semantic branch condition.
+- RESTART means source-proven pristine chapter-start state for the same chapter.
+- Prefer the current-session `chapter_start_snapshot` when valid/matching.
+- Persistent fallback must be a matching RESTART slot, not the current mid-chapter SAVE slot.
+- Stale/wrong-chapter restart sources are rejected/removed according to accepted P5 behavior.
+- Test Chapter must not accidentally seed pristine restart from an already-progressed first save.
+- Overworld special cases retain their accepted SAVE behavior.
 
-## Current profiler architecture to prove
+### LOAD
 
-`app/engine/performance.py` currently:
+All user-facing loads/restarts must converge on the accepted canonical transaction:
 
-- enables runtime profiling only under the Android/profile environment policy;
-- stores frame timing/scope/counter history inside `RuntimeProfiler`;
-- registers `_on_gc` with `gc.callbacks` when enabled at construction;
-- sets `_frame_thread_id` in `begin_frame()`;
-- `section()` records scopes only when enabled **and** the current thread equals `_frame_thread_id`;
-- worker-thread sections therefore yield without touching the shared main-thread scope stack;
-- `finish_frame()` aggregates/logs profiler-owned data.
+1. validate source/context before authoritative build;
+2. worker/background portion may read/unpickle only;
+3. authoritative hydrate/build executes synchronously as one logical transaction on the main thread;
+4. START/RESTART context applies the accepted chapter-start path;
+5. compatibility restoration happens inside the transaction;
+6. validate complete world before publication;
+7. publish/install once at the transaction boundary;
+8. exception/failure leaves no partially installed gameplay state.
 
-These are implementation details to verify, not authority to change gameplay behavior.
+Do not introduce a second load path for Android or any frontend.
 
-## Required proof
+## UX paths to verify
 
-At minimum prove:
+Inventory and exercise the actual current frontend routes for at least:
 
-1. Profiler disabled: `begin_frame`, `section`, `count`, `finish_frame` do not alter gameplay state and do not emit profiler warnings.
-2. Profiler enabled around a representative deterministic gameplay update produces the same logical state/result as profiler disabled.
-3. Enabled profiler does not change RNG state before/after representative deterministic gameplay.
-4. Enabled profiler does not change action/action-log order in representative combat/Event/state-machine paths.
-5. S17 disabled == S17 profiler-idle exactly under immutable Trace V1.
-6. S17 debugger-idle remains unchanged as a neighboring observer baseline.
-7. A worker thread entering `RUNTIME_PROFILER.section()` during an active main-thread frame does not append/pop/corrupt the main-thread `_scope_stack` or `_frame_scopes`.
-8. Main-thread nested scope parentage remains correct even when a worker attempts a scope concurrently.
-9. Worker scope execution still executes the wrapped worker body exactly once; profiling cannot suppress worker work.
-10. A worker thread cannot change `_frame_thread_id` merely by entering `section()`.
-11. `count()`/logging/profiler metadata do not become gameplay inputs.
-12. GC callback only mutates profiler-owned GC counters; registering/removing the test callback does not mutate gameplay state.
-13. Profiler exceptions/log formatting are not used to alter gameplay lifecycle.
-14. P7-T01 fast-forward equivalence remains green with existing profiler-idle observer proof.
-15. P7-T02 debugger parity remains green.
-16. P6 Event/tilemap platform-policy tests remain green.
-17. P5 canonical load/restart and Phase-3 combat lifecycle focused tests remain green.
+### Title / save menu
 
-## Thread-isolation emphasis
+- load an existing current-progress SAVE;
+- new game / chapter-start source setup where applicable;
+- restart-current-chapter option if exposed through title/save UI;
+- slot availability/selection routes to the intended SAVE vs RESTART source;
+- desktop and Android presentation differences do not change selected logical source/context.
 
-The accepted Android preload/resource workers may execute code enclosed by profiler sections.
+### Game over
 
-Worker-thread profiler calls must be observational no-ops with respect to the active main-thread frame scope tree.
+- restart current chapter uses pristine restart semantics;
+- any return/title/load option routes correctly;
+- no mid-chapter SAVE is silently used as pristine restart;
+- state-stack/input transition ordering remains valid.
 
-Do not solve thread safety by:
+### Runtime debugger
 
-- serializing gameplay on the profiler lock;
-- moving gameplay to another thread;
-- creating thread-local gameplay state;
-- allowing worker scopes into the main frame tree.
+- restart current chapter retains P7-T02 shared controller semantics;
+- matching in-memory snapshot is preferred;
+- persistent matching RESTART fallback only;
+- explicit difficulty is preserved;
+- Android touch ownership is released before canonical state replacement.
 
-If correct observer behavior would require such architecture, STOP under ESC-02/ESC-09.
+### Direct load/restart integration
 
-## Test/evidence scope
+- canonical `load_game_data` behavior remains the only authoritative install transaction;
+- Android `SaveLoadJob` worker remains read/unpickle only;
+- desktop may load synchronously where accepted but must produce the same logical transaction result;
+- failure/corrupt/invalid source does not publish partial state.
+
+## PC / Android parity model
+
+The two platforms do not need identical widgets, animations, file-dialog presentation, or host timing.
+
+Required equivalence is:
+
+```text
+same logical user intent
++ same save/restart source
++ same requested difficulty/context
+=> same canonical transaction/context
+=> same logical restored/restarted world
+```
+
+Platform-specific filesystem location, touch mechanics, loading screen presentation, and resource-preload timing are excluded from gameplay equality when they preserve the same canonical source and transaction.
+
+Do not compare host-frame counts.
+
+## Required scenario matrix
+
+At minimum cover deterministic feature-level evidence for:
+
+1. **Title load — current SAVE**
+   - desktop route;
+   - Android route or Android-routing policy seam;
+   - same source/context and logical result.
+
+2. **Restart — current-session pristine snapshot**
+   - mutate current chapter after chapter-start snapshot;
+   - restart;
+   - prove mutations disappear and pristine source wins.
+
+3. **Restart — persistent RESTART fallback**
+   - no valid in-memory snapshot;
+   - matching RESTART source exists;
+   - restart uses it.
+
+4. **Wrong/stale restart source rejection**
+   - wrong chapter or stale source is not accepted as pristine restart.
+
+5. **Mid-chapter SAVE separation**
+   - current SAVE exists and differs from pristine state;
+   - restart must not use it.
+
+6. **Difficulty propagation**
+   - explicit restart/debugger difficulty reaches accepted canonical load context and chapter-start semantics.
+
+7. **Game-over restart**
+   - same pristine-source contract;
+   - no alternate Android gameplay semantics.
+
+8. **Debugger restart**
+   - shared controller route remains consistent with Game Over/Title restart source rules.
+
+9. **Load failure atomicity**
+   - invalid/corrupt/incompatible source fails without partial authoritative install.
+
+10. **Initiative/phase compatibility regression**
+   - accepted P5 exact-state/new-save behavior remains green;
+   - legacy ambiguous initiative current-progress failure remains atomic rather than guessed;
+   - START/RESTART deterministic rebuild remains accepted where applicable.
+
+11. **Aura/FOW reconstruction regression**
+   - aura children remain re-derived rather than serialized as independent truth;
+   - FOW logical state remains consistent after load/restart where existing fixtures cover it.
+
+12. **Fast-forward / observers around UX**
+   - P7-T01/P7-T02/P7-T03 regressions remain green;
+   - loading/restart routing is not altered by debugger/profiler idle modes.
+
+## Source/source-context proof
+
+For each user-facing route, prove the selected source type and context explicitly.
+
+Distinguish:
+
+- SAVE current progress;
+- RESTART pristine chapter source;
+- `chapter_start_snapshot` current-session pristine source;
+- START/new-game chapter setup;
+- overworld special SAVE behavior.
+
+A test that only checks the final state changed is insufficient if it cannot prove the route chose the correct source/context.
+
+## Atomicity proof
+
+P7-T04 must keep Phase-2/5 atomicity evidence green.
+
+No UX route may observe/install:
+
+- partially hydrated GameState;
+- incomplete tilemap/board/world;
+- staged state stack as authoritative truth;
+- partially restored initiative/phase state;
+- worker-thread authoritative gameplay mutation.
+
+If a frontend route bypasses canonical `load_game_data`, STOP and report it before attempting a fix.
+
+## Test/evidence policy
+
+Expected default production changes: **NONE**.
 
 Expected default changes:
 
-- focused tests, preferably extending `app/tests/test_performance_profiler.py` or adding one bounded profiler-equivalence test file;
-- optionally `recovery/p7_t03_profiler_observer_equivalence.md`.
+- focused UX regression tests;
+- optionally `recovery/p7_t04_save_load_restart_ux.md`.
 
-Expected production changes: **NONE**.
+A bounded production fix is allowed only when tests prove a local frontend/routing defect with one unambiguous correct answer, such as:
 
-A production change to `app/engine/performance.py` is allowed only if deterministic evidence proves a profiler-specific observer defect and the fix changes profiler-owned state only.
+- wrong slot/source selected before canonical API call;
+- wrong requested difficulty/context forwarded;
+- Android touch/UI ownership not released before an already-correct canonical transition;
+- duplicate frontend submission of one load/restart request.
 
-If a fix requires changing gameplay/state/combat/Event/save/load/tilemap code, STOP and escalate/review.
+Allowed frontend/integration surfaces if evidence proves such a defect:
+
+- `app/engine/title_screen.py`
+- `app/engine/game_over.py`
+- `app/engine/runtime_debugger.py`
+- `app/engine/runtime_debugger_controller.py`
+- `app/engine/android_debugger.py`
+- narrow Android frontend/runtime bridge code directly owning the UX request
+- focused tests/report
+
+Phase-5 core is protected.
+
+If the defect requires changing:
+
+- canonical `load_game_data` transaction;
+- `GameState.load_iter` semantics;
+- SaveLoadJob worker authority;
+- save schema/compatibility;
+- pristine restart definition/source precedence;
+- initiative/phase compatibility policy;
+- aura/FOW serialization semantics;
+
+STOP under ESC-02/ESC-06/ESC-09 and request controller review/escalation.
+
+## Regression requirements
+
+Keep green:
+
+- P7-T01 fast-forward equivalence;
+- P7-T02 debugger parity;
+- P7-T03 profiler observer-equivalence;
+- P5 canonical load/restart/compatibility tests;
+- Phase-4 tilemap atomicity/barrier tests;
+- Phase-3 combat lifecycle;
+- P6 platform policy.
 
 ## Immutable proof
 
 Run at minimum:
 
+- S2 load
+- S4 restart
 - S5 representative gameplay
+- S12 aura
+- S13 FOW
 - S16 fast-forward
 - S17 disabled
 - S17 debugger-idle
 - S17 profiler-idle
 - S18 game-over/restart
 
-If any production profiler fix touches instrumentation in combat/Event/state-machine call sites, also run the relevant immutable scenarios exercised by those surfaces; do not regenerate goldens.
+Run S14 tilemap as well because load/restart world publication must not regress the accepted tilemap/board contract.
+
+No golden regeneration.
 
 Run focused:
 
-- `app.tests.test_performance_profiler`
-- Android performance/profiler instrumentation tests
-- recovery observer/S17 tests
-- P7 fast-forward equivalence
-- P7 debugger parity
-- Phase-3 combat lifecycle
-- P5 canonical load/restart
-- P6 platform-policy/Event/tilemap tests
-- recovery trace/lifecycle/golden integrity
+- canonical load tests;
+- restart contract tests;
+- atomic restore tests;
+- Android restart/load/persistence tests;
+- title/save-menu routing tests;
+- game-over tests;
+- runtime debugger restart tests;
+- initiative/phase compatibility tests;
+- aura/FOW/tilemap regression tests;
+- P7 fast-forward/debugger/profiler tests;
+- recovery trace/lifecycle/golden integrity.
 
-Run broader unittest discovery and report known baseline/native/test-isolation failures without fixing unrelated issues.
+Run broader unittest discovery and report known baseline/native/test-isolation failures without repairing unrelated issues.
 
 Finally run:
 
@@ -190,34 +326,39 @@ Finally run:
 
 Do not:
 
-- begin P7-T04 or Phase 8;
-- modify gameplay to accommodate profiler instrumentation;
-- change profiler into a scheduler;
-- change fast-forward semantics;
-- change debugger semantics;
-- change combat/Event/tilemap/load/restart contracts;
+- begin Phase 8;
+- redesign title/save/game-over/debugger UI;
+- create Android-only gameplay load/restart semantics;
+- create another load API;
+- change P5 canonical transaction or restart-source precedence;
+- add a generic save migration framework;
+- guess ambiguous legacy initiative progress;
+- serialize aura children as new save truth;
+- alter fast-forward/debugger/profiler semantics;
+- alter combat/tilemap/platform-policy contracts;
 - change Trace V1/comparator/manifest/goldens;
 - modify project data/assets;
 - merge master.
 
 ## Escalation / stop rules
 
-Primary: **GPT-5.6 Luna / low**.
-Escalation target: **GPT-5.6 Terra / medium**.
+Primary: **GPT-5.6 Terra / medium**.
+Escalation target: **GPT-5.6 Sol / high**.
 Pre-authorized: **NO**.
 
 STOP on:
 
-- **ESC-02** observer defect root cause is nonlocal;
+- **ESC-02** failure root cause is inside/nonlocal to canonical load/restart rather than local UX routing;
 - **ESC-03** immutable trace divergence;
-- **ESC-04** competing profiler semantics affect gameplay;
-- **ESC-05** instrumentation changes logical state/lifecycle;
-- **ESC-07** platform-specific instrumentation would require gameplay fork;
-- **ESC-08** repeated bounded failure;
-- **ESC-09** cross-cutting thread/scheduler architecture appears necessary.
+- **ESC-04** desktop/Android UX routes imply competing gameplay semantics;
+- **ESC-05** partial/invalid gameplay state becomes observable;
+- **ESC-06** save-format/compatibility/restart-source conflict;
+- **ESC-07** fix would require a platform gameplay fork;
+- **ESC-08** repeated bounded frontend fix failure;
+- **ESC-09** new cross-cutting save/load/restart architecture appears necessary.
 
 Do not self-escalate.
 
 ## Gate status
 
-**P7-T02 is ACCEPTED. P7-T03 is the only authorized task. P7-T04 and Phase 8+ remain blocked pending controller review.**
+**P7-T01/P7-T02/P7-T03 are ACCEPTED. P7-T04 is the only authorized task. Phase 8+ remains blocked pending controller review.**

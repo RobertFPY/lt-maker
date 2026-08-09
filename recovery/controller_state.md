@@ -4,270 +4,265 @@
 
 ## Current authorization
 
-- Current phase: **Phase 6**
-- Phase 1 harness / immutable Trace V1 PC-reference goldens: **ACCEPTED**
-- Phase 2 state-restore semantics: **ACCEPTED**
+- Current phase: **Phase 7**
+- Phase 1 deterministic Trace V1 harness/goldens: **ACCEPTED**
+- Phase 2 GameState/state-machine atomicity: **ACCEPTED**
 - Phase 3 combat lifecycle semantics: **ACCEPTED**
 - Phase 4 tilemap/board/event atomicity: **ACCEPTED**
 - Phase 5 save/load/restart consolidation: **ACCEPTED**
+- Phase 6 platform-policy boundary: **ACCEPTED**
 - P6-T01 runtime capability audit/design: **ACCEPTED** at `017e73c3164a56712a823016a7cfe642c75bbd17`
 - P6-T02 Android audio/resource policy migration: **ACCEPTED** at `cb217eb4b10d993c14594ce30b98e22cec05b405`
-- Active task: **P6-T03 only — Migrate accepted Android scheduling policy**
-- Primary model: **GPT-5.6 Terra / high**
-- Escalation target: **GPT-5.6 Sol / max**
+- P6-T03 accepted scheduling migration / Event semantic restore: **ACCEPTED** at `3c8c5479d292ce43fd3347a12dffa9d7c32fa7db`
+- Active task: **P7-T01 only — Fast-forward equivalence suite**
+- Primary model: **GPT-5.6 Terra / medium**
+- Escalation target: **GPT-5.6 Sol / high**
 - Escalation pre-authorized: **NO**
-- Phase 7+: **UNAUTHORIZED**
+- P7-T02/P7-T03/P7-T04 and Phase 8+: **UNAUTHORIZED**
 - Golden/reference fixture changes: **UNAUTHORIZED**
 - Project-data / asset changes: **UNAUTHORIZED**
-- Controller gate after P6-T03: **YES — STOP FOR CONTROLLER REVIEW**
+- Controller gate after P7-T01: **YES — STOP FOR CONTROLLER REVIEW**
 
-## P6-T02 acceptance record
+## Phase 6 acceptance record
 
-The controller accepts `cb217eb4b10d993c14594ce30b98e22cec05b405` (`refactor(android): isolate audio policy`).
+The controller accepts `3c8c5479d292ce43fd3347a12dffa9d7c32fa7db` (`fix(android): restore semantic event scheduling`) and closes Phase 6.
 
 Accepted evidence:
 
-- it is one direct descendant of P6-T02 authorization commit `a90ed76beccbafea423c82a0adf2a539d2c115ba`;
-- production changes are bounded to `app/engine/sound.py` and the existing physical-audio/preload callers in animation combat, title, game over, sound room, and loading state, plus focused tests;
-- no Event/tilemap scheduling, canonical load/restart, project data, Trace V1, comparator, manifest, or golden fixture changed;
-- the implementation extends the existing `SoundController` abstraction rather than creating a parallel audio controller or service locator;
-- semantic music NID selection and lifecycle timing remain in their existing callers; the sound subsystem owns only physical backend selection/fallback and playback restoration;
-- desktop `play_music` remains the legacy cached/fade path;
-- Android stream success uses the existing stream path once with no legacy double-play; stream failure falls back exactly once to the established legacy path;
-- streamed battle playback returns a bounded restore handle owned by the sound subsystem; animation combat still decides when battle music starts/finishes and which NID is selected;
-- Sound Room retains caller-owned `request_present` before synchronous Android stream loading and retains existing UI/action ordering;
-- `LoadingState` still computes the exact level-song set; `SoundController.prepare_level_songs` owns only platform-specific flush/preload execution and receives only the controller plus NID set;
-- worker audio preparation does not receive `GameState`, Event, solver, board, units, save publication, or state machine;
-- timing-sensitive render/cache branches were intentionally not migrated;
-- immutable S5/S7/S8/S16/S17/S18 and focused audio/loading/canonical/tilemap/debugger/profiler tests were reported PASS with unchanged goldens.
+- the commit is exactly one descendant of P6-T03 authorization commit `887877114d1f4d9aa1b94fac6d7e3afe6bd19479`;
+- scope is bounded to Event scheduling cleanup, the Phase-4 tilemap scheduling caller/job, a narrow runtime work-budget capability, and focused tests;
+- `Event.process()` no longer contains the Android 2 ms wall-clock command deadline, `android_process_budget_seconds`, or `_android_process_yielded` lifecycle behavior;
+- consecutive EventProcessor commands now continue under shared semantics until the event/command itself creates a semantic boundary;
+- `waiting_for_present` remains an explicit presentation fence; SAVE-command queue ordering remains intact;
+- `EventState.should_defer_render()` now retains a previous frame only for the explicit `_defer_render` tilemap barrier rather than a generic command-budget yield;
+- `OffWorldWorkBudget` is immutable and the work-budget module depends only on `android_runtime` platform detection;
+- desktop `change_tilemap` remains synchronous and registers no pending job/barrier;
+- Android retains exactly the accepted `4_000_000 ns` budget only for pending/off-world tilemap preparation;
+- `TilemapChangeJob` consumes the injected immutable budget while its final commit remains synchronous;
+- the Phase-4 `_android_tilemap_pending` Event barrier, movement/input/listener suppression, synchronous commit, synchronous rollback-before-release, aura/FOW/region/action-log ordering remain owned by the existing Event/tilemap transaction;
+- P6-T02 sound policy is unchanged;
+- immutable S5/S12/S13/S14/S16/S17/S18 and focused Event/fast-forward/tilemap/audio/load/restart/combat/debugger/profiler tests were reported PASS with unchanged Trace V1/goldens/project data;
+- the known broad-suite shared-test pollution involving `_Uses.tag` remains unrelated baseline evidence and was not repaired in Phase 6.
 
-## Controller decision — Event.process Android 2 ms deadline
+### Non-blocking source note
 
-The unresolved P6-T01 scheduling question is now resolved.
+`StateMachine.update()` still contains historical wording / profiler counter naming referring to an `event_budget_deferred_draw`. No generic Event command scheduler remains attached to that name; current render deferral is driven by the explicit state-owned `should_defer_render()` path, which for EventState is the accepted tilemap `_defer_render` barrier. Do not treat the stale observer label/comment as authorization to reintroduce command budgeting. Rename only if a later bounded task already touches that observer surface and tests prove no semantic impact.
 
-### Decision: REJECT / RESTORE-PC-SEMANTICS
+## Locked Phase-6 platform boundary
 
-Current `Event.process()` uses `is_android_render_optimization_enabled()` plus a 2 ms `perf_counter()` deadline. After at least one command, expiration can set `_android_process_yielded` and return while the Event is still semantically in `processing`; `_update_state()` then stops further processor work for that outer update.
+Later tasks must preserve:
 
-The PC behavioral reference has no wall-clock command deadline: while an Event remains in `processing`, commands continue synchronously until the event/command itself creates a semantic boundary such as waiting, pause/block, completion, or another explicit state transition.
+1. **Audio/resource policy:** `SoundController` owns physical streamed/cached selection and preload policy only. Semantic music selection and lifecycle timing remain caller-owned.
+2. **Event commands:** no Android-specific generic wall-clock/command-count scheduling. Event commands share one semantic execution model.
+3. **Tilemap scheduling:** Android may progressively prepare pending TileMap/GameBoard/Boundary off-world under the 4 ms work budget; the live commit/rollback remains atomic and Event-local barrier semantics remain mandatory.
+4. **No giant platform service:** runtime capabilities stay narrow and cannot own gameplay, save/load, combat, input, or state-machine semantics.
+5. **Protected prior phases:** canonical GameState load, restart, combat lifecycle, aura/FOW and state publication contracts remain stronger than any platform policy.
 
-Therefore the Android deadline is **not** an accepted presentation optimization and is not an approved `CAP-WORK-BUDGET` seam.
+---
 
-Classification:
+# P7-T01 — Fast-forward equivalence suite
 
-- `GAMEPLAY-SEMANTIC — MUST NOT PLATFORM-FORK`
-- `RESTORE-PC-SEMANTICS`
+Execute **P7-T01 only** using **GPT-5.6 Terra / medium**.
 
-Rationale:
-
-- the deadline can insert an outer-host-frame boundary solely because host wall-clock time elapsed;
-- consecutive event commands may therefore become observable on different updates on Android even though no command requested a boundary;
-- Event command ordering/lifecycle is authoritative gameplay semantics under INV-01/INV-04/INV-05;
-- there is no proof that inter-command frame insertion is behaviorally equivalent;
-- immutable traces passing under existing scenarios are insufficient proof for arbitrary event scripts.
-
-P6-T03 must remove this deadline behavior completely. Do not replace it with a different command-count, wall-clock, coroutine, or frame budget.
-
-Preserve separately accepted explicit semantic/presentation boundaries, including the fast-forward `waiting_for_present` fence where a command explicitly requests one presentation before continuation.
-
-Performance consequence is accepted for recovery correctness: long uninterrupted event command batches may again consume one longer host frame. A future performance task may optimize individual expensive commands only through proven off-world/preparation boundaries; it may not reintroduce generic inter-command scheduling divergence.
-
-## Accepted scheduling policy that MAY migrate
-
-The only approved progressive gameplay-adjacent scheduling policy in P6-T03 is Phase-4 Android tilemap **off-world preparation**.
-
-Accepted invariant:
-
-```text
-LIVE OLD WORLD
-    -> progressively build pending TileMap/GameBoard/Boundary off-world
-    -> validate complete pending structures
-    -> one synchronous authoritative commit or synchronous rollback
-LIVE NEW/RESTORED WORLD
-```
-
-The Event-local `_android_tilemap_pending` barrier remains mandatory. It blocks movement, gameplay input/listeners, later event commands, and presentation exposure as already accepted. It is semantic proof machinery, not a generic platform service.
-
-The current 4 ms `TilemapChangeJob` preparation budget is eligible to move behind a narrow runtime work-budget policy.
-
-## P6-T03 — authorized scope
-
-Execute **P6-T03 only** using **GPT-5.6 Terra / high**.
-
-Escalation target: **GPT-5.6 Sol / max**, not pre-authorized.
+Escalation target: **GPT-5.6 Sol / high**, not pre-authorized.
 
 PC behavioral reference:
 
 `9314f54b49f4552b5a3d023b4da0012ce7dfbc89`
 
-Mandatory design input:
-
-`recovery/p6_t01_runtime_capability_map.md`
-
-### Goal A — restore shared Event command scheduling
-
-Remove the Android generic command deadline from `app/events/event.py`.
-
-Required resulting behavior:
-
-- no `android_process_budget_seconds` gameplay scheduling constant;
-- no `_android_process_yielded` lifecycle flag;
-- no `perf_counter()` deadline deciding whether another EventProcessor command runs;
-- while Event state remains `processing`, run commands synchronously until a command/event creates an existing semantic boundary;
-- preserve command queue ordering and SAVE-command queue rules;
-- preserve profiler observation without profiler state deciding lifecycle;
-- preserve `waiting_for_present` as an explicit accepted presentation fence;
-- preserve normal wait/dialog/paused/blocked/complete semantics;
-- preserve fast-forward INV-06 behavior.
-
-Do not redesign EventProcessor or introduce a replacement scheduler.
-
-### Goal B — migrate only the accepted tilemap off-world work budget
-
-Create/use a narrow work-budget capability only for the proven Phase-4 pending tilemap preparation.
-
-Approved shape is equivalent to:
-
-```python
-@dataclass(frozen=True)
-class OffWorldWorkBudget:
-    enabled: bool
-    deadline_ns: int
-
-
-def tilemap_prepare_budget() -> OffWorldWorkBudget:
-    ...
-```
-
-Exact naming/module may vary if a smaller source-aligned API is cleaner.
-
-Default/desktop:
-
-- progressive tilemap preparation disabled;
-- `change_tilemap` remains the P4-T02 synchronous build + synchronous commit path.
-
-Android:
-
-- progressive pending/off-world preparation enabled;
-- preserve the accepted 4,000,000 ns budget unless source/tests require escalation;
-- `should_skip` may continue to drain pending preparation without the normal deadline as already established;
-- final commit remains one synchronous operation.
-
-Preferred dependency direction:
+Fast-forward is a later intended feature absent from the PC reference. Its accepted hybrid contract is:
 
 ```text
-event_functions -> narrow work-budget policy -> android_runtime/config
-                  -> TilemapChangeJob receives immutable budget/config
+fast-forward OFF on recovery == accepted recovery gameplay semantics
+fast-forward ON              == fast-forward OFF logical outcomes
 ```
 
-The capability module must not import `GameState`, Event, action, combat, save, state machine, unit/board ownership, or other gameplay-critical modules.
+Only presentation/host timing may differ.
 
-Do not create a giant runtime capability registry/service locator.
+## Goal
 
-### Tilemap barrier contract — locked
+Build and run a deterministic ON/OFF equivalence suite proving INV-06 across representative gameplay lifecycles.
 
-Do not weaken or move ownership of:
+This is **test/evidence first**. Do not change production code merely to make a harness convenient.
 
-- `_android_tilemap_pending`;
-- Event input/listener suspension while pending;
-- movement suspension while pending;
-- later Event command blocking while pending;
-- `_defer_render` handling;
-- synchronous commit;
-- synchronous rollback-before-release;
-- unit/region/aura/FOW/action-log ordering accepted in P4.
+A bounded production fix is allowed only if a failing equivalence test identifies a local fast-forward-specific defect whose correct behavior is unambiguous from the OFF path and whose fix does not reopen Phase-2/3/4/5/6 architecture. Otherwise STOP for controller review or named escalation.
 
-The work-budget policy may decide only whether pending preparation is enabled and the numeric budget for pending object construction/validation.
+## Current implementation contract to test
 
-It may not own the Event barrier or authoritative commit.
+Current driver behavior includes:
 
-### Explicitly rejected scheduling seams
+- `FAST_FORWARD` held -> `get_fast_forward_steps()` uses normalized speed;
+- supported speeds are 200..800 percent in 100-percent steps; default is 300 percent;
+- one host input snapshot may drive multiple logical game updates;
+- only the first logical substep receives the host input event; later substeps receive `[]`;
+- transient input is consumed before repeat chains/additional logical substeps so key/click/text edges cannot replay;
+- additional fast-forward substeps advance virtual engine time using the bounded fast-forward step;
+- states with `blocks_fast_forward` may stop the extra substeps;
+- a `request_present` / presentation barrier may force one draw and stop remaining fast-forward substeps;
+- rendering intermediate substeps may be deferred, but logical `update_visuals()` still advances according to the established state-machine lifecycle.
 
-Do not add/migrate budgets for:
+These mechanisms are implementation details. P7-T01 proves their *outcomes*, not their exact current structure.
 
-- EventProcessor command batches;
-- combat solver/actions/playback/cleanup;
-- `GameState.load_iter` host-frame hydration;
-- AddGroup/unit-by-unit live placement;
-- save/load/restart publication;
-- phase/initiative progression;
-- aura/FOW/region live restoration;
-- debugger/profiler execution.
+## Critical equivalence-runner rule
 
-### Authorized production surfaces
+Do **not** pair ON/OFF runs by host-frame number.
 
-Expected:
+Fast-forward intentionally changes how many logical substeps fit in one host frame, so `frame N` does not identify the same logical input opportunity.
 
-- `app/events/event.py`
-- `app/events/event_functions.py`
-- `app/engine/jobs/tilemap_change_job.py`
-- a narrow new `app/engine/runtime_capabilities/work_budget.py` (and minimal package `__init__.py`) if used
+Pair runs using the same:
 
-Narrow adjacent tests only.
+- initial save/snapshot/world setup;
+- RNG seed/state;
+- configuration except fast-forward state/speed;
+- ordered user-intent/input script;
+- logical readiness condition/checkpoint for each input;
+- terminal logical checkpoint.
 
-If implementation requires changing P4 atomic commit architecture or P5 load/restart architecture, STOP under ESC-02/ESC-07/ESC-09.
+Inputs must be injected when the same logical state is ready for that action, not after the same number of rendered frames.
 
-## Required tests
+Host frame count, number of draws, wall-clock time, profiler counters and audio/render state are not equality fields.
 
-At minimum prove:
+## Required equality dimensions
 
-1. With Android render optimization enabled, multiple consecutive EventProcessor commands with no semantic boundary execute in the same `Event.process()` call/update just as shared/reference semantics require.
-2. Host wall-clock/perf-counter progression cannot itself defer the next Event command.
-3. `_android_process_yielded` no longer controls Event lifecycle.
-4. Explicit `waiting_for_present` still ends the current processing pass and resumes only on the established next-present boundary.
-5. wait/dialog/paused/blocked/complete Event boundaries remain unchanged.
-6. Event SAVE-command queue ordering remains unchanged.
-7. fast-forward does not replay input edges or alter outcomes.
-8. desktop tilemap change remains synchronous and registers no pending job/barrier.
-9. Android tilemap preparation is enabled only through the narrow work-budget policy.
-10. Android tilemap budget remains 4,000,000 ns unless explicitly escalated.
-11. repeated pending updates mutate no live tilemap/board/unit/region/aura/FOW state before commit.
-12. Event-local pending barrier still blocks movement, input/listeners, and later event commands.
-13. final live tilemap commit remains synchronous and non-generator.
-14. pending-build failure leaves old world authoritative.
-15. live-commit failure rolls back synchronously before barrier release.
-16. `should_skip` pending behavior remains bounded to off-world preparation and does not reintroduce partial live mutation.
-17. the work-budget capability has no gameplay-critical imports.
-18. P6-T02 audio policy tests remain green and no scheduling dependency leaks into sound policy.
-19. P5 canonical load/restart tests remain green.
-20. Phase-3 combat lifecycle tests remain green.
+For each ON/OFF pair compare, where applicable:
+
+- ordered state transitions at logical checkpoints;
+- normalized action sequence/action log effects;
+- RNG state and RNG-dependent outcomes;
+- combat solver outcome and ordered gameplay playback effects;
+- HP/mana and death state;
+- EXP/level/promotion outcome;
+- item durability/uses/costs/consumption;
+- skills/statuses and proc outcomes;
+- unit positions, finished/dead flags and team/phase state;
+- FOW/visited/bounds/regions/aura logical state when exercised;
+- triggered Event order and Event command completion;
+- game/level variables touched by the scenario;
+- save-relevant logical state when a scenario crosses a save-capable boundary;
+- final active/pending state stack;
+- final Trace V1 logical state / semantic delta hashes where the existing recorder supports the boundary.
+
+Equal terminal state alone is insufficient if actions/hooks/events/RNG were duplicated, skipped or reordered.
+
+## Required scenario matrix
+
+Use existing recovery scenarios/harnesses whenever they provide sufficient semantic coverage rather than inventing duplicate infrastructure.
+
+At minimum include deterministic ON/OFF pairs covering:
+
+1. **Event command chain** — multiple consecutive semantic Event commands, waits/explicit presentation fence where applicable, and final Event completion. This must prove the removed P6 generic Event budget is not replaced by fast-forward scheduling divergence.
+2. **Movement + Wait / FOW** — movement commits, FOW vantage/visited behavior and Wait finalization; no duplicate input edge on extra substeps.
+3. **Combat** — at least one representative combat that exercises RNG, ordered actions/playback, durability/cost, HP/death and EXP/skill/status hooks as available in existing fixtures.
+4. **Combat presentation lifecycle** — animated/map/simple path coverage sufficient to prove presentation acceleration does not change solver/actions/cleanup order. Reuse Phase-3 lifecycle tests rather than reopening combat architecture.
+5. **Phase/upkeep transition** — turn/phase or initiative progression with statuses/upkeep if existing deterministic fixtures support it.
+6. **Interactive blocking state** — a choice/menu/text/input-owned state with `blocks_fast_forward` or equivalent protection; holding FAST_FORWARD must not auto-consume/replay a selection edge.
+7. **Explicit presentation fence** — `request_present` causes the required cue boundary without changing logical effects or replaying input.
+8. **Speed invariance** — compare OFF against at least the default 300% and boundary speeds 200% and 800% for a deterministic representative scenario. All supported speeds must use the same semantic model; if exhaustive 200..800 is cheap, run all.
+9. **Observer coexistence** — fast-forward with debugger/profiler idle where existing S17 harness supports it; observer enablement must not change the ON/OFF logical result.
+10. **Game-over/restart boundary** if exercised by existing S18 without creating a new save-format test; fast-forward must not alter the resulting restart/game-over semantics.
+
+S16 remains the existing hybrid fast-forward golden/oracle and must pass unchanged, but P7-T01 must add broader direct ON/OFF equivalence proof rather than treating one immutable S16 fixture as sufficient.
+
+## Input-edge invariants
+
+Explicitly prove:
+
+- SELECT/BACK/START/directional/text/click edge used on the first logical substep is not replayed on additional substeps;
+- held FAST_FORWARD itself may remain held and request extra updates;
+- entering a fast-forward-blocking state during a host frame stops extra updates before a second logical input opportunity can be consumed;
+- repeat chains receive no replayed transient input;
+- explicit presentation fences do not cause the original input edge to be delivered again when processing resumes.
+
+## Time/presentation handling
+
+Do not assert equal:
+
+- host-frame count;
+- draw count;
+- wall-clock duration;
+- audio playback position;
+- animation surface/cache state;
+- profiler timing samples.
+
+Do assert that virtual-time acceleration cannot change gameplay outcomes. If a timer/wait affects gameplay rather than presentation, compare its resulting logical effect/order, not the numeric host time used to reach it.
+
+## Trace/golden rules
+
+- Reuse immutable Trace V1 fixtures/comparator.
+- Do not modify Trace V1 schema, normalizers, manifest or goldens.
+- Do not regenerate S16 or any other fixture.
+- If an existing immutable scenario diverges, determine the first logical checkpoint/delta difference.
+- A golden mismatch is evidence; never normalize it away.
+- If the harness cannot express ON/OFF equivalence without changing Trace V1 schema, STOP under ESC-03/ESC-09 rather than editing the oracle in this task.
+
+## Production-change boundary
+
+Default expected changes:
+
+- focused tests;
+- optionally `recovery/p7_t01_fast_forward_equivalence.md` for the final matrix/evidence.
+
+Production files should remain unchanged if all equivalence tests pass.
+
+If a local production defect is found, before changing code record:
+
+```text
+FAST-FORWARD DIVERGENCE
+scenario:
+OFF first differing checkpoint/effect:
+ON first differing checkpoint/effect:
+input readiness condition:
+RNG before/after:
+state stack before/after:
+local suspected owner:
+prior-phase contract touched: YES/NO
+```
+
+A local fix may touch only the demonstrated fast-forward/input/presentation owner. If the proposed fix changes combat solver/action ordering, Event semantics, canonical load/restart, Phase-4 live tilemap atomicity, or platform-policy boundaries, STOP and escalate/review.
+
+## Required focused tests
+
+Run/add focused coverage for at least:
+
+- `driver.get_fast_forward_steps` and all supported speed normalization;
+- `update_game_state` transient-input consumption;
+- `update_game_state_for_frame` first-substep input / later-empty-input behavior;
+- `blocks_fast_forward` entry and already-current behavior;
+- presentation-barrier termination of remaining substeps;
+- state-machine repeat chain input behavior;
+- Event processing/presentation-fence tests from P6-T03;
+- Phase-3 combat lifecycle tests;
+- movement/FOW regression tests;
+- phase/initiative/upkeep tests relevant to chosen scenario;
+- debugger/profiler idle observer tests.
 
 ## Immutable proof
 
 Run at minimum:
 
-- S5 event scenario
-- S12 aura
-- S13 FOW/movement
-- S14 tilemap
-- S16 fast-forward
-- S17 disabled/debugger-idle/profiler-idle
-- S18 game-over/restart
+- S5
+- S7
+- S8
+- S13
+- S16
+- S17 disabled
+- S17 debugger-idle
+- S17 profiler-idle
+- S18
 
-Do not regenerate any golden.
+Add S12/S14 if touched by the chosen ON/OFF scenario or any production fix.
 
-Run focused suites for:
+All invoked immutable scenarios must match existing fixtures exactly.
 
-- Event/EventProcessor lifecycle and command ordering;
-- fast-forward/presentation fence;
-- tilemap change job/barrier/rollback;
-- P6-T02 sound platform policy;
-- canonical load/restart;
-- combat lifecycle;
-- debugger/profiler observer behavior;
-- recovery trace/lifecycle/golden integrity.
+Run recovery trace/lifecycle/golden integrity suites.
 
-Run broader unittest discovery and report known baseline/native Windows/test-isolation failures without repairing unrelated issues.
+Run broader unittest discovery and report known baseline/native/test-isolation failures without repairing unrelated issues.
 
-Then run:
+Finally run:
 
 - `python -m compileall -q app`
 - `git diff --check`
-
-Commit only bounded P6-T03 production/tests.
-
-Then:
-
+- commit bounded P7-T01 tests/report and only any explicitly justified local production fix
 - `git show --check`
 - `git status --short`
 
@@ -275,36 +270,35 @@ Then:
 
 Do not:
 
-- begin Phase 7;
-- retain the generic Event 2 ms deadline;
-- replace it with another generic Event command scheduler;
-- move the Event barrier into a generic capability;
-- alter P4 live tilemap transaction ordering;
-- alter P5 canonical load/restart semantics;
-- alter P6-T02 audio policy semantics;
-- migrate timing-sensitive render animation branches;
+- begin P7-T02/P7-T03/P7-T04 or Phase 8;
+- redesign fast-forward into a new scheduler;
+- reintroduce Android Event command budgeting;
+- alter combat solver/actions/hooks/cleanup semantics;
+- alter P4 tilemap atomicity/barrier semantics;
+- alter P5 load/restart/save schema semantics;
+- alter P6 sound/work-budget policy semantics;
 - change Trace V1/comparator/manifest/goldens;
 - modify project data/assets;
 - merge master.
 
 ## Escalation / stop rules
 
-Primary: **GPT-5.6 Terra / high**.
-Escalation target: **GPT-5.6 Sol / max**.
+Primary: **GPT-5.6 Terra / medium**.
+Escalation target: **GPT-5.6 Sol / high**.
 Pre-authorized: **NO**.
 
 STOP on:
 
-- **ESC-02** root cause requires unrelated architecture;
-- **ESC-03** immutable trace divergence cannot be removed by bounded implementation;
-- **ESC-04** competing Event semantics appear despite the explicit controller decision;
-- **ESC-05** invariant failure/partial world becomes observable;
-- **ESC-07** platform-policy boundary conflicts with gameplay semantics;
-- **ESC-08** repeated bounded failure;
-- **ESC-09** implementation requires new cross-cutting scheduler/platform architecture.
+- **ESC-02** divergence root cause is nonlocal;
+- **ESC-03** immutable trace divergence cannot be resolved by a bounded local correctness fix;
+- **ESC-04** multiple plausible fast-forward semantics exist instead of the OFF path being an unambiguous oracle;
+- **ESC-05** invariant failure/partial gameplay state becomes observable;
+- **ESC-07** fixing equivalence would require a new platform gameplay fork;
+- **ESC-08** repeated local fix failure;
+- **ESC-09** a new cross-cutting scheduler/harness architecture appears necessary.
 
 Do not self-escalate.
 
 ## Gate status
 
-**P6-T02 is ACCEPTED. P6-T03 is the only authorized task. Phase 7 and later remain blocked pending controller review.**
+**Phase 6 is ACCEPTED. P7-T01 is the only authorized task. P7-T02 and later remain blocked pending controller review.**

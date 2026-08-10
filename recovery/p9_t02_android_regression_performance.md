@@ -204,3 +204,49 @@ divergence or invariant failure was observed, so no escalation is triggered.
 P9-T02 cannot pass until a usable target is connected and a current-provenance
 artifact is built, installed, launched, and characterized through the supported
 Android route.  **Stop for controller review; do not begin P9-T03.**
+
+## P9-T02-R2 real-target attempt (2026-08-10)
+
+**Result: PARTIAL.**  This run began at controller HEAD
+`d8388ee30037c71f33ec862666388b2e5692a469`.  The only intervening changes
+since the accepted host/Trace evidence were controller documentation and this
+evidence report, so the Phase 1--8 host and frozen Trace V1 results above remain
+carry-forward evidence.
+
+### Target and current artifact
+
+| Item | Evidence |
+| --- | --- |
+| Initial ADB target | `127.0.0.1:58526 device product:windows_x86_64 model:Subsystem_for_Android_TM_ device:windows_x86_64` |
+| Device details while connected | Subsystem for Android(TM); Android 13 / API 33; ABI list `x86_64,arm64-v8a,x86,armeabi-v7a,armeabi` |
+| ADB | 1.0.41 / 37.0.0-14910828 |
+| Build route | Repository `utilities\\build_tools\\android_runtime\\build_runtime.ps1`, WSL pipeline, Golden Knight project, debug + runtime debugger |
+| Build preflight | PASS: 2,527 files, 243,045,060 bytes |
+| Current artifact | `fire-emblem-tales-of-the-golden-knight-android-0.2.0-20260810T012939Z-000f44aa` |
+| APK provenance | `arm64-v8a`, package `org.lextalionis.fire_emblem_tales_of_the_golden_knight`, version 0.2.0 / code 1026410, source digest `83d286840a8f12e2a03e7c7306f3dbc56ea6a29c3e231efb68847777ce1f2324` |
+| APK verification | PASS: phase-4 manifest, signature v2, migration activity, DocumentsProvider, API 26/36, package metadata all verified |
+| APK SHA-256 | `000f44aa4611a37b7fb23cdd9f4f0a8644a4a751c85d76bb5d8570f38d43124c` |
+
+### Device-gate result
+
+The target disappeared between the initial authorized-device probe and the
+supported `adb install -r -t` invocation.  The install command returned:
+
+```text
+adb.exe: device '127.0.0.1:58526' not found
+```
+
+Two subsequent bounded `adb devices -l` probes returned no devices.  Therefore
+no APK was installed, no activity was launched, and no project/resource/DB/title
+log, touch/movement/combat/tilemap/save/restart/fast-forward/debugger/profiler,
+audio/resource, or device performance observation can be claimed.  This is an
+environment/device-availability limit, not an APK startup or semantic failure.
+
+No current artifact may be represented as device-tested until the WSA target
+remains connected through install and launch.  The locked 4,000,000 ns budget,
+cache capacities, renderer/audio policies, gameplay source, tests, project data
+and Trace fixtures remain unchanged.  No divergence was observed and no
+escalation is triggered.
+
+**R2 next action: controller review.  Reattempt only after an authorized target
+is stable; do not begin P9-T03.**

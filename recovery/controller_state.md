@@ -5,7 +5,9 @@
 
 ## Current authorization
 
-- Current phase: **Phase 9 — Full validation and release candidate**
+- Current phase: **Phase 9 — COMPLETE**
+- Recovery plan: **COMPLETE**
+- Final controller gate: **PASSED**
 - Phases 1–8: **ACCEPTED**
 - P9-T01 full PC regression matrix: **ACCEPTED** at
   `50e7339986d3eff2998d49000c3b61437949e358`
@@ -13,17 +15,19 @@
   `981593e78efd2f6f537e48d81d5cdc076585b284`
 - P9-T03 architecture contamination audit: **ACCEPTED / PASS** at
   `14f93b42c411119bbd1871eed5d150541dbc4fde`
-- Authorized task: **P9-T04 — Final release candidate review**
-- P9-T04 status: **AUTHORIZED — NOT STARTED**
-- Primary model: **GPT-5.6 Sol / max**
-- Escalation target: **GPT-5.6 Sol / ultra**
-- Escalation authorized: **NO**
-- Prerequisite: **P9-T03 accepted**
-- Controller gate after P9-T04: **FINAL**
-- No task beyond P9-T04 is authorized.
+- P9-T04 final release candidate review: **ACCEPTED / PASS** at
+  `1e261379a9ddf2315b710ea81a5ecf1458a46afe`
+- INV-01 through INV-10: **SATISFIED**
+- PC behavior equivalence: **PASS**
+- Android behavior equivalence: **PASS**
+- Architecture contamination: **PASS**
+- Release blockers: **NONE**
+- ESC-10: **NOT TRIGGERED**
+- Authorized recovery task: **NONE**
+- No further recovery task is authorized.
 - Trace V1/comparator/manifest/golden changes: **UNAUTHORIZED**
 - Project data/assets: **UNAUTHORIZED**
-- Merge to `master`: **UNAUTHORIZED**
+- Master merge: **AWAITING EXPLICIT USER AUTHORIZATION**
 
 ## P9-T02 acceptance record
 
@@ -72,20 +76,52 @@ Accepted architecture conclusions:
 The complete accepted evidence remains in
 `recovery/p9_t03_architecture_contamination_audit.md`.
 
-## P9-T04 execution gate
+## P9-T04 acceptance record
 
-P9-T04 is **AUTHORIZED — NOT STARTED**. It may begin only:
+The controller accepts the P9-T04 PASS evidence at
+`1e261379a9ddf2315b710ea81a5ecf1458a46afe`.
 
-1. after this controller-state change is committed outside the Codex sandbox;
-2. after the resulting new HEAD is returned to the controller;
-3. after the controller verifies that commit; and
-4. in a **new Codex execution** whose model gate confirms exactly
-   `GPT-5.6 Sol / max`.
+Accepted final conclusions:
 
-P9-T04 must use the escalation target `GPT-5.6 Sol / ultra` only after explicit
-controller authorization. Its controller gate is **FINAL**.
+- the recovery history is coherent;
+- one shared gameplay core remains authoritative;
+- INV-01 through INV-10 are satisfied;
+- PC behavior equivalence passed;
+- Android behavior equivalence passed;
+- required later features are preserved;
+- staged and partial-state architecture was removed, rewritten, or bounded by
+  the accepted transaction boundaries;
+- the architecture contamination audit passed;
+- Android x86_64 WSA build and runtime validation passed;
+- `arm64-v8a` remains supported and is the default Android build target;
+- the final sanity matrix passed;
+- release blockers are none; and
+- ESC-10 was not triggered.
 
-No task beyond P9-T04 is authorized. Merge to `master` remains unauthorized.
+The complete accepted evidence remains in
+`recovery/p9_t04_final_release_candidate_review.md`.
+
+## Recovery completion and merge restriction
+
+**RECOVERY PLAN: COMPLETE**
+
+**FINAL CONTROLLER GATE: PASSED**
+
+**MASTER MERGE: AWAITING EXPLICIT USER AUTHORIZATION**
+
+No further recovery task is authorized. Completion of P9-T04 does not itself
+authorize any of the following:
+
+- checkout or mutation of `master`;
+- merge;
+- rebase;
+- squash;
+- cherry-pick;
+- push or force-push; or
+- release tagging.
+
+Each operation above requires a separate explicit user/controller
+authorization.
 
 ## Protected unexpected path
 

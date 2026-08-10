@@ -11,15 +11,16 @@
   `50e7339986d3eff2998d49000c3b61437949e358`
 - P9-T02 full Android regression/performance matrix: **ACCEPTED / PASS** at
   `981593e78efd2f6f537e48d81d5cdc076585b284`
-- Active task: **P9-T03 — Architecture contamination audit**
-- P9-T03 status: **AUTHORIZED**
-- Primary model: **GPT-5.6 Terra / high**
-- Escalation target: **GPT-5.6 Sol / max**
+- P9-T03 architecture contamination audit: **ACCEPTED / PASS** at
+  `14f93b42c411119bbd1871eed5d150541dbc4fde`
+- Authorized task: **P9-T04 — Final release candidate review**
+- P9-T04 status: **AUTHORIZED — NOT STARTED**
+- Primary model: **GPT-5.6 Sol / max**
+- Escalation target: **GPT-5.6 Sol / ultra**
 - Escalation authorized: **NO**
-- Prerequisite: **P9-T02 accepted**
-- Controller gate after P9-T03: **YES — STOP FOR CONTROLLER REVIEW**
-- P9-T04: **UNAUTHORIZED**
-- No later task is authorized.
+- Prerequisite: **P9-T03 accepted**
+- Controller gate after P9-T04: **FINAL**
+- No task beyond P9-T04 is authorized.
 - Trace V1/comparator/manifest/golden changes: **UNAUTHORIZED**
 - Project data/assets: **UNAUTHORIZED**
 - Merge to `master`: **UNAUTHORIZED**
@@ -51,21 +52,40 @@ Accepted facts:
 The complete accepted evidence remains in
 `recovery/p9_t02_android_regression_performance.md`.
 
-## P9-T03 execution gate
+## P9-T03 acceptance record
 
-P9-T03 may begin only in a **new Codex execution** after the controller-state
-synchronization commit exists at HEAD and the model gate confirms exactly:
+The controller accepts the P9-T03 PASS evidence at
+`14f93b42c411119bbd1871eed5d150541dbc4fde`.
 
-`GPT-5.6 Terra / high`
+Accepted architecture conclusions:
 
-P9-T03 must audit the categories and obey the acceptance/stop conditions in
-`plan.md`. Every remaining suspicious architecture case requires explicit
-classification and justification. If remaining contamination requires
-architecture-level reconciliation rather than bounded local cleanup, stop and
-request the configured escalation target; do not self-escalate.
+- no Android gameplay fork remains;
+- no staged authoritative restore remains;
+- no partial-world publication remains;
+- no worker thread improperly mutates authoritative gameplay state;
+- no generic Event scheduling contamination remains;
+- retained platform and presentation boundaries are justified;
+- P9-T02 ABI support remains confined to build, editor, and tooling policy;
+- no unresolved architecture contamination remains;
+- no semantic escalation trigger was encountered.
 
-P9-T04 and every later task remain unauthorized until controller review and
-acceptance of P9-T03.
+The complete accepted evidence remains in
+`recovery/p9_t03_architecture_contamination_audit.md`.
+
+## P9-T04 execution gate
+
+P9-T04 is **AUTHORIZED — NOT STARTED**. It may begin only:
+
+1. after this controller-state change is committed outside the Codex sandbox;
+2. after the resulting new HEAD is returned to the controller;
+3. after the controller verifies that commit; and
+4. in a **new Codex execution** whose model gate confirms exactly
+   `GPT-5.6 Sol / max`.
+
+P9-T04 must use the escalation target `GPT-5.6 Sol / ultra` only after explicit
+controller authorization. Its controller gate is **FINAL**.
+
+No task beyond P9-T04 is authorized. Merge to `master` remains unauthorized.
 
 ## Protected unexpected path
 

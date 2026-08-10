@@ -34,6 +34,32 @@ class AndroidBuildConfigTests(unittest.TestCase):
             self.assertFalse(config.runtime_debugger)
             self.assertEqual([], validate_config(config))
 
+    def test_x86_64_is_a_supported_explicit_build_abi(self):
+        with tempfile.TemporaryDirectory() as temporary_dir:
+            config = AndroidEditorBuildConfig(
+                package_id="com.example.sample",
+                app_name="Sample Game",
+                version_name="1.0.0",
+                version_code=100,
+                arch="x86_64",
+                output_directory=str(Path(temporary_dir) / "output"),
+            )
+
+            self.assertEqual([], validate_config(config))
+
+    def test_unknown_android_abi_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temporary_dir:
+            config = AndroidEditorBuildConfig(
+                package_id="com.example.sample",
+                app_name="Sample Game",
+                version_name="1.0.0",
+                version_code=100,
+                arch="x86",
+                output_directory=str(Path(temporary_dir) / "output"),
+            )
+
+            self.assertTrue(any("ABI" in error for error in validate_config(config)))
+
     def test_config_round_trip_uses_project_build_folder(self):
         with tempfile.TemporaryDirectory() as temporary_dir:
             project = Path(temporary_dir) / "sample.ltproj"
@@ -103,7 +129,7 @@ class AndroidBuildConfigTests(unittest.TestCase):
             app_name="",
             version_name="1",
             version_code=0,
-            arch="x86_64",
+            arch="mips",
             mode="release",
             output_directory="",
         )
@@ -163,6 +189,36 @@ class AndroidBuildConfigTests(unittest.TestCase):
         self.assertIn("-Icon", arguments)
         self.assertIn(r"E:\Icons\sample.png", arguments)
         self.assertNotIn(" ".join(arguments), arguments)
+
+    def test_selected_abi_is_forwarded_to_the_powershell_builder(self):
+        config = AndroidEditorBuildConfig(
+            package_id="com.example.sample",
+            app_name="Sample Game",
+            version_name="2.0.0",
+            version_code=200,
+            arch="x86_64",
+            output_directory=r"E:\Build Output",
+        )
+
+        arguments = powershell_arguments(
+            Path(r"E:\repo\build_runtime.ps1"),
+            Path(r"E:\Games\Sample.ltproj"),
+            config,
+        )
+
+        self.assertEqual("x86_64", arguments[arguments.index("-Arch") + 1])
+
+    def test_editor_exposes_both_supported_abis(self):
+        dialog = (
+            Path(__file__).resolve().parents[1]
+            / "editor"
+            / "file_manager"
+            / "android_builder"
+            / "android_build_dialog.py"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn('"arm64-v8a"', dialog)
+        self.assertIn('"x86_64"', dialog)
 
     def test_runtime_debugger_is_an_explicit_build_option(self):
         config = AndroidEditorBuildConfig(

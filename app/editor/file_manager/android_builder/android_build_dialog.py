@@ -72,7 +72,7 @@ class AndroidBuildDialog(QDialog):
     def _create_ui(self) -> None:
         root = QVBoxLayout(self)
         intro = QLabel(
-            "Build an ARM64 APK using the verified Buildozer/python-for-android "
+            "Build an Android APK using the verified Buildozer/python-for-android "
             "pipeline. Optimized Release builds are development-signed for testing."
         )
         intro.setWordWrap(True)
@@ -106,6 +106,7 @@ class AndroidBuildDialog(QDialog):
 
         self.abi = QComboBox(self)
         self.abi.addItem("ARM64 (arm64-v8a)", "arm64-v8a")
+        self.abi.addItem("x86-64 (x86_64)", "x86_64")
         form.addRow("ABI:", self.abi)
 
         self.mode = QComboBox(self)

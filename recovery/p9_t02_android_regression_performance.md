@@ -2,12 +2,197 @@
 
 ## Task result
 
-**PARTIAL.**  The current recovery host-side Android/platform contract matrix and
-the required frozen Trace V1 scenarios passed.  ADB is installed, but `adb
-devices -l` returned no connected or booted emulator target.  Consequently no
-current-recovery APK could be installed, launched, observed, or profiled on a
-real Android runtime.  This report makes no Android device, acoustic, or FPS
-claim.
+**PASS after the controller-authorized ESC-02 continuation.**  The earlier
+PARTIAL/FAIL results are retained below as historical evidence.  The confirmed
+arm64-only-on-x86_64 WSA blocker was repaired at the Android build-policy layer,
+a strict x86_64 APK was built and statically verified, and the current artifact
+was installed and exercised on WSA through title, chapter start, Event/combat,
+tilemap preparation/commit, movement/Wait/FOW, SAVE load, pristine RESTART,
+fast-forward, debugger-idle, profiler, and streamed-audio/resource paths.  The
+former ELF mismatch/SIGSEGV did not recur.  No gameplay, project, save schema,
+Trace V1, golden, or Android runtime-policy constant changed.
+
+## ESC-02 authorized ABI repair and resumed Android matrix (2026-08-10)
+
+### Authorization, prior result, and root cause
+
+The controller accepted the previous stop, confirmed ESC-02, and authorized
+GPT-5.6 Sol / high solely to repair the Android ABI build-policy blocker and
+resume P9-T02.  P9-T03 remained unauthorized.  Work started at
+`0400b8a7021f8863ecd913706e097fc58c539947` on
+`recovery/pc-core-semantics`.  The unexpected zero-byte untracked path
+`recovery/pc-core-semantics` was preserved without reading, editing, renaming,
+deleting, or staging it.
+
+The prior current-build APK packaged only AArch64 native libraries.  WSA's
+native process and `/system/bin/ifconfig` are x86_64, so the subprocess inherited
+the application's arm64 `libcrypto.so`; the loader reported EM_AARCH64 instead
+of EM_X86_64 and the app died with SIGSEGV before project startup.  This was a
+strict build-policy/toolchain mismatch, not gameplay divergence.
+
+### ABI source of truth and bounded policy change
+
+| Surface | Before | After |
+| --- | --- | --- |
+| Toolchain manifest | Default and only accepted ABI `arm64-v8a` | Default remains `arm64-v8a`; supported set is `arm64-v8a`, `x86_64` |
+| PowerShell/WSL build route | No requested-ABI input | Explicit `-Arch`; selected ABI reaches preflight and generated Buildozer config |
+| Runtime validation | Required configured ABI to equal global arm64 pin | Requires staged selected ABI to be supported and generated config to match it exactly |
+| APK verification | Required arm64 directory/advertisement | Requires exactly the selected ABI directory/advertisement and checks every executable `.so` ELF machine |
+| Editor | ARM64-only UI/validation | Offers only supported ARM64/x86_64 choices and forwards the selected ABI |
+| Publication | arm64-named output | Preserves old arm64 names; uses x86_64 names for x86_64 builds and verifies ABI identity |
+
+`toolchain_manifest.json` remains the upstream default/support policy.  The
+effective per-build JSON is authoritative for the requested artifact; generated
+Buildozer/Gradle files remain outputs, not policy sources.  Verification stays
+strict: extra ABI directories, a wrong advertised ABI, a wrong ELF machine, or
+an unknown ABI fails the build.  The only non-ELF `.so` accepted is the exact
+python-for-android `libpybundle.so` gzip payload, verified by magic bytes.
+
+Changed files and rationale:
+
+| Files | Rationale |
+| --- | --- |
+| `toolchain_manifest.json`, `preflight.py`, `validate_runtime.py` | Declare supported ABIs while preserving the ARM64 default; validate selected config through staging |
+| `build_runtime.ps1`, `build_runtime.sh` | Carry the explicit ABI through the supported Windows/WSL build path and isolate native-cache identity by ABI |
+| `verify_apk.py`, `publish_artifacts.py` | Strictly bind APK contents/ELF machines and published identity to the selected ABI |
+| `android_build_config.py`, `android_build_dialog.py` | Validate, expose, and forward the explicit editor ABI choice |
+| `test_android_build_config.py`, `test_phase4_pipeline.py` | Cover selection, forwarding, generation, publication, strict ABI directory/machine rejection, and pybundle handling |
+| `README.md`, `DECISIONS.md` | Record the selected-ABI source and strict verification contract |
+| This report | Preserve ESC-02, build, WSA runtime, parity, and performance evidence |
+
+### x86_64 toolchain and dependency support
+
+The pinned python-for-android checkout (`58d21141`, release lineage
+2026.05.09) contains `Archx86_64`; Android NDK r29 provides the x86_64 clang
+toolchain/sysroot; the OpenSSL recipe selects `android-x86_64`; and SDL2,
+SDL2_image, SDL2_mixer, SDL2_ttf, CPython 3.11.9, pygame-ce, and the remaining
+startup native recipes built for the selected architecture.  This is source
+build support, not relabeling or verifier suppression.
+
+The first complete x86_64 build exposed one packaging fact: python-for-Android
+stores its compressed Python bundle under `libpybundle.so`.  A narrow verifier
+rule now accepts only that exact path when its payload begins with gzip magic;
+all other `.so` entries must be valid ELF with the requested machine value.
+
+### Current artifact and static APK verification
+
+| Field | Result |
+| --- | --- |
+| Build route | `build_runtime.ps1` -> WSL `build_runtime.sh` -> Buildozer/python-for-android |
+| Project | `Fire Emblem Tales of The Golden Knight.ltproj` |
+| Build config | debug, runtime debugger enabled, `arch=x86_64` |
+| Build ID | `fire-emblem-tales-of-the-golden-knight-android-0.2.0-20260810T040804Z-026a5385` |
+| APK | `fire-emblem-tales-of-the-golden-knight-0.2.0-x86_64-debug.apk` |
+| Size / SHA-256 | 232,670,293 bytes / `026a53851b747b85cad5b89be1de65f4dfc9166f2114e60f3ccb6237229b8ff5` |
+| Package/version | `org.lextalionis.fire_emblem_tales_of_the_golden_knight`; 0.2.0 / 1026410 |
+| APIs/signature | min 26, target 36, APK Signature Scheme v2, development certificate |
+| Native ABI directories | exactly `lib/x86_64/` |
+| ELF machine | 62 / EM_X86_64 for every executable native `.so` |
+| Required samples | EM_X86_64: `libpython3.11.so`, `libcrypto.so`, `libSDL2.so`, `libSDL2_image.so`, `libSDL2_mixer.so`, `libSDL2_ttf.so` |
+| Python bundle | exact `lib/x86_64/libpybundle.so`, gzip magic `1f 8b` |
+| Repository verifier | PASS; no errors; ABI report `x86_64` |
+
+The first uncached x86_64 build completed in 663 seconds.  After the narrow
+pybundle verifier correction, the final cache-backed build completed in 87.5
+seconds.  These are host build times, not device frame-time claims.
+
+### WSA install, launch, and former crash result
+
+| Field | Evidence |
+| --- | --- |
+| ADB | 1.0.41 / 37.0.0-14910828; `127.0.0.1:58526 device` |
+| Target | Subsystem for Android(TM), Android 13 / API 33 |
+| Native ABI/list | `x86_64`; `x86_64,arm64-v8a,x86,armeabi-v7a,armeabi` |
+| Install | `adb install -r -t` returned `Success` |
+| Installed package | version 0.2.0 / 1026410; `primaryCpuAbi=x86_64`; update time 2026-08-10 11:21:56 |
+| Launch | normal `org.lextalionis.android.LtPythonActivity`; COLD, 194 ms ActivityManager launch time |
+| Startup | Python 3.11 and pygame initialized; metadata/project/resources loaded; DB deserialized (101.24 ms); `Engine Init Completed`; title state reached |
+| Prior crash scan | no EM_AARCH64/EM_X86_64 mismatch, wrong-ELF, linker-fatal, SIGSEGV, signal-11, or fatal-exception match |
+
+The process remained alive through the full interactive run.  The former
+`/system/bin/ifconfig`/arm64 `libcrypto.so` failure did not reproduce.
+
+### Real-runtime semantic matrix
+
+All inputs below were sent to the real WSA application after focusing its
+native window.  Keyboard and raw-touch differences are presentation/input
+mapping only; synchronization checks use the resulting logical state.
+
+| Workload | Synchronization-point evidence | Result |
+| --- | --- | --- |
+| Title/new chapter | Title -> mode/save-slot -> level resources/DB -> chapter events -> coherent `free` stack | PASS |
+| Event/combat | Intro Event executed consecutive commands; scripted combat completed through accepted combat render/lifecycle scopes and returned to Event | PASS |
+| Tilemap | Pending `CREATE_TILEMAP`/`BUILD_BOARD` work spanned profiler scopes; final published world was matched `tilemap=Prologue`, board/regions/29 units; later command did not run through the pending barrier | PASS |
+| Movement/Wait/FOW | One SELECT entered move; RIGHT+SELECT committed movement; one Wait returned to `free`; action log recorded Camus movement to `(47,8)` and `UpdateFogOfWar` once | PASS |
+| Current SAVE | Save snapshot 5.6 ms, worker I/O 8.8 ms; distinct `FETOGK-0.p` (114,086 bytes) and pristine `FETOGK-restart0.p` (37,738 bytes) were persisted | PASS |
+| Current SAVE load | Android `in_chapter_load_job` read/unpickled, then one main-thread restore transaction (230.0 ms; 286.0 ms containing frame) published coherent `free`, 29 units/14 on-map, Prologue/4 regions; progressed `(47,8)` Wait/FOW state returned | PASS |
+| Pristine RESTART | Real UI: Restart Game -> title -> Restart Level. `title_load_job` read/unpickled the restart slot; one 288.0 ms restore transaction (290.6 ms frame) entered deterministic chapter-start handling. Progressed `(47,8)` state did not resume; pristine sequence showed Camus at `(49,5)` before opening script mutation | PASS |
+| Phase | Restart rebuilt chapter-start status-upkeep/phase-change/Event sequence before control | PASS |
+| Fast-forward/input | Raw-touch hold produced `ff_requested=3`, `ff_updates=3`, one draw/present. `player_choice` and Android debugger reduced to one update, so no duplicate confirmation/input opportunity occurred | PASS |
+| Debugger | Android drawer opened one `android_debugger` state over `free`; shared-controller observer path left units/tilemap/regions unchanged; close returned cleanly | PASS |
+| Profiler | Enabled observer recorded main-thread scopes and logical metadata without becoming a scheduler; worker/load/tilemap sections did not publish gameplay. Disabled/observer equivalence remains covered by accepted host S17 and P7 tests | PASS |
+
+No Android-only gameplay mutation path, partial GameState publication, changed
+SAVE/RESTART source, action/Event/RNG ordering divergence, or generic Event
+wall-clock budget was observed.  The exact immutable PC/host Trace V1 matrix
+from the accepted P9-T02 runs remains carry-forward evidence because gameplay,
+tests, Trace contracts, project data, and runtime policy values did not change.
+The device synchronization points match those accepted transaction shapes;
+device profiler logs are not misrepresented as a second Trace V1 serializer.
+
+### Audio/resource evidence
+
+Title and chapter transitions loaded the selected music resources through the
+existing Android sound subsystem.  Profiler/log evidence includes
+`music_stream_load`, `GlobalMusicState.PLAYING`, song object/cache creation,
+and Android `AudioTrack` frame delivery/stop records.  Resource preparation
+completed before chapter publication and did not mutate gameplay from worker
+threads.  No fallback duplication, missing packaged resource, or ordering
+change was observed.  This validates backend/logical playback state only; no
+claim of acoustic quality or audibility is made.
+
+### Device performance characterization
+
+This is an x86_64 WSA debug/instrumented artifact, not physical-device FPS.
+No knobs were changed: tilemap pending budget remains 4,000,000 ns; cache,
+renderer, audio, and fast-forward policies are unchanged.
+
+| Workload | Samples / distribution | Major work/stall |
+| --- | --- | --- |
+| Startup/title steady state | repeated 300-frame windows; median cadence approximately 16.0 ms, p95 16.7-16.8 ms, maxima 16.9-17.7 ms (one transition window 21.0 ms) | DB load 101.24 ms before title; title music stream load p95 3.3-3.6 ms |
+| Map idle/movement | repeated 300-frame windows; average/median cadence approximately 16.0 ms, p95 16.6-16.8 ms, maxima 16.9-17.7 ms | map draw approximately 6-8 ms; input/update sub-millisecond in steady state |
+| Combat | representative scripted combat window; approximately 16.0 ms average, p95 16.6 ms, max 37.4 ms | presentation/lifecycle scopes only; logical combat completed |
+| Tilemap/Event skip | bounded transition | 154.9 ms worst observed transition frame; off-world create/build scopes visible before one coherent final world |
+| Current SAVE | one operation | snapshot 5.6 ms; worker I/O 8.8 ms |
+| Current SAVE load | one operation | restore transaction 230.0 ms; containing frame 286.0 ms |
+| Pristine RESTART | one operation plus chapter-start events | restore transaction 288.0 ms; containing frame 290.6 ms; later chapter-start Event frame 555.9 ms, dominated by event chain/turn-change and resource/song work |
+| Fast-forward | 300-frame representative map windows | approximately 16.0 ms cadence, p95 about 16.8 ms; three logical updates with one draw/present while held |
+| Memory after restart Event | one `dumpsys meminfo` sample | TOTAL PSS 307,387 KB; TOTAL RSS 407,780 KB; native heap PSS 181,288 KB; no swap |
+
+The profiler emits average and p95 over 300-frame windows, not raw p99; maxima
+above are the available worst meaningful stalls.  WSA host scheduling and debug
+instrumentation limit transferability to physical Android hardware.  No
+historical x86_64 WSA baseline exists, so this is characterization rather than
+an FPS-regression claim.
+
+### Tests, checks, and exact command families
+
+- `utilities\\enemy_event_generator\\.python\\python.exe -m unittest app.tests.test_android_build_config -v`: 16 passed.
+- `utilities\\enemy_event_generator\\.python\\python.exe utilities/build_tools/android_runtime/test_phase4_pipeline.py`: 29 passed.
+- PowerShell parser validation for `build_runtime.ps1`: PASS.
+- WSL `bash -n utilities/build_tools/android_runtime/build_runtime.sh`: PASS.
+- `build_runtime.ps1 ... -Arch x86_64 -EnableRuntimeDebugger`: final build and strict verifier PASS.
+- Independent ZIP/ELF inspection: exactly x86_64; all executable `.so` machine 62; pybundle gzip only.
+- `adb devices -l`, `getprop`, `install -r -t`, `am start -W`, `dumpsys package`, `pidof`, `run-as` save inventory, `dumpsys meminfo`, bounded `logcat` capture/crash scan: PASS as described above.
+- Real UI input used Android key/touch injection only after native WSA window focus: title/new game, Event skip/choice, movement/Wait, Save/Load, Restart Game/title Restart Level, debugger open/close, and fast-forward hold.
+- `python -m compileall -q app utilities/build_tools/android_runtime`, targeted tests, script syntax checks, strict APK verification, `git diff --check`, `git show --check`, and final status are the final delivery gates.
+
+No generated APK/build artifact is committed.  No project/asset, gameplay,
+save schema, Trace/golden/comparator/manifest, 4 ms work-budget, cache,
+renderer, audio, or runtime scheduling policy was modified.  No further
+escalation trigger was encountered after the authorized ESC-02 repair.
+
+## Initial P9-T02 identity and scope (historical)
 
 ## Identity and scope
 

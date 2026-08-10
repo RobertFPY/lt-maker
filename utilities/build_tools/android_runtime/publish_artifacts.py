@@ -26,6 +26,10 @@ def slug(value: str) -> str:
     return normalized or "lt-project"
 
 
+def artifact_arch_label(arch: str) -> str:
+    return "arm64" if arch == "arm64-v8a" else arch
+
+
 def atomic_copy(source: Path, destination: Path) -> None:
     destination.parent.mkdir(parents=True, exist_ok=True)
     descriptor, temporary_name = tempfile.mkstemp(
@@ -66,6 +70,7 @@ def publish(
         "package_id": config_payload.get("package_id"),
         "version_name": config_payload.get("version_name"),
         "version_code": config_payload.get("version_code"),
+        "abis": [config_payload.get("arch")],
     }
     observed_identity = {
         key: verification_payload.get(key)
@@ -82,6 +87,7 @@ def publish(
         artifact_mode = config_payload["mode"]
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     project_slug = slug(preflight_payload["project_dir"].removesuffix(".ltproj"))
+    arch_label = artifact_arch_label(config_payload["arch"])
     build_id = (
         f"{project_slug}-android-{config_payload['version_name']}-"
         f"{timestamp}-{apk_hash[:8]}"
@@ -95,7 +101,7 @@ def publish(
     try:
         apk_name = (
             f"{project_slug}-{config_payload['version_name']}-"
-            f"arm64-{artifact_mode}.apk"
+            f"{arch_label}-{artifact_mode}.apk"
         )
         published_apk = temporary_dir / apk_name
         shutil.copy2(apk, published_apk)
@@ -134,7 +140,7 @@ def publish(
         raise
 
     final_apk = final_dir / apk_name
-    alias_stem = f"lt-android-runtime-arm64-{artifact_mode}.apk"
+    alias_stem = f"lt-android-runtime-{arch_label}-{artifact_mode}.apk"
     latest_apk = output_dir / alias_stem
     latest_sha = output_dir / f"{alias_stem}.sha256"
     atomic_copy(final_apk, latest_apk)

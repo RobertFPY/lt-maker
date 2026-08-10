@@ -10,6 +10,7 @@ from pathlib import Path
 import re
 import subprocess
 import tarfile
+from typing import Callable
 import zipfile
 
 from preflight import atomic_write_json, load_build_config, load_toolchain_manifest
@@ -22,6 +23,10 @@ PACKAGE_RE = re.compile(
 SDK_RE = re.compile(r"sdkVersion:'(?P<value>[^']+)'")
 TARGET_SDK_RE = re.compile(r"targetSdkVersion:'(?P<value>[^']+)'")
 NATIVE_RE = re.compile(r"native-code: (?P<values>.+)")
+ELF_MACHINE_BY_ABI = {
+    "x86_64": 62,
+    "arm64-v8a": 183,
+}
 LAUNCHABLE_ACTIVITY_RE = re.compile(
     r"launchable-activity: name='(?P<activity>[^']+)'"
 )
@@ -59,6 +64,72 @@ def launchable_activity(badging: str) -> str | None:
     """Return the Activity Android will actually launch from aapt metadata."""
     match = LAUNCHABLE_ACTIVITY_RE.search(badging)
     return match.group("activity") if match else None
+
+
+def native_abis_from_badging(badging: str) -> set[str]:
+    match = NATIVE_RE.search(badging)
+    return set(re.findall(r"'([^']+)'", match.group("values"))) if match else set()
+
+
+def elf_machine(header: bytes) -> int | None:
+    if len(header) < 20 or header[:4] != b"\x7fELF":
+        return None
+    if header[5] == 1:
+        byteorder = "little"
+    elif header[5] == 2:
+        byteorder = "big"
+    else:
+        return None
+    return int.from_bytes(header[18:20], byteorder)
+
+
+def validate_native_abi(
+    expected_arch: str,
+    advertised_abis: set[str],
+    apk_names: list[str],
+    read_header: Callable[[str], bytes],
+) -> list[str]:
+    errors: list[str] = []
+    expected_abis = {expected_arch}
+    if advertised_abis != expected_abis:
+        errors.append(
+            "APK advertises native ABIs "
+            f"{sorted(advertised_abis)}; expected {sorted(expected_abis)}"
+        )
+    abi_dirs = {
+        name.split("/", 2)[1]
+        for name in apk_names
+        if name.startswith("lib/") and len(name.split("/", 2)) >= 3
+    }
+    if abi_dirs != expected_abis:
+        errors.append(
+            f"APK contains ABI directories {sorted(abi_dirs)}; "
+            f"expected {sorted(expected_abis)}"
+        )
+    expected_machine = ELF_MACHINE_BY_ABI.get(expected_arch)
+    if expected_machine is None:
+        errors.append(f"No ELF machine policy is defined for ABI {expected_arch!r}")
+        return errors
+    native_libraries = [
+        name
+        for name in apk_names
+        if name.startswith(f"lib/{expected_arch}/") and name.endswith(".so")
+    ]
+    if not native_libraries:
+        errors.append(f"APK contains no native libraries for ABI {expected_arch}")
+    for name in native_libraries:
+        header = read_header(name)
+        if name.endswith("/libpybundle.so"):
+            if not header.startswith(b"\x1f\x8b"):
+                errors.append(f"Packaged pybundle is not gzip data: {name}")
+            continue
+        observed_machine = elf_machine(header)
+        if observed_machine != expected_machine:
+            errors.append(
+                f"Native library {name} has ELF machine {observed_machine}; "
+                f"expected {expected_machine} for {expected_arch}"
+            )
+    return errors
 
 
 def _read_private_payload(apk_path: Path) -> tuple[dict, dict, list[str]]:
@@ -126,7 +197,7 @@ def verify(
     launcher_activity = launchable_activity(badging)
     sdk_match = SDK_RE.search(badging)
     target_match = TARGET_SDK_RE.search(badging)
-    native_match = NATIVE_RE.search(badging)
+    advertised_abis = native_abis_from_badging(badging)
     if not package_match:
         errors.append("aapt did not return package/version metadata")
     else:
@@ -149,8 +220,6 @@ def verify(
         errors.append("APK minimum Android API does not match toolchain manifest")
     if not target_match or int(target_match.group("value")) != toolchain["android_api"]:
         errors.append("APK target Android API does not match toolchain manifest")
-    if not native_match or "'arm64-v8a'" not in native_match.group("values"):
-        errors.append("APK does not advertise arm64-v8a native code")
     expected_migration_activity = "org.lextalionis.android.LtPythonActivity"
     if launcher_activity != expected_migration_activity:
         errors.append(
@@ -192,13 +261,20 @@ def verify(
         errors.append(
             "Packaged runtime manifest and preflight report use different projects"
         )
+    with zipfile.ZipFile(apk_path) as apk:
+        errors.extend(
+            validate_native_abi(
+                build_config.arch,
+                advertised_abis,
+                apk_names,
+                lambda name: apk.read(name)[:20],
+            )
+        )
     abi_dirs = {
         name.split("/", 2)[1]
         for name in apk_names
         if name.startswith("lib/") and len(name.split("/", 2)) >= 3
     }
-    if abi_dirs != {"arm64-v8a"}:
-        errors.append(f"APK contains unexpected ABI directories: {sorted(abi_dirs)}")
     dex_names = [
         name for name in apk_names if re.fullmatch(r"classes\d*\.dex", name)
     ]

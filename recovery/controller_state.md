@@ -7,57 +7,60 @@
 - Current phase: **Phase 9 — Full validation and release candidate**
 - Phases 1–8: **ACCEPTED**
 - P9-T01 full PC regression matrix: **ACCEPTED** at `50e7339986d3eff2998d49000c3b61437949e358`
-- P9-T02 full Android regression/performance matrix: **PARTIAL / NOT ACCEPTED** from the execution started at controller commit `4c7f418f43d9d8dd2541c9a6b408d63b26cd1ca5`
-  - host Android/platform semantics passed;
-  - required immutable Android-relevant Trace V1 scenarios passed;
-  - no usable Android device/emulator was connected;
-  - the available APK was historical and not provenance-valid for current recovery HEAD;
-  - executor could not commit the local report because the local Git environment denied creation of `.git/index.lock`;
-  - the uncommitted local report is not controller-reviewed evidence and does not itself advance the gate.
-- Active task: **P9-T02-R1 only — Android device completion and evidence finalization**
+- P9-T02 full Android regression/performance matrix: **PARTIAL / NOT ACCEPTED**
+  - initial committed PARTIAL evidence: `392a8f5fb260a8b84ff86fc767c1b2e3136f1968`
+  - device-gate recheck PARTIAL evidence: `81670bb6ca194217e78a652ac7e57e6e42387063`
+  - host Android/platform regression matrix passed;
+  - required immutable Android-relevant Trace V1 scenarios passed exactly;
+  - no production/test/project/Trace/build-policy changes occurred;
+  - no authorized Android device/emulator was connected;
+  - no current-provenance Android artifact was installed/launched;
+  - no real-device audio/resource/runtime or performance evidence exists yet.
+- Active task: **P9-T02 remains open — WAITING ON REAL ANDROID TARGET**
+- Next executor continuation when a target exists: **P9-T02-R2 only — Android device completion**
 - Primary model: **GPT-5.6 Terra / medium**
 - Escalation target: **GPT-5.6 Sol / high**
 - Escalation pre-authorized: **NO**
 - P9-T03/P9-T04: **UNAUTHORIZED**
 - Expected production/test changes: **NONE**
 - Allowed evidence change: `recovery/p9_t02_android_regression_performance.md`
-- Controller gate after P9-T02-R1: **YES — STOP FOR CONTROLLER REVIEW**
 - Trace V1/comparator/manifest/golden changes: **UNAUTHORIZED**
 - Project-data / asset changes: **UNAUTHORIZED**
-- Android tuning/build-config changes merely to manufacture validation: **UNAUTHORIZED**
+- Android tuning/build-policy changes merely to manufacture validation: **UNAUTHORIZED**
 - Merge to `master`: **UNAUTHORIZED**
 
-## P9-T02 partial evidence record
+## P9-T02 partial acceptance record
 
-The controller does **not** accept P9-T02 yet. The reported execution is a valid environment-gated PARTIAL result.
+The controller accepts `81670bb6ca194217e78a652ac7e57e6e42387063` as **valid PARTIAL evidence only**. It does not close P9-T02.
 
-Accepted carry-forward evidence, provided source/test behavior remains unchanged:
+Accepted evidence:
 
-- execution used the authorized P9-T02 primary `GPT-5.6 Terra / medium`;
-- branch/start point was `recovery/pc-core-semantics` at `4c7f418f43d9d8dd2541c9a6b408d63b26cd1ca5`;
-- `adb` 37.0.0 was available but `adb devices -l` returned no connected/authorized target;
-- the only available APK was from 2026-08-07 and therefore cannot prove the current recovery HEAD;
-- required host-side Android render/resource/platform/audio/work-budget/load/restart/fast-forward/debugger/profiler/cache/recovery contracts were reported green;
-- immutable S2/S4/S5/S7/S8/S12/S13/S14/S15/S16/S17-disabled/S17-debugger-idle/S17-profiler-idle/S18 were reported exact;
+- ancestry from controller gate `a890539c52fddbfa3e5c07602fb356a9ec00c798` is clean;
+- the two executor commits after that controller gate change only `recovery/p9_t02_android_regression_performance.md`;
+- `392a8f5fb260a8b84ff86fc767c1b2e3136f1968` committed the original Android matrix PARTIAL report;
+- `81670bb6ca194217e78a652ac7e57e6e42387063` only rechecked the Android device gate and appended evidence;
+- execution used the authorized primary `GPT-5.6 Terra / medium`;
+- ADB 37.0.0 was available but `adb devices -l` returned no connected/authorized target;
+- the historical 2026-08-07 APK is explicitly rejected as current-provenance release evidence;
+- required host Android/platform policy suites and immutable S2/S4/S5/S7/S8/S12/S13/S14/S15/S16/S17-disabled/S17-debugger-idle/S17-profiler-idle/S18 were reported green/exact;
 - compileall and diff checks passed;
-- no production source, test, project data/assets, Trace V1 schema/comparator/manifest/golden, Android policy values or master changed.
+- no Android knob, including the accepted `4_000_000 ns` off-world work budget, changed;
+- no production source, tests, project data/assets, Trace V1 schema/comparator/manifest/goldens, Android build policy or master changed.
 
-These results may be carried forward into P9-T02-R1 without mechanically rerunning the entire host matrix if the only intervening changes are controller documentation and the P9-T02 evidence report. Any source/test/build-policy change invalidates that carry-forward and requires relevant revalidation.
+These host/Trace results may be carried forward while source/test/build-policy behavior remains unchanged. Do not mechanically rerun them on every no-device retry.
 
-P9-T02 remains PARTIAL because the release gate still lacks real current-build Android evidence for install/launch, runtime lifecycle, audio/resource behavior and representative performance characterization.
+P9-T02 remains blocked solely on real Android release evidence. Do not invoke another executor retry until `adb devices -l` shows an authorized usable device/emulator, unless the controller explicitly asks for another environment diagnosis.
 
-## Locked contracts during P9-T02-R1
+## Locked contracts while waiting
 
-All accepted Phase-1-through-8 and P9-T01 semantics remain immutable:
-
-1. One shared gameplay core; Android policy may not fork gameplay semantics.
+1. One shared gameplay core; no Android gameplay fork.
 2. No observable partial authoritative gameplay state.
 3. Combat action/RNG/hook/cleanup/state-stack ordering remains locked.
 4. Canonical save/load/restart remains one authoritative transaction; SAVE != pristine RESTART.
-5. Fast-forward changes time/presentation only, not logical outcomes or input-edge semantics.
+5. Fast-forward changes time/presentation only, not logical outcomes/input-edge semantics.
 6. Debugger/profiler remain observers absent explicit debugger commands.
 7. No Event wall-clock command scheduler may return.
-8. Android work budgeting remains limited to accepted off-world tilemap preparation; the `4_000_000 ns` value is not a P9-T02 tuning target.
+8. Android work budgeting remains limited to accepted off-world tilemap preparation; `4_000_000 ns` is not a validation tuning target.
 9. `_android_tilemap_pending` remains an Event-local correctness barrier with one synchronous live commit/rollback.
 10. P8 cache decisions remain locked: `GC-REGION` NOT CERTIFIED SAFE; battle source-frame cache REJECTED; title smoke KEEP-PLATFORM; styled-text optimization deferred.
 11. No Android FPS/device-performance claim may be inferred from host simulation.
@@ -65,197 +68,45 @@ All accepted Phase-1-through-8 and P9-T01 semantics remain immutable:
 
 ---
 
-# P9-T02-R1 — Android device completion and evidence finalization
+# P9-T02-R2 — Android device completion
 
-Execute **P9-T02-R1 only** using **GPT-5.6 Terra / medium**.
+Run **only when `adb devices -l` shows an authorized usable Android device/emulator**.
+
+Use **GPT-5.6 Terra / medium** exactly.
 
 Escalation target: **GPT-5.6 Sol / high**, not pre-authorized.
 
-This is a narrow continuation of P9-T02. Do not begin P9-T03.
+Do not begin P9-T03.
 
-## Pre-task
+## Required completion evidence
 
-Before work:
+Using only the repository-supported Android build/install/launch route:
 
-1. read `AGENTS.md`, `AGENTS.override.md`, entire `plan.md`, and this file;
-2. verify branch `recovery/pc-core-semantics` and current HEAD;
-3. preserve the existing untracked `recovery/p9_t02_android_regression_performance.md` if present;
-4. verify no production/test/project/Trace changes are present;
-5. print the mandatory task/model report.
+1. record device/emulator model, API level, ABI and ADB state;
+2. build or obtain an artifact provenance-valid for the current recovery source;
+3. record exact artifact/build provenance and hash;
+4. install/update it on the authorized target;
+5. launch the real application/project;
+6. capture bounded startup/runtime logs proving project/resource/DB load and normal title/game startup;
+7. verify no recovery-specific startup exception;
+8. gather real-runtime evidence where supported for movement/touch intent, combat completion, tilemap pending+atomic commit, SAVE load, pristine RESTART, fast-forward, debugger idle/shared-controller behavior, profiler disabled/observer behavior, and representative Android streamed audio/resource transitions;
+9. compare synchronization-point logical semantics against the accepted PC behavior; any unexplained deterministic divergence => STOP/report `ESC-03`;
+10. characterize current-build performance without changing knobs for representative startup/title, map/movement, combat, tilemap transition, save/load/restart and fast-forward workloads;
+11. where measurable record sample duration/frame count, median frame time, p95, p99/worst meaningful stall, major stalls and process memory/heap/RSS indication;
+12. label debug/instrumented measurements as characterization, not release-FPS claims;
+13. update only `recovery/p9_t02_android_regression_performance.md` unless the controller separately authorizes something else;
+14. run relevant compile/import checks, `git diff --check`, `git show --check` and finish clean.
 
-## Git report finalization
+Do not change production source, tests, Trace/goldens, project data/assets, Android work-budget/cache/render/audio policy, or master.
 
-The prior executor stopped because Git could not create `.git/index.lock`.
-
-This is a local Git/environment issue, not authorization to modify repository behavior.
-
-Allowed handling:
-
-- inspect whether a stale `.git/index.lock` exists and whether another Git process owns it;
-- if the Codex execution sandbox cannot write `.git`, leave the report intact and have the user perform the Git add/commit from a normal writable terminal;
-- after any controller fast-forward, preserve the untracked report and commit it on top of the current controller HEAD.
-
-Do not broadly rewrite repository ACLs, disable security controls, force-reset, or delete a lock owned by an active Git process merely to make Codex commit.
-
-P9-T02 cannot receive final controller acceptance until its report exists in a committed diff that can be reviewed.
-
-## Real Android gate
-
-A P9-T02 PASS still requires a usable real Android device or emulator.
-
-When a target becomes available:
-
-- capture `adb devices -l` and target authorization;
-- record device/emulator model, API, ABI and relevant runtime/build details;
-- build/use an artifact provenance-valid for the current recovery source through the existing supported Android build pipeline;
-- record exact build commit/provenance;
-- install/update using the existing supported route;
-- launch the real application/project;
-- capture bounded startup/runtime logs;
-- verify project/resource/DB load and normal title/game startup;
-- prove no recovery-specific startup exception;
-- do not use the historical 2026-08-07 APK as current validation evidence.
-
-If no target is available, report PARTIAL again. Do not manufacture a device result with host flags or mocks.
-
-## Android logical/runtime checks on target
-
-Using current accepted gameplay semantics, gather real-runtime evidence where the existing app/tooling supports it for:
-
-- representative level/chapter startup;
-- movement/input/touch intent without duplicate action;
-- combat completion;
-- tilemap pending preparation and blocked live gameplay until atomic commit;
-- current SAVE load and pristine RESTART source behavior;
-- fast-forward representative path;
-- debugger idle/shared-controller behavior;
-- profiler disabled/observer behavior;
-- representative title/background/battle or other available streamed audio/resource transitions.
-
-Do not invent a second gameplay harness inside the Android app.
-
-Any deterministic logical divergence from accepted PC synchronization semantics => STOP and report `ESC-03`.
-
-## Performance characterization
-
-On the real device/emulator, characterize the current build without changing knobs.
-
-Where tooling supports it, collect representative evidence for:
-
-- startup/title;
-- map idle/pan/movement;
-- combat;
-- representative tilemap change;
-- save/load/restart;
-- fast-forward.
-
-Record device/build provenance and, where measurable:
-
-- sample duration/frame count;
-- median frame time;
-- p95 frame time;
-- p99 or worst meaningful stall;
-- major stall locations/counters;
-- process memory/heap/RSS indication;
-- audio/resource/preload stalls visible in logs/profiler.
-
-Debug/instrumented measurements must be labeled as such and are characterization, not release-FPS claims.
-
-Do not change work-budget values, cache capacities, renderer policy, audio policy or gameplay semantics.
-
-## Carry-forward host evidence
-
-If no source/test/build-policy behavior changed since the PARTIAL run, the already-reported host matrix and immutable trace results may be cited and carried forward rather than rerun in full.
-
-Still rerun at minimum after final evidence assembly:
-
-- relevant bounded smoke/import/compile checks;
-- `git diff --check`;
-- `git status --short`;
-- any focused owner tests directly exercised by a new device-observed issue.
-
-If any source/test behavior changed, rerun all affected accepted regressions and immutable scenarios before claiming PASS.
-
-## Change policy
-
-Expected committed change:
-
-- `recovery/p9_t02_android_regression_performance.md`
-
-Production source: **UNAUTHORIZED**.
-Tests: **UNAUTHORIZED** unless separately controller-approved after a proven defect.
-Trace/golden/comparator/manifest: **UNAUTHORIZED**.
-Project data/assets: **UNAUTHORIZED**.
-Android tuning/build policy: **UNAUTHORIZED**.
-Master: **UNAUTHORIZED**.
+Host/Trace evidence from `392a8f5f`/`81670bb6` may be carried forward if source/test/build-policy behavior is unchanged. If any such behavior changes, rerun all affected accepted regressions and immutable scenarios.
 
 ## PASS / PARTIAL / FAIL
 
-PASS only if all original P9-T02 release requirements are satisfied, including:
+PASS only if current-provenance real Android install/launch, runtime parity evidence, representative audio/resource validation and device performance characterization are complete with no unexplained semantic divergence.
 
-- current-provenance Android artifact;
-- real device/emulator install and launch;
-- no unexplained logical parity divergence;
-- accepted tilemap/load/restart/fast-forward/debugger/profiler contracts;
-- representative audio/resource validation;
-- representative device performance characterization;
-- committed evidence report;
-- no unauthorized production/project/Trace changes.
-
-PARTIAL if the device/emulator, current artifact, required runtime observation, performance capture, or committed evidence remains unavailable.
+PARTIAL if any required real-device gate remains unavailable.
 
 FAIL on a reproducible Android semantic/invariant regression attributable to current recovery behavior.
 
-Do not self-advance to P9-T03 even if PASS is reported.
-
-## Escalation
-
-Primary: GPT-5.6 Terra / medium.
-Escalation target: GPT-5.6 Sol / high.
-Pre-authorized: NO.
-
-STOP/request controller authorization on ESC-02/03/04/05/06/07/08/09.
-
-Do not self-escalate.
-
-## Report
-
-TASK RESULT: PASS | PARTIAL | FAIL
-MODEL/EFFORT
-BRANCH / START HEAD
-FILES CHANGED
-GIT INDEX/REPORT FINALIZATION
-ANDROID ENVIRONMENT
-DEVICE/EMULATOR
-ADB STATUS
-BUILD/APK PROVENANCE
-INSTALL RESULT
-REAL ANDROID LAUNCH RESULT
-PROJECT STARTUP CHECKPOINT
-PC/ANDROID SYNCHRONIZATION PARITY
-IMMUTABLE TRACE MATRIX / CARRIED-FORWARD BASIS
-HOST ANDROID/PLATFORM REGRESSION MATRIX / CARRIED-FORWARD BASIS
-TILEMAP/WORK-BUDGET RESULT
-SAVE/LOAD/RESTART RESULT
-FAST-FORWARD/INPUT RESULT
-DEBUGGER RESULT
-PROFILER RESULT
-AUDIO/RESOURCE RESULT
-PERFORMANCE WORKLOADS
-FRAME-TIME MEDIAN/P95/P99
-MAJOR STALLS
-MEMORY OBSERVATIONS
-PERFORMANCE CLAIM LIMITATIONS
-PRODUCTION CHANGES
-TEST CHANGES
-PROJECT/TRACE/GOLDEN CHANGES
-COMMANDS RUN
-KNOWN BASELINE ISSUES
-NEW REGRESSIONS
-ENVIRONMENT/TOOLING LIMITS
-ESCALATION TRIGGERS
-COMMIT SHA
-WORKING TREE STATUS
-NEXT ACTION: CONTROLLER REVIEW
-
-STOP FOR CONTROLLER REVIEW.
+STOP FOR CONTROLLER REVIEW. Do not self-advance to P9-T03.

@@ -205,6 +205,67 @@ P9-T02 cannot pass until a usable target is connected and a current-provenance
 artifact is built, installed, launched, and characterized through the supported
 Android route.  **Stop for controller review; do not begin P9-T03.**
 
+## P9-T02-R2 real Android target result (2026-08-10)
+
+**TASK RESULT: FAIL — ESC-02 required.**  A real authorized target was available
+and the repository-supported pipeline produced a current-source artifact, but
+the installed application deterministically died before project/resource/DB or
+title startup.  This is a packaging/runtime ABI failure outside this
+validation-only task; no gameplay, Android policy, build configuration, test,
+or project-data change was made.
+
+### Target and artifact
+
+| Field | Evidence |
+| --- | --- |
+| Target | `127.0.0.1:58526`, authorized `device`; Windows Subsystem for Android |
+| Device / API | `Subsystem for Android(TM)`, Android 13 / API 33 |
+| ABI | `x86_64,arm64-v8a,x86,armeabi-v7a,armeabi` |
+| ADB | 1.0.41 / 37.0.0-14910828 |
+| Build route | `utilities\\build_tools\\android_runtime\\build_runtime.ps1 -Project "Fire Emblem Tales of The Golden Knight.ltproj"` |
+| Build result | PASS: preflight, static validation, packaging, signing, and APK verification |
+| Build provenance | current clean recovery HEAD `f3b5330a33fbde920a8b3619042441958b491392`; build ID `fire-emblem-tales-of-the-golden-knight-android-0.2.0-20260810T013837Z-b15b4de6` |
+| APK | `fire-emblem-tales-of-the-golden-knight-0.2.0-arm64-debug.apk`; SHA-256 `b15b4de64a1b7e15600405cc854d95fdad87c67094f7a030ac462530c484d9f2` |
+| Verification | `arm64-v8a`, min/target API 26/36, v2 signature, launcher `org.lextalionis.android.LtPythonActivity`, documents provider; `errors: []` |
+
+### Install and launch evidence
+
+`adb install -r -t` returned `Success`.  `am start -W` returned `Status: ok`,
+`LaunchState: COLD`, and `TotalTime: 211 ms`.  Python-for-Android initialized
+and reported `pygame-ce 2.3.2 (SDL 2.30.11, Python 3.11.9)`, then the process
+died.  After the bounded 25-second observation there was no package PID and
+`dumpsys activity exit-info` recorded signal 11.
+
+The decisive logcat failure is:
+
+```text
+CANNOT LINK EXECUTABLE "/system/bin/ifconfig":
+.../lib/arm64/libcrypto.so is for EM_AARCH64 (183) instead of EM_X86_64 (62)
+Process ... exited due to signal 11 (Segmentation fault)
+```
+
+The crashing stack includes `_posixsubprocess.cpython-311.so`, `libpython3.11`,
+and the arm64 app libraries.  It occurs before any observed project selection,
+metadata validation, `RESOURCES.load`, `DB.load`, title state, gameplay input,
+audio transition, or profiler/gameplay checkpoint.
+
+### Consequence and disposition
+
+- PC/Android gameplay synchronization, tilemap, SAVE/RESTART, fast-forward,
+  debugger, profiler, and audio/resource runtime evidence cannot be collected:
+  the process never reaches those paths.
+- No device frame-time, p95/p99, memory/RSS, or runtime audio measurement is
+  available; launch duration is not an engine performance result.
+- Host-side Android/platform and immutable Trace V1 evidence from the accepted
+  392a8f5f/81670bb6 runs remains valid carry-forward evidence because source,
+  tests, and policy remain unchanged.
+- This is not an immutable Trace V1 divergence.  The observed current-build
+  Android startup failure requires source-proven packaging/runtime ABI diagnosis
+  outside P9-T02-R2.  **Stop under ESC-02; GPT-5.6 Sol / high controller
+  authorization is required before any repair.**
+
+No P9-T03 work was started.
+
 ## P9-T02-R2 real-target attempt (2026-08-10)
 
 **Result: PARTIAL.**  This run began at controller HEAD

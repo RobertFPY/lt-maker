@@ -266,6 +266,55 @@ audio transition, or profiler/gameplay checkpoint.
 
 No P9-T03 work was started.
 
+## Android-on-WSA ABI gate revalidation (2026-08-10)
+
+**TASK RESULT: PARTIAL — ANDROID ABI BUILD BLOCKER.**  This revalidation did
+not rebuild or install another known-incompatible arm64-only artifact.  The
+authorized WSA target is connected, but its native execution ABI is x86_64 and
+the currently authorized repository pipeline is deliberately arm64-only.
+The earlier current-build launch failure is therefore confirmed as an ABI gate,
+not valid engine-startup or gameplay evidence.
+
+```text
+ANDROID ABI BUILD BLOCKER
+
+WSA NATIVE ABI: x86_64 (uname -m; ro.product.cpu.abi)
+WSA ABI LIST: x86_64,arm64-v8a,x86,armeabi-v7a,armeabi
+CURRENT BUILD ABI: arm64-v8a only
+SUPPORTED BUILD ABIS: arm64-v8a only
+REQUIRED BUILD-CONFIG CHANGE: add and validate x86_64 or a verified multi-ABI
+  Python-for-Android/Buildozer artifact, including native recipe, verifier,
+  signing/publishing, and editor validation support.
+FILES THAT WOULD NEED TO CHANGE: at minimum
+  utilities/build_tools/android_runtime/toolchain_manifest.json,
+  buildozer.spec, preflight.py, configure_build.py, verify_apk.py,
+  validate_runtime.py, publish_artifacts.py, and Android editor build-config
+  validation/UI; recipe/toolchain compatibility also requires proof.
+ACTION: controller authorization required before build-policy modification.
+```
+
+### Concrete WSA and APK evidence
+
+| Field | Result |
+| --- | --- |
+| ADB serial/state | `127.0.0.1:58526`, `device` (authorized) |
+| WSA product/model/device | `windows_x86_64` / `Subsystem for Android(TM)` / `windows_x86_64` |
+| Android | 13 / API 33 |
+| WSA ABI properties | `ro.product.cpu.abi=x86_64`; `ro.product.cpu.abilist64=x86_64,arm64-v8a`; `ro.dalvik.vm.isa.x86_64=x86_64`; no arm64 VM ISA value |
+| Pipeline enforcement | `android.archs = arm64-v8a`; toolchain manifest is arm64; preflight/editor validation reject any non-arm64 configuration; verifier requires exactly `{arm64-v8a}` |
+| Latest APK library directories | `lib/arm64-v8a/` only |
+| Critical packaged libraries | arm64 `libpython3.11.so`, `libcrypto.so`, `libSDL2*.so`; no `lib/x86_64/` directory |
+| Previous launch chain | `_posixsubprocess` invoked `/system/bin/ifconfig` on the x86_64 WSA process, which attempted to load app `lib/arm64/libcrypto.so` and terminated with SIGSEGV |
+
+No source/test/build-policy/project/Trace change was made.  The final working
+tree also contains an unexpected zero-byte untracked path
+`recovery/pc-core-semantics`; it was not created as an authorized evidence
+artifact and was deliberately not deleted by this task.  Host/Trace evidence
+from `392a8f5f` and `81670bb6` remains carry-forward evidence only.  Current
+WSA install, engine startup, title/window, logical-runtime, audio/resource, and
+performance evidence cannot be claimed until an ABI-compatible supported build
+exists.  **Stop for controller authorization; do not begin P9-T03.**
+
 ## P9-T02-R2 real-target attempt (2026-08-10)
 
 **Result: PARTIAL.**  This run began at controller HEAD

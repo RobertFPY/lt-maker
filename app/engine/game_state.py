@@ -248,9 +248,8 @@ class GameState():
     def prepare_for_load(self):
         """Clear volatile world fields without replacing the active machine.
 
-        Normal Android restores no longer call this between frames. It remains
-        available for failed-transaction cleanup and staged-load compatibility
-        until the controller-authorized cleanup task.
+        Normal restores never call this between frames. It is retained for
+        failed-transaction cleanup after the canonical transaction has failed.
         """
         logging.info("Preparing Game State for Load")
         self.unit_registry = {}

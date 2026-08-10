@@ -171,3 +171,36 @@ current-provenance artifact built through the supported route, real launch/log
 evidence, and device performance characterization.
 
 **Next action: controller review.  Do not begin P9-T03.**
+
+## P9-T02-R1 device-gate recheck (2026-08-10)
+
+**Result: PARTIAL, unchanged.**  This continuation was run at
+`392a8f5fb260a8b84ff86fc767c1b2e3136f1968`, a direct descendant of controller
+commit `a890539c52fddbfa3e5c07602fb356a9ec00c798`.  The intervening commit is
+this report's prior PARTIAL evidence only; no production source, tests,
+project/assets, Trace fixtures, or Android build policy changed.  The accepted
+host-side matrix and immutable trace evidence above are therefore carried
+forward rather than mechanically rerun.
+
+### Recheck record
+
+| Required gate | Observation |
+| --- | --- |
+| Branch / tracked worktree | `recovery/pc-core-semantics`; clean |
+| ADB | Android Debug Bridge 1.0.41 / 37.0.0-14910828 |
+| `adb devices -l` | No device or emulator attached/authorized |
+| Device model / API / ABI | Unavailable: no target |
+| Current-provenance APK | Unavailable: no target justifies a new supported build/install run; historical 2026-08-07 artifact remains ineligible |
+| Install / real launch / startup logs | Not run: no target |
+| Touch/movement/combat/tilemap/save/restart/fast-forward/debugger/profiler runtime observations | Not available without a real target |
+| Audio/resource observation | No device log or acoustic observation available |
+| Performance characterization | No device samples, frame percentiles, stalls, or memory/RSS data available |
+
+`utilities\\enemy_event_generator\\.python\\python.exe -m compileall -q app`
+passed for the unchanged source scope.  No Android knob, including the
+4,000,000 ns off-world tilemap budget, was modified.  No deterministic logical
+divergence or invariant failure was observed, so no escalation is triggered.
+
+P9-T02 cannot pass until a usable target is connected and a current-provenance
+artifact is built, installed, launched, and characterized through the supported
+Android route.  **Stop for controller review; do not begin P9-T03.**

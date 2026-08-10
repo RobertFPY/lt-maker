@@ -1,112 +1,195 @@
 # Recovery Controller State
 
-> Live controller-gate state. `plan.md` remains authoritative for architecture, invariants, model policy, task definitions, and global escalation rules. Historical evidence remains in committed recovery reports and prior controller commits.
+> Live controller-gate state. `plan.md` remains authoritative for architecture, invariants, model policy, task definitions, and global escalation rules.
 
 ## Current authorization
 
 - Current phase: **Phase 9 — Full validation and release candidate**
 - Phases 1–8: **ACCEPTED**
 - P9-T01 full PC regression matrix: **ACCEPTED** at `50e7339986d3eff2998d49000c3b61437949e358`
-- P9-T02 full Android regression/performance matrix: **PARTIAL / NOT ACCEPTED**
-  - initial committed PARTIAL evidence: `392a8f5fb260a8b84ff86fc767c1b2e3136f1968`
-  - device-gate recheck PARTIAL evidence: `81670bb6ca194217e78a652ac7e57e6e42387063`
-  - host Android/platform regression matrix passed;
-  - required immutable Android-relevant Trace V1 scenarios passed exactly;
-  - no production/test/project/Trace/build-policy changes occurred;
-  - no authorized Android device/emulator was connected;
-  - no current-provenance Android artifact was installed/launched;
-  - no real-device audio/resource/runtime or performance evidence exists yet.
-- Active task: **P9-T02 remains open — WAITING ON REAL ANDROID TARGET**
-- Next executor continuation when a target exists: **P9-T02-R2 only — Android device completion**
-- Primary model: **GPT-5.6 Terra / medium**
-- Escalation target: **GPT-5.6 Sol / high**
-- Escalation pre-authorized: **NO**
+- P9-T02 full Android regression/performance matrix: **NOT ACCEPTED**
+  - host/Trace PARTIAL evidence: `392a8f5fb260a8b84ff86fc767c1b2e3136f1968`, `81670bb6ca194217e78a652ac7e57e6e42387063`;
+  - real-target evidence-only attempt: `f3b5330a33fbde920a8b3619042441958b491392`;
+  - current WSA ABI/runtime failure evidence: `23f31e9e62e02754fbe62f48b9f1b75c6fdad634`.
+- Active task: **P9-T02-R3 only — Android ABI/runtime root-cause diagnosis**
+- Authorized model: **GPT-5.6 Sol / high**
+- Authorization basis: **ESC-02 nonlocal root cause from P9-T02 Terra/medium**
+- Further escalation: **NOT PRE-AUTHORIZED**
 - P9-T03/P9-T04: **UNAUTHORIZED**
-- Expected production/test changes: **NONE**
-- Allowed evidence change: `recovery/p9_t02_android_regression_performance.md`
+- Expected production/test/build-policy changes: **NONE — diagnosis/evidence only**
+- Allowed evidence change: `recovery/p9_t02_android_regression_performance.md` and optional `recovery/p9_t02_r3_abi_runtime_diagnosis.md`
 - Trace V1/comparator/manifest/golden changes: **UNAUTHORIZED**
-- Project-data / asset changes: **UNAUTHORIZED**
-- Android tuning/build-policy changes merely to manufacture validation: **UNAUTHORIZED**
+- Project data/assets: **UNAUTHORIZED**
 - Merge to `master`: **UNAUTHORIZED**
+- Controller gate after R3: **YES — STOP FOR CONTROLLER REVIEW**
 
-## P9-T02 partial acceptance record
+## P9-T02 ESC-02 review record
 
-The controller accepts `81670bb6ca194217e78a652ac7e57e6e42387063` as **valid PARTIAL evidence only**. It does not close P9-T02.
+The controller accepts `23f31e9e62e02754fbe62f48b9f1b75c6fdad634` as valid failure/diagnostic evidence, but does **not** accept P9-T02.
 
-Accepted evidence:
+Accepted facts:
 
-- ancestry from controller gate `a890539c52fddbfa3e5c07602fb356a9ec00c798` is clean;
-- the two executor commits after that controller gate change only `recovery/p9_t02_android_regression_performance.md`;
-- `392a8f5fb260a8b84ff86fc767c1b2e3136f1968` committed the original Android matrix PARTIAL report;
-- `81670bb6ca194217e78a652ac7e57e6e42387063` only rechecked the Android device gate and appended evidence;
-- execution used the authorized primary `GPT-5.6 Terra / medium`;
-- ADB 37.0.0 was available but `adb devices -l` returned no connected/authorized target;
-- the historical 2026-08-07 APK is explicitly rejected as current-provenance release evidence;
-- required host Android/platform policy suites and immutable S2/S4/S5/S7/S8/S12/S13/S14/S15/S16/S17-disabled/S17-debugger-idle/S17-profiler-idle/S18 were reported green/exact;
-- compileall and diff checks passed;
-- no Android knob, including the accepted `4_000_000 ns` off-world work budget, changed;
-- no production source, tests, project data/assets, Trace V1 schema/comparator/manifest/goldens, Android build policy or master changed.
+- ancestry from controller `d8388ee30037c71f33ec862666388b2e5692a469` is evidence-only; the intervening executor commits change only `recovery/p9_t02_android_regression_performance.md`;
+- the real target was Windows Subsystem for Android, Android 13/API 33, device/product `windows_x86_64`, advertising ABI list including `x86_64` and `arm64-v8a`;
+- a current-provenance APK was built through the repository WSL/Buildozer pipeline from clean source; preflight, package metadata, native-library inventory and signature verification passed;
+- the APK is ARM64-only by the repository's current build contract (`android.archs = arm64-v8a`; verification expects only `arm64-v8a` native libraries);
+- install succeeded and the launcher Activity returned `Status: ok`;
+- Python-for-Android/pygame initialized, then the process died before project selection, metadata validation, `RESOURCES.load`, `DB.load`, title state or gameplay startup;
+- decisive device evidence shows `/system/bin/ifconfig` attempting to load the packaged ARM64 `libcrypto.so` while the system executable is x86_64, producing an ELF machine mismatch and SIGSEGV near `_posixsubprocess`;
+- therefore no device gameplay-parity, audio/resource or performance characterization can be accepted from that run;
+- no production source, tests, project data/assets, Trace/goldens, cache/audio/work-budget policy or build configuration changed;
+- host Android/platform suites and immutable Trace V1 evidence remain valid carry-forward while source/test/build-policy behavior is unchanged.
 
-These host/Trace results may be carried forward while source/test/build-policy behavior remains unchanged. Do not mechanically rerun them on every no-device retry.
+The current evidence does **not** yet establish that the current APK is generically broken on a native ARM64 Android target. It establishes a mixed-ABI failure on an x86_64 WSA system running the repository's intentionally ARM64-only artifact. The root owner of the `/system/bin/ifconfig` subprocess and linker environment must be identified before any repair is designed.
 
-P9-T02 remains blocked solely on real Android release evidence. Do not invoke another executor retry until `adb devices -l` shows an authorized usable device/emulator, unless the controller explicitly asks for another environment diagnosis.
-
-## Locked contracts while waiting
+## Locked contracts during R3
 
 1. One shared gameplay core; no Android gameplay fork.
 2. No observable partial authoritative gameplay state.
-3. Combat action/RNG/hook/cleanup/state-stack ordering remains locked.
+3. Combat/action/Event/RNG/hook/cleanup ordering remains locked.
 4. Canonical save/load/restart remains one authoritative transaction; SAVE != pristine RESTART.
-5. Fast-forward changes time/presentation only, not logical outcomes/input-edge semantics.
-6. Debugger/profiler remain observers absent explicit debugger commands.
+5. Fast-forward changes time/presentation only, not outcomes/input-edge semantics.
+6. Debugger/profiler remain observers absent explicit commands.
 7. No Event wall-clock command scheduler may return.
-8. Android work budgeting remains limited to accepted off-world tilemap preparation; `4_000_000 ns` is not a validation tuning target.
-9. `_android_tilemap_pending` remains an Event-local correctness barrier with one synchronous live commit/rollback.
-10. P8 cache decisions remain locked: `GC-REGION` NOT CERTIFIED SAFE; battle source-frame cache REJECTED; title smoke KEEP-PLATFORM; styled-text optimization deferred.
-11. No Android FPS/device-performance claim may be inferred from host simulation.
-12. Trace/goldens and project content/assets remain protected.
+8. Android work budgeting remains limited to accepted off-world tilemap preparation; `4_000_000 ns` is not a tuning target.
+9. P8 cache decisions remain locked (`GC-REGION` not certified; battle source-frame cache rejected; title smoke keep-platform; styled-text deferred).
+10. Trace/goldens and project content/assets remain protected.
+11. Do not infer generic Android failure from WSA mixed-ABI evidence without target/runtime ownership proof.
 
 ---
 
-# P9-T02-R2 — Android device completion
+# P9-T02-R3 — Android ABI/runtime root-cause diagnosis
 
-Run **only when `adb devices -l` shows an authorized usable Android device/emulator**.
+Execute **P9-T02-R3 only** using **GPT-5.6 Sol / high**.
 
-Use **GPT-5.6 Terra / medium** exactly.
+This is the controller-authorized escalation for ESC-02. Do not begin P9-T03. Do not implement a production or packaging fix during R3.
 
-Escalation target: **GPT-5.6 Sol / high**, not pre-authorized.
+## Goal
 
-Do not begin P9-T03.
+Classify the startup failure as one of:
 
-## Required completion evidence
+- `WSA-MIXED-ABI-TRANSLATION-LIMITATION`
+- `CURRENT-APK/P4A-PACKAGING-DEFECT`
+- `REPO-OWNED-ANDROID-RUNTIME-DEFECT`
+- `DEPENDENCY/TOOLCHAIN-DEFECT`
+- `UNRESOLVED`
 
-Using only the repository-supported Android build/install/launch route:
+Do not collapse these categories merely because the observed linker error contains an app-library path.
 
-1. record device/emulator model, API level, ABI and ADB state;
-2. build or obtain an artifact provenance-valid for the current recovery source;
-3. record exact artifact/build provenance and hash;
-4. install/update it on the authorized target;
-5. launch the real application/project;
-6. capture bounded startup/runtime logs proving project/resource/DB load and normal title/game startup;
-7. verify no recovery-specific startup exception;
-8. gather real-runtime evidence where supported for movement/touch intent, combat completion, tilemap pending+atomic commit, SAVE load, pristine RESTART, fast-forward, debugger idle/shared-controller behavior, profiler disabled/observer behavior, and representative Android streamed audio/resource transitions;
-9. compare synchronization-point logical semantics against the accepted PC behavior; any unexplained deterministic divergence => STOP/report `ESC-03`;
-10. characterize current-build performance without changing knobs for representative startup/title, map/movement, combat, tilemap transition, save/load/restart and fast-forward workloads;
-11. where measurable record sample duration/frame count, median frame time, p95, p99/worst meaningful stall, major stalls and process memory/heap/RSS indication;
-12. label debug/instrumented measurements as characterization, not release-FPS claims;
-13. update only `recovery/p9_t02_android_regression_performance.md` unless the controller separately authorizes something else;
-14. run relevant compile/import checks, `git diff --check`, `git show --check` and finish clean.
+## A. Freeze provenance
 
-Do not change production source, tests, Trace/goldens, project data/assets, Android work-budget/cache/render/audio policy, or master.
+Before diagnosis:
 
-Host/Trace evidence from `392a8f5f`/`81670bb6` may be carried forward if source/test/build-policy behavior is unchanged. If any such behavior changes, rerun all affected accepted regressions and immutable scenarios.
+- read `AGENTS.md`, `AGENTS.override.md`, entire `plan.md`, this file and the P9-T02 report;
+- verify branch/HEAD/model/effort and print the mandatory pre-task report;
+- record exact WSA properties (`ro.product.*`, API, ABI lists), package `primaryCpuAbi`/`nativeLibraryDir`, artifact SHA-256 and build manifest/source digest;
+- preserve the current APK and logs read-only for diagnosis.
 
-## PASS / PARTIAL / FAIL
+## B. Trace `/system/bin/ifconfig` ownership
 
-PASS only if current-provenance real Android install/launch, runtime parity evidence, representative audio/resource validation and device performance characterization are complete with no unexplained semantic divergence.
+Determine exactly what launches `/system/bin/ifconfig` before project startup.
 
-PARTIAL if any required real-device gate remains unavailable.
+Search/inspect, in order:
 
-FAIL on a reproducible Android semantic/invariant regression attributable to current recovery behavior.
+1. repository Python/Java/native startup code;
+2. packaged project/runtime Python archive;
+3. Python 3.11 stdlib and `_posixsubprocess` caller chain;
+4. python-for-android SDL2 bootstrap and pinned p4a commit;
+5. local p4a recipes / packaged dependencies.
 
-STOP FOR CONTROLLER REVIEW. Do not self-advance to P9-T03.
+Required output:
+
+```text
+IFCONFIG CALLER:
+CALL CHAIN:
+OWNER: REPO | PYTHON-STDLIB | P4A/BOOTSTRAP | DEPENDENCY | UNKNOWN
+WHY IT RUNS BEFORE PROJECT LOAD:
+```
+
+A native stack containing `_posixsubprocess` is not by itself proof that `_posixsubprocess` initiated the command; identify the Python/Java caller if possible.
+
+## C. ABI/linker diagnosis
+
+Use read-only tooling such as `aapt`, `apkanalyzer`, `unzip`, `readelf`/`llvm-readelf`, `dumpsys package`, `getprop`, logcat/tombstone and packaged manifests.
+
+Establish:
+
+- ELF machine for relevant APK native libraries, especially `libcrypto.so`, Python and `_posixsubprocess`;
+- ELF machine for `/system/bin/ifconfig` on WSA;
+- process architecture from tombstone/runtime;
+- package primary ABI/native library path;
+- whether app linker environment (`LD_LIBRARY_PATH` or equivalent p4a/bootstrap namespace/environment) is inherited by the child `exec`;
+- why the child resolves app `libcrypto.so` instead of the system-compatible dependency;
+- whether this behavior is specific to WSA ARM translation or would occur on native ARM64 Android.
+
+Do not mutate `LD_LIBRARY_PATH`, replace system binaries or delete packaged libraries as an accepted workaround during diagnosis.
+
+## D. Build-contract inspection
+
+Inspect current repository build policy and dependency constraints:
+
+- `utilities/build_tools/android_runtime/buildozer.spec`;
+- project Android config used for the Golden Knight build;
+- `configure_build.py`, preflight/APK verification policy;
+- p4a pin/bootstrap/local recipes;
+- any pass-through/prebuilt dependency that constrains `arm64-v8a`.
+
+Record why the artifact is ARM64-only and whether x86_64 is an intended/supported repository target today.
+
+Do not change ABI list or build recipes in R3.
+
+## E. Target A/B test
+
+Strongly prefer an authorized **native ARM64 Android device/emulator** for one bounded A/B startup test using the same provenance-valid ARM64 APK.
+
+If native ARM64 reaches project/resource/DB/title startup while WSA fails at the mixed-ABI child exec, classify the WSA failure as `WSA-MIXED-ABI-TRANSLATION-LIMITATION` unless contrary evidence exists.
+
+If native ARM64 reproduces the same pre-project failure, classify toward packaging/runtime/toolchain defect and stop with evidence.
+
+If no native ARM64 target is available, do not assert generic Android packaging failure; leave target-general classification `UNRESOLVED` if static/runtime evidence cannot prove it.
+
+## F. Fix-design boundary
+
+Production/build fixes remain unauthorized.
+
+If diagnosis finds:
+
+- a narrow repo-owned pre-project subprocess call with a clearly platform-safe replacement: document the proposed minimal fix and STOP for controller approval;
+- a p4a/bootstrap/linker-environment defect: document the smallest upstream/local recipe/bootstrap remediation options and STOP;
+- x86_64/multi-ABI support would require new dependency/toolchain architecture: report `ESC-09` and STOP;
+- WSA is simply outside the currently supported native ARM64 target contract: document the support limitation and what native ARM64 evidence is still required for P9-T02 acceptance.
+
+Do not implement speculative fixes, environment hacks or gameplay changes.
+
+## Carry-forward evidence
+
+Host Android/platform suites and immutable Trace V1 results from earlier accepted P9-T02 evidence may be carried forward because no source/test/build-policy behavior changed.
+
+R3 should run only diagnostics and bounded sanity checks needed for the root-cause classification, plus `compileall`, `git diff --check`, `git show --check`, final clean status.
+
+## Report
+
+TASK RESULT: PASS-DIAGNOSIS | PARTIAL | FAIL
+MODEL/EFFORT
+BRANCH / START HEAD
+FILES CHANGED
+ARTIFACT/DEVICE PROVENANCE
+WSA ABI FACTS
+APK ABI FACTS
+IFCONFIG CALLER
+CALL CHAIN / OWNER
+LINKER ENVIRONMENT FINDING
+ROOT-CAUSE CLASSIFICATION
+NATIVE ARM64 A/B RESULT
+TARGET SUPPORT MATRIX
+PROPOSED REMEDIATION OPTIONS
+IMPLEMENTATION AUTHORIZED: NO
+HOST/TRACE CARRY-FORWARD BASIS
+COMMANDS RUN
+NEW REGRESSIONS
+ESCALATION/STOP TRIGGERS
+COMMIT SHA
+WORKING TREE STATUS
+NEXT ACTION: CONTROLLER REVIEW
+
+STOP FOR CONTROLLER REVIEW. Do not begin P9-T03.

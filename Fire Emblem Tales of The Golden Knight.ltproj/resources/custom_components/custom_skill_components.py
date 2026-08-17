@@ -21,6 +21,64 @@ class DoNothing(SkillComponent):
     expose = ComponentType.Int
     value = 1
 
+
+class ComparisonStatBonus(SkillComponent):
+    nid = 'comparison_stat_bonus'
+    desc = 'Adds to the user\'s Resistance only when skills compare stats.'
+    tag = SkillTags.CUSTOM
+
+    expose = ComponentType.Int
+    value = 0
+    ignore_conditional = True
+
+    def comparison_stat_bonus(self, unit, stat):
+        return self.value if stat == 'RES' else 0
+
+
+class Obstruct(SkillComponent):
+    nid = 'obstruct'
+    desc = ('Enemies without Pass cannot move through spaces adjacent to the '
+            'user while the user has at least this fraction of maximum HP.')
+    tag = SkillTags.MOVEMENT
+
+    expose = ComponentType.Float
+    value = 0.9
+
+    def obstructs_movement(self, unit, mover):
+        return bool(
+            unit.position and unit.get_hp() > 0 and
+            unit.get_hp() >= unit.get_max_hp() * self.value and
+            skill_system.check_enemy(unit, mover) and
+            not skill_system.pass_through(mover))
+
+
+class Feint(SkillComponent):
+    nid = 'feint'
+    desc = 'Configuration for a Feint effect applied after a Rally assist.'
+    tag = SkillTags.CUSTOM
+
+    expose = ComponentType.NewMultipleOptions
+    options = {
+        'stat': ComponentType.Stat,
+        'effect': ComponentType.Skill,
+    }
+    value = {
+        'stat': 'STR',
+        'effect': '',
+    }
+
+
+class LostOnNextAction(SkillComponent):
+    nid = 'lost_on_next_action'
+    desc = 'Remove after this unit completes its next non-combat action.'
+    tag = SkillTags.CUSTOM
+
+    def on_wait(self, unit, actively_chosen):
+        action.do(action.RemoveSkill(unit, self.skill))
+
+    def on_end_chapter_unconditional(self, unit, skill):
+        action.do(action.RemoveSkill(unit, self.skill))
+
 class SavageBlowFates(SkillComponent):
     nid = 'savage_blow_fates'
     desc = 'Deals 20% Current HP damage to enemies within the given number of spaces from target.'
@@ -691,6 +749,463 @@ def get_proc_rate_with_target(unit, target, skill) -> int:
             return component.proc_rate(unit, target)
     return 100  # 100 is default
 
+
+_SPECIAL_PROC_EFFECT_COMPONENTS = {
+    'attack_proc', 'attack_proc_with_target',
+    'defense_proc', 'defense_proc_with_target',
+}
+_SPECIAL_PROC_SOURCE_COMPONENTS = {'astra_proc', 'aether_proc'}
+
+
+def _special_proc_nids(unit):
+    proc_nids = set()
+    for skill in unit.skills:
+        if not (getattr(skill, 'special_skill', None)
+                or getattr(skill, 'weapon_special_skill', None)):
+            continue
+        for component in skill.components:
+            if component.nid in _SPECIAL_PROC_EFFECT_COMPONENTS and component.value:
+                proc_nids.add(component.value)
+            elif component.nid in _SPECIAL_PROC_SOURCE_COMPONENTS:
+                proc_nids.add(skill.nid)
+    return proc_nids
+
+
+def _special_proc_count(playback, unit):
+    proc_nids = _special_proc_nids(unit)
+    if not proc_nids:
+        return 0
+    return sum(
+        brush.nid in ('attack_proc', 'defense_proc')
+        and brush.unit is unit
+        and getattr(brush.skill, 'nid', None) in proc_nids
+        for brush in playback)
+
+
+def _did_trigger_special(playback, unit):
+    return bool(_special_proc_count(playback, unit))
+
+
+def _is_special_skill(skill) -> bool:
+    return bool(getattr(skill, 'special_skill', None)
+                or getattr(skill, 'weapon_special_skill', None))
+
+
+def _is_special_damage_strike(unit) -> bool:
+    """Whether unit is currently resolving a Wrath-eligible Special strike."""
+    for skill in unit.skills:
+        if not _is_special_skill(skill):
+            continue
+        for component in skill.components:
+            if component.nid in ('attack_proc', 'attack_proc_with_target'):
+                if getattr(component, '_did_action', False):
+                    return True
+            elif component.nid == 'astra_proc':
+                if (getattr(component, '_should_modify_damage', False)
+                        and getattr(component, '_hitcount', 0) == 0):
+                    return True
+            elif component.nid == 'aether_proc':
+                if (getattr(component, '_should_modify_damage', False)
+                        and getattr(component, '_hitcount', 0) in (0, 1)):
+                    return True
+    return False
+
+
+def _is_highest_priority_wrath(component, unit) -> bool:
+    candidates = []
+    for index, skill in enumerate(unit.skills):
+        for other_component in skill.components:
+            if other_component.nid == 'wrath_special_bonus':
+                candidates.append((
+                    _skill_priority(skill), getattr(skill, 'uid', index),
+                    other_component))
+    if not candidates:
+        return False
+    return max(candidates, key=lambda candidate: candidate[:2])[2] is component
+
+
+def _is_highest_priority_special_spiral(component, unit) -> bool:
+    candidates = []
+    for index, skill in enumerate(unit.skills):
+        for other_component in skill.components:
+            if other_component.nid == 'special_spiral_bonus':
+                candidates.append((
+                    _skill_priority(skill), getattr(skill, 'uid', index),
+                    other_component))
+    if not candidates:
+        return False
+    return max(candidates, key=lambda candidate: candidate[:2])[2] is component
+
+
+class SpecialSkillPulse(SkillComponent):
+    nid = 'special_skill_pulse'
+    desc = ('After the user triggers a Special Skill, each later attack that '
+            'does not trigger it increases its activation rate by X%.')
+    tag = SkillTags.CUSTOM
+
+    expose = ComponentType.Int
+    value = 0
+
+    def init(self, skill):
+        skill.data.setdefault('special_skill_pulse_armed', False)
+        skill.data.setdefault('special_skill_pulse_bonus', 0)
+        self._seen_special_proc_count = 0
+
+    def start_combat(self, playback, unit, item, target, item2, mode):
+        self._seen_special_proc_count = 0
+
+    def modify_self_proc_rate(self, unit):
+        if skill_system.condition(self.skill, unit):
+            return self.skill.data['special_skill_pulse_bonus']
+        return 0
+
+    def _did_trigger_new_special(self, playback, unit):
+        proc_count = _special_proc_count(playback, unit)
+        if not proc_count:
+            # Unit tests can provide a strike-local playback list, while the
+            # solver provides a combat-wide list. Resetting only on an empty
+            # list supports both without treating a prior proc as a new one.
+            self._seen_special_proc_count = 0
+            return False
+        if proc_count > self._seen_special_proc_count:
+            self._seen_special_proc_count = proc_count
+            return True
+        return False
+
+    def _process_strike(self, actions, playback, unit, mode, expected_mode):
+        if self._did_trigger_new_special(playback, unit):
+            if not self.skill.data['special_skill_pulse_armed']:
+                actions.append(action.SetObjData(
+                    self.skill, 'special_skill_pulse_armed', True))
+            if self.skill.data['special_skill_pulse_bonus']:
+                actions.append(action.SetObjData(
+                    self.skill, 'special_skill_pulse_bonus', 0))
+        elif (mode == expected_mode and
+              self.skill.data['special_skill_pulse_armed']):
+            actions.append(action.SetObjData(
+                self.skill, 'special_skill_pulse_bonus',
+                self.skill.data['special_skill_pulse_bonus'] + self.value))
+
+    def after_strike(self, actions, playback, unit, item, target, item2, mode,
+                     attack_info, strike):
+        self._process_strike(actions, playback, unit, mode, 'attack')
+
+    def after_take_strike(self, actions, playback, unit, item, target, item2,
+                          mode, attack_info, strike):
+        self._process_strike(actions, playback, unit, mode, 'defense')
+
+
+class SpecialSpiralBonus(SkillComponent):
+    nid = 'special_spiral_bonus'
+    desc = ('After the user triggers a Special Skill, adds its activation '
+            'rate through the next action involving the user.')
+    tag = SkillTags.CUSTOM
+
+    expose = ComponentType.Int
+    value = 0
+    ignore_conditional = True
+
+    def init(self, skill):
+        skill.data.setdefault('special_spiral_active', False)
+        skill.data.setdefault('special_spiral_skip_next_wait', False)
+        self._triggered_this_combat = False
+
+    def start_combat(self, playback, unit, item, target, item2, mode):
+        self._triggered_this_combat = False
+        if (not _is_highest_priority_special_spiral(self, unit)
+                and self.skill.data['special_spiral_active']):
+            action.do(action.SetObjData(
+                self.skill, 'special_spiral_active', False))
+            action.do(action.SetObjData(
+                self.skill, 'special_spiral_skip_next_wait', False))
+
+    def modify_self_proc_rate(self, unit):
+        if (self.skill.data['special_spiral_active']
+                and _is_highest_priority_special_spiral(self, unit)):
+            return self.value
+        return 0
+
+    def after_strike(self, actions, playback, unit, item, target, item2, mode,
+                     attack_info, strike):
+        if (not _is_highest_priority_special_spiral(self, unit)
+                or not skill_system.condition(self.skill, unit)
+                or not _did_trigger_special(playback, unit)):
+            return
+        if not self.skill.data['special_spiral_active']:
+            actions.append(action.SetObjData(
+                self.skill, 'special_spiral_active', True))
+        self._triggered_this_combat = True
+
+    def end_combat(self, playback, unit, item, target, item2, mode):
+        if not _is_highest_priority_special_spiral(self, unit):
+            self._triggered_this_combat = False
+            return
+        if self._triggered_this_combat:
+            action.do(action.SetObjData(
+                self.skill, 'special_spiral_skip_next_wait', mode == 'attack'))
+        elif self.skill.data['special_spiral_active']:
+            action.do(action.SetObjData(
+                self.skill, 'special_spiral_active', False))
+            action.do(action.SetObjData(
+                self.skill, 'special_spiral_skip_next_wait', False))
+        self._triggered_this_combat = False
+
+    def on_wait(self, unit, actively_chosen):
+        if self.skill.data['special_spiral_skip_next_wait']:
+            action.do(action.SetObjData(
+                self.skill, 'special_spiral_skip_next_wait', False))
+        elif self.skill.data['special_spiral_active']:
+            action.do(action.SetObjData(
+                self.skill, 'special_spiral_active', False))
+
+
+class WrathSpecialBonus(SkillComponent):
+    nid = 'wrath_special_bonus'
+    desc = ('Adds proc rate while the combat condition is active and adds '
+            'flat damage to Special Skill strikes.')
+    tag = SkillTags.CUSTOM
+
+    expose = ComponentType.NewMultipleOptions
+    options = {
+        'proc_rate_bonus': ComponentType.Int,
+        'damage_bonus': ComponentType.Int,
+    }
+
+    def __init__(self, value=None):
+        self.value = {
+            'proc_rate_bonus': 0,
+            'damage_bonus': 0,
+        }
+        if value:
+            self.value.update(value)
+
+    def modify_self_proc_rate(self, unit):
+        # get_modified_proc_rate calls this hook directly, so it bypasses the
+        # normal skill_system dispatcher condition check. CombatCondition has
+        # already captured its pre-combat result at this point.
+        if (not _is_highest_priority_wrath(self, unit)
+                or not skill_system.condition(self.skill, unit)):
+            return 0
+        return int(self.value['proc_rate_bonus'])
+
+    def raw_damage(self, unit, item, target, item2, mode, attack_info, base_value):
+        # raw_damage is condition-gated by skill_system, unlike proc rate.
+        if (not _is_highest_priority_wrath(self, unit)
+                or not _is_special_damage_strike(unit)):
+            return 0
+        return int(self.value['damage_bonus'])
+
+
+def _highest_priority_cancel_affinity_value(unit):
+    candidates = []
+    for index, skill in enumerate(unit.skills):
+        for component in skill.components:
+            if component.nid != 'cancel_affinity':
+                continue
+            try:
+                value = int(component.value)
+            except (TypeError, ValueError):
+                continue
+            candidates.append((_skill_priority(skill), getattr(skill, 'uid', index), value))
+    return max(candidates, key=lambda candidate: candidate[:2])[2] if candidates else None
+
+
+class CancelAffinity(SkillComponent):
+    nid = 'cancel_affinity'
+    desc = ('Controls skill-sourced weapon-triangle multipliers while leaving '
+            'direct item modifiers, including Reaver, unchanged.')
+    tag = SkillTags.CUSTOM
+
+    expose = ComponentType.Int
+    value = 1
+
+    def weapon_triangle_multiplier_override(
+            self, unit, item, target, item2, has_disadvantage,
+            self_skill_multiplier, foe_skill_multiplier):
+        tier = _highest_priority_cancel_affinity_value(unit)
+        if tier == 1:
+            return 1.0, 1.0
+        if tier == 2:
+            return 1.0, 1.0 if has_disadvantage else foe_skill_multiplier
+        if tier == 3:
+            return (1.0,
+                    2.0 - foe_skill_multiplier if has_disadvantage
+                    else foe_skill_multiplier)
+        return None
+
+
+def _is_highest_priority_lull(component, unit) -> bool:
+    candidates = []
+    for index, skill in enumerate(unit.skills):
+        for other_component in skill.components:
+            if other_component.nid == 'lull_combat_stats':
+                candidates.append((
+                    _skill_priority(skill), getattr(skill, 'uid', index),
+                    other_component))
+    if not candidates:
+        return False
+    return max(candidates, key=lambda candidate: candidate[:2])[2] is component
+
+
+class LullCombatStats(SkillComponent):
+    nid = 'lull_combat_stats'
+    desc = ('Applies the selected Lull stat penalties and neutralizes the '
+            'foe\'s positive net bonuses during combat.')
+    tag = SkillTags.CUSTOM
+
+    expose = ComponentType.NewMultipleOptions
+    options = {
+        'penalty': ComponentType.Int,
+        'affect_attack': ComponentType.Bool,
+        'affect_speed': ComponentType.Bool,
+        'affect_defense': ComponentType.Bool,
+        'affect_resistance': ComponentType.Bool,
+    }
+
+    def __init__(self, value=None):
+        self.value = {
+            'penalty': 0,
+            'affect_attack': False,
+            'affect_speed': False,
+            'affect_defense': False,
+            'affect_resistance': False,
+        }
+        if value:
+            self.value.update(value)
+
+    def _active(self, unit, target) -> bool:
+        return bool(target) and _is_highest_priority_lull(self, unit)
+
+    def _amount(self, target, stat_nid) -> int:
+        return int(self.value['penalty']) + max(0, target.stat_bonus(stat_nid))
+
+    def dynamic_resist(self, unit, item, target, item2, mode, attack_info,
+                       base_value):
+        if not self.value['affect_attack'] or not self._active(unit, target):
+            return 0
+        attack_stat = ('MAG' if item2 and item_funcs.is_magic(target, item2)
+                       else 'STR')
+        return self._amount(target, attack_stat)
+
+    def dynamic_damage(self, unit, item, target, item2, mode, attack_info,
+                       base_value):
+        if not self._active(unit, target):
+            return 0
+        is_magic = bool(item) and item_funcs.is_magic(unit, item)
+        if self.value['affect_defense'] and not is_magic:
+            return self._amount(target, 'DEF')
+        if self.value['affect_resistance'] and is_magic:
+            return self._amount(target, 'RES')
+        return 0
+
+    def dynamic_attack_speed(self, unit, item, target, item2, mode,
+                             attack_info, base_value):
+        if self.value['affect_speed'] and self._active(unit, target):
+            return self._amount(target, 'SPD')
+        return 0
+
+    def dynamic_defense_speed(self, unit, item, target, item2, mode,
+                              attack_info, base_value):
+        if self.value['affect_speed'] and self._active(unit, target):
+            return self._amount(target, 'SPD')
+        return 0
+
+
+class LowerDefResSource(SkillComponent):
+    nid = 'lower_def_res_source'
+    desc = 'Marks a skill that calculates damage using the lower of DEF or RES.'
+    tag = SkillTags.CUSTOM
+
+
+def _is_highest_priority_lower_def_res_neutralizer(component, unit) -> bool:
+    candidates = []
+    for index, skill in enumerate(unit.skills):
+        for other_component in skill.components:
+            if other_component.nid == 'neutralize_lower_def_res':
+                candidates.append((
+                    _skill_priority(skill), getattr(skill, 'uid', index),
+                    other_component))
+    if not candidates:
+        return False
+    return max(candidates, key=lambda candidate: candidate[:2])[2] is component
+
+
+def _has_active_lower_def_res_source(unit, item) -> bool:
+    for skill in unit.skills:
+        if any(component.nid == 'lower_def_res_source'
+               for component in skill.components):
+            if skill_system.condition(skill, unit, item):
+                return True
+    return False
+
+
+class NeutralizeLowerDefRes(SkillComponent):
+    nid = 'neutralize_lower_def_res'
+    desc = ('Neutralizes Foe skills that calculate damage using the lower of '
+            'DEF or RES.')
+    tag = SkillTags.CUSTOM
+
+    def dynamic_resist(self, unit, item, target, item2, mode, attack_info,
+                       base_value):
+        if (not target or not item2 or
+                not _is_highest_priority_lower_def_res_neutralizer(self, unit) or
+                not _has_active_lower_def_res_source(target, item2)):
+            return 0
+
+        resolved_formula = combat_calcs.resolve_defensive_formula(
+            unit, item, target, item2,
+            item_system.resist_formula, skill_system.resist_formula,
+            item_system.resist_formula_override,
+            skill_system.resist_formula_override,
+            skill_system.Defaults.resist_formula)
+        if resolved_formula != 'WORSE_DEFENSE':
+            return 0
+
+        normal_formula = ('MAGIC_DEFENSE'
+                          if item_funcs.is_magic(target, item2)
+                          else 'DEFENSE')
+        normal_resist = equations.parser.get(normal_formula, unit)
+        worse_resist = equations.parser.get('WORSE_DEFENSE', unit)
+        return max(0, normal_resist - worse_resist)
+
+
+class StardustMirageBonus(SkillComponent):
+    nid = 'stardust_mirage_bonus'
+    desc = ('Adds Speed-based true damage to each Stardust Mirage strike and '
+            'prevents crits during the proc sequence.')
+    tag = SkillTags.CUSTOM
+
+    expose = ComponentType.NewMultipleOptions
+    options = {
+        'speed_damage_percent': ComponentType.Float,
+        'disable_crit': ComponentType.Bool,
+    }
+
+    def __init__(self, value=None):
+        self.value = {
+            'speed_damage_percent': 0.1,
+            'disable_crit': True,
+        }
+        if value:
+            self.value.update(value)
+
+    def _astra_proc_is_active(self) -> bool:
+        for component in self.skill.components:
+            if component.nid == 'astra_proc':
+                return bool(getattr(component, '_should_modify_damage', False))
+        return False
+
+    def raw_damage(self, unit, item, target, item2, mode, attack_info, base_value):
+        if not self._astra_proc_is_active():
+            return 0
+        return int(unit.get_stat('SPD') * self.value['speed_damage_percent'])
+
+    def crit_multiplier(self, unit, item, target, item2, mode, attack_info, base_value):
+        if self.value['disable_crit'] and self._astra_proc_is_active():
+            return 0
+        return 1
+
+
 class EvalProcRate(SkillComponent):
     nid = 'eval_proc_rate'
     desc = "Evaluates the proc rate. Only compatible with custom Proc components."
@@ -1126,6 +1641,18 @@ class BetterPostCombatDamage(SkillComponent):
             end_health = target.get_hp() - self.value
             action.do(action.SetHP(target, max(1, end_health)))
             action.do(action.TriggerCharge(unit, self.skill))
+
+
+class SurvivingInitiatorPostCombatDamage(BetterPostCombatDamage):
+    nid = 'surviving_initiator_post_combat_damage'
+    desc = ('Target takes non-lethal flat damage after combat only when the '
+            'initiator survives.')
+    tag = SkillTags.CUSTOM
+
+    def end_combat(self, playback, unit, item, target, item2, mode):
+        if mode != 'attack' or unit.get_hp() <= 0:
+            return
+        super().end_combat(playback, unit, item, target, item2, mode)
 
 class EvalPostCombatDamage(SkillComponent):
     nid = 'eval_post_combat_damage'

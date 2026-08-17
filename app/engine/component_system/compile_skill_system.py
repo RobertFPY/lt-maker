@@ -9,6 +9,7 @@ SKILL_HOOKS: Dict[str, HookInfo] = {
     'can_counter':                          HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_TRUE),
     # false priority (set to False if result is False in any component, False if not defined)
     'pass_through':                         HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'obstructs_movement':                   HookInfo(['unit', 'mover'], ResolvePolicy.ANY_DEFAULT_FALSE),
     'vantage':                              HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'desperation':                          HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'ignore_terrain':                       HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
@@ -55,6 +56,7 @@ SKILL_HOOKS: Dict[str, HookInfo] = {
     # numeric accum (adds together all values. 0 if no values are defined)
     'sight_range':                          HookInfo(['unit'], ResolvePolicy.NUMERIC_ACCUM, has_default_value=True),
     'xcom_movement':                        HookInfo(['unit'], ResolvePolicy.NUMERIC_ACCUM, has_default_value=True),
+    'comparison_stat_bonus':                HookInfo(['unit', 'stat'], ResolvePolicy.NUMERIC_ACCUM, has_default_value=True),
     # formula (as exclusive)
     'damage_formula':                       HookInfo(['unit'], ResolvePolicy.UNIQUE),
     'resist_formula':                       HookInfo(['unit'], ResolvePolicy.UNIQUE),
@@ -88,6 +90,7 @@ SKILL_HOOKS: Dict[str, HookInfo] = {
     'enemy_exp_multiplier':                 HookInfo(['unit', 'target'], ResolvePolicy.UNIQUE, has_default_value=True),
     'wexp_multiplier':                      HookInfo(['unit', 'target'], ResolvePolicy.UNIQUE, has_default_value=True),
     'enemy_wexp_multiplier':                HookInfo(['unit', 'target'], ResolvePolicy.UNIQUE, has_default_value=True),
+    'weapon_triangle_multiplier_override':  HookInfo(['unit', 'item', 'target', 'item2', 'has_disadvantage', 'self_skill_multiplier', 'foe_skill_multiplier'], ResolvePolicy.UNIQUE),
     'canto_movement':                       HookInfo(['unit', 'target'], ResolvePolicy.MAXIMUM, has_default_value=False),
     # item numeric modifiers (sums component values, default 0 if not defined)
     'empower_splash':                       HookInfo(['unit'], ResolvePolicy.NUMERIC_ACCUM),

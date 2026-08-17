@@ -8804,6 +8804,14 @@
             [
                 "defense_speed",
                 7
+            ],
+            [
+                "event_before_combat",
+                "Global DeathCamus"
+            ],
+            [
+                "event_after_combat",
+                "Global DeathCamus"
             ]
         ]
     },
@@ -14128,11 +14136,70 @@
                 "Global WilyFighterSkill"
             ],
             [
-                "event_after_combat",
-                "Global WilyFighterSkill2"
+                "hidden",
+                null
+            ]
+        ]
+    },
+    {
+        "nid": "Wily_Fighter_Neutralize_Effect",
+        "name": "Wily Fighter",
+        "desc": "Foe's bonuses are neutralized for this combat.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            3,
+            5
+        ],
+        "components": [
+            [
+                "stat_change",
+                [
+                    [
+                        "STR",
+                        0
+                    ],
+                    [
+                        "MAG",
+                        0
+                    ],
+                    [
+                        "SKL",
+                        0
+                    ],
+                    [
+                        "SPD",
+                        0
+                    ],
+                    [
+                        "LCK",
+                        0
+                    ],
+                    [
+                        "DEF",
+                        0
+                    ],
+                    [
+                        "RES",
+                        0
+                    ]
+                ]
+            ],
+            [
+                "lost_on_end_combat2",
+                {
+                    "lost_on_self": true,
+                    "lost_on_ally": true,
+                    "lost_on_enemy": true,
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
+                }
             ],
             [
                 "hidden",
+                null
+            ],
+            [
+                "lost_on_end_chapter",
                 null
             ]
         ]
@@ -14568,6 +14635,10 @@
             [
                 "item_override",
                 "WorseDefense_Weapons"
+            ],
+            [
+                "lower_def_res_source",
+                null
             ]
         ]
     },
@@ -14600,6 +14671,10 @@
             [
                 "item_override",
                 "WorseDefense_Weapons"
+            ],
+            [
+                "lower_def_res_source",
+                null
             ]
         ]
     },
@@ -14628,6 +14703,10 @@
             [
                 "item_override",
                 "WorseDefense_Weapons"
+            ],
+            [
+                "lower_def_res_source",
+                null
             ]
         ]
     },
@@ -14656,6 +14735,10 @@
             [
                 "item_override",
                 "WorseDefense_Weapons"
+            ],
+            [
+                "lower_def_res_source",
+                null
             ],
             [
                 "dynamic_damage",
@@ -14735,6 +14818,10 @@
             [
                 "item_override",
                 "WorseDefense_Weapons"
+            ],
+            [
+                "lower_def_res_source",
+                null
             ],
             [
                 "dynamic_damage",
@@ -16300,10 +16387,6 @@
             [
                 "event_before_combat",
                 "Global WilyFighterSkill"
-            ],
-            [
-                "event_after_combat",
-                "Global WilyFighterSkill2"
             ]
         ]
     },
@@ -16336,10 +16419,6 @@
             [
                 "event_before_combat",
                 "Global WilyFighterSkill"
-            ],
-            [
-                "event_after_combat",
-                "Global WilyFighterSkill2"
             ]
         ]
     },
@@ -16372,10 +16451,6 @@
             [
                 "event_before_combat",
                 "Global WilyFighterSkill"
-            ],
-            [
-                "event_after_combat",
-                "Global WilyFighterSkill2"
             ]
         ]
     },
@@ -16408,10 +16483,6 @@
             [
                 "event_before_combat",
                 "Global WilyFighterSkill"
-            ],
-            [
-                "event_after_combat",
-                "Global WilyFighterSkill2"
             ]
         ]
     },
@@ -16444,10 +16515,6 @@
             [
                 "event_before_combat",
                 "Global WilyFighterSkill"
-            ],
-            [
-                "event_after_combat",
-                "Global WilyFighterSkill2"
             ]
         ]
     },
@@ -16480,10 +16547,6 @@
             [
                 "event_before_combat",
                 "Global WilyFighterSkill"
-            ],
-            [
-                "event_after_combat",
-                "Global WilyFighterSkill2"
             ]
         ]
     },
@@ -16508,6 +16571,13 @@
             [
                 "priority",
                 0
+            ],
+            [
+                "feint",
+                {
+                    "stat": "STR",
+                    "effect": "Strength_Feint_T1_Effect"
+                }
             ]
         ]
     },
@@ -16532,6 +16602,13 @@
             [
                 "priority",
                 1
+            ],
+            [
+                "feint",
+                {
+                    "stat": "STR",
+                    "effect": "Strength_Feint_T2_Effect"
+                }
             ]
         ]
     },
@@ -16556,6 +16633,13 @@
             [
                 "priority",
                 2
+            ],
+            [
+                "feint",
+                {
+                    "stat": "STR",
+                    "effect": "Strength_Feint_T3_Effect"
+                }
             ]
         ]
     },
@@ -16580,6 +16664,13 @@
             [
                 "priority",
                 0
+            ],
+            [
+                "feint",
+                {
+                    "stat": "MAG",
+                    "effect": "Magic_Feint_T1_Effect"
+                }
             ]
         ]
     },
@@ -16604,6 +16695,13 @@
             [
                 "priority",
                 1
+            ],
+            [
+                "feint",
+                {
+                    "stat": "MAG",
+                    "effect": "Magic_Feint_T2_Effect"
+                }
             ]
         ]
     },
@@ -16628,6 +16726,13 @@
             [
                 "priority",
                 2
+            ],
+            [
+                "feint",
+                {
+                    "stat": "MAG",
+                    "effect": "Magic_Feint_T3_Effect"
+                }
             ]
         ]
     },
@@ -16652,6 +16757,13 @@
             [
                 "priority",
                 0
+            ],
+            [
+                "feint",
+                {
+                    "stat": "SPD",
+                    "effect": "Speed_Feint_T1_Effect"
+                }
             ]
         ]
     },
@@ -16676,6 +16788,13 @@
             [
                 "priority",
                 1
+            ],
+            [
+                "feint",
+                {
+                    "stat": "SPD",
+                    "effect": "Speed_Feint_T2_Effect"
+                }
             ]
         ]
     },
@@ -16700,6 +16819,13 @@
             [
                 "priority",
                 2
+            ],
+            [
+                "feint",
+                {
+                    "stat": "SPD",
+                    "effect": "Speed_Feint_T3_Effect"
+                }
             ]
         ]
     },
@@ -16724,6 +16850,13 @@
             [
                 "priority",
                 0
+            ],
+            [
+                "feint",
+                {
+                    "stat": "DEF",
+                    "effect": "Defense_Feint_T1_Effect"
+                }
             ]
         ]
     },
@@ -16748,6 +16881,13 @@
             [
                 "priority",
                 1
+            ],
+            [
+                "feint",
+                {
+                    "stat": "DEF",
+                    "effect": "Defense_Feint_T2_Effect"
+                }
             ]
         ]
     },
@@ -16772,13 +16912,20 @@
             [
                 "priority",
                 2
+            ],
+            [
+                "feint",
+                {
+                    "stat": "DEF",
+                    "effect": "Defense_Feint_T3_Effect"
+                }
             ]
         ]
     },
     {
         "nid": "Resistance_Feint_T1",
         "name": "Resistance Feint",
-        "desc": "If User uses or is targeted with a Rally assist skill, inflicts -3 Resistance onFoe with the highest bonus stats of the stats in the skill name through their next action.",
+        "desc": "If User uses or is targeted with a Rally assist skill, inflicts -3 Resistance on Foe with the highest bonus stats of the stats in the skill name through their next action.",
         "icon_nid": "CustomSkill",
         "icon_index": [
             6,
@@ -16796,13 +16943,20 @@
             [
                 "priority",
                 0
+            ],
+            [
+                "feint",
+                {
+                    "stat": "RES",
+                    "effect": "Resistance_Feint_T1_Effect"
+                }
             ]
         ]
     },
     {
         "nid": "Resistance_Feint_T2",
         "name": "Resistance Feint",
-        "desc": "If User uses or is targeted with a Rally assist skill, inflicts -5 Resistance onFoe with the highest bonus stats of the stats in the skill name through their next action.",
+        "desc": "If User uses or is targeted with a Rally assist skill, inflicts -5 Resistance on Foe with the highest bonus stats of the stats in the skill name through their next action.",
         "icon_nid": "CustomSkill",
         "icon_index": [
             6,
@@ -16820,13 +16974,20 @@
             [
                 "priority",
                 1
+            ],
+            [
+                "feint",
+                {
+                    "stat": "RES",
+                    "effect": "Resistance_Feint_T2_Effect"
+                }
             ]
         ]
     },
     {
         "nid": "Resistance_Feint_T3",
         "name": "Resistance Feint",
-        "desc": "If User uses or is targeted with a Rally assist skill, inflicts -7 Resistance onFoe with the highest bonus stats of the stats in the skill name through their next action.",
+        "desc": "If User uses or is targeted with a Rally assist skill, inflicts -7 Resistance on Foe with the highest bonus stats of the stats in the skill name through their next action.",
         "icon_nid": "CustomSkill",
         "icon_index": [
             6,
@@ -16844,6 +17005,678 @@
             [
                 "priority",
                 2
+            ],
+            [
+                "feint",
+                {
+                    "stat": "RES",
+                    "effect": "Resistance_Feint_T3_Effect"
+                }
+            ]
+        ]
+    },
+    {
+        "nid": "Strength_Feint_T1_Effect",
+        "name": "Strength Feint 1",
+        "desc": "Strength -3 through next action.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            2,
+            8
+        ],
+        "components": [
+            [
+                "stat_change",
+                [
+                    [
+                        "STR",
+                        -3
+                    ]
+                ]
+            ],
+            [
+                "lost_on_end_combat2",
+                {
+                    "lost_on_self": true,
+                    "lost_on_ally": true,
+                    "lost_on_enemy": true,
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
+                }
+            ],
+            [
+                "lost_on_next_action",
+                null
+            ],
+            [
+                "lost_on_end_chapter",
+                null
+            ],
+            [
+                "condition",
+                "not has_skill(unit, 'Strength_Feint_T2_Effect') and not has_skill(unit, 'Strength_Feint_T3_Effect')"
+            ],
+            [
+                "hidden_if_inactive",
+                null
+            ]
+        ]
+    },
+    {
+        "nid": "Strength_Feint_T2_Effect",
+        "name": "Strength Feint 2",
+        "desc": "Strength -5 through next action.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            2,
+            8
+        ],
+        "components": [
+            [
+                "stat_change",
+                [
+                    [
+                        "STR",
+                        -5
+                    ]
+                ]
+            ],
+            [
+                "lost_on_end_combat2",
+                {
+                    "lost_on_self": true,
+                    "lost_on_ally": true,
+                    "lost_on_enemy": true,
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
+                }
+            ],
+            [
+                "lost_on_next_action",
+                null
+            ],
+            [
+                "lost_on_end_chapter",
+                null
+            ],
+            [
+                "condition",
+                "not has_skill(unit, 'Strength_Feint_T3_Effect')"
+            ],
+            [
+                "hidden_if_inactive",
+                null
+            ]
+        ]
+    },
+    {
+        "nid": "Strength_Feint_T3_Effect",
+        "name": "Strength Feint 3",
+        "desc": "Strength -7 through next action.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            2,
+            8
+        ],
+        "components": [
+            [
+                "stat_change",
+                [
+                    [
+                        "STR",
+                        -7
+                    ]
+                ]
+            ],
+            [
+                "lost_on_end_combat2",
+                {
+                    "lost_on_self": true,
+                    "lost_on_ally": true,
+                    "lost_on_enemy": true,
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
+                }
+            ],
+            [
+                "lost_on_next_action",
+                null
+            ],
+            [
+                "lost_on_end_chapter",
+                null
+            ]
+        ]
+    },
+    {
+        "nid": "Magic_Feint_T1_Effect",
+        "name": "Magic Feint 1",
+        "desc": "Magic -3 through next action.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            3,
+            8
+        ],
+        "components": [
+            [
+                "stat_change",
+                [
+                    [
+                        "MAG",
+                        -3
+                    ]
+                ]
+            ],
+            [
+                "lost_on_end_combat2",
+                {
+                    "lost_on_self": true,
+                    "lost_on_ally": true,
+                    "lost_on_enemy": true,
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
+                }
+            ],
+            [
+                "lost_on_next_action",
+                null
+            ],
+            [
+                "lost_on_end_chapter",
+                null
+            ],
+            [
+                "condition",
+                "not has_skill(unit, 'Magic_Feint_T2_Effect') and not has_skill(unit, 'Magic_Feint_T3_Effect')"
+            ],
+            [
+                "hidden_if_inactive",
+                null
+            ]
+        ]
+    },
+    {
+        "nid": "Magic_Feint_T2_Effect",
+        "name": "Magic Feint 2",
+        "desc": "Magic -5 through next action.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            3,
+            8
+        ],
+        "components": [
+            [
+                "stat_change",
+                [
+                    [
+                        "MAG",
+                        -5
+                    ]
+                ]
+            ],
+            [
+                "lost_on_end_combat2",
+                {
+                    "lost_on_self": true,
+                    "lost_on_ally": true,
+                    "lost_on_enemy": true,
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
+                }
+            ],
+            [
+                "lost_on_next_action",
+                null
+            ],
+            [
+                "lost_on_end_chapter",
+                null
+            ],
+            [
+                "condition",
+                "not has_skill(unit, 'Magic_Feint_T3_Effect')"
+            ],
+            [
+                "hidden_if_inactive",
+                null
+            ]
+        ]
+    },
+    {
+        "nid": "Magic_Feint_T3_Effect",
+        "name": "Magic Feint 3",
+        "desc": "Magic -7 through next action.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            3,
+            8
+        ],
+        "components": [
+            [
+                "stat_change",
+                [
+                    [
+                        "MAG",
+                        -7
+                    ]
+                ]
+            ],
+            [
+                "lost_on_end_combat2",
+                {
+                    "lost_on_self": true,
+                    "lost_on_ally": true,
+                    "lost_on_enemy": true,
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
+                }
+            ],
+            [
+                "lost_on_next_action",
+                null
+            ],
+            [
+                "lost_on_end_chapter",
+                null
+            ]
+        ]
+    },
+    {
+        "nid": "Speed_Feint_T1_Effect",
+        "name": "Speed Feint 1",
+        "desc": "Speed -3 through next action.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            4,
+            8
+        ],
+        "components": [
+            [
+                "stat_change",
+                [
+                    [
+                        "SPD",
+                        -3
+                    ]
+                ]
+            ],
+            [
+                "lost_on_end_combat2",
+                {
+                    "lost_on_self": true,
+                    "lost_on_ally": true,
+                    "lost_on_enemy": true,
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
+                }
+            ],
+            [
+                "lost_on_next_action",
+                null
+            ],
+            [
+                "lost_on_end_chapter",
+                null
+            ],
+            [
+                "condition",
+                "not has_skill(unit, 'Speed_Feint_T2_Effect') and not has_skill(unit, 'Speed_Feint_T3_Effect')"
+            ],
+            [
+                "hidden_if_inactive",
+                null
+            ]
+        ]
+    },
+    {
+        "nid": "Speed_Feint_T2_Effect",
+        "name": "Speed Feint 2",
+        "desc": "Speed -5 through next action.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            4,
+            8
+        ],
+        "components": [
+            [
+                "stat_change",
+                [
+                    [
+                        "SPD",
+                        -5
+                    ]
+                ]
+            ],
+            [
+                "lost_on_end_combat2",
+                {
+                    "lost_on_self": true,
+                    "lost_on_ally": true,
+                    "lost_on_enemy": true,
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
+                }
+            ],
+            [
+                "lost_on_next_action",
+                null
+            ],
+            [
+                "lost_on_end_chapter",
+                null
+            ],
+            [
+                "condition",
+                "not has_skill(unit, 'Speed_Feint_T3_Effect')"
+            ],
+            [
+                "hidden_if_inactive",
+                null
+            ]
+        ]
+    },
+    {
+        "nid": "Speed_Feint_T3_Effect",
+        "name": "Speed Feint 3",
+        "desc": "Speed -7 through next action.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            4,
+            8
+        ],
+        "components": [
+            [
+                "stat_change",
+                [
+                    [
+                        "SPD",
+                        -7
+                    ]
+                ]
+            ],
+            [
+                "lost_on_end_combat2",
+                {
+                    "lost_on_self": true,
+                    "lost_on_ally": true,
+                    "lost_on_enemy": true,
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
+                }
+            ],
+            [
+                "lost_on_next_action",
+                null
+            ],
+            [
+                "lost_on_end_chapter",
+                null
+            ]
+        ]
+    },
+    {
+        "nid": "Defense_Feint_T1_Effect",
+        "name": "Defense Feint 1",
+        "desc": "Defense -3 through next action.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            5,
+            8
+        ],
+        "components": [
+            [
+                "stat_change",
+                [
+                    [
+                        "DEF",
+                        -3
+                    ]
+                ]
+            ],
+            [
+                "lost_on_end_combat2",
+                {
+                    "lost_on_self": true,
+                    "lost_on_ally": true,
+                    "lost_on_enemy": true,
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
+                }
+            ],
+            [
+                "lost_on_next_action",
+                null
+            ],
+            [
+                "lost_on_end_chapter",
+                null
+            ],
+            [
+                "condition",
+                "not has_skill(unit, 'Defense_Feint_T2_Effect') and not has_skill(unit, 'Defense_Feint_T3_Effect')"
+            ],
+            [
+                "hidden_if_inactive",
+                null
+            ]
+        ]
+    },
+    {
+        "nid": "Defense_Feint_T2_Effect",
+        "name": "Defense Feint 2",
+        "desc": "Defense -5 through next action.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            5,
+            8
+        ],
+        "components": [
+            [
+                "stat_change",
+                [
+                    [
+                        "DEF",
+                        -5
+                    ]
+                ]
+            ],
+            [
+                "lost_on_end_combat2",
+                {
+                    "lost_on_self": true,
+                    "lost_on_ally": true,
+                    "lost_on_enemy": true,
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
+                }
+            ],
+            [
+                "lost_on_next_action",
+                null
+            ],
+            [
+                "lost_on_end_chapter",
+                null
+            ],
+            [
+                "condition",
+                "not has_skill(unit, 'Defense_Feint_T3_Effect')"
+            ],
+            [
+                "hidden_if_inactive",
+                null
+            ]
+        ]
+    },
+    {
+        "nid": "Defense_Feint_T3_Effect",
+        "name": "Defense Feint 3",
+        "desc": "Defense -7 through next action.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            5,
+            8
+        ],
+        "components": [
+            [
+                "stat_change",
+                [
+                    [
+                        "DEF",
+                        -7
+                    ]
+                ]
+            ],
+            [
+                "lost_on_end_combat2",
+                {
+                    "lost_on_self": true,
+                    "lost_on_ally": true,
+                    "lost_on_enemy": true,
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
+                }
+            ],
+            [
+                "lost_on_next_action",
+                null
+            ],
+            [
+                "lost_on_end_chapter",
+                null
+            ]
+        ]
+    },
+    {
+        "nid": "Resistance_Feint_T1_Effect",
+        "name": "Resistance Feint 1",
+        "desc": "Resistance -3 through next action.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            6,
+            8
+        ],
+        "components": [
+            [
+                "stat_change",
+                [
+                    [
+                        "RES",
+                        -3
+                    ]
+                ]
+            ],
+            [
+                "lost_on_end_combat2",
+                {
+                    "lost_on_self": true,
+                    "lost_on_ally": true,
+                    "lost_on_enemy": true,
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
+                }
+            ],
+            [
+                "lost_on_next_action",
+                null
+            ],
+            [
+                "lost_on_end_chapter",
+                null
+            ],
+            [
+                "condition",
+                "not has_skill(unit, 'Resistance_Feint_T2_Effect') and not has_skill(unit, 'Resistance_Feint_T3_Effect')"
+            ],
+            [
+                "hidden_if_inactive",
+                null
+            ]
+        ]
+    },
+    {
+        "nid": "Resistance_Feint_T2_Effect",
+        "name": "Resistance Feint 2",
+        "desc": "Resistance -5 through next action.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            6,
+            8
+        ],
+        "components": [
+            [
+                "stat_change",
+                [
+                    [
+                        "RES",
+                        -5
+                    ]
+                ]
+            ],
+            [
+                "lost_on_end_combat2",
+                {
+                    "lost_on_self": true,
+                    "lost_on_ally": true,
+                    "lost_on_enemy": true,
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
+                }
+            ],
+            [
+                "lost_on_next_action",
+                null
+            ],
+            [
+                "lost_on_end_chapter",
+                null
+            ],
+            [
+                "condition",
+                "not has_skill(unit, 'Resistance_Feint_T3_Effect')"
+            ],
+            [
+                "hidden_if_inactive",
+                null
+            ]
+        ]
+    },
+    {
+        "nid": "Resistance_Feint_T3_Effect",
+        "name": "Resistance Feint 3",
+        "desc": "Resistance -7 through next action.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            6,
+            8
+        ],
+        "components": [
+            [
+                "stat_change",
+                [
+                    [
+                        "RES",
+                        -7
+                    ]
+                ]
+            ],
+            [
+                "lost_on_end_combat2",
+                {
+                    "lost_on_self": true,
+                    "lost_on_ally": true,
+                    "lost_on_enemy": true,
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
+                }
+            ],
+            [
+                "lost_on_next_action",
+                null
+            ],
+            [
+                "lost_on_end_chapter",
+                null
             ]
         ]
     },
@@ -17312,7 +18145,17 @@
                 ]
             ],
             [
-                "lost_on_endstep",
+                "lost_on_end_combat2",
+                {
+                    "lost_on_self": true,
+                    "lost_on_ally": true,
+                    "lost_on_enemy": true,
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
+                }
+            ],
+            [
+                "lost_on_next_action",
                 null
             ],
             [
@@ -17369,7 +18212,17 @@
                 ]
             ],
             [
-                "lost_on_endstep",
+                "lost_on_end_combat2",
+                {
+                    "lost_on_self": true,
+                    "lost_on_ally": true,
+                    "lost_on_enemy": true,
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
+                }
+            ],
+            [
+                "lost_on_next_action",
                 null
             ],
             [
@@ -17426,7 +18279,17 @@
                 ]
             ],
             [
-                "lost_on_endstep",
+                "lost_on_end_combat2",
+                {
+                    "lost_on_self": true,
+                    "lost_on_ally": true,
+                    "lost_on_enemy": true,
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
+                }
+            ],
+            [
+                "lost_on_next_action",
                 null
             ],
             [
@@ -17483,7 +18346,17 @@
                 ]
             ],
             [
-                "lost_on_endstep",
+                "lost_on_end_combat2",
+                {
+                    "lost_on_self": true,
+                    "lost_on_ally": true,
+                    "lost_on_enemy": true,
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
+                }
+            ],
+            [
+                "lost_on_next_action",
                 null
             ],
             [
@@ -17540,7 +18413,17 @@
                 ]
             ],
             [
-                "lost_on_endstep",
+                "lost_on_end_combat2",
+                {
+                    "lost_on_self": true,
+                    "lost_on_ally": true,
+                    "lost_on_enemy": true,
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
+                }
+            ],
+            [
+                "lost_on_next_action",
                 null
             ],
             [
@@ -17597,7 +18480,17 @@
                 ]
             ],
             [
-                "lost_on_endstep",
+                "lost_on_end_combat2",
+                {
+                    "lost_on_self": true,
+                    "lost_on_ally": true,
+                    "lost_on_enemy": true,
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
+                }
+            ],
+            [
+                "lost_on_next_action",
                 null
             ],
             [
@@ -17654,7 +18547,17 @@
                 ]
             ],
             [
-                "lost_on_endstep",
+                "lost_on_end_combat2",
+                {
+                    "lost_on_self": true,
+                    "lost_on_ally": true,
+                    "lost_on_enemy": true,
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
+                }
+            ],
+            [
+                "lost_on_next_action",
                 null
             ],
             [
@@ -17711,7 +18614,17 @@
                 ]
             ],
             [
-                "lost_on_endstep",
+                "lost_on_end_combat2",
+                {
+                    "lost_on_self": true,
+                    "lost_on_ally": true,
+                    "lost_on_enemy": true,
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
+                }
+            ],
+            [
+                "lost_on_next_action",
                 null
             ],
             [
@@ -17768,7 +18681,17 @@
                 ]
             ],
             [
-                "lost_on_endstep",
+                "lost_on_end_combat2",
+                {
+                    "lost_on_self": true,
+                    "lost_on_ally": true,
+                    "lost_on_enemy": true,
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
+                }
+            ],
+            [
+                "lost_on_next_action",
                 null
             ],
             [
@@ -17825,7 +18748,17 @@
                 ]
             ],
             [
-                "lost_on_endstep",
+                "lost_on_end_combat2",
+                {
+                    "lost_on_self": true,
+                    "lost_on_ally": true,
+                    "lost_on_enemy": true,
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
+                }
+            ],
+            [
+                "lost_on_next_action",
                 null
             ],
             [
@@ -17882,7 +18815,17 @@
                 ]
             ],
             [
-                "lost_on_endstep",
+                "lost_on_end_combat2",
+                {
+                    "lost_on_self": true,
+                    "lost_on_ally": true,
+                    "lost_on_enemy": true,
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
+                }
+            ],
+            [
+                "lost_on_next_action",
                 null
             ],
             [
@@ -17939,7 +18882,17 @@
                 ]
             ],
             [
-                "lost_on_endstep",
+                "lost_on_end_combat2",
+                {
+                    "lost_on_self": true,
+                    "lost_on_ally": true,
+                    "lost_on_enemy": true,
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
+                }
+            ],
+            [
+                "lost_on_next_action",
                 null
             ],
             [
@@ -17996,7 +18949,17 @@
                 ]
             ],
             [
-                "lost_on_endstep",
+                "lost_on_end_combat2",
+                {
+                    "lost_on_self": true,
+                    "lost_on_ally": true,
+                    "lost_on_enemy": true,
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
+                }
+            ],
+            [
+                "lost_on_next_action",
                 null
             ],
             [
@@ -18053,7 +19016,17 @@
                 ]
             ],
             [
-                "lost_on_endstep",
+                "lost_on_end_combat2",
+                {
+                    "lost_on_self": true,
+                    "lost_on_ally": true,
+                    "lost_on_enemy": true,
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
+                }
+            ],
+            [
+                "lost_on_next_action",
                 null
             ],
             [
@@ -18110,7 +19083,17 @@
                 ]
             ],
             [
-                "lost_on_endstep",
+                "lost_on_end_combat2",
+                {
+                    "lost_on_self": true,
+                    "lost_on_ally": true,
+                    "lost_on_enemy": true,
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
+                }
+            ],
+            [
+                "lost_on_next_action",
                 null
             ],
             [
@@ -18142,8 +19125,14 @@
                 0
             ],
             [
-                "resist",
-                3
+                "lull_combat_stats",
+                {
+                    "penalty": 3,
+                    "affect_attack": true,
+                    "affect_speed": true,
+                    "affect_defense": false,
+                    "affect_resistance": false
+                }
             ]
         ]
     },
@@ -18170,12 +19159,14 @@
                 1
             ],
             [
-                "dynamic_resist",
-                "5 + max(0, target.stat_bonus('MAG')) if item_funcs.is_magic(target, item2) else 5 + max(0, target.stat_bonus('STR'))"
-            ],
-            [
-                "dynamic_attack_speed",
-                "5 + max(0, target.stat_bonus('SPD'))"
+                "lull_combat_stats",
+                {
+                    "penalty": 5,
+                    "affect_attack": true,
+                    "affect_speed": true,
+                    "affect_defense": false,
+                    "affect_resistance": false
+                }
             ]
         ]
     },
@@ -18202,12 +19193,14 @@
                 2
             ],
             [
-                "dynamic_resist",
-                "7 + max(0, target.stat_bonus('MAG')) if item_funcs.is_magic(target, item2) else 7 + max(0, target.stat_bonus('STR'))"
-            ],
-            [
-                "dynamic_attack_speed",
-                "7 + max(0, target.stat_bonus('SPD'))"
+                "lull_combat_stats",
+                {
+                    "penalty": 7,
+                    "affect_attack": true,
+                    "affect_speed": true,
+                    "affect_defense": false,
+                    "affect_resistance": false
+                }
             ]
         ]
     },
@@ -18234,12 +19227,14 @@
                 0
             ],
             [
-                "dynamic_resist",
-                "3 + max(0, target.stat_bonus('MAG')) if item_funcs.is_magic(target, item2) else 3 + max(0, target.stat_bonus('STR'))"
-            ],
-            [
-                "dynamic_damage",
-                "3 + max(0, target.stat_bonus('DEF')) if not item_funcs.is_magic(unit, item) else 0"
+                "lull_combat_stats",
+                {
+                    "penalty": 3,
+                    "affect_attack": true,
+                    "affect_speed": false,
+                    "affect_defense": true,
+                    "affect_resistance": false
+                }
             ]
         ]
     },
@@ -18266,12 +19261,14 @@
                 1
             ],
             [
-                "dynamic_resist",
-                "5 + max(0, target.stat_bonus('MAG')) if item_funcs.is_magic(target, item2) else 5 + max(0, target.stat_bonus('STR'))"
-            ],
-            [
-                "dynamic_damage",
-                "5 + max(0, target.stat_bonus('DEF')) if not item_funcs.is_magic(unit, item) else 0"
+                "lull_combat_stats",
+                {
+                    "penalty": 5,
+                    "affect_attack": true,
+                    "affect_speed": false,
+                    "affect_defense": true,
+                    "affect_resistance": false
+                }
             ]
         ]
     },
@@ -18298,12 +19295,14 @@
                 2
             ],
             [
-                "dynamic_resist",
-                "7 + max(0, target.stat_bonus('MAG')) if item_funcs.is_magic(target, item2) else 7 + max(0, target.stat_bonus('STR'))"
-            ],
-            [
-                "dynamic_damage",
-                "7 + max(0, target.stat_bonus('DEF')) if not item_funcs.is_magic(unit, item) else 0"
+                "lull_combat_stats",
+                {
+                    "penalty": 7,
+                    "affect_attack": true,
+                    "affect_speed": false,
+                    "affect_defense": true,
+                    "affect_resistance": false
+                }
             ]
         ]
     },
@@ -18330,12 +19329,14 @@
                 0
             ],
             [
-                "dynamic_resist",
-                "3 + max(0, target.stat_bonus('MAG')) if item_funcs.is_magic(target, item2) else 3 + max(0, target.stat_bonus('STR'))"
-            ],
-            [
-                "dynamic_damage",
-                "3 + max(0, target.stat_bonus('RES')) if item_funcs.is_magic(unit, item) else 0"
+                "lull_combat_stats",
+                {
+                    "penalty": 3,
+                    "affect_attack": true,
+                    "affect_speed": false,
+                    "affect_defense": false,
+                    "affect_resistance": true
+                }
             ]
         ]
     },
@@ -18362,12 +19363,14 @@
                 1
             ],
             [
-                "dynamic_resist",
-                "5 + max(0, target.stat_bonus('MAG')) if item_funcs.is_magic(target, item2) else 5 + max(0, target.stat_bonus('STR'))"
-            ],
-            [
-                "dynamic_damage",
-                "5 + max(0, target.stat_bonus('RES')) if item_funcs.is_magic(unit, item) else 0"
+                "lull_combat_stats",
+                {
+                    "penalty": 5,
+                    "affect_attack": true,
+                    "affect_speed": false,
+                    "affect_defense": false,
+                    "affect_resistance": true
+                }
             ]
         ]
     },
@@ -18394,12 +19397,14 @@
                 2
             ],
             [
-                "dynamic_resist",
-                "7 + max(0, target.stat_bonus('MAG')) if item_funcs.is_magic(target, item2) else 7 + max(0, target.stat_bonus('STR'))"
-            ],
-            [
-                "dynamic_damage",
-                "7 + max(0, target.stat_bonus('RES')) if item_funcs.is_magic(unit, item) else 0"
+                "lull_combat_stats",
+                {
+                    "penalty": 7,
+                    "affect_attack": true,
+                    "affect_speed": false,
+                    "affect_defense": false,
+                    "affect_resistance": true
+                }
             ]
         ]
     },
@@ -18426,12 +19431,14 @@
                 0
             ],
             [
-                "dynamic_attack_speed",
-                "3 + max(0, target.stat_bonus('SPD'))"
-            ],
-            [
-                "dynamic_damage",
-                "3 + max(0, target.stat_bonus('DEF')) if not item_funcs.is_magic(unit, item) else 0"
+                "lull_combat_stats",
+                {
+                    "penalty": 3,
+                    "affect_attack": false,
+                    "affect_speed": true,
+                    "affect_defense": true,
+                    "affect_resistance": false
+                }
             ]
         ]
     },
@@ -18458,12 +19465,14 @@
                 1
             ],
             [
-                "dynamic_attack_speed",
-                "5 + max(0, target.stat_bonus('SPD'))"
-            ],
-            [
-                "dynamic_damage",
-                "5 + max(0, target.stat_bonus('DEF')) if not item_funcs.is_magic(unit, item) else 0"
+                "lull_combat_stats",
+                {
+                    "penalty": 5,
+                    "affect_attack": false,
+                    "affect_speed": true,
+                    "affect_defense": true,
+                    "affect_resistance": false
+                }
             ]
         ]
     },
@@ -18490,12 +19499,14 @@
                 2
             ],
             [
-                "dynamic_attack_speed",
-                "7 + max(0, target.stat_bonus('SPD'))"
-            ],
-            [
-                "dynamic_damage",
-                "7 + max(0, target.stat_bonus('DEF')) if not item_funcs.is_magic(unit, item) else 0"
+                "lull_combat_stats",
+                {
+                    "penalty": 7,
+                    "affect_attack": false,
+                    "affect_speed": true,
+                    "affect_defense": true,
+                    "affect_resistance": false
+                }
             ]
         ]
     },
@@ -18522,12 +19533,14 @@
                 0
             ],
             [
-                "dynamic_attack_speed",
-                "3 + max(0, target.stat_bonus('SPD'))"
-            ],
-            [
-                "dynamic_damage",
-                "3 + max(0, target.stat_bonus('RES')) if item_funcs.is_magic(unit, item) else 0"
+                "lull_combat_stats",
+                {
+                    "penalty": 3,
+                    "affect_attack": false,
+                    "affect_speed": true,
+                    "affect_defense": false,
+                    "affect_resistance": true
+                }
             ]
         ]
     },
@@ -18554,12 +19567,14 @@
                 1
             ],
             [
-                "dynamic_attack_speed",
-                "5 + max(0, target.stat_bonus('SPD'))"
-            ],
-            [
-                "dynamic_damage",
-                "5 + max(0, target.stat_bonus('RES')) if item_funcs.is_magic(unit, item) else 0"
+                "lull_combat_stats",
+                {
+                    "penalty": 5,
+                    "affect_attack": false,
+                    "affect_speed": true,
+                    "affect_defense": false,
+                    "affect_resistance": true
+                }
             ]
         ]
     },
@@ -18586,12 +19601,14 @@
                 2
             ],
             [
-                "dynamic_attack_speed",
-                "7 + max(0, target.stat_bonus('SPD'))"
-            ],
-            [
-                "dynamic_damage",
-                "7 + max(0, target.stat_bonus('RES')) if item_funcs.is_magic(unit, item) else 0"
+                "lull_combat_stats",
+                {
+                    "penalty": 7,
+                    "affect_attack": false,
+                    "affect_speed": true,
+                    "affect_defense": false,
+                    "affect_resistance": true
+                }
             ]
         ]
     },
@@ -18854,7 +19871,7 @@
                 "mode == 'attack'"
             ],
             [
-                "better_post_combat_damage",
+                "surviving_initiator_post_combat_damage",
                 4
             ],
             [
@@ -18886,7 +19903,7 @@
                 "mode == 'attack'"
             ],
             [
-                "better_post_combat_damage",
+                "surviving_initiator_post_combat_damage",
                 7
             ],
             [
@@ -18918,7 +19935,7 @@
                 "mode == 'attack'"
             ],
             [
-                "better_post_combat_damage",
+                "surviving_initiator_post_combat_damage",
                 10
             ],
             [
@@ -18954,7 +19971,7 @@
                 "mode == 'attack'"
             ],
             [
-                "better_post_combat_damage",
+                "surviving_initiator_post_combat_damage",
                 7
             ],
             [
@@ -19033,7 +20050,7 @@
                 "mode == 'attack'"
             ],
             [
-                "better_post_combat_damage",
+                "surviving_initiator_post_combat_damage",
                 7
             ],
             [
@@ -19204,7 +20221,7 @@
                 0
             ],
             [
-                "do_nothing",
+                "cancel_affinity",
                 1
             ]
         ]
@@ -19232,8 +20249,8 @@
                 1
             ],
             [
-                "do_nothing",
-                1
+                "cancel_affinity",
+                2
             ]
         ]
     },
@@ -19260,8 +20277,8 @@
                 2
             ],
             [
-                "do_nothing",
-                1
+                "cancel_affinity",
+                3
             ]
         ]
     },
@@ -19288,8 +20305,12 @@
                 0
             ],
             [
-                "do_nothing",
-                1
+                "combat_condition",
+                "mode == 'attack'"
+            ],
+            [
+                "special_spiral_bonus",
+                10
             ]
         ]
     },
@@ -19316,8 +20337,8 @@
                 1
             ],
             [
-                "do_nothing",
-                1
+                "special_spiral_bonus",
+                10
             ]
         ]
     },
@@ -19344,8 +20365,8 @@
                 2
             ],
             [
-                "do_nothing",
-                1
+                "special_spiral_bonus",
+                20
             ]
         ]
     },
@@ -19373,6 +20394,10 @@
             ],
             [
                 "negate_cannot_be_countered",
+                null
+            ],
+            [
+                "neutralize_lower_def_res",
                 null
             ],
             [
@@ -19408,6 +20433,10 @@
                 null
             ],
             [
+                "neutralize_lower_def_res",
+                null
+            ],
+            [
                 "post_combat_healing",
                 6
             ]
@@ -19440,6 +20469,10 @@
                 null
             ],
             [
+                "neutralize_lower_def_res",
+                null
+            ],
+            [
                 "post_combat_healing",
                 7
             ]
@@ -19448,7 +20481,7 @@
     {
         "nid": "Sudden_Panic_T1",
         "name": "Sudden Panic",
-        "desc": "At the start of turn, if Foe's HP is lower than User's HP - 5 and Foe is within 3 spaces of another Foe, converts bonuses on those Foes into penalties through their next action.",
+        "desc": "At the start of combat, if Foe's HP is lower than User's HP - 5 and Foe is within 3 spaces of another Foe, converts bonuses on that Foe into penalties through their next action.",
         "icon_nid": "Skills",
         "icon_index": [
             0,
@@ -19468,15 +20501,19 @@
                 0
             ],
             [
-                "do_nothing",
-                1
+                "combat_condition",
+                "target is not None and target.position is not None and target.get_hp() > 0 and skill_system.check_enemy(unit, target) and target.get_hp() < unit.get_hp() - 5 and any(other is not target and other.position is not None and other.get_hp() > 0 and skill_system.check_enemy(unit, other) and other.team == target.team and utils.calculate_distance(target.position, other.position) <= 3 for other in game.get_all_units())"
+            ],
+            [
+                "event_before_combat",
+                "Global SuddenPanicApply"
             ]
         ]
     },
     {
         "nid": "Sudden_Panic_T2",
         "name": "Sudden Panic",
-        "desc": "At the start of turn, if Foe's HP is lower than User's HP - 3 and Foe is within 5 spaces of another Foe, converts bonuses on those Foes into penalties through their next action.",
+        "desc": "At the start of combat, if Foe's HP is lower than User's HP - 3 and Foe is within 5 spaces of another Foe, converts bonuses on that Foe into penalties through their next action.",
         "icon_nid": "Skills",
         "icon_index": [
             0,
@@ -19496,15 +20533,19 @@
                 1
             ],
             [
-                "do_nothing",
-                1
+                "combat_condition",
+                "target is not None and target.position is not None and target.get_hp() > 0 and skill_system.check_enemy(unit, target) and target.get_hp() < unit.get_hp() - 3 and any(other is not target and other.position is not None and other.get_hp() > 0 and skill_system.check_enemy(unit, other) and other.team == target.team and utils.calculate_distance(target.position, other.position) <= 5 for other in game.get_all_units())"
+            ],
+            [
+                "event_before_combat",
+                "Global SuddenPanicApply"
             ]
         ]
     },
     {
         "nid": "Sudden_Panic_T3",
         "name": "Sudden Panic",
-        "desc": "At the start of turn, if Foe's HP is lower than User's HP - 1 and Foe is within 7 spaces of another Foe, converts bonuses on those Foes into penalties through their next action.",
+        "desc": "At the start of combat, if Foe's HP is lower than User's HP - 1 and Foe is within 7 spaces of another Foe, converts bonuses on that Foe into penalties through their next action.",
         "icon_nid": "Skills",
         "icon_index": [
             0,
@@ -19524,8 +20565,69 @@
                 2
             ],
             [
-                "do_nothing",
+                "combat_condition",
+                "target is not None and target.position is not None and target.get_hp() > 0 and skill_system.check_enemy(unit, target) and target.get_hp() < unit.get_hp() - 1 and any(other is not target and other.position is not None and other.get_hp() > 0 and skill_system.check_enemy(unit, other) and other.team == target.team and utils.calculate_distance(target.position, other.position) <= 7 for other in game.get_all_units())"
+            ],
+            [
+                "event_before_combat",
+                "Global SuddenPanicApply"
+            ]
+        ]
+    },
+    {
+        "nid": "Sudden_Panic_Effect",
+        "name": "Sudden Panic",
+        "desc": "Bonuses are converted into penalties through the next action.",
+        "icon_nid": "Skills",
+        "icon_index": [
+            0,
+            0
+        ],
+        "components": [
+            [
+                "stat_change",
+                [
+                    [
+                        "STR",
+                        0
+                    ],
+                    [
+                        "MAG",
+                        0
+                    ],
+                    [
+                        "SKL",
+                        0
+                    ],
+                    [
+                        "SPD",
+                        0
+                    ],
+                    [
+                        "LCK",
+                        0
+                    ],
+                    [
+                        "DEF",
+                        0
+                    ],
+                    [
+                        "RES",
+                        0
+                    ]
+                ]
+            ],
+            [
+                "event_on_wait",
+                "Global SuddenPanicExpire"
+            ],
+            [
+                "priority",
                 1
+            ],
+            [
+                "lost_on_end_chapter",
+                null
             ]
         ]
     },
@@ -19632,8 +20734,8 @@
                 null
             ],
             [
-                "regeneration",
-                0.5
+                "eval_regeneration",
+                "10"
             ],
             [
                 "condition",
@@ -19641,7 +20743,7 @@
             ],
             [
                 "priority",
-                2
+                0
             ]
         ]
     },
@@ -19664,8 +20766,8 @@
                 null
             ],
             [
-                "regeneration",
-                0.5
+                "eval_regeneration",
+                "15"
             ],
             [
                 "condition",
@@ -19673,7 +20775,7 @@
             ],
             [
                 "priority",
-                2
+                1
             ]
         ]
     },
@@ -19696,8 +20798,8 @@
                 null
             ],
             [
-                "regeneration",
-                0.5
+                "eval_regeneration",
+                "20"
             ],
             [
                 "condition",
@@ -19733,7 +20835,7 @@
             ],
             [
                 "combat_condition",
-                "unit.get_stat('SPD') >= (target.get_stat('SPD') - 5)"
+                "unit.get_stat('SPD') > (target.get_stat('SPD') - 5)"
             ],
             [
                 "dynamic_damage",
@@ -19769,7 +20871,7 @@
             ],
             [
                 "combat_condition",
-                "unit.get_stat('SPD') >= (target.get_stat('SPD') - 6)"
+                "unit.get_stat('SPD') > (target.get_stat('SPD') - 6)"
             ],
             [
                 "dynamic_damage",
@@ -19805,7 +20907,7 @@
             ],
             [
                 "combat_condition",
-                "unit.get_stat('SPD') >= (target.get_stat('SPD') - 7)"
+                "unit.get_stat('SPD') > (target.get_stat('SPD') - 7)"
             ],
             [
                 "dynamic_damage",
@@ -19841,7 +20943,7 @@
             ],
             [
                 "combat_condition",
-                "unit.get_stat('SPD') >= (target.get_stat('SPD') - 7)"
+                "unit.get_stat('SPD') > (target.get_stat('SPD') - 7)"
             ],
             [
                 "dynamic_damage",
@@ -20017,7 +21119,7 @@
             ],
             [
                 "combat_condition",
-                "unit.get_stat('RES') > target.get_stat('RES')"
+                "unit.get_stat('RES') + skill_system.comparison_stat_bonus(unit, 'RES') > target.get_stat('RES')"
             ],
             [
                 "resist_multiplier",
@@ -20049,7 +21151,7 @@
             ],
             [
                 "combat_condition",
-                "unit.get_stat('RES') > target.get_stat('RES')"
+                "unit.get_stat('RES') + skill_system.comparison_stat_bonus(unit, 'RES') > target.get_stat('RES')"
             ],
             [
                 "resist_multiplier",
@@ -20081,7 +21183,7 @@
             ],
             [
                 "combat_condition",
-                "unit.get_stat('RES') > target.get_stat('RES')"
+                "unit.get_stat('RES') + skill_system.comparison_stat_bonus(unit, 'RES') > target.get_stat('RES')"
             ],
             [
                 "resist_multiplier",
@@ -20113,7 +21215,11 @@
             ],
             [
                 "combat_condition",
-                "unit.get_stat('RES') + 5 > target.get_stat('RES')"
+                "unit.get_stat('RES') + skill_system.comparison_stat_bonus(unit, 'RES') > target.get_stat('RES')"
+            ],
+            [
+                "comparison_stat_bonus",
+                5
             ],
             [
                 "resist_multiplier",
@@ -20292,8 +21398,11 @@
                 "unit.get_hp() < unit.get_max_hp() * 0.25"
             ],
             [
-                "modify_self_proc_rate",
-                10
+                "wrath_special_bonus",
+                {
+                    "proc_rate_bonus": 10,
+                    "damage_bonus": 10
+                }
             ]
         ]
     },
@@ -20324,8 +21433,11 @@
                 "unit.get_hp() < unit.get_max_hp() * 0.25"
             ],
             [
-                "modify_self_proc_rate",
-                15
+                "wrath_special_bonus",
+                {
+                    "proc_rate_bonus": 15,
+                    "damage_bonus": 10
+                }
             ]
         ]
     },
@@ -20356,8 +21468,11 @@
                 "unit.get_hp() < unit.get_max_hp() * 0.25"
             ],
             [
-                "modify_self_proc_rate",
-                20
+                "wrath_special_bonus",
+                {
+                    "proc_rate_bonus": 20,
+                    "damage_bonus": 10
+                }
             ]
         ]
     },
@@ -20384,8 +21499,12 @@
                 0
             ],
             [
-                "do_nothing",
-                1
+                "combat_condition",
+                "mode == 'defense'"
+            ],
+            [
+                "special_skill_pulse",
+                3
             ]
         ]
     },
@@ -20412,8 +21531,12 @@
                 1
             ],
             [
-                "do_nothing",
-                1
+                "combat_condition",
+                "mode == 'defense'"
+            ],
+            [
+                "special_skill_pulse",
+                4
             ]
         ]
     },
@@ -20440,8 +21563,12 @@
                 2
             ],
             [
-                "do_nothing",
-                1
+                "combat_condition",
+                "mode == 'defense'"
+            ],
+            [
+                "special_skill_pulse",
+                5
             ]
         ]
     },
@@ -20468,8 +21595,12 @@
                 0
             ],
             [
-                "do_nothing",
-                1
+                "combat_condition",
+                "mode == 'attack'"
+            ],
+            [
+                "special_skill_pulse",
+                3
             ]
         ]
     },
@@ -20496,8 +21627,12 @@
                 1
             ],
             [
-                "do_nothing",
-                1
+                "combat_condition",
+                "mode == 'attack'"
+            ],
+            [
+                "special_skill_pulse",
+                4
             ]
         ]
     },
@@ -20524,8 +21659,12 @@
                 2
             ],
             [
-                "do_nothing",
-                1
+                "combat_condition",
+                "mode == 'attack'"
+            ],
+            [
+                "special_skill_pulse",
+                5
             ]
         ]
     },
@@ -20552,8 +21691,8 @@
                 0
             ],
             [
-                "do_nothing",
-                1
+                "obstruct",
+                0.9
             ]
         ]
     },
@@ -20580,8 +21719,8 @@
                 1
             ],
             [
-                "do_nothing",
-                1
+                "obstruct",
+                0.7
             ]
         ]
     },
@@ -20608,8 +21747,8 @@
                 2
             ],
             [
-                "do_nothing",
-                1
+                "obstruct",
+                0.5
             ]
         ]
     },
@@ -25636,10 +26775,6 @@
                 "Global PanicPloySkill"
             ],
             [
-                "event_after_combat",
-                "Global PanicPloySkill2"
-            ],
-            [
                 "self_nihil",
                 [
                     "Atk_Spd_Bond_T4",
@@ -25682,10 +26817,6 @@
             [
                 "event_before_combat",
                 "Global PanicPloySkill"
-            ],
-            [
-                "event_after_combat",
-                "Global PanicPloySkill2"
             ],
             [
                 "self_nihil",
@@ -25732,10 +26863,6 @@
                 "Global PanicPloySkill"
             ],
             [
-                "event_after_combat",
-                "Global PanicPloySkill2"
-            ],
-            [
                 "self_nihil",
                 [
                     "Atk_Spd_Bond_T4",
@@ -25746,6 +26873,69 @@
                     "Slick_Fighter_T2",
                     "Slick_Fighter_T3"
                 ]
+            ]
+        ]
+    },
+    {
+        "nid": "Panic_Ploy_Effect",
+        "name": "Panic Ploy",
+        "desc": "Bonuses are converted into penalties for this combat.",
+        "icon_nid": "CustomSkill",
+        "icon_index": [
+            4,
+            2
+        ],
+        "components": [
+            [
+                "stat_change",
+                [
+                    [
+                        "STR",
+                        0
+                    ],
+                    [
+                        "MAG",
+                        0
+                    ],
+                    [
+                        "SKL",
+                        0
+                    ],
+                    [
+                        "SPD",
+                        0
+                    ],
+                    [
+                        "LCK",
+                        0
+                    ],
+                    [
+                        "DEF",
+                        0
+                    ],
+                    [
+                        "RES",
+                        0
+                    ]
+                ]
+            ],
+            [
+                "lost_on_end_combat2",
+                {
+                    "lost_on_self": true,
+                    "lost_on_ally": true,
+                    "lost_on_enemy": true,
+                    "lost_on_splash": true,
+                    "only_if_initiated": false
+                }
+            ],
+            [
+                "hidden",
+                null
+            ],
+            [
+                "lost_on_end_chapter",
+                null
             ]
         ]
     },
@@ -25778,10 +26968,6 @@
             [
                 "event_after_combat",
                 "Global StallPloySkill"
-            ],
-            [
-                "give_status_after_combat",
-                "Stall_Ploy_Effect"
             ],
             [
                 "self_nihil",
@@ -25828,10 +27014,6 @@
                 "Global StallPloySkill"
             ],
             [
-                "give_status_after_combat",
-                "Stall_Ploy_Effect"
-            ],
-            [
                 "self_nihil",
                 [
                     "Atk_Spd_Bond_T4",
@@ -25876,10 +27058,6 @@
                 "Global StallPloySkill"
             ],
             [
-                "give_status_after_combat",
-                "Stall_Ploy_Effect"
-            ],
-            [
                 "self_nihil",
                 [
                     "Atk_Spd_Bond_T4",
@@ -25904,12 +27082,17 @@
         ],
         "components": [
             [
-                "lost_on_end_chapter",
-                null
+                "stat_change",
+                [
+                    [
+                        "MOV",
+                        0
+                    ]
+                ]
             ],
             [
-                "event_on_remove",
-                "Global StallPloySkill2"
+                "lost_on_end_chapter",
+                null
             ],
             [
                 "lost_on_endstep",
@@ -32064,6 +33247,21 @@
             [
                 "allowed_weapons",
                 "item_system.is_weapon(unit, item)"
+            ],
+            [
+                "astra_proc",
+                {
+                    "extra_attacks": 4,
+                    "damage_percent": 0.5,
+                    "show_proc_effects": true
+                }
+            ],
+            [
+                "stardust_mirage_bonus",
+                {
+                    "speed_damage_percent": 0.1,
+                    "disable_crit": true
+                }
             ],
             [
                 "proc_rate",

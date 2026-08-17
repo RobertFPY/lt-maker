@@ -1,3 +1,5 @@
+from functools import reduce
+from operator import mul
 from typing import List, Optional, Tuple
 from app.engine.utils.ltcache import ltcached
 from app.engine.combat_calcs_utils import resolve_defensive_formula, resolve_offensive_formula
@@ -93,6 +95,23 @@ def get_support_rank_bonus(unit, target=None):
     bonuses = [_[0] for _ in bonuses]
     return bonuses, allies
 
+
+def _weapon_triangle_modifier_sources(unit, item):
+    """Return weapon-triangle multipliers split by item and skill source."""
+    item_values = [
+        component.modify_weapon_triangle(unit, item)
+        for component in getattr(item, 'components', [])
+        if component.defines('modify_weapon_triangle')]
+    override_components = (skill_system.item_override(unit, item)
+                           if hasattr(unit, 'skills') else [])
+    skill_values = [
+        component.modify_weapon_triangle(unit, item)
+        for component in override_components
+        if component.defines('modify_weapon_triangle')]
+    return (reduce(mul, item_values, 1),
+            reduce(mul, skill_values, 1))
+
+
 @ltcached
 def compute_advantage(unit1, unit2, item1, item2, advantage=True) -> Optional[weapons.CombatBonus]:
     if not item1 or not item2:
@@ -105,8 +124,19 @@ def compute_advantage(unit1, unit2, item1, item2, advantage=True) -> Optional[we
             item_system.ignore_weapon_advantage(unit2, item2):
         return None
 
-    w_mod1 = item_system.modify_weapon_triangle(unit1, item1)
-    w_mod2 = item_system.modify_weapon_triangle(unit2, item2)
+    item_mod1, skill_mod1 = _weapon_triangle_modifier_sources(unit1, item1)
+    item_mod2, skill_mod2 = _weapon_triangle_modifier_sources(unit2, item2)
+    item_final_w_mod = utils.sign(item_mod1) * utils.sign(item_mod2) * max(abs(item_mod1), abs(item_mod2))
+    has_disadvantage = (1 if advantage else -1) * utils.sign(item_final_w_mod) < 0
+    multiplier_override = None
+    if hasattr(unit1, 'skills'):
+        multiplier_override = skill_system.weapon_triangle_multiplier_override(
+            unit1, item1, unit2, item2, has_disadvantage, skill_mod1, skill_mod2)
+    if multiplier_override is not None:
+        skill_mod1, skill_mod2 = multiplier_override
+
+    w_mod1 = item_mod1 * skill_mod1
+    w_mod2 = item_mod2 * skill_mod2
     final_w_mod = utils.sign(w_mod1) * utils.sign(w_mod2) * max(abs(w_mod1), abs(w_mod2))
 
     if advantage:
@@ -140,12 +170,35 @@ def compute_advantage_attr(attacker, defender, weapon, def_weapon, attribute: st
         mod += int(getattr(disadv, attribute))
     return mod
 
+
+def _can_be_countered_sources(unit, item) -> Tuple[bool, bool]:
+    """Return counterability from the item itself and from skill overrides."""
+    # Keep the existing behavior for lightweight callers that do not provide
+    # real UnitObject/ItemObject instances (for example, legacy test doubles).
+    if not hasattr(unit, 'skills') or not hasattr(item, 'components'):
+        return item_system.can_be_countered(unit, item), True
+
+    base_values = [
+        component.can_be_countered(unit, item)
+        for component in item.components
+        if component.defines('can_be_countered')]
+    override_values = [
+        component.can_be_countered(unit, item)
+        for component in skill_system.item_override(unit, item)
+        if component.defines('can_be_countered')]
+    return (bool(base_values) and all(base_values),
+            all(override_values))
+
+
 def can_counterattack(attacker, aweapon, defender, dweapon) -> bool:
     if not dweapon:
         return False
     if not item_funcs.available(defender, dweapon):
         return False
-    if not item_system.can_be_countered(attacker, aweapon) and not skill_system.negate_cannot_be_countered(defender):
+    base_can_be_countered, override_can_be_countered = _can_be_countered_sources(attacker, aweapon)
+    if not base_can_be_countered:
+        return False
+    if not override_can_be_countered and not skill_system.negate_cannot_be_countered(defender):
         return False
     if not item_system.can_counter(defender, dweapon):
         return False

@@ -47,7 +47,10 @@ class PathSystem():
         else:
             # Feed the unit's team into the function
             can_move_through = functools.partial(self.game.board.can_move_through, unit.team)
-        valid_moves = pathfinder.process(can_move_through, movement_left)
+        can_continue_through = lambda pos: (
+            pos == start_pos or not movement_funcs.is_obstructed(unit, pos))
+        valid_moves = pathfinder.process(
+            can_move_through, movement_left, can_continue_through)
         valid_moves.add(unit.position)
         if witch_warp:
             witch_warp = set(skill_system.witch_warp(unit))
@@ -78,7 +81,10 @@ class PathSystem():
             # Feed the unit's team into the function
             can_move_through = functools.partial(self.game.board.can_move_through, unit.team)
 
-        valid_moves = pathfinder.process(can_move_through, movement_left)
+        can_continue_through = lambda pos: (
+            pos == start_pos or not movement_funcs.is_obstructed(unit, pos))
+        valid_moves = pathfinder.process(
+            can_move_through, movement_left, can_continue_through)
         return valid_moves
 
     def get_path(self, unit: UnitObject, position: Pos, ally_block: bool = False, 
@@ -113,7 +119,11 @@ class PathSystem():
         else:
             pathfinder = pathfinding.AStar(start_pos, position, grid)
 
-        path = pathfinder.process(can_move_through, limit=use_limit)
+        can_continue_through = None if free_movement else lambda pos: (
+            pos == start_pos or not movement_funcs.is_obstructed(unit, pos))
+        path = pathfinder.process(
+            can_move_through, limit=use_limit,
+            can_continue_through=can_continue_through)
         if path is None:
             return []
         return path
@@ -139,6 +149,8 @@ class PathSystem():
             mcost = movement_funcs.get_mcost(unit, pos)
             movement -= mcost
             if movement < 0:
+                return False
+            if pos != path[0] and movement_funcs.is_obstructed(unit, pos):
                 return False
             prev_pos = pos
         return True

@@ -48,6 +48,17 @@ def check_weakly_traversable(unit_to_move: UnitObject, pos: Tuple[int, int]) -> 
     movement = unit_to_move.get_movement()
     return mcost <= 5 or mcost <= movement
 
+def is_obstructed(unit_to_move: UnitObject, pos: Tuple[int, int]) -> bool:
+    if skill_system.pass_through(unit_to_move):
+        return False
+    if not game.target_system:
+        return False
+    for adjacent_pos in game.target_system.get_adjacent_positions(pos):
+        holder = game.board.get_unit(adjacent_pos)
+        if holder and skill_system.obstructs_movement(holder, unit_to_move):
+            return True
+    return False
+
 def check_simple_traversable(pos: Tuple[int, int]) -> bool:
     if not game.board.check_bounds(pos):
         return False
@@ -69,6 +80,8 @@ def check_position(unit: UnitObject, new_position: Tuple[int, int],
     # Event movement is nearly always valid
     if event:
         return True
+    elif not is_final_pos and is_obstructed(unit, new_position):
+        return False
     elif skill_system.pass_through(unit):
         # If this is the final position
         if is_final_pos and game.board.get_unit(new_position):

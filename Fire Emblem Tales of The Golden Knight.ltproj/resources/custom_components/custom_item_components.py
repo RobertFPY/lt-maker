@@ -34,6 +34,90 @@ class DoNothing(ItemComponent):
     expose = ComponentType.Int
     value = 1
 
+
+class RallyAssist(ItemComponent):
+    nid = 'rally_assist'
+    desc = 'Triggers Feint skills after this Rally assist successfully hits an ally.'
+    tag = ItemTags.CUSTOM
+
+    def __init__(self, value=None):
+        super().__init__(value)
+        self._hit_targets = []
+
+    @staticmethod
+    def _skill_priority(skill):
+        for component in skill.components:
+            if component.nid == 'priority':
+                try:
+                    return int(component.value)
+                except (TypeError, ValueError):
+                    return 0
+        return 0
+
+    @classmethod
+    def _highest_feints_by_stat(cls, owner):
+        selected = {}
+        for index, skill in enumerate(owner.skills):
+            if not skill_system.condition(skill, owner):
+                continue
+            skill_uid = getattr(skill, 'uid', index)
+            if skill_uid is None:
+                skill_uid = index
+            for component in skill.components:
+                if component.nid != 'feint' or not isinstance(component.value, dict):
+                    continue
+                stat_nid = component.value.get('stat')
+                effect_nid = component.value.get('effect')
+                if not stat_nid or not effect_nid:
+                    continue
+                candidate = (cls._skill_priority(skill), skill_uid, component)
+                previous = selected.get(stat_nid)
+                if previous is None or candidate[:2] > previous[:2]:
+                    selected[stat_nid] = candidate
+        return selected
+
+    @staticmethod
+    def _target_with_highest_bonus(owner, stat_nid):
+        target = None
+        highest_bonus = 0
+        for candidate in game.units:
+            if not candidate.position or candidate.get_hp() <= 0:
+                continue
+            if not skill_system.check_enemy(owner, candidate):
+                continue
+            bonus = candidate.stat_bonus(stat_nid)
+            if bonus > highest_bonus:
+                target = candidate
+                highest_bonus = bonus
+        return target
+
+    @classmethod
+    def _resolve_feints(cls, owner):
+        for stat_nid, (_, _, component) in cls._highest_feints_by_stat(owner).items():
+            target = cls._target_with_highest_bonus(owner, stat_nid)
+            if target:
+                action.do(action.AddSkill(target, component.value['effect'], owner))
+
+    def start_combat(self, playback, unit, item, target, item2, mode):
+        self._hit_targets.clear()
+
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
+        if target and skill_system.check_ally(unit, target):
+            self._hit_targets.append(target)
+
+    def end_combat(self, playback, unit, item, target, item2, mode):
+        if not self._hit_targets:
+            return
+        owners = []
+        for owner in [unit] + self._hit_targets:
+            if owner and owner not in owners:
+                owners.append(owner)
+        try:
+            for owner in owners:
+                self._resolve_feints(owner)
+        finally:
+            self._hit_targets.clear()
+
 class StealFullInventoryWIP(ItemComponent):
     nid = 'steal_full_inventory'
     desc = "Steal any unequipped item from target on hit"

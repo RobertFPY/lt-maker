@@ -146,7 +146,7 @@ class AndroidSoundRoomRound2SourceTests(unittest.TestCase):
 
     def test_soundroom_routes_stream_and_has_cleanup_paths(self):
         for token in (
-            'play_streamed_preview', 'stop_streamed_preview',
+            'play_preview', 'should_defer_preview', 'stop_streamed_preview',
             'is_android_render_optimization_enabled',
         ):
             self.assertIn(token, self.base_source)
@@ -163,18 +163,20 @@ class AndroidSoundRoomRound2SourceTests(unittest.TestCase):
         for token in (
             "event == 'SELECT'", "event == 'INFO'", "event == 'AUX'",
             "event == 'START'", "event == 'BACK'", 'battle=True',
-            'fade_in(music)', '_queue_stream_preview(music)',
+            'play_music(music)', '_queue_stream_preview(music)',
             '_queue_stream_preview(music, battle=True)',
-            'play_streamed_music(\n                        music, fade_in=50)',
+            'play_music(music, fade_in=50)',
         ):
             self.assertIn(token, take_input_source)
+        self.assertNotIn('is_android_runtime()', take_input_source)
         pending_preview = next(
             node for node in soundroom.body
             if isinstance(node, ast.FunctionDef) and node.name == '_play_pending_stream_preview'
         )
         pending_preview_source = ast.get_source_segment(self.base_source, pending_preview)
-        self.assertIn('play_streamed_preview(music, battle=battle)', pending_preview_source)
-        self.assertIn('play_legacy_preview(music, battle=battle)', pending_preview_source)
+        self.assertIn('play_preview(music, battle=battle)', pending_preview_source)
+        self.assertNotIn('play_streamed_preview(', pending_preview_source)
+        self.assertNotIn('play_legacy_preview(', pending_preview_source)
         self.assertIn("sound_thread.play_sfx('Error')", pending_preview_source)
         self.assertIn('self.playing = False', pending_preview_source)
 

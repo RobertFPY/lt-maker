@@ -10,6 +10,10 @@
   "android_minapi": 26,
   "android_ndk": 29,
   "android_arch": "arm64-v8a",
+  "supported_android_arches": [
+    "arm64-v8a",
+    "x86_64"
+  ],
   "serialization_version": 1,
   "build_mode": "debug",
   "development_signer": {

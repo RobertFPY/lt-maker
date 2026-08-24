@@ -1,0 +1,167 @@
+{
+  "schema_version": 1,
+  "reference_revision": "9314f54b49f4552b5a3d023b4da0012ce7dfbc89",
+  "scenarios": [
+    {
+      "schema_version": 1,
+      "reference_revision": "9314f54b49f4552b5a3d023b4da0012ce7dfbc89",
+      "scenario_id": "01_new_game_first_playable_map",
+      "input_fixture_id": "testing_proj_chapter_0_seed_1701_v1",
+      "fixture_path": "app/tests/fixtures/recovery_traces/v1/01_new_game_first_playable_map.jsonl",
+      "sha256": "17FB4C8F9417D463879FE19607E5B869CC75452F5659F187AC20555EEB662E75",
+      "checkpoint_ids": ["player.control.ready"]
+    },
+    {
+      "schema_version": 1,
+      "reference_revision": "9314f54b49f4552b5a3d023b4da0012ce7dfbc89",
+      "scenario_id": "02_existing_save_load",
+      "input_fixture_id": "testing_proj_chapter_0_seed_1701_in_memory_save_v1",
+      "fixture_path": "app/tests/fixtures/recovery_traces/v1/02_existing_save_load.jsonl",
+      "sha256": "43B5680F6E7FCEAED5F423831D073522317E3EA49E55B27E31FE9C375865B539",
+      "checkpoint_ids": ["save.restore.complete"]
+    },
+    {
+      "scenario_id": "03_event_save_load",
+      "status": "N/A — REFERENCE-UNSUPPORTED"
+    },
+    {
+      "schema_version": 1,
+      "reference_revision": "9314f54b49f4552b5a3d023b4da0012ce7dfbc89",
+      "scenario_id": "04_restart_current_chapter",
+      "input_fixture_id": "testing_proj_chapter_0_restart_slot_seed_1701_v1",
+      "fixture_path": "app/tests/fixtures/recovery_traces/v1/04_restart_current_chapter.jsonl",
+      "sha256": "636547840913373410FB6612A528494B11DBDA0CEB22A2A7E9F835272F040428",
+      "checkpoint_ids": ["restart.complete"]
+    },
+    {
+      "schema_version": 1,
+      "reference_revision": "9314f54b49f4552b5a3d023b4da0012ce7dfbc89",
+      "scenario_id": "05_standard_map_combat",
+      "input_fixture_id": "testing_proj_chapter_0_eirika_map_combat_seed_1701_v1",
+      "fixture_path": "app/tests/fixtures/recovery_traces/v1/05_standard_map_combat.jsonl",
+      "sha256": "F545EA0ECA7588EEBC5DF018F1FE7F185B285E73252CDA9F4C17244CF5FFEADE",
+      "checkpoint_ids": ["combat.cleanup.complete"]
+    },
+    {
+      "schema_version": 1,
+      "reference_revision": "9314f54b49f4552b5a3d023b4da0012ce7dfbc89",
+      "scenario_id": "06_simple_combat",
+      "input_fixture_id": "testing_proj_chapter_0_eirika_simple_combat_seed_1701_v1",
+      "fixture_path": "app/tests/fixtures/recovery_traces/v1/06_simple_combat.jsonl",
+      "sha256": "EBE882CB9247BF46A448AAC7E158004F789D87B1370304DB76955E7AB095EB19",
+      "checkpoint_ids": ["combat.cleanup.complete"]
+    },
+    {
+      "schema_version": 1,
+      "reference_revision": "9314f54b49f4552b5a3d023b4da0012ce7dfbc89",
+      "scenario_id": "07_animation_combat",
+      "input_fixture_id": "default_proj_chapter_0_eirika_animation_combat_seed_1701_v1",
+      "fixture_path": "app/tests/fixtures/recovery_traces/v1/07_animation_combat.jsonl",
+      "sha256": "8EAFDE83F8A9BF636965BFEB3606B609CB0BAEFB8ADF96A42033DB854CD7AC22",
+      "checkpoint_ids": ["combat.cleanup.complete"]
+    },
+    {
+      "schema_version": 1,
+      "reference_revision": "9314f54b49f4552b5a3d023b4da0012ce7dfbc89",
+      "scenario_id": "08_base_combat",
+      "input_fixture_id": "default_proj_chapter_0_eirika_vulnerary_base_combat_seed_1701_v1",
+      "fixture_path": "app/tests/fixtures/recovery_traces/v1/08_base_combat.jsonl",
+      "sha256": "F2039EA3AEB4FDAD566F9A13AC612A6C465DB9B81DA20C8B22690D965B5EE13D",
+      "checkpoint_ids": ["combat.cleanup.complete"]
+    },
+    {
+      "schema_version": 1,
+      "reference_revision": "9314f54b49f4552b5a3d023b4da0012ce7dfbc89",
+      "scenario_id": "09_skill_proc_hooks",
+      "input_fixture_id": "default_proj_chapter_0_eirika_luna_seed_0_v1",
+      "fixture_path": "app/tests/fixtures/recovery_traces/v1/09_skill_proc_hooks.jsonl",
+      "sha256": "20C12378399E44A326AE26ED3F087515860AB52AA38F08E5534FACC541DB4B69",
+      "checkpoint_ids": ["combat.cleanup.complete"]
+    },
+    {
+      "schema_version": 1,
+      "reference_revision": "9314f54b49f4552b5a3d023b4da0012ce7dfbc89",
+      "scenario_id": "10_item_durability_and_broken",
+      "input_fixture_id": "default_proj_chapter_0_eirika_angelic_robe_one_use_seed_1701_v1",
+      "fixture_path": "app/tests/fixtures/recovery_traces/v1/10_item_durability_and_broken.jsonl",
+      "sha256": "CF6CAF5FC6D1EC365BEE8982925F3EAB583840889BA768303C27B0A8B07EC3D1",
+      "checkpoint_ids": ["item.broken.cleanup.complete"]
+    },
+    {
+      "schema_version": 1,
+      "reference_revision": "9314f54b49f4552b5a3d023b4da0012ce7dfbc89",
+      "scenario_id": "11_promotion_class_change",
+      "input_fixture_id": "default_proj_chapter_0_eirika_lunar_brace_single_route_seed_1701_v1",
+      "fixture_path": "app/tests/fixtures/recovery_traces/v1/11_promotion_class_change.jsonl",
+      "sha256": "D6D02B66537E97A422C6BB86F5E97234E181532102D941446F3847572D3BA0B2",
+      "checkpoint_ids": ["promotion.complete"]
+    },
+    {
+      "schema_version": 1,
+      "reference_revision": "9314f54b49f4552b5a3d023b4da0012ce7dfbc89",
+      "scenario_id": "12_aura_lifecycle",
+      "input_fixture_id": "default_proj_chapter_0_eirika_inspiration_aura_save_load_seed_1701_v1",
+      "fixture_path": "app/tests/fixtures/recovery_traces/v1/12_aura_lifecycle.jsonl",
+      "sha256": "6A8EC39E493B984EC87D1A1EC03FC53C06A6A92D8DA8650E33AD0513229E3C43",
+      "checkpoint_ids": ["aura.propagated", "aura.load.complete", "aura.teardown.complete"]
+    },
+    {
+      "schema_version": 1,
+      "reference_revision": "9314f54b49f4552b5a3d023b4da0012ce7dfbc89",
+      "scenario_id": "13_fog_move_cancel_wait",
+      "input_fixture_id": "default_proj_chapter_0_eirika_fog_move_cancel_wait_seed_1701_v1",
+      "fixture_path": "app/tests/fixtures/recovery_traces/v1/13_fog_move_cancel_wait.jsonl",
+      "sha256": "B75E3414B552E0BE4941C41B01A20D96C68C0CCCFB21945E482CF7E03828749E",
+      "checkpoint_ids": ["fog.move.preview", "fog.move.cancel.complete", "fog.wait.complete"]
+    },
+    {
+      "schema_version": 1,
+      "reference_revision": "9314f54b49f4552b5a3d023b4da0012ce7dfbc89",
+      "scenario_id": "14_tilemap_change",
+      "input_fixture_id": "testing_proj_chapter_0_prologue_to_magvel_tilemap_v1",
+      "fixture_path": "app/tests/fixtures/recovery_traces/v1/14_tilemap_change.jsonl",
+      "sha256": "10E3A5EA0EA734FE9F5A3E3721221A6D36F1C72053C11AC7BD40A676EA4AC5D0",
+      "checkpoint_ids": ["tilemap.change.commit"]
+    },
+    {
+      "schema_version": 1,
+      "reference_revision": "9314f54b49f4552b5a3d023b4da0012ce7dfbc89",
+      "scenario_id": "15_phase_transition",
+      "input_fixture_id": "testing_proj_chapter_0_player_to_enemy_phase_seed_1701_v1",
+      "fixture_path": "app/tests/fixtures/recovery_traces/v1/15_phase_transition.jsonl",
+      "sha256": "BA02193DAEEF908E32E7B55665573E927F96EAAB47673C8ED10419670154B593",
+      "checkpoint_ids": ["phase.transition.complete"]
+    },
+    {
+      "schema_version": 1,
+      "reference_revision": "9314f54b49f4552b5a3d023b4da0012ce7dfbc89",
+      "scenario_id": "16_fast_forward_equivalence",
+      "input_fixture_id": "testing_proj_chapter_0_simple_combat_fast_forward_v1",
+      "fixture_path": "app/tests/fixtures/recovery_traces/v1/16_fast_forward_reference_off.jsonl",
+      "sha256": "8B12BF2F43ADDC6777802451C20F34172A07C1BFDAE838ACEB0AE5C2B9E3EAEC",
+      "checkpoint_ids": ["fast_forward.comparison.end"],
+      "reference_mode": "off",
+      "recovery_metamorphic_assertion": "on_equals_off_under_INV-06"
+    },
+    {
+      "schema_version": 1,
+      "reference_revision": "9314f54b49f4552b5a3d023b4da0012ce7dfbc89",
+      "scenario_id": "17_observer_idle_hybrid",
+      "input_fixture_id": "testing_proj_chapter_0_observer_idle_seed_1701_v1",
+      "fixture_path": "app/tests/fixtures/recovery_traces/v1/17_observer_disabled_baseline.jsonl",
+      "sha256": "20A582F6EEE02DC5A00DDEC4DF3D87ED80594DEE27ED444C8C7FF7A1926100F0",
+      "checkpoint_ids": ["observer.disabled.baseline", "observer.idle.complete"],
+      "reference_mode": "disabled",
+      "recovery_metamorphic_assertion": "debugger_idle_equals_disabled_and_profiler_idle_equals_disabled"
+    },
+    {
+      "schema_version": 1,
+      "reference_revision": "9314f54b49f4552b5a3d023b4da0012ce7dfbc89",
+      "scenario_id": "18_game_over_restart",
+      "input_fixture_id": "default_proj_chapter_0_death_eirika_restart_slot_seed_1701_v1",
+      "fixture_path": "app/tests/fixtures/recovery_traces/v1/18_game_over_restart.jsonl",
+      "sha256": "284CA80D724F7C8BEC927124F55CBB1E5B6415D5D972374F460F561F31889F10",
+      "checkpoint_ids": ["game_over.transition.commit", "game_over.title_start.commit", "restart.complete"]
+    }
+  ]
+}

@@ -57,22 +57,8 @@ class EventState(State):
             self.event.update_visuals()
 
     def should_defer_render(self) -> bool:
-        """Keep event command batches visually atomic on Android.
-
-        A budget yield can occur immediately after a costly command such as
-        ``change_tilemap``.  Drawing then would expose that partial mutation
-        before the event's following transition command runs.
-        """
-        return bool(
-            self.event
-            and (
-                getattr(self.event, '_defer_render', False)
-                or (
-                    self.event.state == 'processing'
-                    and getattr(self.event, '_android_process_yielded', False)
-                )
-            )
-        )
+        """Retain the previous frame only during a live tilemap barrier."""
+        return bool(self.event and getattr(self.event, '_defer_render', False))
 
     def draw(self, surf):
         if self.event:

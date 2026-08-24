@@ -90,6 +90,14 @@ def load_toolchain_manifest() -> dict[str, Any]:
     return json.loads(TOOLCHAIN_MANIFEST_PATH.read_text(encoding="utf-8"))
 
 
+def supported_android_arches(toolchain: dict[str, Any] | None = None) -> tuple[str, ...]:
+    toolchain = toolchain or load_toolchain_manifest()
+    configured = toolchain.get("supported_android_arches")
+    if isinstance(configured, list) and all(isinstance(arch, str) for arch in configured):
+        return tuple(configured)
+    return (str(toolchain["android_arch"]),)
+
+
 def load_build_config(path: Path | None = None, **overrides: Any) -> BuildConfig:
     toolchain = load_toolchain_manifest()
     payload = dict(toolchain["default_build"])
@@ -131,8 +139,11 @@ def validate_build_config(config: BuildConfig) -> list[str]:
         )
     if not 1 <= config.version_code <= 2_100_000_000:
         errors.append("version_code must be between 1 and 2100000000")
-    if config.arch != "arm64-v8a":
-        errors.append("Phase 4 supports only the arm64-v8a ABI")
+    supported = supported_android_arches()
+    if config.arch not in supported:
+        errors.append(
+            f"Unsupported Android ABI {config.arch!r}; expected one of {supported}"
+        )
     if config.mode not in {"debug", "release"}:
         errors.append("mode must be either debug or release")
     return errors
@@ -582,6 +593,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--version-name")
     parser.add_argument("--version-code", type=int)
     parser.add_argument("--icon")
+    parser.add_argument("--arch")
     parser.add_argument("--mode", choices=("debug", "release"))
     parser.add_argument("--runtime-debugger", action="store_true", default=None)
     return parser.parse_args()
@@ -598,6 +610,7 @@ def main() -> int:
         version_name=args.version_name,
         version_code=args.version_code,
         icon=args.icon,
+        arch=args.arch,
         mode=args.mode,
         runtime_debugger=args.runtime_debugger,
     )

@@ -8,6 +8,7 @@ param(
     [string]$VersionName,
     [Nullable[int]]$VersionCode,
     [string]$Icon,
+    [ValidateSet('arm64-v8a', 'x86_64')][string]$Arch,
     [ValidateSet('debug', 'release')][string]$Mode,
     [switch]$EnableRuntimeDebugger
 )
@@ -55,6 +56,7 @@ $appNameArg = if ($AppName) { $AppName } else { $defaultArg }
 $versionNameArg = if ($VersionName) { $VersionName } else { $defaultArg }
 $versionCodeArg = if ($null -ne $VersionCode) { [string]$VersionCode } else { $defaultArg }
 $iconArg = if ($iconWsl) { $iconWsl } else { $defaultArg }
+$archArg = if ($Arch) { $Arch } else { $defaultArg }
 $modeArg = if ($Mode) { $Mode } else { $defaultArg }
 $runtimeDebuggerArg = if ($EnableRuntimeDebugger) { '1' } else { '0' }
 & wsl.exe -d $Distro -- bash "$runtimeWsl/build_runtime.sh" `
@@ -66,7 +68,8 @@ $runtimeDebuggerArg = if ($EnableRuntimeDebugger) { '1' } else { '0' }
     $versionCodeArg `
     $iconArg `
     $runtimeDebuggerArg `
-    $modeArg
+    $modeArg `
+    $archArg
 if ($LASTEXITCODE -ne 0) {
     throw "Android runtime build failed with exit code $LASTEXITCODE"
 }

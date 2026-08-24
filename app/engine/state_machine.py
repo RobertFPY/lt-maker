@@ -37,6 +37,11 @@ class StateMachine():
         self.prior_state: State = None
         self._presentation_request: str | None = None
         self._presentation_barrier_drawn = False
+        # Recovery tracing is test-injected.  Normal runtime has no recorder.
+        self.trace_recorder = None
+
+    def set_trace_recorder(self, recorder):
+        self.trace_recorder = recorder
 
     def _new_state(self, state_name: str) -> State:
         """Create a state with explicit lifecycle flags.
@@ -256,6 +261,7 @@ class StateMachine():
         return self.prev_state in ('transition_out', 'transition_to', 'transition_pop', 'transition_double_pop')
 
     def process_temp_state(self):
+        committed = bool(self.temp_state)
         if self.temp_state:
             logging.debug("Temp State: %s", self.temp_state)
         for transition in self.temp_state:
@@ -277,6 +283,8 @@ class StateMachine():
         if self.temp_state:
             logging.debug("State: %s", self.state_names())
         self.temp_state.clear()
+        if committed and self.trace_recorder is not None:
+            self.trace_recorder.state_transition_committed(self)
 
     def visible_states(self) -> List[State]:
         """Return the state stack segment that composes the current scene."""

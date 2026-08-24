@@ -1,4 +1,6 @@
+import gc
 import logging
+import threading
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
@@ -6,9 +8,13 @@ from unittest.mock import Mock, patch
 
 from app.engine import driver
 from app.engine.performance import RuntimeProfiler
+from app.utilities import static_random
 
 
 class RuntimeProfilerTests(unittest.TestCase):
+    def tearDown(self) -> None:
+        static_random.set_seed(0)
+
     def test_disabled_profiler_does_not_emit_records(self):
         profiler = RuntimeProfiler()
         profiler.enabled = False
@@ -69,6 +75,116 @@ class RuntimeProfilerTests(unittest.TestCase):
         profiler.finish_frame()
         self.assertEqual(('main',), tuple(
             scope['name'] for scope in profiler.latest_frame_scopes()))
+
+    def test_enabled_profiler_real_worker_scope_cannot_corrupt_main_scope_tree(self):
+        profiler = RuntimeProfiler()
+        profiler.enabled = True
+        profiler.slow_frame_ms = 100000
+        profiler.begin_frame()
+        main_thread_id = threading.get_ident()
+        worker_calls = []
+
+        def worker() -> None:
+            with profiler.section('worker'):
+                worker_calls.append(threading.get_ident())
+
+        with profiler.section('outer'):
+            thread = threading.Thread(target=worker)
+            thread.start()
+            thread.join()
+            with profiler.section('inner'):
+                pass
+
+        profiler.finish_frame()
+        scopes = profiler.latest_frame_scopes()
+        self.assertEqual(1, len(worker_calls))
+        self.assertNotEqual(main_thread_id, worker_calls[0])
+        self.assertEqual(('outer', 'inner'), tuple(scope['name'] for scope in scopes))
+        self.assertEqual((None, 0), tuple(scope['parent_scope_id'] for scope in scopes))
+        self.assertEqual(main_thread_id, profiler._frame_thread_id)
+        self.assertEqual([], profiler._scope_stack)
+
+    def test_profiler_on_off_preserves_rng_and_ordered_gameplay_effects(self):
+        def run(profiler_enabled):
+            profiler = RuntimeProfiler()
+            profiler.enabled = profiler_enabled
+            profiler.interval_seconds = 100000
+            logical_state = {'hp': 100, 'actions': []}
+            static_random.set_seed(1701)
+
+            def gameplay_update() -> None:
+                damage = static_random.get_combat()
+                logical_state['actions'].append('damage')
+                logical_state['hp'] -= damage
+                logical_state['actions'].append('cleanup')
+
+            profiler.begin_frame()
+            if profiler.enabled:
+                with profiler.section('combat.update'):
+                    gameplay_update()
+            else:
+                gameplay_update()
+            profiler.finish_frame()
+            return logical_state, static_random.get_combat_random_state()
+
+        profiler_off = run(False)
+        profiler_on = run(True)
+        self.assertEqual(profiler_off, profiler_on)
+
+    def test_disabled_profiler_executes_wrapped_body_and_count_without_gameplay_effect(self):
+        profiler = RuntimeProfiler()
+        profiler.enabled = False
+        logical_state = {'actions': [], 'rng': static_random.get_combat_random_state()}
+        with patch.object(logging, 'warning') as warning:
+            profiler.begin_frame()
+            with profiler.section('event.command'):
+                logical_state['actions'].append('command')
+            profiler.count('command')
+            profiler.finish_frame()
+
+        self.assertEqual(['command'], logical_state['actions'])
+        self.assertEqual(static_random.get_combat_random_state(), logical_state['rng'])
+        self.assertEqual((), profiler.latest_frame_scopes())
+        warning.assert_not_called()
+
+    def test_gc_callback_changes_only_profiler_owned_counters(self):
+        profiler = RuntimeProfiler()
+        profiler.enabled = True
+        logical_state = {'actions': ['attack'], 'rng': static_random.get_combat_random_state()}
+        callback_was_registered = profiler._on_gc in gc.callbacks
+        if not callback_was_registered:
+            gc.callbacks.append(profiler._on_gc)
+        try:
+            started = profiler._gc_started
+            finished = profiler._gc_finished
+            profiler._on_gc('start', {})
+            profiler._on_gc('stop', {})
+            self.assertEqual(started + 1, profiler._gc_started)
+            self.assertEqual(finished + 1, profiler._gc_finished)
+            self.assertEqual({'actions': ['attack'], 'rng': logical_state['rng']}, logical_state)
+        finally:
+            if not callback_was_registered:
+                gc.callbacks.remove(profiler._on_gc)
+        self.assertEqual(callback_was_registered, profiler._on_gc in gc.callbacks)
+
+    def test_profiler_branches_call_same_gameplay_operations(self):
+        root = Path(__file__).parents[1]
+        state_machine = (root / 'engine' / 'state_machine.py').read_text(encoding='utf-8')
+        update_body = state_machine[state_machine.index('def update'):]
+        for statement in (
+                'start_output = state.start()',
+                'begin_output = state.begin()',
+                'input_output = state.take_input(event)',
+                'update_output = state.update()',
+                'state.end()',
+                'self.process_temp_state()'):
+            self.assertEqual(2, update_body.count(statement))
+
+        event = (root / 'events' / 'event.py').read_text(encoding='utf-8')
+        self.assertEqual(1, event.count('self.run_command(command)'))
+        driver_source = (root / 'engine' / 'driver.py').read_text(encoding='utf-8')
+        self.assertEqual(1, driver_source.count(
+            'surf, updates_run = update_game_state_for_frame('))
 
     def test_slow_frame_output_includes_scope_path_and_metadata(self):
         profiler = RuntimeProfiler()
@@ -159,34 +275,39 @@ class RuntimeProfilerTests(unittest.TestCase):
         ):
             self.assertIn("RUNTIME_PROFILER.section('%s')" % scope, source)
 
-    def test_map_combat_defers_solver_to_its_own_update_state(self):
+    def test_map_combat_profiles_solver_inside_begin_phase(self):
         source = (Path(__file__).parents[1] / 'engine' / 'combat' /
                   'map_combat.py').read_text(encoding='utf-8')
 
-        self.assertIn("self.set_state('solve_phase')", source)
-        solve_state = source.index("elif self.state == 'solve_phase':")
+        begin_phase = source.index("elif self.state == 'begin_phase':")
         solver = source.index("RUNTIME_PROFILER.section('combat.solver_do')")
-        self.assertLess(solve_state, solver)
+        proc_visuals = source.index("elif self.state == 'proc_animations':")
+        self.assertNotIn("elif self.state == 'solve_phase':", source)
+        self.assertLess(begin_phase, solver)
+        self.assertLess(solver, proc_visuals)
 
-    def test_map_combat_defers_visual_setup_until_after_solver(self):
+    def test_map_combat_keeps_visual_setup_with_solver_update(self):
         source = (Path(__file__).parents[1] / 'engine' / 'combat' /
                   'map_combat.py').read_text(encoding='utf-8')
 
         solver = source.index("RUNTIME_PROFILER.section('combat.solver_do')")
-        visual_setup = source.index("elif self.state == 'setup_phase_visuals':")
         health_bars = source.index("RUNTIME_PROFILER.section('combat.health_bar_build')")
-        self.assertLess(solver, visual_setup)
-        self.assertLess(visual_setup, health_bars)
+        self.assertNotIn("elif self.state == 'setup_phase_visuals':", source)
+        self.assertLess(solver, health_bars)
 
-    def test_animation_combat_defers_visual_setup_until_after_solver(self):
+    def test_animation_combat_keeps_solver_and_visual_destination_in_begin_phase(self):
         source = (Path(__file__).parents[1] / 'engine' / 'combat' /
                   'animation_combat.py').read_text(encoding='utf-8')
 
         begin_phase = source.index("elif self.state == 'begin_phase':")
-        visual_setup = source.index("elif self.state == 'setup_phase_visuals':")
         solver = source.index('self.state_machine.do()', begin_phase)
+        visual_setup = source.index('self.get_actors()', solver)
+        combat_effect = source.index("elif self.state == 'combat_effect':", solver)
+        self.assertNotIn("elif self.state == 'solve_phase':", source)
+        self.assertNotIn("elif self.state == 'setup_phase_visuals':", source)
         self.assertLess(begin_phase, solver)
         self.assertLess(solver, visual_setup)
+        self.assertLess(visual_setup, combat_effect)
 
     def test_animation_combat_stages_initial_paint_setup_before_combat_init(self):
         from app.engine.combat.animation_combat import AnimationCombat
@@ -235,100 +356,71 @@ class RuntimeProfilerTests(unittest.TestCase):
         combat.setup_battle_animations.assert_called_once_with()
         self.assertEqual('paint_setup', combat.state)
 
-    def test_animation_combat_stages_start_hooks_before_visual_init(self):
-        from app.engine.combat.animation_combat import AnimationCombat
-
+    def test_animation_combat_groups_start_hooks_with_visual_init(self):
         source = (Path(__file__).parents[1] / 'engine' / 'combat' /
                   'animation_combat.py').read_text(encoding='utf-8')
         update = source.index('def update')
         init_state = source.index("if self.state == 'init':", update)
-        visual_state = source.index("elif self.state == 'init_visuals':", init_state)
         start_hook = source.index('self.start_combat()', init_state)
+        attacker_sprite = source.index(
+            "self.attacker.sprite.change_state('combat_attacker')", start_hook)
+        stats = source.index('self._set_stats(self.playback)', attacker_sprite)
+        red_cursor = source.index("elif self.state == 'red_cursor':", stats)
+        self.assertNotIn("self.state == 'init_visuals'", source)
         self.assertLess(init_state, start_hook)
-        self.assertLess(start_hook, visual_state)
+        self.assertLess(start_hook, attacker_sprite)
+        self.assertLess(attacker_sprite, stats)
+        self.assertLess(stats, red_cursor)
 
-        combat = AnimationCombat.__new__(AnimationCombat)
-        combat.state = 'init'
-        combat.start_combat = Mock()
-        combat.last_update = 0
-
-        self.assertFalse(combat.update())
-        combat.start_combat.assert_called_once_with()
-        self.assertEqual('init_visuals', combat.state)
-
-    def test_animation_combat_stages_initial_stats_after_cursor_setup(self):
-        from app.engine.combat.animation_combat import AnimationCombat
-
+    def test_animation_combat_groups_cursor_setup_before_initial_stats(self):
         source = (Path(__file__).parents[1] / 'engine' / 'combat' /
                   'animation_combat.py').read_text(encoding='utf-8')
         update = source.index('def update')
-        visuals = source.index("elif self.state == 'init_visuals':", update)
-        stats = source.index("elif self.state == 'init_stats':", visuals)
-        refresh = source.index('self._set_stats(self.playback)', stats)
-        self.assertLess(visuals, stats)
-        self.assertLess(stats, refresh)
+        init_state = source.index("if self.state == 'init':", update)
+        cursor = source.index('game.cursor.set_pos(self.view_pos)', init_state)
+        refresh = source.index('self._set_stats(self.playback)', cursor)
+        self.assertNotIn("self.state == 'init_stats'", source)
+        self.assertLess(cursor, refresh)
 
-        combat = AnimationCombat.__new__(AnimationCombat)
-        combat.state = 'init_stats'
-        combat._set_stats = Mock()
-        combat.playback = []
-        combat.last_update = 0
-
-        self.assertFalse(combat.update())
-        combat._set_stats.assert_called_once_with([])
-        self.assertEqual('red_cursor', combat.state)
-
-    def test_animation_combat_stages_arena_pairing_after_stats(self):
-        from app.engine.combat.animation_combat import AnimationCombat
-
+    def test_animation_combat_groups_arena_pairing_after_stats(self):
         source = (Path(__file__).parents[1] / 'engine' / 'combat' /
                   'animation_combat.py').read_text(encoding='utf-8')
         update = source.index('def update')
-        stats = source.index("elif self.state == 'arena_visuals':", update)
-        pairing = source.index("elif self.state == 'arena_pair_animations':", stats)
-        refresh = source.index('self._set_stats(self.playback)', stats)
-        self.assertLess(stats, refresh)
+        arena = source.index("elif self.state == 'arena_init':", update)
+        refresh = source.index('self._set_stats(self.playback)', arena)
+        pairing = source.index('self.pair_battle_animations(0)', refresh)
+        fade = source.index("elif self.state == 'arena_fade_in':", pairing)
+        self.assertNotIn("self.state == 'arena_visuals'", source)
+        self.assertNotIn("self.state == 'arena_pair_animations'", source)
+        self.assertLess(arena, refresh)
         self.assertLess(refresh, pairing)
+        self.assertLess(pairing, fade)
 
-        combat = AnimationCombat.__new__(AnimationCombat)
-        combat.state = 'arena_visuals'
-        combat._set_stats = Mock()
-        combat.playback = []
-        combat.last_update = 0
-
-        self.assertFalse(combat.update())
-        combat._set_stats.assert_called_once_with([])
-        self.assertEqual('arena_pair_animations', combat.state)
-
-    def test_animation_combat_stages_transform_check_after_battle_music(self):
-        from app.engine.combat.animation_combat import AnimationCombat
-
+    def test_animation_combat_groups_transform_decision_with_battle_music(self):
         source = (Path(__file__).parents[1] / 'engine' / 'combat' /
                   'animation_combat.py').read_text(encoding='utf-8')
         update = source.index('def update')
         music = source.index("elif self.state == 'battle_music':", update)
-        transform_check = source.index("elif self.state == 'check_transform':", music)
         load_music = source.index('self.start_battle_music()', music)
+        transform_check = source.index(
+            'self.left_battle_anim.is_transform()', load_music)
+        transform_start = source.index(
+            'self.left_battle_anim.initiate_transform()', transform_check)
+        transform_wait = source.index("elif self.state == 'transform':", transform_start)
+        self.assertNotIn("self.state == 'check_transform'", source)
+        self.assertNotIn("self.state == 'initiate_transform'", source)
         self.assertLess(music, load_music)
         self.assertLess(load_music, transform_check)
-
-        combat = AnimationCombat.__new__(AnimationCombat)
-        combat.state = 'battle_music'
-        combat.start_battle_music = Mock()
-        combat.last_update = 0
-
-        self.assertFalse(combat.update())
-        combat.start_battle_music.assert_called_once_with()
-        self.assertEqual('check_transform', combat.state)
+        self.assertLess(transform_check, transform_start)
+        self.assertLess(transform_start, transform_wait)
 
     def test_android_streamed_battle_music_restores_cached_map_track(self):
         from app.engine.combat import animation_combat as animation_combat_module
-        from app.engine.combat.animation_combat import (
-            AnimationCombat, _AndroidStreamedBattleMusic,
-        )
+        from app.engine.combat.animation_combat import AnimationCombat
+        from app.engine.sound import StreamedBattleMusic
 
         combat = AnimationCombat.__new__(AnimationCombat)
-        combat.battle_music = _AndroidStreamedBattleMusic('map_track', False)
+        combat.battle_music = StreamedBattleMusic('map_track', False)
         sound_thread = Mock()
 
         with patch.object(animation_combat_module.DB.constants, 'value', return_value=True), \
@@ -338,21 +430,20 @@ class RuntimeProfilerTests(unittest.TestCase):
                 ):
             combat.finish()
 
-        sound_thread.stop_streamed_music.assert_called_once_with()
-        sound_thread.fade_in.assert_called_once_with(
-            'map_track', fade_in=50, from_start=True,
+        sound_thread.finish_battle_music.assert_called_once_with(
+            combat.battle_music, from_start=True,
         )
 
-    def test_animation_combat_uses_android_stream_for_battle_track(self):
+    def test_animation_combat_keeps_selection_and_delegates_battle_backend(self):
         source = (Path(__file__).parents[1] / 'engine' / 'combat' /
                   'animation_combat.py').read_text(encoding='utf-8')
         start = source.index('def start_battle_music')
         finish = source.index('def left_team', start)
         battle_music = source[start:finish]
 
-        self.assertIn('is_android_runtime()', battle_music)
-        self.assertIn('play_streamed_music(', battle_music)
-        self.assertIn('battle=True', battle_music)
+        self.assertIn('get_sound_thread().start_battle_music(', battle_music)
+        self.assertNotIn('is_android_runtime()', battle_music)
+        self.assertNotIn('play_streamed_music(', battle_music)
 
     def test_animation_combat_stages_transform_rebuild_before_repairing(self):
         from app.engine.combat.animation_combat import AnimationCombat
@@ -401,176 +492,125 @@ class RuntimeProfilerTests(unittest.TestCase):
         self.assertFalse(combat.update())
         self.assertEqual('setup_pre_proc', combat.state)
 
-    def test_animation_combat_stages_solver_after_begin_phase_end_check(self):
-        from app.engine.combat.animation_combat import AnimationCombat
-
+    def test_animation_combat_runs_solver_after_begin_phase_end_check(self):
         source = (Path(__file__).parents[1] / 'engine' / 'combat' /
                   'animation_combat.py').read_text(encoding='utf-8')
         update = source.index('def update')
         begin_phase = source.index("elif self.state == 'begin_phase':", update)
-        solve_phase = source.index("elif self.state == 'solve_phase':", begin_phase)
-        solver = source.index('self.state_machine.do()', solve_phase)
-        self.assertLess(begin_phase, solve_phase)
-        self.assertLess(solve_phase, solver)
+        terminal_check = source.index(
+            'if not self.state_machine.get_state():', begin_phase)
+        solver = source.index('self.state_machine.do()', terminal_check)
+        visual_setup = source.index('self.get_actors()', solver)
+        self.assertNotIn("self.state == 'solve_phase'", source)
+        self.assertNotIn("self.state == 'setup_phase_visuals'", source)
+        self.assertLess(begin_phase, terminal_check)
+        self.assertLess(terminal_check, solver)
+        self.assertLess(solver, visual_setup)
 
-        state_machine = Mock()
-        state_machine.get_state.return_value = True
-        combat = AnimationCombat.__new__(AnimationCombat)
-        combat.state = 'begin_phase'
-        combat.state_machine = state_machine
-        combat.last_update = 0
-
-        self.assertFalse(combat.update())
-        state_machine.do.assert_not_called()
-        self.assertEqual('solve_phase', combat.state)
-
-    def test_animation_combat_stages_remaining_heavy_operations(self):
+    def test_animation_combat_retains_only_presentation_resource_staging(self):
         source = (Path(__file__).parents[1] / 'engine' / 'combat' /
                   'animation_combat.py').read_text(encoding='utf-8')
 
         for state in (
-            'pair_entrance_animations', 'start_event', 'initiate_transform',
-            'setup_phase_followup', 'setup_hit_effect',
-            'resume_hit_animation', 'setup_delayed_death',
-            'end_combat_focus', 'end_combat_camera', 'cleanup1',
+            'pair_entrance_animations', 'rebuild_transform_animations',
+            'repair_transform_animations', 'setup_pre_proc',
+            'setup_delayed_death',
             'rebuild_revert_animations', 'repair_revert_animations',
-            'initiate_revert_transforms', 'finish_combat', 'cleanup2',
+            'initiate_revert_transforms',
         ):
             self.assertIn("self.state == '%s'" % state, source)
 
-    def test_animation_combat_stages_final_cleanup_after_finish(self):
-        from app.engine.combat.animation_combat import AnimationCombat
+        for state in (
+            'init_visuals', 'init_stats', 'arena_visuals',
+            'arena_pair_animations', 'start_event', 'check_transform',
+            'initiate_transform', 'solve_phase', 'setup_phase_visuals',
+            'setup_phase_followup', 'setup_hit_effect',
+            'resume_hit_animation', 'end_combat_focus',
+            'end_combat_camera', 'cleanup1', 'finish_combat', 'cleanup2',
+        ):
+            self.assertNotIn("self.state == '%s'" % state, source)
 
-        combat = AnimationCombat.__new__(AnimationCombat)
-        combat.state = 'finish_combat'
-        combat.finish = Mock()
-        combat.last_update = 0
+    def test_animation_combat_finishes_and_cleans_up_in_terminal_states(self):
+        source = (Path(__file__).parents[1] / 'engine' / 'combat' /
+                  'animation_combat.py').read_text(encoding='utf-8')
 
-        self.assertFalse(combat.update())
-        combat.finish.assert_called_once_with()
-        self.assertEqual('cleanup2', combat.state)
+        fade_start = source.index("elif self.state == 'fade_out':")
+        arena_start = source.index("elif self.state == 'arena_out':", fade_start)
+        terminal_end = source.index('if self.state != current_state:', arena_start)
+        for terminal_source in (
+                source[fade_start:arena_start],
+                source[arena_start:terminal_end]):
+            finish = terminal_source.index('self.finish()')
+            cleanup = terminal_source.index('self.clean_up2()')
+            end_skip = terminal_source.index('self.end_skip()')
+            done = terminal_source.index('return True')
+            self.assertLess(finish, cleanup)
+            self.assertLess(cleanup, end_skip)
+            self.assertLess(end_skip, done)
 
-        combat.clean_up2 = Mock()
-        combat.end_skip = Mock()
-        self.assertTrue(combat.update())
-        combat.clean_up2.assert_called_once_with()
-        combat.end_skip.assert_called_once_with()
-
-    def test_map_combat_defers_actions_until_after_playback_effects(self):
+    def test_map_combat_applies_actions_with_playback_effects(self):
         source = (Path(__file__).parents[1] / 'engine' / 'combat' /
                   'map_combat.py').read_text(encoding='utf-8')
 
         anim_state = source.index("elif self.state == 'anim':")
-        action_state = source.index("elif self.state == 'apply_actions':")
+        hp_wait = source.index("elif self.state == 'hp_bar_wait':")
         playback = source.index('self._handle_playback()', anim_state)
-        apply_actions = source.index('self._apply_actions()', action_state)
-        self.assertLess(anim_state, action_state)
-        self.assertLess(playback, action_state)
-        self.assertLess(action_state, apply_actions)
+        apply_actions = source.index('self._apply_actions()', playback)
+        self.assertNotIn("elif self.state == 'apply_actions':", source)
+        self.assertLess(anim_state, playback)
+        self.assertLess(playback, apply_actions)
+        self.assertLess(apply_actions, hp_wait)
 
-    def test_map_combat_defers_cleanup0_until_after_solver_exhaustion(self):
+    def test_map_combat_groups_cleanup0_with_terminal_detection(self):
         source = (Path(__file__).parents[1] / 'engine' / 'combat' /
                   'map_combat.py').read_text(encoding='utf-8')
 
         begin_phase = source.index("elif self.state == 'begin_phase':")
-        cleanup_state = source.index("elif self.state == 'cleanup0':")
-        cleanup = source.index('self.clean_up0()', cleanup_state)
-        self.assertLess(begin_phase, cleanup_state)
-        self.assertLess(cleanup_state, cleanup)
+        proc_visuals = source.index("elif self.state == 'proc_animations':")
+        cleanup = source.index('self.clean_up0()', begin_phase)
+        self.assertNotIn("elif self.state == 'cleanup0':", source)
+        self.assertLess(begin_phase, cleanup)
+        self.assertLess(cleanup, proc_visuals)
 
-    def test_simple_combat_resolves_phases_from_update_not_constructor(self):
-        from app.engine.combat.simple_combat import SimpleCombat
-
-        source = (Path(__file__).parents[1] / 'engine' / 'combat' /
-                  'simple_combat.py').read_text(encoding='utf-8')
-
-        constructor = source.index('def __init__')
-        update = source.index('def update')
-        constructor_end = source.index('def start_combat', constructor)
-        constructor_body = source[constructor:constructor_end]
-        self.assertNotIn('while self.state_machine.get_state()', constructor_body)
-        self.assertIn("if self.state == 'combat':", source[update:])
-
-        state_machine = Mock()
-        state_machine.get_state.side_effect = [True, False]
-        state_machine.do.return_value = (['action'], ['playback'])
-        combat = SimpleCombat.__new__(SimpleCombat)
-        combat.state = 'combat'
-        combat.state_machine = state_machine
-        combat.full_playback = []
-        combat._apply_actions = Mock()
-        combat.clean_up0 = Mock()
-        combat.clean_up1 = Mock()
-        combat.clean_up2 = Mock()
-
-        self.assertFalse(combat.update())
-        self.assertEqual(['playback'], combat.full_playback)
-        combat._apply_actions.assert_called_once_with()
-        state_machine.setup_next_state.assert_called_once_with()
-
-        self.assertFalse(combat.update())
-        self.assertEqual('cleanup0', combat.state)
-        self.assertFalse(combat.update())
-        combat.clean_up0.assert_called_once_with()
-
-    def test_simple_combat_stages_start_hooks_before_solver(self):
+    def test_simple_combat_resolves_phases_in_constructor(self):
         source = (Path(__file__).parents[1] / 'engine' / 'combat' /
                   'simple_combat.py').read_text(encoding='utf-8')
 
         constructor = source.index('def __init__')
         update = source.index('def update')
         constructor_body = source[constructor:update]
-        self.assertNotIn('self.start_combat()', constructor_body)
-        self.assertNotIn('self.start_event()', constructor_body)
-        self.assertIn("if self.state == 'init':", source[update:])
-        self.assertIn("if self.state == 'start_event':", source[update:])
+        self.assertIn('while self.state_machine.get_state()', constructor_body)
+        self.assertNotIn("if self.state == 'combat':", source[update:])
 
-        from app.engine.combat.simple_combat import SimpleCombat
-        combat = SimpleCombat.__new__(SimpleCombat)
-        combat.state = 'init'
-        combat.start_combat = Mock()
-        combat.start_event = Mock()
+    def test_simple_combat_runs_start_hooks_before_solver(self):
+        source = (Path(__file__).parents[1] / 'engine' / 'combat' /
+                  'simple_combat.py').read_text(encoding='utf-8')
 
-        self.assertFalse(combat.update())
-        combat.start_combat.assert_called_once_with()
-        self.assertEqual('start_event', combat.state)
-        self.assertFalse(combat.update())
-        combat.start_event.assert_called_once_with()
-        self.assertEqual('combat', combat.state)
+        constructor = source.index('def __init__')
+        update = source.index('def update')
+        constructor_body = source[constructor:update]
+        hooks = constructor_body.index('self.start_combat()')
+        event = constructor_body.index('self.start_event()')
+        solver = constructor_body.index('while self.state_machine.get_state()')
+        self.assertLess(hooks, event)
+        self.assertLess(event, solver)
 
-    def test_base_combat_resolves_one_phase_per_update(self):
-        from app.engine.combat.base_combat import BaseCombat
-
+    def test_base_combat_drains_all_phases_in_first_update(self):
         source = (Path(__file__).parents[1] / 'engine' / 'combat' /
                   'base_combat.py').read_text(encoding='utf-8')
 
         update = source.index('def update')
         update_body = source[update:]
-        self.assertNotIn('while self.state_machine.get_state()', update_body)
+        self.assertIn('while self.state_machine.get_state()', update_body)
         self.assertIn("if self.state == 'init':", update_body)
-        self.assertIn("if self.state == 'cleanup0':", update_body)
+        self.assertNotIn("if self.state == 'combat':", update_body)
+        solver = update_body.index('self.state_machine.do()')
+        apply_actions = update_body.index('self._apply_actions()', solver)
+        advance = update_body.index('self.state_machine.setup_next_state()', apply_actions)
+        self.assertLess(solver, apply_actions)
+        self.assertLess(apply_actions, advance)
 
-        state_machine = Mock()
-        state_machine.get_state.side_effect = [True, False]
-        state_machine.do.return_value = (['action'], ['playback'])
-        combat = BaseCombat.__new__(BaseCombat)
-        combat.state = 'combat'
-        combat.state_machine = state_machine
-        combat.full_playback = []
-        combat._apply_actions = Mock()
-        combat.clean_up0 = Mock()
-
-        self.assertFalse(combat.update())
-        self.assertEqual(['playback'], combat.full_playback)
-        combat._apply_actions.assert_called_once_with()
-        self.assertFalse(combat.update())
-        self.assertEqual('cleanup0', combat.state)
-        self.assertFalse(combat.update())
-        combat.clean_up0.assert_called_once_with()
-
-    def test_base_combat_stages_start_hooks_before_solver(self):
-        from app.engine.combat.base_combat import BaseCombat
-
+    def test_base_combat_runs_start_hooks_in_constructor(self):
         source = (Path(__file__).parents[1] / 'engine' / 'combat' /
                   'base_combat.py').read_text(encoding='utf-8')
 
@@ -578,22 +618,11 @@ class RuntimeProfilerTests(unittest.TestCase):
         update = source.index('def update')
         constructor_end = source.index('def start_combat', constructor)
         constructor_body = source[constructor:constructor_end]
-        self.assertNotIn('self.start_combat()', constructor_body)
-        self.assertNotIn('self.start_event()', constructor_body)
-        self.assertIn("if self.state == 'init':", source[update:])
-        self.assertIn("if self.state == 'start_event':", source[update:])
-
-        combat = BaseCombat.__new__(BaseCombat)
-        combat.state = 'init'
-        combat.start_combat = Mock()
-        combat.start_event = Mock()
-
-        self.assertFalse(combat.update())
-        combat.start_combat.assert_called_once_with()
-        self.assertEqual('start_event', combat.state)
-        self.assertFalse(combat.update())
-        combat.start_event.assert_called_once_with()
-        self.assertEqual('combat', combat.state)
+        hooks = constructor_body.index('self.start_combat()')
+        event = constructor_body.index('self.start_event()')
+        self.assertLess(hooks, event)
+        self.assertNotIn("if self.state == 'start_event':", source[update:])
+        self.assertNotIn("if self.state == 'combat':", source[update:])
 
 
 if __name__ == '__main__':

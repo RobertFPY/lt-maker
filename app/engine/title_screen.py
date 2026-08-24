@@ -108,9 +108,7 @@ class TitleStartState(State):
         sound_thread.clear()
         music = RECORDS.get('_music_title_screen') or DB.constants.value('music_main')
         if music:
-            if is_android_runtime() and sound_thread.play_streamed_music(music, fade_in=50):
-                return
-            sound_thread.fade_in(music, fade_in=50)
+            sound_thread.play_music(music, fade_in=50)
 
     def begin(self):
         if game.state.from_transition() and not self._return_directly_to_title_menu:
@@ -509,7 +507,7 @@ class TitleLoadState(State):
         self.fluid.reset_on_change_state()
 
     def _start_android_load(self, save_slot, *, transition_from, next_action,
-                            remove_suspend: bool) -> str:
+                            remove_suspend: bool, level_nid=None) -> str:
         """Move save I/O out of the input callback on Android only.
 
         The old title state stays beneath the opaque loading state for one
@@ -517,7 +515,21 @@ class TitleLoadState(State):
         while the worker starts reading immediately and the next frame can
         draw a loading screen instead of blocking ``take_input``.
         """
-        job = save.SaveLoadJob(save_slot)
+        destination = {
+            'start_level': save.LoadDestination.START_LEVEL,
+            'restart_level': save.LoadDestination.RESTART_LEVEL,
+            'overworld': save.LoadDestination.OVERWORLD,
+        }.get(next_action, save.LoadDestination.SAVED)
+        state_prefix = tuple(game.state.state) \
+            if transition_from == 'Restart Level' else ()
+        load_context = save.LoadTransactionContext.for_slot(
+            save_slot,
+            destination=destination,
+            preserve_existing_states=False,
+            state_prefix=state_prefix,
+            level_nid=level_nid,
+        )
+        job = save.SaveLoadJob(save_slot, context=load_context)
         game.memory['_save_load_job'] = job
         game.memory['_save_load_context'] = {
             'transition_from': transition_from,
@@ -567,17 +579,20 @@ class TitleLoadState(State):
                         next_action=next_action,
                         remove_suspend=True,
                     )
-                game.state.clear()
-                game.state.process_temp_state()
-                game.build_new()
-                save.load_game(game, save_slot)
-                if save_slot.kind == 'start':  # Restart
-                    # Restart level
-                    next_level_nid = game.game_vars['_next_level_nid']
-                    game.load_states(['start_level_asset_loading'])
-                    game.start_level(next_level_nid)
-                elif save_slot.kind == 'overworld': # load overworld
-                    game.load_states(['overworld'])
+                destination = (
+                    save.LoadDestination.START_LEVEL
+                    if save_slot.kind == 'start'
+                    else save.LoadDestination.OVERWORLD
+                    if save_slot.kind == 'overworld'
+                    else save.LoadDestination.SAVED
+                )
+                context = save.LoadTransactionContext.for_slot(
+                    save_slot,
+                    destination=destination,
+                    clear_existing_states=True,
+                    preserve_existing_states=False,
+                )
+                save.load_game(game, save_slot, context=context)
                 game.memory['transition_from'] = 'Load Game'
                 game.memory['title_menu'] = self.menu
                 game.state.change('title_wait')
@@ -661,13 +676,17 @@ class TitleRestartState(TitleLoadState):
             selection = self.menu.current_index
             save_slot = save.RESTART_SLOTS[selection]
             save_slot_main = save.SAVE_SLOTS[selection]
-            if save_slot.kind:
+            is_overworld_restart = save_slot_main.kind == 'overworld'
+            has_valid_restart = is_overworld_restart or \
+                save.restart_slot_matches_chapter(
+                    save_slot, getattr(save_slot_main, 'level_nid', None))
+            if has_valid_restart:
                 get_sound_thread().play_sfx('Save')
                 logging.info("Loading game...")
                 if is_android_runtime():
-                    target_slot = save_slot_main if save_slot_main.kind == 'overworld' else save_slot
+                    target_slot = save_slot_main if is_overworld_restart else save_slot
                     next_action = (
-                        'overworld' if save_slot_main.kind == 'overworld'
+                        'overworld' if is_overworld_restart
                         else 'restart_level'
                     )
                     return self._start_android_load(
@@ -675,16 +694,21 @@ class TitleRestartState(TitleLoadState):
                         transition_from='Restart Level',
                         next_action=next_action,
                         remove_suspend=True,
+                        level_nid=getattr(save_slot_main, 'level_nid', None),
                     )
-                game.build_new()
-                # Restart level
-                if save_slot_main.kind == 'overworld':
-                    save.load_game(game, save_slot_main)
-                    game.load_states(['overworld'])
+                if is_overworld_restart:
+                    context = save.LoadTransactionContext.for_slot(
+                        save_slot_main,
+                        destination=save.LoadDestination.OVERWORLD,
+                    )
+                    save.load_game(game, save_slot_main, context=context)
                 else:
-                    save.load_game(game, save_slot)
-                    next_level_nid = game.game_vars['_next_level_nid']
-                    game.start_level(next_level_nid)
+                    context = save.LoadTransactionContext.for_slot(
+                        save_slot,
+                        destination=save.LoadDestination.RESTART_LEVEL,
+                        level_nid=getattr(save_slot_main, 'level_nid', None),
+                    )
+                    save.load_game(game, save_slot, context=context)
                 game.memory['transition_from'] = 'Restart Level'
                 game.memory['title_menu'] = self.menu
                 game.state.change('title_wait')
@@ -941,60 +965,27 @@ class TitleLoadJobState(State):
         self.particles = game.memory.get('title_particles')
         self.error = None
         self.finished = False
-        self._restore_complete = False
-        self._post_load_iter = None
         if self.job is None:
             self.error = save.SaveLoadError('Title loader started without a save job')
 
     def _recover_from_error(self) -> None:
         logging.error(
-            'Staged save load failed: %s', self.error,
+            'Save load transaction failed: %s', self.error,
             exc_info=(type(self.error), self.error, self.error.__traceback__) if self.error else None,
         )
         if self.job:
             self.job.abort(game)
         else:
-            game.clear()
-            game.build_new()
-        game.load_states(['title_start'])
+            save.reset_failed_load(game)
+        game.memory.pop('_save_load_job', None)
+        game.memory.pop('_save_load_context', None)
         game.memory['_return_directly_to_title_menu'] = True
         self.finished = True
 
-    def _begin_post_load(self) -> bool:
-        """Start any level reconstruction that must follow save restoration."""
-        next_action = self.context.get('next_action')
-        if next_action == 'start_level':
-            next_level_nid = game.game_vars['_next_level_nid']
-            self._post_load_iter = game.start_level_iter(next_level_nid)
-            return False
-        elif next_action == 'restart_level':
-            next_level_nid = game.game_vars['_next_level_nid']
-            self._post_load_iter = game.start_level_iter(next_level_nid)
-            return False
-        elif next_action == 'overworld':
-            game.load_states(['overworld'])
-        return True
-
-    def _advance_post_load(self, budget_ms: float = 8.0) -> bool:
-        if self._post_load_iter is None:
-            return True
-        deadline = time.perf_counter() + max(0.0, budget_ms) / 1000.0
-        while time.perf_counter() < deadline:
-            try:
-                next(self._post_load_iter)
-            except StopIteration:
-                self._post_load_iter = None
-                return True
-        return False
-
     def _complete_load(self) -> None:
-        next_action = self.context.get('next_action')
-        if next_action == 'start_level':
-            game.load_states(['start_level_asset_loading'])
-        elif next_action == 'overworld':
-            game.load_states(['overworld'])
-        else:
-            game.commit_staged_state()
+        # The canonical transaction has already installed S/Q and its one
+        # gameplay destination.  This state owns only the title presentation
+        # handoff that occurs after the authoritative publication boundary.
         game.memory['transition_from'] = self.context.get('transition_from', 'Load Game')
         game.memory['title_menu'] = self.context.get('title_menu')
         game.state.change('title_wait')
@@ -1016,19 +1007,13 @@ class TitleLoadJobState(State):
             self._recover_from_error()
             return 'repeat'
         try:
-            if not self._restore_complete:
-                with RUNTIME_PROFILER.section('save_load_restore_step'):
-                    self._restore_complete = self.job.advance(game, budget_ms=8.0)
-                if self._restore_complete and self._begin_post_load():
-                    self._complete_load()
-                    return 'repeat'
-            elif self._post_load_iter is not None:
-                with RUNTIME_PROFILER.section('save_load_start_level_step'):
-                    if self._advance_post_load(budget_ms=8.0):
-                        self._complete_load()
-                        return 'repeat'
+            with RUNTIME_PROFILER.section('save_load_restore_transaction'):
+                if not self.job.advance(game, budget_ms=8.0):
+                    return None
+                self._complete_load()
+            return 'repeat'
         except Exception as exc:
-            self.error = save.SaveLoadError('Unable to restore staged save')
+            self.error = save.SaveLoadError('Unable to restore save transaction')
             self.error.__cause__ = exc
             self._recover_from_error()
             return 'repeat'

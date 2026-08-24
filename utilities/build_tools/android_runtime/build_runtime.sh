@@ -12,6 +12,7 @@ VERSION_CODE="${6:-}"
 ICON_PATH="${7:-}"
 RUNTIME_DEBUGGER="${8:-0}"
 MODE="${9:-}"
+ARCH="${10:-}"
 DEFAULT_SENTINEL="__LT_DEFAULT__"
 [[ "${PACKAGE_ID}" == "${DEFAULT_SENTINEL}" ]] && PACKAGE_ID=""
 [[ "${APP_NAME}" == "${DEFAULT_SENTINEL}" ]] && APP_NAME=""
@@ -19,6 +20,7 @@ DEFAULT_SENTINEL="__LT_DEFAULT__"
 [[ "${VERSION_CODE}" == "${DEFAULT_SENTINEL}" ]] && VERSION_CODE=""
 [[ "${ICON_PATH}" == "${DEFAULT_SENTINEL}" ]] && ICON_PATH=""
 [[ "${MODE}" == "${DEFAULT_SENTINEL}" ]] && MODE=""
+[[ "${ARCH}" == "${DEFAULT_SENTINEL}" ]] && ARCH=""
 
 PROBE_VENV="${HOME}/.venvs/lt-android-probe"
 if [[ -x "${PROBE_VENV}/bin/buildozer" ]]; then
@@ -93,6 +95,9 @@ fi
 if [[ -n "${MODE}" ]]; then
     PREFLIGHT_ARGS+=(--mode "${MODE}")
 fi
+if [[ -n "${ARCH}" ]]; then
+    PREFLIGHT_ARGS+=(--arch "${ARCH}")
+fi
 if [[ "${RUNTIME_DEBUGGER}" == "1" ]]; then
     PREFLIGHT_ARGS+=(--runtime-debugger)
 fi
@@ -144,7 +149,13 @@ BUILD_MODE="$(
         'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8"))["mode"])' \
         "${RESOLVED_CONFIG}"
 )"
+BUILD_ARCH="$(
+    python3 -c \
+        'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8"))["arch"])' \
+        "${RESOLVED_CONFIG}"
+)"
 echo "Android packaging mode: ${BUILD_MODE}"
+echo "Android packaging ABI: ${BUILD_ARCH}"
 APKSIGNER_PATH=""
 KEYTOOL_PATH="$(command -v keytool)"
 if [[ "${BUILD_MODE}" == "release" ]]; then
@@ -163,12 +174,13 @@ P4A_COMMIT="$(
         "${SOURCE_DIR}/toolchain_manifest.json"
 )"
 NATIVE_HASH="$(
-    printf '%s\n%s\n%s\n%s\n%s\n' \
+    printf '%s\n%s\n%s\n%s\n%s\n%s\n' \
         "${NATIVE_FILES_HASH}" \
         "${P4A_COMMIT}" \
         "$(buildozer --version)" \
         "$(java -version 2>&1 | head -n 1)" \
         "${BUILD_MODE}" \
+        "${BUILD_ARCH}" \
     | sha256sum \
     | cut -d' ' -f1
 )"
@@ -282,7 +294,7 @@ BUILD_STATUS=$?
 set -e
 
 if [[ ${BUILD_STATUS} -ne 0 ]]; then
-    P4A_BUILD_ROOT="${WORK_DIR}/.buildozer/android/platform/build-arm64-v8a/build"
+    P4A_BUILD_ROOT="${WORK_DIR}/.buildozer/android/platform/build-${BUILD_ARCH}/build"
     HOSTPYTHON="${P4A_BUILD_ROOT}/other_builds/hostpython3/desktop/hostpython3/native-build/root/usr/local/bin/python3.11"
     P4A_VENV="${P4A_BUILD_ROOT}/venv"
     if [[ -x "${HOSTPYTHON}" && -x "${P4A_VENV}/bin/python" ]] \

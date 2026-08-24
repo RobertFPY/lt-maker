@@ -11,7 +11,7 @@ import tempfile
 from types import SimpleNamespace
 
 from prepare_runtime import RUNTIME_ROOT, STAGING_DIR, normalize_project_name, prepare, sha256
-from preflight import load_toolchain_manifest, resolve_project
+from preflight import load_toolchain_manifest, resolve_project, supported_android_arches
 
 
 def require(condition: bool, message: str) -> None:
@@ -1317,9 +1317,14 @@ def main(
         app["android.api"] == str(toolchain["android_api"]),
         "android.api does not match toolchain manifest",
     )
+    requested_arch = manifest["build"]["arch"]
     require(
-        app["android.archs"] == toolchain["android_arch"],
-        "Runtime APK must be arm64-only",
+        requested_arch in supported_android_arches(toolchain),
+        f"Unsupported staged Android ABI: {requested_arch}",
+    )
+    require(
+        app["android.archs"] == requested_arch,
+        "Configured APK ABI does not match staged build manifest",
     )
     require(app["p4a.bootstrap"] == "sdl2", "Runtime APK must use SDL2")
     for requirement in (

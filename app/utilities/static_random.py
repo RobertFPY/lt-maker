@@ -83,6 +83,9 @@ def get_generator_from_unit(unit_nid: str, offset: int = 0) -> LCG:
 def get_combat_random_state() -> int:
     return r.combat_random.state
 
+def get_growth_random_state() -> int:
+    return r.growth_random.state
+
 def set_combat_random_state(state: int) -> None:
     r.combat_random.state = state
 

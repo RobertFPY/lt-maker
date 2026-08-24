@@ -282,15 +282,17 @@ class RuntimeDebugger:
     def restart_chapter(difficulty_nid: NID) -> bool:
         if not game.level or difficulty_nid not in DB.difficulty_modes:
             return False
-        snapshot = getattr(game, 'chapter_start_snapshot', None)
         level_nid = game.level.nid
         from app.engine import save
+        snapshot = getattr(game, 'chapter_start_snapshot', None)
+        if not save.snapshot_matches_chapter(snapshot, level_nid):
+            snapshot = None
         restart_slot = None
         if snapshot is None:
             if game.current_save_slot is None:
                 return False
             restart_slot = save.RESTART_SLOTS[game.current_save_slot]
-            if restart_slot.kind != 'start':
+            if not save.restart_slot_matches_chapter(restart_slot, level_nid):
                 return False
 
         # Loading a chapter-start snapshot replaces the state stack directly.
@@ -298,14 +300,17 @@ class RuntimeDebugger:
         # raw-touch capture before the reset can orphan it over the new map.
         from app.engine.android_runtime import set_android_touch_consumer
         set_android_touch_consumer(None)
+        context_kwargs = {
+            'destination': save.LoadDestination.RESTART_LEVEL,
+            'level_nid': level_nid,
+            'difficulty_mode_nid': difficulty_nid,
+        }
         if snapshot is not None:
-            game.build_new()
-            game.load(snapshot)
-            save.set_next_uids(game)
+            context = save.LoadTransactionContext(
+                save_kind='start', **context_kwargs)
+            game.load(snapshot, load_context=context)
         else:
-            save.load_game(game, restart_slot)
-        from app.engine.objects.difficulty_mode import DifficultyModeObject
-        game.current_mode = DifficultyModeObject.from_prefab(
-            DB.difficulty_modes.get(difficulty_nid))
-        game.start_level(level_nid)
+            context = save.LoadTransactionContext.for_slot(
+                restart_slot, **context_kwargs)
+            save.load_game(game, restart_slot, context=context)
         return True

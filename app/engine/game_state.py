@@ -93,8 +93,6 @@ class GameState():
         self.memory: Dict = {}
 
         self.state: state_machine.StateMachine = state_machine.StateMachine()
-        self._staged_state_data = None
-
         self.alerts: List[banner.Banner] = []
 
         self.current_mode: DifficultyModeObject = None
@@ -175,8 +173,6 @@ class GameState():
         self.memory = {}
 
         self.state = state_machine.StateMachine()
-        self._staged_state_data = None
-
         self.playtime = 0
 
         self.alerts = []
@@ -250,11 +246,10 @@ class GameState():
         self.generic()
 
     def prepare_for_load(self):
-        """Clear runtime-owned data without constructing a throwaway new game.
+        """Clear volatile world fields without replacing the active machine.
 
-        A staged save restore replaces every registry below.  Building prefab
-        parties, teams, overworld tilemaps, and map controllers first only to
-        overwrite them caused a visible main-thread spike on Android.
+        Normal restores never call this between frames. It is retained for
+        failed-transaction cleanup after the canonical transaction has failed.
         """
         logging.info("Preparing Game State for Load")
         self.unit_registry = {}
@@ -273,23 +268,23 @@ class GameState():
         self.movement = None
         self.overworld_controller = None
         self.map_sprite_registry = {}
-        self._staged_state_data = None
         self.alerts.clear()
 
-    def commit_staged_state(self) -> None:
-        """Atomically install state saved by an Android staged restore.
-
-        Title loading may need to reconstruct a new chapter first.  Keeping
-        this payload separate prevents a saved MapState or PhaseChangeState
-        from running against the intentionally incomplete loading game.
-        """
-        if self._staged_state_data is None:
-            raise ValueError('No staged state data is available to commit')
-        starting_states, temp_state = self._staged_state_data
+    def install_state_machine(self, state_data, *, prefix_states=None,
+                              suffix_states=None) -> None:
+        """Install transaction-local saved state after the world is complete."""
+        if state_data is None:
+            raise ValueError('No saved state data is available to install')
+        starting_states, temp_state = state_data
+        trace_recorder = self.state.trace_recorder
         restored_state = state_machine.StateMachine()
-        restored_state.load_states(starting_states, temp_state)
+        restored_state.load_states(list(starting_states), list(temp_state))
+        if prefix_states:
+            restored_state.state = list(prefix_states) + restored_state.state
+        if suffix_states:
+            restored_state.load_states(list(suffix_states))
+        restored_state.set_trace_recorder(trace_recorder)
         self.state = restored_state
-        self._staged_state_data = None
 
     def sweep(self):
         """
@@ -342,11 +337,20 @@ class GameState():
 
         self.get_region_under_pos.cache_clear()
 
-    def level_setup(self):
-        for _phase in self.level_setup_iter():
+    def level_setup(self, *, chapter_start_state=None):
+        for _phase in self.level_setup_iter(
+                chapter_start_state=chapter_start_state):
             pass
 
-    def level_setup_iter(self):
+    def _capture_chapter_start_snapshot(self, chapter_start_state=None) -> None:
+        self.chapter_start_snapshot = deepcopy(self.save()[0])
+        if chapter_start_state is not None:
+            # Android keeps the live loader authoritative until the whole
+            # transaction commits. Record the destination stack that desktop
+            # would have had here without publishing it early.
+            self.chapter_start_snapshot['state'] = deepcopy(chapter_start_state)
+
+    def level_setup_iter(self, *, chapter_start_state=None):
         from app.engine.initiative import InitiativeTracker
         from app.engine import action
 
@@ -398,16 +402,19 @@ class GameState():
             self.initiative.start(self.get_all_units())
         # Keep an in-memory restart point before LevelStart events can mutate
         # units, inventory, skills, or other persistent game data.
-        self.chapter_start_snapshot = deepcopy(self.save()[0])
+        self._capture_chapter_start_snapshot(chapter_start_state)
         yield 'complete'
 
-    def start_level(self, level_nid, with_party=None):
-        for _phase in self.start_level_iter(level_nid, with_party):
+    def start_level(self, level_nid, with_party=None, *, chapter_start_state=None):
+        for _phase in self.start_level_iter(
+                level_nid, with_party,
+                chapter_start_state=chapter_start_state):
             pass
 
-    def start_level_iter(self, level_nid, with_party=None):
+    def start_level_iter(self, level_nid, with_party=None, *,
+                         chapter_start_state=None):
         """
-        Yieldable version of level startup used by Android save loading.
+        Phased level startup. Public callers exhaust it synchronously.
         """
         self.boundary = None
         self.generic()
@@ -435,7 +442,8 @@ class GameState():
 
         self.roam_info = RoamInfo(level_prefab.roam, level_prefab.roam_unit)
 
-        for phase in self.level_setup_iter():
+        for phase in self.level_setup_iter(
+                chapter_start_state=chapter_start_state):
             yield phase
 
     def build_level_from_scratch(self, level_nid, tilemap):
@@ -532,25 +540,20 @@ class GameState():
 
         return s_dict, meta_dict
 
-    def load(self, s_dict):
-        """Restore a save synchronously for desktop callers and tests.
-
-        ``load_iter`` is the single source of restore ordering.  Keeping this
-        public method synchronous preserves the long-standing API while the
-        Android title loader can advance the same restore in bounded slices.
-        """
-        for _phase in self.load_iter(s_dict):
-            pass
+    def load(self, s_dict, *, load_context=None):
+        """Synchronously restore through the canonical save transaction."""
+        from app.engine import save
+        context = load_context or save.LoadTransactionContext()
+        save.load_game_data(self, s_dict, context=context)
 
     def load_iter(self, s_dict, *, replace_state_machine: bool = False) -> Iterator[str]:
         """Restore a save in dependency-safe, yieldable phases.
 
-        The iterator never changes the save schema.  Each yield occurs after a
-        coherent boundary (registries, links, board, arrivals, auras, events),
-        so a loading state can budget work per frame without making consumers
-        observe a partially linked registry.  ``replace_state_machine`` is
-        used by the Android title loading state: it retains that loading state
-        until all game data is ready, then atomically installs the saved stack.
+        The iterator never changes the save schema. Each yield names a completed
+        internal phase; it is not permission to resume normal lifecycle work.
+        ``replace_state_machine`` defers S/Q to the canonical transaction.
+        The transaction drains every phase in one main-thread call; these
+        yields are profiling boundaries, not frames.
         """
         from app.engine import action, aura_funcs, records, save, supports, turnwheel, dialog_log
         from app.engine.objects.difficulty_mode import DifficultyModeObject
@@ -577,9 +580,10 @@ class GameState():
         self.current_party = s_dict['current_party']
         self.turncount = int(s_dict['turncount'])
 
-        # Desktop's synchronous path preserves the historical point at which
-        # saved states are restored.  The staged path defers it until the
-        # successful final commit so its loading state remains drawable.
+        # The canonical desktop/Android transaction passes
+        # ``replace_state_machine=True`` so saved S/Q remains local until the
+        # complete world and destination can be installed together.  Keep the
+        # direct iterator behavior for compatibility with narrow internal use.
         if not replace_state_machine:
             self.state.load_states(s_dict['state'][0], s_dict['state'][1])
         yield 'registries'
@@ -763,11 +767,9 @@ class GameState():
         yield 'events'
 
         if replace_state_machine:
-            # A start/restart save must rebuild its level after restore.  Do
-            # not expose the saved MapState until TitleLoadJob has completed
-            # that work, otherwise its begin/update methods run with no level.
-            self._staged_state_data = s_dict['state']
-            yield 'state_prepare'
+            # The caller owns s_dict['state'] transaction-locally. Do not
+            # publish it or retain it on the authoritative singleton.
+            yield 'state_deferred'
         else:
             yield 'state'
 
@@ -1871,18 +1873,20 @@ def start_level(level_nid):
 def load_level(level_nid, save_loc):
     global game
     logging.info("Load Level %s" % level_nid)
-    if not game:
-        game = GameState()
-    else:
-        game.clear()
     import pickle
 
     from app.engine import save
     with open(save_loc, 'rb') as fp:
         s_dict = pickle.load(fp)
+    if not game:
+        game = GameState()
+    else:
+        game.clear()
     game.load_states(['start_level_asset_loading'])
-    game.build_new()
-    game.load(s_dict)
-    save.set_next_uids(game)
-    game.start_level(level_nid)
+    context = save.LoadTransactionContext(
+        save_kind='start',
+        destination=save.LoadDestination.RESTART_LEVEL,
+        level_nid=str(level_nid),
+    )
+    game.load(s_dict, load_context=context)
     return game

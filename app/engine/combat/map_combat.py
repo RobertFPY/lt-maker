@@ -71,27 +71,17 @@ class MapCombat(SimpleCombat):
         # print("Map Combat %s" % self.state)
         elif self.state == 'begin_phase':
             if not self.state_machine.get_state():
-                self.set_state('cleanup0')
+                with RUNTIME_PROFILER.section('combat.cleanup0'):
+                    self.clean_up0()
+                self.set_state('exp_wait')
+                return False
 
-            else:
-                self.set_state('solve_phase')
-
-        elif self.state == 'cleanup0':
-            with RUNTIME_PROFILER.section('combat.cleanup0'):
-                self.clean_up0()
-            self.set_state('exp_wait')
-
-        elif self.state == 'solve_phase':
             with RUNTIME_PROFILER.section('combat.solver_do'):
                 self.actions, self.playback = self.state_machine.do()
             self.full_playback += self.playback
             if not self.actions and not self.playback:
                 self.state_machine.setup_next_state()
                 return False
-
-            self.set_state('setup_phase_visuals')
-
-        elif self.state == 'setup_phase_visuals':
             if not item_system.no_map_hp_display(self.attacker, self.main_item):
                 with RUNTIME_PROFILER.section('combat.health_bar_build'):
                     self._build_health_bars()
@@ -223,20 +213,17 @@ class MapCombat(SimpleCombat):
         elif self.state == 'anim':
             if self._skip or current_time > 83:
                 self._handle_playback()
-                self.set_state('apply_actions')
+                self._apply_actions()
 
-        elif self.state == 'apply_actions':
-            self._apply_actions()
-
-            # Force update hp bars so we can get timing info
-            for hp_bar in self.health_bars.values():
-                hp_bar.update()
-            if self.health_bars:
-                self.hp_bar_time = max(hp_bar.get_time_for_change()
-                                       for hp_bar in self.health_bars.values())
-            else:
-                self.hp_bar_time = 0
-            self.set_state('hp_bar_wait')
+                # Force update hp bars so we can get timing info
+                for hp_bar in self.health_bars.values():
+                    hp_bar.update()
+                if self.health_bars:
+                    self.hp_bar_time = max(hp_bar.get_time_for_change()
+                                           for hp_bar in self.health_bars.values())
+                else:
+                    self.hp_bar_time = 0
+                self.set_state('hp_bar_wait')
 
         elif self.state == 'hp_bar_wait':
             if self._skip or current_time > self.hp_bar_time:
@@ -291,7 +278,7 @@ class MapCombat(SimpleCombat):
         if self.state != current_state:
             self.last_update = engine.get_time()
 
-        if self.state not in ('begin_phase', 'cleanup0', 'proc_animations', 'apply_actions'):
+        if self.state not in ('begin_phase', 'proc_animations'):
             for hp_bar in self.health_bars.values():
                 hp_bar.update()
 

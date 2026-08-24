@@ -1,6 +1,9 @@
 # Auto detect text files and perform LF normalization
 * text=false
 
+# Recovery trace fixtures are hashed byte-for-byte and must stay LF on Windows.
+app/tests/fixtures/recovery_traces/v1/*.jsonl text eol=lf
+
 # Custom for Visual Studio
 *.cs     diff=csharp
 

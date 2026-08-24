@@ -23910,6 +23910,42 @@
         ]
     },
     {
+        "nid": "Internal_Rally_Feint_Test",
+        "name": "Rally (Feint Test)",
+        "desc": "Internal developer item for validating Feint after a Rally assist.",
+        "icon_nid": "Skills",
+        "icon_index": [
+            0,
+            0
+        ],
+        "components": [
+            [
+                "spell",
+                null
+            ],
+            [
+                "target_ally",
+                null
+            ],
+            [
+                "min_range",
+                1
+            ],
+            [
+                "max_range",
+                1
+            ],
+            [
+                "rally_assist",
+                null
+            ],
+            [
+                "no_ai",
+                null
+            ]
+        ]
+    },
+    {
         "nid": "Empty_Spell",
         "name": "Empty Slot",
         "desc": "",

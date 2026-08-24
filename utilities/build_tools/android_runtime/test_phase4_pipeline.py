@@ -36,6 +36,7 @@ from preflight import (
 )
 from publish_artifacts import publish
 from validate_runtime import validate_touch_controls
+from verify_apk import validate_native_abi
 
 
 class Phase4PipelineTests(unittest.TestCase):
@@ -300,6 +301,17 @@ class Phase4PipelineTests(unittest.TestCase):
         self.assertEqual("debug", config.mode)
         self.assertEqual([], validate_build_config(config))
 
+    def test_x86_64_is_a_supported_explicit_build_abi(self):
+        config = load_build_config(arch="x86_64")
+
+        self.assertEqual("x86_64", config.arch)
+        self.assertEqual([], validate_build_config(config))
+
+    def test_unknown_build_abi_is_rejected(self):
+        config = load_build_config(arch="x86")
+
+        self.assertTrue(any("ABI" in error for error in validate_build_config(config)))
+
     def test_project_editor_build_config_overrides_release_identity(self):
         with tempfile.TemporaryDirectory() as temporary_dir:
             project = Path(temporary_dir) / "golden.ltproj"
@@ -327,7 +339,7 @@ class Phase4PipelineTests(unittest.TestCase):
             app_name="Bad",
             version_name="1",
             version_code=0,
-            arch="x86_64",
+            arch="mips",
             mode="release",
         )
         errors = validate_build_config(config)
@@ -414,6 +426,7 @@ class Phase4PipelineTests(unittest.TestCase):
                         "app_name": "Example Game",
                         "version_name": "1.2.3",
                         "version_code": 123,
+                        "arch": "x86_64",
                     }
                 ),
                 encoding="utf-8",
@@ -423,7 +436,80 @@ class Phase4PipelineTests(unittest.TestCase):
             self.assertIn("package.name = fireemblem", configured)
             self.assertIn("package.domain = com.example", configured)
             self.assertIn("version = 1.2.3", configured)
+            self.assertIn("android.archs = x86_64", configured)
         self.assertIn("android.numeric_version = 123", configured)
+
+    def test_x86_64_abi_validation_rejects_wrong_elf_machine(self):
+        x86_64_header = bytearray(20)
+        x86_64_header[:4] = b"\x7fELF"
+        x86_64_header[5] = 1
+        x86_64_header[18:20] = (62).to_bytes(2, "little")
+        arm64_header = bytearray(x86_64_header)
+        arm64_header[18:20] = (183).to_bytes(2, "little")
+
+        self.assertEqual(
+            [],
+            validate_native_abi(
+                "x86_64",
+                {"x86_64"},
+                ["lib/x86_64/libpython3.11.so"],
+                lambda _name: bytes(x86_64_header),
+            ),
+        )
+        errors = validate_native_abi(
+            "x86_64",
+            {"x86_64"},
+            ["lib/x86_64/libcrypto.so"],
+            lambda _name: bytes(arm64_header),
+        )
+        self.assertTrue(any("ELF machine" in error for error in errors))
+
+    def test_abi_validation_rejects_unrequested_native_directory(self):
+        header = bytearray(20)
+        header[:4] = b"\x7fELF"
+        header[5] = 1
+        header[18:20] = (62).to_bytes(2, "little")
+
+        errors = validate_native_abi(
+            "x86_64",
+            {"x86_64", "arm64-v8a"},
+            [
+                "lib/x86_64/libpython3.11.so",
+                "lib/arm64-v8a/libpython3.11.so",
+            ],
+            lambda _name: bytes(header),
+        )
+
+        self.assertTrue(any("advertises native ABIs" in error for error in errors))
+        self.assertTrue(any("ABI directories" in error for error in errors))
+
+    def test_abi_validation_accepts_only_the_known_gzip_pybundle_payload(self):
+        header = bytearray(20)
+        header[:4] = b"\x7fELF"
+        header[5] = 1
+        header[18:20] = (62).to_bytes(2, "little")
+        payloads = {
+            "lib/x86_64/libpython3.11.so": bytes(header),
+            "lib/x86_64/libpybundle.so": b"\x1f\x8b" + bytes(18),
+        }
+
+        self.assertEqual(
+            [],
+            validate_native_abi(
+                "x86_64",
+                {"x86_64"},
+                list(payloads),
+                payloads.__getitem__,
+            ),
+        )
+        payloads["lib/x86_64/libpybundle.so"] = b"not-gzip"
+        errors = validate_native_abi(
+            "x86_64",
+            {"x86_64"},
+            list(payloads),
+            payloads.__getitem__,
+        )
+        self.assertTrue(any("pybundle" in error for error in errors))
 
     def test_long_unlisted_portrait_import_is_excluded_from_android_snapshot(self):
         with tempfile.TemporaryDirectory() as temporary_dir:
@@ -534,6 +620,7 @@ class Phase4PipelineTests(unittest.TestCase):
                         "package_id": "com.example.sample",
                         "version_name": "1.0.0",
                         "version_code": 100,
+                        "abis": ["arm64-v8a"],
                     }
                 ),
                 encoding="utf-8",
@@ -578,6 +665,7 @@ class Phase4PipelineTests(unittest.TestCase):
                         "package_id": "com.example.sample",
                         "version_name": "1.0.0",
                         "version_code": 100,
+                        "abis": ["arm64-v8a"],
                     }
                 ),
                 encoding="utf-8",
@@ -622,6 +710,7 @@ class Phase4PipelineTests(unittest.TestCase):
                         "version_name": "1.0.0",
                         "version_code": 100,
                         "signing_profile": "development",
+                        "abis": ["arm64-v8a"],
                     }
                 ),
                 encoding="utf-8",
@@ -650,6 +739,71 @@ class Phase4PipelineTests(unittest.TestCase):
             self.assertNotIn("unsigned", result["apk"])
             self.assertTrue(
                 (output / "lt-android-runtime-arm64-release-dev-signed.apk").is_file()
+            )
+
+    def test_publish_names_x86_64_artifacts_from_active_config(self):
+        with tempfile.TemporaryDirectory() as temporary_dir:
+            root = Path(temporary_dir)
+            apk = root / "input.apk"
+            apk.write_bytes(b"x86_64 apk")
+            preflight = root / "preflight.json"
+            verification = root / "verification.json"
+            config = root / "config.json"
+            build_log = root / "build.log"
+            output = root / "artifacts"
+            preflight.write_text(
+                json.dumps(
+                    {
+                        "passed": True,
+                        "project_dir": "sample.ltproj",
+                        "source_digest": "abc",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            verification.write_text(
+                json.dumps(
+                    {
+                        "passed": True,
+                        "sha256": hashlib.sha256(apk.read_bytes()).hexdigest(),
+                        "source_digest": "abc",
+                        "package_id": "com.example.sample",
+                        "version_name": "1.0.0",
+                        "version_code": 100,
+                        "abis": ["x86_64"],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            config.write_text(
+                json.dumps(
+                    {
+                        "package_id": "com.example.sample",
+                        "app_name": "Sample",
+                        "version_name": "1.0.0",
+                        "version_code": 100,
+                        "icon": None,
+                        "arch": "x86_64",
+                        "mode": "debug",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            build_log.write_text("successful build\n", encoding="utf-8")
+
+            result = publish(
+                apk,
+                preflight,
+                verification,
+                build_log,
+                config,
+                output,
+            )
+
+            self.assertIn("x86_64", Path(result["apk"]).name)
+            self.assertEqual(
+                apk.read_bytes(),
+                (output / "lt-android-runtime-x86_64-debug.apk").read_bytes(),
             )
 
 

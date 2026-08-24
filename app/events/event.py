@@ -8,7 +8,6 @@ from app.engine.objects.skill import SkillObject
 from app.engine.text_evaluator import TextEvaluator
 
 import logging
-import time
 from typing import Any, Callable, Dict, List, Tuple, Optional
 
 import app.engine.config as cf
@@ -45,9 +44,6 @@ class EvaluateException(EventError):
 class Event():
     skippable = {"wait", "bop_portrait", "sound",
                  "location_card", "credits", "ending"}
-    # Event command batches must leave time for drawing and input on Android.
-    # A single command can still request its own incremental implementation.
-    android_process_budget_seconds = 0.002
 
     def __init__(self, event_prefab: EventPrefab, trigger: triggers.EventTrigger, game: GameState = None):
         self._transition_speed: int = 250
@@ -184,11 +180,23 @@ class Event():
         return self.processor.finished() and not self.command_queue
 
     def update(self):
-        # update all internal updates, remove the ones that are finished
-        self.should_update = {name: to_update for name, to_update in self.should_update.items() if not to_update(self.do_skip)}
+        # An Android tilemap change may prepare pending structures over several
+        # frames.  Keep the old live world authoritative until its single
+        # synchronous commit; no other event update or movement may advance in
+        # that interval.
+        android_tilemap_pending = getattr(self, '_android_tilemap_pending', False)
+        if android_tilemap_pending:
+            tilemap_update = self.should_update.get('tilemap_change')
+            if tilemap_update and tilemap_update(self.do_skip):
+                del self.should_update['tilemap_change']
+        else:
+            # update all internal updates, remove the ones that are finished
+            self.should_update = {
+                name: to_update for name, to_update in self.should_update.items()
+                if not to_update(self.do_skip)}
 
         # Update movement so that no_block works correctly
-        if self.game.movement:
+        if self.game.movement and not android_tilemap_pending:
             self.game.movement.update()
 
         # A presentation fence ends a fast-forward host frame. Resume the
@@ -273,10 +281,6 @@ class Event():
                     self.end()
                 else:
                     self.process()
-                if getattr(self, '_android_process_yielded', False):
-                    # ``_update_state`` may otherwise call process up to five
-                    # times in this host frame, silently defeating the budget.
-                    break
                 if self.state == 'paused':
                     break  # Necessary so we don't go right back to processing
 
@@ -332,6 +336,8 @@ class Event():
                 self.transition_state = None
 
     def take_input(self, event):
+        if getattr(self, '_android_tilemap_pending', False):
+            return
         if event == 'START' or event == 'BACK':
             get_sound_thread().play_sfx('Select 4')
             self.skip(event == 'START')
@@ -416,16 +422,7 @@ class Event():
         self.state = 'almost_complete'
 
     def process(self):
-        self._android_process_yielded = False
-        deadline = None
-        if is_android_render_optimization_enabled():
-            deadline = time.perf_counter() + self.android_process_budget_seconds
-        commands_run = 0
         while self.state == 'processing':
-            if commands_run and deadline is not None and time.perf_counter() >= deadline:
-                self._android_process_yielded = True
-                RUNTIME_PROFILER.count('event_budget_yield')
-                break
             if not self.command_queue:
                 next_command = self.processor.fetch_next_command()
                 if not next_command:
@@ -451,7 +448,6 @@ class Event():
                 else:
                     with RUNTIME_PROFILER.section('event_command:%s' % command.nid):
                         self.run_command(command)
-                commands_run += 1
             except EventError as e:
                 raise e
             except Exception as e:

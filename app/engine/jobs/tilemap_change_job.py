@@ -7,6 +7,7 @@ from app.engine.boundary import BoundaryInterface
 from app.engine.game_board import GameBoard
 from app.engine.objects.tilemap import TileMapObject
 from app.engine.performance import RUNTIME_PROFILER
+from app.engine.runtime_capabilities.work_budget import OffWorldWorkBudget
 
 if TYPE_CHECKING:
     from app.engine.game_state import GameState
@@ -15,10 +16,7 @@ if TYPE_CHECKING:
 BoardBuilder = Callable[[TileMapObject], Generator[str, None, GameBoard]]
 BoundaryBuilder = Callable[[int, int], BoundaryInterface]
 TilemapBuilder = Callable[[object], Union[TileMapObject, Generator[str, None, TileMapObject]]]
-Commit = Callable[
-    [TileMapObject, GameBoard, BoundaryInterface],
-    Optional[Generator[str, None, None]],
-]
+Commit = Callable[[TileMapObject, GameBoard, BoundaryInterface], None]
 
 
 class TilemapChangeJob:
@@ -29,7 +27,6 @@ class TilemapChangeJob:
     job only owns pending objects and a failure leaves the live map alone.
     """
 
-    FRAME_BUDGET_NS = 4_000_000
     CAPTURE_STATE = 'CAPTURE_STATE'
     CREATE_TILEMAP = 'CREATE_TILEMAP'
     CREATE_TEMP_BOARD = 'CREATE_TEMP_BOARD'
@@ -49,6 +46,7 @@ class TilemapChangeJob:
         board_builder: BoardBuilder = GameBoard.build_iter,
         boundary_builder: BoundaryBuilder = BoundaryInterface,
         commit: Commit,
+        work_budget: OffWorldWorkBudget,
     ) -> None:
         self.game = game
         self.tilemap_prefab = tilemap_prefab
@@ -56,16 +54,15 @@ class TilemapChangeJob:
         self.board_builder = board_builder
         self.boundary_builder = boundary_builder
         self.commit = commit
+        self.work_budget = work_budget
         self.state = self.CAPTURE_STATE
         self.error: Optional[Exception] = None
         self.pending_tilemap: Optional[TileMapObject] = None
         self.pending_board: Optional[GameBoard] = None
         self.pending_boundary: Optional[BoundaryInterface] = None
         self.last_board_phase: Optional[str] = None
-        self.last_commit_phase: Optional[str] = None
         self._tilemap_iter: Optional[Generator[str, None, TileMapObject]] = None
         self._board_iter: Optional[Generator[str, None, GameBoard]] = None
-        self._commit_iter: Optional[Generator[str, None, None]] = None
 
     @property
     def is_finished(self) -> bool:
@@ -81,7 +78,7 @@ class TilemapChangeJob:
 
     def update(self, should_skip: bool) -> bool:
         deadline_ns = (2**63 - 1 if should_skip
-                       else time.perf_counter_ns() + self.FRAME_BUDGET_NS)
+                       else time.perf_counter_ns() + self.work_budget.deadline_ns)
         return self.step(deadline_ns)
 
     def step(self, deadline_ns: int) -> bool:
@@ -133,16 +130,11 @@ class TilemapChangeJob:
             assert self.pending_tilemap is not None
             assert self.pending_board is not None
             assert self.pending_boundary is not None
-            if self._commit_iter is None:
-                self._commit_iter = self.commit(
-                    self.pending_tilemap, self.pending_board, self.pending_boundary)
-                if self._commit_iter is None:
-                    self.state = self.COMPLETE
-                    return
-            try:
-                self.last_commit_phase = next(self._commit_iter)
-            except StopIteration:
-                self.state = self.COMPLETE
+            result = self.commit(
+                self.pending_tilemap, self.pending_board, self.pending_boundary)
+            if result is not None:
+                raise TypeError('Tilemap change commit must be synchronous and return None')
+            self.state = self.COMPLETE
 
     def _validate(self) -> None:
         if not self.pending_tilemap or not self.pending_board or not self.pending_boundary:

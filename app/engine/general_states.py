@@ -41,12 +41,6 @@ class LoadingState(State):
     # For A E S T H E T I C S
     duration = 1000  # How long to wait after we load in everything to actually move to the turn_change state
 
-    @staticmethod
-    def _flush_and_load_songs(sound_controller, level_songs) -> None:
-        sound_controller.flush()
-        if level_songs:
-            sound_controller.load_songs(level_songs)
-
     def start(self):
         logging.debug("Loading state...")
         self.completed_time = None
@@ -75,22 +69,9 @@ class LoadingState(State):
                 level_songs.add(music_command.parameters.get('Music'))
             for music_command in inspector.find_all_calls_of_command(event_commands.ChangeMusic(), self.level_nid).values():
                 level_songs.add(music_command.parameters.get('Music'))
-        if is_android_runtime():
-            # Releasing cached pygame Sound objects can take over 100 ms on
-            # Android. Do it in the same worker that preloads the next songs.
-            loading_music_thread = threading.Thread(
-                target=self._flush_and_load_songs,
-                args=(sound_controller, level_songs),
-            )
-            loading_music_thread.start()
+        loading_music_thread = sound_controller.prepare_level_songs(level_songs)
+        if loading_music_thread:
             self.loading_threads.append(loading_music_thread)
-        else:
-            sound_controller.flush()
-            if level_songs:
-                loading_music_thread = threading.Thread(
-                    target=sound_controller.load_songs, args=[level_songs])
-                loading_music_thread.start()
-                self.loading_threads.append(loading_music_thread)
 
     def update(self):
         if not self.completed_time and not any([thread.is_alive() for thread in self.loading_threads]):
@@ -494,15 +475,20 @@ def battle_save():
 def load_save_slot(save_slot: save.SaveSlot):
     """Replace the current session with a regular save-slot state."""
     logging.info("Loading save of kind %s from the map menu...", save_slot.kind)
-    game.state.clear()
-    game.state.process_temp_state()
-    save.load_game(game, save_slot)
-    if save_slot.kind == 'start':
-        next_level_nid = game.game_vars['_next_level_nid']
-        game.load_states(['start_level_asset_loading'])
-        game.start_level(next_level_nid)
-    elif save_slot.kind == 'overworld':
-        game.load_states(['overworld'])
+    destination = (
+        save.LoadDestination.START_LEVEL
+        if save_slot.kind == 'start'
+        else save.LoadDestination.OVERWORLD
+        if save_slot.kind == 'overworld'
+        else save.LoadDestination.SAVED
+    )
+    context = save.LoadTransactionContext.for_slot(
+        save_slot,
+        destination=destination,
+        clear_existing_states=True,
+        preserve_existing_states=False,
+    )
+    save.load_game(game, save_slot, context=context)
     save.remove_suspend()
 
 class InChapterLoadState(MapState):
@@ -554,8 +540,20 @@ class InChapterLoadState(MapState):
 
     @staticmethod
     def _start_android_load(save_slot: save.SaveSlot) -> None:
-        """Replace the map with a drawable loader before staged restoration."""
-        job = save.SaveLoadJob(save_slot)
+        """Replace the map with an opaque loader before atomic restoration."""
+        destination = (
+            save.LoadDestination.START_LEVEL
+            if save_slot.kind == 'start'
+            else save.LoadDestination.OVERWORLD
+            if save_slot.kind == 'overworld'
+            else save.LoadDestination.SAVED
+        )
+        context = save.LoadTransactionContext.for_slot(
+            save_slot,
+            destination=destination,
+            preserve_existing_states=False,
+        )
+        job = save.SaveLoadJob(save_slot, context=context)
         job.start()
         game.memory['_in_chapter_save_load_job'] = job
         game.memory['_in_chapter_save_load_slot'] = save_slot
@@ -573,7 +571,7 @@ class InChapterLoadState(MapState):
 
 
 class InChapterLoadJobState(State):
-    """Android-only staged save loader for the in-chapter Load menu."""
+    """Android-only opaque loader for an atomic in-chapter restore."""
 
     name = 'in_chapter_load_job'
     in_level = False
@@ -585,43 +583,21 @@ class InChapterLoadJobState(State):
         self.save_slot = game.memory.get('_in_chapter_save_load_slot')
         self.error = None
         self.finished = False
-        self._post_load_iter = None
         if self.job is None or self.save_slot is None:
             self.error = save.SaveLoadError('In-chapter loader started without a save job')
 
     def _recover_from_error(self) -> None:
-        logging.error('Staged in-chapter save load failed: %s', self.error, exc_info=self.error)
+        logging.error('In-chapter save load failed: %s', self.error, exc_info=self.error)
         if self.job:
             self.job.abort(game)
         else:
-            game.clear()
-            game.build_new()
-        game.load_states(['title_start'])
+            save.reset_failed_load(game)
+        game.memory.pop('_in_chapter_save_load_job', None)
+        game.memory.pop('_in_chapter_save_load_slot', None)
         self.finished = True
 
-    def _begin_post_load(self) -> bool:
-        if self.save_slot.kind == 'start':
-            self._post_load_iter = game.start_level_iter(game.game_vars['_next_level_nid'])
-            return False
-        if self.save_slot.kind == 'overworld':
-            game.load_states(['overworld'])
-            return True
-        game.commit_staged_state()
-        return True
-
-    def _advance_post_load(self, budget_ms: float = 8.0) -> bool:
-        deadline = time.perf_counter() + max(0.0, budget_ms) / 1000.0
-        while time.perf_counter() < deadline:
-            try:
-                next(self._post_load_iter)
-            except StopIteration:
-                self._post_load_iter = None
-                return True
-        return False
-
     def _complete_load(self) -> None:
-        if self.save_slot.kind == 'start':
-            game.load_states(['start_level_asset_loading'])
+        # S/Q and the route destination were published by the canonical core.
         save.remove_suspend()
         game.memory.pop('_in_chapter_save_load_job', None)
         game.memory.pop('_in_chapter_save_load_slot', None)
@@ -638,21 +614,13 @@ class InChapterLoadJobState(State):
             self._recover_from_error()
             return 'repeat'
         try:
-            if not self.job.completed:
-                with RUNTIME_PROFILER.section('in_chapter_load_restore_step'):
-                    if not self.job.advance(game, budget_ms=8.0):
-                        return None
-            if self.job.completed and self._post_load_iter is None:
-                if self._begin_post_load():
-                    self._complete_load()
-                    return 'repeat'
-            if self._post_load_iter is not None:
-                with RUNTIME_PROFILER.section('in_chapter_load_start_level_step'):
-                    if self._advance_post_load():
-                        self._complete_load()
-                        return 'repeat'
+            with RUNTIME_PROFILER.section('in_chapter_load_restore_transaction'):
+                if not self.job.advance(game, budget_ms=8.0):
+                    return None
+                self._complete_load()
+            return 'repeat'
         except Exception as exc:
-            self.error = save.SaveLoadError('Unable to restore staged in-chapter save')
+            self.error = save.SaveLoadError('Unable to restore in-chapter save transaction')
             self.error.__cause__ = exc
             self._recover_from_error()
             return 'repeat'

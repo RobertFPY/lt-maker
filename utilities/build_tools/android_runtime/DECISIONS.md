@@ -91,7 +91,9 @@ A build is not publishable until:
 
 - `aapt` reports the requested package ID and version name/code;
 - minimum API and target API match the toolchain manifest;
-- the only native ABI directory is `arm64-v8a`;
+- the only native ABI directory is the ABI selected by the effective build
+  config (`arm64-v8a` or `x86_64`), and every packaged native library has the
+  matching ELF machine value;
 - `apksigner` verifies APK Signature Scheme v2;
 - `assets/private.tar` contains passing preflight and phase-4 runtime manifests;
 - the packaged build config matches the requested config.

@@ -33,6 +33,7 @@ STAGE_MARKERS = (
     ),
     ("ARTIFACT_DIR:", 98, "Artifacts published"),
 )
+SUPPORTED_ANDROID_ABIS = ("arm64-v8a", "x86_64")
 
 
 @dataclass(frozen=True)
@@ -175,8 +176,11 @@ def validate_config(config: AndroidEditorBuildConfig) -> list[str]:
         )
     if not 1 <= config.version_code <= 2_100_000_000:
         errors.append("Version code must be between 1 and 2100000000.")
-    if config.arch != "arm64-v8a":
-        errors.append("The current Android pipeline supports only arm64-v8a.")
+    if config.arch not in SUPPORTED_ANDROID_ABIS:
+        errors.append(
+            f"Unsupported Android ABI {config.arch!r}; choose one of "
+            f"{', '.join(SUPPORTED_ANDROID_ABIS)}."
+        )
     if config.mode not in {"debug", "release"}:
         errors.append("Build mode must be debug or release.")
     if not config.output_directory.strip():
@@ -237,6 +241,8 @@ def powershell_arguments(
         config.version_name,
         "-VersionCode",
         str(config.version_code),
+        "-Arch",
+        config.arch,
         "-Mode",
         config.mode,
     ]

@@ -22,8 +22,8 @@ Maker while retaining this command-line entry point.
    is re-hashed after the copy; a concurrent source change aborts the build.
 6. Materialize `buildozer.spec`, then run Buildozer/python-for-android with the
    SDL2 bootstrap and the custom pygame-ce 2.3.2 recipe.
-7. Verify package ID, version name/code, min/target API, ARM64-only native
-   libraries, v2 signature, and the packaged phase-4 runtime/preflight
+7. Verify package ID, version name/code, min/target API, selected-ABI native
+   libraries and ELF machine values, v2 signature, and the packaged phase-4 runtime/preflight
    manifests. The runtime and packaged preflight source digests must match.
 8. Publish APK, SHA-256, preflight, verification report, effective config, and
    complete build log as one atomic artifact directory. Previous immutable
@@ -31,7 +31,8 @@ Maker while retaining this command-line entry point.
 
 `toolchain_manifest.json` is the authoritative pin set: CPython 3.11.9,
 pygame-ce 2.3.2, python-for-android 2026.05.09, API 36, minimum API 26, NDK 29,
-and `arm64-v8a` debug APK.
+and an `arm64-v8a` default ABI. Supported per-build ABIs are declared in the
+same manifest.
 
 ## Build from LT Maker (phase 5)
 
@@ -57,8 +58,8 @@ display a warning because Android will treat the result as a different app and
 will not upgrade the old app's persistent player data. Keystores and passwords
 are not represented in either project configuration.
 
-The current pipeline supports `arm64-v8a` Debug signing and native-optimized
-Release builds signed with the established development certificate. The latter
+The current pipeline supports `arm64-v8a` and `x86_64` Debug signing and
+native-optimized Release builds signed with the established development certificate. The latter
 is for private installation and testing only; it is not a Play Store release.
 
 ## Preflight
@@ -110,11 +111,12 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File `
   -AppName "My Game" `
   -VersionName "1.0.0" `
   -VersionCode 100 `
-  -Icon "E:\Games\MyGameIcon.png"
+  -Icon "E:\Games\MyGameIcon.png" `
+  -Arch "x86_64"
 ```
 
 The build dialog supports `debug` and native-optimized `release` APK modes for
-`arm64-v8a`. Release output is development-signed after Buildozer packages it,
+`arm64-v8a` and `x86_64`. Release output is development-signed after Buildozer packages it,
 then verified against the existing development certificate before publication.
 No keystore credentials are stored in project Android JSON. AAB, production
 keystores, and Play delivery remain out of scope.

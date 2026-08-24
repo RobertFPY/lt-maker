@@ -33,7 +33,7 @@ from app.events.event_validators import (
     Group, StartingGroup, Event,
     OverworldNID, OverworldLocation, OverworldNodeNID, OverworldNodeMenuOption, OverworldEntity,
     ItemComponent, SkillComponent,
-    Sprite, MaybeSprite, PhaseMusic,
+    Sprite, MaybeSprite, PhaseMusic, Ruleset,
 )
 from app.data.database.units import UnitPrefab
 from app.data.database.skills import SkillPrefab
@@ -69,6 +69,7 @@ import unittest
 from unittest.mock import MagicMock, patch, call
 
 from app.tests.mocks.mock_game import get_mock_game
+from app.events import event_commands
 from app.events.event_commands import EventCommand, parse_text_to_command
 from app.utilities.enums import Alignments
 from app.engine.codegen import source_generator
@@ -95,6 +96,13 @@ class EventValidateUnitTests(unittest.TestCase):
         self.assert_validator_passes(validator, "10")
         self.assert_validator_passes(validator, "-5")
         self.assert_validator_fails(validator, "abc")
+
+    def test_ruleset_validator(self):
+        validator = Ruleset()
+        for value in ('Retro', 'retro', 'Modern', 'modern', 'default'):
+            self.assert_validator_passes(validator, value)
+        self.assert_validator_fails(validator, 'unsupported')
+        self.assertEqual('Ruleset', event_commands.SetGameRules.get_validator_from_keyword('Ruleset'))
 
     # --- pure numeric validators ---
 

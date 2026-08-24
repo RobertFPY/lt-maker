@@ -1,27 +1,30 @@
 from functools import lru_cache
+import sys
+from types import ModuleType
 from typing import List, Type
 
 from app.data.database.components import ComponentType
 from app.data.database.item_components import ItemComponent, ItemTags
-from app.utilities.class_utils import recursive_subclasses
+from app.engine.component_catalog import build_component_catalog
 from app.utilities.data import Data
+
+
+def _engine_component_modules() -> tuple[ModuleType, ...]:
+    from app.engine import item_components
+    prefix = item_components.__name__ + '.'
+    return tuple(module for name, module in sorted(sys.modules.items())
+                 if name.startswith(prefix) and isinstance(module, ModuleType))
 
 
 @lru_cache(1)
 def get_cached_item_components(proj_dir: str):
-    # Necessary for get_item_components to find all the
-    # item components defined in item_components folder
     from app.data.resources.resources import RESOURCES
-    from app.engine import item_components
-    if RESOURCES.has_loaded_custom_components():
-        # Necessary for get_item_components to find the item component subclasses
-        # defined here
-        import custom_components
-
-    subclasses = recursive_subclasses(ItemComponent)
+    catalog = build_component_catalog(
+        ItemComponent, _engine_component_modules(),
+        RESOURCES.get_loaded_custom_component_modules(), 'item')
     # Sort by tag
-    subclasses = sorted(subclasses, key=lambda x: list(ItemTags).index(x.tag) if x.tag in list(ItemTags) else 100)
-    return Data(subclasses)
+    return Data(sorted(catalog.values(),
+                       key=lambda x: list(ItemTags).index(x.tag) if x.tag in list(ItemTags) else 100))
 
 def get_item_components() -> Data[Type[ItemComponent]]:
     from app.data.database.database import DB

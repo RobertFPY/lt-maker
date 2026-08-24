@@ -37,6 +37,8 @@ class InitState(SolverState):
     name = 'init'
 
     def get_next_state(self, solver):
+        if getattr(solver, 'force_end_combat', False):
+            return 'done'
         command = solver.get_script()
         if command == '--':
             if solver.defender_has_vantage():
@@ -51,30 +53,33 @@ class AttackerState(SolverState):
     num_multiattacks = 1
 
     def get_next_state(self, solver):
+        if getattr(solver, 'force_end_combat', False):
+            return 'done'
         command = solver.get_script()
-
-        can_double_in_pairup = not DB.constants.value('limit_attack_stance')
 
         if solver.attacker_alive() and (not solver.defender or solver.defender_alive()):
             if command == '--':
                 # Calculate the number of phases in this combat
-                attacker_num_phases = combat_calcs.compute_attack_phases(
+                attacker_phase_plan = solver.get_attack_phase_plan(
                     solver.attacker, solver.defender, solver.main_item, solver.def_item, 'attack', solver.get_attack_info())
+                attacker_num_phases = attacker_phase_plan.total_phases
                 if solver.defender:
-                    defender_num_phases = combat_calcs.compute_attack_phases(
+                    defender_phase_plan = solver.get_attack_phase_plan(
                         solver.defender, solver.attacker, solver.def_item, solver.main_item, 'defense', solver.get_defense_info())
+                    defender_num_phases = defender_phase_plan.total_phases
                 else:
                     defender_num_phases = 1
 
-                if solver.attacker.strike_partner and solver.attacker_partner_alive() and \
-                        (solver.num_attacks == 1 or can_double_in_pairup) \
-                        and solver.attacker_partner_item_has_uses() \
-                        and solver.num_subattacks >= self.num_multiattacks:
+                if solver.item_has_uses() and solver.num_subattacks < self.num_multiattacks:
+                    return 'attacker'
+                elif solver.item_has_uses() and \
+                        solver.num_attacks < 1 + attacker_phase_plan.early_phases:
+                    solver.num_subattacks = 0
+                    return 'attacker'
+                elif solver.attacker_partner_pending and solver.attacker_partner_alive() and \
+                        solver.attacker_partner_item_has_uses():
                     solver.num_subattacks = 0
                     return 'attacker_partner'
-                elif solver.item_has_uses() and \
-                        solver.num_subattacks < self.num_multiattacks:
-                    return 'attacker'
                 elif solver.item_has_uses() and \
                         solver.attacker_has_desperation() and \
                         solver.num_attacks < attacker_num_phases:
@@ -114,18 +119,29 @@ class AttackerState(SolverState):
                     solver.update_stats(playback)
                 solver.process(actions, playback, solver.attacker, defender, target_pos, item, resolve_weapon(defender), 'attack', attack_info)
                 skill_system.end_sub_combat(actions, playback, defender, resolve_weapon(defender), solver.attacker, solver.main_item, 'defense', attack_info)
+                if solver.force_end_combat:
+                    break
             for target in splash:
                 skill_system.start_sub_combat(actions, playback, target, None, solver.attacker, solver.main_item, 'defense', attack_info)
                 solver.process(actions, playback, solver.attacker, target, target_pos, item, None, 'splash', attack_info)
                 skill_system.end_sub_combat(actions, playback, target, None, solver.attacker, solver.main_item, 'defense', attack_info)
+                if solver.force_end_combat:
+                    break
+            if solver.force_end_combat:
+                break
             # Make sure that we run on_hit even if otherwise unavailable
             if not defender and not splash:
                 solver.simple_process(actions, playback, solver.attacker, solver.attacker, target_pos, item, None, None, None)
+
+        if getattr(solver, 'force_end_combat', False):
+            skill_system.end_sub_combat(actions, playback, solver.attacker, solver.main_item, solver.defender, resolve_weapon(solver.defender), 'attack', attack_info)
+            return
 
         solver.num_subattacks += 1
         self.num_multiattacks = combat_calcs.compute_multiattacks(solver.attacker, solver.defender, solver.main_item, 'attack', attack_info)
         if solver.num_subattacks >= self.num_multiattacks:
             solver.num_attacks += 1
+            solver.queue_attacker_partner()
         # If we are trying to go for a subattack, but there is no defender and we don't do double splash
         # just skip the remaining attacks
         elif not DB.constants.value('double_splash') and all(defender is None for defender in solver.defenders):
@@ -141,24 +157,33 @@ class AttackerPartnerState(SolverState):
     # Nearly identical to attacker state except contains no possibility that attacker partner is the next in line to attack
 
     def get_next_state(self, solver):
+        if getattr(solver, 'force_end_combat', False):
+            return 'done'
         command = solver.get_script()
 
         if solver.attacker_alive() and (not solver.defender or solver.defender_alive()):
             if command == '--':
                 
                 # Calculate the number of phases in this combat
-                attacker_num_phases = combat_calcs.compute_attack_phases(
+                attacker_phase_plan = solver.get_attack_phase_plan(
                     solver.attacker, solver.defender, solver.main_item, solver.def_item, 'attack', solver.get_attack_info())
+                attacker_num_phases = attacker_phase_plan.total_phases
                 if solver.defender:
-                    defender_num_phases = combat_calcs.compute_attack_phases(
+                    defender_phase_plan = solver.get_attack_phase_plan(
                         solver.defender, solver.attacker, solver.def_item, solver.main_item, 'defense', solver.get_defense_info())
+                    defender_num_phases = defender_phase_plan.total_phases
                 else:
                     defender_num_phases = 1
 
-                if solver.item_has_uses() and solver.attacker_partner_alive() \
-                        and solver.attacker_partner_item_has_uses() \
-                        and solver.num_subattacks < self.num_multiattacks:
+                if solver.attacker_partner_pending and solver.attacker_partner_alive() \
+                        and solver.attacker_partner_item_has_uses():
+                    if solver.num_subattacks >= self.num_multiattacks:
+                        solver.num_subattacks = 0
                     return 'attacker_partner'
+                elif solver.item_has_uses() and \
+                        solver.num_attacks < 1 + attacker_phase_plan.early_phases:
+                    solver.num_subattacks = 0
+                    return 'attacker'
                 elif solver.item_has_uses() and \
                         solver.attacker_has_desperation() and \
                         solver.num_attacks < attacker_num_phases:
@@ -194,16 +219,28 @@ class AttackerPartnerState(SolverState):
                     solver.update_stats(playback)
                 solver.process(actions, playback, atk_p, defender, target_pos, item, resolve_weapon(defender), 'attack', attack_info, assist=True)
                 skill_system.end_sub_combat(actions, playback, defender, resolve_weapon(defender), atk_p, solver.main_item, 'defense', attack_info)
+                if solver.force_end_combat:
+                    break
             for target in splash:
                 skill_system.start_sub_combat(actions, playback, target, None, atk_p, solver.main_item, 'defense', attack_info)
                 solver.process(actions, playback, atk_p, target, target_pos, item, None, 'attack', attack_info, assist=True)
                 skill_system.end_sub_combat(actions, playback, target, None, atk_p, solver.main_item, 'defense', attack_info)
+                if solver.force_end_combat:
+                    break
+            if solver.force_end_combat:
+                break
             # Make sure that we run on_hit even if otherwise unavailable
             if not defender and not splash:
                 solver.simple_process(actions, playback, atk_p, atk_p, target_pos, item, None, None, None)
 
+        if getattr(solver, 'force_end_combat', False):
+            skill_system.end_sub_combat(actions, playback, atk_p, solver.main_item, solver.defender, resolve_weapon(solver.defender), 'attack', attack_info)
+            return
+
         solver.num_subattacks += 1
         self.num_multiattacks = combat_calcs.compute_multiattacks(atk_p, solver.defender, resolve_weapon(atk_p), 'attack', attack_info)
+        if solver.num_subattacks >= self.num_multiattacks:
+            solver.attacker_partner_pending -= 1
         # End check attack proc
         skill_system.end_sub_combat(actions, playback, atk_p, solver.main_item, solver.defender, resolve_weapon(solver.defender), 'attack', attack_info)
 
@@ -212,26 +249,30 @@ class DefenderState(SolverState):
     num_multiattacks = 1
 
     def get_next_state(self, solver):
+        if getattr(solver, 'force_end_combat', False):
+            return 'done'
         command = solver.get_script()
-
-        can_double_in_pairup = not DB.constants.value('limit_attack_stance')
 
         if solver.attacker_alive() and solver.defender_alive():
             if command == '--':
 
                 # Calculate the number of phases in this combat
-                attacker_num_phases = combat_calcs.compute_attack_phases(solver.attacker, solver.defender, solver.main_item, solver.def_item, 'attack', solver.get_attack_info())
-                defender_num_phases = combat_calcs.compute_attack_phases(solver.defender, solver.attacker, solver.def_item, solver.main_item, 'defense', solver.get_defense_info())
+                attacker_phase_plan = solver.get_attack_phase_plan(solver.attacker, solver.defender, solver.main_item, solver.def_item, 'attack', solver.get_attack_info())
+                attacker_num_phases = attacker_phase_plan.total_phases
+                defender_phase_plan = solver.get_attack_phase_plan(solver.defender, solver.attacker, solver.def_item, solver.main_item, 'defense', solver.get_defense_info())
+                defender_num_phases = defender_phase_plan.total_phases
 
-                if solver.defender.strike_partner and solver.defender_partner_alive() \
-                        and solver.defender_partner_item_has_uses() \
-                        and (solver.num_defends == 1 or can_double_in_pairup) \
-                        and solver.num_subdefends >= self.num_multiattacks:
-                    solver.num_subdefends = 0
-                    return 'defender_partner'
                 if solver.allow_counterattack() and \
                         solver.num_subdefends < self.num_multiattacks:
                     return 'defender'
+                elif solver.allow_counterattack() and \
+                        solver.num_defends < 1 + defender_phase_plan.early_phases:
+                    solver.num_subdefends = 0
+                    return 'defender'
+                elif solver.defender_partner_pending and solver.defender_partner_alive() \
+                        and solver.defender_partner_item_has_uses():
+                    solver.num_subdefends = 0
+                    return 'defender_partner'
                 elif solver.allow_counterattack() and \
                         solver.defender_has_desperation() and \
                         solver.num_defends < defender_num_phases:
@@ -265,10 +306,15 @@ class DefenderState(SolverState):
         # Remove defending unit's proc skills (which is solver.attacker)
         skill_system.end_sub_combat(actions, playback, solver.attacker, solver.main_item, solver.defender, solver.def_item, 'defense', attack_info)
 
+        if getattr(solver, 'force_end_combat', False):
+            skill_system.end_sub_combat(actions, playback, solver.defender, solver.def_item, solver.attacker, solver.main_item, 'attack', attack_info)
+            return
+
         solver.num_subdefends += 1
         self.num_multiattacks = combat_calcs.compute_multiattacks(solver.defender, solver.attacker, solver.def_item, 'defense', attack_info)
         if solver.num_subdefends >= self.num_multiattacks:
             solver.num_defends += 1
+            solver.queue_defender_partner()
 
         # Remove attacking unit's proc skills (which is solver.defender)
         skill_system.end_sub_combat(actions, playback, solver.defender, solver.def_item, solver.attacker, solver.main_item, 'attack', attack_info)
@@ -279,18 +325,27 @@ class DefenderPartnerState(SolverState):
     # Nearly identical to defender state except contains no possibility that defender partner is the next in line to attack
 
     def get_next_state(self, solver):
+        if solver.force_end_combat:
+            return 'done'
         command = solver.get_script()
         if solver.attacker_alive() and solver.defender_alive():
             if command == '--':
                 
                 # Calculate the number of phases in this combat
-                attacker_num_phases = combat_calcs.compute_attack_phases(solver.attacker, solver.defender, solver.main_item, solver.def_item, 'attack', solver.get_attack_info())
-                defender_num_phases = combat_calcs.compute_attack_phases(solver.defender, solver.attacker, solver.def_item, solver.main_item, 'defense', solver.get_defense_info())
+                attacker_phase_plan = solver.get_attack_phase_plan(solver.attacker, solver.defender, solver.main_item, solver.def_item, 'attack', solver.get_attack_info())
+                attacker_num_phases = attacker_phase_plan.total_phases
+                defender_phase_plan = solver.get_attack_phase_plan(solver.defender, solver.attacker, solver.def_item, solver.main_item, 'defense', solver.get_defense_info())
+                defender_num_phases = defender_phase_plan.total_phases
 
-                if solver.allow_counterattack() and solver.defender_partner_alive() \
-                        and solver.defender_partner_item_has_uses() \
-                        and solver.num_subdefends < self.num_multiattacks:
+                if solver.defender_partner_pending and solver.defender_partner_alive() \
+                        and solver.defender_partner_item_has_uses():
+                    if solver.num_subdefends >= self.num_multiattacks:
+                        solver.num_subdefends = 0
                     return 'defender_partner'
+                elif solver.allow_counterattack() and \
+                        solver.num_defends < 1 + defender_phase_plan.early_phases:
+                    solver.num_subdefends = 0
+                    return 'defender'
                 elif solver.allow_counterattack() and \
                         solver.defender_has_desperation() and \
                         solver.num_defends < defender_num_phases:
@@ -322,8 +377,15 @@ class DefenderPartnerState(SolverState):
             solver.update_stats(playback)
         solver.process(actions, playback, def_p, solver.attacker, solver.attacker.position, solver.def_item, solver.main_item, 'defense', attack_info, assist=True)
 
+        if solver.force_end_combat:
+            skill_system.end_sub_combat(actions, playback, solver.attacker, solver.main_item, def_p, solver.def_item, 'defense', attack_info)
+            skill_system.end_sub_combat(actions, playback, def_p, solver.def_item, solver.attacker, solver.main_item, 'attack', attack_info)
+            return
+
         solver.num_subdefends += 1
         self.num_multiattacks = combat_calcs.compute_multiattacks(def_p, solver.attacker, resolve_weapon(def_p), 'defense', attack_info)
+        if solver.num_subdefends >= self.num_multiattacks:
+            solver.defender_partner_pending -= 1
 
         # Remove defending unit's proc skills (which is solver.attacker)
         skill_system.end_sub_combat(actions, playback, solver.attacker, solver.main_item, def_p, solver.def_item, 'defense', attack_info)
@@ -366,12 +428,44 @@ class CombatPhaseSolver():
     def reset(self):
         self.num_attacks, self.num_defends = 0, 0
         self.num_subattacks, self.num_subdefends = 0, 0
+        self.attacker_partner_pending = 0
+        self.defender_partner_pending = 0
+        self._phase_plan_proc_grants = {}
+        self.force_end_combat = False
+
+    def queue_attacker_partner(self):
+        if not (self.attacker.strike_partner and self.attacker_partner_alive()
+                and self.attacker_partner_item_has_uses()):
+            return
+        if not DB.constants.value('limit_attack_stance') or self.num_attacks == 1:
+            self.attacker_partner_pending += 1
+
+    def queue_defender_partner(self):
+        if not (self.defender and self.defender.strike_partner
+                and self.defender_partner_alive()
+                and self.defender_partner_item_has_uses()):
+            return
+        if not DB.constants.value('limit_attack_stance') or self.num_defends == 1:
+            self.defender_partner_pending += 1
 
     def get_attack_info(self) -> tuple:
         return self.num_attacks, self.num_subattacks
 
     def get_defense_info(self) -> tuple:
         return self.num_defends, self.num_subdefends
+
+    def get_attack_phase_plan(self, unit, target, item, def_item, mode, attack_info):
+        """Keep chance-based follow-up grants stable for one solver round."""
+        key = id(unit), mode
+        if key in self._phase_plan_proc_grants:
+            return combat_calcs.compute_attack_phase_plan(
+                unit, target, item, def_item, mode, attack_info,
+                proc_grants=self._phase_plan_proc_grants[key])
+
+        phase_plan = combat_calcs.compute_attack_phase_plan(
+            unit, target, item, def_item, mode, attack_info)
+        self._phase_plan_proc_grants[key] = phase_plan.proc_grants
+        return phase_plan
 
     def get_state(self):
         return self.state
@@ -460,6 +554,9 @@ class CombatPhaseSolver():
                 getattr(attacker, "nid", attacker),
             )
             return
+        if self.force_end_combat:
+            self.state = None
+            return
 
         # Is the item I am processing the first one?
         first_item = item in (self.main_item, self.def_item, self.items[0])
@@ -547,6 +644,8 @@ class CombatPhaseSolver():
                 item_system.after_strike(actions, playback, attacker, item, defender, resolve_weapon(defender), mode, attack_info, strike)
                 skill_system.after_strike(actions, playback, attacker, item, defender, resolve_weapon(defender), mode, attack_info, strike)
                 skill_system.after_take_strike(actions, playback, defender, def_item, attacker, item, mode, attack_info, strike)
+                if skill_system.end_combat_after_strike(attacker, item, defender, def_item, mode, attack_info):
+                    self.force_end_combat = True
         else:
             item_system.on_miss(actions, playback, attacker, item, defender, resolve_weapon(defender), def_pos, mode, attack_info, first_item)
             item_system.after_strike(actions, playback, attacker, item, defender, resolve_weapon(defender), mode, attack_info, Strike.MISS)

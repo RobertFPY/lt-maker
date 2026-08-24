@@ -39,8 +39,9 @@ class Djikstra:
         adj.g = node.g + adj.cost
         adj.parent = node
 
-    def process(self, can_move_through: Callable[[Pos], bool], 
-                movement_left: float) -> Set[Pos]:
+    def process(self, can_move_through: Callable[[Pos], bool],
+                movement_left: float,
+                can_continue_through: Callable[[Pos], bool] = None) -> Set[Pos]:
         # add starting node to open heap queue
         heapq.heappush(self.open, (self.start_node.g, self.start_node))
         while self.open:
@@ -52,6 +53,9 @@ class Djikstra:
                 return {(node.x, node.y) for node in self.closed}
             # add node to closed set so we don't process it twice
             self.closed.add(node)
+            if (can_continue_through and
+                    not can_continue_through((node.x, node.y))):
+                continue
             # get adjacent nodes for node
             adj_nodes = self._get_adj_nodes(node)
             for adj in adj_nodes:
@@ -154,7 +158,8 @@ class AStar:
 
     def process(self, can_move_through: Callable[[Pos], bool],
                 adj_good_enough: bool = False, limit: float = None,
-                max_movement_limit: int = 999) -> List[Pos]:
+                max_movement_limit: int = 999,
+                can_continue_through: Callable[[Pos], bool] = None) -> List[Pos]:
         """
         Args:
             can_move_through (Callable): Expects a callback function that takes in a position 
@@ -177,6 +182,9 @@ class AStar:
             # if ending node, display found path
             if node is self.end_node or (adj_good_enough and node in self.adj_end):
                 return self._return_path(node)
+            if (can_continue_through and
+                    not can_continue_through((node.x, node.y))):
+                continue
             # get adjacent nodes for node
             adj_nodes = self._get_adj_nodes(node)
             for adj in adj_nodes:

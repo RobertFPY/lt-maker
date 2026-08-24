@@ -16703,7 +16703,7 @@
         ],
         "components": [
             [
-                "swap_on_end_combat",
+                "swap_on_end_combat_initiate_alive",
                 null
             ]
         ]
@@ -23919,5 +23919,75 @@
             0
         ],
         "components": []
+    },
+    {
+        "nid": "Internal_Rally_Feint_Test",
+        "name": "Rally (Feint Test)",
+        "desc": "Internal developer item for validating Feint after a Rally assist.",
+        "icon_nid": "Skills",
+        "icon_index": [
+            0,
+            0
+        ],
+        "components": [
+            [
+                "spell",
+                null
+            ],
+            [
+                "target_ally",
+                null
+            ],
+            [
+                "min_range",
+                1
+            ],
+            [
+                "max_range",
+                1
+            ],
+            [
+                "rally_assist",
+                null
+            ],
+            [
+                "no_ai",
+                null
+            ]
+        ]
+    },
+    {
+        "nid": "Class_Puppet_T2",
+        "name": "Field Examination",
+        "desc": "Create one temporary puppet on an adjacent empty tile.",
+        "icon_nid": "Skills",
+        "icon_index": [7, 10],
+        "components": [
+            ["spell", null],
+            ["target_tile", null],
+            ["min_range", 1],
+            ["max_range", 1],
+            ["empty_tile_target_restrict", null],
+            ["traversable_tile_target_restrict", null],
+            ["class_puppet_summon", {"class": "Class_Puppet_T2", "movement": 6, "rank": 2}],
+            ["no_ai", null]
+        ]
+    },
+    {
+        "nid": "Class_Puppet_T3",
+        "name": "Field Specialist",
+        "desc": "Create one temporary puppet on an adjacent empty tile.",
+        "icon_nid": "Skills",
+        "icon_index": [7, 10],
+        "components": [
+            ["spell", null],
+            ["target_tile", null],
+            ["min_range", 1],
+            ["max_range", 1],
+            ["empty_tile_target_restrict", null],
+            ["traversable_tile_target_restrict", null],
+            ["class_puppet_summon", {"class": "Class_Puppet_T3", "movement": 9, "rank": 3}],
+            ["no_ai", null]
+        ]
     }
 ]

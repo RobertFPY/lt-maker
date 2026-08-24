@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Tuple
 from app.data.serialization.versions import CURRENT_SERIALIZATION_VERSION
 from app.utilities import utils
@@ -10,6 +10,7 @@ from app.engine.combat_calcs import can_counterattack
 @dataclass
 class MockUnit():
     position: Tuple[int, int] = (0, 0)
+    skills: list = field(default_factory=list)
     distant_counter = False
     close_counter = False
     can_counter = True

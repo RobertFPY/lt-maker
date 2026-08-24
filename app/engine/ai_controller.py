@@ -519,22 +519,38 @@ class PrimaryAI():
     def compute_priority(self, main_target_pos, splash, move, item) -> float:
         tp = 0
         main_target = game.board.get_unit(main_target_pos)
+        interception = None
+        if main_target and self.unit.position:
+            from app.engine.combat.save_intercept import (active_save_interception,
+                                                          can_attempt_save_interception,
+                                                          find_save_interception)
+            can_intercept = can_attempt_save_interception(
+                self.unit, item, [main_target_pos], [main_target_pos], [splash])
+            if can_intercept:
+                interception = find_save_interception(
+                    self.unit, main_target, item,
+                    utils.calculate_distance(self.unit.position, main_target_pos))
         # Only count main target if it's one of the legal targets
         if main_target and main_target_pos in self.behaviour_targets:
-            ai_priority = item_system.ai_priority(self.unit, item, main_target, move)
-            ai_priority_multiplier = skill_system.ai_priority_multiplier(main_target)
-
-            # If no ai priority hook defined
-            if ai_priority is None:
-                pass
+            effective_target = interception.savior if interception else main_target
+            if interception:
+                context = active_save_interception(interception)
             else:
-                total_priority = ai_priority * ai_priority_multiplier
-                tp += total_priority
+                from contextlib import nullcontext
+                context = nullcontext()
+            with context:
+                ai_priority = item_system.ai_priority(self.unit, item, effective_target, move)
+                ai_priority_multiplier = skill_system.ai_priority_multiplier(effective_target)
 
-            if item_system.damage(self.unit, item) is not None and \
-                    skill_system.check_enemy(self.unit, main_target):
-                ai_priority = self.default_priority(main_target, item, move)
-                tp += ai_priority * ai_priority_multiplier
+                # If no ai priority hook defined
+                if ai_priority is not None:
+                    total_priority = ai_priority * ai_priority_multiplier
+                    tp += total_priority
+
+                if item_system.damage(self.unit, item) is not None and \
+                        skill_system.check_enemy(self.unit, effective_target):
+                    ai_priority = self.default_priority(effective_target, item, move)
+                    tp += ai_priority * ai_priority_multiplier
 
         for splash_pos in splash:
             target = game.board.get_unit(splash_pos)

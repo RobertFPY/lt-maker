@@ -1,3 +1,6 @@
+from dataclasses import dataclass
+from functools import reduce
+from operator import mul
 from typing import List, Optional, Tuple
 from app.engine.utils.ltcache import ltcached
 from app.engine.combat_calcs_utils import resolve_defensive_formula, resolve_offensive_formula
@@ -93,6 +96,22 @@ def get_support_rank_bonus(unit, target=None):
     bonuses = [_[0] for _ in bonuses]
     return bonuses, allies
 
+def _weapon_triangle_modifier_sources(unit, item):
+    """Return direct-item and skill-override triangle multipliers separately."""
+    item_values = [
+        component.modify_weapon_triangle(unit, item)
+        for component in getattr(item, 'components', [])
+        if component.defines('modify_weapon_triangle')]
+    override_components = (skill_system.item_override(unit, item)
+                           if hasattr(unit, 'skills') else [])
+    skill_values = [
+        component.modify_weapon_triangle(unit, item)
+        for component in override_components
+        if component.defines('modify_weapon_triangle')]
+    return (reduce(mul, item_values, 1),
+            reduce(mul, skill_values, 1))
+
+
 @ltcached
 def compute_advantage(unit1, unit2, item1, item2, advantage=True) -> Optional[weapons.CombatBonus]:
     if not item1 or not item2:
@@ -105,8 +124,22 @@ def compute_advantage(unit1, unit2, item1, item2, advantage=True) -> Optional[we
             item_system.ignore_weapon_advantage(unit2, item2):
         return None
 
-    w_mod1 = item_system.modify_weapon_triangle(unit1, item1)
-    w_mod2 = item_system.modify_weapon_triangle(unit2, item2)
+    item_mod1, skill_mod1 = _weapon_triangle_modifier_sources(unit1, item1)
+    item_mod2, skill_mod2 = _weapon_triangle_modifier_sources(unit2, item2)
+    item_final_w_mod = (utils.sign(item_mod1) * utils.sign(item_mod2)
+                        * max(abs(item_mod1), abs(item_mod2)))
+    has_disadvantage = ((1 if advantage else -1)
+                        * utils.sign(item_final_w_mod) < 0)
+    multiplier_override = None
+    if hasattr(unit1, 'skills'):
+        multiplier_override = skill_system.weapon_triangle_multiplier_override(
+            unit1, item1, unit2, item2, has_disadvantage,
+            skill_mod1, skill_mod2)
+    if multiplier_override is not None:
+        skill_mod1, skill_mod2 = multiplier_override
+
+    w_mod1 = item_mod1 * skill_mod1
+    w_mod2 = item_mod2 * skill_mod2
     final_w_mod = utils.sign(w_mod1) * utils.sign(w_mod2) * max(abs(w_mod1), abs(w_mod2))
 
     if advantage:
@@ -140,12 +173,33 @@ def compute_advantage_attr(attacker, defender, weapon, def_weapon, attribute: st
         mod += int(getattr(disadv, attribute))
     return mod
 
+
+def _can_be_countered_sources(unit, item) -> Tuple[bool, bool]:
+    """Return counterability from the item itself and skill overrides."""
+    if not hasattr(unit, 'skills') or not hasattr(item, 'components'):
+        return item_system.can_be_countered(unit, item), True
+
+    base_values = [
+        component.can_be_countered(unit, item)
+        for component in item.components
+        if component.defines('can_be_countered')]
+    override_values = [
+        component.can_be_countered(unit, item)
+        for component in skill_system.item_override(unit, item)
+        if component.defines('can_be_countered')]
+    return (bool(base_values) and all(base_values), all(override_values))
+
 def can_counterattack(attacker, aweapon, defender, dweapon) -> bool:
     if not dweapon:
         return False
     if not item_funcs.available(defender, dweapon):
         return False
-    if not item_system.can_be_countered(attacker, aweapon) and not skill_system.negate_cannot_be_countered(defender):
+    base_can_be_countered, override_can_be_countered = _can_be_countered_sources(
+        attacker, aweapon)
+    if not base_can_be_countered:
+        return False
+    if (not override_can_be_countered
+            and not skill_system.negate_cannot_be_countered(defender)):
         return False
     if not item_system.can_counter(defender, dweapon):
         return False
@@ -227,7 +281,7 @@ def avoid(unit, item, item_to_avoid=None):
     avoid += skill_system.modify_avoid(unit, item)
     return avoid
 
-def crit_accuracy(unit, item=None):
+def crit_accuracy(unit, item=None, allow_without_item_crit=False):
     if not item:
         item = unit.get_weapon()
     if not item:
@@ -235,7 +289,9 @@ def crit_accuracy(unit, item=None):
 
     crit_accuracy = item_system.crit(unit, item)
     if crit_accuracy is None:
-        return None
+        if not allow_without_item_crit:
+            return None
+        crit_accuracy = 0
 
     equation = resolve_offensive_formula(
         unit, item,
@@ -312,9 +368,15 @@ def damage(unit, item=None, target=None, target_item=None):
     return might
 
 def defense(atk_unit, def_unit, item, item_to_avoid=None):
+    low_prio_item_formula = item_system.resist_formula
+    if skill_system.adaptive_damage(atk_unit) and skill_system.neutralize_foe_adaptive_damage(def_unit):
+        def low_prio_item_formula(unit, weapon):
+            formula = item_system.resist_formula(unit, weapon)
+            return None if formula == 'WORSE_DEFENSE' else formula
+
     equation = resolve_defensive_formula(
         def_unit, item, atk_unit, item_to_avoid,
-        item_system.resist_formula, skill_system.resist_formula,
+        low_prio_item_formula, skill_system.resist_formula,
         item_system.resist_formula_override, skill_system.resist_formula_override,
         skill_system.Defaults.resist_formula
     )
@@ -436,7 +498,11 @@ def compute_crit(unit, target, item, def_item, mode, attack_info):
     if not item:
         return None
 
-    crit = crit_accuracy(unit, item)
+    if skill_system.prevent_critical(unit, item, target):
+        return 0
+    crit = crit_accuracy(
+        unit, item,
+        allow_without_item_crit=skill_system.allow_critical(unit, item, target))
     if crit is None:
         return None
 
@@ -616,11 +682,14 @@ def compute_damage(unit, target, item, def_item, mode, attack_info, crit=False, 
         if thracia_crit:
             might += total_might * thracia_crit
 
-    might *= skill_system.damage_multiplier(unit, item, target, resolve_weapon(target), mode, attack_info, might)
-    if not skill_system.reduce_resist_multiplier(unit, item, target, resolve_weapon(target), mode, attack_info, might):
-        might *= skill_system.resist_multiplier(target, resolve_weapon(target), unit, item, mode, attack_info, might)
-    else:
-        might *= 1 - ((1 - skill_system.resist_multiplier(target, resolve_weapon(target), unit, item, mode, attack_info, might)) * skill_system.reduce_resist_multiplier(unit, item, target, resolve_weapon(target), mode, attack_info, might))
+    target_item = resolve_weapon(target)
+    might *= skill_system.damage_multiplier(unit, item, target, target_item, mode, attack_info, might)
+    if not skill_system.neutralize_foe_damage_reduction(unit):
+        if not skill_system.reduce_resist_multiplier(unit, item, target, target_item, mode, attack_info, might):
+            might *= skill_system.resist_multiplier(target, target_item, unit, item, mode, attack_info, might)
+        else:
+            might *= 1 - ((1 - skill_system.resist_multiplier(target, target_item, unit, item, mode, attack_info, might)) * skill_system.reduce_resist_multiplier(unit, item, target, target_item, mode, attack_info, might))
+        might -= skill_system.flat_damage_reduction(target, target_item, unit, item, mode, attack_info, might)
 
     might += skill_system.raw_damage(unit, item, target, def_item, mode, attack_info, might)
 
@@ -676,25 +745,66 @@ def outspeed(unit, target, item, def_item, mode, attack_info) -> int:
 
     return 1 if speed >= equations.parser.speed_to_double(unit) else 0
 
-def compute_attack_phases(unit, target, item, def_item, mode, attack_info) -> int:
-    num_attacks = 1
+
+@dataclass(frozen=True)
+class AttackPhasePlan:
+    total_phases: int
+    early_phases: int
+    # Proc grants are tracked separately so the solver can preserve a combat's
+    # initial RNG result while still recalculating the non-RNG parts of a plan.
+    proc_grants: int = 0
+
+
+def compute_attack_phase_plan(unit, target, item, def_item, mode, attack_info,
+                              proc_grants: Optional[int] = None) -> AttackPhasePlan:
+    """Resolve additive follow-up phases while keeping early grants separately timed."""
     if not item:
-        return 0
+        return AttackPhasePlan(0, 0)
 
-    if skill_system.no_dynamic_attacks(target) and skill_system.negate_no_dynamic_attacks(unit):
-        num_attacks += item_system.dynamic_attacks(unit, item, target, resolve_weapon(target), mode, attack_info, num_attacks)
-        num_attacks += skill_system.dynamic_attacks(unit, item, target, resolve_weapon(target), mode, attack_info, num_attacks)
-    elif not skill_system.no_dynamic_attacks(target) and skill_system.negate_no_dynamic_attacks(unit):
-        num_attacks += item_system.dynamic_attacks(unit, item, target, resolve_weapon(target), mode, attack_info, num_attacks)
-        num_attacks += skill_system.dynamic_attacks(unit, item, target, resolve_weapon(target), mode, attack_info, num_attacks)
-    elif not skill_system.no_dynamic_attacks(target) and not skill_system.negate_no_dynamic_attacks(unit):
-        num_attacks += item_system.dynamic_attacks(unit, item, target, resolve_weapon(target), mode, attack_info, num_attacks)
-        num_attacks += skill_system.dynamic_attacks(unit, item, target, resolve_weapon(target), mode, attack_info, num_attacks)
-    # Only bother calculating whether we outspeed when there is a target
+    # These are hard limits.  Project data uses prevent_self_follow_up for
+    # neutralizable effects; no_double remains for effects such as Bane.
+    if not item_system.can_double(unit, item) or skill_system.no_double(unit):
+        return AttackPhasePlan(1, 0)
+
+    prevention = skill_system.prevent_self_follow_up(unit)
     if target:
-        num_attacks += outspeed(unit, target, item, def_item, mode, attack_info)
+        prevention = prevention or skill_system.prevent_foe_follow_up(target)
+    if prevention and not skill_system.neutralize_follow_up_prevention(unit):
+        return AttackPhasePlan(1, 0)
 
-    return num_attacks
+    base_phases = 1
+    natural_phases = outspeed(unit, target, item, def_item, mode, attack_info) if target else 0
+    natural_prevention = target and skill_system.prevent_foe_natural_follow_up(target)
+    if natural_prevention and not skill_system.neutralize_follow_up_prevention(unit):
+        natural_phases = 0
+
+    legacy_dynamic_denied = target and skill_system.no_dynamic_attacks(target) \
+        and not skill_system.negate_no_dynamic_attacks(unit)
+    grants_neutralized = target and skill_system.neutralize_foe_follow_up_grants(target)
+    if legacy_dynamic_denied or grants_neutralized:
+        normal_grants = 0
+        early_grants = 0
+    else:
+        target_item = resolve_weapon(target)
+        normal_grants = item_system.dynamic_attacks(
+            unit, item, target, target_item, mode, attack_info, base_phases)
+        normal_grants += skill_system.dynamic_attacks(
+            unit, item, target, target_item, mode, attack_info, base_phases)
+        early_grants = skill_system.dynamic_early_attacks(
+            unit, item, target, target_item, mode, attack_info, base_phases)
+
+    eligible_phases = base_phases + natural_phases + normal_grants + early_grants
+    if proc_grants is None:
+        proc_grants = skill_system.dynamic_follow_up_proc_count(
+            unit, item, target, def_item, mode, attack_info, eligible_phases)
+    return AttackPhasePlan(
+        eligible_phases + proc_grants,
+        early_grants,
+        proc_grants,
+    )
+
+def compute_attack_phases(unit, target, item, def_item, mode, attack_info) -> int:
+    return compute_attack_phase_plan(unit, target, item, def_item, mode, attack_info).total_phases
 
 def compute_multiattacks(unit, target, item, mode, attack_info):
     if not item:

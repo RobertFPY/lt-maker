@@ -9,19 +9,29 @@ SKILL_HOOKS: Dict[str, HookInfo] = {
     'can_counter':                          HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_TRUE),
     # false priority (set to False if result is False in any component, False if not defined)
     'pass_through':                         HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'obstructs_movement':                   HookInfo(['unit', 'mover'], ResolvePolicy.ANY_DEFAULT_FALSE),
     'vantage':                              HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'desperation':                          HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'ignore_terrain':                       HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'ignore_terrain_traversal':             HookInfo(['unit', 'effect'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'crit_anyway':                          HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'allow_critical':                       HookInfo(['unit', 'item', 'target'], ResolvePolicy.ANY_DEFAULT_FALSE),
+    'prevent_critical':                     HookInfo(['unit', 'item', 'target'], ResolvePolicy.ANY_DEFAULT_FALSE),
     'ignore_region_status':                 HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'no_double':                            HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'def_double':                           HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'target_no_double':                     HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'negate_no_double':                     HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'negate_cannot_be_countered':           HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'adaptive_damage':                      HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'neutralize_foe_adaptive_damage':       HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'no_dynamic_attacks':                   HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'negate_no_dynamic_attacks':            HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'prevent_self_follow_up':               HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'prevent_foe_follow_up':                HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'prevent_foe_natural_follow_up':        HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'neutralize_follow_up_prevention':      HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'neutralize_foe_follow_up_grants':      HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'ignore_rescue_penalty':                HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'ignore_forced_movement':               HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'distant_counter':                      HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
@@ -35,6 +45,11 @@ SKILL_HOOKS: Dict[str, HookInfo] = {
     'hide_skill_icon':                      HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'ignore_dying_in_combat':               HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
     'no_trade':                             HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'block_hp_recovery':                    HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'block_death_prevention':               HookInfo(['unit'], ResolvePolicy.ALL_DEFAULT_FALSE),
+    'neutralize_foe_damage_reduction':      HookInfo(['unit'], ResolvePolicy.ANY_DEFAULT_FALSE),
+    'neutralize_foe_death_prevention':      HookInfo(['unit'], ResolvePolicy.ANY_DEFAULT_FALSE),
+    'end_combat_after_strike':              HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info'], ResolvePolicy.ANY_DEFAULT_FALSE),
     # false priority, true if any (set to True if result is True in any component, False if not defined)
     'can_unlock':                           HookInfo(['unit', 'region'], ResolvePolicy.ANY_DEFAULT_FALSE),
     'has_canto':                            HookInfo(['unit', 'target'], ResolvePolicy.ANY_DEFAULT_FALSE),
@@ -45,6 +60,8 @@ SKILL_HOOKS: Dict[str, HookInfo] = {
     # exclusive (returns last component value, has default value if not defined)
     'can_select':                           HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
     'movement_type':                        HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
+    'modify_movement_cost':                 HookInfo(['unit', 'position', 'terrain', 'base_cost'], ResolvePolicy.MINIMUM, has_default_value=True),
+    'movement_cap':                         HookInfo(['unit'], ResolvePolicy.MINIMUM, has_default_value=True),
     'num_items_offset':                     HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
     'num_accessories_offset':               HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
     'change_variant':                       HookInfo(['unit'], ResolvePolicy.UNIQUE, has_default_value=True),
@@ -55,6 +72,8 @@ SKILL_HOOKS: Dict[str, HookInfo] = {
     # numeric accum (adds together all values. 0 if no values are defined)
     'sight_range':                          HookInfo(['unit'], ResolvePolicy.NUMERIC_ACCUM, has_default_value=True),
     'xcom_movement':                        HookInfo(['unit'], ResolvePolicy.NUMERIC_ACCUM, has_default_value=True),
+    'comparison_stat_bonus':                HookInfo(['unit', 'stat'], ResolvePolicy.NUMERIC_ACCUM, has_default_value=True),
+    'stat_bonus_adjustment':                HookInfo(['unit', 'stat_nid', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
     # formula (as exclusive)
     'damage_formula':                       HookInfo(['unit'], ResolvePolicy.UNIQUE),
     'resist_formula':                       HookInfo(['unit'], ResolvePolicy.UNIQUE),
@@ -85,14 +104,21 @@ SKILL_HOOKS: Dict[str, HookInfo] = {
     'check_enemy':                          HookInfo(['unit', 'target'], ResolvePolicy.UNIQUE, has_default_value=True),
     'can_trade':                            HookInfo(['unit', 'target'], ResolvePolicy.UNIQUE, has_default_value=True),
     'exp_multiplier':                       HookInfo(['unit', 'target'], ResolvePolicy.UNIQUE, has_default_value=True),
+    'experience_family_multiplier':         HookInfo(['unit', 'target', 'item'], ResolvePolicy.MAXIMUM, has_default_value=True),
+    'valor_family_multiplier':              HookInfo(['provider', 'recipient', 'item'], ResolvePolicy.MAXIMUM, has_default_value=True),
     'enemy_exp_multiplier':                 HookInfo(['unit', 'target'], ResolvePolicy.UNIQUE, has_default_value=True),
     'wexp_multiplier':                      HookInfo(['unit', 'target'], ResolvePolicy.UNIQUE, has_default_value=True),
     'enemy_wexp_multiplier':                HookInfo(['unit', 'target'], ResolvePolicy.UNIQUE, has_default_value=True),
+    'weapon_triangle_multiplier_override':  HookInfo(['unit', 'item', 'target', 'item2', 'has_disadvantage', 'self_skill_multiplier', 'foe_skill_multiplier'], ResolvePolicy.UNIQUE),
     'canto_movement':                       HookInfo(['unit', 'target'], ResolvePolicy.MAXIMUM, has_default_value=False),
     # item numeric modifiers (sums component values, default 0 if not defined)
     'empower_splash':                       HookInfo(['unit'], ResolvePolicy.NUMERIC_ACCUM),
     'empower_heal':                         HookInfo(['unit', 'target'], ResolvePolicy.NUMERIC_ACCUM),
     'empower_heal_received':                HookInfo(['unit', 'target'], ResolvePolicy.NUMERIC_ACCUM),
+    'heal_multiplier':                      HookInfo(['unit', 'target'], ResolvePolicy.NUMERIC_MULTIPLY, has_default_value=True),
+    # Only status/debuff proc components opt into this modifier.  It deliberately
+    # does not share the generic proc-rate path used by Special skills.
+    'modify_debuff_proc_rate':              HookInfo(['unit', 'target'], ResolvePolicy.NUMERIC_ACCUM),
     'empower_mana':                         HookInfo(['unit', 'target'], ResolvePolicy.NUMERIC_ACCUM),
     'empower_mana_received':                HookInfo(['unit', 'target'], ResolvePolicy.NUMERIC_ACCUM),
     'modify_damage':                        HookInfo(['unit', 'item'], ResolvePolicy.NUMERIC_ACCUM),
@@ -110,6 +136,7 @@ SKILL_HOOKS: Dict[str, HookInfo] = {
     # dynamic numeric modifiers (as item numberic modifiers)
     'dynamic_damage':                       HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
     'raw_damage':                       HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
+    'flat_damage_reduction':            HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
     'dynamic_resist':                       HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
     'dynamic_accuracy':                     HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
     'dynamic_avoid':                        HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
@@ -118,6 +145,8 @@ SKILL_HOOKS: Dict[str, HookInfo] = {
     'dynamic_attack_speed':                 HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
     'dynamic_defense_speed':                HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
     'dynamic_attacks':                      HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
+    'dynamic_early_attacks':                HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
+    'dynamic_follow_up_proc_count':         HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'eligible_phases'], ResolvePolicy.NUMERIC_ACCUM),
     'dynamic_multiattacks':                 HookInfo(['unit', 'item', 'target', 'item2', 'mode', 'attack_info', 'base_value'], ResolvePolicy.NUMERIC_ACCUM),
     # mana (as item numeric modifiers)
     'mana':                                 HookInfo(['playback', 'unit', 'item', 'target'], ResolvePolicy.NUMERIC_ACCUM),
@@ -162,15 +191,18 @@ SKILL_HOOKS: Dict[str, HookInfo] = {
     'usable_wtypes':                        HookInfo(['unit'], ResolvePolicy.UNION),
     'forbidden_wtypes':                     HookInfo(['unit'], ResolvePolicy.UNION),
     'target_icon':                          HookInfo(['unit', 'icon_unit'], ResolvePolicy.UNION),
+    'save_intercept_offers':                HookInfo(['provider', 'attacker', 'protected', 'item', 'attack_distance'], ResolvePolicy.UNION),
 }
 
 def generate_skill_hook_str(hook_name: str, hook_info: HookInfo):
     args = hook_info.args
-    if not 'unit' in args:
-        raise ValueError("Expected 'unit' in args for hook %s" % hook_name)
+    actor = 'unit' if 'unit' in args else 'provider'
+    if actor not in args:
+        raise ValueError("Expected 'unit' or 'provider' in args for hook %s" % hook_name)
     func_signature = ['{arg}: {type}'.format(arg=arg, type=ARG_TYPE_MAP.get(arg, "Any")) for arg in args]
 
-    conditional_check = "condition(skill, unit)" if 'item' not in args else 'condition(skill, unit, item)'
+    conditional_check = "condition(skill, {actor})" if 'item' not in args else 'condition(skill, {actor}, item)'
+    conditional_check = conditional_check.format(actor=actor)
     default_handling = "return result"
     unconditional_handling = ""
     cache_handling = ""
@@ -188,7 +220,7 @@ def generate_skill_hook_str(hook_name: str, hook_info: HookInfo):
     func_text = """{cache_handling}
 def {hook_name}({func_signature}):
     values = []
-    for skill in unit.skills[:]:
+    for skill in {actor}.skills[:]:
         for component in skill.components:
             if component.defines('{hook_name}'):
                 if component.ignore_conditional or {conditional_check}:
@@ -199,6 +231,7 @@ def {hook_name}({func_signature}):
 """.format(hook_name=hook_name,
            func_signature=', '.join(func_signature),
            conditional_check=conditional_check,
+           actor=actor,
            args=', '.join(args),
            policy_resolution=hook_info.policy.value,
            default_handling=default_handling,

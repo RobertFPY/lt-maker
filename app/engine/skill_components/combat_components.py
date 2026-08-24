@@ -275,6 +275,30 @@ class ResistMultiplier(SkillComponent):
     def resist_multiplier(self, unit, item, target, item2, mode, attack_info, base_value):
         return self.value
 
+
+class FlatDamageReduction(SkillComponent):
+    nid = 'flat_damage_reduction'
+    desc = "Reduces final damage taken by a flat amount"
+    tag = SkillTags.COMBAT
+
+    expose = ComponentType.Int
+    value = 0
+
+    def flat_damage_reduction(self, unit, item, target, item2, mode, attack_info, base_value):
+        return self.value
+
+
+class SpecialDefenseMultiplier(SkillComponent):
+    nid = 'special_defense_multiplier'
+    desc = "Multiplies Foe's resolved Defense/Resistance for this Special strike"
+    tag = SkillTags.COMBAT
+
+    expose = ComponentType.Float
+    value = 1.0
+
+    def defense_multiplier(self, unit, item, target, item2, mode, attack_info, base_value):
+        return self.value
+
 class PCC(SkillComponent):
     nid = 'pcc'
     desc = "Multiplies crit chance by a stat on second strike"

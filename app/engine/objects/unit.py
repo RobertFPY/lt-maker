@@ -394,7 +394,7 @@ class UnitObject(Prefab):
         return equations.parser.get_gauge_inc(self)
 
     def get_movement(self):
-        return equations.parser.movement(self)
+        return min(equations.parser.movement(self), skill_system.movement_cap(self))
 
     def get_xcom_movement(self):
         return equations.parser.get_xcom_movement(self) + skill_system.xcom_movement(self)
@@ -520,7 +520,7 @@ class UnitObject(Prefab):
         accessory = self.equipped_accessory
         if accessory:
             bonus += item_system.stat_change(self, accessory, stat_nid)
-        return bonus
+        return bonus + skill_system.stat_bonus_adjustment(self, stat_nid, bonus)
 
     def subtle_stat_bonus(self, stat_nid: NID) -> int:
         bonus = skill_system.subtle_stat_change(self, stat_nid)

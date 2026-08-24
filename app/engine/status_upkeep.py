@@ -4,6 +4,7 @@ from app.data.database.database import DB
 from app.engine import (action, animations, engine, gui, health_bar,
                         item_funcs, item_system, skill_system)
 from app.engine.game_state import game
+from app.engine import ranked_upkeep
 from app.engine.sound import get_sound_thread
 from app.engine.state import MapState
 from app.events import triggers
@@ -37,6 +38,9 @@ class StatusUpkeepState(MapState):
         self.time_for_change = 0
 
         self.actions, self.playback = [], []
+        # The list is popped from the end, so reverse it to represent the real
+        # processing order used as a deterministic rank tie-breaker.
+        ranked_upkeep.begin_upkeep(reversed(self.units), game.get_all_units())
 
     def is_traveler(self, cur_unit):
         possible_carrying_units = [unit for unit in game.units if unit.position]
@@ -107,6 +111,7 @@ class StatusUpkeepState(MapState):
                 # About to begin the real phase
                 if self.name == 'status_upkeep':
                     action.do(action.MarkPhase(game.phase.get_current()))
+                ranked_upkeep.end_upkeep()
                 game.state.back()
                 return 'repeat'
 

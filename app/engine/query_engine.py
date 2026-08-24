@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from app.utilities.typing import NID
 
 from app.data.database.database import DB
+from app.engine import skill_system
 from app.utilities import utils
 
 class GameQueryEngine():
@@ -273,6 +274,19 @@ class GameQueryEngine():
             within the specified `dist`.
         """
         return self.get_units_within_distance(position, dist, team='player')
+
+    def get_combat_allies_within_distance(self, unit: UnitObject, dist: int = 1) -> List[UnitObject]:
+        """Return allied combat units within Manhattan distance of ``unit``.
+
+        Unlike :meth:`get_allies_within_distance`, this deliberately uses combat
+        alliance semantics and excludes the queried unit itself.
+        """
+        if not unit.position:
+            return []
+        return [candidate for candidate in self.game.get_all_units()
+                if candidate is not unit and candidate.position and 'Tile' not in candidate.tags
+                and utils.calculate_distance(unit.position, candidate.position) <= dist
+                and skill_system.check_ally(unit, candidate)]
 
     def get_enemies_within_distance(self, position, dist: int = 1) -> List[Tuple[UnitObject, int]]:
         """Return a list containing all enemy units within `dist` distance to the specific position.

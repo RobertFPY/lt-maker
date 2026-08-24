@@ -34,6 +34,130 @@ class DoNothing(ItemComponent):
     expose = ComponentType.Int
     value = 1
 
+
+class ClassPuppetSummon(ItemComponent):
+    nid = 'class_puppet_summon'
+    desc = 'Creates one temporary owner-bound puppet on a selected adjacent tile.'
+    tag = ItemTags.CUSTOM
+
+    expose = ComponentType.NewMultipleOptions
+    options = {
+        'class': ComponentType.Class,
+        'movement': ComponentType.Int,
+        'rank': ComponentType.Int,
+    }
+    value = {'class': '', 'movement': 0, 'rank': 0}
+
+    @staticmethod
+    def _live_puppet(owner):
+        return any(
+            getattr(other, '_fields', {}).get('PuppetOwner') == owner.nid
+            and other.position is not None and not getattr(other, 'dead', False)
+            and not getattr(other, 'is_dying', False) and other.get_hp() > 0
+            for other in game.get_all_units())
+
+    def target_restrict(self, unit, item, def_pos, splash):
+        return bool(unit and unit.position and def_pos
+                    and utils.calculate_distance(unit.position, def_pos) == 1
+                    and not self._live_puppet(unit)
+                    and not game.board.get_unit(def_pos)
+                    and movement_funcs.check_traversable(unit, def_pos))
+
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos,
+               mode, attack_info):
+        if self.target_restrict(unit, item, target_pos, ()):
+            actions.append(action.SpawnClassPuppet(
+                unit, target_pos, self.value['class'],
+                int(self.value['movement']), int(self.value['rank'])))
+
+
+class RallyAssist(ItemComponent):
+    nid = 'rally_assist'
+    desc = 'Triggers Feint skills after this Rally assist hits an ally.'
+    tag = ItemTags.CUSTOM
+
+    def __init__(self, value=None):
+        super().__init__(value)
+        self._hit_targets = []
+
+    @staticmethod
+    def _skill_priority(skill):
+        for component in skill.components:
+            if component.nid == 'priority':
+                try:
+                    return int(component.value)
+                except (TypeError, ValueError):
+                    return 0
+        return 0
+
+    @classmethod
+    def _highest_feints_by_stat(cls, owner):
+        selected = {}
+        for index, skill in enumerate(owner.skills):
+            if not skill_system.condition(skill, owner):
+                continue
+            skill_uid = getattr(skill, 'uid', index)
+            if skill_uid is None:
+                skill_uid = index
+            for component in skill.components:
+                if component.nid != 'feint' or not isinstance(component.value, dict):
+                    continue
+                stat_nid = component.value.get('stat')
+                effect_nid = component.value.get('effect')
+                if not stat_nid or not effect_nid:
+                    continue
+                candidate = (cls._skill_priority(skill), skill_uid, component)
+                previous = selected.get(stat_nid)
+                if previous is None or candidate[:2] > previous[:2]:
+                    selected[stat_nid] = candidate
+        return selected
+
+    @staticmethod
+    def _target_with_highest_bonus(owner, stat_nid):
+        target = None
+        highest_bonus = 0
+        for candidate in game.get_all_units():
+            if (not candidate.position or candidate.get_hp() <= 0
+                    or getattr(candidate, 'dead', False)
+                    or getattr(candidate, 'is_dying', False)
+                    or 'Tile' in getattr(candidate, 'tags', [])):
+                continue
+            if not skill_system.check_enemy(owner, candidate):
+                continue
+            bonus = candidate.stat_bonus(stat_nid)
+            if bonus > highest_bonus:
+                target = candidate
+                highest_bonus = bonus
+        return target
+
+    @classmethod
+    def _resolve_feints(cls, owner):
+        for stat_nid, (_, _, component) in cls._highest_feints_by_stat(owner).items():
+            target = cls._target_with_highest_bonus(owner, stat_nid)
+            if target:
+                action.do(action.AddSkill(target, component.value['effect'], owner))
+
+    def start_combat(self, playback, unit, item, target, item2, mode):
+        self._hit_targets.clear()
+
+    def on_hit(self, actions, playback, unit, item, target, item2, target_pos,
+               mode, attack_info):
+        if target and skill_system.check_ally(unit, target):
+            self._hit_targets.append(target)
+
+    def end_combat(self, playback, unit, item, target, item2, mode):
+        if not self._hit_targets:
+            return
+        owners = []
+        for owner in [unit] + self._hit_targets:
+            if owner and owner not in owners:
+                owners.append(owner)
+        try:
+            for owner in owners:
+                self._resolve_feints(owner)
+        finally:
+            self._hit_targets.clear()
+
 class StealFullInventoryWIP(ItemComponent):
     nid = 'steal_full_inventory'
     desc = "Steal any unequipped item from target on hit"
@@ -356,6 +480,20 @@ class DamageAny(ItemComponent):
             playback.append(pb.HitSound('No Damage'))
             playback.append(pb.HitAnim('MapNoDamage', target))
 
+def _living_positioned(unit):
+    return bool(unit and unit.position is not None and unit.get_hp() > 0 and
+                not getattr(unit, 'dead', False) and not getattr(unit, 'is_dying', False))
+
+
+def _open_passable_tile(unit, position, vacating=()):
+    if not game.board.check_bounds(position):
+        return False
+    if movement_funcs.get_mcost(unit, position) == 99:
+        return False
+    occupant = game.board.get_unit(position)
+    return not occupant or occupant in vacating
+
+
 class ShoveOnEndCombatInitiate(ItemComponent):
     nid = 'shove_on_end_combat_initiate'
     desc = "Item shoves target at the end of combat, only on initiation"
@@ -369,23 +507,18 @@ class ShoveOnEndCombatInitiate(ItemComponent):
         offset_y = utils.clamp(unit_to_move.position[1] - anchor_pos[1], -1, 1)
         new_position = (unit_to_move.position[0] + offset_x * magnitude,
                         unit_to_move.position[1] + offset_y * magnitude)
-
-        mcost = movement_funcs.get_mcost(unit_to_move, new_position)
-        #If we could pass through it if we had movement, allow the action to occur
-        if mcost != 99:
-            mcost = 0
-        if game.board.check_bounds(new_position) and \
-                not game.board.get_unit(new_position) and \
-                mcost <= equations.parser.movement(unit_to_move):
+        if _open_passable_tile(unit_to_move, new_position):
             return new_position
         return False
-    
+
     def end_combat(self, playback, unit, item, target, item2, mode):
-        if target and not skill_system.ignore_forced_movement(target) and mode and mode == 'attack':
+        if mode == 'attack' and _living_positioned(unit) and _living_positioned(target) and not skill_system.ignore_forced_movement(target):
             new_position = self._check_shove(target, unit.position, self.value)
             if new_position:
                 action.do(action.ForcedMovement(target, new_position))
-class ShoveOnEndCombatInitiatePlus(ItemComponent):
+
+
+class ShoveOnEndCombatInitiatePlus(ItemComponent):
     nid = 'shove_on_end_combat_initiate_plus'
     desc = "Item shoves target at the end of combat, only on initiation, if target couldn't move back due to terrain limit, target suffered x damage."
     tag = ItemTags.CUSTOM
@@ -404,29 +537,23 @@ class ShoveOnEndCombatInitiate(ItemComponent):
         if value:
             self.value.update(value)
 
-    def _check_shove(self, unit_to_move, anchor_pos, magnitude):
+    def _candidate_position(self, unit_to_move, anchor_pos, magnitude):
         offset_x = utils.clamp(unit_to_move.position[0] - anchor_pos[0], -1, 1)
         offset_y = utils.clamp(unit_to_move.position[1] - anchor_pos[1], -1, 1)
-        new_position = (unit_to_move.position[0] + offset_x * magnitude,
-                        unit_to_move.position[1] + offset_y * magnitude)
+        return (unit_to_move.position[0] + offset_x * magnitude,
+                unit_to_move.position[1] + offset_y * magnitude)
 
-        mcost = movement_funcs.get_mcost(unit_to_move, new_position)
-        #If we could pass through it if we had movement, allow the action to occur
-        if mcost != 99:
-            mcost = 0
-        if game.board.check_bounds(new_position) and \
-                not game.board.get_unit(new_position) and \
-                mcost <= equations.parser.movement(unit_to_move):
-            return new_position
-        return False
-    
     def end_combat(self, playback, unit, item, target, item2, mode):
-        if target and not skill_system.ignore_forced_movement(target) and mode and mode == 'attack':
-            new_position = self._check_shove(target, unit.position, self.value['space'])
-            if new_position:
-                action.do(action.ForcedMovement(target, new_position))            else:                if target and skill_system.check_enemy(unit, target) and not target.get_hp() <= 0:
-                    end_health = target.get_hp() - self.value['damage']
-                    action.do(action.SetHP(target, max(1, end_health)))
+        if mode != 'attack' or not _living_positioned(unit) or not _living_positioned(target) or skill_system.ignore_forced_movement(target):
+            return
+        new_position = self._candidate_position(target, unit.position, self.value['space'])
+        if not game.board.check_bounds(new_position) or game.board.get_unit(new_position):
+            return
+        if movement_funcs.get_mcost(target, new_position) == 99:
+            action.do(action.SetHP(target, max(1, target.get_hp() - self.value['damage'])))
+        else:
+            action.do(action.ForcedMovement(target, new_position))
+
 class ShoveFlexibleOnEndCombatInitiate(ItemComponent):
     nid = 'shove_flexible_on_end_combat_initiate'
     desc = "Item shoves target at the end of combat, only on initiation. Target will stop if they hit a wall."
@@ -464,43 +591,6 @@ class ShoveFlexibleOnEndCombatInitiate(ItemComponent):
             new_position = self._check_shove(target, unit.position, self.value)
             if new_position:
                 action.do(action.ForcedMovement(target, new_position))
-
-class EvalHPCost(ItemComponent):
-    nid = 'eval_hp_cost'
-    desc = "Item subtracts the specified amount of HP upon use. If the subtraction would kill the unit the item becomes unusable."
-    tag = ItemTags.CUSTOM
-
-    expose = ComponentType.String
-    value = ""
-
-    _did_something = False
-
-    def _check_value(self, unit, item) -> int:
-        from app.engine import evaluate
-        try:
-            return int(evaluate.evaluate(self.value, unit, local_args={'item': item}))
-        except:
-            print("Couldn't evaluate %s conditional" % self.value)
-        return 0
-    
-    def available(self, unit, item) -> bool:
-        return unit.get_hp() > self._check_value(unit, item)
-
-    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
-        self._did_something = True
-
-    def on_miss(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
-        self._did_something = True
-
-    def end_combat(self, playback, unit, item, target, item2, mode):
-        value = self._check_value(unit, item)
-        if self._did_something:
-            action.do(action.ChangeHP(unit, -value))
-        self._did_something = False
-
-    def reverse_use(self, unit, item):
-        value = self._check_value(unit, item)
-        action.do(action.ChangeHP(unit, value))
 
 class ShoveFlexibleStops(ItemComponent):
     nid = 'shove_flex_stops'
@@ -840,7 +930,7 @@ class Backdash(ItemComponent):
             if new_position:
                 actions.append(action.ForcedMovement(unit, new_position))
                 playback.append(pb.ShoveHit(unit, item, target))
-class BackdashInitiate(ItemComponent):
+class BackdashInitiate(ItemComponent):
     nid = 'backdash_initiate'
     desc = 'Unit shoves *itself* backwards from the target point.'
     tag = ItemTags.CUSTOM
@@ -854,28 +944,18 @@ class Backdash(ItemComponent):
         upos = user.position
         offset = utils.tmult(utils.tclamp(utils.tuple_sub(upos, tpos), (-1, -1), (1, 1)), magnitude)
         npos = utils.tuple_add(upos, offset)
-
-        mcost_user = game.movement.get_mcost(user, npos)
-        if game.board.check_bounds(npos) and not game.board.get_unit(npos) and \
-                mcost_user <= equations.parser.movement(user):
+        if _open_passable_tile(user, npos):
             return npos
         return None
 
-    def target_restrict(self, unit, item, def_pos, splash) -> bool:
-        target = game.board.get_unit(def_pos)
-        if not target:
-            return False
+    def end_combat(self, playback, unit, item, target, item2, mode):
+        if mode != 'attack' or not _living_positioned(unit) or not target or target.position is None or skill_system.ignore_forced_movement(unit):
+            return
         new_position = self._check_dash(target, unit, self.value)
         if new_position:
-            return True
-        return False
+            action.do(action.ForcedMovement(unit, new_position))
 
-    def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
-        if target and not skill_system.ignore_forced_movement(unit) and mode and mode == 'attack':
-            new_position = self._check_dash(target, unit, self.value)
-            if new_position:
-                actions.append(action.ForcedMovement(unit, new_position))
-                playback.append(pb.ShoveHit(unit, item, target))
+
 class DrawBackOnEndCombatInitiate(ItemComponent):
     nid = 'draw_back_on_end_combat_initiate'
     desc = "Item moves both user and target back at the end of combat, only on initiation"
@@ -891,27 +971,28 @@ class DrawBackOnEndCombatInitiate(ItemComponent):
                              user.position[1] - offset_y * magnitude)
         new_position_target = (target.position[0] - offset_x * magnitude,
                                target.position[1] - offset_y * magnitude)
-
-        mcost_user = movement_funcs.get_mcost(user, new_position_user)
-        mcost_target = movement_funcs.get_mcost(target, new_position_target)
-        #If we could pass through it if we had movement, allow the action to occur
-        if mcost_user != 99:
-            mcost_user = 0
-        if mcost_target != 99:
-            mcost_target = 0
-        if game.board.check_bounds(new_position_user) and \
-                not game.board.get_unit(new_position_user) and \
-                mcost_user <= equations.parser.movement(user) and mcost_target <= equations.parser.movement(target):
+        if _open_passable_tile(user, new_position_user) and _open_passable_tile(target, new_position_target, vacating=(user,)):
             return new_position_user, new_position_target
         return None, None
-    
+
     def end_combat(self, playback, unit, item, target, item2, mode):
-        if target and not skill_system.ignore_forced_movement(unit) and not skill_system.ignore_forced_movement(target) and mode and mode == 'attack':
-            new_position_user, new_position_target = self._check_draw_back(target, unit, self.value)
-            if new_position_user:
-                action.do(action.Teleport(unit, new_position_user))
-            if new_position_target and not game.board.get_unit(new_position_target):
-                action.do(action.Teleport(target, new_position_target))
+        if mode != 'attack' or not _living_positioned(unit) or not _living_positioned(target) or skill_system.ignore_forced_movement(unit) or skill_system.ignore_forced_movement(target):
+            return
+        new_position_user, new_position_target = self._check_draw_back(target, unit, self.value)
+        if new_position_user and new_position_target:
+            action.do(action.Teleport(unit, new_position_user))
+            action.do(action.Teleport(target, new_position_target))
+
+
+class SwapOnEndCombatInitiateAlive(ItemComponent):
+    nid = 'swap_on_end_combat_initiate_alive'
+    desc = 'Item swaps user with target after initiated combat when both are alive.'
+    tag = ItemTags.CUSTOM
+
+    def end_combat(self, playback, unit, item, target, item2, mode):
+        if mode == 'attack' and _living_positioned(unit) and _living_positioned(target) and not skill_system.ignore_forced_movement(unit) and not skill_system.ignore_forced_movement(target):
+            action.do(action.Swap(unit, target))
+
 
 class EvalDamage(ItemComponent):
     nid = 'eval_damage'

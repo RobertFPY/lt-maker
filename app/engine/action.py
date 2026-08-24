@@ -34,6 +34,14 @@ def alters_game_state(func: Callable[..., Any]) -> Callable[..., None]:
         game.on_alter_game_state()
     return wrapper
 
+
+def _suppress_save_cleanup_movement(action: Any) -> bool:
+    from app.engine.combat.save_intercept import is_save_cleanup_active
+    if is_save_cleanup_active():
+        action._save_cleanup_suppressed = True
+        return True
+    return getattr(action, '_save_cleanup_suppressed', False)
+
 def wrap_do_exec_reverse(_cls: Type[Action]) -> Type[Action]:
     for func in ['do', 'execute', 'reverse']:
         setattr(_cls, func, alters_game_state(getattr(_cls, func)))
@@ -255,16 +263,22 @@ class SimpleMove(Move):
         self.update_fow_action = UpdateFogOfWar(self.unit)
 
     def do(self):
+        if _suppress_save_cleanup_movement(self):
+            return
         game.leave(self.unit)
         game.arrive(self.unit, self.new_pos)
         self.update_fow_action.do()
 
     def execute(self):
+        if _suppress_save_cleanup_movement(self):
+            return
         game.leave(self.unit)
         game.arrive(self.unit, self.new_pos)
         self.update_fow_action.execute()
 
     def reverse(self):
+        if getattr(self, '_save_cleanup_suppressed', False):
+            return
         self.update_fow_action.reverse()
         game.leave(self.unit)
         game.arrive(self.unit, self.old_pos)
@@ -276,6 +290,8 @@ class Teleport(SimpleMove):
 
 class ForcedMovement(SimpleMove):
     def do(self):
+        if _suppress_save_cleanup_movement(self):
+            return
         # Sprite transition
         x_offset = (self.old_pos[0] - self.new_pos[0]) * TILEWIDTH
         y_offset = (self.old_pos[1] - self.new_pos[1]) * TILEHEIGHT
@@ -287,6 +303,8 @@ class ForcedMovement(SimpleMove):
         self.update_fow_action.do()
 
     def execute(self):
+        if _suppress_save_cleanup_movement(self):
+            return
         game.leave(self.unit)
         game.arrive(self.unit, self.new_pos)
         self.update_fow_action.do()
@@ -301,6 +319,8 @@ class Swap(Action):
         self.update_fow_action2 = UpdateFogOfWar(self.unit2)
 
     def do(self):
+        if _suppress_save_cleanup_movement(self):
+            return
         game.leave(self.unit1)
         game.leave(self.unit2)
         game.arrive(self.unit2, self.pos1)
@@ -309,6 +329,8 @@ class Swap(Action):
         self.update_fow_action2.do()
 
     def reverse(self):
+        if getattr(self, '_save_cleanup_suppressed', False):
+            return
         self.update_fow_action1.reverse()
         self.update_fow_action2.reverse()
         game.leave(self.unit1)
@@ -319,6 +341,8 @@ class Swap(Action):
 
 class Warp(SimpleMove):
     def do(self):
+        if _suppress_save_cleanup_movement(self):
+            return
         self.unit.sprite.set_transition('warp_move')
 
         game.leave(self.unit)
@@ -328,6 +352,8 @@ class Warp(SimpleMove):
 
 class Swoosh(SimpleMove):
     def do(self):
+        if _suppress_save_cleanup_movement(self):
+            return
         self.unit.sprite.set_transition('swoosh_move')
 
         game.leave(self.unit)
@@ -337,11 +363,113 @@ class Swoosh(SimpleMove):
 
 class FadeMove(SimpleMove):
     def do(self):
+        if _suppress_save_cleanup_movement(self):
+            return
         self.unit.sprite.set_transition('fade_move')
 
         game.leave(self.unit)
         game.arrive(self.unit, self.new_pos)
         self.update_fow_action.do()
+
+
+class BeginSaveInterception(Action):
+    """Temporarily replace the protected defender on its tile, reversibly."""
+    def __init__(self, interception):
+        self.savior = interception.savior
+        self.protected = interception.protected
+        self.save_skill = interception.offer.skill
+        self.save_kind = interception.offer.kind
+        self.save_radius = interception.offer.radius
+        self.save_rank = interception.offer.rank
+        self.save_stats = tuple(interception.offer.stats)
+        self.save_damage = interception.offer.damage
+        self.save_consumes_turn = interception.offer.consume_once_per_turn
+        self.save_consumption_key = 'save_intercept_last_turn'
+        self.save_consumption_had_value = False
+        self.save_consumption_old_value = None
+        self.savior_position = self.savior.position
+        self.protected_position = self.protected.position
+        self.saved_state = {
+            unit.nid: (unit.previous_position, unit.movement_left, unit.has_moved, unit.finished)
+            for unit in (self.savior, self.protected)
+        }
+        self.saved_fow = {
+            unit.nid: game.board.fow_vantage_point.get(unit.nid)
+            for unit in (self.savior, self.protected)
+        }
+
+    def _restore_fow(self):
+        for unit in (self.savior, self.protected):
+            radius = game.board.get_fog_of_war_radius(unit.team)
+            game.board.update_fow(self.saved_fow[unit.nid], unit, skill_system.sight_range(unit) + radius)
+        game.boundary.reset_fog_of_war()
+
+    def _restore_unit_state(self):
+        for unit in (self.savior, self.protected):
+            previous_position, movement_left, has_moved, finished = self.saved_state[unit.nid]
+            unit.previous_position = previous_position
+            unit.movement_left = movement_left
+            unit.has_moved = has_moved
+            unit.finished = finished
+
+    def _interception(self):
+        from app.engine.combat.save_intercept import make_restored_save_interception
+        return make_restored_save_interception(
+            self.savior, self.protected, self.save_skill, self.save_kind,
+            self.save_radius, self.save_rank, self.save_stats, self.save_damage)
+
+    def do(self):
+        from app.engine.combat.save_intercept import set_active_save_interception
+        try:
+            if self.save_consumes_turn:
+                self.save_consumption_had_value = self.save_consumption_key in self.save_skill.data
+                self.save_consumption_old_value = self.save_skill.data.get(self.save_consumption_key)
+                self.save_skill.data[self.save_consumption_key] = getattr(game, 'turncount', 0)
+            game.leave(self.protected)
+            game.leave(self.savior)
+            game.arrive(self.savior, self.protected_position)
+            self._restore_fow()
+            self._restore_unit_state()
+            set_active_save_interception(self._interception())
+        except Exception:
+            self._restore(restore_consumption=True)
+            raise
+
+    def _restore(self, restore_consumption=False):
+        from app.engine.combat.save_intercept import set_active_save_interception
+        try:
+            if self.savior.position:
+                game.leave(self.savior)
+            if self.protected.position:
+                game.leave(self.protected)
+            if self.savior_position:
+                game.arrive(self.savior, self.savior_position)
+            if self.protected_position:
+                game.arrive(self.protected, self.protected_position)
+            self._restore_fow()
+            self._restore_unit_state()
+            if restore_consumption and self.save_consumes_turn:
+                if self.save_consumption_had_value:
+                    self.save_skill.data[self.save_consumption_key] = self.save_consumption_old_value
+                else:
+                    self.save_skill.data.pop(self.save_consumption_key, None)
+        finally:
+            set_active_save_interception(None)
+
+    def reverse(self):
+        self._restore(restore_consumption=True)
+
+
+class EndSaveInterception(Action):
+    """Restore a BeginSaveInterception after all post-combat effects resolve."""
+    def __init__(self, begin_action):
+        self.begin_action = begin_action
+
+    def do(self):
+        self.begin_action._restore()
+
+    def reverse(self):
+        self.begin_action.do()
 
 class QuickArrive(Action):
     """
@@ -503,6 +631,84 @@ class RegisterUnit(Action):
         for item in reversed(self.unit.items):
             game.unregister_item(item)
         game.unregister_unit(self.unit)
+
+
+class SpawnClassPuppet(Action):
+    """Create and place one temporary, owner-bound Class Skill puppet.
+
+    The action owns both registration and placement so turnwheel reversal removes
+    the exact runtime unit and its registered children in reverse order.
+    """
+    def __init__(self, owner: UnitObject, position: Pos, klass: NID,
+                 movement: int, rank: int):
+        self.owner = owner
+        self.position = position
+        self.klass = klass
+        self.movement = movement
+        self.rank = rank
+        self.unit: Optional[UnitObject] = None
+        self.register_action: Optional[RegisterUnit] = None
+        self.arrive_action: Optional[ArriveOnMap] = None
+
+    def _build_unit(self) -> UnitObject:
+        from app.data.database.level_units import GenericUnit
+
+        stem = f'ClassPuppet_{self.owner.nid}_{self.rank}'
+        nid = stem
+        suffix = 1
+        while game.get_unit(nid):
+            suffix += 1
+            nid = f'{stem}_{suffix}'
+        faction = self.owner.faction or DB.factions[0].nid
+        prefab = GenericUnit(nid, None, 1, self.klass, faction, [], [],
+                             self.owner.team, 'None')
+        unit = UnitObject.from_prefab(prefab, game.current_mode)
+        unit.party = self.owner.party
+        unit.stats = {stat_nid: 0 for stat_nid in DB.stats.keys()}
+        unit.stats['HP'] = 10
+        unit.stats['MOV'] = self.movement
+        unit.current_hp = 10
+        unit._movement_left = self.movement
+        unit._fields['PuppetOwner'] = self.owner.nid
+        unit._fields['PuppetTemporary'] = True
+        return unit
+
+    def do(self):
+        if self.unit is None:
+            self.unit = self._build_unit()
+            self.register_action = RegisterUnit(self.unit)
+            self.arrive_action = ArriveOnMap(self.unit, self.position)
+        self.register_action.do()
+        self.arrive_action.do()
+
+    def reverse(self):
+        if self.arrive_action and self.unit and self.unit.position:
+            self.arrive_action.reverse()
+        if self.register_action:
+            self.register_action.reverse()
+
+
+class DespawnClassPuppet(Action):
+    """Remove a temporary puppet while keeping end-of-chapter cleanup reversible."""
+    def __init__(self, unit: UnitObject):
+        self.unit = unit
+        self.leave_action: Optional[LeaveMap] = None
+        self.register_action: Optional[RegisterUnit] = None
+
+    def do(self):
+        if self.leave_action is None and self.unit.position:
+            self.leave_action = LeaveMap(self.unit)
+        if self.register_action is None:
+            self.register_action = RegisterUnit(self.unit)
+        if self.leave_action:
+            self.leave_action.do()
+        self.register_action.reverse()
+
+    def reverse(self):
+        if self.register_action:
+            self.register_action.do()
+        if self.leave_action:
+            self.leave_action.reverse()
 
 class IncrementTurn(Action):
     def do(self):
@@ -2373,7 +2579,7 @@ class SetWexp(Action):
 class ChangeHP(Action):
     def __init__(self, unit, num):
         self.unit = unit
-        self.num = num
+        self.num = 0 if num > 0 and skill_system.block_hp_recovery(unit) else num
         self.old_hp = self.unit.get_hp()
 
     def do(self):

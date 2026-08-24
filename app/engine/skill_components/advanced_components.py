@@ -9,7 +9,9 @@ from app.data.database.skill_components import SkillComponent, SkillTags
 from app.engine import action, equations, item_funcs, skill_system
 from app.engine.game_state import game
 import app.engine.combat.playback as pb
+from app.engine.combat import utils as combat_utils
 from app.utilities import static_random, utils
+from app.utilities.enums import Strike
 from app.engine.source_type import SourceType
 
 if TYPE_CHECKING:
@@ -187,6 +189,16 @@ def get_modified_proc_rate(unit, skill, target=None) -> int:
     if target:
         proc_rate += sum(get_modify_enemy_proc_rate(target, s) for s in target.skills)
     return proc_rate
+
+
+def get_modified_debuff_proc_rate(unit, skill, target=None) -> int:
+    """Return a status/debuff proc rate without changing Special proc rates.
+
+    Components that apply a debuff or status probabilistically must call this
+    helper explicitly.  Generic combat/Special proc components intentionally
+    continue to use :func:`get_modified_proc_rate`.
+    """
+    return get_proc_rate(unit, skill) + skill_system.modify_debuff_proc_rate(unit, target)
 
 
 def get_weapon_filter(skill, unit, item) -> bool:
@@ -368,6 +380,7 @@ class AstraProc(SkillComponent):
         'extra_attacks': ComponentType.Int,
         'damage_percent': ComponentType.Float,
         'show_proc_effects': ComponentType.Bool,
+        'disable_crit': ComponentType.Bool,
     }
 
     def __init__(self, value=None):
@@ -375,6 +388,7 @@ class AstraProc(SkillComponent):
             'extra_attacks': 4,
             'damage_percent': 0.5,
             'show_proc_effects': True,
+            'disable_crit': False,
         }
         if value:
             self.value.update(value)
@@ -412,6 +426,9 @@ class AstraProc(SkillComponent):
             return max(0, float(self.value['damage_percent']))
         return 1
 
+    def prevent_critical(self, unit, item, target):
+        return self._should_modify_damage and bool(self.value['disable_crit'])
+
     def after_strike(self, actions, playback, unit, item, target, item2, mode, attack_info, strike):
         if self._should_modify_damage:
             self._hitcount += 1
@@ -436,7 +453,7 @@ class AetherProc(SkillComponent):
     options = {
         'extra_attacks': ComponentType.Int,
         'lifelink': ComponentType.Float,
-        'luna_def_multiplier': ComponentType.Float,
+        'defense_ignore_percent': ComponentType.Float,
         'show_proc_effects': ComponentType.Bool,
     }
 
@@ -444,11 +461,15 @@ class AetherProc(SkillComponent):
         self.value = {
             'extra_attacks': 1,         # Each proc adds this many bonus strikes (1 Sol + 1 Luna = 2 total)
             'lifelink': 0.5,            # Sol: fraction of damage to heal (0.5 = 50%)
-            'luna_def_multiplier': 0.5, # Luna: fraction of target's defense applied (0.5 = ignore 50%)
+            'defense_ignore_percent': 0.5,
             'show_proc_effects': True,
         }
         if value:
+            legacy = value.get('luna_def_multiplier') if isinstance(value, dict) else None
             self.value.update(value)
+            if legacy is not None and 'defense_ignore_percent' not in value:
+                self.value['defense_ignore_percent'] = 1 - float(legacy)
+            self.value.pop('luna_def_multiplier', None)
         
         # Instance variables - each skill instance has its own state
         self._num_procs = 0              # Number of times Aether has procced this combat
@@ -478,32 +499,24 @@ class AetherProc(SkillComponent):
     def dynamic_multiattacks(self, unit, item, target, item2, mode, attack_info, base_value) -> int:
         return int(self.value['extra_attacks']) * self._num_procs
 
-    def dynamic_damage(self, unit, item, target, item2, mode, attack_info, base_value) -> int:
-        if self._should_modify_damage and self._hitcount == 1:
-            return math.ceil(
-                float(target.stats['DEF']) * float(self.value['luna_def_multiplier'])
-            )
-        return 0
+    def defense_multiplier(self, unit, item, target, item2, mode, attack_info, base_value):
+        if self._should_modify_damage and self._hitcount == 0:
+            return max(0, 1 - float(self.value['defense_ignore_percent']))
+        return 1
 
     def after_strike(self, actions, playback, unit, item, target, item2, mode, attack_info, strike):
         if not self._should_modify_damage:
             return
 
-        # Sol effect: heal from the first strike of the proc only
-        if self._hitcount == 0:
-            last_hit = next(
-                (p for p in reversed(playback)
-                 if p.nid in ('damage_hit', 'damage_crit') and p.attacker == unit),
-                None
+        # Aether resolves Luna first, then Sol on the bonus strike.
+        if self._hitcount == 1 and strike != Strike.MISS:
+            true_damage = int(
+                combat_utils.get_current_strike_true_damage(playback, unit, target)
+                * float(self.value['lifelink'])
             )
-            if last_hit:
-                true_damage = int(
-                    utils.clamp(last_hit.true_damage, 0, target.get_hp())
-                    * float(self.value['lifelink'])
-                )
-                if true_damage > 0:
-                    actions.append(action.ChangeHP(unit, true_damage))
-                    playback.append(pb.HealHit(unit, item, unit, true_damage, true_damage))
+            if true_damage > 0:
+                actions.append(action.ChangeHP(unit, true_damage))
+                playback.append(pb.HealHit(unit, item, unit, true_damage, true_damage))
 
         # Luna effect: bonus damage based on target's defense
 

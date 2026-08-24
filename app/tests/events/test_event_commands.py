@@ -47,6 +47,19 @@ class EventCommandUnitTests(unittest.TestCase):
         command = event_commands.determine_command_type("s;Eirika;I am evil;;60")
         self.assertTrue(command == event_commands.Speak)
 
+    def test_command_catalog_keeps_s_as_speak_and_rejects_alias_collisions(self):
+        self.assertIsNone(event_commands.SpeakStyle.nickname)
+        self.assertEqual('s', event_commands.Speak.nickname)
+        self.assertIsNone(event_commands.Say.nickname)
+        self.assertIs(event_commands.Speak,
+                      event_commands.determine_command_type('s;Eirika;Text'))
+        self.assertIn('speak_style', event_commands.get_all_event_commands(
+            event_commands.EventVersion.EVENT))
+        self.assertNotIn('say', event_commands.get_all_event_commands(
+            event_commands.EventVersion.EVENT))
+        self.assertIn('say', event_commands.get_all_event_commands(
+            event_commands.EventVersion.PYEV1))
+
     def test_determine_command_type_comment(self):
         command1 = event_commands.determine_command_type("#Hello")
         self.assertTrue(command1 == event_commands.Comment)

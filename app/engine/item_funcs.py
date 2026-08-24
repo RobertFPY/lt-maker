@@ -3,7 +3,7 @@ import logging
 import math
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, Dict, List, Set
+from typing import TYPE_CHECKING, Dict, List, Optional, Set
 
 from app.data.database.database import DB
 from app.engine import item_system, skill_system, text_funcs
@@ -47,6 +47,15 @@ def is_magic(unit: UnitObject, item: ItemObject, distance: int = 0) -> bool:
     if item.magic or (item.magic_at_range and distance > 1):
         return True
     return False
+
+def is_magic_in_combat(unit: UnitObject, item: Optional[ItemObject], target: UnitObject) -> bool:
+    """Determine whether the supplied combat item deals magic damage to ``target``."""
+    if not item:
+        return False
+    distance = 0
+    if unit and target and unit.position and target.position:
+        distance = utils.calculate_distance(unit.position, target.position)
+    return is_magic(unit, item, distance)
 
 def is_ranged(unit: UnitObject, item: ItemObject) -> bool:
     """

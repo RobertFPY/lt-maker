@@ -272,6 +272,69 @@ class EventUnitTests(unittest.TestCase):
         add_unit_command = add_unit("Eirika", "2,5", "Normal")
         self.MACRO_test_event([add_unit_command])
 
+    def test_force_skill_tutorial_python_wrappers_allow_omitted_unit(self):
+        from app.events.python_eventing.python_event_command_wrappers import force_skill_tutorial, skill_tutorial
+
+        self.assertEqual(force_skill_tutorial().parameters, {})
+        self.assertEqual(skill_tutorial().parameters, {})
+
+    def test_force_skill_tutorial_parser_accepts_omitted_or_supplied_unit(self):
+        omitted_unit, bad_idx = parse_text_to_command('force_skill_tutorial')
+        self.assertIsNone(bad_idx)
+        self.assertEqual(omitted_unit.parameters, {})
+
+        supplied_unit, bad_idx = parse_text_to_command('force_skill_tutorial;Eirika')
+        self.assertIsNone(bad_idx)
+        self.assertEqual(supplied_unit.parameters, {'Unit': 'Eirika'})
+
+    def test_force_skill_tutorial_uses_event_unit_when_omitted(self):
+        from app.events import event_functions
+
+        event = MagicMock()
+        event.unit = MagicMock()
+        event.game.memory = {}
+
+        event_functions.force_skill_tutorial(event)
+
+        self.assertEqual(event.game.memory['current_unit'], event.unit)
+        self.assertEqual(event.game.memory['scroll_units'], [event.unit])
+        self.assertTrue(event.game.memory['_force_skill_tutorial'])
+        self.assertEqual(event.game.memory['next_state'], 'info_menu')
+        event.game.state.change.assert_called_once_with('transition_to')
+        self.assertEqual(event.state, 'paused')
+
+    def test_force_skill_tutorial_resolves_supplied_unit(self):
+        from app.events import event_functions
+
+        event = MagicMock()
+        resolved_unit = MagicMock()
+        event._get_unit.return_value = resolved_unit
+        event.game.memory = {}
+
+        event_functions.force_skill_tutorial(event, 'Eirika')
+
+        event._get_unit.assert_called_once_with('Eirika')
+        self.assertEqual(event.game.memory['current_unit'], resolved_unit)
+        self.assertEqual(event.game.memory['scroll_units'], [resolved_unit])
+        self.assertTrue(event.game.memory['_force_skill_tutorial'])
+        self.assertEqual(event.game.memory['next_state'], 'info_menu')
+        event.game.state.change.assert_called_once_with('transition_to')
+        self.assertEqual(event.state, 'paused')
+
+    def test_force_skill_tutorial_missing_unit_leaves_event_running(self):
+        from app.events import event_functions
+
+        event = MagicMock()
+        event.unit = None
+        event.game.memory = {}
+        event.state = 'running'
+
+        event_functions.force_skill_tutorial(event)
+
+        self.assertEqual(event.game.memory, {})
+        event.game.state.change.assert_not_called()
+        self.assertEqual(event.state, 'running')
+
     def test_copy_stat_copies_stats_level_and_exp(self):
         from app.engine import action
         from app.events import event_functions

@@ -542,7 +542,6 @@ Changes a portrait's facial expression.
 
 class SpeakStyle(EventCommand):
     nid = "speak_style"
-    nickname = "s"
     tag = Tags.DIALOGUE_TEXT
 
     desc = \
@@ -605,7 +604,6 @@ Extra flags:
 
 class Say(EventCommand):
     nid = "say"
-    nickname = "s"
     tag = Tags.DIALOGUE_TEXT
 
     desc = \
@@ -4072,7 +4070,7 @@ Opens the unit info menu directly on the skill page and plays the "Skill System 
 If *Unit* is not given, the event's own unit is used. Unlike the automatic first-visit tutorial, this command always plays and does not check (or set) the `_skill_tutorial_seen` game var.
         """
 
-    keywords = ["Unit"]
+    optional_keywords = ["Unit"]
 
 class RestrictKeys(EventCommand):
     nid = "restrict_keys"
@@ -4259,12 +4257,26 @@ def restore_command(dat) -> EventCommand:
 
 evaluables = ('Expression', 'String', 'StringList', 'PointList', 'Nid', 'Text')
 
-ALL_EVENT_COMMANDS: Dict[NID, Type[EventCommand]] = {
-    command.nid: command for command in EventCommand.__subclasses__()
-}
-ALL_EVENT_COMMANDS.update({
-    command.nickname: command for command in EventCommand.__subclasses__() if command.nickname
-})
+def build_event_command_catalog(
+        command_types: Optional[List[Type[EventCommand]]] = None,
+) -> Dict[NID, Type[EventCommand]]:
+    """Register canonical command NIDs and aliases without silent overwrites."""
+    catalog: Dict[NID, Type[EventCommand]] = {}
+    for command_t in command_types or EventCommand.__subclasses__():
+        for key in (command_t.nid, command_t.nickname):
+            if not key:
+                continue
+            previous = catalog.get(key)
+            if previous and previous is not command_t:
+                raise ValueError(
+                    f"Duplicate event command key {key!r}: "
+                    f"{previous.__module__}.{previous.__qualname__}, "
+                    f"{command_t.__module__}.{command_t.__qualname__}")
+            catalog[key] = command_t
+    return catalog
+
+
+ALL_EVENT_COMMANDS = build_event_command_catalog()
 
 
 FORBIDDEN_PYTHON_COMMANDS: List[EventCommand] = [Comment, If, Elif, Else,
@@ -4273,13 +4285,14 @@ FORBIDDEN_PYTHON_COMMANDS: List[EventCommand] = [Comment, If, Elif, Else,
 FORBIDDEN_PYTHON_COMMAND_NIDS: List[str] = [cmd.nid for cmd in FORBIDDEN_PYTHON_COMMANDS] + [cmd.nickname for cmd in FORBIDDEN_PYTHON_COMMANDS]
 def get_all_event_commands(version: EventVersion) -> Dict[NID, Type[EventCommand]]:
     if version == EventVersion.EVENT:
-        commands = {nid: command_t for nid, command_t in ALL_EVENT_COMMANDS.items() if nid not in ['say']}
+        commands = {key: command_t for key, command_t in ALL_EVENT_COMMANDS.items()
+                    if command_t.nid != 'say'}
         return commands
     elif version == EventVersion.PYEV1:
         commands = {}
         for nid, command_t in ALL_EVENT_COMMANDS.items():
-            if not command_t.tag in [Tags.HIDDEN, Tags.FLOW_CONTROL]:
-                if not command_t.nid in FORBIDDEN_PYTHON_COMMAND_NIDS:
+            if command_t.tag not in [Tags.HIDDEN, Tags.FLOW_CONTROL]:
+                if command_t.nid not in FORBIDDEN_PYTHON_COMMAND_NIDS:
                     commands[nid] = command_t
         commands['wait'] = Wait
         commands['finish'] = Finish

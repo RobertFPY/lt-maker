@@ -6,7 +6,8 @@ import shutil
 import os
 import traceback
 
-from typing import Dict, List
+from types import ModuleType
+from typing import Dict, List, Tuple
 
 from app import sprites
 from app.data.category import Categories, CategorizedCatalog
@@ -57,6 +58,8 @@ class Resources():
 
         # custom components
         self.loaded_custom_components_path = None
+        self._loaded_custom_components_package: ModuleType | None = None
+        self._loaded_custom_component_modules: Tuple[ModuleType, ...] = ()
 
     def load_standard_resources(self):
         self.platforms = self.get_sprites('resources', 'platforms')
@@ -141,7 +144,7 @@ class Resources():
         cc_path = self.get_custom_components_path()
 
         if not cc_path:
-            self.loaded_custom_components_path = None
+            self._unload_custom_components()
             return
 
         init_suffixes = (
@@ -150,45 +153,64 @@ class Resources():
         )
         module_path = next(
             (
-                os.path.join(cc_path, "__init__" + suffix)
+                os.path.abspath(os.path.join(cc_path, "__init__" + suffix))
                 for suffix in init_suffixes
                 if os.path.exists(os.path.join(cc_path, "__init__" + suffix))
             ),
             None,
         )
-        if module_path != self.loaded_custom_components_path and module_path:
-            self.loaded_custom_components_path = module_path
-            print("Importing Custom Components")
-            try:
-                spec = importlib.util.spec_from_file_location(
-                    'custom_components',
-                    module_path,
-                    submodule_search_locations=[cc_path],
-                )
-                if not spec or not spec.loader:
-                    raise ImportError(
-                        "Could not create a loader for custom components at %s"
-                        % module_path
-                    )
-                module = importlib.util.module_from_spec(spec)
-                # spec.name is 'custom_components'
-                sys.modules[spec.name] = module
-                spec.loader.exec_module(module)
-                # Project package initializers historically scanned only ``.py``
-                # files. Android packages contain flat ``.pyc`` files instead,
-                # so explicitly import every child module using Python's own
-                # source/bytecode-aware discovery.
-                import_submodules(
-                    spec.name,
-                    [cc_path],
-                    reload_existing=True,
-                )
-            except:
-                import_failure_msg = traceback.format_exc()
-                logging.error("Failed to import custom components: %s" % (import_failure_msg))
-                raise exceptions.CustomComponentsException("Failed to import custom components: %s" % (import_failure_msg))
         if not module_path:
-            self.loaded_custom_components_path = None
+            self._unload_custom_components()
+            return
+        if module_path == self.loaded_custom_components_path:
+            return
+
+        # A project package is process-global under this stable package name.
+        # Remove the old project before attempting a new one so no stale class
+        # can appear in the active runtime catalog.
+        self._unload_custom_components()
+        importlib.invalidate_caches()
+        print("Importing Custom Components")
+        try:
+            spec = importlib.util.spec_from_file_location(
+                'custom_components', module_path, submodule_search_locations=[cc_path])
+            if not spec or not spec.loader:
+                raise ImportError("Could not create a loader for custom components at %s" % module_path)
+            package = importlib.util.module_from_spec(spec)
+            sys.modules[spec.name] = package
+            spec.loader.exec_module(package)
+            # Project package initializers are deliberately passive. Discovery
+            # lives here so the resource loader owns module lifetime, including
+            # Android's source/bytecode layouts.
+            modules = tuple(import_submodules(spec.name, [cc_path], reload_existing=False))
+        except Exception:
+            import_failure_msg = traceback.format_exc()
+            self._unload_custom_components()
+            logging.error("Failed to import custom components: %s" % import_failure_msg)
+            raise exceptions.CustomComponentsException(
+                "Failed to import custom components: %s" % import_failure_msg)
+
+        # Publish only after package and every child import succeeded.
+        self.loaded_custom_components_path = module_path
+        self._loaded_custom_components_package = package
+        self._loaded_custom_component_modules = modules
+
+    def _clear_component_catalog_caches(self):
+        """Invalidate component catalogs after the active project changes."""
+        from app.engine import item_component_access, skill_component_access
+        item_component_access.get_cached_item_components.cache_clear()
+        skill_component_access.get_cached_skill_components.cache_clear()
+
+    def _unload_custom_components(self):
+        """Drop the active custom package and every child module atomically."""
+        import sys
+        for name in tuple(sys.modules):
+            if name == 'custom_components' or name.startswith('custom_components.'):
+                del sys.modules[name]
+        self.loaded_custom_components_path = None
+        self._loaded_custom_components_package = None
+        self._loaded_custom_component_modules = ()
+        self._clear_component_catalog_caches()
 
     def save_as_data(self, save_data_types) -> NestedPrimitiveDict:
         to_save = {}
@@ -386,6 +408,10 @@ class Resources():
 
     def has_loaded_custom_components(self):
         return self.loaded_custom_components_path
+
+    def get_loaded_custom_component_modules(self) -> Tuple[ModuleType, ...]:
+        """Return exactly the custom component modules for the active project."""
+        return self._loaded_custom_component_modules
 
     def get_custom_components_path(self):
         if self.main_folder:

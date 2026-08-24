@@ -2,7 +2,7 @@ import logging
 
 from app.utilities import utils
 
-from app.engine import item_system, skill_system, battle_animation
+from app.engine import action, item_system, skill_system, battle_animation
 from app.engine.game_state import game
 from app.engine.input_manager import get_input_manager
 
@@ -62,7 +62,8 @@ def has_animation(attacker: UnitObject, item: ItemObject, main_target: tuple, fo
     return False
 
 def engage(attacker: UnitObject, positions: list, main_item: ItemObject, skip: bool = False, script: list = None,
-           total_rounds: int = 1, force_animation: bool = False, force_no_animation: bool = False, arena_combat: bool = False):
+           total_rounds: int = 1, force_animation: bool = False, force_no_animation: bool = False,
+           arena_combat: bool = False, allow_save_interception: bool = True):
     """
     Builds the correct combat controller for this interaction
 
@@ -107,25 +108,50 @@ def engage(attacker: UnitObject, positions: list, main_item: ItemObject, skip: b
     # To account for any multitarget items that have been duplicated in the preceding for loop
     items = multitarget_items
 
-    if target_positions[0] is None:
+    save_begin_action = None
+    interception = None
+    from app.engine.combat.save_intercept import can_attempt_save_interception
+    can_intercept = allow_save_interception and can_attempt_save_interception(
+        attacker, main_item, positions, main_targets, splashes, script=script,
+        arena_combat=arena_combat)
+    if can_intercept:
+        from app.engine.combat.save_intercept import find_save_interception
+        protected = game.board.get_unit(main_targets[0])
+        if protected and attacker.position:
+            distance = utils.calculate_distance(attacker.position, main_targets[0])
+            interception = find_save_interception(attacker, protected, main_item, distance)
+            if interception:
+                save_begin_action = action.BeginSaveInterception(interception)
+                action.do(save_begin_action)
+                attacker.strike_partner, interception.savior.strike_partner = \
+                    game.target_system.find_strike_partners(attacker, interception.savior, main_item)
+
+    try:
+        if target_positions[0] is None:
         # If we are targeting None, (which means we're in base using an item)
-        combat = BaseCombat(attacker, main_item, attacker, script, total_rounds)
-    elif skip:
+            combat = BaseCombat(attacker, main_item, attacker, script, total_rounds)
+        elif skip:
         # If we are skipping
-        combat = SimpleCombat(attacker, main_item, items, target_positions, main_targets, splashes, script, total_rounds)
-        game.highlight.remove_highlights()
+            combat = SimpleCombat(attacker, main_item, items, target_positions, main_targets, splashes, script, total_rounds)
+            game.highlight.remove_highlights()
     # If more than one target position or more than one item being used, cannot use animation combat
-    elif len(positions) > 1 or len(items) > 1:
-        combat = MapCombat(attacker, main_item, items, target_positions, main_targets, splashes, script, total_rounds)
+        elif len(positions) > 1 or len(items) > 1:
+            combat = MapCombat(attacker, main_item, items, target_positions, main_targets, splashes, script, total_rounds)
     # If affecting more than one target, cannot use animation combat
-    elif not main_targets[0] or splashes[0]:
-        combat = MapCombat(attacker, main_item, items, target_positions, main_targets, splashes, script, total_rounds)
-    elif has_animation(attacker, item, main_target, force_animation, force_no_animation):
-        defender = game.board.get_unit(main_target)
-        def_item = defender.get_weapon()
-        combat = AnimationCombat(attacker, item, defender, def_item, script, total_rounds, arena_combat)
-    else:
-        combat = MapCombat(attacker, main_item, items, target_positions, main_targets, splashes, script, total_rounds)
+        elif not main_targets[0] or splashes[0]:
+            combat = MapCombat(attacker, main_item, items, target_positions, main_targets, splashes, script, total_rounds)
+        elif has_animation(attacker, item, main_target, force_animation, force_no_animation):
+            defender = game.board.get_unit(main_target)
+            def_item = defender.get_weapon()
+            combat = AnimationCombat(attacker, item, defender, def_item, script, total_rounds, arena_combat)
+        else:
+            combat = MapCombat(attacker, main_item, items, target_positions, main_targets, splashes, script, total_rounds)
+    except Exception:
+        if save_begin_action:
+            action.do(action.EndSaveInterception(save_begin_action))
+        raise
+    combat.save_interception = interception
+    combat.save_begin_action = save_begin_action
     return combat
 
 def start_combat(unit: UnitObject, target: tuple, item: ItemObject, skip: bool = False,
@@ -162,7 +188,8 @@ def start_combat(unit: UnitObject, target: tuple, item: ItemObject, skip: bool =
     game.state.change('combat')
     combat = engage(
         unit, targets, item, skip=skip, script=script, total_rounds=total_rounds,
-        arena_combat=arena, force_animation=force_animation, force_no_animation=force_no_animation)
+        arena_combat=arena, force_animation=force_animation, force_no_animation=force_no_animation,
+        allow_save_interception=not event_combat)
     combat.ai_combat = ai_combat  # Must mark this so we can come back!
     combat.event_combat = event_combat  # Must mark this so we can come back!
     combat.arena_combat = arena

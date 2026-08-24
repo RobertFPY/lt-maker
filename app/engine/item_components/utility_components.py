@@ -43,9 +43,11 @@ class Heal(ItemComponent):
         return unit and unit.get_hp() < unit.get_max_hp()
 
     def on_hit(self, actions, playback, unit, item, target, item2, target_pos, mode, attack_info):
-        heal = self._get_heal_amount(unit, target) + self._get_rank_heal_bonus(unit, item)
-        true_heal = min(heal, target.get_max_hp() - target.get_hp())
-        actions.append(action.ChangeHP(target, heal))
+        heal = int((self._get_heal_amount(unit, target) + self._get_rank_heal_bonus(unit, item)) *
+                   skill_system.heal_multiplier(unit, target))
+        heal_action = action.ChangeHP(target, heal)
+        true_heal = min(heal_action.num, target.get_max_hp() - target.get_hp())
+        actions.append(heal_action)
 
         # For animation
         if true_heal > 0:
@@ -61,10 +63,13 @@ class Heal(ItemComponent):
 
     def ai_priority(self, unit, item, target, move):
         if target and skill_system.check_ally(unit, target):
+            if skill_system.block_hp_recovery(target):
+                return 0
             max_hp = target.get_max_hp()
             missing_health = max_hp - target.get_hp()
             help_term = utils.clamp(missing_health / float(max_hp), 0, 1)
-            heal = self._get_heal_amount(unit, target) + self._get_rank_heal_bonus(unit, item)
+            heal = int((self._get_heal_amount(unit, target) + self._get_rank_heal_bonus(unit, item)) *
+                       skill_system.heal_multiplier(unit, target))
             heal_term = utils.clamp(min(heal, missing_health) / float(max_hp), 0, 1)
             return help_term * heal_term
         return 0

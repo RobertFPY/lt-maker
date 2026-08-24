@@ -95,6 +95,10 @@ class OptionValidator(Validator):
     def valid_entries(self, level: Optional[NID] = None, text: Optional[str] = None) -> List[Tuple[Optional[str], NID]]:
         return [(None, option) for option in self.valid]
 
+
+class Ruleset(OptionValidator):
+    valid = ['retro', 'modern', 'default']
+
 class EnumValidator(OptionValidator):
     enum_type: Type[Enum]
 

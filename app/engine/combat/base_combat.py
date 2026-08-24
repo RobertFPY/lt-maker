@@ -87,30 +87,40 @@ class BaseCombat(SimpleCombat):
             item_system.cleanup_combat(self.full_playback, self.defender, self.def_item, self.attacker, self.main_item, 'defense')
 
     def end_combat(self):
-        skill_system.end_combat(self.full_playback, self.attacker, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
-        item_system.end_combat(self.full_playback, self.attacker, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
-        if self.attacker.strike_partner:
-            skill_system.end_combat(self.full_playback, self.attacker.strike_partner, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
-            item_system.end_combat(self.full_playback, self.attacker.strike_partner, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
-        if self.defender.strike_partner:
-            skill_system.end_combat(self.full_playback, self.defender.strike_partner, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
-            item_system.end_combat(self.full_playback, self.defender.strike_partner, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
-        if self.attacker is not self.defender:
-            skill_system.end_combat(self.full_playback, self.defender, self.def_item, self.attacker, self.main_item, 'defense')
-            if self.def_item:
-                item_system.end_combat(self.full_playback, self.defender, self.def_item, self.attacker, self.main_item, 'defense')
-
-        skill_system.deactivate_all_combat_arts(self.attacker)
-
-        skill_system.post_combat(self.full_playback, self.attacker, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
-        if self.attacker.strike_partner:
-            skill_system.post_combat(self.full_playback, self.attacker.strike_partner, self.attacker.strike_partner.get_weapon(), \
-                                     self.defender, resolve_weapon(self.defender), 'attack')
-        if self.attacker is not self.defender:
-            skill_system.post_combat(self.full_playback, self.defender, self.def_item, self.attacker, self.main_item, 'defense')
+        save_begin_action = getattr(self, 'save_begin_action', None)
+        if save_begin_action:
+            from app.engine.combat.save_intercept import set_save_cleanup_active
+            set_save_cleanup_active(True)
+        try:
+            skill_system.end_combat(self.full_playback, self.attacker, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
+            item_system.end_combat(self.full_playback, self.attacker, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
+            if self.attacker.strike_partner:
+                skill_system.end_combat(self.full_playback, self.attacker.strike_partner, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
+                item_system.end_combat(self.full_playback, self.attacker.strike_partner, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
             if self.defender.strike_partner:
-                skill_system.post_combat(self.full_playback, self.defender.strike_partner, self.defender.strike_partner.get_weapon(), \
-                                         self.attacker, self.main_item, 'defense')
+                skill_system.end_combat(self.full_playback, self.defender.strike_partner, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
+                item_system.end_combat(self.full_playback, self.defender.strike_partner, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
+            if self.attacker is not self.defender:
+                skill_system.end_combat(self.full_playback, self.defender, self.def_item, self.attacker, self.main_item, 'defense')
+                if self.def_item:
+                    item_system.end_combat(self.full_playback, self.defender, self.def_item, self.attacker, self.main_item, 'defense')
+
+            skill_system.deactivate_all_combat_arts(self.attacker)
+
+            skill_system.post_combat(self.full_playback, self.attacker, self.main_item, self.defender, resolve_weapon(self.defender), 'attack')
+            if self.attacker.strike_partner:
+                skill_system.post_combat(self.full_playback, self.attacker.strike_partner, self.attacker.strike_partner.get_weapon(), \
+                                         self.defender, resolve_weapon(self.defender), 'attack')
+            if self.attacker is not self.defender:
+                skill_system.post_combat(self.full_playback, self.defender, self.def_item, self.attacker, self.main_item, 'defense')
+                if self.defender.strike_partner:
+                    skill_system.post_combat(self.full_playback, self.defender.strike_partner, self.defender.strike_partner.get_weapon(), \
+                                             self.attacker, self.main_item, 'defense')
+        finally:
+            if save_begin_action:
+                from app.engine.combat.save_intercept import set_save_cleanup_active
+                set_save_cleanup_active(False)
+                action.do(action.EndSaveInterception(save_begin_action))
         self.attacker.strike_partner = None
         self.defender.strike_partner = None
 

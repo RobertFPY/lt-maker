@@ -2964,8 +2964,21 @@ class CombatTargetingState(MapState):
                 ignore = [not item_system.item_restrict(self.cur_unit, self.item, target_unit, item) for item in target_unit.items]
                 game.ui_view.draw_trade_preview(target_unit, surf, ignore)
             elif item_system.is_weapon(self.cur_unit, self.item) and not cf.SETTINGS['forecast'] == 'Off':
+                from app.engine.combat.save_intercept import (active_save_interception,
+                                                              can_attempt_save_interception,
+                                                              find_save_interception)
+                main_target, splash = item_system.splash(self.cur_unit, self.item, game.cursor.position)
+                preview = None
+                if can_attempt_save_interception(self.cur_unit, self.item, [game.cursor.position],
+                                                  [main_target], [splash]):
+                    preview = find_save_interception(
+                        self.cur_unit, target_unit, self.item,
+                        utils.calculate_distance(self.cur_unit.position, game.cursor.position))
                 self.find_strike_partners(game.cursor.position, atk=False)
-                game.ui_view.draw_attack_info(surf, self.cur_unit, self.item, target_unit, self.attacker_assist, self.defender_assist)
+                forecast_defender = preview.savior if preview else target_unit
+                with active_save_interception(preview):
+                    game.ui_view.draw_attack_info(surf, self.cur_unit, self.item, forecast_defender,
+                                                  self.attacker_assist, self.defender_assist)
             elif not cf.SETTINGS['forecast'] == 'Off':
                 game.ui_view.draw_spell_info(surf, self.cur_unit, self.item, target_unit)
 

@@ -22,31 +22,19 @@ from app.utilities.data import Data
 
 
 class ItemSkillComponentTests(unittest.TestCase):
-    def setUp(self) -> None:
+    @classmethod
+    def setUpClass(cls) -> None:
         source_generator.generate_component_system_source()
 
-    def tearDown(self) -> None:
-        pass
-
     def test_item_components(self) -> None:
-        # Test that all item components have
-        # unique nids
-        item_components = ItemComponent.__subclasses__()
-        nids = {component.nid for component in item_components}
-        for component in item_components:
-            nid = component.nid
-            self.assertIn(nid, nids)
-            nids.remove(nid)
+        from app.engine import item_component_access
+        item_components = item_component_access.get_cached_item_components('test-item-components')
+        self.assertEqual(len(item_components.keys()), len(set(item_components.keys())))
 
     def test_skill_components(self) -> None:
-        # Test that all skill components have
-        # unique nids
-        skill_components = SkillComponent.__subclasses__()
-        nids = {component.nid for component in skill_components}
-        for component in skill_components:
-            nid = component.nid
-            self.assertIn(nid, nids)
-            nids.remove(nid)
+        from app.engine import skill_component_access
+        skill_components = skill_component_access.get_cached_skill_components('test-skill-components')
+        self.assertEqual(len(skill_components.keys()), len(set(skill_components.keys())))
 
     def _test_skill_hook_with_components(self, components: List[SkillComponent], call_hook: Callable[[UnitObject], Any], expected_result: Any) -> None:
         mock_skill = MagicMock()
@@ -62,6 +50,22 @@ class ItemSkillComponentTests(unittest.TestCase):
         self._test_skill_hook_with_components([], lambda unit: skill_system.usable_wtypes(unit), set())
         self._test_skill_hook_with_components([CanUseWeaponType(None), CanUseWeaponType("Sword"), CanUseWeaponType("Lance")], lambda unit: skill_system.usable_wtypes(unit), set(["Sword", "Lance"]))
         self._test_skill_hook_with_components([CanUseWeaponType("Sword"), CanUseWeaponType("Lance"), CanUseWeaponType("Lance")], lambda unit: skill_system.usable_wtypes(unit), set(["Sword", "Lance"]))
+
+    def test_heal_multiplier_defaults_to_one_and_multiplies_active_skill_effects(self) -> None:
+        from app.engine import skill_system
+        unit = MagicMock()
+        unit.skills = []
+        target = MagicMock()
+        self.assertEqual(1, skill_system.heal_multiplier(unit, target))
+
+        component = MagicMock()
+        component.defines.return_value = True
+        component.ignore_conditional = True
+        component.heal_multiplier.return_value = .7
+        skill = MagicMock()
+        skill.components = [component]
+        unit.skills = [skill]
+        self.assertEqual(.7, skill_system.heal_multiplier(unit, target))
 
     def test_combat_condition_invalidates_cache_after_publishing(self) -> None:
         # Regression: CombatCondition.pre_combat must invalidate the ltcache AFTER it

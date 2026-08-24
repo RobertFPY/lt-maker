@@ -8,6 +8,7 @@ from app.utilities.enums import Strike
 from app.engine import action, item_system, skill_system
 from app.engine.game_state import game
 from app.engine.combat import playback as pb
+from app.engine.combat import utils as combat_utils
 
 import logging
 
@@ -18,6 +19,9 @@ class Miracle(SkillComponent):
     tag = SkillTags.COMBAT2
 
     def cleanup_combat(self, playback, unit, item, target, item2, mode):
+        if skill_system.block_death_prevention(unit) or \
+                (target and skill_system.neutralize_foe_death_prevention(target)):
+            return
         if unit.get_hp() <= 0:
             action.do(action.SetHP(unit, 1))
             game.death.miracle(unit)
@@ -30,6 +34,9 @@ class TrueMiracle(SkillComponent):
     tag = SkillTags.COMBAT2
 
     def after_take_strike(self, actions, playback, unit, item, target, item2, mode, attack_info, strike):
+        if skill_system.block_death_prevention(unit) or \
+                (target and skill_system.neutralize_foe_death_prevention(target)):
+            return
         did_something = False
         for act in reversed(actions):
             if isinstance(act, action.ChangeHP) and -act.num >= act.old_hp and act.unit == unit:
@@ -114,18 +121,14 @@ class Lifelink(SkillComponent):
     value = 0.5
 
     def after_strike(self, actions, playback, unit, item, target, item2, mode, attack_info, strike):
-        total_damage_dealt = 0
-        playbacks = [p for p in playback if p.nid in (
-            'damage_hit', 'damage_crit') and p.attacker == unit]
-        for p in playbacks:
-            total_damage_dealt += p.true_damage
-
-        damage = utils.clamp(total_damage_dealt, 0, target.get_hp())
-        true_damage = int(damage * self.value)
+        if strike == Strike.MISS or not target:
+            return
+        true_damage = int(combat_utils.get_current_strike_true_damage(
+            playback, unit, target) * self.value)
+        if true_damage <= 0:
+            return
         actions.append(action.ChangeHP(unit, true_damage))
-
         playback.append(pb.HealHit(unit, item, unit, true_damage, true_damage))
-
         actions.append(action.TriggerCharge(unit, self.skill))
 
 
@@ -138,14 +141,10 @@ class AllyLifelink(SkillComponent):
     value = 0.5
 
     def after_strike(self, actions, playback, unit, item, target, item2, mode, attack_info, strike):
-        total_damage_dealt = 0
-        playbacks = [p for p in playback if p.nid in (
-            'damage_hit', 'damage_crit') and p.attacker == unit]
-        for p in playbacks:
-            total_damage_dealt += p.true_damage
-
-        damage = utils.clamp(total_damage_dealt, 0, target.get_hp())
-        true_damage = int(damage * self.value)
+        if strike == Strike.MISS or not target:
+            return
+        true_damage = int(combat_utils.get_current_strike_true_damage(
+            playback, unit, target) * self.value)
         if true_damage > 0 and unit.position:
             adj_positions = game.target_system.get_adjacent_positions(unit.position)
             did_happen = False
@@ -313,6 +312,78 @@ class CannotDouble(SkillComponent):
         return True
 
 
+class NeutralizeFoeDamageReduction(SkillComponent):
+    nid = 'neutralize_foe_damage_reduction'
+    desc = "Neutralizes Foe's percentage and flat final damage reduction"
+    tag = SkillTags.COMBAT2
+
+    def neutralize_foe_damage_reduction(self, unit):
+        return True
+
+
+class NeutralizeFoeDeathPrevention(SkillComponent):
+    nid = 'neutralize_foe_death_prevention'
+    desc = "Neutralizes Foe's effects that prevent death"
+    tag = SkillTags.COMBAT2
+
+    def neutralize_foe_death_prevention(self, unit):
+        return True
+
+
+class EndCombatAfterStrike(SkillComponent):
+    nid = 'end_combat_after_strike'
+    desc = "Ends the entire combat immediately after this strike resolves"
+    tag = SkillTags.COMBAT2
+
+    def end_combat_after_strike(self, unit, item, target, item2, mode, attack_info):
+        return True
+
+
+class PreventSelfFollowUp(SkillComponent):
+    nid = 'prevent_self_follow_up'
+    desc = "Unit cannot make follow-up attacks"
+    tag = SkillTags.COMBAT2
+
+    def prevent_self_follow_up(self, unit):
+        return True
+
+
+class PreventFoeFollowUp(SkillComponent):
+    nid = 'prevent_foe_follow_up'
+    desc = "Foe cannot make follow-up attacks"
+    tag = SkillTags.COMBAT2
+
+    def prevent_foe_follow_up(self, unit):
+        return True
+
+
+class PreventFoeNaturalFollowUp(SkillComponent):
+    nid = 'prevent_foe_natural_follow_up'
+    desc = "Foe cannot make follow-up attacks by Speed comparison"
+    tag = SkillTags.COMBAT2
+
+    def prevent_foe_natural_follow_up(self, unit):
+        return True
+
+
+class NeutralizeFollowUpPrevention(SkillComponent):
+    nid = 'neutralize_follow_up_prevention'
+    desc = "Neutralizes effects that prevent Unit's follow-up attacks"
+    tag = SkillTags.COMBAT2
+
+    def neutralize_follow_up_prevention(self, unit):
+        return True
+
+
+class NeutralizeFoeFollowUpGrants(SkillComponent):
+    nid = 'neutralize_foe_follow_up_grants'
+    desc = "Neutralizes effects that grant Foe follow-up attacks"
+    tag = SkillTags.COMBAT2
+
+    def neutralize_foe_follow_up_grants(self, unit):
+        return True
+
+
 class CanDoubleOnDefense(SkillComponent):
     nid = 'can_double_on_defense'
     desc = "Unit can double while defending (extraneous if set to True in constants)"
@@ -452,12 +523,19 @@ class GiveStatusAfterHit(SkillComponent):
     expose = ComponentType.Skill
 
     def after_strike(self, actions, playback, unit, item, target, item2, mode, attack_info, strike):
-        mark_playbacks = [p for p in playback if p.nid in (
-            'mark_hit', 'mark_crit')]
-
-        if target and any(p.attacker == unit for p in mark_playbacks):
+        if strike in (Strike.HIT, Strike.CRIT) and target \
+                and skill_system.check_enemy(unit, target):
             actions.append(action.AddSkill(target, self.value, unit))
             actions.append(action.TriggerCharge(unit, self.skill))
+
+
+class BlockHPRecovery(SkillComponent):
+    nid = 'block_hp_recovery'
+    desc = 'Prevents the owner from recovering HP.'
+    tag = SkillTags.STATUS
+
+    def block_hp_recovery(self, unit):
+        return True
 
 
 class SkillBeforeCombat(SkillComponent):

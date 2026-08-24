@@ -30,6 +30,9 @@ def get_mcost(unit_to_move: UnitObject, pos: Tuple[int, int]) -> int:
         else:
             movement_group = DB.classes[0].movement_group
         mcost = DB.mcost.get_mcost(movement_group, terrain.mtype)
+        if unit_to_move:
+            mcost = skill_system.modify_movement_cost(
+                unit_to_move, pos, terrain, mcost)
     else:
         mcost = 1
     return mcost
@@ -47,6 +50,15 @@ def check_weakly_traversable(unit_to_move: UnitObject, pos: Tuple[int, int]) -> 
     mcost = get_mcost(unit_to_move, pos)
     movement = unit_to_move.get_movement()
     return mcost <= 5 or mcost <= movement
+
+def is_obstructed(unit_to_move: UnitObject, pos: Tuple[int, int]) -> bool:
+    if skill_system.pass_through(unit_to_move) or not game.target_system:
+        return False
+    for adjacent_pos in game.target_system.get_adjacent_positions(pos):
+        holder = game.board.get_unit(adjacent_pos)
+        if holder and skill_system.obstructs_movement(holder, unit_to_move):
+            return True
+    return False
 
 def check_simple_traversable(pos: Tuple[int, int]) -> bool:
     if not game.board.check_bounds(pos):
@@ -69,6 +81,8 @@ def check_position(unit: UnitObject, new_position: Tuple[int, int],
     # Event movement is nearly always valid
     if event:
         return True
+    elif not is_final_pos and is_obstructed(unit, new_position):
+        return False
     elif skill_system.pass_through(unit):
         # If this is the final position
         if is_final_pos and game.board.get_unit(new_position):

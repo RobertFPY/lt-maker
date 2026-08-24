@@ -1,24 +1,29 @@
 from functools import lru_cache
+import sys
+from types import ModuleType
 
 from app.data.database.components import ComponentType
 from app.data.database.skill_components import SkillComponent, SkillTags
-from app.utilities.class_utils import recursive_subclasses
+from app.engine.component_catalog import build_component_catalog
 from app.utilities.data import Data
+
+
+def _engine_component_modules() -> tuple[ModuleType, ...]:
+    from app.engine import skill_components
+    prefix = skill_components.__name__ + '.'
+    return tuple(module for name, module in sorted(sys.modules.items())
+                 if name.startswith(prefix) and isinstance(module, ModuleType))
 
 
 @lru_cache(1)
 def get_cached_skill_components(proj_dir: str):
     from app.data.resources.resources import RESOURCES
-    from app.engine import skill_components
-    if RESOURCES.has_loaded_custom_components():
-        # Necessary for get_skill_components to find the item component subclasses
-        # defined here
-        import custom_components
-
-    subclasses = recursive_subclasses(SkillComponent)
+    catalog = build_component_catalog(
+        SkillComponent, _engine_component_modules(),
+        RESOURCES.get_loaded_custom_component_modules(), 'skill')
     # Sort by tag
-    subclasses = sorted(subclasses, key=lambda x: list(SkillTags).index(x.tag) if x.tag in list(SkillTags) else 100)
-    return Data(subclasses)
+    return Data(sorted(catalog.values(),
+                       key=lambda x: list(SkillTags).index(x.tag) if x.tag in list(SkillTags) else 100))
 
 def get_skill_components():
     from app.data.database.database import DB

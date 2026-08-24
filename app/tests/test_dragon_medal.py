@@ -1,8 +1,12 @@
-import importlib.util
+import importlib
 import json
 import os
 import unittest
 from types import SimpleNamespace
+
+from app.data.database.database import DB
+from app.data.resources.resources import RESOURCES
+from app.data.serialization.versions import CURRENT_SERIALIZATION_VERSION
 
 
 PROJECT_PATH = os.path.join(
@@ -25,13 +29,9 @@ class DragonMedalTest(unittest.TestCase):
                   encoding='utf-8') as skills_file:
             cls.skills = {skill['nid']: skill for skill in json.load(skills_file)}
 
-        component_path = os.path.join(
-            PROJECT_PATH, 'resources', 'custom_components',
-            'custom_item_components.py')
-        spec = importlib.util.spec_from_file_location(
-            'dragon_medal_test_custom_items', component_path)
-        cls.custom_items = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(cls.custom_items)
+        RESOURCES.load(PROJECT_PATH, CURRENT_SERIALIZATION_VERSION)
+        DB.load(PROJECT_PATH, CURRENT_SERIALIZATION_VERSION)
+        cls.custom_items = importlib.import_module('custom_components.custom_item_components')
 
     def _component_value(self, prefab, nid):
         return next(value for component_nid, value in prefab['components']
@@ -55,7 +55,10 @@ class DragonMedalTest(unittest.TestCase):
                 self.assertTrue(restriction.available(martin, item))
                 self.assertTrue(restriction.available(dragon_unit, item))
                 self.assertFalse(restriction.available(normal_unit, item))
-                self.assertEqual(['Dragon_Medal_Effect'], statuses)
+                expected_statuses = ['Dragon_Medal_Effect', 'Dragonskin_T4']
+                if item_nid == 'Dragon_Medal_Pro2':
+                    expected_statuses.append('Renewal_T3')
+                self.assertEqual(expected_statuses, statuses)
 
     def test_medal_description_changes_for_martin_and_other_dragons(self):
         for item_nid in ('Dragon_Medal', 'Dragon_Medal_Pro2'):
@@ -63,7 +66,7 @@ class DragonMedalTest(unittest.TestCase):
             change_desc = self._component_value(
                 item, 'change_desc_on_equip')
 
-            self.assertEqual(['Martin'], change_desc['list_unit'])
+            self.assertEqual(['Martin', 'Martin_Clone'], change_desc['list_unit'])
             self.assertEqual(MARTIN_DESC, change_desc['desc_for_unit'])
             self.assertEqual(DRAGON_DESC, change_desc['desc_for_other'])
 

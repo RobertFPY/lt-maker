@@ -220,7 +220,7 @@
             },
             {
                 "nid": "Swordmaster",
-                "Class": "Duelist_Blow_T2",
+                "Class": "Master_Duelist_Swordmaster_T2",
                 "Special": "Phatasm_T2",
                 "SlotA": "",
                 "SlotB": "Vantage_T2",
@@ -237,7 +237,7 @@
             },
             {
                 "nid": "SwordmasterFemale",
-                "Class": "Duelist_Blow_T2",
+                "Class": "Master_Duelist_Swordmaster_T2",
                 "Special": "Phatasm_T2",
                 "SlotA": "",
                 "SlotB": "Vantage_T2",
@@ -254,7 +254,7 @@
             },
             {
                 "nid": "TrueBlade",
-                "Class": "Master_Duelist_T3",
+                "Class": "Passionate_Duelist_T3",
                 "Special": "Astra_T3",
                 "SlotA": "",
                 "SlotB": "Vantage_T3",
@@ -271,7 +271,7 @@
             },
             {
                 "nid": "Tsukage",
-                "Class": "Master_Duelist_T3",
+                "Class": "Passionate_Duelist_T3",
                 "Special": "Astra_T3",
                 "SlotA": "",
                 "SlotB": "Vantage_T3",
@@ -305,7 +305,7 @@
             },
             {
                 "nid": "Mercenary_Elite",
-                "Class": "Heavy_Blade_T1",
+                "Class": "Heavy_Blade_Plus_T2",
                 "Special": "Daylight_T1",
                 "SlotA": "",
                 "SlotB": "Axebreaker_T1",
@@ -322,7 +322,7 @@
             },
             {
                 "nid": "Hero",
-                "Class": "Heavy_Blade_T1",
+                "Class": "Heavy_Blade_Plus_T2",
                 "Special": "Noontime_T2",
                 "SlotA": "",
                 "SlotB": "Axebreaker_T2",
@@ -373,7 +373,7 @@
             },
             {
                 "nid": "Rogue",
-                "Class": "Thief_Techniques_T2",
+                "Class": "Shadowstep_T2",
                 "Special": "Bane_T1",
                 "SlotA": "",
                 "SlotB": "Acrobat_T2",
@@ -390,7 +390,7 @@
             },
             {
                 "nid": "RogueFemale",
-                "Class": "Thief_Techniques_T2",
+                "Class": "Shadowstep_T2",
                 "Special": "Bane_T1",
                 "SlotA": "",
                 "SlotB": "Acrobat_T2",
@@ -407,7 +407,7 @@
             },
             {
                 "nid": "Trickster",
-                "Class": "Lupin_Techniques_T3",
+                "Class": "Phantom_Heist_T3",
                 "Special": "Bane_T1",
                 "SlotA": "",
                 "SlotB": "Super_Acrobat_T3",
@@ -424,7 +424,7 @@
             },
             {
                 "nid": "TricksterFemale",
-                "Class": "Lupin_Techniques_T3",
+                "Class": "Phantom_Heist_T3",
                 "Special": "Bane_T1",
                 "SlotA": "",
                 "SlotB": "Super_Acrobat_T3",
@@ -441,7 +441,7 @@
             },
             {
                 "nid": "Assassin",
-                "Class": "Fear_T2",
+                "Class": "Shadow_Veil_T2",
                 "Special": "Lethality_T2",
                 "SlotA": "",
                 "SlotB": "Chill_Speed_T2",
@@ -458,7 +458,7 @@
             },
             {
                 "nid": "AssassinFemale",
-                "Class": "Fear_T2",
+                "Class": "Shadow_Veil_T2",
                 "Special": "Lethality_T2",
                 "SlotA": "",
                 "SlotB": "Chill_Speed_T2",
@@ -475,7 +475,7 @@
             },
             {
                 "nid": "Reaper",
-                "Class": "Fear_T3",
+                "Class": "Grim_Shroud_T3",
                 "Special": "Lethality_T2",
                 "SlotA": "",
                 "SlotB": "Chill_Speed_T3",
@@ -492,7 +492,7 @@
             },
             {
                 "nid": "ReaperFemale",
-                "Class": "Fear_T3",
+                "Class": "Grim_Shroud_T3",
                 "Special": "Lethality_T2",
                 "SlotA": "",
                 "SlotB": "Chill_Speed_T3",
@@ -543,7 +543,7 @@
             },
             {
                 "nid": "Soldier_Elite",
-                "Class": "Sturdy_Stance_T1",
+                "Class": "Sturdy_Stance_T2",
                 "Special": "New_Moon_T1",
                 "SlotA": "",
                 "SlotB": "Desperation_T1",
@@ -593,8 +593,25 @@
                 "Hidden1": ""
             },
             {
+                "nid": "Bow_Rider",
+                "Class": "Precision_Volley_T1",
+                "Special": "",
+                "SlotA": "",
+                "SlotB": "",
+                "SlotC": "",
+                "Assit": "",
+                "Slot A": "",
+                "Slot B": "",
+                "Slot C": "",
+                "Assit1": "",
+                "Assit2": "",
+                "Class Skill": "",
+                "Special Skill": "",
+                "Hidden1": ""
+            },
+            {
                 "nid": "Axe_Raider",
-                "Class": "Outdoor_Fighter_T1",
+                "Class": "Battlecry_Charge_T1",
                 "Special": "Glowing_Ember_T1",
                 "SlotA": "Armored_Blow_T1",
                 "SlotB": "",
@@ -611,7 +628,7 @@
             },
             {
                 "nid": "Axe_Raider_Elite",
-                "Class": "Outdoor_Fighter_T2",
+                "Class": "Battlecry_Charge_T2",
                 "Special": "Bonfire_T2",
                 "SlotA": "Armored_Blow_T1",
                 "SlotB": "",
@@ -628,7 +645,7 @@
             },
             {
                 "nid": "Sword_Rider",
-                "Class": "Outdoor_Fighter_T1",
+                "Class": "Rapid_Assault_T1",
                 "Special": "Chilling_Wind_T1",
                 "SlotA": "Warding_Blow_T1",
                 "SlotB": "",
@@ -645,7 +662,7 @@
             },
             {
                 "nid": "Sword_Rider_Elite",
-                "Class": "Outdoor_Fighter_T2",
+                "Class": "Rapid_Assault_T2",
                 "Special": "Iceberg_T2",
                 "SlotA": "Warding_Blow_T1",
                 "SlotB": "",
@@ -662,7 +679,7 @@
             },
             {
                 "nid": "Lance_Rider",
-                "Class": "Outdoor_Fighter_T1",
+                "Class": "Solid_Shield_T1",
                 "Special": "New_Moon_T1",
                 "SlotA": "Darting_Blow_T1",
                 "SlotB": "",
@@ -679,7 +696,7 @@
             },
             {
                 "nid": "Lance_Rider_Elite",
-                "Class": "Outdoor_Fighter_T2",
+                "Class": "Solid_Shield_T2",
                 "Special": "Moonbow_T2",
                 "SlotA": "Darting_Blow_T1",
                 "SlotB": "",
@@ -696,7 +713,7 @@
             },
             {
                 "nid": "Axe_Paladin",
-                "Class": "Outdoor_Fighter_T2",
+                "Class": "Battlecry_Charge_T2",
                 "Special": "Bonfire_T2",
                 "SlotA": "Armored_Blow_T2",
                 "SlotB": "",
@@ -713,7 +730,7 @@
             },
             {
                 "nid": "Axe_Paladin_Elite",
-                "Class": "Outdoor_Warrior_T3",
+                "Class": "Warcry_Charge_T3",
                 "Special": "Ignis_T3",
                 "SlotA": "Armored_Blow_T2",
                 "SlotB": "",
@@ -730,7 +747,7 @@
             },
             {
                 "nid": "Sword_Paladin",
-                "Class": "Outdoor_Fighter_T2",
+                "Class": "Rapid_Assault_T2",
                 "Special": "Iceberg_T2",
                 "SlotA": "Warding_Blow_T2",
                 "SlotB": "",
@@ -747,7 +764,7 @@
             },
             {
                 "nid": "Sword_Paladin_Elite",
-                "Class": "Outdoor_Fighter_T2",
+                "Class": "Swift_Raid_T3",
                 "Special": "Iceberg_T2",
                 "SlotA": "Warding_Blow_T2",
                 "SlotB": "",
@@ -764,7 +781,7 @@
             },
             {
                 "nid": "Lance_Paladin",
-                "Class": "Outdoor_Fighter_T2",
+                "Class": "Solid_Shield_T2",
                 "Special": "Moonbow_T2",
                 "SlotA": "Darting_Blow_T2",
                 "SlotB": "",
@@ -781,7 +798,7 @@
             },
             {
                 "nid": "Lance_Paladin_Elite",
-                "Class": "Outdoor_Warrior_T3",
+                "Class": "Diamond_Formation_T3",
                 "Special": "Luna_T3",
                 "SlotA": "Darting_Blow_T2",
                 "SlotB": "",
@@ -815,7 +832,7 @@
             },
             {
                 "nid": "Great_Knight",
-                "Class": "Outdoor_Warrior_T3",
+                "Class": "Warcry_Charge_T3",
                 "Special": "Ignis_T3",
                 "SlotA": "Armored_Blow_T3",
                 "SlotB": "",
@@ -832,7 +849,7 @@
             },
             {
                 "nid": "Great_Knight_Elite",
-                "Class": "Outdoor_Warrior_T4",
+                "Class": "Warcry_Charge_T4",
                 "Special": "Ignis_T4",
                 "SlotA": "Armored_Blow_T3",
                 "SlotB": "",
@@ -849,7 +866,7 @@
             },
             {
                 "nid": "Glory_Knight",
-                "Class": "Outdoor_Warrior_T3",
+                "Class": "Swift_Raid_T3",
                 "Special": "Glacies_T3",
                 "SlotA": "Warding_Blow_T3",
                 "SlotB": "",
@@ -866,7 +883,7 @@
             },
             {
                 "nid": "Glory_Knight_Elite",
-                "Class": "Outdoor_Warrior_T4",
+                "Class": "Swift_Raid_T4",
                 "Special": "Glacies_T4",
                 "SlotA": "Warding_Blow_T3",
                 "SlotB": "",
@@ -883,7 +900,7 @@
             },
             {
                 "nid": "Duke_Knight",
-                "Class": "Outdoor_Warrior_T3",
+                "Class": "Diamond_Formation_T3",
                 "Special": "Luna_T3",
                 "SlotA": "Darting_Blow_T3",
                 "SlotB": "",
@@ -900,7 +917,7 @@
             },
             {
                 "nid": "Duke_Knight_Elite",
-                "Class": "Outdoor_Warrior_T4",
+                "Class": "Diamond_Formation_T4",
                 "Special": "Luna_T4",
                 "SlotA": "Darting_Blow_T3",
                 "SlotB": "",
@@ -934,7 +951,7 @@
             },
             {
                 "nid": "Pegasus_Knight",
-                "Class": "Air_Control_T1",
+                "Class": "Sky_Rider_T1",
                 "Special": "New_Moon_T1",
                 "SlotA": "",
                 "SlotB": "Pegasus_Flight_T1",
@@ -951,7 +968,7 @@
             },
             {
                 "nid": "Pegasus_Knight_Elite",
-                "Class": "Air_Control_T2",
+                "Class": "Air_Raid_T2",
                 "Special": "Moonbow_T2",
                 "SlotA": "",
                 "SlotB": "Pegasus_Flight_T1",
@@ -1002,7 +1019,7 @@
             },
             {
                 "nid": "Falcoknight_Elite",
-                "Class": "Air_Raid_T3",
+                "Class": "Raid_of_the_Valkyria_T3",
                 "Special": "Luna_T3",
                 "SlotA": "",
                 "SlotB": "Pegasus_Flight_T2",
@@ -1036,7 +1053,7 @@
             },
             {
                 "nid": "Valkyria",
-                "Class": "Air_Raid_T3",
+                "Class": "Raid_of_the_Valkyria_T3",
                 "Special": "Luna_T3",
                 "SlotA": "",
                 "SlotB": "Pegasus_Flight_T3",
@@ -1104,7 +1121,7 @@
             },
             {
                 "nid": "Armored_Axe_Melee",
-                "Class": "Indoor_Fighter_T1",
+                "Class": "Siege_Breaker_T1",
                 "Special": "Buckler_T1",
                 "SlotA": "",
                 "SlotB": "Wary_Fighter_T1",
@@ -1121,7 +1138,7 @@
             },
             {
                 "nid": "Armored_Axe_Range",
-                "Class": "Indoor_Fighter_T1",
+                "Class": "Siege_Breaker_T1",
                 "Special": "Holy_Vestments_T1",
                 "SlotA": "",
                 "SlotB": "Wary_Fighter_T1",
@@ -1138,7 +1155,7 @@
             },
             {
                 "nid": "Armored_Axe_Elite_Melee",
-                "Class": "Indoor_Fighter_T2",
+                "Class": "Siege_Breaker_T2",
                 "Special": "Escutcheon_T2",
                 "SlotA": "",
                 "SlotB": "Wary_Fighter_T1",
@@ -1155,7 +1172,7 @@
             },
             {
                 "nid": "Armored_Axe_Elite_Range",
-                "Class": "Indoor_Fighter_T2",
+                "Class": "Siege_Breaker_T2",
                 "Special": "Sacred_Cowl_T2",
                 "SlotA": "",
                 "SlotB": "Wary_Fighter_T1",
@@ -1172,7 +1189,7 @@
             },
             {
                 "nid": "Armored_Lance_Melee",
-                "Class": "Indoor_Fighter_T1",
+                "Class": "Phalanx_Guard_T1",
                 "Special": "Buckler_T1",
                 "SlotA": "",
                 "SlotB": "Wary_Fighter_T1",
@@ -1189,7 +1206,7 @@
             },
             {
                 "nid": "Armored_Lance_Range",
-                "Class": "Indoor_Fighter_T1",
+                "Class": "Phalanx_Guard_T1",
                 "Special": "Holy_Vestments_T1",
                 "SlotA": "",
                 "SlotB": "Wary_Fighter_T1",
@@ -1206,7 +1223,7 @@
             },
             {
                 "nid": "Armored_Lance_Elite_Melee",
-                "Class": "Indoor_Fighter_T2",
+                "Class": "Phalanx_Guard_T2",
                 "Special": "Escutcheon_T2",
                 "SlotA": "",
                 "SlotB": "Wary_Fighter_T1",
@@ -1223,7 +1240,7 @@
             },
             {
                 "nid": "Armored_Lance_Elite_Range",
-                "Class": "Indoor_Fighter_T2",
+                "Class": "Phalanx_Guard_T2",
                 "Special": "Sacred_Cowl_T2",
                 "SlotA": "",
                 "SlotB": "Wary_Fighter_T1",
@@ -1240,7 +1257,7 @@
             },
             {
                 "nid": "Armored_Sword_Melee",
-                "Class": "Indoor_Fighter_T1",
+                "Class": "Shield_Discipline_T1",
                 "Special": "Buckler_T1",
                 "SlotA": "",
                 "SlotB": "Wary_Fighter_T1",
@@ -1257,7 +1274,7 @@
             },
             {
                 "nid": "Armored_Sword_Range",
-                "Class": "Indoor_Fighter_T1",
+                "Class": "Shield_Discipline_T1",
                 "Special": "Holy_Vestments_T1",
                 "SlotA": "",
                 "SlotB": "Wary_Fighter_T1",
@@ -1274,7 +1291,7 @@
             },
             {
                 "nid": "Armored_Sword_Elite_Melee",
-                "Class": "Indoor_Fighter_T2",
+                "Class": "Shield_Discipline_T2",
                 "Special": "Escutcheon_T2",
                 "SlotA": "",
                 "SlotB": "Wary_Fighter_T1",
@@ -1291,7 +1308,7 @@
             },
             {
                 "nid": "Armored_Sword_Elite_Range",
-                "Class": "Indoor_Fighter_T2",
+                "Class": "Shield_Discipline_T2",
                 "Special": "Sacred_Cowl_T2",
                 "SlotA": "",
                 "SlotB": "Wary_Fighter_T1",
@@ -1308,7 +1325,7 @@
             },
             {
                 "nid": "Axe_General_Melee",
-                "Class": "Indoor_Fighter_T2",
+                "Class": "Siege_Breaker_T2",
                 "Special": "Escutcheon_T2",
                 "SlotA": "",
                 "SlotB": "Wary_Fighter_T2",
@@ -1325,7 +1342,7 @@
             },
             {
                 "nid": "Axe_General_Range",
-                "Class": "Indoor_Fighter_T2",
+                "Class": "Siege_Breaker_T2",
                 "Special": "Sacred_Cowl_T2",
                 "SlotA": "",
                 "SlotB": "Wary_Fighter_T2",
@@ -1342,7 +1359,7 @@
             },
             {
                 "nid": "Axe_General_Elite_Melee",
-                "Class": "Indoor_Warrior_T3",
+                "Class": "Grand_Breach_T3",
                 "Special": "Pasvise_T3",
                 "SlotA": "",
                 "SlotB": "Wary_Fighter_T2",
@@ -1359,7 +1376,7 @@
             },
             {
                 "nid": "Axe_General_Elite_Range",
-                "Class": "Indoor_Warrior_T3",
+                "Class": "Grand_Breach_T3",
                 "Special": "Aegis_T3",
                 "SlotA": "",
                 "SlotB": "Wary_Fighter_T2",
@@ -1376,7 +1393,7 @@
             },
             {
                 "nid": "Lance_General_Melee",
-                "Class": "Indoor_Fighter_T2",
+                "Class": "Phalanx_Guard_T2",
                 "Special": "Escutcheon_T2",
                 "SlotA": "",
                 "SlotB": "Wary_Fighter_T2",
@@ -1393,7 +1410,7 @@
             },
             {
                 "nid": "Lance_General_Range",
-                "Class": "Indoor_Fighter_T2",
+                "Class": "Phalanx_Guard_T2",
                 "Special": "Sacred_Cowl_T2",
                 "SlotA": "",
                 "SlotB": "Wary_Fighter_T2",
@@ -1410,7 +1427,7 @@
             },
             {
                 "nid": "Lance_General_Elite_Melee",
-                "Class": "Indoor_Warrior_T3",
+                "Class": "Imperial_Phalanx_T3",
                 "Special": "Pasvise_T3",
                 "SlotA": "",
                 "SlotB": "Wary_Fighter_T2",
@@ -1427,7 +1444,7 @@
             },
             {
                 "nid": "Lance_General_Elite_Range",
-                "Class": "Indoor_Warrior_T3",
+                "Class": "Imperial_Phalanx_T3",
                 "Special": "Aegis_T3",
                 "SlotA": "",
                 "SlotB": "Wary_Fighter_T2",
@@ -1444,7 +1461,7 @@
             },
             {
                 "nid": "Sword_General_Melee",
-                "Class": "Indoor_Fighter_T2",
+                "Class": "Shield_Discipline_T2",
                 "Special": "Escutcheon_T2",
                 "SlotA": "",
                 "SlotB": "Wary_Fighter_T2",
@@ -1461,7 +1478,7 @@
             },
             {
                 "nid": "Sword_General_Range",
-                "Class": "Indoor_Fighter_T2",
+                "Class": "Shield_Discipline_T2",
                 "Special": "Sacred_Cowl_T2",
                 "SlotA": "",
                 "SlotB": "Wary_Fighter_T2",
@@ -1478,7 +1495,7 @@
             },
             {
                 "nid": "Sword_General_Elite_Melee",
-                "Class": "Indoor_Warrior_T3",
+                "Class": "Aegis_Doctrine_T3",
                 "Special": "Pasvise_T3",
                 "SlotA": "",
                 "SlotB": "Wary_Fighter_T2",
@@ -1495,7 +1512,7 @@
             },
             {
                 "nid": "Sword_General_Elite_Range",
-                "Class": "Indoor_Warrior_T3",
+                "Class": "Aegis_Doctrine_T3",
                 "Special": "Aegis_T3",
                 "SlotA": "",
                 "SlotB": "Wary_Fighter_T2",
@@ -1512,7 +1529,7 @@
             },
             {
                 "nid": "Axe_Marshall_Melee",
-                "Class": "Indoor_Warrior_T3",
+                "Class": "Grand_Breach_T3",
                 "Special": "Pasvise_T3",
                 "SlotA": "",
                 "SlotB": "Wary_Fighter_T3",
@@ -1529,7 +1546,7 @@
             },
             {
                 "nid": "Axe_Marshall_Range",
-                "Class": "Indoor_Warrior_T3",
+                "Class": "Grand_Breach_T3",
                 "Special": "Aegis_T3",
                 "SlotA": "",
                 "SlotB": "Wary_Fighter_T3",
@@ -1546,7 +1563,7 @@
             },
             {
                 "nid": "Axe_Marshall_Elite_Melee",
-                "Class": "Indoor_Warrior_T4",
+                "Class": "Grand_Breach_T4",
                 "Special": "Pasvise_T4",
                 "SlotA": "",
                 "SlotB": "Wary_Fighter_T3",
@@ -1563,7 +1580,7 @@
             },
             {
                 "nid": "Axe_Marshall_Elite_Range",
-                "Class": "Indoor_Warrior_T4",
+                "Class": "Grand_Breach_T4",
                 "Special": "Aegis_T4",
                 "SlotA": "",
                 "SlotB": "Wary_Fighter_T3",
@@ -1580,7 +1597,7 @@
             },
             {
                 "nid": "Lance_Marshall_Melee",
-                "Class": "Indoor_Warrior_T3",
+                "Class": "Imperial_Phalanx_T3",
                 "Special": "Pasvise_T3",
                 "SlotA": "",
                 "SlotB": "Wary_Fighter_T3",
@@ -1597,7 +1614,7 @@
             },
             {
                 "nid": "Lance_Marshall_Range",
-                "Class": "Indoor_Warrior_T3",
+                "Class": "Imperial_Phalanx_T3",
                 "Special": "Aegis_T3",
                 "SlotA": "",
                 "SlotB": "Wary_Fighter_T3",
@@ -1614,7 +1631,7 @@
             },
             {
                 "nid": "Lance_Marshall_Elite_Melee",
-                "Class": "Indoor_Warrior_T4",
+                "Class": "Imperial_Phalanx_T4",
                 "Special": "Pasvise_T4",
                 "SlotA": "",
                 "SlotB": "Wary_Fighter_T3",
@@ -1631,7 +1648,7 @@
             },
             {
                 "nid": "Lance_Marshall_Elite_Range",
-                "Class": "Indoor_Warrior_T4",
+                "Class": "Imperial_Phalanx_T4",
                 "Special": "Aegis_T4",
                 "SlotA": "",
                 "SlotB": "Wary_Fighter_T3",
@@ -1648,7 +1665,7 @@
             },
             {
                 "nid": "Sword_Marshall_Melee",
-                "Class": "Indoor_Warrior_T3",
+                "Class": "Aegis_Doctrine_T3",
                 "Special": "Pasvise_T3",
                 "SlotA": "",
                 "SlotB": "Wary_Fighter_T3",
@@ -1665,7 +1682,7 @@
             },
             {
                 "nid": "Sword_Marshall_Range",
-                "Class": "Indoor_Warrior_T3",
+                "Class": "Aegis_Doctrine_T3",
                 "Special": "Aegis_T3",
                 "SlotA": "",
                 "SlotB": "Wary_Fighter_T3",
@@ -1682,7 +1699,7 @@
             },
             {
                 "nid": "Sword_Marshall_Elite_Melee",
-                "Class": "Indoor_Warrior_T4",
+                "Class": "Aegis_Doctrine_T4",
                 "Special": "Pasvise_T4",
                 "SlotA": "",
                 "SlotB": "Wary_Fighter_T3",
@@ -1699,7 +1716,7 @@
             },
             {
                 "nid": "Sword_Marshall_Elite_Range",
-                "Class": "Indoor_Warrior_T4",
+                "Class": "Aegis_Doctrine_T4",
                 "Special": "Aegis_T4",
                 "SlotA": "",
                 "SlotB": "Wary_Fighter_T3",
@@ -1716,7 +1733,7 @@
             },
             {
                 "nid": "Great_General",
-                "Class": "Indoor_Warrior_T3",
+                "Class": "Mortal_Legend_T3",
                 "Special": "Pasvise_T3",
                 "SlotA": "",
                 "SlotB": "Wary_Fighter_T3",
@@ -1750,7 +1767,7 @@
             },
             {
                 "nid": "Fighter",
-                "Class": "Small_Blind_T1",
+                "Class": "Calculated_Risk_T1",
                 "Special": "Ire_T1",
                 "SlotA": "Zeal_T1",
                 "SlotB": "",
@@ -1766,8 +1783,25 @@
                 "Hidden1": ""
             },
             {
+                "nid": "Fighter_Female",
+                "Class": "Calculated_Risk_T1",
+                "Special": "",
+                "SlotA": "",
+                "SlotB": "",
+                "SlotC": "",
+                "Assit": "",
+                "Slot A": "",
+                "Slot B": "",
+                "Slot C": "",
+                "Assit1": "",
+                "Assit2": "",
+                "Class Skill": "",
+                "Special Skill": "",
+                "Hidden1": ""
+            },
+            {
                 "nid": "Fighter_Elite",
-                "Class": "Big_Blind_T2",
+                "Class": "Deadly_Wager_T2",
                 "Special": "Ire_T1",
                 "SlotA": "Zeal_T1",
                 "SlotB": "",
@@ -1818,7 +1852,7 @@
             },
             {
                 "nid": "Warrior",
-                "Class": "Big_Blind_T2",
+                "Class": "Deadly_Wager_T2",
                 "Special": "Colossus_T2",
                 "SlotA": "Zeal_T2",
                 "SlotB": "",
@@ -1835,7 +1869,7 @@
             },
             {
                 "nid": "Warrior_Elite",
-                "Class": "Big_Blind_T3",
+                "Class": "Fatal_Gambit_T3",
                 "Special": "Colossus_T2",
                 "SlotA": "Zeal_T2",
                 "SlotB": "",
@@ -1852,7 +1886,7 @@
             },
             {
                 "nid": "Reaver",
-                "Class": "Big_Blind_T3",
+                "Class": "Fatal_Gambit_T3",
                 "Special": "Impale_T3",
                 "SlotA": "Zeal_T3",
                 "SlotB": "",
@@ -1869,7 +1903,7 @@
             },
             {
                 "nid": "Reaver_Elite",
-                "Class": "Super_Big_Blind_T4",
+                "Class": "All_In_T3",
                 "Special": "Impale_T3",
                 "SlotA": "Zeal_T3",
                 "SlotB": "",
@@ -1903,7 +1937,7 @@
             },
             {
                 "nid": "Berserker",
-                "Class": "Bloodthirst_T2",
+                "Class": "Carnage_Instinct_T2",
                 "Special": "Colossus_T2",
                 "SlotA": "Fury_T2",
                 "SlotB": "",
@@ -1954,7 +1988,7 @@
             },
             {
                 "nid": "Mounted_Brigand",
-                "Class": "Roar_T2",
+                "Class": "Howling_Charge_T2",
                 "Special": "Colossus_T2",
                 "SlotA": "Life_and_Death_T2",
                 "SlotB": "",
@@ -1971,7 +2005,7 @@
             },
             {
                 "nid": "Mounted_Berserker",
-                "Class": "Howling_T3",
+                "Class": "War_Cry_T3",
                 "Special": "Impale_T3",
                 "SlotA": "Life_and_Death_T3",
                 "SlotB": "",
@@ -2022,7 +2056,7 @@
             },
             {
                 "nid": "Archer_Elite",
-                "Class": "Quick_Draw_T2",
+                "Class": "Deadeye_Discipline_T2",
                 "Special": "Sure_Shot_T1",
                 "SlotA": "Prescience_T1",
                 "SlotB": "",
@@ -2039,7 +2073,7 @@
             },
             {
                 "nid": "Sniper",
-                "Class": "Quick_Draw_T2",
+                "Class": "Deadeye_Discipline_T2",
                 "Special": "True_Strike_T2",
                 "SlotA": "Prescience_T2",
                 "SlotB": "",
@@ -2056,7 +2090,7 @@
             },
             {
                 "nid": "SniperFemale",
-                "Class": "Quick_Draw_T2",
+                "Class": "Deadeye_Discipline_T2",
                 "Special": "True_Strike_T2",
                 "SlotA": "Prescience_T2",
                 "SlotB": "",
@@ -2124,7 +2158,7 @@
             },
             {
                 "nid": "Marksman_Elite",
-                "Class": "Marksmanship_T4",
+                "Class": "Longbow_Mastery_T4",
                 "Special": "Assassination_T3",
                 "SlotA": "Prescience_T3",
                 "SlotB": "",
@@ -2141,7 +2175,7 @@
             },
             {
                 "nid": "Bow_Paladin",
-                "Class": "Longbow_Master_T3",
+                "Class": "Precision_Volley_T2",
                 "Special": "Assassination_T3",
                 "SlotA": "",
                 "SlotB": "Bowbreaker_T3",
@@ -2158,7 +2192,7 @@
             },
             {
                 "nid": "Bow_Paladin_Elite",
-                "Class": "Longbow_Master_T4",
+                "Class": "Static_Volley_T3",
                 "Special": "Assassination_T3",
                 "SlotA": "",
                 "SlotB": "Bowbreaker_T3",
@@ -2175,7 +2209,7 @@
             },
             {
                 "nid": "Hunter",
-                "Class": "Lucky_Odd_T1",
+                "Class": "Field_Instinct_T1",
                 "Special": "Sure_Shot_T1",
                 "SlotA": "",
                 "SlotB": "Bowbreaker_T1",
@@ -2192,7 +2226,7 @@
             },
             {
                 "nid": "HunterFemale",
-                "Class": "Lucky_Odd_T1",
+                "Class": "Field_Instinct_T1",
                 "Special": "Sure_Shot_T1",
                 "SlotA": "",
                 "SlotB": "Bowbreaker_T1",
@@ -2209,7 +2243,7 @@
             },
             {
                 "nid": "Ranger",
-                "Class": "Lucky_Odd_T2",
+                "Class": "Field_Archery_T2",
                 "Special": "True_Strike_T2",
                 "SlotA": "",
                 "SlotB": "Bowbreaker_T2",
@@ -2226,7 +2260,7 @@
             },
             {
                 "nid": "RangerFemale",
-                "Class": "Lucky_Odd_T2",
+                "Class": "Field_Archery_T2",
                 "Special": "True_Strike_T2",
                 "SlotA": "",
                 "SlotB": "Bowbreaker_T2",
@@ -2243,7 +2277,7 @@
             },
             {
                 "nid": "Ranger_Knight",
-                "Class": "Unlucky_Odd_T3",
+                "Class": "Mobile_Ballistics_T3",
                 "Special": "Assassination_T3",
                 "SlotA": "",
                 "SlotB": "Bowbreaker_T3",
@@ -2260,7 +2294,7 @@
             },
             {
                 "nid": "Ranger_KnightFemale",
-                "Class": "Unlucky_Odd_T3",
+                "Class": "Mobile_Ballistics_T3",
                 "Special": "Assassination_T3",
                 "SlotA": "",
                 "SlotB": "Bowbreaker_T3",
@@ -2277,7 +2311,7 @@
             },
             {
                 "nid": "Nomad",
-                "Class": "Swift_Arrow_T1",
+                "Class": "Desert_Hunter_T1",
                 "Special": "Sure_Shot_T1",
                 "SlotA": "",
                 "SlotB": "Quick_Riposte_T1",
@@ -2294,7 +2328,7 @@
             },
             {
                 "nid": "Nomadic_Trooper",
-                "Class": "Swift_Arrow_T2",
+                "Class": "Desert_Hunter_T2",
                 "Special": "True_Strike_T2",
                 "SlotA": "",
                 "SlotB": "Quick_Riposte_T2",
@@ -2311,7 +2345,7 @@
             },
             {
                 "nid": "Chieftain",
-                "Class": "Swift_Sparrow_T3",
+                "Class": "Hunter_Instinct_T3",
                 "Special": "Assassination_T3",
                 "SlotA": "",
                 "SlotB": "Quick_Riposte_T3",
@@ -2328,7 +2362,7 @@
             },
             {
                 "nid": "Deacon",
-                "Class": "Light_Barrier_T1",
+                "Class": "Radiant_Aura_T1",
                 "Special": "Night_Sky_T1",
                 "SlotA": "",
                 "SlotB": "",
@@ -2345,7 +2379,7 @@
             },
             {
                 "nid": "Deacon_Elite",
-                "Class": "Light_Barrier_T2",
+                "Class": "Radiant_Aura_T2",
                 "Special": "Night_Sky_T1",
                 "SlotA": "",
                 "SlotB": "",
@@ -2362,7 +2396,7 @@
             },
             {
                 "nid": "Bishop",
-                "Class": "Light_Barrier_T2",
+                "Class": "Radiant_Aura_T2",
                 "Special": "Glimmer_T2",
                 "SlotA": "",
                 "SlotB": "",
@@ -2379,7 +2413,7 @@
             },
             {
                 "nid": "Bishop_Elite",
-                "Class": "Light_Aura_T3",
+                "Class": "Sacred_Aura_T4",
                 "Special": "Glimmer_T2",
                 "SlotA": "",
                 "SlotB": "",
@@ -2396,7 +2430,7 @@
             },
             {
                 "nid": "Pontifex",
-                "Class": "Light_Aura_T3",
+                "Class": "Sacred_Aura_T3",
                 "Special": "Starlight_T3",
                 "SlotA": "",
                 "SlotB": "",
@@ -2413,7 +2447,7 @@
             },
             {
                 "nid": "Pontifex_Elite",
-                "Class": "Light_Aura_T4",
+                "Class": "Sacred_Aura_T4",
                 "Special": "Starlight_T3",
                 "SlotA": "",
                 "SlotB": "",
@@ -2447,7 +2481,7 @@
             },
             {
                 "nid": "Cleric_Elite",
-                "Class": "Light_Blessing_T2",
+                "Class": "Light_Blessing_Plus_T2",
                 "Special": "Miracle_T1",
                 "SlotA": "",
                 "SlotB": "Guard_T1",
@@ -2481,7 +2515,7 @@
             },
             {
                 "nid": "High_Priestess",
-                "Class": "Light_Blessing_T2",
+                "Class": "Divine_Blessing_T3",
                 "Special": "Glimmer_T2",
                 "SlotA": "",
                 "SlotB": "Guard_T2",
@@ -2498,7 +2532,7 @@
             },
             {
                 "nid": "High_Priestess_Elite",
-                "Class": "Divine_Blessing_T3",
+                "Class": "Divine_Blessing_T4",
                 "Special": "Glimmer_T2",
                 "SlotA": "",
                 "SlotB": "Guard_T2",
@@ -2532,7 +2566,7 @@
             },
             {
                 "nid": "Saint_Elite",
-                "Class": "Divine_Blessing_T4",
+                "Class": "Divine_Blessing_Plus_T4",
                 "Special": "Starlight_T3",
                 "SlotA": "",
                 "SlotB": "Guard_T3",
@@ -2549,7 +2583,7 @@
             },
             {
                 "nid": "Mage",
-                "Class": "Forcus_T1",
+                "Class": "Arcane_Precision_T1",
                 "Special": "Chilling_Wind_T1",
                 "SlotA": "Warding_Blow_T1",
                 "SlotB": "",
@@ -2566,7 +2600,7 @@
             },
             {
                 "nid": "MageFemale",
-                "Class": "Forcus_T1",
+                "Class": "Arcane_Precision_T1",
                 "Special": "Chilling_Wind_T1",
                 "SlotA": "Warding_Blow_T1",
                 "SlotB": "",
@@ -2583,7 +2617,7 @@
             },
             {
                 "nid": "Mage_Elite",
-                "Class": "Forcus_T2",
+                "Class": "Forcus_Channelling_T2",
                 "Special": "Iceberg_T2",
                 "SlotA": "Warding_Blow_T1",
                 "SlotB": "",
@@ -2600,7 +2634,7 @@
             },
             {
                 "nid": "Sage",
-                "Class": "Forcus_T2",
+                "Class": "Arcane_Insight_T2",
                 "Special": "Iceberg_T2",
                 "SlotA": "Warding_Blow_T2",
                 "SlotB": "",
@@ -2617,7 +2651,7 @@
             },
             {
                 "nid": "SageFemale",
-                "Class": "Forcus_T2",
+                "Class": "Arcane_Insight_T2",
                 "Special": "Iceberg_T2",
                 "SlotA": "Warding_Blow_T2",
                 "SlotB": "",
@@ -2634,7 +2668,7 @@
             },
             {
                 "nid": "Sage_Elite",
-                "Class": "Master_Forcus_T3",
+                "Class": "Omniscient_Arcane_T3",
                 "Special": "Glacies_T3",
                 "SlotA": "Warding_Blow_T2",
                 "SlotB": "",
@@ -2651,7 +2685,7 @@
             },
             {
                 "nid": "Wizard",
-                "Class": "Magic_Talent_T2",
+                "Class": "Forcus_Channelling_T2",
                 "Special": "Iceberg_T2",
                 "SlotA": "Warding_Blow_T2",
                 "SlotB": "",
@@ -2668,7 +2702,7 @@
             },
             {
                 "nid": "WizardFemale",
-                "Class": "Magic_Talent_T2",
+                "Class": "Forcus_Channelling_T2",
                 "Special": "Iceberg_T2",
                 "SlotA": "Warding_Blow_T2",
                 "SlotB": "",
@@ -2685,7 +2719,7 @@
             },
             {
                 "nid": "Wizard_Elite",
-                "Class": "Magic_Talent_T3",
+                "Class": "Arcane_Burst_T3",
                 "Special": "Glacies_T3",
                 "SlotA": "Warding_Blow_T2",
                 "SlotB": "",
@@ -2702,7 +2736,7 @@
             },
             {
                 "nid": "Grand_Sage",
-                "Class": "Master_Forcus_T3",
+                "Class": "Omniscient_Arcane_T3",
                 "Special": "Glacies_T3",
                 "SlotA": "Warding_Blow_T3",
                 "SlotB": "",
@@ -2719,7 +2753,7 @@
             },
             {
                 "nid": "Grand_SageFemale",
-                "Class": "Master_Forcus_T3",
+                "Class": "Omniscient_Arcane_T3",
                 "Special": "Glacies_T3",
                 "SlotA": "Warding_Blow_T3",
                 "SlotB": "",
@@ -2736,7 +2770,7 @@
             },
             {
                 "nid": "Grand_Sage_Elite",
-                "Class": "Master_Forcus_T4",
+                "Class": "Power_of_Knowledge_T4",
                 "Special": "Glacies_T4",
                 "SlotA": "Warding_Blow_T3",
                 "SlotB": "",
@@ -2753,7 +2787,7 @@
             },
             {
                 "nid": "Grand_Wizard",
-                "Class": "Magic_Talent_T3",
+                "Class": "Arcane_Burst_T3",
                 "Special": "Glacies_T3",
                 "SlotA": "Warding_Blow_T3",
                 "SlotB": "",
@@ -2770,7 +2804,7 @@
             },
             {
                 "nid": "Grand_WizardFemale",
-                "Class": "Magic_Talent_T3",
+                "Class": "Arcane_Burst_T3",
                 "Special": "Glacies_T3",
                 "SlotA": "Warding_Blow_T3",
                 "SlotB": "",
@@ -2787,7 +2821,7 @@
             },
             {
                 "nid": "Grand_Wizard_Elite",
-                "Class": "Rare_Magic_Talent_T4",
+                "Class": "Magic_Has_No_Equal_T4",
                 "Special": "Glacies_T4",
                 "SlotA": "Warding_Blow_T3",
                 "SlotB": "",
@@ -2889,7 +2923,7 @@
             },
             {
                 "nid": "Druid_Elite",
-                "Class": "Super_Hex_T3",
+                "Class": "Hex_T2",
                 "Special": "Reprisal_T2",
                 "SlotA": "",
                 "SlotB": "Poison_Strike_T2",
@@ -3008,7 +3042,7 @@
             },
             {
                 "nid": "Necromancer",
-                "Class": "Call_of_the_Haunted_T3",
+                "Class": "Path_of_the_Dammed_T3",
                 "Special": "Vengence_T3",
                 "SlotA": "",
                 "SlotB": "Poison_Strike_T3",
@@ -3025,7 +3059,7 @@
             },
             {
                 "nid": "NecromancerFemale",
-                "Class": "Call_of_the_Haunted_T3",
+                "Class": "Path_of_the_Dammed_T3",
                 "Special": "Vengence_T3",
                 "SlotA": "",
                 "SlotB": "Poison_Strike_T3",
@@ -3042,7 +3076,7 @@
             },
             {
                 "nid": "Necromancer_Elite",
-                "Class": "Call_of_the_Haunted_T4",
+                "Class": "Path_of_the_Dammed_T3",
                 "Special": "Vengence_T3",
                 "SlotA": "",
                 "SlotB": "Poison_Strike_T3",
@@ -3059,7 +3093,7 @@
             },
             {
                 "nid": "Troubadour",
-                "Class": "Magical_Shield_T1",
+                "Class": "Arcane_Reprisal_T1",
                 "Special": "Miracle_T1",
                 "SlotA": "",
                 "SlotB": "",
@@ -3076,7 +3110,7 @@
             },
             {
                 "nid": "TroubadourFemale",
-                "Class": "Magical_Shield_T1",
+                "Class": "Arcane_Reprisal_T1",
                 "Special": "Miracle_T1",
                 "SlotA": "",
                 "SlotB": "",
@@ -3093,7 +3127,7 @@
             },
             {
                 "nid": "Troubadour_Elite",
-                "Class": "Magical_Shield_T2",
+                "Class": "Arcane_Reprisal_T2",
                 "Special": "Miracle_T1",
                 "SlotA": "",
                 "SlotB": "",
@@ -3110,7 +3144,7 @@
             },
             {
                 "nid": "Strategist",
-                "Class": "Magical_Shield_T2",
+                "Class": "Arcane_Reprisal_T2",
                 "Special": "Reprisal_T2",
                 "SlotA": "",
                 "SlotB": "",
@@ -3127,7 +3161,7 @@
             },
             {
                 "nid": "StrategistFemale",
-                "Class": "Magical_Shield_T2",
+                "Class": "Arcane_Reprisal_T2",
                 "Special": "Reprisal_T2",
                 "SlotA": "",
                 "SlotB": "",
@@ -3144,7 +3178,7 @@
             },
             {
                 "nid": "Strategist_Elite",
-                "Class": "Magical_Barrier_T3",
+                "Class": "Arcane_Retort_T4",
                 "Special": "Reprisal_T2",
                 "SlotA": "",
                 "SlotB": "",
@@ -3161,7 +3195,7 @@
             },
             {
                 "nid": "Dark_Knight",
-                "Class": "Magical_Barrier_T3",
+                "Class": "Arcane_Retort_T3",
                 "Special": "Vengence_T3",
                 "SlotA": "",
                 "SlotB": "",
@@ -3178,7 +3212,7 @@
             },
             {
                 "nid": "Dark_KnightFemale",
-                "Class": "Magical_Barrier_T3",
+                "Class": "Arcane_Retort_T3",
                 "Special": "Vengence_T3",
                 "SlotA": "",
                 "SlotB": "",
@@ -3195,7 +3229,7 @@
             },
             {
                 "nid": "Dark_Knight_Elite",
-                "Class": "Magical_Barrier_T4",
+                "Class": "Arcane_Retort_T4",
                 "Special": "Vengence_T3",
                 "SlotA": "",
                 "SlotB": "",
@@ -3212,7 +3246,7 @@
             },
             {
                 "nid": "Mage Knight",
-                "Class": "Magical_Aura_T2",
+                "Class": "Arcane_Aegis_T2",
                 "Special": "Glimmer_T2",
                 "SlotA": "",
                 "SlotB": "",
@@ -3229,7 +3263,7 @@
             },
             {
                 "nid": "Mage_KnightFemale",
-                "Class": "Magical_Aura_T2",
+                "Class": "Arcane_Aegis_T2",
                 "Special": "Glimmer_T2",
                 "SlotA": "",
                 "SlotB": "",
@@ -3246,7 +3280,7 @@
             },
             {
                 "nid": "Mage_Knight_Elite",
-                "Class": "Magical_Aura_T3",
+                "Class": "Arcane_Aegis_T3",
                 "Special": "Glimmer_T2",
                 "SlotA": "",
                 "SlotB": "",
@@ -3263,7 +3297,7 @@
             },
             {
                 "nid": "Sage_Knight",
-                "Class": "Magical_Aura_T3",
+                "Class": "Arcane_Aegis_T3",
                 "Special": "Starlight_T3",
                 "SlotA": "",
                 "SlotB": "",
@@ -3280,7 +3314,7 @@
             },
             {
                 "nid": "Sage_KnightFemale",
-                "Class": "Magical_Aura_T3",
+                "Class": "Arcane_Aegis_T3",
                 "Special": "Starlight_T3",
                 "SlotA": "",
                 "SlotB": "",
@@ -3297,7 +3331,7 @@
             },
             {
                 "nid": "Sage_Knight_Elite",
-                "Class": "Magical_Aura_T4",
+                "Class": "Grand_Arcane_Aegis_T4",
                 "Special": "Starlight_T3",
                 "SlotA": "",
                 "SlotB": "",
@@ -3314,7 +3348,7 @@
             },
             {
                 "nid": "Lance_Wyvern_Rider",
-                "Class": "Wyvern_Pack_T1",
+                "Class": "Aerial_Armor_T1",
                 "Special": "Glowing_Ember_T1",
                 "SlotA": "",
                 "SlotB": "Axebreaker_T1",
@@ -3331,7 +3365,7 @@
             },
             {
                 "nid": "Axe_Wyvern_Rider",
-                "Class": "Wyvern_Pack_T1",
+                "Class": "Diving_Strike_T1",
                 "Special": "Glowing_Ember_T1",
                 "SlotA": "",
                 "SlotB": "Lancebreaker_T1",
@@ -3348,7 +3382,7 @@
             },
             {
                 "nid": "Lance_Wyvern_Rider_Elite",
-                "Class": "Wyvern_Pack_T2",
+                "Class": "Aerial_Armor_T2",
                 "Special": "Bonfire_T2",
                 "SlotA": "",
                 "SlotB": "Axebreaker_T1",
@@ -3365,7 +3399,7 @@
             },
             {
                 "nid": "Axe_Wyvern_Rider_Elite",
-                "Class": "Wyvern_Pack_T2",
+                "Class": "Diving_Strike_T2",
                 "Special": "Bonfire_T2",
                 "SlotA": "",
                 "SlotB": "Lancebreaker_T1",
@@ -3382,7 +3416,7 @@
             },
             {
                 "nid": "Lance_Wyvern_Lord",
-                "Class": "Quick_Burn_T2",
+                "Class": "Sky_Guard_T2",
                 "Special": "Bonfire_T2",
                 "SlotA": "",
                 "SlotB": "Axebreaker_T2",
@@ -3399,7 +3433,7 @@
             },
             {
                 "nid": "Axe_Wyvern_Lord",
-                "Class": "Quick_Burn_T2",
+                "Class": "Sky_Strike_T2",
                 "Special": "Bonfire_T2",
                 "SlotA": "",
                 "SlotB": "Lancebreaker_T2",
@@ -3416,7 +3450,7 @@
             },
             {
                 "nid": "Lance_Wyvern_Lord_Elite",
-                "Class": "Quick_Burn_T3",
+                "Class": "Sky_Guard_T3",
                 "Special": "Ignis_T3",
                 "SlotA": "",
                 "SlotB": "Axebreaker_T2",
@@ -3433,7 +3467,7 @@
             },
             {
                 "nid": "Axe_Wyvern_Lord_Elite",
-                "Class": "Quick_Burn_T3",
+                "Class": "Sky_Strike_T3",
                 "Special": "Ignis_T3",
                 "SlotA": "",
                 "SlotB": "Lancebreaker_T2",
@@ -3467,7 +3501,7 @@
             },
             {
                 "nid": "Lance_Wyvern_Knight",
-                "Class": "Wyvern_Pack_T2",
+                "Class": "Aerial_Armor_T2",
                 "Special": "Moonbow_T2",
                 "SlotA": "",
                 "SlotB": "Axebreaker_T2",
@@ -3484,7 +3518,7 @@
             },
             {
                 "nid": "Axe_Wyvern_Knight",
-                "Class": "Wyvern_Pack_T2",
+                "Class": "Diving_Strike_T2",
                 "Special": "Moonbow_T2",
                 "SlotA": "",
                 "SlotB": "Lancebreaker_T2",
@@ -3501,7 +3535,7 @@
             },
             {
                 "nid": "Lance_Wyvern_Knight_Elite",
-                "Class": "Dragon_Pack_T3",
+                "Class": "Aerial_Guard_T3",
                 "Special": "Luna_T3",
                 "SlotA": "",
                 "SlotB": "Axebreaker_T2",
@@ -3518,7 +3552,7 @@
             },
             {
                 "nid": "Axe_Wyvern_Knight_Elite",
-                "Class": "Dragon_Pack_T3",
+                "Class": "Crushing_Dive_T3",
                 "Special": "Luna_T3",
                 "SlotA": "",
                 "SlotB": "Lancebreaker_T2",
@@ -3535,7 +3569,7 @@
             },
             {
                 "nid": "Lance_Dragon_Lord",
-                "Class": "Quick_Burn_T3",
+                "Class": "Sky_Guard_T3",
                 "Special": "Ignis_T3",
                 "SlotA": "",
                 "SlotB": "Axebreaker_T3",
@@ -3552,7 +3586,7 @@
             },
             {
                 "nid": "Axe_Dragon_Lord",
-                "Class": "Quick_Burn_T3",
+                "Class": "Sky_Strike_T3",
                 "Special": "Ignis_T3",
                 "SlotA": "",
                 "SlotB": "Lancebreaker_T3",
@@ -3569,7 +3603,7 @@
             },
             {
                 "nid": "Lance_Dragon_Lord_Elite",
-                "Class": "Dragon_Burn_T4",
+                "Class": "Dragon_Guard_T4",
                 "Special": "Ignis_T4",
                 "SlotA": "",
                 "SlotB": "Axebreaker_T3",
@@ -3603,7 +3637,7 @@
             },
             {
                 "nid": "Lance_Dragon_Knight",
-                "Class": "Dragon_Pack_T3",
+                "Class": "Aerial_Guard_T3",
                 "Special": "Luna_T3",
                 "SlotA": "",
                 "SlotB": "Axebreaker_T3",
@@ -3620,7 +3654,7 @@
             },
             {
                 "nid": "Axe_Dragon_Knight",
-                "Class": "Dragon_Pack_T3",
+                "Class": "Crushing_Dive_T3",
                 "Special": "Luna_T3",
                 "SlotA": "",
                 "SlotB": "Lancebreaker_T3",
@@ -3637,7 +3671,7 @@
             },
             {
                 "nid": "Lance_Dragon_Knight_Elite",
-                "Class": "Dragon_Pack_T4",
+                "Class": "Aerial_Guard_T4",
                 "Special": "Luna_T4",
                 "SlotA": "",
                 "SlotB": "Axebreaker_T3",
@@ -3654,7 +3688,7 @@
             },
             {
                 "nid": "Axe_Dragon_Knight_Elite",
-                "Class": "Dragon_Pack_T4",
+                "Class": "Crushing_Dive_T4",
                 "Special": "Luna_T4",
                 "SlotA": "",
                 "SlotB": "Lancebreaker_T3",
@@ -3705,7 +3739,7 @@
             },
             {
                 "nid": "Wicked_Knight",
-                "Class": "Slow_Burn_T3",
+                "Class": "Infernal_Dominion_T3",
                 "Special": "Glacies_T3",
                 "SlotA": "",
                 "SlotB": "Tomebreaker_T3",

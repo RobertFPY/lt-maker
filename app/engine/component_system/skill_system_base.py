@@ -59,6 +59,14 @@ class Defaults():
         return 1.0
 
     @staticmethod
+    def experience_family_multiplier(unit, target, item) -> float:
+        return 1.0
+
+    @staticmethod
+    def valor_family_multiplier(provider, recipient, item) -> float:
+        return 1.0
+
+    @staticmethod
     def enemy_exp_multiplier(unit1, unit2) -> float:
         return 1.0
 
@@ -99,6 +107,14 @@ class Defaults():
         return 0
 
     @staticmethod
+    def heal_multiplier(unit1, unit2) -> float:
+        return 1.0
+
+    @staticmethod
+    def modify_debuff_proc_rate(unit1, unit2) -> int:
+        return 0
+
+    @staticmethod
     def empower_mana(unit1, unit2) -> int:
         return 0
 
@@ -115,12 +131,20 @@ class Defaults():
         return None
 
     @staticmethod
+    def modify_movement_cost(unit, position, terrain, base_cost):
+        return base_cost
+
+    @staticmethod
     def sight_range(unit):
         return 0
 
     @staticmethod
     def xcom_movement(unit):
         return 0
+
+    @staticmethod
+    def movement_cap(unit):
+        return 1000
 
     @staticmethod
     def empower_splash(unit):

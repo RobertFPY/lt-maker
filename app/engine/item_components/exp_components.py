@@ -6,6 +6,7 @@ from app.data.database.item_components import ItemComponent, ItemTags
 from app.data.database.components import ComponentType
 
 from app.engine import skill_system, action
+from app.engine.game_state import game
 from app.utilities import utils
 
 def determine_all_defenders(playback: list, attacker) -> set:
@@ -48,8 +49,19 @@ def determine_all_healed_defenders(playback: list, attacker) -> set:
         all_defenders.add(mark.defender)
     return all_defenders
 
-def modify_exp(exp, attacker, defender):
-    self_mult = skill_system.exp_multiplier(attacker, defender)
+def get_experience_family_multiplier(recipient, item):
+    providers = (
+        provider for provider in game.get_all_units()
+        if provider.position is not None and not provider.dead and not provider.is_dying
+        and 'Tile' not in provider.tags and skill_system.check_ally(provider, recipient)
+    )
+    return max((skill_system.experience_family_multiplier(provider, recipient, item)
+                for provider in providers), default=1.0)
+
+
+def modify_exp(exp, attacker, defender, item):
+    family_mult = get_experience_family_multiplier(attacker, item)
+    self_mult = family_mult * skill_system.exp_multiplier(attacker, defender)
     exp *= self_mult
     if not defender:
         return exp
@@ -77,7 +89,7 @@ class Exp(ItemComponent):
         defenders = determine_all_defenders(playback, unit)
         for defender in defenders:
             exp = self.value
-            exp = modify_exp(exp, unit, defender)
+            exp = modify_exp(exp, unit, defender, item)
             total_exp += exp
         total_exp = utils.clamp(int(total_exp), DB.constants.value('min_exp'), 100)
         return total_exp
@@ -113,7 +125,7 @@ class LevelExp(ItemComponent):
         defenders = determine_all_damaged_defenders(playback, unit)
         for defender in defenders:
             exp = self._calc_exp(unit, defender)
-            exp = modify_exp(exp, unit, defender)
+            exp = modify_exp(exp, unit, defender, item)
             total_exp += exp
         total_exp = utils.clamp(int(total_exp), DB.constants.value('min_exp'), 100)
         return total_exp
@@ -145,6 +157,7 @@ class HealExp(ItemComponent):
             if healing_done <= 0:
                 continue
             exp_gained = self._calc_exp(unit, healing_done)
+            exp_gained = modify_exp(exp_gained, unit, None, item)
             total_exp += exp_gained
         total_exp = utils.clamp(int(total_exp), 0, 100)
         return total_exp

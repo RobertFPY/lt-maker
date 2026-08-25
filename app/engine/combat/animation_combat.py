@@ -563,31 +563,65 @@ class AnimationCombat(BaseCombat, MockCombat):
             return False
 
         elif self.state == 'rebuild_revert_animations':
-            if not self.left.is_dying:
-                new_left_battle_anim = battle_animation.get_battle_anim(self.left, self.left_item, self.distance, allow_revert=True)
-                if new_left_battle_anim:
-                    self.left_battle_anim = new_left_battle_anim
-            if not self.right.is_dying:
-                new_right_battle_anim = battle_animation.get_battle_anim(self.right, self.right_item, self.distance, allow_revert=True)
-                if new_right_battle_anim:
-                    self.right_battle_anim = new_right_battle_anim
-            if self.lp_battle_anim:
-                new_lp_battle_anim = battle_animation.get_battle_anim(self.left_partner, self.left_partner.get_weapon(), self.distance, allow_revert=True)
-                if new_lp_battle_anim:
-                    self.lp_battle_anim = new_lp_battle_anim
-            if self.rp_battle_anim:
-                new_rp_battle_anim = battle_animation.get_battle_anim(self.right_partner, self.right_partner.get_weapon(), self.distance, allow_revert=True)
-                if new_rp_battle_anim:
-                    self.rp_battle_anim = new_rp_battle_anim
-            self.state = 'repair_revert_animations'
-            return False
+            current_battle_anim_role = None
+            for role, battle_anim in (
+                    ('left', self.left_battle_anim),
+                    ('right', self.right_battle_anim),
+                    ('lp', self.lp_battle_anim),
+                    ('rp', self.rp_battle_anim)):
+                if self.current_battle_anim is battle_anim:
+                    current_battle_anim_role = role
+                    break
+            if current_battle_anim_role is None:
+                raise RuntimeError('Cannot remap current battle animation after EXP')
 
-        elif self.state == 'repair_revert_animations':
+            new_left_battle_anim = self.left_battle_anim
+            new_right_battle_anim = self.right_battle_anim
+            new_lp_battle_anim = self.lp_battle_anim
+            new_rp_battle_anim = self.rp_battle_anim
+            try:
+                if not self.left.is_dying:
+                    candidate = battle_animation.get_battle_anim(
+                        self.left, self.left_item, self.distance, allow_revert=True)
+                    if candidate:
+                        new_left_battle_anim = candidate
+
+                if not self.right.is_dying:
+                    candidate = battle_animation.get_battle_anim(
+                        self.right, self.right_item, self.distance, allow_revert=True)
+                    if candidate:
+                        new_right_battle_anim = candidate
+
+                if self.lp_battle_anim:
+                    candidate = battle_animation.get_battle_anim(
+                        self.left_partner, self.left_partner.get_weapon(),
+                        self.distance, allow_revert=True)
+                    if candidate:
+                        new_lp_battle_anim = candidate
+
+                if self.rp_battle_anim:
+                    candidate = battle_animation.get_battle_anim(
+                        self.right_partner, self.right_partner.get_weapon(),
+                        self.distance, allow_revert=True)
+                    if candidate:
+                        new_rp_battle_anim = candidate
+            except Exception:
+                logging.exception(
+                    'Failed to rebuild post-EXP battle animations; '
+                    'restoring prior animation staging')
+            else:
+                self.left_battle_anim = new_left_battle_anim
+                self.right_battle_anim = new_right_battle_anim
+                self.lp_battle_anim = new_lp_battle_anim
+                self.rp_battle_anim = new_rp_battle_anim
             self.pair_battle_animations(0)
-            self.state = 'initiate_revert_transforms'
-            return False
 
-        elif self.state == 'initiate_revert_transforms':
+            self.current_battle_anim = {
+                'left': self.left_battle_anim,
+                'right': self.right_battle_anim,
+                'lp': self.lp_battle_anim,
+                'rp': self.rp_battle_anim,
+            }[current_battle_anim_role]
             if self.left_battle_anim.is_transform():
                 self.left_battle_anim.initiate_transform()
             if self.right_battle_anim.is_transform():

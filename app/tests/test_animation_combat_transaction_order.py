@@ -430,6 +430,183 @@ class AnimationCombatTransactionTests(unittest.TestCase):
         self.assertEqual(['focus_exp', 'move_camera', 'cleanup1'], order)
         self.assertEqual('exp_wait', combat.state)
 
+    def test_rebuild_revert_commits_current_role_before_animation_update(self):
+        for current_role in ('left', 'right', 'lp', 'rp'):
+            with self.subTest(current_role=current_role):
+                order = []
+                combat = _animation_combat_for_state('rebuild_revert_animations')
+                combat.left_item = object()
+                combat.right_item = object()
+                combat.distance = 1
+                combat.left_partner = SimpleNamespace(get_weapon=lambda: object())
+                combat.right_partner = SimpleNamespace(get_weapon=lambda: object())
+
+                old_anims = {
+                    'left': combat.left_battle_anim,
+                    'right': combat.right_battle_anim,
+                    'lp': Mock(),
+                    'rp': Mock(),
+                }
+                combat.lp_battle_anim = old_anims['lp']
+                combat.rp_battle_anim = old_anims['rp']
+                combat.current_battle_anim = old_anims[current_role]
+
+                new_anims = {role: Mock() for role in old_anims}
+                for battle_anim in new_anims.values():
+                    battle_anim.is_transform.return_value = False
+                    battle_anim.current_frame = 'old_frame'
+                new_anims[current_role].is_transform.return_value = True
+                new_anims[current_role].initiate_transform.side_effect = \
+                    lambda: order.append('initiate')
+
+                def pair_battle_animations(frames):
+                    order.append(('pair', frames))
+                    for battle_anim in new_anims.values():
+                        battle_anim.current_frame = None
+
+                def update_anims():
+                    self.assertIs(
+                        combat.current_battle_anim, new_anims[current_role])
+                    self.assertIsNone(combat.current_battle_anim.current_frame)
+                    combat.current_battle_anim.current_frame = 'drawable_frame'
+                    order.append('update')
+
+                combat.pair_battle_animations = Mock(
+                    side_effect=pair_battle_animations)
+                combat.update_anims = Mock(side_effect=update_anims)
+
+                with patch.object(
+                        animation_combat_module.battle_animation,
+                        'get_battle_anim',
+                        side_effect=[
+                            new_anims['left'], new_anims['right'],
+                            new_anims['lp'], new_anims['rp'],
+                        ]):
+                    self.assertFalse(self._update(combat))
+
+                self.assertEqual([
+                    ('pair', 0), 'initiate', 'update',
+                ], order)
+                self.assertEqual('fade_out_wait', combat.state)
+                self.assertIs(combat.current_battle_anim, new_anims[current_role])
+                self.assertEqual(
+                    'drawable_frame', combat.current_battle_anim.current_frame)
+                for role, battle_anim in new_anims.items():
+                    if role == current_role:
+                        battle_anim.initiate_transform.assert_called_once_with()
+                    else:
+                        battle_anim.initiate_transform.assert_not_called()
+
+    def test_rebuild_revert_factory_failure_restores_old_staging(self):
+        combat = _animation_combat_for_state('rebuild_revert_animations')
+        combat.left_item = object()
+        combat.right_item = object()
+        combat.distance = 1
+        combat.left_partner = SimpleNamespace(get_weapon=lambda: object())
+        combat.right_partner = SimpleNamespace(get_weapon=lambda: object())
+
+        old_anims = {
+            'left': combat.left_battle_anim,
+            'right': combat.right_battle_anim,
+            'lp': Mock(),
+            'rp': Mock(),
+        }
+        combat.lp_battle_anim = old_anims['lp']
+        combat.rp_battle_anim = old_anims['rp']
+        combat.current_battle_anim = old_anims['right']
+        for battle_anim in old_anims.values():
+            battle_anim.is_transform.return_value = False
+            battle_anim.current_frame = 'old_frame'
+
+        def pair_battle_animations(frames):
+            self.assertEqual(0, frames)
+            for battle_anim in old_anims.values():
+                battle_anim.current_frame = None
+
+        def update_anims():
+            self.assertIs(combat.current_battle_anim, old_anims['right'])
+            self.assertEqual('fade_out_wait', combat.state)
+            self.assertIsNone(combat.current_battle_anim.current_frame)
+            combat.current_battle_anim.current_frame = 'drawable_frame'
+
+        combat.pair_battle_animations = Mock(side_effect=pair_battle_animations)
+        combat.update_anims = Mock(side_effect=update_anims)
+        new_left_battle_anim = Mock()
+        new_right_battle_anim = Mock()
+
+        with (
+                self.assertLogs('root', level='ERROR') as logs,
+                patch.object(
+                    animation_combat_module.battle_animation,
+                    'get_battle_anim',
+                    side_effect=[
+                        new_left_battle_anim,
+                        new_right_battle_anim,
+                        RuntimeError('factory failure'),
+                    ]) as get_battle_anim,
+        ):
+            self.assertFalse(self._update(combat))
+
+        self.assertIn('Failed to rebuild post-EXP battle animations', logs.output[0])
+        self.assertEqual(3, get_battle_anim.call_count)
+        self.assertIs(combat.left_battle_anim, old_anims['left'])
+        self.assertIs(combat.right_battle_anim, old_anims['right'])
+        self.assertIs(combat.lp_battle_anim, old_anims['lp'])
+        self.assertIs(combat.rp_battle_anim, old_anims['rp'])
+        self.assertIs(combat.current_battle_anim, old_anims['right'])
+        self.assertEqual('fade_out_wait', combat.state)
+        self.assertEqual('drawable_frame', combat.current_battle_anim.current_frame)
+        combat.pair_battle_animations.assert_called_once_with(0)
+        combat.update_anims.assert_called_once_with()
+
+    def test_rebuild_revert_keeps_dying_or_missing_animations(self):
+        combat = _animation_combat_for_state('rebuild_revert_animations')
+        combat.left_item = object()
+        combat.right_item = object()
+        combat.distance = 1
+        combat.left.is_dying = True
+        combat.current_battle_anim = combat.right_battle_anim
+        combat.left_battle_anim.is_transform.return_value = False
+        combat.right_battle_anim.is_transform.return_value = False
+        combat.pair_battle_animations = Mock()
+        combat.update_anims = Mock()
+
+        with patch.object(
+                animation_combat_module.battle_animation,
+                'get_battle_anim', return_value=None) as get_battle_anim:
+            self.assertFalse(self._update(combat))
+
+        get_battle_anim.assert_called_once_with(
+            combat.right, combat.right_item, combat.distance, allow_revert=True)
+        self.assertIs(combat.current_battle_anim, combat.right_battle_anim)
+        self.assertEqual('fade_out_wait', combat.state)
+        combat.update_anims.assert_called_once_with()
+
+    def test_rebuild_revert_rejects_an_unowned_current_animation(self):
+        combat = _animation_combat_for_state('rebuild_revert_animations')
+        combat.current_battle_anim = Mock()
+
+        with patch.object(
+                animation_combat_module.battle_animation,
+                'get_battle_anim') as get_battle_anim:
+            with self.assertRaisesRegex(
+                    RuntimeError, 'Cannot remap current battle animation after EXP'):
+                self._update(combat)
+
+        get_battle_anim.assert_not_called()
+
+    def test_skipping_revert_does_not_rebuild_animations(self):
+        combat = _animation_combat_for_state('revert_transform')
+        combat._skip = True
+
+        with patch.object(
+                animation_combat_module.battle_animation,
+                'get_battle_anim') as get_battle_anim:
+            self.assertFalse(self._update(combat))
+
+        self.assertEqual('fade_out_wait', combat.state)
+        get_battle_anim.assert_not_called()
+
     def test_fade_out_and_arena_out_finish_cleanup_and_end_skip_atomically(self):
         for state in ('fade_out', 'arena_out'):
             with self.subTest(state=state):

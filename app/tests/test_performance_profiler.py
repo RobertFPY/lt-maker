@@ -515,8 +515,7 @@ class RuntimeProfilerTests(unittest.TestCase):
             'pair_entrance_animations', 'rebuild_transform_animations',
             'repair_transform_animations', 'setup_pre_proc',
             'setup_delayed_death',
-            'rebuild_revert_animations', 'repair_revert_animations',
-            'initiate_revert_transforms',
+            'rebuild_revert_animations',
         ):
             self.assertIn("self.state == '%s'" % state, source)
 
@@ -527,6 +526,7 @@ class RuntimeProfilerTests(unittest.TestCase):
             'setup_phase_followup', 'setup_hit_effect',
             'resume_hit_animation', 'end_combat_focus',
             'end_combat_camera', 'cleanup1', 'finish_combat', 'cleanup2',
+            'repair_revert_animations', 'initiate_revert_transforms',
         ):
             self.assertNotIn("self.state == '%s'" % state, source)
 
